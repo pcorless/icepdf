@@ -68,7 +68,7 @@ public class NameTree extends Dictionary {
      */
     public List getNamesAndValues() {
         if (root != null) {
-            ArrayList<Object> namesAndValues = new ArrayList<Object>();
+            ArrayList<Object> namesAndValues = new ArrayList<>();
             // single root, just return the list.
             if (root.getNamesAndValues() != null) {
                 namesAndValues.addAll(root.getNamesAndValues());
@@ -99,7 +99,7 @@ public class NameTree extends Dictionary {
         }
         // intermediary node.
         else {
-            ArrayList<Object> namesAndValues = new ArrayList<Object>();
+            ArrayList<Object> namesAndValues = new ArrayList<>();
             for (NameNode node : nameNode.getKidsNodes()) {
                 namesAndValues.addAll(getNamesAndValues(node));
             }
@@ -123,9 +123,9 @@ public class NameTree extends Dictionary {
      * The addition of a node to a name tree is relatively complex but because we are assuming this will only be used
      * in limit capacity as name tree's best to be created a PDF encoder.
      *
-     * @param newName
-     * @param destination
-     * @return
+     * @param newName label for name node.
+     * @param destination associated destination
+     * @return true if insertion was successful, false otherwise.
      */
     public boolean addNameNode(String newName, Destination destination) {
         StateManager stateManager = library.getStateManager();

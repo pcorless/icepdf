@@ -156,7 +156,7 @@ public class AFM {
     };
 
 
-    public static final HashMap<String, AFM> AFMs = new HashMap<String, AFM>(14);
+    public static final HashMap<String, AFM> AFMs = new HashMap<>(14);
 
 
     private String fontName;
@@ -169,8 +169,8 @@ public class AFM {
     private int avgWidth = 0;
     private int flags = 0;
 
-    /**
-     * Reader and parse all the core 14 AFM font descriptors
+    /*
+      Reader and parse all the core 14 AFM font descriptors
      */
     static {
         try {
@@ -190,8 +190,8 @@ public class AFM {
      * Creates a new AFM file based on the
      *
      * @param resource name of desired resource.
-     * @throws IOException if the specified resource could not be found or o
-     *                     pened.
+     * @throws IOException if the specified resource could not be found or opened.
+     * @return AFM font list.
      */
     public static AFM loadFont(String resource) throws IOException {
         InputStream in = AFM.class.getResourceAsStream(resource);

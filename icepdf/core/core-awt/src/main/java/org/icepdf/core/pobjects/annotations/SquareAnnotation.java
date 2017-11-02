@@ -101,7 +101,7 @@ public class SquareAnnotation extends MarkupAnnotation {
         StateManager stateManager = library.getStateManager();
 
         // create a new entries to hold the annotation properties
-        HashMap<Name, Object> entries = new HashMap<Name, Object>();
+        HashMap<Name, Object> entries = new HashMap<>();
         // set default link annotation values.
         entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
         entries.put(Dictionary.SUBTYPE_KEY, Annotation.SUBTYPE_SQUARE);
@@ -200,7 +200,7 @@ public class SquareAnnotation extends MarkupAnnotation {
         this.fillColor = fillColor;
         float[] compArray = new float[3];
         this.fillColor.getColorComponents(compArray);
-        java.util.List<Float> colorValues = new ArrayList<Float>(compArray.length);
+        java.util.List<Float> colorValues = new ArrayList<>(compArray.length);
         for (float comp : compArray) {
             colorValues.add(comp);
         }

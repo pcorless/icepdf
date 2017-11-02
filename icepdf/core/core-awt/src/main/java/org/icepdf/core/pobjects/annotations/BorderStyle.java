@@ -21,7 +21,7 @@ import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -200,7 +200,7 @@ public class BorderStyle extends Dictionary {
         this.borderStyle = lineStyle;
         entries.put(BORDER_STYLE_KEY, this.borderStyle);
         if (this.borderStyle.equals(BorderStyle.BORDER_STYLE_DASHED)) {
-            entries.put(BorderStyle.BORDER_DASH_KEY, Arrays.asList(3f));
+            entries.put(BorderStyle.BORDER_DASH_KEY, Collections.singletonList(3f));
         } else {
             entries.remove(BorderStyle.BORDER_DASH_KEY);
         }
@@ -230,9 +230,9 @@ public class BorderStyle extends Dictionary {
         if (dashArray != null) {
             this.dashArray = dashArray;
             int sz = dashArray.length;
-            List<Number> dashVector = new ArrayList<Number>(sz);
-            for (int i = 0; i < sz; i++) {
-                dashVector.add(dashArray[i]);
+            List<Number> dashVector = new ArrayList<>(sz);
+            for (float aDashArray : dashArray) {
+                dashVector.add(aDashArray);
             }
             this.dashArray = dashArray;
             entries.put(BORDER_STYLE_DASHED, dashVector);

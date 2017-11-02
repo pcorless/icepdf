@@ -56,7 +56,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
     public ArrayList<ChoiceFieldDictionary.ChoiceOption> generateChoices() {
         Shapes shapes = getShapes();
         if (shapes != null) {
-            ArrayList<ChoiceFieldDictionary.ChoiceOption> options = new ArrayList<ChoiceFieldDictionary.ChoiceOption>();
+            ArrayList<ChoiceFieldDictionary.ChoiceOption> options = new ArrayList<>();
             String tmp;
             ArrayList<LineText> pageLines = shapes.getPageText().getPageLines();
             for (LineText lines : pageLines) {
@@ -69,7 +69,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
             }
             return options;
         }
-        return new ArrayList<ChoiceFieldDictionary.ChoiceOption>();
+        return new ArrayList<>();
     }
 
     /**
@@ -126,7 +126,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
             StateManager stateManager = library.getStateManager();
             stateManager.addChange(new PObject(appearanceStream, appearanceStream.getPObjectReference()));
             // add an AP entry for the
-            HashMap<Object, Object> appearanceRefs = new HashMap<Object, Object>();
+            HashMap<Object, Object> appearanceRefs = new HashMap<>();
             appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, appearanceStream.getPObjectReference());
             entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
             Rectangle2D formBbox = new Rectangle2D.Float(0, 0,

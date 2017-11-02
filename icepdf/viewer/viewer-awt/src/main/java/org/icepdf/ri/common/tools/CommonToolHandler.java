@@ -23,8 +23,8 @@ import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.util.PropertiesManager;
 
 import java.awt.*;
-import java.awt.geom.*;
-import java.util.logging.Level;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
@@ -62,23 +62,17 @@ public abstract class CommonToolHandler {
 
     protected abstract void checkAndApplyPreferences();
 
-    protected AffineTransform getPageTransformInverse() {
-        return getPageTransformInverse(pageViewComponent);
+    protected AffineTransform getToPageSpaceTransform() {
+        return getToPageSpaceTransform(pageViewComponent);
     }
 
-    protected AffineTransform getPageTransformInverse(AbstractPageViewComponent pageViewComponent) {
+    protected AffineTransform getToPageSpaceTransform(AbstractPageViewComponent pageViewComponent) {
         Page currentPage = pageViewComponent.getPage();
         DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-        AffineTransform at = currentPage.getPageTransform(
+        return currentPage.getToPageSpaceTransform(
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
-        try {
-            at = at.createInverse();
-        } catch (NoninvertibleTransformException e) {
-            logger.log(Level.FINE, "Error page space transform", e);
-        }
-        return at;
     }
 
     protected AffineTransform getPageTransform() {
@@ -99,118 +93,60 @@ public abstract class CommonToolHandler {
      * Convert the shapes that make up the annotation to page space so that
      * they will scale correctly at different zooms.
      *
+     * @param rect rectangle of rectangle to convert to page space.
      * @return transformed bBox.
      */
     protected Rectangle convertToPageSpace(Rectangle rect) {
         Page currentPage = pageViewComponent.getPage();
         DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-        AffineTransform at = currentPage.getPageTransform(
-                documentViewModel.getPageBoundary(),
-                documentViewModel.getViewRotation(),
-                documentViewModel.getViewZoom());
-        try {
-            at = at.createInverse();
-        } catch (NoninvertibleTransformException e) {
-            logger.log(Level.FINE, "Error converting to page space.", e);
-        }
-        // convert the two points as well as the bbox.
-        Rectangle tBbox = new Rectangle(rect.x, rect.y,
-                rect.width, rect.height);
+        return currentPage.convertToPageSpace(rect, documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(), documentViewModel.getViewZoom());
+    }
 
-        tBbox = at.createTransformedShape(tBbox).getBounds();
-
-        return tBbox;
-
+    /**
+     * Converts the location point from g2d to page space.
+     *
+     * @param location location to convert.
+     * @return converted point with Point2D precision.
+     */
+    protected Point2D.Float convertToPageSpace(Point location) {
+        Page currentPage = pageViewComponent.getPage();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
+        return currentPage.convertToPageSpace(location, documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(), documentViewModel.getViewZoom());
     }
 
     /**
      * Convert the shapes that make up the annotation to page space so that
      * they will scale correctly at different zooms.
      *
+     * @param shape shape to convert to page space.
      * @return transformed bBox.
      */
     protected Shape convertToPageSpace(Shape shape) {
-        return convertToPageSpace(pageViewComponent, shape);
-    }
-
-    protected Shape convertToPageSpace(AbstractPageViewComponent pageViewComponent, Shape shape) {
         Page currentPage = pageViewComponent.getPage();
         DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-        AffineTransform at = currentPage.getPageTransform(
-                documentViewModel.getPageBoundary(),
-                documentViewModel.getViewRotation(),
-                documentViewModel.getViewZoom());
-        try {
-            at = at.createInverse();
-        } catch (NoninvertibleTransformException e) {
-            logger.log(Level.FINE, "Error converting to page space", e);
-        }
-        shape = at.createTransformedShape(shape);
-        return shape;
-
-    }
-
-    protected Point2D[] convertToPageSpace(Point2D start, Point2D end) {
-        Page currentPage = pageViewComponent.getPage();
-        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-        AffineTransform at = currentPage.getPageTransform(
-                documentViewModel.getPageBoundary(),
-                documentViewModel.getViewRotation(),
-                documentViewModel.getViewZoom());
-        try {
-            at = at.createInverse();
-        } catch (NoninvertibleTransformException e) {
-            logger.log(Level.FINE, "Error converting to page space", e);
-        }
-        at.transform(start, start);
-        at.transform(end, end);
-
-        return new Point2D[]{start, end};
+        return currentPage.convertToPageSpace(shape, documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(), documentViewModel.getViewZoom());
     }
 
     /**
-     * Convert the mouse coordinates to the space specified by the pageTransform
-     * matrix.  This is a utility method for converting the mouse coordinates
-     * to page space so that it can be used in a contains calculation for text
-     * selection.
+     * Converts the given point from g2d space to page space.
      *
-     * @param mousePoint    point to convert space of
-     * @param pageTransform transform
-     * @return page space mouse coordinates.
+     * @param points points to convert.
+     * @return list of converted points with Point2D precision.
      */
-    protected Point2D.Float convertMouseToPageSpace(Point mousePoint,
-                                                    AffineTransform pageTransform) {
-        Point2D.Float pageMouseLocation = new Point2D.Float();
-        try {
-            pageTransform.createInverse().transform(
-                    mousePoint, pageMouseLocation);
-        } catch (NoninvertibleTransformException e) {
-            logger.log(Level.SEVERE,
-                    "Error converting mouse point to page space.", e);
-        }
-        return pageMouseLocation;
-    }
-
-    /**
-     * Converts the rectangle to the space specified by the page transform. This
-     * is a utility method for converting a selection rectangle to page space
-     * so that an intersection can be calculated to determine a selected state.
-     *
-     * @param mouseRect     rectangle to convert space of
-     * @param pageTransform page transform
-     * @return converted rectangle.
-     */
-    protected Rectangle2D convertRectangleToPageSpace(Rectangle mouseRect,
-                                                      AffineTransform pageTransform) {
-        GeneralPath shapePath;
-        try {
-            AffineTransform transform = pageTransform.createInverse();
-            shapePath = new GeneralPath(mouseRect);
-            shapePath.transform(transform);
-            return shapePath.getBounds2D();
-        } catch (NoninvertibleTransformException e) {
-            logger.log(Level.SEVERE,
-                    "Error converting mouse point to page space.", e);
+    protected Point2D[] convertToPageSpace(Point... points) {
+        if (points != null) {
+            Page currentPage = pageViewComponent.getPage();
+            DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
+            AffineTransform pageSpaceTransform = currentPage.getToPageSpaceTransform(documentViewModel.getPageBoundary(),
+                    documentViewModel.getViewRotation(), documentViewModel.getViewZoom());
+            Point2D[] point2DS = new Point2D[points.length];
+            for (int i = 0, max = points.length; i < max; i++) {
+                point2DS[i] = Page.convertTo(points[i], pageSpaceTransform);
+            }
+            return point2DS;
         }
         return null;
     }

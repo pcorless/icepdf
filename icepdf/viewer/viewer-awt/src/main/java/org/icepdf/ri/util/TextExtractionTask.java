@@ -68,8 +68,9 @@ public class TextExtractionTask {
     /**
      * Create a new instance of the TextExtraction object.
      *
-     * @param document document whose text will be extracted.
-     * @param file     output file for extracted text.
+     * @param document      document whose text will be extracted.
+     * @param file          output file for extracted text.
+     * @param messageBundle main message bundle for i18n
      */
     public TextExtractionTask(Document document, File file, ResourceBundle messageBundle) {
         this.document = document;
@@ -99,6 +100,8 @@ public class TextExtractionTask {
 
     /**
      * Find out how much work needs to be done.
+     *
+     * @return length of task, generally number of pages in document.
      */
     public int getLengthOfTask() {
         return lengthOfTask;
@@ -106,6 +109,8 @@ public class TextExtractionTask {
 
     /**
      * Find out how much has been done.
+     *
+     * @return gets the current progress, generally the number of pages read so far.
      */
     public int getCurrent() {
         return current;
@@ -121,6 +126,8 @@ public class TextExtractionTask {
 
     /**
      * Find out if the task has completed.
+     *
+     * @return true if task is complete, otherwise false.
      */
     public boolean isDone() {
         return done;
@@ -129,6 +136,7 @@ public class TextExtractionTask {
     /**
      * Returns the most recent dialog message, or null
      * if there is no current dialog message.
+     * @return dialog message already formatted for current progress.
      */
     public String getMessage() {
         return dialogMessage;

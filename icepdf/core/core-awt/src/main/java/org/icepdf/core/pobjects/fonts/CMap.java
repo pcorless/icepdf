@@ -24,7 +24,7 @@ import org.icepdf.core.pobjects.Name;
  */
 public interface CMap {
 
-    public static final Name TYPE = new Name("CMap");
+    Name TYPE = new Name("CMap");
 
     /**
      * Maps the character id to an underlying unicode value if available.
@@ -32,9 +32,9 @@ public interface CMap {
      * @param ch character code to find unicode value of.
      * @return unicode value of ch if available otherwise original ch is returned unaltered.
      */
-    public char toSelector(char ch);
+    char toSelector(char ch);
 
-    public char toSelector(char ch, boolean isCFF);
+    char toSelector(char ch, boolean isCFF);
 
     /**
      * Maps the character id to an underlying to unicode table. This method should
@@ -45,7 +45,7 @@ public interface CMap {
      * @param ch character id to look for corresponding unicode values.
      * @return unicode value of specified character code.
      */
-    public String toUnicode(char ch);
+    String toUnicode(char ch);
 
     /**
      * Determines if the cid should be interpreted as a one or two byte character.
@@ -54,7 +54,7 @@ public interface CMap {
      *
      * @return true if the cid should be considered as having a one byte length.
      */
-    public boolean isOneByte();
+    boolean isOneByte();
 
     /**
      * Determines if the cid should be interpreted as a one or two byte character.
@@ -63,7 +63,7 @@ public interface CMap {
      *
      * @return true if the cid should be considered as having a two byte length.
      */
-    public boolean isTwoByte();
+    boolean isTwoByte();
 
     /**
      * Determines if the cid should be interpreted as a one or two byte character.
@@ -73,12 +73,12 @@ public interface CMap {
      *
      * @return true if the cid should be considered as having a mixed byte length.
      */
-    public boolean isMixedByte();
+    boolean isMixedByte();
 
     /**
      * Utility method ot check if a CMap contain s any data, specifically usable toUnicode data.
      *
      * @return true if the mapping contains at least one entry.
      */
-    public boolean isEmptyMapping();
+    boolean isEmptyMapping();
 }

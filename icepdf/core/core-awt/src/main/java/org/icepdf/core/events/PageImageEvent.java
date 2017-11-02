@@ -41,6 +41,7 @@ public class PageImageEvent extends PageInitializingEvent {
      * @param index       index of image in the resource dictionary
      * @param total       total number of images to loaded.
      * @param interrupted true if the image loading was interrupted in anyway.
+     * @param duration    load time in ms.
      */
     public PageImageEvent(Page pageSource, int index, int total, long duration, boolean interrupted) {
         super(pageSource, interrupted);

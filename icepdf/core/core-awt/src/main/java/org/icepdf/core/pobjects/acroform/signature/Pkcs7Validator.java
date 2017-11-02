@@ -58,9 +58,9 @@ public class Pkcs7Validator extends AbstractPkcsValidator {
         // parse out the singer data.
         parseSignerData(signedData, cmsData);
 
-        /**
-         * End of signature validation checking and data gather;
-         * This section should be moved to a base class and extened for the SHA1 and 7Detatched.
+        /*
+          End of signature validation checking and data gather;
+          This section should be moved to a base class and extened for the SHA1 and 7Detatched.
          */
         initialized = true;
     }

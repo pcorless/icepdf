@@ -37,6 +37,13 @@ public abstract class AbstractBufferedImageOp implements BufferedImageOp {
     /**
      * A convenience method for getting ARGB pixels from an image. This tries to avoid the performance
      * penalty of BufferedImage.getRGB unmanaging the image.
+     * @param image image
+     * @param x pixel
+     * @param y pixel
+     * @param width width of image.
+     * @param height height of image.
+     * @param pixels if not null, the rgb pixels are written here
+     * @return array of RGB pixels.
      */
     public int[] getRGB(BufferedImage image, int x, int y, int width, int height, int[] pixels) {
         int type = image.getType();
@@ -48,6 +55,12 @@ public abstract class AbstractBufferedImageOp implements BufferedImageOp {
     /**
      * A convenience method for setting ARGB pixels in an image. This tries to avoid the performance
      * penalty of BufferedImage.setRGB unmanaging the image.
+     * @param image image
+     * @param x pixel
+     * @param y pixel
+     * @param width width of image.
+     * @param height height of image.
+     * @param pixels if not null, the rgb pixels to write.
      */
     public void setRGB(BufferedImage image, int x, int y, int width, int height, int[] pixels) {
         int type = image.getType();

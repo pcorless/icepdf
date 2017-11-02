@@ -254,50 +254,57 @@ public class Stream extends Dictionary {
             String filterName = filterName1.toString();
             //System.out.println("  Decoding: " + filterName);
 
-            if (filterName.equals("FlateDecode")
-                    || filterName.equals("/Fl")
-                    || filterName.equals("Fl")) {
-                input = new FlateDecode(library, entries, input);
-            } else if (
-                    filterName.equals("LZWDecode")
-                            || filterName.equals("/LZW")
-                            || filterName.equals("LZW")) {
-                input = new LZWDecode(new BitStream(input), library, entries);
-            } else if (
-                    filterName.equals("ASCII85Decode")
-                            || filterName.equals("/A85")
-                            || filterName.equals("A85")) {
-                input = new ASCII85Decode(input);
-            } else if (
-                    filterName.equals("ASCIIHexDecode")
-                            || filterName.equals("/AHx")
-                            || filterName.equals("AHx")) {
-                input = new ASCIIHexDecode(input);
-            } else if (
-                    filterName.equals("RunLengthDecode")
-                            || filterName.equals("/RL")
-                            || filterName.equals("RL")) {
-                input = new RunLengthDecode(input);
-            } else if (
-                    filterName.equals("CCITTFaxDecode")
-                            || filterName.equals("/CCF")
-                            || filterName.equals("CCF")) {
-                // Leave empty so our else clause works
-            } else if (
-                    filterName.equals("DCTDecode")
-                            || filterName.equals("/DCT")
-                            || filterName.equals("DCT")) {
-                // Leave empty so our else clause works
-            } else if ( // No short name, since no JBIG2 for inline images
-                    filterName.equals("JBIG2Decode")) {
-                // Leave empty so our else clause works
-            } else if ( // No short name, since no JPX for inline images
-                    filterName.equals("JPXDecode")) {
-                // Leave empty so our else clause works
-            } else {
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.fine("UNSUPPORTED:" + filterName + " " + entries);
-                }
+            switch (filterName) {
+                case "FlateDecode":
+                case "/Fl":
+                case "Fl":
+                    input = new FlateDecode(library, entries, input);
+                    break;
+                case "LZWDecode":
+                case "/LZW":
+                case "LZW":
+                    input = new LZWDecode(new BitStream(input), library, entries);
+                    break;
+                case "ASCII85Decode":
+                case "/A85":
+                case "A85":
+                    input = new ASCII85Decode(input);
+                    break;
+                case "ASCIIHexDecode":
+                case "/AHx":
+                case "AHx":
+                    input = new ASCIIHexDecode(input);
+                    break;
+                case "RunLengthDecode":
+                case "/RL":
+                case "RL":
+                    input = new RunLengthDecode(input);
+                    break;
+                case "CCITTFaxDecode":
+                case "/CCF":
+                case "CCF":
+                    // Leave empty so our else clause works
+                    break;
+                case "DCTDecode":
+                case "/DCT":
+                case "DCT":
+                    // Leave empty so our else clause works
+                    break;
+                case "JBIG2Decode":
+// No short name, since no JBIG2 for inline images
+
+                    // Leave empty so our else clause works
+                    break;
+                case "JPXDecode":
+// No short name, since no JPX for inline images
+
+                    // Leave empty so our else clause works
+                    break;
+                default:
+                    if (logger.isLoggable(Level.FINE)) {
+                        logger.fine("UNSUPPORTED:" + filterName + " " + entries);
+                    }
+                    break;
             }
         }
         // Apply  Predictor Filter logic fo LZW or Flate streams.
@@ -313,7 +320,7 @@ public class Stream extends Dictionary {
         List<String> filterNames = null;
         Object o = library.getObject(entries, FILTER_KEY);
         if (o instanceof Name) {
-            filterNames = new ArrayList<String>(1);
+            filterNames = new ArrayList<>(1);
             filterNames.add(o.toString());
         } else if (o instanceof List) {
             filterNames = (List) o;
@@ -330,40 +337,42 @@ public class Stream extends Dictionary {
         for (int i = 0; i < filterNames.size(); i++) {
             filterName = filterNames.get(i);
 
-            if (filterName.equals("FlateDecode")
-                    || filterName.equals("/Fl")
-                    || filterName.equals("Fl")) {
-                filterName = "FlateDecode";
-            } else if (
-                    filterName.equals("LZWDecode")
-                            || filterName.equals("/LZW")
-                            || filterName.equals("LZW")) {
-                filterName = "LZWDecode";
-            } else if (
-                    filterName.equals("ASCII85Decode")
-                            || filterName.equals("/A85")
-                            || filterName.equals("A85")) {
-                filterName = "ASCII85Decode";
-            } else if (
-                    filterName.equals("ASCIIHexDecode")
-                            || filterName.equals("/AHx")
-                            || filterName.equals("AHx")) {
-                filterName = "ASCIIHexDecode";
-            } else if (
-                    filterName.equals("RunLengthDecode")
-                            || filterName.equals("/RL")
-                            || filterName.equals("RL")) {
-                filterName = "RunLengthDecode";
-            } else if (
-                    filterName.equals("CCITTFaxDecode")
-                            || filterName.equals("/CCF")
-                            || filterName.equals("CCF")) {
-                filterName = "CCITTFaxDecode";
-            } else if (
-                    filterName.equals("DCTDecode")
-                            || filterName.equals("/DCT")
-                            || filterName.equals("DCT")) {
-                filterName = "DCTDecode";
+            switch (filterName) {
+                case "FlateDecode":
+                case "/Fl":
+                case "Fl":
+                    filterName = "FlateDecode";
+                    break;
+                case "LZWDecode":
+                case "/LZW":
+                case "LZW":
+                    filterName = "LZWDecode";
+                    break;
+                case "ASCII85Decode":
+                case "/A85":
+                case "A85":
+                    filterName = "ASCII85Decode";
+                    break;
+                case "ASCIIHexDecode":
+                case "/AHx":
+                case "AHx":
+                    filterName = "ASCIIHexDecode";
+                    break;
+                case "RunLengthDecode":
+                case "/RL":
+                case "RL":
+                    filterName = "RunLengthDecode";
+                    break;
+                case "CCITTFaxDecode":
+                case "/CCF":
+                case "CCF":
+                    filterName = "CCITTFaxDecode";
+                    break;
+                case "DCTDecode":
+                case "/DCT":
+                case "DCT":
+                    filterName = "DCTDecode";
+                    break;
             }
             // There aren't short names for JBIG2Decode or JPXDecode
             filterNames.set(i, filterName);

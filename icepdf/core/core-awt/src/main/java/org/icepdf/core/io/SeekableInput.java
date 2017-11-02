@@ -28,49 +28,49 @@ public interface SeekableInput {
     // Since Java does not have multiple inheritance, we have to
     //  explicitly expose InputStream's methods as part of our interface
     //
-    public int read() throws IOException;
+    int read() throws IOException;
 
-    public int read(byte[] buffer) throws IOException;
+    int read(byte[] buffer) throws IOException;
 
-    public int read(byte[] buffer, int offset, int length) throws IOException;
+    int read(byte[] buffer, int offset, int length) throws IOException;
 
-    public void close() throws IOException;
+    void close() throws IOException;
 
-    public int available();
+    int available();
 
-    public void mark(int readLimit);
+    void mark(int readLimit);
 
-    public boolean markSupported();
+    boolean markSupported();
 
-    public void reset() throws IOException;
+    void reset() throws IOException;
 
-    public long skip(long n) throws IOException;
+    long skip(long n) throws IOException;
 
 
     //
     // Special methods that make this truly seekable
     //
 
-    public void seekAbsolute(long absolutePosition) throws IOException;
+    void seekAbsolute(long absolutePosition) throws IOException;
 
-    public void seekRelative(long relativeOffset) throws IOException;
+    void seekRelative(long relativeOffset) throws IOException;
 
-    public void seekEnd() throws IOException;
+    void seekEnd() throws IOException;
 
-    public long getAbsolutePosition() throws IOException;
+    long getAbsolutePosition() throws IOException;
 
-    public long getLength() throws IOException;
+    long getLength() throws IOException;
 
     // To access InputStream methods, call this instead of casting
     // This InputStream has to support mark(), reset(), and obviously markSupported()
-    public InputStream getInputStream();
+    InputStream getInputStream();
 
 
     //
     // For regulating competing Threads' access to our state and I/O
     //
 
-    public void beginThreadAccess();
+    void beginThreadAccess();
 
-    public void endThreadAccess();
+    void endThreadAccess();
 }

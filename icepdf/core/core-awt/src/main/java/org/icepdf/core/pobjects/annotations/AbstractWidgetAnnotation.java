@@ -275,9 +275,9 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
         String[] lines = contents.split("\n|\r|\f");
         for (String line : lines) {
             char[] chars = line.toCharArray();
-            StringBuffer hex = new StringBuffer();
-            for (int i = 0; i < chars.length; i++) {
-                hex.append(Integer.toHexString((int) chars[i]));
+            StringBuilder hex = new StringBuilder();
+            for (char aChar : chars) {
+                hex.append(Integer.toHexString((int) aChar));
             }
             content.append('<').append(hex).append(">' ");
         }
@@ -392,7 +392,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
     /**
      * Set the static alpha value uses to paint a color over a widget annotation.
      *
-     * @param highlightAlpha
+     * @param highlightAlpha highlight alpha value between zero and one.
      */
     public static void setHighlightAlpha(float highlightAlpha) {
         AbstractWidgetAnnotation.highlightAlpha = highlightAlpha;

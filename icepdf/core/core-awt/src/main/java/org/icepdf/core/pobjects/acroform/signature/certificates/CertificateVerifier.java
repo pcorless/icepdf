@@ -22,6 +22,7 @@ import org.icepdf.core.pobjects.acroform.signature.exceptions.SelfSignedVerifica
 
 import java.security.*;
 import java.security.cert.*;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -46,6 +47,7 @@ public class CertificateVerifier {
      * root CA certificates and all other certificates in the set are intermediate
      * certificates.
      *
+     * @param signerCert      signer certificate
      * @param cert            - certificate for validation
      * @param additionalCerts - set of trusted root CA certificates that will be
      *                        used as "trust anchors" and intermediate CA certificates that will be
@@ -56,6 +58,10 @@ public class CertificateVerifier {
      * @throws CertificateVerificationException - if the certification is not
      *                                          successful (e.g. certification path cannot be built or some
      *                                          certificate in the chain is expired or CRL checks are failed)
+     * @throws CertificateVerificationException could not verify cert.
+     * @throws CertificateExpiredException      cert is expired
+     * @throws SelfSignedVerificationException  self signed cert.
+     * @throws RevocationVerificationException revocation verifcation error.
      */
     public static PKIXCertPathBuilderResult verifyCertificate(X509Certificate signerCert, X509Certificate[] cert,
                                                               Collection<X509Certificate> additionalCerts)
@@ -68,8 +74,8 @@ public class CertificateVerifier {
             }
             // Prepare a set of trusted root CA certificates
             // and a set of intermediate certificates
-            Set<X509Certificate> trustedRootCerts = new HashSet<X509Certificate>();
-            Set<X509Certificate> intermediateCerts = new HashSet<X509Certificate>();
+            Set<X509Certificate> trustedRootCerts = new HashSet<>();
+            Set<X509Certificate> intermediateCerts = new HashSet<>();
             for (X509Certificate additionalCert : additionalCerts) {
                 if (isSelfSigned(additionalCert)) {
                     trustedRootCerts.add(additionalCert);
@@ -78,9 +84,7 @@ public class CertificateVerifier {
                 }
             }
             // add in any specified intermediate certificates
-            for (int i = 0; i < cert.length; i++) {
-                intermediateCerts.add(cert[i]);
-            }
+            intermediateCerts.addAll(Arrays.asList(cert));
 
             // Attempt to build the certification chain and verify it, first element should always be the signer cert.
             PKIXCertPathBuilderResult verifiedCertChain =
@@ -100,10 +104,8 @@ public class CertificateVerifier {
             }
             throw new CertificateVerificationException(
                     "Error building certification path: " + signerCert.getSubjectX500Principal(), certPathEx);
-        } catch (CertificateVerificationException cvex) {
+        } catch (CertificateVerificationException | RevocationVerificationException cvex) {
             throw cvex;
-        } catch (RevocationVerificationException e) {
-            throw e;
         } catch (Exception ex) {
             throw new CertificateVerificationException(
                     "Error verifying the certificate: " + signerCert.getSubjectX500Principal(), ex);
@@ -132,7 +134,7 @@ public class CertificateVerifier {
         selector.setCertificate(cert);
 
         // Create the trust anchors (set of root CA certificates)
-        Set<TrustAnchor> trustAnchors = new HashSet<TrustAnchor>();
+        Set<TrustAnchor> trustAnchors = new HashSet<>();
         for (X509Certificate trustedRootCert : trustedRootCerts) {
             trustAnchors.add(new TrustAnchor(trustedRootCert, null));
         }
@@ -156,6 +158,12 @@ public class CertificateVerifier {
 
     /**
      * Checks whether given X.509 certificate is self-signed.
+     *
+     * @param cert cert to test for self signing.
+     * @return true if self signed, otherwise false.
+     * @throws CertificateException     certificate exception.
+     * @throws NoSuchAlgorithmException not such algorithm exception.
+     * @throws NoSuchProviderException no such provider exception.
      */
     public static boolean isSelfSigned(X509Certificate cert)
             throws CertificateException, NoSuchAlgorithmException,
@@ -165,11 +173,8 @@ public class CertificateVerifier {
             PublicKey key = cert.getPublicKey();
             cert.verify(key);
             return true;
-        } catch (SignatureException sigEx) {
+        } catch (SignatureException | InvalidKeyException sigEx) {
             // Invalid signature, not self-signed
-            return false;
-        } catch (InvalidKeyException keyEx) {
-            // Invalid key,  not self-signed
             return false;
         }
     }

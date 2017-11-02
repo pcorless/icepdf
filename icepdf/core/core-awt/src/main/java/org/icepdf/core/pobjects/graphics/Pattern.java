@@ -44,29 +44,29 @@ public interface Pattern {
     /**
      * The pattern type is a tiling pattern
      */
-    public static final int PATTERN_TYPE_TILING = 1;
+    int PATTERN_TYPE_TILING = 1;
 
     /**
      * The pattern type is a shading pattern
      */
-    public static final int PATTERN_TYPE_SHADING = 2;
+    int PATTERN_TYPE_SHADING = 2;
 
-    public static final Name TYPE_VALUE = new Name("pattern");
+    Name TYPE_VALUE = new Name("pattern");
 
-    public Name getType();
+    Name getType();
 
-    public int getPatternType();
+    int getPatternType();
 
-    public AffineTransform getMatrix();
+    AffineTransform getMatrix();
 
-    public void setMatrix(AffineTransform matrix);
+    void setMatrix(AffineTransform matrix);
 
-    public Rectangle2D getBBox();
+    Rectangle2D getBBox();
 
     void init(GraphicsState graphicsState);
 
-    public Paint getPaint() throws InterruptedException;
+    Paint getPaint() throws InterruptedException;
 
-    public void setParentGraphicState(GraphicsState graphicsState);
+    void setParentGraphicState(GraphicsState graphicsState);
 
 }

@@ -28,9 +28,7 @@ public class SmartBlurFilter extends AbstractBufferedImageOp {
         return dst;
     }
 
-    /**
-     * Convolve with a kernel consisting of one row
-     */
+    // Convolve with a kernel consisting of one row
     public void thresholdBlur(Kernel kernel, int[] inPixels, int[] outPixels, int width, int height, boolean alpha) {
         int index = 0;
         float[] matrix = kernel.getKernelData(null);

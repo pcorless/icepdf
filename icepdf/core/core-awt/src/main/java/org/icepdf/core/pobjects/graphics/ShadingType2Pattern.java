@@ -90,7 +90,7 @@ public class ShadingType2Pattern extends ShadingPattern {
         if (tmp instanceof List) {
             domain = (List<Number>) tmp;
         } else {
-            domain = new ArrayList<Number>(2);
+            domain = new ArrayList<>(2);
             domain.add(0.0f);
             domain.add(1.0f);
         }
@@ -103,7 +103,7 @@ public class ShadingType2Pattern extends ShadingPattern {
         if (tmp instanceof List) {
             extend = (List<Boolean>) tmp;
         } else {
-            extend = new ArrayList<Boolean>(2);
+            extend = new ArrayList<>(2);
             extend.add(false);
             extend.add(false);
         }
@@ -165,6 +165,8 @@ public class ShadingType2Pattern extends ShadingPattern {
      * @param numberOfPoints number of points to generate.
      * @param startPoint     start of line segment.
      * @param endPoint       end of line segment.
+     * @param t0             domain min
+     * @param t1             domain max
      * @return list of points found on line
      */
     protected Color[] calculateColorPoints(int numberOfPoints,

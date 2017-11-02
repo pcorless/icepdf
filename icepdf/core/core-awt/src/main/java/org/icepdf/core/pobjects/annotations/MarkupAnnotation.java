@@ -235,8 +235,8 @@ public abstract class MarkupAnnotation extends Annotation {
         // add the transparency graphic context settings.
         if (form != null) {
             Resources resources = form.getResources();
-            HashMap<Object, Object> graphicsProperties = new HashMap<Object, Object>(2);
-            HashMap<Object, Object> graphicsState = new HashMap<Object, Object>(1);
+            HashMap<Object, Object> graphicsProperties = new HashMap<>(2);
+            HashMap<Object, Object> graphicsState = new HashMap<>(1);
             graphicsProperties.put(GraphicsState.CA_STROKING_KEY, opacity);
             graphicsProperties.put(GraphicsState.CA_NON_STROKING_KEY, opacity);
             graphicsState.put(EXT_GSTATE_NAME, graphicsProperties);

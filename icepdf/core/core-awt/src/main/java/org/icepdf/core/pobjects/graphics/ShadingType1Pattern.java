@@ -44,10 +44,10 @@ public class ShadingType1Pattern extends ShadingType2Pattern {
     private static final Logger logger =
             Logger.getLogger(ShadingType1Pattern.class.toString());
 
-    /**
-     * (Optional) An array of four numbers [xmin xmax ymin ymax] specifying the
-     * rectangular domain of coordinates over which the colour function(s) are
-     * defined. Default value: [0.0 1.0 0.0 1.0].
+    /*
+      (Optional) An array of four numbers [xmin xmax ymin ymax] specifying the
+      rectangular domain of coordinates over which the colour function(s) are
+      defined. Default value: [0.0 1.0 0.0 1.0].
      */
 //    protected java.util.List<Number> domain;
 
@@ -87,7 +87,7 @@ public class ShadingType1Pattern extends ShadingType2Pattern {
         if (tmp instanceof java.util.List) {
             domain = (List<Number>) tmp;
         } else {
-            domain = new ArrayList<Number>(2);
+            domain = new ArrayList<>(2);
             domain.add(0.0f);
             domain.add(1.0f);
             domain.add(0.0f);

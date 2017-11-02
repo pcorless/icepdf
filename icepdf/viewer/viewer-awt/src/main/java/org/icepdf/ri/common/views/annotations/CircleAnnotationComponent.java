@@ -53,7 +53,7 @@ public class CircleAnnotationComponent extends MarkupAnnotationComponent<CircleA
     public void resetAppearanceShapes() {
         super.resetAppearanceShapes();
         refreshAnnotationRect();
-        annotation.resetAppearanceStream(getPageTransform());
+        annotation.resetAppearanceStream(getToPageSpaceTransform());
     }
 
     @Override

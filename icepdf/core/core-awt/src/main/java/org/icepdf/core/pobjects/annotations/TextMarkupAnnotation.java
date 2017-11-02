@@ -174,7 +174,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
         Shapes shapes = appearanceState.getShapes();
         if (shapes != null) {
-            markupBounds = new ArrayList<Shape>();
+            markupBounds = new ArrayList<>();
             markupPath = new GeneralPath();
 
             ShapeDrawCmd shapeDrawCmd;
@@ -196,6 +196,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
      *
      * @param library document library
      * @param rect    bounding rectangle in user space
+     *                @param  subType subtype of the markup annotation
      * @return new TextMarkupAnnotation Instance.
      */
     public static TextMarkupAnnotation getInstance(Library library,
@@ -205,7 +206,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
         StateManager stateManager = library.getStateManager();
 
         // create a new entries to hold the annotation properties
-        HashMap<Name, Object> entries = new HashMap<Name, Object>();
+        HashMap<Name, Object> entries = new HashMap<>();
         // set default link annotation values.
         entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
         entries.put(Dictionary.SUBTYPE_KEY, subType);
@@ -304,7 +305,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
                 AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f)));
 
         // create the quad points
-        List<Float> quadPoints = new ArrayList<Float>();
+        List<Float> quadPoints = new ArrayList<>();
         if (markupBounds != null) {
             Rectangle2D bounds;
             // build out the square in quadrant 1.

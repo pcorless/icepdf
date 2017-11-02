@@ -83,6 +83,8 @@ public class SigVerificationTask extends AbstractTask<SigVerificationTask> {
 
     /**
      * Start the task, verify the specified signature annotation.
+     * @param signatureTreeNode tree node to verify
+     * @param signatureWidgetAnnotation annotation that contains the signature.
      */
     public void verifySignature(final SignatureWidgetAnnotation signatureWidgetAnnotation,
                                 final SignatureTreeNode signatureTreeNode) {

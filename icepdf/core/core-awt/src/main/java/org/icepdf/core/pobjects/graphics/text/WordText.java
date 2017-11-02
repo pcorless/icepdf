@@ -81,7 +81,7 @@ public class WordText extends AbstractText implements TextSelect {
 
     public WordText() {
         text = new StringBuilder();
-        glyphs = new ArrayList<GlyphText>(4);
+        glyphs = new ArrayList<>(4);
     }
 
     public int size(){

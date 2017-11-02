@@ -30,10 +30,10 @@ import java.util.prefs.Preferences;
  * reliable it is beneficial that it has read and cached all system fonts.  The scanning of system fonts can be time
  * consuming and negatively effect the startup time of the library.  To speed up subsequent launches of the PDF library
  * the fonts are stored using the Preferences API using a backing store determined by the JVM.</p>
- * <p>
+ *
  * // read/store the font cache.
  * FontPropertiesManager.getInstance().loadOrReadSystemFonts();
- * <p>
+ *
  * <p>NOTE:  This class was significantly simplified in version 6.3 of ICEpdf and the release notes should be
  * consulted if any custom font loading was implemented by the end user.</p>
  *

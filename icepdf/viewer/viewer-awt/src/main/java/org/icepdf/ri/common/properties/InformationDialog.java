@@ -36,6 +36,10 @@ public class InformationDialog extends EscapeJDialog {
 
     /**
      * Creates the document information  dialog.
+     *
+     * @param frame           parent frame.
+     * @param document        document
+     * @param messageBundle   i18n message bundle
      */
     public InformationDialog(JFrame frame, Document document,
                              ResourceBundle messageBundle) {

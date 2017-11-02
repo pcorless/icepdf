@@ -49,7 +49,7 @@ public class StateManager {
     public StateManager(PTrailer trailer) {
         this.trailer = trailer;
         // cache of objects that have changed.
-        changes = new HashMap<Reference, PObject>();
+        changes = new HashMap<>();
 
         // number of objects is always one more then the current size and
         // thus the next available number.

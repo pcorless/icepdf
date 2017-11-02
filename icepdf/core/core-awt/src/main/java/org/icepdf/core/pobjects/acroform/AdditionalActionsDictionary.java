@@ -215,6 +215,7 @@ public class AdditionalActionsDictionary extends Dictionary {
     }
 
     /**
+     * @return true if bit is set, otherwise false.
      * @see #ANNOTATION_Bl_KEY
      */
     public boolean isAnnotationBIValue() {
@@ -222,6 +223,7 @@ public class AdditionalActionsDictionary extends Dictionary {
     }
 
     /**
+     * @return true if bit is set, otherwise false.
      * @see #ANNOTATION_D_KEY
      */
     public boolean isAnnotationDValue() {
@@ -229,6 +231,7 @@ public class AdditionalActionsDictionary extends Dictionary {
     }
 
     /**
+     * @return true if bit is set, otherwise false.
      * @see #ANNOTATION_E_KEY
      */
     public boolean isAnnotationEValue() {
@@ -236,6 +239,7 @@ public class AdditionalActionsDictionary extends Dictionary {
     }
 
     /**
+     * @return true if bit is set, otherwise false.
      * @see #ANNOTATION_FO_KEY
      */
     public boolean isAnnotationFOValue() {
@@ -243,6 +247,7 @@ public class AdditionalActionsDictionary extends Dictionary {
     }
 
     /**
+     * @return true if bit is set, otherwise false.
      * @see #ANNOTATION_PC_KEY
      */
     public boolean isAnnotationPCValue() {
@@ -250,6 +255,7 @@ public class AdditionalActionsDictionary extends Dictionary {
     }
 
     /**
+     * @return true if bit is set, otherwise false.
      * @see #ANNOTATION_PI_KEY
      */
     public boolean isAnnotationPIValue() {
@@ -257,6 +263,7 @@ public class AdditionalActionsDictionary extends Dictionary {
     }
 
     /**
+     * @return true if bit is set, otherwise false.
      * @see #ANNOTATION_PO_KEY
      */
     public boolean isAnnotationPOValue() {
@@ -264,6 +271,7 @@ public class AdditionalActionsDictionary extends Dictionary {
     }
 
     /**
+     * @return true if bit is set, otherwise false.
      * @see #ANNOTATION_PV_KEY
      */
     public boolean isAnnotationPVValue() {
@@ -271,6 +279,7 @@ public class AdditionalActionsDictionary extends Dictionary {
     }
 
     /**
+     * @return true if bit is set, otherwise false.
      * @see #ANNOTATION_U_KEY
      */
     public boolean isAnnotationUValue() {
@@ -278,6 +287,7 @@ public class AdditionalActionsDictionary extends Dictionary {
     }
 
     /**
+     * @return true if bit is set, otherwise false.
      * @see #ANNOTATION_X_KEY
      */
     public boolean isAnnotationXValue() {
@@ -286,12 +296,14 @@ public class AdditionalActionsDictionary extends Dictionary {
 
     /**
      * @see #CATALOG_DP_KEY
+     * @return true if bit is set, otherwise false.
      */
     public boolean isCatalogDPValue() {
         return library.getObject(entries, CATALOG_DP_KEY) != null;
     }
 
     /**
+     * @return true if bit is set, otherwise false.
      * @see #CATALOG_DS_KEY
      */
     public boolean isCatalogDSValue() {
@@ -299,6 +311,7 @@ public class AdditionalActionsDictionary extends Dictionary {
     }
 
     /**
+     * @return true if bit is set, otherwise false.
      * @see #CATALOG_WC_KEY
      */
     public boolean isCatalogWCValue() {
@@ -306,6 +319,7 @@ public class AdditionalActionsDictionary extends Dictionary {
     }
 
     /**
+     * @return true if bit is set, otherwise false.
      * @see #CATALOG_WP_KEY
      */
     public boolean isCatalogWPValue() {
@@ -313,6 +327,7 @@ public class AdditionalActionsDictionary extends Dictionary {
     }
 
     /**
+     * @return true if bit is set, otherwise false.
      * @see #CATALOG_WS_KEY
      */
     public boolean isCatalogWSValue() {
@@ -320,6 +335,7 @@ public class AdditionalActionsDictionary extends Dictionary {
     }
 
     /**
+     * @return true if bit is set, otherwise false.
      * @see #FORM_C_KEY
      */
     public boolean isFormCValue() {
@@ -327,6 +343,7 @@ public class AdditionalActionsDictionary extends Dictionary {
     }
 
     /**
+     * @return true if bit is set, otherwise false.
      * @see #FORM_F_KEY
      */
     public boolean isFormFValue() {
@@ -334,6 +351,7 @@ public class AdditionalActionsDictionary extends Dictionary {
     }
 
     /**
+     * @return true if bit is set, otherwise false.
      * @see #FORM_K_KEY
      */
     public boolean isFormKValue() {
@@ -341,6 +359,7 @@ public class AdditionalActionsDictionary extends Dictionary {
     }
 
     /**
+     * @return true if bit is set, otherwise false.
      * @see #FORM_V_KEY
      */
     public boolean isFormVValue() {
@@ -348,6 +367,7 @@ public class AdditionalActionsDictionary extends Dictionary {
     }
 
     /**
+     * @return true if bit is set, otherwise false.
      * @see #PAGE_0_KEY
      */
     public boolean isPageOValue() {
@@ -355,6 +375,7 @@ public class AdditionalActionsDictionary extends Dictionary {
     }
 
     /**
+     * @return true if bit is set, otherwise false.
      * @see #PAGE_C_KEY
      */
     public boolean isPageCValue() {

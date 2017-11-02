@@ -57,6 +57,11 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
 
     /**
      * Create a new instance of SearchPanel.
+     *
+     * @param frame           parent frame.
+     * @param swingController document controller.
+     * @param document        document
+     * @param messageBundle   i18n message bundle
      */
     public FontDialog(JFrame frame, SwingController swingController, Document document,
                       ResourceBundle messageBundle) {

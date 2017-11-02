@@ -122,7 +122,6 @@ public abstract class AbstractWorkerPanel extends JPanel implements MutableDocum
      * Build the tree based on the current implementation of cellRenderer and the given worker task
      * found by the calling implementation of {@link #buildWorkerTaskUI()}.
      * Before this method is call the following instance variables should be set:
-     * <p/>
      * <ul>
      * <li>nodeSelectionListener - event handler for node clicks</li>
      * <li>cellRenderer - cell render, implements DefaultTreeCellRenderer</li>
@@ -236,6 +235,7 @@ public abstract class AbstractWorkerPanel extends JPanel implements MutableDocum
 
     /**
      * The actionPerformed method in this class is called each time the Timer "goes off".
+     * @param evt event perform
      */
     protected void timerActionPerformed(ActionEvent evt) {
         progressBar.setValue(workerTask.getCurrentProgress());

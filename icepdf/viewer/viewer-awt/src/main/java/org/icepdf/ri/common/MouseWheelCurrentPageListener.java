@@ -36,6 +36,9 @@ public class MouseWheelCurrentPageListener implements MouseWheelListener {
 
     /**
      * Install a MouseWheelCurrentPageListener as a MouseWheelListener
+     * @param currentPageChanger current page changer
+     * @param scrollpane parent scrollpane
+     * @return MouseWheelCurrentPageListener that was installed.
      */
     public static Object install(JScrollPane scrollpane,
                                  CurrentPageChanger currentPageChanger) {

@@ -59,10 +59,6 @@ public class Resources extends Dictionary {
     HashMap extGStates;
     HashMap properties;
 
-    /**
-     * @param l
-     * @param h
-     */
     public Resources(Library l, HashMap h) {
         super(l, h);
         colorspaces = library.getDictionary(entries, COLORSPACE_KEY);
@@ -78,10 +74,6 @@ public class Resources extends Dictionary {
         return fonts;
     }
 
-    /**
-     * @param o
-     * @return
-     */
     public PColorSpace getColorSpace(Object o) {
 
         if (o == null) {
@@ -123,10 +115,6 @@ public class Resources extends Dictionary {
 
     }
 
-    /**
-     * @param s
-     * @return
-     */
     public org.icepdf.core.pobjects.fonts.Font getFont(Name s) {
         org.icepdf.core.pobjects.fonts.Font font = null;
         if (fonts != null) {
@@ -201,11 +189,6 @@ public class Resources extends Dictionary {
         return font;
     }
 
-    /**
-     * @param s
-     * @param graphicsState
-     * @return
-     */
     public Image getImage(Name s, GraphicsState graphicsState) {
 
         // check xobjects for stream
@@ -261,10 +244,6 @@ public class Resources extends Dictionary {
         return count;
     }
 
-    /**
-     * @param s
-     * @return
-     */
     public boolean isForm(Name s) {
         Object o = library.getObject(xobjects, s);
         return o instanceof Form;

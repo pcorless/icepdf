@@ -36,7 +36,7 @@ public interface SecurityHandlerInterface {
      * @param password password to authorize
      * @return true, if the password was authorized successfully; false, otherwise.
      */
-    public boolean isAuthorized(String password);
+    boolean isAuthorized(String password);
 
     /**
      * Determines whether the supplied user password is authorized to view the
@@ -46,7 +46,7 @@ public interface SecurityHandlerInterface {
      * @param password password to authorize
      * @return true, if the password was authorized successfully; false, otherwise.
      */
-    public boolean isUserAuthorized(String password);
+    boolean isUserAuthorized(String password);
 
     /**
      * Determines whether the supplied owner password is authorized to view the
@@ -56,7 +56,7 @@ public interface SecurityHandlerInterface {
      * @param password password to authorize
      * @return true, if the password was authorized successfully; false, otherwise.
      */
-    public boolean isOwnerAuthorized(String password);
+    boolean isOwnerAuthorized(String password);
 
     /**
      * Encrypt the PDF data bytestream or string.
@@ -68,9 +68,9 @@ public interface SecurityHandlerInterface {
      *                        or string value.
      * @return the encrypted stream or string  byte data
      */
-    public byte[] encrypt(Reference objectReference,
-                          byte[] encryptionKey,
-                          byte[] data);
+    byte[] encrypt(Reference objectReference,
+                   byte[] encryptionKey,
+                   byte[] data);
 
     /**
      * Decrypt the PDF data bytestream or string.
@@ -82,9 +82,9 @@ public interface SecurityHandlerInterface {
      *                        or string value.
      * @return the decrypted stream or string byte data
      */
-    public byte[] decrypt(Reference objectReference,
-                          byte[] encryptionKey,
-                          byte[] data);
+    byte[] decrypt(Reference objectReference,
+                   byte[] encryptionKey,
+                   byte[] data);
 
     /**
      * Encrypt the PDF data byteStream.
@@ -94,6 +94,7 @@ public interface SecurityHandlerInterface {
      * @param encryptionKey   encryption key used by decryption algorithm.
      * @param input           inputStream data to be decrypted;  either represents an object stream
      *                        or string value.
+     * @param decodeParams    optional params to encrypt stream.
      * @return the ecrypted stream or string byte data
      */
     InputStream encryptInputStream(
@@ -110,6 +111,7 @@ public interface SecurityHandlerInterface {
      * @param encryptionKey   encryption key used by decryption algorithm.
      * @param input           inputStream data to be decrypted;  either represents an object stream
      *                        or string value.
+     * @param decodeParams    optional params to encrypt stream.
      * @return the decrypted stream or string byte data
      */
     InputStream decryptInputStream(
@@ -123,21 +125,21 @@ public interface SecurityHandlerInterface {
      *
      * @return byte data representing encryption key
      */
-    public byte[] getEncryptionKey();
+    byte[] getEncryptionKey();
 
     /**
      * Gets the encryption key used by the security handler for decryption data.
      *
      * @return byte data representing encryption key
      */
-    public byte[] getDecryptionKey();
+    byte[] getDecryptionKey();
 
     /**
      * Gets the name of the default security handler.
      *
      * @return string representing security handler name
      */
-    public String getHandlerName();
+    String getHandlerName();
 
     /**
      * Gets the PDF permissions object associated with this document's
@@ -145,15 +147,15 @@ public interface SecurityHandlerInterface {
      *
      * @return security handlers permissions object
      */
-    public Permissions getPermissions();
+    Permissions getPermissions();
 
     /**
      * Initiate the security handler
      */
-    public void init();
+    void init();
 
     /**
      * Dispose of the security handler.
      */
-    public void dispose();
+    void dispose();
 }

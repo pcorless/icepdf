@@ -104,6 +104,11 @@ public class FindMarkupAnnotationTask extends AbstractTask<FindMarkupAnnotationT
     /**
      * Start the task, start searching the document for the pattern.
      * Color
+     * @param filterAuthor author filter column value
+     * @param filterColor color filter column value
+     * @param filterType annotation type filter column value
+     * @param searchPattern search pattern
+     * @param sortType  sort type
      */
     public void startTask(
             final Pattern searchPattern,

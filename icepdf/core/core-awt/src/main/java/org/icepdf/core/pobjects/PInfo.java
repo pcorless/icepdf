@@ -24,10 +24,8 @@ import java.util.HashMap;
 /**
  * <p>This class represents the data stored in a File trailers optional "info"
  * entry.</p>
- * <p/>
  * <p>Any entry whose value is not known should be omitted from the dictionary,
  * rather than included with an empty string as its value.</p>
- * <p/>
  * <p>Some plug-in extensions may choose to permit searches on the contents of the
  * document information dictionary. To facilitate browsing and editing, all keys
  * in the dictionary are fully spelled out, not abbreviated. New keys should be

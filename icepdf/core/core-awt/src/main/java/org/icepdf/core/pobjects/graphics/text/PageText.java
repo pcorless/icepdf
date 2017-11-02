@@ -68,13 +68,13 @@ public class PageText implements TextSelect {
     private LinkedHashMap<OptionalContents, PageText> optionalPageLines;
 
     public PageText() {
-        pageLines = new ArrayList<LineText>(64);
+        pageLines = new ArrayList<>(64);
     }
 
     public void newLine(LinkedList<OptionalContents> oCGs) {
         if (oCGs != null && oCGs.size() > 0) {
             if (optionalPageLines == null) {
-                optionalPageLines = new LinkedHashMap<OptionalContents, PageText>(10);
+                optionalPageLines = new LinkedHashMap<>(10);
             }
             OptionalContents optionalContent = oCGs.peek();
             PageText pageText = optionalPageLines.get(optionalContent);
@@ -136,7 +136,7 @@ public class PageText implements TextSelect {
      * @return list of all visible lineText.
      */
     private ArrayList<LineText> getVisiblePageLines(boolean skip) {
-        ArrayList<LineText> visiblePageLines = skip ? new ArrayList<LineText>() : new ArrayList<LineText>(pageLines);
+        ArrayList<LineText> visiblePageLines = skip ? new ArrayList<>() : new ArrayList<>(pageLines);
         // add optional content text that is visible.
         // check optional content.
         if (optionalPageLines != null) {
@@ -159,7 +159,7 @@ public class PageText implements TextSelect {
     }
 
     private ArrayList<LineText> getAllPageLines() {
-        ArrayList<LineText> visiblePageLines = new ArrayList<LineText>(pageLines);
+        ArrayList<LineText> visiblePageLines = new ArrayList<>(pageLines);
         // add optional content text that is visible.
         // check optional content.
         if (optionalPageLines != null) {
@@ -221,7 +221,7 @@ public class PageText implements TextSelect {
     protected void addOptionalPageLines(OptionalContents optionalContent,
                                         GlyphText sprite) {
         if (optionalPageLines == null) {
-            optionalPageLines = new LinkedHashMap<OptionalContents, PageText>(10);
+            optionalPageLines = new LinkedHashMap<>(10);
         }
         PageText pageText = optionalPageLines.get(optionalContent);
         if (pageText == null) {
@@ -408,7 +408,7 @@ public class PageText implements TextSelect {
      * @return new array of sorted pages lines
      */
     private ArrayList<LineText> sortLinesVertically(ArrayList<LineText> pageLines) {
-        ArrayList<LineText> sortedPageLines = new ArrayList<LineText>(64);
+        ArrayList<LineText> sortedPageLines = new ArrayList<>(64);
         // move over all
         for (LineText pageLine : pageLines) {
             // all page words will be on one line
@@ -483,7 +483,7 @@ public class PageText implements TextSelect {
      * sorted once more by each words x coordinate.
      */
     public void sortAndFormatText() {
-        ArrayList<LineText> visiblePageLines = new ArrayList<LineText>(pageLines);
+        ArrayList<LineText> visiblePageLines = new ArrayList<>(pageLines);
         // create new array for storing the sorted lines
         ArrayList<LineText> sortedPageLines = sortLinesVertically(visiblePageLines);
         // try and insert the option words on existing lines
@@ -503,8 +503,8 @@ public class PageText implements TextSelect {
             for (final LineText lineText : sortedPageLines) {
                 final List<WordText> words = lineText.getWords();
                 if (words.size() > 0) {
-                    final List<WordText> trimmedWords = new ArrayList<WordText>();
-                    final Set<String> refs = new HashSet<String>();
+                    final List<WordText> trimmedWords = new ArrayList<>();
+                    final Set<String> refs = new HashSet<>();
                     for (final WordText wordText : words) {
                         // use regular rectangle so get a little rounding.
                         final String key = wordText.getText() + wordText.getBounds().getBounds();
@@ -520,8 +520,7 @@ public class PageText implements TextSelect {
         // sort each line by x coordinate.
         if (sortedPageLines.size() > 0) {
             for (LineText lineText : sortedPageLines) {
-                Collections.sort(lineText.getWords(),
-                        new WordPositionComparator());
+                lineText.getWords().sort(new WordPositionComparator());
             }
         }
 
@@ -534,8 +533,7 @@ public class PageText implements TextSelect {
 
         // sort the lines
         if (sortedPageLines.size() > 0 && !preserveColumns) {
-            Collections.sort(sortedPageLines,
-                    new LinePositionComparator());
+            sortedPageLines.sort(new LinePositionComparator());
         }
 
         // Round out the word bounds

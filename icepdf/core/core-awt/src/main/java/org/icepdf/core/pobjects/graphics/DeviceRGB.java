@@ -29,17 +29,10 @@ public class DeviceRGB extends PColorSpace {
     public static final Name DEVICERGB_KEY = new Name("DeviceRGB");
     public static final Name RGB_KEY = new Name("RGB");
 
-    /**
-     * @param l
-     * @param h
-     */
     DeviceRGB(Library l, HashMap h) {
         super(l, h);
     }
 
-    /**
-     * @return
-     */
     public int getNumComponents() {
         return 3;
     }

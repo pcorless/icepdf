@@ -251,11 +251,7 @@ public class SeedValueDictionary extends Dictionary {
         return null;
     }
 
-    /**
-     * todo consider class for dictionary def.
-     *
-     * @return
-     */
+    // todo consider class for dictionary def.
     public HashMap getMDP() {
         Object tmp = library.getObject(entries, MDP_KEY);
         if (tmp instanceof HashMap) {
@@ -265,11 +261,7 @@ public class SeedValueDictionary extends Dictionary {
         }
     }
 
-    /**
-     * todo consider class for dictionary def.
-     *
-     * @return
-     */
+    // todo consider class for dictionary def.
     public HashMap getTimeStamp() {
         Object tmp = library.getObject(entries, TIME_STAMP_KEY);
         if (tmp instanceof HashMap) {

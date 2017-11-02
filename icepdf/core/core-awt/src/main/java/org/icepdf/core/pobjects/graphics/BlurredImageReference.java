@@ -62,7 +62,7 @@ public class BlurredImageReference extends CachedImageReference {
         // kick off a new thread to load the image, if not already in pool.
         ImagePool imagePool = imageStream.getLibrary().getImagePool();
         if (useProxy && imagePool.get(reference) == null) {
-            futureTask = new FutureTask<BufferedImage>(this);
+            futureTask = new FutureTask<>(this);
             Library.executeImage(futureTask);
         } else if (!useProxy && imagePool.get(reference) == null) {
             image = call();

@@ -21,8 +21,6 @@ import org.icepdf.ri.common.views.DocumentViewController;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.NoninvertibleTransformException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -45,7 +43,7 @@ public class TextMarkupAnnotationComponent extends MarkupAnnotationComponent<Tex
     @Override
     public void resetAppearanceShapes() {
         super.resetAppearanceShapes();
-        annotation.resetAppearanceStream(getPageTransform());
+        annotation.resetAppearanceStream(getToPageSpaceTransform());
     }
 
     @Override
@@ -53,18 +51,13 @@ public class TextMarkupAnnotationComponent extends MarkupAnnotationComponent<Tex
         if (super.contains(x, y) &&
                 annotation != null && annotation.getMarkupPath() != null) {
             // convert the mouse coords to component space.
-            try {
-                AffineTransform pageTransform = getPageTransform();
-                Rectangle compBounds = getBounds();
-                shape = annotation.getMarkupPath().createTransformedShape(pageTransform.createInverse());
-                AffineTransform af = new AffineTransform(1, 0, 0, 1,
-                        -compBounds.x, -compBounds.y);
-                shape = af.createTransformedShape(shape);
-                // we do the contains test on the annotations shape.
-                return shape.contains(x, y);
-            } catch (NoninvertibleTransformException e) {
-                logger.log(Level.SEVERE, "Error converting mouse point to page space.", e);
-            }
+            AffineTransform pageTransform = getPageSpaceTransform();
+            Rectangle compBounds = getBounds();
+            shape = annotation.getMarkupPath().createTransformedShape(pageTransform);
+            AffineTransform af = new AffineTransform(1, 0, 0, 1, -compBounds.x, -compBounds.y);
+            shape = af.createTransformedShape(shape);
+            // we do the contains test on the annotations shape.
+            return shape.contains(x, y);
         }
         return super.contains(x, y);
     }
@@ -91,7 +84,7 @@ public class TextMarkupAnnotationComponent extends MarkupAnnotationComponent<Tex
 //
 //        Rectangle2D bounds = annotation.getUserSpaceRectangle();// getBounds();
         // apply page transform.
-//        AffineTransform at = currentPage.getPageTransform(
+//        AffineTransform at = currentPage.getToPageSpaceTransform(
 //                documentViewModel.getPageBoundary(),
 //                documentViewModel.getViewRotation(),
 //                documentViewModel.getViewZoom());

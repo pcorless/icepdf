@@ -432,11 +432,11 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
 
                 // remove white space
                 StringTokenizer st = new StringTokenizer(font1.getPSName(), " ", false);
-                String fontName = "";
-                while (st.hasMoreElements()) fontName += st.nextElement();
+                StringBuilder fontName = new StringBuilder();
+                while (st.hasMoreElements()) fontName.append(st.nextElement());
 
                 // if a match is found assign it as the real font
-                if (fontName.equalsIgnoreCase(basefont)) {
+                if (fontName.toString().equalsIgnoreCase(basefont)) {
                     font = new OFont(new java.awt.Font(font1.getFamily(), style, 1));
                     basefont = font1.getPSName();
                     isFontSubstitution = true;
@@ -592,11 +592,11 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
     }
 
 
-    /**
-     * Gets the widths of the given <code>character</code> and appends it to the
-     * current <code>advance</code>
-     *
-     * @param character character to find width of
+    /*
+      Gets the widths of the given <code>character</code> and appends it to the
+      current <code>advance</code>
+
+      @param character character to find width of
      * @param advance   current advance of the character
      * @return width of specfied character.
 
@@ -674,7 +674,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
     }
 
     private HashMap<Integer, Float> calculateCIDWidths() {
-        HashMap<Integer, Float> cidWidths = new HashMap<Integer, Float>(75);
+        HashMap<Integer, Float> cidWidths = new HashMap<>(75);
         // get width vector
         Object o = library.getObject(entries, W_KEY);
         if (o instanceof List) {

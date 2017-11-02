@@ -120,7 +120,7 @@ public class EmbeddedFileStream extends Dictionary {
     /**
      * Get compressed size in bytes.
      *
-     * @return
+     * @return number of bytes in compressed stream.
      */
     public int getCompressedSize() {
         return fileStream.getRawBytes().length;

@@ -190,11 +190,6 @@ public class TilingPattern extends Stream implements Pattern {
         initiParams();
     }
 
-    /**
-     * @param l
-     * @param h
-     * @param streamInputWrapper
-     */
     public TilingPattern(Library l, HashMap h, SeekableInputConstrainedWrapper streamInputWrapper) {
         super(l, h, streamInputWrapper);
         initiParams();
@@ -611,9 +606,6 @@ public class TilingPattern extends Stream implements Pattern {
         this.unColored = unColored;
     }
 
-    /**
-     * @return
-     */
     public String toString() {
         return "Tiling Pattern: \n" +
                 "              obj:  " + this.getPObjectReference() +

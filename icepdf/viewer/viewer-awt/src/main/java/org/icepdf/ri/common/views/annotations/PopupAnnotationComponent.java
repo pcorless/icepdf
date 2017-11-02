@@ -577,7 +577,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 TextAnnotationHandler.createTextAnnotation(
                         documentViewController.getDocument().getPageTree().getLibrary(),
                         selectedMarkupAnnotation.getUserSpaceRectangle().getBounds(),
-                        getPageTransform());
+                        getToPageSpaceTransform());
         markupAnnotation.setTitleText(title);
         markupAnnotation.setContents(content);
         markupAnnotation.setState(state);
@@ -590,7 +590,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 //                TextAnnotationHandler.createPopupAnnotation(
 //                        documentViewModel.getDocument().getPageTree().getLibrary(),
 //                        this.popupAnnotation.getUserSpaceRectangle().getBounds(),
-//                        markupAnnotation, getPageTransform());
+//                        markupAnnotation, getToPageSpaceTransform());
 //        popupAnnotation.setOpen(false);
 //        addAnnotationComponent(popupAnnotation);
 

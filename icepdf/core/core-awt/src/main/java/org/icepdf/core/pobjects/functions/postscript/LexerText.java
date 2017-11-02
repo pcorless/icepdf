@@ -66,7 +66,7 @@ public class LexerText {
                         "1 roll 4 -1 roll 2 index -0.796100 mul 1.000000 add mul 1 index -0.247100 \n" +
                         "mul 1.000000 add mul 4 1 roll 3 -1 roll 2 index -0.647100 mul 1.000000 \n" +
                         "add mul 1 index -0.878400 mul 1.000000 add mul 3 1 roll pop pop }";
-        ;
+
 
         InputStream function_4 = new ByteArrayInputStream(test.getBytes());
         Lexer lex = new Lexer();

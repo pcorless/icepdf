@@ -224,7 +224,7 @@ public class FontManager {
         Properties fontProperites;
         // make sure we are initialized
         if (fontList == null) {
-            fontList = new ArrayList<Object[]>();
+            fontList = new ArrayList<>();
         }
         // copy all data from fontList into the properties file
         fontProperites = new Properties();
@@ -262,7 +262,7 @@ public class FontManager {
             throws IllegalArgumentException {
         String errorString = "Error parsing font properties ";
         try {
-            fontList = new ArrayList<Object[]>(500);
+            fontList = new ArrayList<>(500);
             String[] fontKeys = fontPreferences.keys();
             String name;
             String family;
@@ -270,9 +270,9 @@ public class FontManager {
             String path;
             StringTokenizer tokens;
             // read in font information
-            for (int i = 0, max = fontKeys.length; i < max; i++) {
-                name = fontKeys[i];
-                tokens = new StringTokenizer((String) fontPreferences.get(name, null), "|");
+            for (String fontKey : fontKeys) {
+                name = fontKey;
+                tokens = new StringTokenizer(fontPreferences.get(name, null), "|");
                 // get family, decoration and path tokens
                 family = tokens.nextToken();
                 decorations = new Integer(tokens.nextToken());
@@ -321,11 +321,11 @@ public class FontManager {
     private synchronized void readSystemFonts(String[] extraFontPaths, boolean skipSystemFonts) {
         // create a new font list if needed.
         if (fontList == null) {
-            fontList = new ArrayList<Object[]>(150);
+            fontList = new ArrayList<>(150);
         }
 
 
-        ArrayList<String> fontDirectories = new ArrayList<String>();
+        ArrayList<String> fontDirectories = new ArrayList<>();
         // load the appropriate font set for the OS.
         if (!skipSystemFonts) {
             String operationSystem = System.getProperty("os.name");
@@ -386,7 +386,7 @@ public class FontManager {
                     // load files
                     File[] files = directory.listFiles();
                     if (files != null) {
-                        List<String> dirPaths = new ArrayList<String>();
+                        List<String> dirPaths = new ArrayList<>();
                         for (File file : files) {
                             if (file.isFile()) {
                                 // load the font.
@@ -496,21 +496,21 @@ public class FontManager {
             Iterator nameIterator = fontList.iterator();
             Object[] fontData;
             int decorations;
-            String style = "";
+            StringBuilder style = new StringBuilder();
             for (int i = 0; nameIterator.hasNext(); i++) {
                 fontData = (Object[]) nameIterator.next();
                 decorations = (Integer) fontData[2];
                 if ((decorations & BOLD_ITALIC) == BOLD_ITALIC) {
-                    style += " BoldItalic";
+                    style.append(" BoldItalic");
                 } else if ((decorations & BOLD) == BOLD) {
-                    style += " Bold";
+                    style.append(" Bold");
                 } else if ((decorations & ITALIC) == ITALIC) {
-                    style += " Italic";
+                    style.append(" Italic");
                 } else if ((decorations & PLAIN) == PLAIN) {
-                    style += " Plain";
+                    style.append(" Plain");
                 }
-                availableStyles[i] = style;
-                style = "";
+                availableStyles[i] = style.toString();
+                style = new StringBuilder();
             }
             return availableStyles;
         }
@@ -536,7 +536,7 @@ public class FontManager {
     private FontFile getAsianInstance(List<Object[]> fontList, String name, String[] list, int flags) {
 
         if (fontList == null) {
-            fontList = new ArrayList<Object[]>(150);
+            fontList = new ArrayList<>(150);
         }
 
         FontFile font = null;
@@ -587,7 +587,7 @@ public class FontManager {
      */
     public void readFontPackage(String fontResourcePackage, List<String> resources) {
         if (fontJarList == null) {
-            fontJarList = new ArrayList<Object[]>(35);
+            fontJarList = new ArrayList<>(35);
         }
         URL resourcePath;
         FontFile font;
@@ -625,7 +625,7 @@ public class FontManager {
     public FontFile getInstance(String name, int flags) {
 
         if (fontList == null) {
-            fontList = new ArrayList<Object[]>();
+            fontList = new ArrayList<>();
         }
 
         FontFile font;
@@ -1011,6 +1011,7 @@ public class FontManager {
      * of know type1 fonts
      *
      * @param fontName font name to search for
+     * @param fontSize requested font size.
      * @return a valid AWT Font if a match is found, null otherwise.
      */
     public java.awt.Font getType1AWTFont(String fontName, int fontSize) {
@@ -1202,10 +1203,6 @@ public class FontManager {
      * int the object[] store.
      */
     private static void sortFontListByName() {
-        Collections.sort(fontList, new Comparator<Object[]>() {
-            public int compare(Object[] o1, Object[] o2) {
-                return ((String) o2[0]).compareTo((String) o1[0]);
-            }
-        });
+        fontList.sort((o1, o2) -> ((String) o2[0]).compareTo((String) o1[0]));
     }
 }

@@ -32,8 +32,6 @@ import java.io.IOException;
 public class ListItemTransferHandler extends TransferHandler {
 
     private final DataFlavor dataFlavor;
-    // todo revisit why this can't be a List<Object>
-    private Object[] transferObjects;
 
     private int[] indices;
     //Location where items were added
@@ -42,8 +40,7 @@ public class ListItemTransferHandler extends TransferHandler {
     private int addCount;
 
     public ListItemTransferHandler() {
-        this.
-                dataFlavor = new ActivationDataFlavor(
+        this.dataFlavor = new ActivationDataFlavor(
                 Object[].class, DataFlavor.javaJVMLocalObjectMimeType, "Array of items");
     }
 
@@ -51,7 +48,7 @@ public class ListItemTransferHandler extends TransferHandler {
     protected Transferable createTransferable(JComponent component) {
         JList<Object> list = (JList<Object>) component;
         indices = list.getSelectedIndices();
-        transferObjects = list.getSelectedValues();
+        Object[] transferObjects = list.getSelectedValuesList().toArray();
         return new DataHandler(transferObjects, dataFlavor.getMimeType());
     }
 

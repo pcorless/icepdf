@@ -116,9 +116,7 @@ public class GaussianFilter extends ConvolveFilter {
         }
     }
 
-    /**
-     * Make a Gaussian blur kernel.
-     */
+    // Make a Gaussian blur kernel.
     public static Kernel makeKernel(float radius) {
         int r = (int) Math.ceil(radius);
         int rows = r * 2 + 1;

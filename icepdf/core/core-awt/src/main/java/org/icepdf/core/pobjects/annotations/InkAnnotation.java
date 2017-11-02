@@ -104,7 +104,7 @@ public class InkAnnotation extends MarkupAnnotation {
      * @return an array of an array of points.
      */
     private List<List<Float>> convertPathToArray(Shape inkPath) {
-        List<List<Float>> inkLists = new ArrayList<List<Float>>();
+        List<List<Float>> inkLists = new ArrayList<>();
         List<Float> segment = null;
         if (inkPath != null) {
             PathIterator pathIterator = inkPath.getPathIterator(null);
@@ -113,7 +113,7 @@ public class InkAnnotation extends MarkupAnnotation {
             while (!pathIterator.isDone()) {
                 segmentType = pathIterator.currentSegment(inkSegment);
                 if (segmentType == PathIterator.SEG_MOVETO) {
-                    segment = new ArrayList<Float>();
+                    segment = new ArrayList<>();
                     segment.add(inkSegment[0]);
                     segment.add(inkSegment[1]);
                     inkLists.add(segment);
@@ -141,7 +141,7 @@ public class InkAnnotation extends MarkupAnnotation {
         StateManager stateManager = library.getStateManager();
 
         // create a new entries to hold the annotation properties
-        HashMap<Name, Object> entries = new HashMap<Name, Object>();
+        HashMap<Name, Object> entries = new HashMap<>();
         // set default link annotation values.
         entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
         entries.put(Dictionary.SUBTYPE_KEY, Annotation.SUBTYPE_INK);

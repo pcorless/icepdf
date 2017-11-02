@@ -130,7 +130,7 @@ public class FieldDictionary extends Dictionary {
      */
     public static final Name AA_KEY = new Name("AA");
 
-    /** general field flags **/
+    /* general field flags **/
 
     /**
      * If set, the user may not change the value of the field. Any associated

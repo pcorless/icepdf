@@ -33,10 +33,7 @@ public class BriefestLogFormatter extends Formatter {
         if (loggerName == null) {
             loggerName = "root";
         }
-        StringBuilder output = new StringBuilder()
-                .append(record.getMessage())
-                .append(lineSep);
-        return output.toString();
+        return record.getMessage() + lineSep;
     }
 
 }

@@ -84,7 +84,7 @@ public class Dictionary {
         this.library = library;
         this.entries = entries;
         if (this.entries == null) {
-            this.entries = new HashMap<Object, Object>();
+            this.entries = new HashMap<>();
         }
     }
 
@@ -118,6 +118,7 @@ public class Dictionary {
 
     /**
      * Initiate the Dictionary. Retrieve any needed attributes.
+     * @throws InterruptedException initialization interrupted.
      */
     public void init() throws InterruptedException {
     }

@@ -134,11 +134,12 @@ public class ImageUtility {
     }
 
     /**
-     * Creates a new bufferd image using a GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
+     * Creates a new buffered image using a GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
      * instance.  If not available (headless) we full back to raw buffer creation.
      *
      * @param width  width of new image.
      * @param height height of new image.
+     * @return created buffered image.
      */
     public static BufferedImage createTranslucentCompatibleImage(int width, int height) {
         if (configuration != null) {
@@ -556,10 +557,10 @@ public class ImageUtility {
     /**
      * Blending mode colour transparency test.
      *
-     * @param baseImage
-     * @param blendingMode
-     * @param blendColor
-     * @return
+     * @param baseImage    image to apply blending mode to.
+     * @param blendingMode type of blending mode.
+     * @param blendColor   base blending colour
+     * @return altered image.
      */
     public BufferedImage applyBlendingMode(BufferedImage baseImage, Name blendingMode, Color blendColor) {
 
@@ -614,7 +615,9 @@ public class ImageUtility {
      * have no associated soft mask (although the current soft mask in the
      * graphics state may still apply).
      *
-     * @param baseImage base image in which the mask weill be applied to
+     * @param baseImage  base image in which the mask weill be applied to
+     * @param sMaskImage image mask to apply
+     * @return resultant image.
      */
     public BufferedImage applyExplicitSMask(BufferedImage baseImage, BufferedImage sMaskImage) {
 
@@ -895,7 +898,7 @@ public class ImageUtility {
             tmpImage = (BufferedImage) read.invoke(levigoJbig2Reader, arglist);
             // call dispose on the reader
             Method dispose =
-                    levigoJBIG2ImageReaderClass.getMethod("dispose", (Class<?>[]) null);
+                    levigoJBIG2ImageReaderClass.getMethod("dispose");
             dispose.invoke(levigoJbig2Reader);
         } finally {
             // dispose the stream

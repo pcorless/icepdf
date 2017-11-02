@@ -63,6 +63,7 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
      * Creates a new instance of an OutlineItemTreeNode
      *
      * @param signatureWidgetAnnotation Contains PDF Outline signatureWidgetAnnotation data
+     * @param messageBundle             i18n message bundle
      */
     public SignatureTreeNode(SignatureWidgetAnnotation signatureWidgetAnnotation, ResourceBundle messageBundle) {
         super();
@@ -144,7 +145,6 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
      * - Certificate Details (clickable, loads certificate dialog)
      * - Last Checked: &lt;verification last run time&gt;
      * - Field Name: &lt;field name&gt; on page X (clickable, takes to page and applies focus).
-     *
      */
     public synchronized void refreshSignerNode() {
         if (isVerifyingSignature()) {

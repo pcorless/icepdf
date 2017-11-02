@@ -111,7 +111,7 @@ public class PageTree extends Dictionary {
         }
         kidsCount = library.getNumber(entries, COUNT_KEY).intValue();
         kidsReferences = (List) library.getObject(entries, KIDS_KEY);
-        kidsPageAndPages = new HashMap<Integer, WeakReference<Object>>(kidsReferences.size());
+        kidsPageAndPages = new HashMap<>(kidsReferences.size());
         // Rotation is only respected if child pages do not have their own
         // rotation value.
         Object tmpRotation = library.getObject(entries, ROTATE_KEY);
@@ -257,8 +257,8 @@ public class PageTree extends Dictionary {
     /**
      * Utility method for getting kid index.
      *
-     * @param r
-     * @return
+     * @param r reference to find index of.
+     * @return index number in page tree array.
      */
     private int indexOfKidReference(Reference r) {
         for (int i = 0; i < kidsReferences.size(); i++) {
@@ -269,30 +269,18 @@ public class PageTree extends Dictionary {
         return -1;
     }
 
-    /**
-     * Utility method for initializing a page in the page tree.
-     *
-     * @param index index in the kids vector to initialize
-     * @return
-     */
     private Object getPageOrPagesPotentiallyNotInitedFromReferenceAt(int index) {
         WeakReference<Object> pageOrPages = kidsPageAndPages.get(index);
         if (pageOrPages == null || pageOrPages.get() == null) {
             Reference ref = (Reference) kidsReferences.get(index);
             Object tmp = library.getObject(ref);
-            pageOrPages = new WeakReference<Object>(tmp);
+            pageOrPages = new WeakReference<>(tmp);
             kidsPageAndPages.put(index, pageOrPages);
             return tmp;
         }
         return pageOrPages.get();
     }
 
-    /**
-     * Utility method for initializing a page with its page number
-     *
-     * @param globalIndex
-     * @return
-     */
     private Page getPagePotentiallyNotInitedByRecursiveIndex(int globalIndex) {
         int globalIndexSoFar = 0;
         int numLocalKids = kidsReferences.size();

@@ -139,6 +139,7 @@ public class SoftMask extends Dictionary {
      * function. Default value: Identity.
      *
      * Type: function or name.
+     * @return TR function objec.t
      */
     public Object getTR() {
         Object object = library.getObject(entries, BC_KEY);

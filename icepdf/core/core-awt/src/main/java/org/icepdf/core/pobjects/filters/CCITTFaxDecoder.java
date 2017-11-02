@@ -560,11 +560,6 @@ public class CCITTFaxDecoder {
 
     private boolean fillBits = false;
 
-    /**
-     * @param fillOrder The fill order of the compressed data bytes.
-     * @param w
-     * @param h
-     */
     public CCITTFaxDecoder(int fillOrder, int w, int h) {
         this.fillOrder = fillOrder;
         this.w = w;

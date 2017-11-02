@@ -107,11 +107,11 @@ public class LineAnnotation extends MarkupAnnotation {
      */
     public static final Name LLO_KEY = new Name("LLO");
 
-    /**
-     * (Optional; PDF 1.6) A name describing the intent of the line annotation
-     * (see also Table 170). Valid values shall be LineArrow, which means that
-     * the annotation is intended to function as an arrow, and LineDimension,
-     * which means that the annotation is intended to function as a dimension line.
+    /*
+      (Optional; PDF 1.6) A name describing the intent of the line annotation
+      (see also Table 170). Valid values shall be LineArrow, which means that
+      the annotation is intended to function as an arrow, and LineDimension,
+      which means that the annotation is intended to function as a dimension line.
      */
 //    public static final Name IT_KEY = new Name("IT");
     /**
@@ -193,7 +193,7 @@ public class LineAnnotation extends MarkupAnnotation {
         StateManager stateManager = library.getStateManager();
 
         // create a new entries to hold the annotation properties
-        HashMap<Name, Object> entries = new HashMap<Name, Object>();
+        HashMap<Name, Object> entries = new HashMap<>();
         // set default link annotation values.
         entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
         entries.put(Dictionary.SUBTYPE_KEY, Annotation.SUBTYPE_LINE);
@@ -665,7 +665,7 @@ public class LineAnnotation extends MarkupAnnotation {
 
     public void setEndOfLine(Point2D endOfLine) {
         this.endOfLine = endOfLine;
-        List<Number> pointArray = new ArrayList<Number>(4);
+        List<Number> pointArray = new ArrayList<>(4);
         pointArray.add((float) startOfLine.getX());
         pointArray.add((float) startOfLine.getY());
         pointArray.add((float) endOfLine.getX());
@@ -681,7 +681,7 @@ public class LineAnnotation extends MarkupAnnotation {
         this.interiorColor = interiorColor;
         float[] compArray = new float[3];
         this.interiorColor.getColorComponents(compArray);
-        List<Float> colorValues = new ArrayList<Float>(compArray.length);
+        List<Float> colorValues = new ArrayList<>(compArray.length);
         for (float comp : compArray) {
             colorValues.add(comp);
         }
@@ -694,7 +694,7 @@ public class LineAnnotation extends MarkupAnnotation {
 
     public void setStartArrow(Name startArrow) {
         this.startArrow = startArrow;
-        List<Name> endNameArray = new ArrayList<Name>(2);
+        List<Name> endNameArray = new ArrayList<>(2);
         endNameArray.add(startArrow);
         endNameArray.add(endArrow);
         entries.put(LE_KEY, endNameArray);
@@ -706,7 +706,7 @@ public class LineAnnotation extends MarkupAnnotation {
 
     public void setEndArrow(Name endArrow) {
         this.endArrow = endArrow;
-        List<Name> endNameArray = new ArrayList<Name>(2);
+        List<Name> endNameArray = new ArrayList<>(2);
         endNameArray.add(startArrow);
         endNameArray.add(endArrow);
         entries.put(LE_KEY, endNameArray);

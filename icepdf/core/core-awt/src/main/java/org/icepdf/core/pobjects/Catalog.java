@@ -115,8 +115,8 @@ public class Catalog extends Dictionary {
         // malformed corner case, just have a page object, instead of tree.
         else if (tmp instanceof Page) {
             Page tmpPage = (Page) tmp;
-            HashMap<String, Object> tmpPages = new HashMap<String, Object>();
-            List<Reference> kids = new ArrayList<Reference>();
+            HashMap<String, Object> tmpPages = new HashMap<>();
+            List<Reference> kids = new ArrayList<>();
             kids.add(tmpPage.getPObjectReference());
             tmpPages.put("Kids", kids);
             tmpPages.put("Count", 1);

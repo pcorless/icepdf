@@ -29,8 +29,8 @@ import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
 /**
- * Custom drop down button base which is based on the "Swing Hacks" tips & tools for Building Killer GUI's,
- * Joshua Marinacci & Chris Adamson.
+ * Custom drop down button base which is based on the "Swing Hacks" tips &amp; tools for Building Killer GUI's,
+ * Joshua Marinacci &amp;  Chris Adamson.
  *
  * @since 6.3
  */

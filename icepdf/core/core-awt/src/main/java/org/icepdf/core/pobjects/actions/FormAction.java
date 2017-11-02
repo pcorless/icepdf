@@ -73,6 +73,8 @@ public abstract class FormAction extends Action {
     /**
      * Execute the form action and return the appropriate return code;
      *
+     * @param x x coordinate of the actuating input device.
+     * @param y y coordinate of the actuating input device.
      * @return determined by the implementation.
      */
     public abstract int executeFormAction(int x, int y);

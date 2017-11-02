@@ -102,9 +102,9 @@ public class Separation extends PColorSpace {
     protected Separation(Library l, HashMap h, Object name, Object alternateSpace, Object tintTransform) {
         super(l, h);
         alternate = getColorSpace(l, alternateSpace);
-        colorTable1B = new ConcurrentHashMap<Integer, Color>(256);
-        colorTable3B = new ConcurrentHashMap<Integer, Color>(256);
-        colorTable4B = new ConcurrentHashMap<Integer, Color>(256);
+        colorTable1B = new ConcurrentHashMap<>(256);
+        colorTable3B = new ConcurrentHashMap<>(256);
+        colorTable4B = new ConcurrentHashMap<>(256);
 
         this.tintTransform = Function.getFunction(l, l.getObject(tintTransform));
         // see if name can be converted to a known colour.

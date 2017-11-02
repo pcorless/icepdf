@@ -87,7 +87,7 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
     };
     public static int[] registeredAlaises = {182};
     static {
-        h = new HashMap<String, Integer>(1046);
+        h = new HashMap<>(1046);
         h.put("A", 65);
         h.put("AE", 198);
         h.put("AEacute", 508);
@@ -2186,7 +2186,7 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
         wae[9] = (char) h.get("space").intValue();
 
 
-        sym[0x20] = (char) h.get("space").intValue();
+        sym[040] = (char) h.get("space").intValue();
         sym[041] = (char) h.get("exclam").intValue();
         sym[042] = (char) h.get("universal").intValue();
         sym[043] = (char) h.get("numbersign").intValue();
@@ -2578,9 +2578,9 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
         zap[253] = (char) h.get("a190").intValue();
         zap[254] = (char) h.get("a191").intValue();
     }
-    /**
-     * put your documentation comment here
-     * @param s[]
+    /*
+      put your documentation comment here
+      @param s[]
      */
     /*    public static void main (String s[]) {
      System.out.println("zeta=" + getUV("zeta");

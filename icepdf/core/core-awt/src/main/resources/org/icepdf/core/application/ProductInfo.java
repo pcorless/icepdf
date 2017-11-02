@@ -49,10 +49,6 @@ public class ProductInfo {
      */
     public static String REVISION = "@revision@";
 
-    /**
-     * Convenience method to get all the relevant product information.
-     * @return
-     */
     public String toString(){
         StringBuilder info = new StringBuilder();
         info.append( "\n" );

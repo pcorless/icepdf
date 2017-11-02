@@ -87,7 +87,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
                 StateManager stateManager = library.getStateManager();
                 stateManager.addChange(new PObject(appearanceStream, appearanceStream.getPObjectReference()));
                 // add an AP entry for the
-                HashMap<Object, Object> appearanceRefs = new HashMap<Object, Object>();
+                HashMap<Object, Object> appearanceRefs = new HashMap<>();
                 appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, appearanceStream.getPObjectReference());
                 entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
                 Rectangle2D formBbox = new Rectangle2D.Float(

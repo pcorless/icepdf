@@ -126,11 +126,13 @@ public abstract class AnnotationPanelAdapter extends JPanel
 
     /**
      * Handler for the alpha value update for an annotation's opacity updated.
-     * @param e change event.
-     * @param annotation annotation to apply the opacity value to.
+     *
+     * @param e              change event.
+     * @param annotation     annotation to apply the opacity value to.
+     * @param preferenceName name of preference to write alpha to .
      */
     protected void alphaSliderChange(ChangeEvent e, MarkupAnnotation annotation, String preferenceName) {
-        JSlider source = (JSlider)e.getSource();
+        JSlider source = (JSlider) e.getSource();
         int alpha = source.getValue();
         if (!source.getValueIsAdjusting() && alpha != annotation.getOpacityNormalized()) {
             // set the annotation value
@@ -147,10 +149,11 @@ public abstract class AnnotationPanelAdapter extends JPanel
     /**
      * Set the background colour of the various buttons that are used to show the colour picker as well as show
      * the selected colour.
+     *
      * @param button button to set colour of.
-     * @param color color ot set the buttons background.
+     * @param color  color ot set the buttons background.
      */
-    protected void setButtonBackgroundColor(JButton button, Color color){
+    protected void setButtonBackgroundColor(JButton button, Color color) {
         if (color != null) {
             if (color.getAlpha() < 255) {
                 color = new Color(color.getRGB());
@@ -162,8 +165,8 @@ public abstract class AnnotationPanelAdapter extends JPanel
     }
 
     protected void addGB(JPanel layout, Component component,
-                       int x, int y,
-                       int rowSpan, int colSpan) {
+                         int x, int y,
+                         int rowSpan, int colSpan) {
         constraints.gridx = x;
         constraints.gridy = y;
         constraints.gridwidth = rowSpan;

@@ -22,16 +22,16 @@ public class ShadingType5Pattern extends ShadingMeshPattern {
     private static final Logger logger =
             Logger.getLogger(ShadingType5Pattern.class.toString());
 
-    private ArrayList<Point2D.Float> coordinates = new ArrayList<Point2D.Float>();
-    private ArrayList<Color> colorComponents = new ArrayList<Color>();
+    private ArrayList<Point2D.Float> coordinates = new ArrayList<>();
+    private ArrayList<Color> colorComponents = new ArrayList<>();
 
     public ShadingType5Pattern(Library l, HashMap h, Stream meshDataStream) {
         super(l, h, meshDataStream);
     }
 
     public void init(GraphicsState graphicsState) {
-        coordinates = new ArrayList<Point2D.Float>();
-        colorComponents = new ArrayList<Color>();
+        coordinates = new ArrayList<>();
+        colorComponents = new ArrayList<>();
         try {
             while (vertexBitStream.available() > 0) {
                 coordinates.add(readCoord());

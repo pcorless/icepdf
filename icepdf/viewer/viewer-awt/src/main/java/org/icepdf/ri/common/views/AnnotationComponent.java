@@ -56,40 +56,45 @@ public interface AnnotationComponent {
 
     /**
      * Component is editable, contents can be updated in ui
+     * @return true if has editable, false otherwise.
      */
     boolean isEditable();
 
     /**
      * Component is editable, contents can be updated in ui
+     * @return true if show invisible border, false otherwise.
      */
     boolean isShowInvisibleBorder();
 
     /**
      * Component highlight/select border is draw on mouse over.
+     * @return true if is rollover, false otherwise.
      */
     boolean isRollover();
 
     /**
      * Component is movable.
+     * @return true if movable, false otherwise.
      */
     boolean isMovable();
 
     /**
      * Component is resizable.
+     * @return true if resizable, false otherwise.
      */
     boolean isResizable();
 
     /**
      * border has defined style.
      *
-     * @return true annotation has a border style.
+     * @return true if has border style, false otherwise.
      */
     boolean isBorderStyle();
 
     /**
      * Annotation is in a selected state. Used for drawing a highlighted state.
      *
-     * @return
+     * @return is selected
      */
     boolean isSelected();
 

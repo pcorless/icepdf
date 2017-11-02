@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class OperatorFactory {
 
     private static ConcurrentHashMap<Integer, Operator> operatorCache =
-            new ConcurrentHashMap<Integer, Operator>();
+            new ConcurrentHashMap<>();
 
     @SuppressWarnings(value = "unchecked")
     public static Operator getOperator(char ch[], int offset, int length) {
@@ -45,11 +45,11 @@ public class OperatorFactory {
         // build the operation, consider added a few if range checks to limit
         // the number of compares.
         switch (operatorType) {
-            /**
-             * num1 abs =  num2
-             *    4.5 abs -> 4.5
-             *     3 abs -> 3
-             *     0 abs -> 0
+            /*
+              num1 abs =  num2
+                 4.5 abs -> 4.5
+                  3 abs -> 3
+                  0 abs -> 0
              */
             case OperatorNames.OP_ABS:
                 operator = new Operator(OperatorNames.OP_ABS) {
@@ -59,10 +59,10 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * num1 num2 add = sum
-             *      3 4 add -> 7
-             *  9.9 1.1 add -> 11.0
+            /*
+              num1 num2 add = sum
+                   3 4 add -> 7
+               9.9 1.1 add -> 11.0
              */
             case OperatorNames.OP_ADD:
                 operator = new Operator(OperatorNames.OP_ADD) {
@@ -73,15 +73,15 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             *  bool1 bool2 and  = bool3
-             *  int1 int2 and  = int3
-             *      true true and -> true % A complete truth table
-             *     true false and -> false
-             *     false true and -> false
-             *    false false and -> false
-             *           99 1 and -> 1
-             *           52 7 and -> 4
+            /*
+               bool1 bool2 and  = bool3
+               int1 int2 and  = int3
+                   true true and -> true % A complete truth table
+                  true false and -> false
+                  false true and -> false
+                 false false and -> false
+                        99 1 and -> 1
+                        52 7 and -> 4
              */
             case OperatorNames.OP_AND:
                 operator = new Operator(OperatorNames.OP_AND) {
@@ -99,12 +99,12 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /***
-             *  num den atan = angle
-             *      0 1 atan -> 0.0
-             *      1 0 atan -> 90.0
-             *   -100 0 atan -> 270.0
-             *      4 4 atan -> 45.0
+            /*
+             num den atan = angle
+             0 1 atan -> 0.0
+             1 0 atan -> 90.0
+             -100 0 atan -> 270.0
+             4 4 atan -> 45.0
              */
             case OperatorNames.OP_ATAN:
                 operator = new Operator(OperatorNames.OP_ATAN) {
@@ -115,10 +115,10 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /***
-             *  int1 shift bitshift int2
-             *      07 3 bitshift -> 56
-             *    142 3 bitshift -> 17
+            /*
+             int1 shift bitshift int2
+             07 3 bitshift -> 56
+             142 3 bitshift -> 17
              */
             case OperatorNames.OP_BITSHIFT:
                 operator = new Operator(OperatorNames.OP_BITSHIFT) {
@@ -129,11 +129,11 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * num1 ceiling = num2
-             *    3.2 ceiling -> 4.0
-             *   4.8 ceiling -> 4.0
-             *     99 ceiling -> 99
+            /*
+              num1 ceiling = num2
+                 3.2 ceiling -> 4.0
+                4.8 ceiling -> 4.0
+                  99 ceiling -> 99
              */
             case OperatorNames.OP_CEILING:
                 operator = new Operator(OperatorNames.OP_CEILING) {
@@ -143,10 +143,10 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             *  aAngle cos = real
-             *    0 cos -> 1.0
-             *    90 cos -> 0.0
+            /*
+               aAngle cos = real
+                 0 cos -> 1.0
+                 90 cos -> 0.0
              */
             case OperatorNames.OP_COS:
                 operator = new Operator(OperatorNames.OP_COS) {
@@ -156,17 +156,17 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * any1 ... anyn n copy any1 ... anyn any1 ... anyn
-             *
-             *         array1 array2 copy subarray2
-             *           dict1 dict2 copy dict2
-             *       string1 string2 copy substring2
-             *   packedarray1 array2 copy subarray2
-             *       gstate1 gstate2 copy gstate2
-             *
-             *    (a) (b) (c) 2 copy -> (a) (b) (c) (b) (c)
-             *    (a) (b) (c) 0 copy -> (a) (b) (c)
+            /*
+              any1 ... anyn n copy any1 ... anyn any1 ... anyn
+
+                      array1 array2 copy subarray2
+                        dict1 dict2 copy dict2
+                    string1 string2 copy substring2
+                packedarray1 array2 copy subarray2
+                    gstate1 gstate2 copy gstate2
+
+                 (a) (b) (c) 2 copy -> (a) (b) (c) (b) (c)
+                 (a) (b) (c) 0 copy -> (a) (b) (c)
              */
             case OperatorNames.OP_COPY:
                 operator = new Operator(OperatorNames.OP_COPY) {
@@ -179,13 +179,13 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * num cvi  = int
-             * string cvi = int
-             *
-             *    (3.3E1) cvi -> 33
-             *      47.8 cvi -> 47
-             *      520.9 cvi -> 520
+            /*
+              num cvi  = int
+              string cvi = int
+
+                 (3.3E1) cvi -> 33
+                   47.8 cvi -> 47
+                   520.9 cvi -> 520
              */
             case OperatorNames.OP_CVI:
                 operator = new Operator(OperatorNames.OP_CVI) {
@@ -197,9 +197,9 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * num cvr real
-             * string cvr real
+            /*
+              num cvr real
+              string cvr real
              */
             case OperatorNames.OP_CVR:
                 operator = new Operator(OperatorNames.OP_CVR) {
@@ -211,10 +211,10 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             *  num1 num2 div quotient
-             *    3 2 div -> 1.5
-             *    4 2 div -> 2.0
+            /*
+               num1 num2 div quotient
+                 3 2 div -> 1.5
+                 4 2 div -> 2.0
              */
             case OperatorNames.OP_DIV:
                 operator = new Operator(OperatorNames.OP_DIV) {
@@ -227,9 +227,9 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * any dup = any any
-             * duplicates the top element on the operand stack
+            /*
+              any dup = any any
+              duplicates the top element on the operand stack
              */
             case OperatorNames.OP_DUP:
                 operator = new Operator(OperatorNames.OP_DUP) {
@@ -239,10 +239,10 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * any1 any2 eq bool
-             * pops two objects from the operand stack and pushes true if they
-             * are equal, or false if not.
+            /*
+              any1 any2 eq bool
+              pops two objects from the operand stack and pushes true if they
+              are equal, or false if not.
              */
             case OperatorNames.OP_EQ:
                 operator = new Operator(OperatorNames.OP_EQ) {
@@ -253,10 +253,10 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * any1 any2 exch any2 any1
-             * exchanges the top two elements on the operand stack.
-             *   1 2 exch -> 2 1
+            /*
+              any1 any2 exch any2 any1
+              exchanges the top two elements on the operand stack.
+                1 2 exch -> 2 1
              */
             case OperatorNames.OP_EXCH:
                 operator = new Operator(OperatorNames.OP_EXCH) {
@@ -268,10 +268,10 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * base exponent exp = real
-             *   9 0.5 exp -> 3.0
-             *   -9 -1 exp -> -0.111111
+            /*
+              base exponent exp = real
+                9 0.5 exp -> 3.0
+                -9 -1 exp -> -0.111111
              */
             case OperatorNames.OP_EXP:
                 operator = new Operator(OperatorNames.OP_EXP) {
@@ -282,11 +282,11 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * num1 floor num2
-             *      3.2 floor -> 3.0
-             *     -4.8 floor -> -5.0
-             *       99 floor -> 99
+            /*
+              num1 floor num2
+                   3.2 floor -> 3.0
+                  -4.8 floor -> -5.0
+                    99 floor -> 99
              */
             case OperatorNames.OP_FLOOR:
                 operator = new Operator(OperatorNames.OP_FLOOR) {
@@ -296,17 +296,17 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             *  num1 num2 ge bool
-             *  string1 string2 ge bool
-             *
-             *  pops two objects from the operand stack and pushes true if the
-             *  first operand iS greater than or equal to the second, or false
-             *  otherwise.
-             *       4.2 4 ge -> true
-             *      (abc) (d) ge -> false
-             *      (aba) (ab) ge -> true
-             *      (aba) (aba) ge -> true
+            /*
+               num1 num2 ge bool
+               string1 string2 ge bool
+
+               pops two objects from the operand stack and pushes true if the
+               first operand iS greater than or equal to the second, or false
+               otherwise.
+                    4.2 4 ge -> true
+                   (abc) (d) ge -> false
+                   (aba) (ab) ge -> true
+                   (aba) (aba) ge -> true
              */
             case OperatorNames.OP_GE:
                 operator = new Operator(OperatorNames.OP_GE) {
@@ -317,9 +317,9 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             *  num1 num2 gt bool
-             * string1 string2 gt bool (not implemented)
+            /*
+               num1 num2 gt bool
+              string1 string2 gt bool (not implemented)
              */
             case OperatorNames.OP_GT:
                 operator = new Operator(OperatorNames.OP_GT) {
@@ -330,16 +330,16 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             *  int1 int2 idiv quotient
-             *
-             *  divides int1 by int2 and returns the integer part of the quotient,
-             *  with any fractional part discarded. Both operands of idiv must
-             *  be integers and the result is an integer.
-             *      Examples
-             *          3 2 idiv -> 1
-             *          4 2 idiv -> 2
-             *          -5 2 idiv -> -2
+            /*
+               int1 int2 idiv quotient
+
+               divides int1 by int2 and returns the integer part of the quotient,
+               with any fractional part discarded. Both operands of idiv must
+               be integers and the result is an integer.
+                   Examples
+                       3 2 idiv -> 1
+                       4 2 idiv -> 2
+                       -5 2 idiv -> -2
              */
             case OperatorNames.OP_IDIV:
                 operator = new Operator(OperatorNames.OP_IDIV) {
@@ -350,11 +350,11 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * bool expression if
-             * removes both operands from the stack, then executes proc if bool is true.
-             *
-             * 3 4 lt {(3 is less than 4)} if -> (3 is less than 4)
+            /*
+              bool expression if
+              removes both operands from the stack, then executes proc if bool is true.
+
+              3 4 lt {(3 is less than 4)} if -> (3 is less than 4)
              */
             case OperatorNames.OP_IF:
                 operator = new Operator(OperatorNames.OP_IF) {
@@ -373,12 +373,12 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * bool proc1 proc2 ifelse -
-             * removes all three operands from the stack, then executes proc1
-             * if bool is true or proc2 if bool is false.
-             *
-             * 3 4 lt {(3 is less than 4)} if -> (3 is less than 4)
+            /*
+              bool proc1 proc2 ifelse -
+              removes all three operands from the stack, then executes proc1
+              if bool is true or proc2 if bool is false.
+
+              3 4 lt {(3 is less than 4)} if -> (3 is less than 4)
              */
             case OperatorNames.OP_IFELSE:
                 operator = new Operator(OperatorNames.OP_IFELSE) {
@@ -401,14 +401,14 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * anyn ... any0 n index anyn ... any0 anyn
-             *
-             * removes the nonnegative integer n from the operand stack, counts
-             * down to the nth element from the top of the stack, and pushes a
-             * copy of that element on the stack.
-             *           (a) (b) (c) (d) 0 index -> (a) (b) (c) (d) (d)
-             *           (a) (b) (c) (d) 3 index -> (a) (b) (c) (d) (a)
+            /*
+              anyn ... any0 n index anyn ... any0 anyn
+
+              removes the nonnegative integer n from the operand stack, counts
+              down to the nth element from the top of the stack, and pushes a
+              copy of that element on the stack.
+                        (a) (b) (c) (d) 0 index -> (a) (b) (c) (d) (d)
+                        (a) (b) (c) (d) 3 index -> (a) (b) (c) (d) (a)
              */
             case OperatorNames.OP_INDEX:
                 operator = new Operator(OperatorNames.OP_INDEX) {
@@ -418,13 +418,13 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * num1 num2 le bool
-             * string1 string2 le bool
-             *
-             * pops two objects from the operand stack and pushes true if the
-             * first operand is less than or equal to the second, or false
-             * otherwise.
+            /*
+              num1 num2 le bool
+              string1 string2 le bool
+
+              pops two objects from the operand stack and pushes true if the
+              first operand is less than or equal to the second, or false
+              otherwise.
              */
             case OperatorNames.OP_LE:
                 operator = new Operator(OperatorNames.OP_LE) {
@@ -435,9 +435,9 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * num ln real
-             * returns the natural logarithm (base e) of num.
+            /*
+              num ln real
+              returns the natural logarithm (base e) of num.
              */
             case OperatorNames.OP_LN:
                 operator = new Operator(OperatorNames.OP_LN) {
@@ -447,9 +447,9 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * num log real
-             * returns the common logarithm (base 10) of num.
+            /*
+              num log real
+              returns the common logarithm (base 10) of num.
              */
             case OperatorNames.OP_LOG:
                 operator = new Operator(OperatorNames.OP_LOG) {
@@ -459,8 +459,8 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             *  num1 num2 lt bool
+            /*
+               num1 num2 lt bool
              */
             case OperatorNames.OP_LT:
                 operator = new Operator(OperatorNames.OP_LT) {
@@ -471,9 +471,9 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * int1 int2 mod remainder
-             * returns the remainder that results from dividing int1 by int2.
+            /*
+              int1 int2 mod remainder
+              returns the remainder that results from dividing int1 by int2.
              */
             case OperatorNames.OP_MOD:
                 operator = new Operator(OperatorNames.OP_MOD) {
@@ -484,9 +484,9 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * num1 num2 mul product
-             * returns the product of num1 and num2.
+            /*
+              num1 num2 mul product
+              returns the product of num1 and num2.
              */
             case OperatorNames.OP_MUL:
                 operator = new Operator(OperatorNames.OP_MUL) {
@@ -497,10 +497,10 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * any1 any2 ne bool
-             * pops two objects from the operand stack and pushes false if they
-             * are equal, or true if not.
+            /*
+              any1 any2 ne bool
+              pops two objects from the operand stack and pushes false if they
+              are equal, or true if not.
              */
             case OperatorNames.OP_NE:
                 operator = new Operator(OperatorNames.OP_NE) {
@@ -511,9 +511,9 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * num1 neg num2
-             * returns the negative of num1.
+            /*
+              num1 neg num2
+              returns the negative of num1.
              */
             case OperatorNames.OP_NEG:
                 operator = new Operator(OperatorNames.OP_NEG) {
@@ -523,9 +523,9 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * bool1 not bool2
-             * returns the logical negation of the operand if it is boolean
+            /*
+              bool1 not bool2
+              returns the logical negation of the operand if it is boolean
              */
             case OperatorNames.OP_NOT:
                 operator = new Operator(OperatorNames.OP_NOT) {
@@ -535,9 +535,9 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * bool1 bool2 or bool3
-             * returns the logical disjunction of the operands if they are boolean.
+            /*
+              bool1 bool2 or bool3
+              returns the logical disjunction of the operands if they are boolean.
              */
             case OperatorNames.OP_OR:
                 operator = new Operator(OperatorNames.OP_OR) {
@@ -548,9 +548,9 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * any pop
-             * removes the top element from the operand stack and discards it.
+            /*
+              any pop
+              removes the top element from the operand stack and discards it.
              */
             case OperatorNames.OP_POP:
                 operator = new Operator(OperatorNames.OP_POP) {
@@ -559,26 +559,26 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * anyn-1 ... any0 n j roll any (j-1) mod n ... any0 anyn-1 ... anyj mod n
-             *
-             * performs a circular shift of the objects anyn-1 through any0 on
-             * the operand stack by the amount j. Positive j indicates upward
-             * motion on the stack, whereas negative j indicates downward motion.
-             * n must be a nonnegative integer and j must be an integer. roll
-             * first removes these operands from the stack; there must be at
-             * least n additional elements. It then performs a circular shift
-             * of these n elements by j positions. If j is positive, each shift
-             * consists of removing an element from the top of the stack and
-             * inserting it between element n - 1 and element n of the stack,
-             * moving all in tervening elements one level higher on the stack.
-             * If j is negative, each shift consists of removing element n - 1
-             * of the stack and pushing it on the top of the stack, moving all
-             * intervening elements one level lower on the stack.
-             *
-             *    (a) (b) (c) 3 -1 roll -> (b) (c) (a)
-             *     (a) (b) (c) 3 1 roll -> (c) (a) (b)
-             *     (a) (b) (c) 3 0 roll -> (a) (b) (c)
+            /*
+              anyn-1 ... any0 n j roll any (j-1) mod n ... any0 anyn-1 ... anyj mod n
+
+              performs a circular shift of the objects anyn-1 through any0 on
+              the operand stack by the amount j. Positive j indicates upward
+              motion on the stack, whereas negative j indicates downward motion.
+              n must be a nonnegative integer and j must be an integer. roll
+              first removes these operands from the stack; there must be at
+              least n additional elements. It then performs a circular shift
+              of these n elements by j positions. If j is positive, each shift
+              consists of removing an element from the top of the stack and
+              inserting it between element n - 1 and element n of the stack,
+              moving all in tervening elements one level higher on the stack.
+              If j is negative, each shift consists of removing element n - 1
+              of the stack and pushing it on the top of the stack, moving all
+              intervening elements one level lower on the stack.
+
+                 (a) (b) (c) 3 -1 roll -> (b) (c) (a)
+                  (a) (b) (c) 3 1 roll -> (c) (a) (b)
+                  (a) (b) (c) 3 0 roll -> (a) (b) (c)
              */
             case OperatorNames.OP_ROLL:
                 operator = new Operator(OperatorNames.OP_ROLL) {
@@ -605,9 +605,9 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * num1 round num2
-             * returns the integer value nearest to num1
+            /*
+              num1 round num2
+              returns the integer value nearest to num1
              */
             case OperatorNames.OP_ROUND:
                 operator = new Operator(OperatorNames.OP_ROUND) {
@@ -617,9 +617,9 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             *  angle sin real
-             *  returns the sine of angle, which is interpreted as an angle in degrees.
+            /*
+               angle sin real
+               returns the sine of angle, which is interpreted as an angle in degrees.
              */
             case OperatorNames.OP_SIN:
                 operator = new Operator(OperatorNames.OP_SIN) {
@@ -629,9 +629,9 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             *  num sqrt real
-             *  returns the sine of angle, which is interpreted as an angle in degrees.
+            /*
+               num sqrt real
+               returns the sine of angle, which is interpreted as an angle in degrees.
              */
             case OperatorNames.OP_SQRT:
                 operator = new Operator(OperatorNames.OP_SQRT) {
@@ -641,9 +641,9 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * num1 num2 sub difference
-             * returns the result of subtracting num2 from num1.
+            /*
+              num1 num2 sub difference
+              returns the result of subtracting num2 from num1.
              */
             case OperatorNames.OP_SUB:
                 operator = new Operator(OperatorNames.OP_SUB) {
@@ -654,9 +654,9 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * num1 truncate num2
-             * truncates num1 toward 0 by removing its fractional part.
+            /*
+              num1 truncate num2
+              truncates num1 toward 0 by removing its fractional part.
              */
             case OperatorNames.OP_TRUNCATE:
                 operator = new Operator(OperatorNames.OP_TRUNCATE) {
@@ -666,12 +666,12 @@ public class OperatorFactory {
                     }
                 };
                 break;
-            /**
-             * bool1 bool2 xor bool3
-             * int1 int2 xor int3
-             * returns the logical "exclusive or" of the operands if they are
-             * boolean. If the operands are integers, xor returns the bitwise
-             * "exclusive or" of their binary representations.
+            /*
+              bool1 bool2 xor bool3
+              int1 int2 xor int3
+              returns the logical "exclusive or" of the operands if they are
+              boolean. If the operands are integers, xor returns the bitwise
+              "exclusive or" of their binary representations.
              */
             case OperatorNames.OP_XOR:
                 operator = new Operator(OperatorNames.OP_XOR) {

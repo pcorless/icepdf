@@ -96,6 +96,7 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
      * this mouse and text listeners.
      *
      * @param pageViewComponent page component that this handler is bound to.
+     * @param documentViewController parent document view controller.
      */
     public InkAnnotationHandler(DocumentViewController documentViewController,
                                 AbstractPageViewComponent pageViewComponent) {
@@ -167,7 +168,7 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
         annotation.setInkPath(tInkPath);
         annotation.setOpacity(opacity);
 
-        AffineTransform pageTransform = getPageTransformInverse();
+        AffineTransform pageTransform = getToPageSpaceTransform();
 
         // pass outline shapes and bounds to create the highlight shapes
         annotation.setBBox(tBbox);

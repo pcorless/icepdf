@@ -18,6 +18,7 @@ package org.icepdf.core.util;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.io.*;
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Font;
@@ -28,10 +29,7 @@ import org.icepdf.core.pobjects.graphics.TilingPattern;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -52,8 +50,8 @@ public class Parser {
 
     private InputStream reader;
     boolean lastTokenHString = false;
-    private Stack<Object> stack = new Stack<Object>();
-    private Stack<Integer> offSetStack = new Stack<Integer>();
+    private Stack<Object> stack = new Stack<>();
+    private Stack<Integer> offSetStack = new Stack<>();
     private int parseMode;
     private boolean isTrailer;
     private int linearTraversalOffset;
@@ -383,7 +381,7 @@ public class Parser {
                                 "stream has likely been encountered.");
                         size = 0;
                     }
-                    List<Object> v = new ArrayList<Object>(size);
+                    List<Object> v = new ArrayList<>(size);
                     Object[] tmp = new Object[size];
                     if (searchPosition > 0) {
                         for (int i = size - 1; i >= 0; i--) {
@@ -391,9 +389,7 @@ public class Parser {
                         }
                         // we need a mutable array so copy into an arrayList
                         // so we can't use Arrays.asList().
-                        for (int i = 0; i < size; i++) {
-                            v.add(tmp[i]);
-                        }
+                        v.addAll(Arrays.asList(tmp).subList(0, size));
                         stack.pop(); // "["
                     } else {
                         stack.clear();
@@ -409,7 +405,7 @@ public class Parser {
                     // check for extra >> which we want to ignore
                     if (!isTrailer && deepnessCount >= 0) {
                         if (!stack.isEmpty()) {
-                            HashMap<Object, Object> hashMap = new HashMap<Object, Object>();
+                            HashMap<Object, Object> hashMap = new HashMap<>();
                             Object obj = stack.pop();
                             // put all of the dictionary definistion into the
                             // the hashTabl
@@ -469,7 +465,7 @@ public class Parser {
                         }
                     } else if (isTrailer && deepnessCount == 0) {
                         // we have an xref entry
-                        HashMap<Object, Object> hashMap = new HashMap<Object, Object>();
+                        HashMap<Object, Object> hashMap = new HashMap<>();
                         Object obj = stack.pop();
                         // put all of the dictionary definition into the
                         // the new map.
@@ -534,9 +530,6 @@ public class Parser {
         return stack.pop();
     }
 
-    /**
-     *
-     */
     public String peek2() throws IOException {
         reader.mark(2);
         char c[] = new char[2];
@@ -548,8 +541,11 @@ public class Parser {
     }
 
     /**
+     * Read inline image.
+     *
+     * @param out output stream to write to.
      * @return true if ate the ending EI delimiter
-     * @throws java.io.IOException
+     * @throws java.io.IOException error writing output stream.
      */
     public boolean readLineForInlineImage(OutputStream out) throws IOException {
         // The encoder might not have put EI on its own line (as it should),
@@ -709,7 +705,7 @@ public class Parser {
         Object o = getToken();
         if (o instanceof String) {
             if (o.equals("<<")) {
-                HashMap<Object, Object> h = new HashMap<Object, Object>();
+                HashMap<Object, Object> h = new HashMap<>();
                 Object o1 = getStreamObject();
                 while (!o1.equals(">>")) {
                     h.put(o1, getStreamObject());
@@ -720,7 +716,7 @@ public class Parser {
             // arrays are only used for CID mappings, the hex decoding is delayed
             // as a result using the CID_STREAM flag
             else if (o.equals("[")) {
-                List<Object> v = new ArrayList<Object>();
+                List<Object> v = new ArrayList<>();
                 Object o1 = getStreamObject();
                 while (!o1.equals("]")) {
                     v.add(o1);
@@ -760,12 +756,12 @@ public class Parser {
         }
         while (isWhitespace(currentChar));
 
-        /**
-         *  look the start of different primitive pdf objects
-         * ( - strints
-         * [ - arrays
-         * % - comments
-         * numbers.
+        /*
+           look the start of different primitive pdf objects
+          ( - strints
+          [ - arrays
+          % - comments
+          numbers.
          */
         if (currentChar == '(') {
             // mark that we are currrently processing a string
@@ -829,8 +825,8 @@ public class Parser {
 
         stringBuffer.append(currentChar);
 
-        /**
-         * Finally parse the contents of a complex token
+        /*
+          Finally parse the contents of a complex token
          */
 
         int parenthesisCount = 0;
@@ -879,20 +875,20 @@ public class Parser {
                         }
                     }
                     // look for  "\" character
-                    /**
-                     * The escape sequences can be as follows:
-                     *   \n  - line feed (LF)
-                     *   \r  - Carriage return (CR)
-                     *   \t  - Horizontal tab  (HT)
-                     *   \b  - backspace (BS)
-                     *   \f  - form feed (FF)
-                     *   \(  - left parenthesis
-                     *   \)  - right parenthesis
-                     *   \\  - backslash
-                     *   \ddd - character code ddd (octal)
-                     *
-                     * Note: (\0053) denotes a string containing two characters,
-                     *       \005 (Control-E) followed by the digit 3.
+                    /*
+                      The escape sequences can be as follows:
+                        \n  - line feed (LF)
+                        \r  - Carriage return (CR)
+                        \t  - Horizontal tab  (HT)
+                        \b  - backspace (BS)
+                        \f  - form feed (FF)
+                        \(  - left parenthesis
+                        \)  - right parenthesis
+                        \\  - backslash
+                        \ddd - character code ddd (octal)
+
+                      Note: (\0053) denotes a string containing two characters,
+                            \005 (Control-E) followed by the digit 3.
                      */
                     if (currentChar == '\\') {
                         // read next char
@@ -1009,8 +1005,8 @@ public class Parser {
         }
         while (!complete);
 
-        /**
-         * Return what we found
+        /*
+          Return what we found
          */
         // if a hex string decode it as needed
         if (hexString) {
@@ -1224,6 +1220,7 @@ public class Parser {
      * White space characters defined by ' ', '\t', '\r', '\n', '\f'
      *
      * @param c true if character is white space
+     * @return true if char is whitespace, false otherwise.
      */
     public static boolean isWhitespace(char c) {
         return ((c == ' ') || (c == '\t') || (c == '\r') ||

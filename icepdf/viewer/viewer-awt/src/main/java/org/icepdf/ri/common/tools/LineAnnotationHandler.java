@@ -17,7 +17,6 @@ package org.icepdf.ri.common.tools;
 
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.PDate;
-import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
@@ -36,7 +35,6 @@ import org.icepdf.ri.util.PropertiesManager;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
 import java.util.Date;
 import java.util.logging.Level;
@@ -110,8 +108,8 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
     protected static Name endLineEnding = LineAnnotation.LINE_END_NONE;
 
     // start and end point
-    protected Point2D startOfLine;
-    protected Point2D endOfLine;
+    protected Point startOfLine;
+    protected Point endOfLine;
 
     protected BorderStyle borderStyle = new BorderStyle();
 
@@ -148,7 +146,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
 
     public void mousePressed(MouseEvent e) {
         Point startPoint = e.getPoint();
-        startOfLine = new Point2D.Double(startPoint.getX(), startPoint.getY());
+        startOfLine = new Point(startPoint.x, startPoint.y);
         // annotation selection box.
         int x = e.getX();
         int y = e.getY();
@@ -160,7 +158,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
 
     public void mouseReleased(MouseEvent e) {
         Point startPoint = e.getPoint();
-        endOfLine = new Point2D.Double(startPoint.getX(), startPoint.getY());
+        endOfLine = new Point(startPoint.x, startPoint.y);
         updateSelectionSize(e.getX(),e.getY(), pageViewComponent);
 
         // add a little padding or the end point icon types
@@ -191,7 +189,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         annotation.setInteriorColor(internalColor);
         annotation.setOpacity(opacity);
 
-        AffineTransform pageTransform = getPageTransformInverse();
+        AffineTransform pageTransform = getToPageSpaceTransform();
 
         // setup the markup properties.
         annotation.setContents(annotation.getSubType().toString());
@@ -245,40 +243,8 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
     public void mouseDragged(MouseEvent e) {
         updateSelectionSize(e.getX(),e.getY(), pageViewComponent);
         Point startPoint = e.getPoint();
-        endOfLine = new Point2D.Double(startPoint.getX(), startPoint.getY());
+        endOfLine = new Point(startPoint.x, startPoint.y);
         pageViewComponent.repaint();
-    }
-
-    /**
-     * Convert the shapes that make up the annotation to page space so that
-     * they will scale correctly at different zooms.
-     *
-     * @return transformed bBox.
-     */
-    protected Rectangle convertToPageSpace() {
-        Page currentPage = pageViewComponent.getPage();
-        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-        AffineTransform at = currentPage.getPageTransform(
-                documentViewModel.getPageBoundary(),
-                documentViewModel.getViewRotation(),
-                documentViewModel.getViewZoom());
-        try {
-            at = at.createInverse();
-        } catch (NoninvertibleTransformException e) {
-            logger.log(Level.FINE, "Error converting to page space.", e);
-        }
-        // convert the two points as well as the bbox.
-        Rectangle tBbox = new Rectangle(rectToDraw.x, rectToDraw.y,
-                rectToDraw.width, rectToDraw.height);
-
-        tBbox = at.createTransformedShape(tBbox).getBounds();
-
-        // convert the points
-        startOfLine = at.transform(startOfLine, null);
-        endOfLine = at.transform(endOfLine, null);
-
-        return tBbox;
-
     }
 
     public void mouseEntered(MouseEvent e) {

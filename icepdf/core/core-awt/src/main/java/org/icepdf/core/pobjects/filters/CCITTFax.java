@@ -304,7 +304,7 @@ public class CCITTFax {
      * Map bitstream values to tw and mw codes.
      *
      * @param inb bit stream containing the CCITT data
-     * @throws java.io.IOException
+     * @throws java.io.IOException error during decode.
      */
     static int findWhite(BitStream inb, Code code) throws IOException {
         return findTone(inb, code, twcodes, mwcodes);
@@ -313,7 +313,7 @@ public class CCITTFax {
     /**
      * Finds the next black occruence in the stream
      *
-     * @throws java.io.IOException
+     * @throws java.io.IOException  error during decode.
      */
     static int findBlack(BitStream inb, Code code) throws IOException {
         return findTone(inb, code, tbcodes, mbcodes);
@@ -346,9 +346,6 @@ public class CCITTFax {
         return 0;
     }
 
-    /**
-     * @throws java.io.IOException
-     */
     static void addRun(int x, G4State s, BitStream out) throws IOException {
         s.runLength += x;
         s.cur[s.curIndex++] = s.runLength;
@@ -361,9 +358,6 @@ public class CCITTFax {
         s.runLength = 0;
     }
 
-    /**
-     * @throws java.io.IOException
-     */
     static int readmode(BitStream inb, Code code) throws IOException {
         code.reset();
         while (!inb.atEndOfFile()) {
@@ -408,9 +402,6 @@ public class CCITTFax {
         s.b1 += s.ref[s.refIndex++];
     }
 
-    /**
-     * @throws java.io.IOException
-     */
     static void decodeHorizontal(BitStream in, BitStream out, G4State s, Code code) throws IOException {
         int rl;
         do {
@@ -430,9 +421,6 @@ public class CCITTFax {
         out.close();
     }
 
-    /**
-     * @throws java.io.IOException
-     */
     static void resetRuns(BitStream outb, G4State state) throws IOException {
         //System.err.println("EOL! "+state.a0);
         state.white = true;
@@ -469,8 +457,6 @@ public class CCITTFax {
         outb.close();
     }
 
-    /**
-     */
     public static void Group4Decode(InputStream in, OutputStream out, int width, boolean blackIs1) {
         BitStream inb = new BitStream(in);
         BitStream outb = new BitStream(out);

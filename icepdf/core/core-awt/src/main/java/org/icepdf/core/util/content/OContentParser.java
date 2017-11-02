@@ -17,7 +17,10 @@ package org.icepdf.core.util.content;
 
 import org.icepdf.core.io.ByteDoubleArrayInputStream;
 import org.icepdf.core.io.SequenceInputStream;
-import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.ImageStream;
+import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.graphics.*;
 import org.icepdf.core.pobjects.graphics.commands.GlyphOutlineDrawCmd;
 import org.icepdf.core.pobjects.graphics.commands.ImageDrawCmd;
@@ -89,7 +92,7 @@ public class OContentParser extends AbstractContentParser {
         }
 
         if (oCGs == null && library.getCatalog().getOptionalContent() != null) {
-            oCGs = new LinkedList<OptionalContents>();
+            oCGs = new LinkedList<>();
         }
 
         if (logger.isLoggable(Level.FINER)) {
@@ -107,9 +110,9 @@ public class OContentParser extends AbstractContentParser {
         Parser parser;
 
         // test case for progress bar
-        java.util.List<InputStream> in = new ArrayList<InputStream>();
-        for (int i = 0; i < streamBytes.length; i++) {
-            in.add(new ByteArrayInputStream(streamBytes[i]));
+        java.util.List<InputStream> in = new ArrayList<>();
+        for (byte[] streamByte : streamBytes) {
+            in.add(new ByteArrayInputStream(streamByte));
         }
         parser = new Parser(new SequenceInputStream(in, ' '));
 
@@ -256,21 +259,21 @@ public class OContentParser extends AbstractContentParser {
                         consume_EMC(shapes, oCGs);
                     }
 
-                    /**
-                     * External Object (XObject) a graphics object whose contents
-                     * are defined by a self-contained content stream, separate
-                     * from the content stream in which it is used. There are three
-                     * types of external object:
-                     *
-                     *   - An image XObject (Section 4.8.4, "Image Dictionaries")
-                     *     represents a sampled visual image such as a photograph.
-                     *   - A form XObject (Section 4.9, "Form XObjects") is a
-                     *     self-contained description of an arbitrary sequence of
-                     *     graphics objects.
-                     *   - A PostScript XObject (Section 4.7.1, "PostScript XObjects")
-                     *     contains a fragment of code expressed in the PostScript
-                     *     page description language. PostScript XObjects are no
-                     *     longer recommended to be used. (NOT SUPPORTED)
+                    /*
+                      External Object (XObject) a graphics object whose contents
+                      are defined by a self-contained content stream, separate
+                      from the content stream in which it is used. There are three
+                      types of external object:
+
+                        - An image XObject (Section 4.8.4, "Image Dictionaries")
+                          represents a sampled visual image such as a photograph.
+                        - A form XObject (Section 4.9, "Form XObjects") is a
+                          self-contained description of an arbitrary sequence of
+                          graphics objects.
+                        - A PostScript XObject (Section 4.7.1, "PostScript XObjects")
+                          contains a fragment of code expressed in the PostScript
+                          page description language. PostScript XObjects are no
+                          longer recommended to be used. (NOT SUPPORTED)
                      */
                     // Paint the specified XObject. The operand name must appear as
                     // a key in the XObject subdictionary of the current resource
@@ -449,8 +452,8 @@ public class OContentParser extends AbstractContentParser {
                         consume_K(graphicState, stack, library);
                     }
 
-                    /**
-                     * Type3 operators, update the text state with data from these operands
+                    /*
+                      Type3 operators, update the text state with data from these operands
                      */
                     else if (tok.equals(PdfOps.d0_TOKEN)) {
 //                        collectTokenFrequency(PdfOps.d0_TOKEN);
@@ -568,8 +571,8 @@ public class OContentParser extends AbstractContentParser {
                         consume_W_star(graphicState, geometricPath);
                     }
 
-                    /**
-                     * Single marked-content point
+                    /*
+                      Single marked-content point
                      */
                     // Designate a marked-content point with an associated property
                     // list. tag is a name object indicating the role or significance
@@ -595,9 +598,9 @@ public class OContentParser extends AbstractContentParser {
                                 resources);
                     }
 
-                    /**
-                     * We've seen a couple cases when the text state parameters are written
-                     * outside of text blocks, this should cover these cases.
+                    /*
+                      We've seen a couple cases when the text state parameters are written
+                      outside of text blocks, this should cover these cases.
                      */
                     // Character Spacing
                     else if (tok.equals(PdfOps.Tc_TOKEN)) {
@@ -676,7 +679,7 @@ public class OContentParser extends AbstractContentParser {
 
             // loop through each token returned form the parser
             Object tok = parser.getStreamObject();
-            Stack<Object> stack = new Stack<Object>();
+            Stack<Object> stack = new Stack<>();
             double yBTstart = 0;
             while (tok != null) {
 
@@ -784,11 +787,11 @@ public class OContentParser extends AbstractContentParser {
                             previousBTStart, oCGs);
                 }
 
-                /**
-                 * Tranformation matrix
-                 * tm =   |f1 f2 0|
-                 *        |f3 f4 0|
-                 *        |f5 f6 0|
+                /*
+                  Tranformation matrix
+                  tm =   |f1 f2 0|
+                         |f3 f4 0|
+                         |f5 f6 0|
                  */
                 else if (nextToken.equals(PdfOps.Tm_TOKEN)) {
 //                    collectTokenFrequency(PdfOps.Tm_TOKEN);
@@ -989,10 +992,10 @@ public class OContentParser extends AbstractContentParser {
                     consume_Ts(graphicState, stack);
                 }
 
-                /**
-                 * Begin a compatibility section. Unrecognized operators (along with
-                 * their operands) will be ignored without error until the balancing
-                 * EX operator is encountered.
+                /*
+                  Begin a compatibility section. Unrecognized operators (along with
+                  their operands) will be ignored without error until the balancing
+                  EX operator is encountered.
                  */
                 else if (nextToken.equals(PdfOps.BX_TOKEN)) {
 //                    collectTokenFrequency(PdfOps.BX_TOKEN);
@@ -1007,11 +1010,11 @@ public class OContentParser extends AbstractContentParser {
                     consume_single_quote(graphicState, stack, shapes, textMetrics,
                             glyphOutlineClip, oCGs);
                 }
-                /**
-                 * Move to the next line and show a text string, using aw as the
-                 * word spacing and ac as the character spacing (setting the
-                 * corresponding parameters in the text state). aw and ac are
-                 * numbers expressed in unscaled text space units.
+                /*
+                  Move to the next line and show a text string, using aw as the
+                  word spacing and ac as the character spacing (setting the
+                  corresponding parameters in the text state). aw and ac are
+                  numbers expressed in unscaled text space units.
                  */
                 else if (nextToken.equals(PdfOps.DOUBLE_QUOTE__TOKEN)) {
 //                    collectTokenFrequency(PdfOps.DOUBLE_QUOTE__TOKEN);
@@ -1058,7 +1061,7 @@ public class OContentParser extends AbstractContentParser {
             // PColorSpace cs = null; // from old pdfgo never used
 
             Object tok;
-            HashMap<Object, Object> iih = new HashMap<Object, Object>();
+            HashMap<Object, Object> iih = new HashMap<>();
             tok = p.getStreamObject();
             while (!tok.equals("ID")) {
                 if (tok.equals("BPC")) {

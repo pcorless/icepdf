@@ -243,10 +243,10 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
 
             Parser parser = new Parser(cMapInputStream);
 
-            /**
-             * Start gathering the data from the CMap objects,  the CMap file
-             * is fixed in format so this routine doesn't have to be to
-             * complicated
+            /*
+              Start gathering the data from the CMap objects,  the CMap file
+              is fixed in format so this routine doesn't have to be to
+              complicated
              */
             Object previousToken = null;
             while (true) {
@@ -257,7 +257,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
                 }
                 // find cIdSystemInfo, not always a named attribute
                 String nameString = token.toString();
-                if (nameString.toLowerCase().indexOf("cidsysteminfo") >= 0) {
+                if (nameString.toLowerCase().contains("cidsysteminfo")) {
                     // CIDSystemInfo only has one property which should be
                     // always be hash by definition and our parser result
                     token = parser.getStreamObject();
@@ -272,7 +272,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
                 if (token instanceof Name) {
                     nameString = token.toString();
                     // find cMapName
-                    if (nameString.toLowerCase().indexOf("cmapname") >= 0) {
+                    if (nameString.toLowerCase().contains("cmapname")) {
                         // cmapname will always be a Name object
                         token = parser.getStreamObject();
                         cMapName = token.toString();
@@ -280,7 +280,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
                         token = parser.getStreamObject();
                     }
                     // find cMapType
-                    if (nameString.toLowerCase().indexOf("cmaptype") >= 0) {
+                    if (nameString.toLowerCase().contains("cmaptype")) {
                         // cmapname will always be a float
                         token = parser.getStreamObject();
                         cMapType = Float.parseFloat(token.toString());
@@ -288,7 +288,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
                         token = parser.getStreamObject();
                     }
                     // find UseMap
-                    if (nameString.toLowerCase().indexOf("usemap") >= 0) {
+                    if (nameString.toLowerCase().contains("usemap")) {
                         // nothing for now
                     }
                 }
@@ -325,7 +325,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
                         int numberOfbfChar = (int) Float.parseFloat(previousToken.toString());
                         // there can be multiple char maps so we don't want to override previous values. 
                         if (bfChars == null) {
-                            bfChars = new HashMap<Integer, char[]>(numberOfbfChar);
+                            bfChars = new HashMap<>(numberOfbfChar);
                         }
                         // a range will always have two hex numbers
                         for (int i = 0; i < numberOfbfChar; i++) {
@@ -350,7 +350,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
                     if (stringToken.equalsIgnoreCase("beginbfrange")) {
                         int numberOfbfRanges = (int) Float.parseFloat(previousToken.toString());
                         if (bfRange == null) {
-                            bfRange = new ArrayList<CMapRange>(numberOfbfRanges);
+                            bfRange = new ArrayList<>(numberOfbfRanges);
                         }
                         StringObject hexToken;
                         Integer startRange;
@@ -392,10 +392,10 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
                         }
                     }
 
-                    /**
-                     * CID mappings still need to be implemented but I have
-                     * no examples of yet to check.  The CID mappings are little
-                     * bit different then the bf ranges.
+                    /*
+                      CID mappings still need to be implemented but I have
+                      no examples of yet to check.  The CID mappings are little
+                      bit different then the bf ranges.
                      */
 
                     // find cIdChars

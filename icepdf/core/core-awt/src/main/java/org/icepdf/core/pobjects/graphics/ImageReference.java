@@ -109,6 +109,7 @@ public abstract class ImageReference implements Callable<BufferedImage> {
      * Creates a scaled image to match that of the instance vars width/height.
      *
      * @return decoded/encoded BufferedImage for the respective ImageStream.
+     * @throws InterruptedException interrupted has occurred.
      */
     protected BufferedImage createImage() throws InterruptedException {
         try {

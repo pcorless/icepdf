@@ -28,5 +28,5 @@ public interface PaintPageListener extends java.util.EventListener {
      *
      * @param event paint event containg page information
      */
-    public void paintPage(PaintPageEvent event);
+    void paintPage(PaintPageEvent event);
 }

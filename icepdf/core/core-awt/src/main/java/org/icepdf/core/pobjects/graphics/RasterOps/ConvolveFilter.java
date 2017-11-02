@@ -54,7 +54,7 @@ public class ConvolveFilter extends AbstractBufferedImageOp {
     /**
      * Construct a filter with the given 3x3 kernel.
      *
-     * @param matrix an array of 9 floats containing the kernel
+     * @param kernel Kernel matrix instance.
      */
     public ConvolveFilter(Kernel kernel) {
         this.kernel = kernel;
@@ -127,9 +127,7 @@ public class ConvolveFilter extends AbstractBufferedImageOp {
             convolveHV(kernel, inPixels, outPixels, width, height, alpha, edgeAction);
     }
 
-    /**
-     * Convolve with a 2D kernel
-     */
+    // Convolve with a 2D kernel
     public static void convolveHV(Kernel kernel, int[] inPixels, int[] outPixels, int width, int height, boolean alpha, int edgeAction) {
         int index = 0;
         float[] matrix = kernel.getKernelData(null);
@@ -184,9 +182,7 @@ public class ConvolveFilter extends AbstractBufferedImageOp {
         }
     }
 
-    /**
-     * Convolve with a kernel consisting of one row
-     */
+    // Convolve with a kernel consisting of one row
     public static void convolveH(Kernel kernel, int[] inPixels, int[] outPixels, int width, int height, boolean alpha, int edgeAction) {
         int index = 0;
         float[] matrix = kernel.getKernelData(null);
@@ -230,9 +226,7 @@ public class ConvolveFilter extends AbstractBufferedImageOp {
         }
     }
 
-    /**
-     * Convolve with a kernel consisting of one column
-     */
+    // Convolve with a kernel consisting of one column
     public static void convolveV(Kernel kernel, int[] inPixels, int[] outPixels, int width, int height, boolean alpha, int edgeAction) {
         int index = 0;
         float[] matrix = kernel.getKernelData(null);

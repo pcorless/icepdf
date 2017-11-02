@@ -220,11 +220,8 @@ public final class BlendComposite implements Composite {
 
         BlendComposite bc = (BlendComposite) obj;
 
-        if (mode != bc.mode) {
-            return false;
-        }
+        return mode == bc.mode && alpha == bc.alpha;
 
-        return alpha == bc.alpha;
     }
 
     @Override

@@ -88,6 +88,7 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
      * (see 8.9.5.2, "Decode Arrays"). The ranges shall be specified as follows:
      * [xmin xmax ymin ymax c1,min c1,max … cn,min cn,max]
      * Only one pair of c values shall be specified if a Function entry is present.
+     * @return decode array of shadding mesh.
      */
     protected float[] processDecode() {
         float[] decode = new float[6];

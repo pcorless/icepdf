@@ -123,8 +123,8 @@ public class Indexed extends PColorSpace {
     /**
      * Gets the colour for the array of float values
      *
-     * @param f
-     * @return
+     * @param f color array to get indexed color value of.
+     * @return indexed color value given f.
      */
     public Color getColor(float[] f, boolean fillAndStroke) {
         init();

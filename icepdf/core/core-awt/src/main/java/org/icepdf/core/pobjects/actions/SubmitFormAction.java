@@ -250,7 +250,7 @@ public class SubmitFormAction extends FormAction {
             }
 
             // value pairs to submit.
-            HashMap<String, String> params = new HashMap<String, String>();
+            HashMap<String, String> params = new HashMap<>();
 
             // check for a fields entry
 //            List fields = getFields();
@@ -428,6 +428,7 @@ public class SubmitFormAction extends FormAction {
 
     /**
      * {@link #INCLUDE_EXCLUDE_BIT}
+     * @return true if bit is set, otherwise false.
      */
     public boolean isIncludeExclude() {
         return (getFlags() & INCLUDE_EXCLUDE_BIT) == INCLUDE_EXCLUDE_BIT;
@@ -435,6 +436,7 @@ public class SubmitFormAction extends FormAction {
 
     /**
      * {@link #INCLUDE_NO_VALUE_FIELDS_BIT}
+     * @return true if bit is set, otherwise false.
      */
     public boolean isIncludeNoValueFields() {
         return (getFlags() & INCLUDE_NO_VALUE_FIELDS_BIT) == INCLUDE_NO_VALUE_FIELDS_BIT;
@@ -442,6 +444,7 @@ public class SubmitFormAction extends FormAction {
 
     /**
      * {@link #EXPORT_FORMAT_BIT}
+     * @return true if bit is set, otherwise false.
      */
     public boolean isExportFormat() {
         return (getFlags() & EXPORT_FORMAT_BIT) == EXPORT_FORMAT_BIT;
@@ -449,6 +452,7 @@ public class SubmitFormAction extends FormAction {
 
     /**
      * {@link #GET_METHOD_BIT}
+     * @return true if bit is set, otherwise false.
      */
     public boolean isGetMethod() {
         return (getFlags() & GET_METHOD_BIT) == GET_METHOD_BIT;
@@ -456,6 +460,7 @@ public class SubmitFormAction extends FormAction {
 
     /**
      * {@link #SUBMIT_COORDINATES_BIT}
+     * @return true if bit is set, otherwise false.
      */
     public boolean isSubmitCoordinates() {
         return (getFlags() & SUBMIT_COORDINATES_BIT) == SUBMIT_COORDINATES_BIT;
@@ -463,6 +468,7 @@ public class SubmitFormAction extends FormAction {
 
     /**
      * {@link #SUBMIT_COORDINATES_BIT}
+     * @return true if bit is set, otherwise false.
      */
     public boolean isXFDF() {
         return (getFlags() & XFDF_BIT) == XFDF_BIT;
@@ -470,6 +476,7 @@ public class SubmitFormAction extends FormAction {
 
     /**
      * {@link #INCLUDE_APPEND_SAVES_BIT}
+     * @return true if bit is set, otherwise false.
      */
     public boolean isIncludeAppendSaves() {
         return (getFlags() & INCLUDE_APPEND_SAVES_BIT) == INCLUDE_APPEND_SAVES_BIT;
@@ -477,6 +484,7 @@ public class SubmitFormAction extends FormAction {
 
     /**
      * {@link #INCLUDE_ANNOTATIONS_BIT}
+     * @return true if bit is set, otherwise false.
      */
     public boolean isIncludeAnnotations() {
         return (getFlags() & INCLUDE_ANNOTATIONS_BIT) == INCLUDE_ANNOTATIONS_BIT;
@@ -484,6 +492,7 @@ public class SubmitFormAction extends FormAction {
 
     /**
      * {@link #SUBMIT_PDF_BIT}
+     * @return true if bit is set, otherwise false.
      */
     public boolean isSubmitPDF() {
         return (getFlags() & SUBMIT_PDF_BIT) == SUBMIT_PDF_BIT;
@@ -491,6 +500,7 @@ public class SubmitFormAction extends FormAction {
 
     /**
      * {@link #CANONICAL_FORMAT_BIT}
+     * @return true if bit is set, otherwise false.
      */
     public boolean isCanonicalFormat() {
         return (getFlags() & CANONICAL_FORMAT_BIT) == CANONICAL_FORMAT_BIT;
@@ -498,6 +508,7 @@ public class SubmitFormAction extends FormAction {
 
     /**
      * {@link #EXCL_NON_USER_ANNOTS_BIT}
+     * @return true if bit is set, otherwise false.
      */
     public boolean isExcludeNonUserAnnots() {
         return (getFlags() & EXCL_NON_USER_ANNOTS_BIT) == EXCL_NON_USER_ANNOTS_BIT;
@@ -505,6 +516,7 @@ public class SubmitFormAction extends FormAction {
 
     /**
      * {@link #EXCL_F_KEY_BIT}
+     * @return true if bit is set, otherwise false.
      */
     public boolean isExcludeFKey() {
         return (getFlags() & EXCL_F_KEY_BIT) == EXCL_F_KEY_BIT;
@@ -512,6 +524,7 @@ public class SubmitFormAction extends FormAction {
 
     /**
      * {@link #EMBED_FORM_BIT}
+     * @return true if bit is set, otherwise false.
      */
     public boolean isEmbedForm() {
         return (getFlags() & EMBED_FORM_BIT) == EMBED_FORM_BIT;

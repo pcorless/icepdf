@@ -44,7 +44,7 @@ public class ImageReferenceFactory {
     // allow scaling of large images to improve clarity on screen
 
     public enum ImageReference {
-        DEFAULT, SCALED, MIP_MAP, SMOOTH_SCALED, BLURRED;
+        DEFAULT, SCALED, MIP_MAP, SMOOTH_SCALED, BLURRED
 
 
     }
@@ -100,11 +100,12 @@ public class ImageReferenceFactory {
      * @param imageStream   image data
      * @param resources     parent resource object.
      * @param graphicsState image graphic state.
+     * @param page page that image belongs to .
+     * @param imageIndex image index number of total images for the page.
      * @return newly create ImageReference.
      */
-    public static org.icepdf.core.pobjects.graphics.ImageReference
-    getImageReference(ImageStream imageStream, Resources resources, GraphicsState graphicsState,
-                      Integer imageIndex, Page page) {
+    public static org.icepdf.core.pobjects.graphics.ImageReference getImageReference(
+            ImageStream imageStream, Resources resources, GraphicsState graphicsState, Integer imageIndex, Page page) {
         switch (imageReferenceType) {
             case SCALED:
                 return new ScaledImageReference(imageStream, graphicsState, resources, imageIndex, page);

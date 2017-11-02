@@ -75,7 +75,7 @@ public class CryptFilter extends Dictionary {
     public CryptFilterEntry getCryptFilterByName(Name cryptFilterName) {
         // check if need to initialize the dictionary
         if (cryptFilters == null) {
-            cryptFilters = new HashMap<Name, CryptFilterEntry>(1);
+            cryptFilters = new HashMap<>(1);
             Set cryptKeys = entries.keySet();
             for (Object name : cryptKeys) {
                 cryptFilters.put((Name) name, new CryptFilterEntry(library,

@@ -82,9 +82,9 @@ public class DeviceCMYK extends PColorSpace {
         return alternative2(f);
     }
 
-    /**
-     * Ah yes the many possible ways to go from cmyk to rgb.  Everybody has
-     * an opinion but no one has the solution that is 100%
+    /*
+      Ah yes the many possible ways to go from cmyk to rgb.  Everybody has
+      an opinion but no one has the solution that is 100%
      */
 
     /**

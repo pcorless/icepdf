@@ -25,22 +25,22 @@ import java.awt.geom.Rectangle2D;
  */
 public interface Text {
 
-    public Rectangle2D.Float getBounds();
+    Rectangle2D.Float getBounds();
 
-    public boolean isHighlighted();
+    boolean isHighlighted();
 
-    public boolean isSelected();
+    boolean isSelected();
 
-    public void setHighlighted(boolean highlight);
+    void setHighlighted(boolean highlight);
 
-    public void setSelected(boolean selected);
+    void setSelected(boolean selected);
 
-    public boolean hasHighligh();
+    boolean hasHighligh();
 
-    public boolean hasSelected();
+    boolean hasSelected();
 
-    public void setHasHighlight(boolean hasHighlight);
+    void setHasHighlight(boolean hasHighlight);
 
-    public void setHasSelected(boolean hasSelected);
+    void setHasSelected(boolean hasSelected);
 
 }

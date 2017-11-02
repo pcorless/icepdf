@@ -42,8 +42,11 @@ public class KeyListenerPageColumnChanger extends KeyAdapter {
     /**
      * Install a KeyListenerPageChanger as a KeyListener
      *
-     * @param c Controller that can change pages
-     * @param s JScrollPane that has a vertical JScrollBar, and where events come from
+     * @param c                  Controller that can change pages
+     * @param s                  JScrollPane that has a vertical JScrollBar, and where events come from
+     * @param currentPageChanger page changer.
+     * @param documentView       containing document view.
+     * @return KeyListenerPageColumnChanger that was installed.
      */
     public static KeyListenerPageColumnChanger install(Controller c, JScrollPane s,
                                                        AbstractDocumentView documentView,

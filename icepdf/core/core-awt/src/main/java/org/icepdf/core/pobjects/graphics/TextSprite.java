@@ -72,11 +72,13 @@ public class TextSprite {
     /**
      * <p>Creates a new TextSprite object.</p>
      *
-     * @param font font used when painting glyphs.
-     * @param contentLength length of text content.
+     * @param font                  font used when painting glyphs.
+     * @param contentLength         length of text content.
+     * @param graphicStateTransform ctm transform.
+     * @param tmTransform           text transform form postSript.
      */
     public TextSprite(FontFile font, int contentLength, AffineTransform graphicStateTransform, AffineTransform tmTransform) {
-        glyphTexts = new ArrayList<GlyphText>(contentLength);
+        glyphTexts = new ArrayList<>(contentLength);
         // all glyphs in text share this ctm
         this.graphicStateTransform = graphicStateTransform;
         this.tmTransform = tmTransform;
@@ -96,6 +98,7 @@ public class TextSprite {
      * @param x       x-coordinate to paint.
      * @param y       y-coordinate to paint.
      * @param width   width of cid from font.
+     * @return new GlyphText object containing the text data.
      */
     public GlyphText addText(String cid, String unicode, float x, float y, float width) {
 
@@ -134,7 +137,7 @@ public class TextSprite {
         // irregular negative layout of text,  need to create the bbox appropriately.
         if (w < 0.0f || font.getSize() < 0) {
             glyphBounds = new Rectangle2D.Float(x + width, y - (float) descent, -w, h);
-        }else{
+        } else {
             glyphBounds = new Rectangle2D.Float(x, y - (float) ascent, w, h);
         }
 
@@ -167,7 +170,7 @@ public class TextSprite {
      * xForm object parsing and text selection.  There is no need to do this
      * outside of the context parser.
      *
-     * @param graphicStateTransform
+     * @param graphicStateTransform graphics state transform for the xForm.
      */
     public void setGraphicStateTransform(AffineTransform graphicStateTransform) {
         this.graphicStateTransform = graphicStateTransform;
@@ -354,11 +357,11 @@ public class TextSprite {
      *
      * @param shape shape to calculate intersection against
      * @return true, if <code>TextSprite</code> bounds intersects <code>shape</code>;
-     *         otherwise; false.
+     * otherwise; false.
      */
     public boolean intersects(Shape shape) {
 //        return shape.intersects(bounds.toJava2dCoordinates());
-        return !(optimizedDrawingEnabled)||
+        return !(optimizedDrawingEnabled) ||
                 (shape != null && shape.intersects(bounds));
     }
 }

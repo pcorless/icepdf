@@ -34,108 +34,139 @@ public interface FontFile {
      * Possible encoding format of string that was designed to work with this
      * font.  Type is determined by queues in the parent Cmap definition.
      */
-    public enum ByteEncoding {
+    enum ByteEncoding {
         ONE_BYTE, TWO_BYTE, MIXED_BYTE
     }
 
-    public static final long LAYOUT_NONE = 0;
+    long LAYOUT_NONE = 0;
 
-    public Point2D echarAdvance(char ech);
+    Point2D echarAdvance(char ech);
 
-    public FontFile deriveFont(AffineTransform at);
+    FontFile deriveFont(AffineTransform at);
 
-    public FontFile deriveFont(Encoding encoding, CMap toUnicode);
+    FontFile deriveFont(Encoding encoding, CMap toUnicode);
 
-    public FontFile deriveFont(float[] widths, int firstCh, float missingWidth,
-                               float ascent, float descent, char[] diff);
+    FontFile deriveFont(float[] widths, int firstCh, float missingWidth,
+                        float ascent, float descent, char[] diff);
 
-    public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth,
-                               float ascent, float descent, char[] diff);
+    FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth,
+                        float ascent, float descent, char[] diff);
 
     /**
      * Can the character <var>ch</var> in the nfont's encoding be rendered?
+     *
+     * @param ech character to test for displayability.
+     * @return true if renderable, false otherwise.
      */
-    public boolean canDisplayEchar(char ech);
+    boolean canDisplayEchar(char ech);
 
-    public void setIsCid();
+    void setIsCid();
 
     /**
      * Creates nfont a new <var>pointsize</var>, assuming 72 ppi.
      * Note to subclassers: you must make a complete independent instance of the nfont here,
-     * even if pointsize and everything else is the same, as other <code>deriveFont</code> methods use this to make a clone and might make subsequent changes.
+     * even if point size and everything else is the same, as other <code>deriveFont</code> methods use this to make a clone and might make subsequent changes.
+     *
+     * @param pointsize point size of font.
+     * @return fontFile with associated point size.
      */
-    public FontFile deriveFont(float pointsize);
+    FontFile deriveFont(float pointsize);
 
-    public CMap getToUnicode();
+    CMap getToUnicode();
 
-    public String toUnicode(String displayText);
+    String toUnicode(String displayText);
 
-    public String toUnicode(char displayChar);
+    String toUnicode(char displayChar);
 
     /**
      * Returns name of nfont, such as "Times".
+     *
+     * @return font family of font.
      */
-    public String getFamily();
+    String getFamily();
 
-    public float getSize();
+    float getSize();
 
     /**
      * Returns maximum ascent glyphs above baseline.
+     *
+     * @return fonts ascent.
      */
-    public double getAscent();
+    double getAscent();
 
     /**
      * Returns maximum descent of glyphs below baseline.
+     *
+     * @return fonts descent
      */
-    public double getDescent();
+    double getDescent();
 
     /**
      * Returns left in rectangle's x, ascent in y, width in width, height in height.
+     *
+     * @return max character bounds.
      */
-    public Rectangle2D getMaxCharBounds();
+    Rectangle2D getMaxCharBounds();
 
     /**
      * Returns a copy of the transform associated with this font file.
+     *
+     * @return fonts transform matrix.
      */
-    public AffineTransform getTransform();
+    AffineTransform getTransform();
 
     /**
      * Returns nfont usage rights bit mask.
+     *
+     * @return fonts permission/rights.
      */
-    public int getRights();
+    int getRights();
 
     /**
      * Returns name of nfont, such as "Times-Roman", which is different than the filename.
+     *
+     * @return font name
      */
-    public String getName();
+    String getName();
 
     /**
      * Returns <code>true</code> iff nfont has hinted outlines, which is Type 1 and TrueType is a sign of higher quality.
+     *
+     * @return true if the font is hinted, otherwise false.
      */
-    public boolean isHinted();
+    boolean isHinted();
 
     /**
      * Returns number of glyphs defined in nfont.
+     *
+     * @return number of glyphs in font.
      */
-    public int getNumGlyphs();
+    int getNumGlyphs();
 
-    public int getStyle();
+    /**
+     * Gests the fonts's style.
+     *
+     * @return font style
+     */
+    int getStyle();
 
     /**
      * Returns the character that seems to be used as a space in the current encoding, or NOTDEF_CHAR if no such character.
+     * @return associated space character.
      */
-    public char getSpaceEchar();
+    char getSpaceEchar();
 
-    public Rectangle2D getEstringBounds(String estr, int beginIndex, int limit);
+    Rectangle2D getEstringBounds(String estr, int beginIndex, int limit);
 
     /**
      * Returns primary format, such as "Type1" or "OpenType".
+     * @return  "Type1" or "OpenType"
      */
-    public String getFormat();
+    String getFormat();
 
-    public abstract void drawEstring(Graphics2D g, String estr, float x,
-                                     float y, long layout, int mode,
-                                     Color strokecolor);
+    void drawEstring(Graphics2D g, String estr, float x,
+                     float y, long layout, int mode,
+                     Color strokeColor);
 
     /**
      * Get the glyph outline shape for the given estr translated to x,y.
@@ -145,9 +176,9 @@ public interface FontFile {
      * @param y    y coordinate to translate outline shape.
      * @return glyph outline of the estr.
      */
-    public Shape getEstringOutline(String estr, float x, float y);
+    Shape getEstringOutline(String estr, float x, float y);
 
-    public ByteEncoding getByteEncoding();
+    ByteEncoding getByteEncoding();
 
     /**
      * Gets the source url of the underlying file if any.  Embedded fonts will
@@ -155,5 +186,5 @@ public interface FontFile {
      *
      * @return null if the font is embedded, otherwise the font system path.
      */
-    public URL getSource();
+    URL getSource();
 }

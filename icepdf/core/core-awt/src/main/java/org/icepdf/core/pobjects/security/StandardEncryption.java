@@ -367,15 +367,13 @@ class StandardEncryption {
                         aes.init(encryptionMode, key, iVParameterSpec);
                         ByteArrayOutputStream outputByteArray = new ByteArrayOutputStream();
                         // finally add the stream or string data
-                        CipherOutputStream cos = new CipherOutputStream(outputByteArray, aes);
-                        try {
+                        try (CipherOutputStream cos = new CipherOutputStream(outputByteArray, aes)) {
                             byte[] data = new byte[4096];
                             int read;
                             while ((read = input.read(data)) != -1) {
                                 cos.write(data, 0, read);
                             }
                         } finally {
-                            cos.close();
                             input.close();
                         }
                         byte[] finalData = outputByteArray.toByteArray();
@@ -395,9 +393,7 @@ class StandardEncryption {
                 logger.log(Level.FINE, "NoSuchPaddingException.", ex);
             } catch (InvalidKeyException ex) {
                 logger.log(Level.FINE, "InvalidKeyException.", ex);
-            } catch (InvalidAlgorithmParameterException ex) {
-                logger.log(Level.FINE, "InvalidAlgorithmParameterException", ex);
-            } catch (IOException ex) {
+            } catch (InvalidAlgorithmParameterException | IOException ex) {
                 logger.log(Level.FINE, "InvalidAlgorithmParameterException", ex);
             }
         }
@@ -435,9 +431,7 @@ class StandardEncryption {
                 logger.log(Level.FINE, "NoSuchPaddingException.", ex);
             } catch (InvalidKeyException ex) {
                 logger.log(Level.FINE, "InvalidKeyException.", ex);
-            } catch (InvalidAlgorithmParameterException ex) {
-                logger.log(Level.FINE, "InvalidAlgorithmParameterException", ex);
-            } catch (IOException ex) {
+            } catch (InvalidAlgorithmParameterException | IOException ex) {
                 logger.log(Level.FINE, "InvalidAlgorithmParameterException", ex);
             }
         }
@@ -1177,7 +1171,7 @@ class StandardEncryption {
      *
      * @param intermediateKey key to use for decryption
      * @param encryptedString byte[] to decrypt
-     * @return
+     * @return decrypted byte[].
      */
     private static byte[] AES256CBC(byte[] intermediateKey, byte[] encryptedString) {
         byte[] finalData = null;

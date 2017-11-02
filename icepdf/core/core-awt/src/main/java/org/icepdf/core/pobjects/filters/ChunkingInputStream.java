@@ -51,7 +51,8 @@ public abstract class ChunkingInputStream extends InputStream {
      * fill a buffer, it will instead only give us a chunk at a time,
      * even though more data is available, and buffer.length has bee requested
      *
-     * @throws IOException
+     * @return number of bytes written.
+     * @throws IOException error during decode.
      */
     protected int fillBufferFromInputStream() throws IOException {
         return fillBufferFromInputStream(0, buffer.length);
@@ -79,6 +80,9 @@ public abstract class ChunkingInputStream extends InputStream {
     /**
      * This is only called if bufferAvailable is 0.
      * Implementations should read in more data, and return how many bytes are now available
+     *
+     * @return number of bytes written
+     * @throws IOException error filling internal buffer.
      */
     protected abstract int fillInternalBuffer() throws IOException;
 

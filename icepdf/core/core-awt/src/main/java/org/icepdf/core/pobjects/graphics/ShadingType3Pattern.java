@@ -92,7 +92,7 @@ public class ShadingType3Pattern extends ShadingPattern {
         if (tmp instanceof List) {
             domain = (List<Number>) tmp;
         } else {
-            domain = new ArrayList<Number>(2);
+            domain = new ArrayList<>(2);
             domain.add(0.0f);
             domain.add(1.0f);
         }
@@ -104,7 +104,7 @@ public class ShadingType3Pattern extends ShadingPattern {
         if (tmp instanceof List) {
             extend = (List) tmp;
         } else {
-            extend = new ArrayList<Boolean>(2);
+            extend = new ArrayList<>(2);
             extend.add(false);
             extend.add(false);
         }

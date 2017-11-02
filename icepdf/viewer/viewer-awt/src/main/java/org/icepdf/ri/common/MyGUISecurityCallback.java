@@ -40,6 +40,7 @@ public class MyGUISecurityCallback implements SecurityCallback {
      * password from the user.
      *
      * @param frame frame that the dialog will be centered on.
+     *              @param messageBundle  message bundle for i18n.
      */
     public MyGUISecurityCallback(JFrame frame, ResourceBundle messageBundle) {
         parentFrame = frame;

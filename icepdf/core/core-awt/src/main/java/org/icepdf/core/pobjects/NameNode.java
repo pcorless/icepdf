@@ -44,10 +44,6 @@ public class NameNode extends Dictionary {
     private String lowerLimit;
     private String upperLimit;
 
-    /**
-     * @param l
-     * @param h
-     */
     @SuppressWarnings("unchecked")
     public NameNode(Library l, HashMap h) {
         super(l, h);

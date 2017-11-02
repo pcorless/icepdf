@@ -34,16 +34,15 @@ public class BriefLogFormatter extends Formatter {
         if (loggerName == null) {
             loggerName = "root";
         }
-        StringBuilder output = new StringBuilder()
-                .append(loggerName)
-                .append("[")
-                .append(record.getLevel()).append('|')
-                .append(Thread.currentThread().getName()).append('|')
-                .append(format.format(new Date(record.getMillis())))
-                .append("]: ")
-                .append(record.getMessage()).append(' ')
-                .append(lineSep);
-        return output.toString();
+        String output = loggerName +
+                "[" +
+                record.getLevel() + '|' +
+                Thread.currentThread().getName() + '|' +
+                format.format(new Date(record.getMillis())) +
+                "]: " +
+                record.getMessage() + ' ' +
+                lineSep;
+        return output;
     }
 
 }

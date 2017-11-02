@@ -55,8 +55,8 @@ public class ICCBased extends PColorSpace {
 
     public ICCBased(Library l, Stream h) {
         super(l, h.getEntries());
-        iccColorCache3B = new ConcurrentHashMap<Integer, Color>();
-        iccColorCache4B = new ConcurrentHashMap<Integer, Color>();
+        iccColorCache3B = new ConcurrentHashMap<>();
+        iccColorCache4B = new ConcurrentHashMap<>();
         numcomp = h.getInt(N_KEY);
         switch (numcomp) {
             case 1:

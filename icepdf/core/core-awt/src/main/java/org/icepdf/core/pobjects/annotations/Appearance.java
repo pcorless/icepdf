@@ -39,7 +39,7 @@ public class Appearance {
      * Create a new instance of an Appearance stream.
      */
     public Appearance() {
-        appearance = new HashMap<Name, AppearanceState>(2);
+        appearance = new HashMap<>(2);
     }
 
     public boolean hasAlternativeAppearance() {

@@ -94,11 +94,7 @@ public class PObject {
         if (object != null ? !object.equals(pObject.object) : pObject.object != null) {
             return false;
         }
-        if (objectReference != null ? !objectReference.equals(pObject.objectReference) : pObject.objectReference != null) {
-            return false;
-        }
-
-        return true;
+        return objectReference != null ? objectReference.equals(pObject.objectReference) : pObject.objectReference == null;
     }
 
     public int getLinearTraversalOffset() {

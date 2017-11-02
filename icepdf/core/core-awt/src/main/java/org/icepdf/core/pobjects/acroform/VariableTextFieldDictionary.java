@@ -161,8 +161,9 @@ public class VariableTextFieldDictionary extends FieldDictionary {
      * If the DA key is present the appearance stream is generated as is,  however if not then the content
      * is passed and we try to pull the color, size, font, and font name.
      *
-     * @param content
-     * @return
+     * @param content content to parse for general appearance values.
+     * @param resources  parent resource dictionary.
+     * @return base postscript encoded default appearance values.
      */
     public String generateDefaultAppearance(String content, Resources resources) {
         try {

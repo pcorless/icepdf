@@ -49,12 +49,12 @@ public class SeekableByteArrayInputStream extends ByteArrayInputStream implement
     //
 
     public void seekAbsolute(long absolutePosition) {
-        int absPos = (int) (absolutePosition & 0xFFFFFFFF);
+        int absPos = (int) (absolutePosition);
         pos = m_iBeginningOffset + absPos;
     }
 
     public void seekRelative(long relativeOffset) {
-        int relOff = (int) (relativeOffset & 0xFFFFFFFF);
+        int relOff = (int) (relativeOffset);
         int currPos = pos + relOff;
         if (currPos < m_iBeginningOffset)
             currPos = m_iBeginningOffset;
@@ -67,12 +67,12 @@ public class SeekableByteArrayInputStream extends ByteArrayInputStream implement
 
     public long getAbsolutePosition() {
         int absPos = pos - m_iBeginningOffset;
-        return (((long) absPos) & 0xFFFFFFFF);
+        return (((long) absPos));
     }
 
     public long getLength() {
         int len = count - m_iBeginningOffset;
-        return (((long) len) & 0xFFFFFFFF);
+        return (((long) len));
     }
 
     public InputStream getInputStream() {

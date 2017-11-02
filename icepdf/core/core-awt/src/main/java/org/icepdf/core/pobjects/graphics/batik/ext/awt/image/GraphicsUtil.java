@@ -772,10 +772,8 @@ public class GraphicsUtil {
         if (masks[0] != 0x00ff0000) return false;
         if (masks[1] != 0x0000ff00) return false;
         if (masks[2] != 0x000000ff) return false;
-        if ((masks.length == 4) &&
-                (masks[3] != 0xff000000)) return false;
-
-        return true;
+        return (masks.length != 4) ||
+                (masks[3] == 0xff000000);
     }
 
     public static boolean is_BYTE_COMP_Data(SampleModel sm) {
@@ -783,9 +781,7 @@ public class GraphicsUtil {
         if (!(sm instanceof ComponentSampleModel)) return false;
 
         // Check transfer type
-        if (sm.getDataType() != DataBuffer.TYPE_BYTE) return false;
-
-        return true;
+        return sm.getDataType() == DataBuffer.TYPE_BYTE;
     }
 
     protected static void divide_INT_PACK_Data(WritableRaster wr) {

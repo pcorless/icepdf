@@ -259,7 +259,7 @@ public class SignatureDictionary extends Dictionary {
     public ArrayList<SignatureReferenceDictionary> getReferences() {
         List<HashMap> tmp = library.getArray(entries, REFERENCE_KEY);
         if (tmp != null && tmp.size() > 0) {
-            ArrayList<SignatureReferenceDictionary> references = new ArrayList<SignatureReferenceDictionary>(tmp.size());
+            ArrayList<SignatureReferenceDictionary> references = new ArrayList<>(tmp.size());
             for (HashMap reference : tmp) {
                 references.add(new SignatureReferenceDictionary(library, reference));
             }

@@ -62,7 +62,7 @@ public class Shapes {
     private boolean interrupted;
 
     // Graphics stack for a page's content.
-    protected ArrayList<DrawCmd> shapes = new ArrayList<DrawCmd>(shapesInitialCapacity);
+    protected ArrayList<DrawCmd> shapes = new ArrayList<>(shapesInitialCapacity);
 
     // stores the state of the currently visible optional content.
     protected OptionalContentState optionalContentState = new OptionalContentState();
@@ -124,6 +124,7 @@ public class Shapes {
      * Paint the graphics stack to the graphics context
      *
      * @param g graphics context to paint to.
+     * @throws InterruptedException thread interrupted.
      */
     public void paint(Graphics2D g) throws InterruptedException{
         try {
@@ -155,27 +156,15 @@ public class Shapes {
         }
     }
 
-    /**
-     * @deprecated use Thread.interrupt() instead.
-     */
-    public void interruptPaint() {
-        interrupted = true;
-    }
-
-    /**
-     * @deprecated use Thread.interrupt() instead.
-     */
-    public boolean isInterrupted() {
-        return interrupted;
-    }
 
     /**
      * Iterates over the Shapes objects extracting all Image objects.
      *
      * @return all images in a page's content, if any.
+     * @throws InterruptedException thread interrupted.
      */
     public ArrayList<Image> getImages() throws InterruptedException {
-        ArrayList<Image> images = new ArrayList<Image>();
+        ArrayList<Image> images = new ArrayList<>();
         for (Object object : shapes) {
             if (object instanceof ImageDrawCmd) {
                 images.add(((ImageDrawCmd) object).getImage());

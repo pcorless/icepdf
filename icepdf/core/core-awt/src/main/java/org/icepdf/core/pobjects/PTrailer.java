@@ -74,8 +74,10 @@ public class PTrailer extends Dictionary {
 
     /**
      * Create a new PTrailer object
-     *
-     * @param dictionary dictionary associated with the trailer
+     * @param library document library
+     * @param dictionary trailer dictionary
+     * @param xrefTable xref table reference
+     * @param xrefStream xref stream reference
      */
     public PTrailer(Library library, HashMap dictionary, CrossReference xrefTable, CrossReference xrefStream) {
         super(library, dictionary);
@@ -241,6 +243,7 @@ public class PTrailer extends Dictionary {
     /**
      * After this PTrailer is parsed, we store it's location within the PDF
      * here, for future use.
+     * @param pos position in file of trailer.
      */
     public void setPosition(long pos) {
         position = pos;

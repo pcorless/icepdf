@@ -65,7 +65,7 @@ public interface SignatureValidator {
      * Sets the signaturesCoverDocumentLength param to indicate that all signatures have been check and cover
      * all the bytes in the document.
      *
-     * @param signaturesCoverDocumentLength
+     * @param signaturesCoverDocumentLength true if signatures covers document length.
      */
     void setSignaturesCoverDocumentLength(boolean signaturesCoverDocumentLength);
 

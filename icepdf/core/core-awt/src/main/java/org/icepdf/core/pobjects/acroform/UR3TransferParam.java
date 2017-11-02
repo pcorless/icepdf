@@ -133,9 +133,9 @@ public class UR3TransferParam extends Dictionary implements TransformParams {
      */
     public static final Name FORM_VALUE_SPAWN_TEMPLATE = new Name("SpawnTemplate");
 
-    /**
-     * The following names (PDF 1.6) shall be permitted only when the signature dictionary is referenced from the UR3
-     * entry of the permissions dictionary;
+    /*
+      The following names (PDF 1.6) shall be permitted only when the signature dictionary is referenced from the UR3
+      entry of the permissions dictionary;
      */
 
     /**

@@ -110,6 +110,8 @@ public class ConservativeSizingByteArrayOutputStream extends OutputStream {
      * byte array. Note that this output stream will then make
      * a new small buffer for itself and reset its size information,
      * meaning that you should call size() before this.
+     *
+     * @return byte array of remaining bytes.
      */
     public synchronized byte[] relinquishByteArray() {
         byte[] returnBuf = buf;

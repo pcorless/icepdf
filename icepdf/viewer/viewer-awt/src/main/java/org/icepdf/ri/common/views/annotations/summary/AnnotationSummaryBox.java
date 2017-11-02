@@ -29,6 +29,9 @@ public class AnnotationSummaryBox extends PopupAnnotationComponent {
                                 AbstractPageViewComponent pageViewComponent) {
         super(annotation, documentViewController, pageViewComponent, true);
 
+        setFocusable(false);
+        removeFocusListener(this);
+
         commentPanel.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
         // hides a bunch of the controls.
         commentPanel.removeMouseListener(popupListener);
@@ -42,5 +45,9 @@ public class AnnotationSummaryBox extends PopupAnnotationComponent {
 
         commentPanel.getInsets().set(10, 10, 10, 10);
         setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+
+        // add property change events for font and font size
     }
+
+
 }

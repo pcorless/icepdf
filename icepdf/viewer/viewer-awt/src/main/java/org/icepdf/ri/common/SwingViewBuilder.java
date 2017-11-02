@@ -370,6 +370,12 @@ public class SwingViewBuilder {
      * Construct a SwingVewBuilder with whichever settings you desire
      *
      * @param c Controller that will interact with the GUI
+     * @param bf button font.
+     * @param bt show button text.
+     * @param ts text size
+     * @param zl zoom levels
+     * @param documentViewType default document view.
+     * @param documentPageFitMode page fit mode
      */
     public SwingViewBuilder(SwingController c, Font bf, boolean bt, int ts,
                             float[] zl, final int documentViewType,
@@ -381,6 +387,14 @@ public class SwingViewBuilder {
      * Construct a SwingVewBuilder with whichever settings you desire
      *
      * @param c Controller that will interact with the GUI
+     * @param properties properties manager
+     * @param bf button font.
+     * @param bt show button text.
+     * @param ts text size
+     * @param zl zoom levels
+     * @param documentViewType default document view.
+     * @param documentPageFitMode page fit mode
+     * @param rotation rotation factor
      */
     public SwingViewBuilder(SwingController c, PropertiesManager properties,
                             Font bf, boolean bt, int ts,
@@ -463,7 +477,7 @@ public class SwingViewBuilder {
     /**
      * The Container will contain the PDF document's current page visualization
      * and document outline if available.
-     *
+     * @param embeddableComponent true if the component is to be used as an embedded component.
      * @param cp Container in which to put components for viewing PDF documents
      */
     public void buildContents(Container cp, boolean embeddableComponent) {
@@ -2321,6 +2335,7 @@ public class SwingViewBuilder {
      * Utility method for creating a menu item.
      *
      * @param text display text for the menu item
+     * @param accel accelerator key
      * @return menu item complete with text and action listener
      */
     protected static JMenuItem makeMenuItem(String text, KeyStroke accel) {
@@ -2336,7 +2351,8 @@ public class SwingViewBuilder {
      * @param text      display text for the menu item
      * @param imageName display image for the menu item
      * @param imageSize size of the image.
-     * @return memu item complete with text, image and action listener
+     * @param accel accelerator key
+     * @return menu item complete with text, image and action listener
      */
     protected JMenuItem makeMenuItem(String text, String imageName,
                                      final String imageSize, KeyStroke accel) {
@@ -2389,7 +2405,8 @@ public class SwingViewBuilder {
     }
 
     /**
-     * Method to attempt to override the system properties with various values form the preferences cllass.
+     * Method to attempt to override the system properties with various values form the preferences class.
+     * @param propertiesManager current properties manager.
      */
     protected void overrideHighlightColor(PropertiesManager propertiesManager) {
 

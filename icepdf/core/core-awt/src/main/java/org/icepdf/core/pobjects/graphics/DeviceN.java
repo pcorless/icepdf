@@ -47,7 +47,7 @@ public class DeviceN extends PColorSpace {
     List<Name> names;
     PColorSpace alternate;
     Function tintTransform;
-    ConcurrentHashMap<Object, Object> colorants = new ConcurrentHashMap<Object, Object>();
+    ConcurrentHashMap<Object, Object> colorants = new ConcurrentHashMap<>();
     PColorSpace colorspaces[];
 
     boolean foundCMYK;

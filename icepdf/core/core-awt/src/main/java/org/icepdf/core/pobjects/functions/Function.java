@@ -171,6 +171,7 @@ public abstract class Function {
      * the PostScript language do describe an arithmetic expression.
      * </li>
      * </ul>
+     * @return function type.
      */
     public int getFunctionType() {
         return functionType;

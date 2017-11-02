@@ -47,8 +47,10 @@ public class MouseWheelListenerPageChanger implements MouseWheelListener {
     /**
      * Install a MouseWheelListenerPageChanger as a MouseWheelListener
      *
-     * @param c Controller that can change pages
-     * @param s JScrollPane that has a vertical JScrollBar, and where events come from
+     * @param documentView document view that contains the wheel listener
+     * @param c            Controller that can change pages
+     * @param s            JScrollPane that has a vertical JScrollBar, and where events come from
+     * @return MouseWheelListenerPageChanger that was installed.
      */
     public static Object install(Controller c, JScrollPane s,
                                  AbstractDocumentView documentView) {

@@ -49,7 +49,7 @@ public class InkAnnotationComponent extends MarkupAnnotationComponent<InkAnnotat
     public void resetAppearanceShapes() {
         super.resetAppearanceShapes();
         refreshAnnotationRect();
-        annotation.resetAppearanceStream(dx, dy, getPageTransform());
+        annotation.resetAppearanceStream(dx, dy, getToPageSpaceTransform());
     }
 
     @Override

@@ -102,8 +102,9 @@ public class TextSelection extends SelectionBoxHandler {
     /**
      * Handles double and triple left mouse clicks to select a word or line of text respectively.
      *
-     * @param clickCount number of mouse clicks to interpret for line or word selection.
-     * @param clickPoint point that mouse was clicked.
+     * @param clickCount        number of mouse clicks to interpret for line or word selection.
+     * @param clickPoint        point that mouse was clicked.
+     * @param pageViewComponent parent page view component
      */
     public void wordLineSelection(int clickCount, Point clickPoint, AbstractPageViewComponent pageViewComponent) {
         // double click we select the whole line.
@@ -132,7 +133,9 @@ public class TextSelection extends SelectionBoxHandler {
     /**
      * Selection started so we want to record the position and update the selection rectangle.
      *
-     * @param startPoint starting selection position.
+     * @param startPoint        starting selection position.
+     * @param isFirst           start of selection if true
+     * @param pageViewComponent parent page component
      */
     public void selectionStart(Point startPoint, AbstractPageViewComponent pageViewComponent, boolean isFirst) {
         try {
@@ -141,18 +144,12 @@ public class TextSelection extends SelectionBoxHandler {
             if (currentPage != null) {
                 // get page text
                 PageText pageText = currentPage.getViewText();
-                // get page transform, same for all calculations
-                DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-                AffineTransform pageTransform = currentPage.getPageTransform(
-                        documentViewModel.getPageBoundary(),
-                        documentViewModel.getViewRotation(),
-                        documentViewModel.getViewZoom());
 
                 // create exclusion boxes
-                calculateTextSelectionExclusion(pageTransform);
+                calculateTextSelectionExclusion();
 
                 ArrayList<LineText> pageLines = pageText.getPageLines();
-                Point2D.Float dragStartLocation = convertMouseToPageSpace(startPoint, pageTransform);
+                Point2D.Float dragStartLocation = convertToPageSpace(startPoint);
                 glyphStartLocation = GlyphLocation.findGlyphLocation(pageLines, dragStartLocation, true, true, null,
                         topMarginExclusion, bottomMarginExclusion);
                 glyphEndLocation = null;
@@ -169,6 +166,9 @@ public class TextSelection extends SelectionBoxHandler {
 
     /**
      * Selection ended so we want to stop record the position and update the selection.
+     *
+     * @param pageViewComponent page component view
+     * @param endPoint          end point of drag
      */
     public void selectionEnd(Point endPoint, AbstractPageViewComponent pageViewComponent) {
 
@@ -181,16 +181,13 @@ public class TextSelection extends SelectionBoxHandler {
                     logger.fine(currentPage.getViewText().getSelected().toString());
                 }
             }
-
             if (selectedCount > 0) {
-
                 // add the page to the page as it is marked for selection
                 documentViewController.getDocumentViewModel().addSelectedPageText(pageViewComponent);
                 documentViewController.firePropertyChange(
                         PropertyConstants.TEXT_SELECTED,
                         null, null);
             }
-
             // clear the rectangle
             clearRectangle(pageViewComponent);
 
@@ -254,23 +251,13 @@ public class TextSelection extends SelectionBoxHandler {
                 // get page text
                 PageText pageText = currentPage.getViewText();
                 if (pageText != null) {
-
-                    // get page transform, same for all calculations
-                    DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-                    AffineTransform pageTransform = currentPage.getPageTransform(
-                            Page.BOUNDARY_CROPBOX,
-                            documentViewModel.getViewRotation(),
-                            documentViewModel.getViewZoom());
-
                     // create exclusion boxes
-                    calculateTextSelectionExclusion(pageTransform);
+                    calculateTextSelectionExclusion();
 
                     ArrayList<LineText> pageLines = pageText.getPageLines();
                     if (pageLines != null) {
                         boolean found = false;
-                        Point2D.Float pageMouseLocation =
-                                convertMouseToPageSpace(mouseLocation, pageTransform);
-
+                        Point2D.Float pageMouseLocation = convertToPageSpace(mouseLocation);
                         for (LineText pageLine : pageLines) {
                             // check for containment, if so break into words.
                             if (pageLine.getBounds().contains(pageMouseLocation)
@@ -295,7 +282,7 @@ public class TextSelection extends SelectionBoxHandler {
         }
     }
 
-    protected void calculateTextSelectionExclusion(AffineTransform pageTransform) {
+    protected void calculateTextSelectionExclusion() {
         if (enableMarginExclusion) {
             Rectangle2D mediaBox = pageViewComponent.getPage().getCropBox();
             topMarginExclusion = new Rectangle2D.Float(
@@ -315,6 +302,7 @@ public class TextSelection extends SelectionBoxHandler {
      * @param g                 graphics context to paint to.
      * @param pageViewComponent page view component to paint selected to on.
      * @param documentViewModel document model contains view properties such as zoom and rotation.
+     * @throws InterruptedException thread interrupted.
      */
     public static void paintSelectedText(Graphics g,
                                          AbstractPageViewComponent pageViewComponent,
@@ -395,15 +383,12 @@ public class TextSelection extends SelectionBoxHandler {
      * Utility for painting text bounds.
      *
      * @param g graphics context to paint to.
+     * @throws InterruptedException thread interrupted.
      */
     protected void paintTextBounds(Graphics g) throws InterruptedException {
         Page currentPage = pageViewComponent.getPage();
         // get page transformation
-        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-        AffineTransform pageTransform = currentPage.getPageTransform(
-                documentViewModel.getPageBoundary(),
-                documentViewModel.getViewRotation(),
-                documentViewModel.getViewZoom());
+        AffineTransform pageTransform = getPageTransform();
         Graphics2D gg = (Graphics2D) g;
         Color oldColor = g.getColor();
         g.setColor(Color.red);
@@ -450,6 +435,8 @@ public class TextSelection extends SelectionBoxHandler {
      * @param mouseLocation     current mouse location already normalized to page space. .
      * @param isDown            general selection trent is down, if false it's up.
      * @param isMovingRight     general selection trent is right, if false it's left.
+     * @param isLocalDown       local movement is down.
+     * @throws InterruptedException thread interrupted.
      */
     protected void multiLineSelectHandler(AbstractPageViewComponent pageViewComponent, Point mouseLocation,
                                           boolean isDown, boolean isLocalDown, boolean isMovingRight) throws InterruptedException {
@@ -464,20 +451,13 @@ public class TextSelection extends SelectionBoxHandler {
                 // clear the currently selected state, ignore highlighted.
                 pageText.clearSelected();
 
-                // get page transform, same for all calculations
-                DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-                AffineTransform pageTransform = currentPage.getPageTransform(
-                        documentViewModel.getPageBoundary(),
-                        documentViewModel.getViewRotation(),
-                        documentViewModel.getViewZoom());
-
                 ArrayList<LineText> pageLines = pageText.getPageLines();
 
                 // create exclusion boxes
-                calculateTextSelectionExclusion(pageTransform);
+                calculateTextSelectionExclusion();
 
                 // normalize the mouse coordinates to page space
-                Point2D.Float draggingMouseLocation = convertMouseToPageSpace(mouseLocation, pageTransform);
+                Point2D.Float draggingMouseLocation = convertToPageSpace(mouseLocation);
 
                 // dragging mouse into a page or from white space, neither glyphStart or glyphEnd will be initialized.
                 if (glyphStartLocation == null) {
@@ -515,11 +495,11 @@ public class TextSelection extends SelectionBoxHandler {
      * Utility for selecting multiple lines via rectangle like tool. The
      * selection works based on the intersection of the rectangle and glyph
      * bounding box.
-     * <p>
      * This method should only be called from within a locked page content
      *
      * @param currentPage   page to looking for text intersection on.
      * @param mouseLocation location of mouse.
+     * @throws InterruptedException thread interrupted.
      */
     protected void wordSelectHandler(Page currentPage, Point mouseLocation) throws InterruptedException {
 
@@ -533,13 +513,7 @@ public class TextSelection extends SelectionBoxHandler {
 
                 // get page transform, same for all calculations
                 DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-                AffineTransform pageTransform = currentPage.getPageTransform(
-                        Page.BOUNDARY_CROPBOX,
-                        documentViewModel.getViewRotation(),
-                        documentViewModel.getViewZoom());
-
-                Point2D.Float pageMouseLocation =
-                        convertMouseToPageSpace(mouseLocation, pageTransform);
+                Point2D.Float pageMouseLocation = convertToPageSpace(mouseLocation);
                 ArrayList<LineText> pageLines = pageText.getPageLines();
                 if (pageLines != null) {
                     for (LineText pageLine : pageLines) {
@@ -548,7 +522,6 @@ public class TextSelection extends SelectionBoxHandler {
                             pageLine.setHasSelected(true);
                             java.util.List<WordText> lineWords = pageLine.getWords();
                             for (WordText word : lineWords) {
-                                //                            if (word.contains(pageTransform, mouseLocation)) {
                                 if (word.getBounds().contains(pageMouseLocation)) {
                                     word.selectAll();
                                     // let the ri know we have selected text.
@@ -573,6 +546,7 @@ public class TextSelection extends SelectionBoxHandler {
      *
      * @param currentPage   page to select
      * @param mouseLocation location of mouse
+     * @throws InterruptedException thread interrupted.
      */
     protected void lineSelectHandler(Page currentPage, Point mouseLocation) throws InterruptedException {
         if (currentPage != null) {
@@ -585,13 +559,8 @@ public class TextSelection extends SelectionBoxHandler {
 
                 // get page transform, same for all calculations
                 DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-                AffineTransform pageTransform = currentPage.getPageTransform(
-                        Page.BOUNDARY_CROPBOX,
-                        documentViewModel.getViewRotation(),
-                        documentViewModel.getViewZoom());
 
-                Point2D.Float pageMouseLocation =
-                        convertMouseToPageSpace(mouseLocation, pageTransform);
+                Point2D.Float pageMouseLocation = convertToPageSpace(mouseLocation);
                 ArrayList<LineText> pageLines = pageText.getPageLines();
                 if (pageLines != null) {
                     for (LineText pageLine : pageLines) {

@@ -225,7 +225,7 @@ public class InteractiveForm extends Dictionary {
      */
     public ArrayList<SignatureWidgetAnnotation> getSignatureFields() {
         // capture the document signatures.
-        ArrayList<SignatureWidgetAnnotation> signatures = new ArrayList<SignatureWidgetAnnotation>();
+        ArrayList<SignatureWidgetAnnotation> signatures = new ArrayList<>();
         if (fields != null) {
             for (Object field : fields) {
                 if (field instanceof SignatureWidgetAnnotation) {

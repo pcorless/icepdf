@@ -41,7 +41,7 @@ public class LazyObjectLoader {
         library = lib;
         this.seekableInput = seekableInput;
         crossReference = xref;
-        leastRecentlyUsed = new SoftLRUCache<Reference, ObjectStream>(256);
+        leastRecentlyUsed = new SoftLRUCache<>(256);
     }
 
     /**

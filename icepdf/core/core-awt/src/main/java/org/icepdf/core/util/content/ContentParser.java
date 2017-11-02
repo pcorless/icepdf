@@ -67,6 +67,7 @@ public interface ContentParser {
      *
      * @param streamBytes bytes that make of one or more content streams.
      * @return an instance of this content parser.
+     * @param  page page being parsed.
      * @throws InterruptedException thread was interrupted.
      * @throws IOException          io exception during the pars.
      */
@@ -81,6 +82,7 @@ public interface ContentParser {
      * @param source byte source to parse.
      * @return Shapes object which contains the extract PageText object.
      * @throws UnsupportedEncodingException encoding error.
+     * @throws InterruptedException thread interrupted.
      */
     Shapes parseTextBlocks(byte[][] source) throws UnsupportedEncodingException, InterruptedException;
 

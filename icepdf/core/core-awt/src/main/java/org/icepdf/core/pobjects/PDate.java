@@ -120,7 +120,8 @@ public class PDate {
     /**
      * Create a new Date object.
      *
-     * @param date date ASCII data.
+     * @param date            date ASCII data.
+     * @param securityManager document security manager.
      */
     public PDate(SecurityManager securityManager, String date) {
         // parse the the date string
@@ -288,12 +289,12 @@ public class PDate {
      */
     private void parseDate(String date) {
         // get ride of "D:" prefix
-        if (date.indexOf(DATE_PREFIX) >= 0) {
+        if (date.contains(DATE_PREFIX)) {
             date = date.substring(2);
             parseAdobeDate(date);
         }
         // have none standard form, Ghostscript, 5/26/2004 13:25:11
-        else if (date.indexOf("/") >= 0) {
+        else if (date.contains("/")) {
             parseGhostScriptDate(date);
         }
         //try adobe format but with out D:
@@ -448,7 +449,7 @@ public class PDate {
 
         //DateFormat is operating on GMT so adjust for time zone offset
         Date dt1 = new Date(time.getTime() + offset);
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(DATE_FORMAT.format(dt1));
 
         offset /= (1000 * 60); //Convert to minutes

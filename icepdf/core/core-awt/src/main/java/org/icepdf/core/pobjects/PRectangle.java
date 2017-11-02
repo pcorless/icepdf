@@ -178,7 +178,7 @@ public class PRectangle extends Rectangle2D.Float {
         rect = new Rectangle2D.Double(rect.getX(),
                 rect.getY(),
                 rect.getWidth(), rect.getHeight());
-        ArrayList<Number> coords = new ArrayList<Number>(4);
+        ArrayList<Number> coords = new ArrayList<>(4);
         coords.add(rect.getMinX());
         coords.add(rect.getMinY());
         coords.add(rect.getMaxX());

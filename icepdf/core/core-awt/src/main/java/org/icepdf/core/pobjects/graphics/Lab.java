@@ -54,10 +54,6 @@ public class Lab extends PColorSpace {
     private float zBase;
     private float zSpread;
 
-    /**
-     * @param l
-     * @param h
-     */
     Lab(Library l, HashMap h) {
         super(l, h);
         List v = (java.util.List) l.getObject(h, WHITE_POINT_KEY);
@@ -89,17 +85,10 @@ public class Lab extends PColorSpace {
         zSpread = whitePoint[2] - zBase;
     }
 
-    /**
-     * @return
-     */
     public int getNumComponents() {
         return 3;
     }
 
-    /**
-     * @param x
-     * @return
-     */
     private double g(double x) {
         if (x < 0.2069F)
             x = 0.12842 * (x - 0.13793);
@@ -123,10 +112,6 @@ public class Lab extends PColorSpace {
         out[0] = bBase + (bSpread * out[0]); // b
     }
 
-    /**
-     * @param f
-     * @return
-     */
     public Color getColor(float[] f, boolean fillAndStroke) {
         double cie_b = f[0];
         double cie_a = f[1];

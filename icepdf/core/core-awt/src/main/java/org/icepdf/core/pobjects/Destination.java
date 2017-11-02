@@ -215,7 +215,7 @@ public class Destination extends Dictionary {
     /**
      * Get the dictionary object, name, string or array.
      *
-     * @return
+     * @return associated destination object, ref, dest array or named destination.
      */
     public Object getObject() {
         return object;
@@ -382,7 +382,7 @@ public class Destination extends Dictionary {
      */
     public static List<Object> destinationSyntax(
             Reference page, final Name type) {
-        List<Object> destSyntax = new ArrayList<Object>(2);
+        List<Object> destSyntax = new ArrayList<>(2);
         destSyntax.add(page);
         destSyntax.add(type);
         return destSyntax;
@@ -398,7 +398,7 @@ public class Destination extends Dictionary {
      */
     public static List<Object> destinationSyntax(
             Reference page, final Name type, Object offset) {
-        List<Object> destSyntax = new ArrayList<Object>(3);
+        List<Object> destSyntax = new ArrayList<>(3);
         destSyntax.add(page);
         destSyntax.add(type);
         destSyntax.add(offset);
@@ -417,7 +417,7 @@ public class Destination extends Dictionary {
      */
     public static List<Object> destinationSyntax(
             Reference page, final Object type, Object left, Object top, Object zoom) {
-        List<Object> destSyntax = new ArrayList<Object>(5);
+        List<Object> destSyntax = new ArrayList<>(5);
         destSyntax.add(page);
         destSyntax.add(type);
         destSyntax.add(left);
@@ -440,7 +440,7 @@ public class Destination extends Dictionary {
     public static List<Object> destinationSyntax(
             Reference page, final Object type, Object left, Object bottom,
             Object right, Object top) {
-        List<Object> destSyntax = new ArrayList<Object>(6);
+        List<Object> destSyntax = new ArrayList<>(6);
         destSyntax.add(page);
         destSyntax.add(type);
         destSyntax.add(left);
@@ -542,7 +542,7 @@ public class Destination extends Dictionary {
         }
         // build and return a fector of changed valued.
         else if (object instanceof List) {
-            List<Object> v = new ArrayList<Object>(7);
+            List<Object> v = new ArrayList<>(7);
             if (ref != null) {
                 v.add(ref);
             }

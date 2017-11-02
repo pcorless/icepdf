@@ -239,12 +239,9 @@ public class PredictorDecode extends ChunkingInputStream {
             return false;
         }
         int predictor = library.getInt(decodeParmsDictionary, PREDICTOR_VALUE);
-        if (predictor != PREDICTOR_PNG_NONE && predictor != PREDICTOR_PNG_SUB &&
-                predictor != PREDICTOR_PNG_UP && predictor != PREDICTOR_PNG_AVG &&
-                predictor != PREDICTOR_PNG_PAETH && predictor != PREDICTOR_PNG_OPTIMUM) {
-            return false;
-        }
-        return true;
+        return predictor == PREDICTOR_PNG_NONE || predictor == PREDICTOR_PNG_SUB ||
+                predictor == PREDICTOR_PNG_UP || predictor == PREDICTOR_PNG_AVG ||
+                predictor == PREDICTOR_PNG_PAETH || predictor == PREDICTOR_PNG_OPTIMUM;
     }
 
 }

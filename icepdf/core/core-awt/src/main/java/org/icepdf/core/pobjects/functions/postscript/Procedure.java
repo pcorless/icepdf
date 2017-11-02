@@ -34,7 +34,7 @@ public class Procedure extends Operator {
     @SuppressWarnings("unchecked")
     public Procedure(Procedure previousProcedure) {
         super(OperatorNames.OP_PROC);
-        stack = new Stack<Object>();
+        stack = new Stack<>();
         if (previousProcedure != null) {
             previousProcedure.getProc().push(this);
         }

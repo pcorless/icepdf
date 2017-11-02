@@ -186,16 +186,16 @@ final class RadialGradientPaintContext extends MultipleGradientPaintContext {
             // one is not specified.
             fillMethod = DEFAULT_IMPL;
 
-            if (false) {
-                // This could be used for a 'smart' choice in
-                // the default case, if the gradient has obvious
-                // discontinuites use AA, otherwise default
-                if (hasDiscontinuity) {
-                    fillMethod = ANTI_ALIAS_IMPL;
-                } else {
-                    fillMethod = DEFAULT_IMPL;
-                }
-            }
+//            if (false) {
+//                // This could be used for a 'smart' choice in
+//                // the default case, if the gradient has obvious
+//                // discontinuites use AA, otherwise default
+//                if (hasDiscontinuity) {
+//                    fillMethod = ANTI_ALIAS_IMPL;
+//                } else {
+//                    fillMethod = DEFAULT_IMPL;
+//                }
+//            }
         }
 
         if ((fillMethod == DEFAULT_IMPL) &&

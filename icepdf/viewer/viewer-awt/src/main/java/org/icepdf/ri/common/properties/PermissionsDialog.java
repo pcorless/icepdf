@@ -36,6 +36,10 @@ public class PermissionsDialog extends EscapeJDialog {
 
     /**
      * Creates the permissions dialog.
+     *
+     * @param frame         parent frame.
+     * @param document      document
+     * @param messageBundle i18n message bundle
      */
     public PermissionsDialog(JFrame frame, Document document,
                              ResourceBundle messageBundle) {

@@ -100,8 +100,9 @@ public abstract class SelectionBoxHandler extends CommonToolHandler {
     /**
      * Update the size of the selection rectangle.
      *
-     * @param x x-coordinate of the selection size update.
-     * @param y y-coordinate of the selection size update.
+     * @param x         x-coordinate of the selection size update.
+     * @param y         y-coordinate of the selection size update.
+     * @param component component to repaint
      */
     public void updateSelectionSize(int x, int y, Component component) {
         // dragging across pages will result in null pointer if don't init.
@@ -183,7 +184,8 @@ public abstract class SelectionBoxHandler extends CommonToolHandler {
      * Utility method for determining if the mouse event occurred over a
      * page in the page view.
      *
-     * @param e mouse event in this coordinates space
+     * @param e         mouse event in this coordinates space
+     * @param container to find component of mouse event source.
      * @return component that mouse event is over or null if not over a page.
      */
     protected PageViewComponentImpl isOverPageComponent(Container container, MouseEvent e) {

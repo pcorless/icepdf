@@ -38,7 +38,6 @@ import java.awt.event.FocusListener;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
-import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Rectangle2D;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -173,7 +172,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
                     documentViewModel.getPageBoundary(),
                     documentViewModel.getViewRotation(),
                     documentViewModel.getViewZoom());
-            Rectangle location = at.createTransformedShape(annotation.getUserSpaceRectangle()).getBounds();
+            Rectangle location = Page.convertTo(annotation.getUserSpaceRectangle(), at).getBounds();
             setBounds(location);
 
             // update zoom and rotation state
@@ -260,21 +259,13 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
     public void refreshAnnotationRect() {
         Page currentPage = pageViewComponent.getPage();
         DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-        AffineTransform at = currentPage.getPageTransform(
+        AffineTransform at = currentPage.getToPageSpaceTransform(
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
-        try {
-            at = at.createInverse();
-        } catch (NoninvertibleTransformException e) {
-            logger.log(Level.FINE, "Error refreshing annotation rectangle", e);
-        }
         // store the new annotation rectangle in its original user space
-        Rectangle2D rect = annotation.getUserSpaceRectangle();
-//        rect = new Rectangle2D.Double(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
         Rectangle bounds = getBounds();
-        rect.setRect(commonBoundsNormalization(new GeneralPath(bounds), at));
-        annotation.syncBBoxToUserSpaceRectangle(rect);
+        annotation.syncBBoxToUserSpaceRectangle(commonBoundsNormalization(new GeneralPath(bounds), at));
     }
 
     /**
@@ -599,7 +590,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
                 dy = endOfMousePress.getY() - startOfMousePress.getY();
             }
 
-            annotation.resetAppearanceStream(dx, -dy, getPageTransform());
+            annotation.resetAppearanceStream(dx, -dy, getToPageSpaceTransform());
 
             // fire new bounds change event, let the listener handle
             // how to deal with the bound change.
@@ -641,44 +632,50 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
      * Convert the shapes that make up the annotation to page space so that
      * they will scale correctly at different zooms.
      *
+     * @param rect rectangle to convert to page space.
      * @return transformed bbox.
      */
     protected Rectangle convertToPageSpace(Rectangle rect) {
         Page currentPage = pageViewComponent.getPage();
         DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-        AffineTransform at = currentPage.getPageTransform(
+        return currentPage.convertToPageSpace(rect, documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(),
+                documentViewModel.getViewZoom());
+    }
+
+    /**
+     * Convert the shapes that make up the annotation to page space so that
+     * they will scale correctly at different zooms.
+     *
+     * @param shape shape to convert to page space.
+     * @return transformed bbox.
+     */
+    protected Shape convertToPageSpace(Shape shape) {
+        Page currentPage = pageViewComponent.getPage();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
+        return currentPage.convertToPageSpace(shape,
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
-        try {
-            at = at.createInverse();
-        } catch (NoninvertibleTransformException e) {
-            logger.log(Level.FINE, "Error converting to page space.", e);
-        }
-        // convert the two points as well as the bbox.
-        Rectangle tBbox = new Rectangle(rect.x, rect.y,
-                rect.width, rect.height);
-
-        tBbox = at.createTransformedShape(tBbox).getBounds();
-
-        return tBbox;
 
     }
 
-    protected AffineTransform getPageTransform() {
+    protected AffineTransform getToPageSpaceTransform() {
         Page currentPage = pageViewComponent.getPage();
         DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-        AffineTransform at = currentPage.getPageTransform(
+        return currentPage.getToPageSpaceTransform(
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
+    }
 
-        try {
-            at = at.createInverse();
-        } catch (NoninvertibleTransformException e) {
-            logger.log(Level.FINE, "Error getting page transform.", e);
-        }
-        return at;
+    protected AffineTransform getPageSpaceTransform() {
+        Page currentPage = pageViewComponent.getPage();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
+        return currentPage.getPageTransform(
+                documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(),
+                documentViewModel.getViewZoom());
     }
 
     /**

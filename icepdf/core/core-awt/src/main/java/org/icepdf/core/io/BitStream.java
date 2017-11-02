@@ -91,11 +91,6 @@ public class BitStream {
         }
     }
 
-    /**
-     * @param count
-     * @return
-     * @throws java.io.IOException
-     */
     public int getBits(int count) throws IOException {
         if (count < 32) {
             while (bits_left < count) {
@@ -120,10 +115,7 @@ public class BitStream {
         return readEOF && (bits_left <= 0);
     }
 
-    /**
-     * @param i
-     * @throws java.io.IOException
-     */
+
     public void putBit(int i) throws IOException {
         bits <<= 1;
         bits |= i;
@@ -135,11 +127,6 @@ public class BitStream {
         }
     }
 
-    /**
-     * @param i
-     * @param len
-     * @throws java.io.IOException
-     */
     public void putRunBits(int i, int len) throws IOException {
         for (int j = len - 1; j >= 0; ) {
             if (bits_left != 0 || j < 8) {
@@ -155,19 +142,12 @@ public class BitStream {
         }
     }
 
-    /**
-     * @return
-     * @throws java.io.IOException
-     */
     public int available() throws IOException {
         if (bits_left == 0 && in.available() <= 0)
             return 0;
         return 1;
     }
 
-    /**
-     * @throws java.io.IOException
-     */
     public void skipByte() throws IOException {
         bits_left = 0;
         bits = 0;

@@ -85,20 +85,20 @@ public class FreeTextAnnotation extends MarkupAnnotation {
      */
     public static final Name CL_KEY = new Name("CL");
 
-    /**
-     * (Optional; PDF 1.6) A name describing the intent of the free text
-     * annotation (see also the IT entry in Table 170). The following values
-     * shall be valid:
-     * <br>
-     * FreeTextThe annotation is intended to function as a plain free-text
-     * annotation. A plain free-text annotation is also known as a text box comment.
-     * FreeTextCallout The annotation is intended to function as a callout. The
-     * callout is associated with an area on the page through the callout line
-     * specified in CL.
-     * <br>
-     * FreeTextTypeWriterThe annotation is intended to function as a click-to-type
-     * or typewriter object and no callout line is drawn.
-     * Default value: FreeText
+    /*
+      (Optional; PDF 1.6) A name describing the intent of the free text
+      annotation (see also the IT entry in Table 170). The following values
+      shall be valid:
+      <br>
+      FreeTextThe annotation is intended to function as a plain free-text
+      annotation. A plain free-text annotation is also known as a text box comment.
+      FreeTextCallout The annotation is intended to function as a callout. The
+      callout is associated with an area on the page through the callout line
+      specified in CL.
+      <br>
+      FreeTextTypeWriterThe annotation is intended to function as a click-to-type
+      or typewriter object and no callout line is drawn.
+      Default value: FreeText
      */
 //    public static final Name IT_KEY = new Name("IT");
 
@@ -316,12 +316,16 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                     fontColor = new Color(ColorUtil.convertColor(colorString));
                 } else if (cssProperty != null && cssProperty.contains("font-weight")) {
                     String fontStyle = cssProperty.substring(cssProperty.indexOf(":") + 1).trim();
-                    if (fontStyle.equals("normal")) {
-                        this.fontStyle = Font.PLAIN;
-                    } else if (fontStyle.equals("italic")) {
-                        this.fontStyle = Font.ITALIC;
-                    } else if (fontStyle.equals("bold")) {
-                        this.fontStyle = Font.BOLD;
+                    switch (fontStyle) {
+                        case "normal":
+                            this.fontStyle = Font.PLAIN;
+                            break;
+                        case "italic":
+                            this.fontStyle = Font.ITALIC;
+                            break;
+                        case "bold":
+                            this.fontStyle = Font.BOLD;
+                            break;
                     }
                 } else if (cssProperty != null && cssProperty.contains("font-size")) {
                     String fontSize = cssProperty.substring(cssProperty.indexOf(":") + 1).trim();
@@ -351,7 +355,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         StateManager stateManager = library.getStateManager();
 
         // create a new entries to hold the annotation properties
-        HashMap<Name, Object> entries = new HashMap<Name, Object>();
+        HashMap<Name, Object> entries = new HashMap<>();
         // set default link annotation values.
         entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
         entries.put(Dictionary.SUBTYPE_KEY, Annotation.SUBTYPE_FREE_TEXT);
@@ -536,7 +540,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             // update the AP's stream bytes so contents can be written out
             form.setRawBytes(
                     PostScriptEncoder.generatePostScript(shapes.getShapes()));
-            HashMap<Object, Object> appearanceRefs = new HashMap<Object, Object>();
+            HashMap<Object, Object> appearanceRefs = new HashMap<>();
             appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
             entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
 
@@ -548,7 +552,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             }
 
             // create the font
-            HashMap<Object, Object> fontDictionary = new HashMap<Object, Object>();
+            HashMap<Object, Object> fontDictionary = new HashMap<>();
             fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.TYPE_KEY,
                     org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY);
             fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY,
@@ -569,10 +573,10 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                         library, fontDictionary);
                 newFont.setPObjectReference(stateManager.getNewReferencNumber());
                 // create font entry
-                HashMap<Object, Object> fontResources = new HashMap<Object, Object>();
+                HashMap<Object, Object> fontResources = new HashMap<>();
                 fontResources.put(EMBEDDED_FONT_NAME, newFont.getPObjectReference());
                 // add the font resource entry.
-                HashMap<Object, Object> resources = new HashMap<Object, Object>();
+                HashMap<Object, Object> resources = new HashMap<>();
                 resources.put(new Name("Font"), fontResources);
                 // and finally add it to the form.
                 form.getEntries().put(new Name("Resources"), resources);
@@ -617,7 +621,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             }
             float[] compArray = new float[3];
             color.getColorComponents(compArray);
-            java.util.List<Float> colorValues = new ArrayList<Float>(compArray.length);
+            java.util.List<Float> colorValues = new ArrayList<>(compArray.length);
             for (float comp : compArray) {
                 colorValues.add(comp);
             }

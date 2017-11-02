@@ -524,7 +524,7 @@ public abstract class Annotation extends Dictionary {
      * human file reading.
      */
     protected static boolean compressAppearanceStream = true;
-    protected HashMap<Name, Appearance> appearances = new HashMap<Name, Appearance>(3);
+    protected HashMap<Name, Appearance> appearances = new HashMap<>(3);
     protected Name currentAppearance;
 
     // page index
@@ -664,7 +664,7 @@ public abstract class Annotation extends Dictionary {
         // else build out a border style from the old B entry or create
         // a default invisible border.
         else {
-            HashMap<Name, Object> borderMap = new HashMap<Name, Object>();
+            HashMap<Name, Object> borderMap = new HashMap<>();
             // get old school border
             Object borderObject = getObject(BORDER_KEY);
             if (borderObject != null && borderObject instanceof List) {
@@ -676,7 +676,7 @@ public abstract class Annotation extends Dictionary {
                 } else if (border.size() == 4) {
                     borderMap.put(BorderStyle.BORDER_STYLE_KEY, BorderStyle.BORDER_STYLE_DASHED);
                     borderMap.put(BorderStyle.BORDER_WIDTH_KEY, border.get(2));
-                    borderMap.put(BorderStyle.BORDER_DASH_KEY, Arrays.asList(3f));
+                    borderMap.put(BorderStyle.BORDER_DASH_KEY, Collections.singletonList(3f));
                 }
             } else {
                 // default to invisible border
@@ -821,6 +821,8 @@ public abstract class Annotation extends Dictionary {
 
     /**
      * Sets the users page rectangle for this annotation action instance
+     *
+     * @param rect the rectangle converted to users space.
      */
     public void setUserSpaceRectangle(Rectangle2D.Float rect) {
         if (userSpaceRectangle != null && rect != null) {
@@ -1617,7 +1619,7 @@ public abstract class Annotation extends Dictionary {
         // put colour back in to the dictionary
         float[] compArray = new float[3];
         this.color.getColorComponents(compArray);
-        List<Float> colorValues = new ArrayList<Float>(compArray.length);
+        List<Float> colorValues = new ArrayList<>(compArray.length);
         for (float comp : compArray) {
             colorValues.add(comp);
         }
@@ -1650,9 +1652,7 @@ public abstract class Annotation extends Dictionary {
      */
     public boolean allowScreenOrPrintRenderingOrInteraction() {
         // Based off of the annotation flags' Invisible and Hidden values
-        if (getFlagHidden())
-            return false;
-        return !(getFlagInvisible() && isSupportedAnnotationType());
+        return !getFlagHidden() && !(getFlagInvisible() && isSupportedAnnotationType());
     }
 
     /**
@@ -1807,7 +1807,7 @@ public abstract class Annotation extends Dictionary {
         }// else a stream, we won't support this for annotations.
         else {
             // create a new xobject/form object
-            HashMap<Name, Object> formEntries = new HashMap<Name, Object>();
+            HashMap<Name, Object> formEntries = new HashMap<>();
             formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
             formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
             form = new Form(library, formEntries, null);
@@ -1824,7 +1824,7 @@ public abstract class Annotation extends Dictionary {
      * @param bbox     bound box.
      * @param matrix   form space.
      * @param rawBytes raw bytes of string data making up the content stream.
-     * @return
+     * @return new Form object with updated appearance stream.
      */
     public Form updateAppearanceStream(Shapes shapes, Rectangle2D bbox, AffineTransform matrix, byte[] rawBytes) {
         // update the appearance stream
@@ -1836,7 +1836,7 @@ public abstract class Annotation extends Dictionary {
             // else a stream, we won't support this for annotations.
         } else {
             // create a new xobject/form object
-            HashMap<Object, Object> formEntries = new HashMap<Object, Object>();
+            HashMap<Object, Object> formEntries = new HashMap<>();
             formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
             formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
             form = new Form(library, formEntries, null);
@@ -1852,7 +1852,7 @@ public abstract class Annotation extends Dictionary {
             stateManager.addChange(new PObject(form, form.getPObjectReference()));
             // update the AP's stream bytes so contents can be written out
             form.setRawBytes(rawBytes);
-            HashMap<Object, Object> appearanceRefs = new HashMap<Object, Object>();
+            HashMap<Object, Object> appearanceRefs = new HashMap<>();
             appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
             entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
 

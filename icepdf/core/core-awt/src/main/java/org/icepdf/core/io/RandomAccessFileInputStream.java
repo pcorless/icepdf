@@ -94,7 +94,7 @@ public class RandomAccessFileInputStream extends InputStream implements Seekable
     }
 
     public long skip(long n) throws IOException {
-        int nn = (int) (n & 0xFFFFFFFF);
+        int nn = (int) (n);
         return (long) m_RandomAccessFile.skipBytes(nn);
     }
 

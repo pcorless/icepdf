@@ -162,6 +162,7 @@ public class WindowManager implements WindowManagementCallback {
      * visible.
      *
      * @param frame parent window containers.
+     * @param prefs preferences
      */
     public static void newWindowLocation(Container frame, Preferences prefs) {
         GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();

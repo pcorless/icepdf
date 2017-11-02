@@ -46,15 +46,16 @@ public interface DrawCmd {
      * @param paintAlpha           enable/disable the alpha painting.
      * @param paintTimer           painTimer keeps track when a repaint should occur.
      * @return resulting shape if currentShape has been altered, otherwise
-     *         returns the currentShape.  Current Shape is generally altered
-     *         clip shape.
+     * returns the currentShape.  Current Shape is generally altered
+     * clip shape.
+     * @throws InterruptedException thread interrupted.
      */
-    public Shape paintOperand(Graphics2D g,
-                              Page parentPage,
-                              Shape currentShape,
-                              Shape clip,
-                              AffineTransform base,
-                              OptionalContentState optionalContentState,
-                              boolean paintAlpha,
-                              PaintTimer paintTimer) throws InterruptedException;
+    Shape paintOperand(Graphics2D g,
+                       Page parentPage,
+                       Shape currentShape,
+                       Shape clip,
+                       AffineTransform base,
+                       OptionalContentState optionalContentState,
+                       boolean paintAlpha,
+                       PaintTimer paintTimer) throws InterruptedException;
 }

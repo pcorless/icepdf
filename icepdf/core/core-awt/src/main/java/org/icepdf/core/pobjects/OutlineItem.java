@@ -95,7 +95,7 @@ public class OutlineItem extends Dictionary {
     public OutlineItem(Library l, HashMap h) {
         super(l, h);
         loadedSubItems = false;
-        subItems = new ArrayList<OutlineItem>(Math.max(Math.abs(getCount()), 16));
+        subItems = new ArrayList<>(Math.max(Math.abs(getCount()), 16));
     }
 
     /**

@@ -74,6 +74,7 @@ public class PrintHelper implements Printable {
      *
      * @param container parent container used to center print dialogs.
      * @param pageTree  document page tree.
+     * @param rotation  rotation of page
      */
     public PrintHelper(Container container, PageTree pageTree, int rotation) {
         this(container, pageTree, rotation, MediaSizeName.NA_LETTER, PrintQuality.DRAFT);

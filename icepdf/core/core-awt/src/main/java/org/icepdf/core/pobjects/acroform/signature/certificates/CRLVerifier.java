@@ -56,6 +56,7 @@ public class CRLVerifier {
      *
      * @param cert the certificate to be checked for revocation
      * @throws CertificateVerificationException if the certificate is revoked
+     * @throws RevocationVerificationException  cert is revoked.
      */
     public static void verifyCertificateCRLs(X509Certificate cert)
             throws CertificateVerificationException, RevocationVerificationException {
@@ -104,7 +105,7 @@ public class CRLVerifier {
     private static X509CRL downloadCRLFromLDAP(String ldapURL)
             throws CertificateException, NamingException, CRLException,
             CertificateVerificationException {
-        Hashtable<String, String> env = new Hashtable<String, String>();
+        Hashtable<String, String> env = new Hashtable<>();
         env.put(Context.INITIAL_CONTEXT_FACTORY,
                 "com.sun.jndi.ldap.LdapCtxFactory");
         env.put(Context.PROVIDER_URL, ldapURL);
@@ -131,12 +132,9 @@ public class CRLVerifier {
             throws IOException, CertificateException,
             CRLException {
         URL url = new URL(crlURL);
-        InputStream crlStream = url.openStream();
-        try {
+        try (InputStream crlStream = url.openStream()) {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             return (X509CRL) cf.generateCRL(crlStream);
-        } finally {
-            crlStream.close();
         }
     }
 
@@ -144,12 +142,17 @@ public class CRLVerifier {
      * Extracts all CRL distribution point URLs from the "CRL Distribution Point"
      * extension in a X.509 certificate. If CRL distribution point extension is
      * unavailable, returns an empty list.
+     *
+     * @param cert cert to extract CRL from.
+     * @return crl distribution list.
+     * @throws CertificateParsingException error parsing the cert.
+     * @throws IOException                 file reading problem
      */
     public static List<String> getCrlDistributionPoints(
             X509Certificate cert) throws CertificateParsingException, IOException {
         byte[] crldpExt = cert.getExtensionValue(Extension.cRLDistributionPoints.getId());
         if (crldpExt == null) {
-            return new ArrayList<String>();
+            return new ArrayList<>();
         }
         ASN1InputStream oAsnInStream = new ASN1InputStream(
                 new ByteArrayInputStream(crldpExt));
@@ -160,7 +163,7 @@ public class CRLVerifier {
                 new ByteArrayInputStream(crldpExtOctets));
         ASN1Primitive derObj2 = oAsnInStream2.readObject();
         CRLDistPoint distPoint = CRLDistPoint.getInstance(derObj2);
-        List<String> crlUrls = new ArrayList<String>();
+        List<String> crlUrls = new ArrayList<>();
         for (DistributionPoint dp : distPoint.getDistributionPoints()) {
             DistributionPointName dpn = dp.getDistributionPoint();
             // Look for URIs in fullName

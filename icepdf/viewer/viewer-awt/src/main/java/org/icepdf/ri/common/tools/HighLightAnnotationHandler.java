@@ -145,7 +145,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
 
             Rectangle tBbox = convertToPageSpace(highlightBounds, highlightPath);
 
-            AffineTransform pageTransform = getPageTransformInverse();
+            AffineTransform pageTransform = getToPageSpaceTransform();
 
             // create annotations types that that are rectangle based;
             // which is actually just link annotations
@@ -231,11 +231,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
                 PageText pageText = currentPage.getViewText();
                 if (pageText != null) {
                     // get page transformation
-                    DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-                    AffineTransform pageTransform = currentPage.getPageTransform(
-                            documentViewModel.getPageBoundary(),
-                            documentViewModel.getViewRotation(),
-                            documentViewModel.getViewZoom());
+                    AffineTransform pageTransform = getPageTransform();
                     // paint the sprites
                     GeneralPath textPath;
                     ArrayList<LineText> pageLines = pageText.getPageLines();

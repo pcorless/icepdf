@@ -39,16 +39,10 @@ public class PageLoadingEvent extends PageInitializingEvent {
         super(pageSource, interrupted);
     }
 
-    /**
-     * @return
-     */
     public int getContentStreamCount() {
         return contentStreamCount;
     }
 
-    /**
-     * @return
-     */
     public int getImageResourceCount() {
         return imageResourceCount;
     }

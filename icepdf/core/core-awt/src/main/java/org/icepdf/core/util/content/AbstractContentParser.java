@@ -98,7 +98,7 @@ public abstract class AbstractContentParser implements ContentParser {
     protected AtomicInteger imageIndex = new AtomicInteger(1);
 
     // stack to help with the parse
-    protected Stack<Object> stack = new Stack<Object>();
+    protected Stack<Object> stack = new Stack<>();
 
     /**
      * @param l PDF library master object.
@@ -525,8 +525,11 @@ public abstract class AbstractContentParser implements ContentParser {
      * @param stack        stack of object being parsed.
      * @param shapes       shapes object.
      * @param resources    associated resources.
+     * @param imageIndex   page index of page.
+     * @param page         parent page getting parsed.
      * @param viewParse    true indicates parsing is for a normal view.  If false
      *                     the consumption of Do will skip Image based xObjects for performance.
+     * @return graphic state after parsing xObject.
      */
     protected static GraphicsState consume_Do(GraphicsState graphicState, Stack stack,
                                               Shapes shapes, Resources resources,
@@ -1508,11 +1511,14 @@ public abstract class AbstractContentParser implements ContentParser {
      * <code>displayText</code> glyphs and respective, text state is added to
      * the shapes collection.
      *
-     * @param displayText text that will be drawn to the screen
-     * @param textMetrics current advanceX of last drawn string,
-     *                    last advance of where the string should be drawn
-     * @param textState   formating properties associated with displayText
-     * @param shapes      collection of all shapes for page content being parsed.
+     * @param displayText      text that will be drawn to the screen
+     * @param textMetrics      current advanceX of last drawn string,
+     *                         last advance of where the string should be drawn
+     * @param textState        formatting properties associated with displayText
+     * @param glyphOutlineClip clip used for cut out fonts.
+     * @param graphicState     current graphics state
+     * @param oCGs             optional content group, can be null
+     * @param shapes           collection of all shapes for page content being parsed.
      */
     protected static void drawString(
             StringBuilder displayText,
@@ -1614,21 +1620,21 @@ public abstract class AbstractContentParser implements ContentParser {
         advanceX += lastx;
         advanceY += lasty;
 
-        /**
-         * The text rendering mode, Tmode, determines whether showing text
-         * causes glyph outlines to be stroked, filled, used as a clipping
-         * boundary, or some combination of the three.
-         *
-         * No Support for 4, 5, 6 and 7.
-         *
-         * 0 - Fill text
-         * 1 - Stroke text
-         * 2 - fill, then stroke text
-         * 3 - Neither fill nor stroke text (invisible)
-         * 4 - Fill text and add to path for clipping
-         * 5 - Stroke text and add to path for clipping.
-         * 6 - Fill, then stroke text and add to path for clipping.
-         * 7 - Add text to path for clipping.
+        /*
+          The text rendering mode, Tmode, determines whether showing text
+          causes glyph outlines to be stroked, filled, used as a clipping
+          boundary, or some combination of the three.
+
+          No Support for 4, 5, 6 and 7.
+
+          0 - Fill text
+          1 - Stroke text
+          2 - fill, then stroke text
+          3 - Neither fill nor stroke text (invisible)
+          4 - Fill text and add to path for clipping
+          5 - Stroke text and add to path for clipping.
+          6 - Fill, then stroke text and add to path for clipping.
+          7 - Add text to path for clipping.
          */
 
         int rmode = textState.rmode;
@@ -1676,9 +1682,10 @@ public abstract class AbstractContentParser implements ContentParser {
      * Utility Method for adding a text sprites to the Shapes stack, given the
      * specified rmode.
      *
-     * @param textSprites text to add to shapes stack
-     * @param shapes      shapes stack
-     * @param rmode       write mode
+     * @param textSprites  text to add to shapes stack
+     * @param shapes       shapes stack
+     * @param rmode        write mode
+     * @param graphicState graphics state
      */
     protected static void drawModeFill(GraphicsState graphicState,
                                        TextSprite textSprites, Shapes shapes, int rmode) {
@@ -1692,10 +1699,11 @@ public abstract class AbstractContentParser implements ContentParser {
      * Utility Method for adding a text sprites to the Shapes stack, given the
      * specifed rmode.
      *
-     * @param textSprites text to add to shapes stack
-     * @param shapes      shapes stack
-     * @param textState   text state used to build new stroke
-     * @param rmode       write mode
+     * @param textSprites  text to add to shapes stack
+     * @param shapes       shapes stack
+     * @param textState    text state used to build new stroke
+     * @param rmode        write mode
+     * @param graphicState current graphics state
      */
     protected static void drawModeStroke(GraphicsState graphicState,
                                          TextSprite textSprites, TextState textState,
@@ -1730,12 +1738,13 @@ public abstract class AbstractContentParser implements ContentParser {
 
     /**
      * Utility Method for adding a text sprites to the Shapes stack, given the
-     * specifed rmode.
+     * specified rmode.
      *
-     * @param textSprites text to add to shapes stack
-     * @param textState   text state used to build new stroke
-     * @param shapes      shapes stack
-     * @param rmode       write mode
+     * @param textSprites  text to add to shapes stack
+     * @param textState    text state used to build new stroke
+     * @param shapes       shapes stack
+     * @param rmode        write mode
+     * @param graphicState current graphics state
      */
     protected static void drawModeFillStroke(GraphicsState graphicState,
                                              TextSprite textSprites, TextState textState,
@@ -1769,7 +1778,9 @@ public abstract class AbstractContentParser implements ContentParser {
      * account patternColour and regular old fill colour.
      *
      * @param shapes        current shapes stack
+     * @param graphicState  current graphics state
      * @param geometricPath current path.
+     * @throws InterruptedException thread interrupted.
      */
     protected static void commonStroke(GraphicsState graphicState, Shapes shapes, GeneralPath geometricPath)
             throws InterruptedException {
@@ -1848,7 +1859,8 @@ public abstract class AbstractContentParser implements ContentParser {
      * <p>
      * Can be enable with -Dorg.icepdf.core.enabledOverPrint=true
      *
-     * @param alpha alph constant
+     * @param alpha      alph constant
+     * @param colorSpace color space of over print
      * @return tweaked over printing alpha
      */
     protected static float commonOverPrintAlpha(float alpha, PColorSpace colorSpace) {
@@ -1878,6 +1890,8 @@ public abstract class AbstractContentParser implements ContentParser {
      * @param shapes        current shapes stack
      * @param graphicState  current graphics state.
      * @param geometricPath current path.
+     * @throws NoninvertibleTransformException error calculating current space.
+     * @throws InterruptedException            thread interrupted.
      */
     protected static void commonFill(Shapes shapes, GraphicsState graphicState, GeneralPath geometricPath)
             throws NoninvertibleTransformException, InterruptedException {
@@ -1994,6 +2008,7 @@ public abstract class AbstractContentParser implements ContentParser {
      * flip on the graphic state.
      *
      * @param graphicState current graphics state.
+     * @return new text scaling AffineTransform.
      */
     protected static AffineTransform applyTextScaling(GraphicsState graphicState) {
         // get the current CTM
@@ -2019,6 +2034,7 @@ public abstract class AbstractContentParser implements ContentParser {
     /**
      * Adds a new Alpha Composite object ot the shapes stack.
      *
+     * @param graphicsState current graphics state
      * @param shapes - current shapes vector to add Alpha Composite to
      * @param rule   - rule to apply to the alphaComposite.
      * @param alpha  - alpha value, opaque = 1.0f.

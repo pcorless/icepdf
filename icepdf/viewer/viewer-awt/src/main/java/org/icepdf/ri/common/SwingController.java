@@ -353,6 +353,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller has access to all properties
+     *
+     * @param propertiesManager current properties manager instance.
      */
     public void setPropertiesManager(PropertiesManager propertiesManager) {
         this.propertiesManager = propertiesManager;
@@ -367,6 +369,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setOpenFileMenuItem(JMenuItem mi) {
         openFileMenuItem = mi;
@@ -375,6 +379,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setRecentFilesSubMenu(JMenu mi) {
         recentFilesSubMenu = mi;
@@ -382,6 +388,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setOpenURLMenuItem(JMenuItem mi) {
         openURLMenuItem = mi;
@@ -390,6 +398,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setCloseMenuItem(JMenuItem mi) {
         closeMenuItem = mi;
@@ -398,6 +408,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setSaveAsFileMenuItem(JMenuItem mi) {
         saveAsFileMenuItem = mi;
@@ -406,6 +418,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setExportTextMenuItem(JMenuItem mi) {
         exportTextMenuItem = mi;
@@ -414,6 +428,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setPermissionsMenuItem(JMenuItem mi) {
         permissionsMenuItem = mi;
@@ -422,6 +438,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setPropertiesMenuItem(JMenuItem mi) {
         propertiesMenuItem = mi;
@@ -430,6 +448,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setInformationMenuItem(JMenuItem mi) {
         informationMenuItem = mi;
@@ -438,6 +458,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setFontInformationMenuItem(JMenuItem mi) {
         fontInformationMenuItem = mi;
@@ -446,6 +468,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setPrintSetupMenuItem(JMenuItem mi) {
         printSetupMenuItem = mi;
@@ -454,6 +478,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setPrintMenuItem(JMenuItem mi) {
         printMenuItem = mi;
@@ -462,6 +488,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setExitMenuItem(JMenuItem mi) {
         exitMenuItem = mi;
@@ -470,6 +498,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setUndoMenuItem(JMenuItem mi) {
         undoMenuItem = mi;
@@ -478,6 +508,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param mi menu item to assign
      */
     public void setReduMenuItem(JMenuItem mi) {
         redoMenuItem = mi;
@@ -486,6 +517,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setCopyMenuItem(JMenuItem mi) {
         copyMenuItem = mi;
@@ -494,6 +527,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setDeleteMenuItem(JMenuItem mi) {
         deleteMenuItem = mi;
@@ -502,6 +537,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setSelectAllMenuItem(JMenuItem mi) {
         selectAllMenuItem = mi;
@@ -510,6 +547,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setDeselectAllMenuItem(JMenuItem mi) {
         deselectAllMenuItem = mi;
@@ -518,6 +557,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setPreferencesMenuItem(JMenuItem mi) {
         preferencesMenuItem = mi;
@@ -526,6 +567,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setFitActualSizeMenuItem(JMenuItem mi) {
         fitActualSizeMenuItem = mi;
@@ -534,6 +577,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setFitPageMenuItem(JMenuItem mi) {
         fitPageMenuItem = mi;
@@ -542,6 +587,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setFitWidthMenuItem(JMenuItem mi) {
         fitWidthMenuItem = mi;
@@ -550,6 +597,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setZoomInMenuItem(JMenuItem mi) {
         zoomInMenuItem = mi;
@@ -558,6 +607,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setZoomOutMenuItem(JMenuItem mi) {
         zoomOutMenuItem = mi;
@@ -566,6 +617,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setRotateLeftMenuItem(JMenuItem mi) {
         rotateLeftMenuItem = mi;
@@ -574,6 +627,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setRotateRightMenuItem(JMenuItem mi) {
         rotateRightMenuItem = mi;
@@ -582,6 +637,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setShowHideToolBarMenuItem(JMenuItem mi) {
         showHideToolBarMenuItem = mi;
@@ -590,6 +647,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setShowHideUtilityPaneMenuItem(JMenuItem mi) {
         showHideUtilityPaneMenuItem = mi;
@@ -598,6 +657,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setFirstPageMenuItem(JMenuItem mi) {
         firstPageMenuItem = mi;
@@ -606,6 +667,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setPreviousPageMenuItem(JMenuItem mi) {
         previousPageMenuItem = mi;
@@ -614,6 +677,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setNextPageMenuItem(JMenuItem mi) {
         nextPageMenuItem = mi;
@@ -622,6 +687,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setLastPageMenuItem(JMenuItem mi) {
         lastPageMenuItem = mi;
@@ -630,6 +697,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setSearchMenuItem(JMenuItem mi) {
         searchMenuItem = mi;
@@ -638,6 +707,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setSearchNextMenuItem(JMenuItem mi) {
         searchNextMenuItem = mi;
@@ -646,6 +717,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setSearchPreviousMenuItem(JMenuItem mi) {
         searchPreviousMenuItem = mi;
@@ -654,6 +727,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setGoToPageMenuItem(JMenuItem mi) {
         goToPageMenuItem = mi;
@@ -662,6 +737,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setMinimiseAllMenuItem(JMenuItem mi) {
         minimiseAllMenuItem = mi;
@@ -670,6 +747,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
      */
     public void setBringAllToFrontMenuItem(JMenuItem mi) {
         bringAllToFrontMenuItem = mi;
@@ -683,6 +762,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param menuItems menu item of opened windows.
      */
     public void setWindowListMenuItems(List menuItems) {
         windowListMenuItems = menuItems;
@@ -695,6 +776,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param mi menu item to assign
      */
     public void setAboutMenuItem(JMenuItem mi) {
         aboutMenuItem = mi;
@@ -703,6 +785,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setOpenFileButton(JButton btn) {
         openFileButton = btn;
@@ -711,6 +794,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setSaveAsFileButton(JButton btn) {
         saveAsFileButton = btn;
@@ -719,6 +803,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setPrintButton(JButton btn) {
         printButton = btn;
@@ -727,6 +812,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setSearchButton(JButton btn) {
         searchButton = btn;
@@ -735,6 +821,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setShowHideUtilityPaneButton(JToggleButton btn) {
         showHideUtilityPaneButton = btn;
@@ -743,6 +830,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setFirstPageButton(JButton btn) {
         firstPageButton = btn;
@@ -751,6 +839,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setPreviousPageButton(JButton btn) {
         previousPageButton = btn;
@@ -759,6 +848,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setNextPageButton(JButton btn) {
         nextPageButton = btn;
@@ -767,6 +857,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setLastPageButton(JButton btn) {
         lastPageButton = btn;
@@ -775,6 +866,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param textField current page number text field value.
      */
     public void setCurrentPageNumberTextField(JTextField textField) {
         currentPageNumberTextField = textField;
@@ -785,6 +877,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param lbl number of pages label.
      */
     public void setNumberOfPagesLabel(JLabel lbl) {
         numberOfPagesLabel = lbl;
@@ -792,6 +885,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setZoomOutButton(JButton btn) {
         zoomOutButton = btn;
@@ -800,6 +894,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param zcb zoom level combo box values.
+     * @param zl default zoom level.
      */
     public void setZoomComboBox(JComboBox zcb, float[] zl) {
         zoomComboBox = zcb;
@@ -810,6 +906,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setZoomInButton(JButton btn) {
         zoomInButton = btn;
@@ -818,6 +915,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setFitActualSizeButton(JToggleButton btn) {
         fitActualSizeButton = btn;
@@ -826,6 +924,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setFitHeightButton(JToggleButton btn) {
         fitHeightButton = btn;
@@ -834,6 +933,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setFontEngineButton(JToggleButton btn) {
         fontEngineButton = btn;
@@ -842,6 +942,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setFitWidthButton(JToggleButton btn) {
         fitWidthButton = btn;
@@ -850,6 +951,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setRotateLeftButton(JButton btn) {
         rotateLeftButton = btn;
@@ -858,6 +960,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setRotateRightButton(JButton btn) {
         rotateRightButton = btn;
@@ -866,6 +969,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setPanToolButton(JToggleButton btn) {
         panToolButton = btn;
@@ -874,6 +978,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setZoomInToolButton(JToggleButton btn) {
         zoomInToolButton = btn;
@@ -882,6 +987,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setTextSelectToolButton(JToggleButton btn) {
         textSelectToolButton = btn;
@@ -890,6 +996,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setSelectToolButton(JToggleButton btn) {
         selectToolButton = btn;
@@ -898,6 +1005,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setLinkAnnotationToolButton(JToggleButton btn) {
         this.linkAnnotationToolButton = btn;
@@ -906,6 +1014,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setStrikeOutAnnotationToolButton(JToggleButton btn) {
         this.strikeOutAnnotationToolButton = btn;
@@ -914,6 +1023,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setUnderlineAnnotationToolButton(JToggleButton btn) {
         this.underlineAnnotationToolButton = btn;
@@ -922,6 +1032,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setLineAnnotationToolButton(JToggleButton btn) {
         this.lineAnnotationToolButton = btn;
@@ -930,6 +1041,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setLineArrowAnnotationToolButton(JToggleButton btn) {
         this.lineArrowAnnotationToolButton = btn;
@@ -938,6 +1050,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setSquareAnnotationToolButton(JToggleButton btn) {
         this.squareAnnotationToolButton = btn;
@@ -946,6 +1059,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setCircleAnnotationToolButton(JToggleButton btn) {
         this.circleAnnotationToolButton = btn;
@@ -954,6 +1068,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setInkAnnotationToolButton(JToggleButton btn) {
         this.inkAnnotationToolButton = btn;
@@ -962,6 +1077,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setFreeTextAnnotationToolButton(JToggleButton btn) {
         this.freeTextAnnotationToolButton = btn;
@@ -975,6 +1091,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setLinkAnnotationPropertiesToolButton(JToggleButton btn) {
         linkAnnotationPropertiesToolButton = btn;
@@ -983,6 +1100,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setHighlightAnnotationToolButton(AnnotationColorToggleButton btn) {
         highlightAnnotationToolButton = btn;
@@ -991,6 +1109,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setHighlightAnnotationPropertiesToolButton(JToggleButton btn) {
         highlightAnnotationPropertiesToolButton = btn;
@@ -999,6 +1118,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setStrikeOutAnnotationPropertiesToolButton(JToggleButton btn) {
         strikeOutAnnotationPropertiesToolButton = btn;
@@ -1007,6 +1127,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setUnderlineAnnotationPropertiesToolButton(JToggleButton btn) {
         underlineAnnotationPropertiesToolButton = btn;
@@ -1015,6 +1136,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setLineAnnotationPropertiesToolButton(JToggleButton btn) {
         lineAnnotationPropertiesToolButton = btn;
@@ -1023,6 +1145,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setLineArrowAnnotationPropertiesToolButton(JToggleButton btn) {
         lineArrowAnnotationPropertiesToolButton = btn;
@@ -1031,6 +1154,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setSquareAnnotationPropertiesToolButton(JToggleButton btn) {
         squareAnnotationPropertiesToolButton = btn;
@@ -1039,6 +1163,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setCircleAnnotationPropertiesToolButton(JToggleButton btn) {
         circleAnnotationPropertiesToolButton = btn;
@@ -1047,6 +1172,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setInkAnnotationPropertiesToolButton(JToggleButton btn) {
         inkAnnotationPropertiesToolButton = btn;
@@ -1055,6 +1181,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setFreeTextAnnotationPropertiesToolButton(JToggleButton btn) {
         freeTextAnnotationPropertiesToolButton = btn;
@@ -1063,6 +1190,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setTextAnnotationToolButton(AnnotationColorToggleButton btn) {
         textAnnotationToolButton = btn;
@@ -1072,6 +1200,7 @@ public class SwingController extends ComponentAdapter
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
      * for the form highlight button.
+     * @param btn button to assign
      */
     public void setFormHighlightButton(JToggleButton btn) {
         formHighlightButton = btn;
@@ -1080,6 +1209,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setTextAnnotationPropertiesToolButton(JToggleButton btn) {
         textAnnotationPropertiesToolButton = btn;
@@ -1088,6 +1218,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param btn button to assign
      */
     public void setZoomDynamicToolButton(JToggleButton btn) {
         zoomDynamicToolButton = btn;
@@ -1096,6 +1227,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param toolbar assignment of complete toolbar.
      */
     public void setCompleteToolBar(JToolBar toolbar) {
         completeToolBar = toolbar;
@@ -1103,6 +1235,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param tree outline tree component
+     * @param scroll outline scroll parent.
      */
     public void setOutlineComponents(JTree tree, JScrollPane scroll) {
         outlinesTree = tree;
@@ -1112,6 +1246,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param sp search panel
      */
     public void setSearchPanel(SearchPanel sp) {
         searchPanel = sp;
@@ -1119,13 +1254,15 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param atp  attachment panel
      */
-    public void setAttachmentPanel(AttachmentPanel sp) {
-        attachmentPanel = sp;
+    public void setAttachmentPanel(AttachmentPanel atp) {
+        attachmentPanel = atp;
     }
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param tn thumbnails panel.
      */
     public void setThumbnailsPanel(ThumbnailsPanel tn) {
         thumbnailsPanel = tn;
@@ -1133,6 +1270,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param tn layers panel.
      */
     public void setLayersPanel(LayersPanel tn) {
         layersPanel = tn;
@@ -1149,6 +1287,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param util  utility tabbed pane.
      */
     public void setUtilityTabbedPane(JTabbedPane util) {
         utilityTabbedPane = util;
@@ -1156,6 +1295,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param embeddableComponent indicates usage of component viewer.
      */
     public void setIsEmbeddedComponent(boolean embeddableComponent) {
         if (embeddableComponent) {
@@ -1166,6 +1306,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param splitPane main split pain that divides utility from page view pane.
      */
     public void setUtilityAndDocumentSplitPane(JSplitPane splitPane) {
 
@@ -1178,13 +1319,15 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * @param lbl status label value.
      */
     public void setStatusLabel(JLabel lbl) {
         statusLabel = lbl;
     }
 
     /**
-     * Called by SwingViewerBuilder, so that Controller can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling.
+     * @param v paren view frame.
      */
     public void setViewerFrame(JFrame v) {
         viewer = v;
@@ -1596,6 +1739,7 @@ public class SwingController extends ComponentAdapter
      * </ul>
      *
      * @see #getDocumentViewToolMode
+     * @param argToolName DocumentViewModel tool name.
      */
     public void setDisplayTool(final int argToolName) {
         try {
@@ -2047,6 +2191,8 @@ public class SwingController extends ComponentAdapter
      *
      * @param document         document to set securityCallback on .
      * @param securityCallback security callback for prompting users or owner passwords.
+     * @throws PDFException general PDF parsing error.
+     * @throws PDFSecurityException security exception likely incorrect user or owner password.
      */
     protected void setupSecurityHandler(Document document, SecurityCallback securityCallback) throws
             PDFException, PDFSecurityException {
@@ -3157,6 +3303,7 @@ public class SwingController extends ComponentAdapter
      *
      * @see #setWindowManagementCallback
      * @see #getWindowManagementCallback
+     * @return true indicates save was execute, false; cancelled.
      */
     public boolean saveChangesDialog() {
         // check if document changes have been made, if so ask the user if they
@@ -3552,6 +3699,7 @@ public class SwingController extends ComponentAdapter
     /**
      * When the user selects an OutlineItem from the Outlines (Bookmarks) JTree,
      * this displays the relevant target portion of the PDF Document
+     * @param outlineItem  navigate to this outlines items destination.
      */
     public void followOutlineItem(OutlineItem outlineItem) {
         if (outlineItem == null)
@@ -3823,6 +3971,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Set the ViewerModel's fit setting to fit the whole page, and update the display
+     * @param fitMode fit mode.
+     * @param refresh true to refresh document page view.
      */
     public void setPageFitMode(final int fitMode, boolean refresh) {
 

@@ -174,7 +174,7 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
 
     public void mouseReleased(MouseEvent e) {
 
-        AffineTransform pageTransform = getPageTransformInverse();
+        AffineTransform pageTransform = getToPageSpaceTransform();
         AffineTransform pageInverseTransform = getPageTransform();
         Dimension scaledSize = new Dimension(
                 (int) Math.abs(ICON_SIZE.width * pageInverseTransform.getScaleX()),

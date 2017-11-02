@@ -109,7 +109,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
     /**
      * Runs a series of tests to try and determine the validity o
      *
-     * @throws SignatureIntegrityException
+     * @throws SignatureIntegrityException signature could not be validated or invalidated.
      */
     public abstract void validate() throws SignatureIntegrityException;
 
@@ -136,6 +136,10 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
      * <br>
      * DigestAlgorithmIdentifiers ::= SET OF DigestAlgorithmIdentifier
      * SignerInfos ::= SET OF SignerInfo
+     *
+     * @param cmsData    signed data.
+     * @param signedData cms data to parse.
+     * @throws SignatureIntegrityException error pasing the signed data.
      */
     protected void parseSignerData(ASN1Sequence signedData, byte[] cmsData) throws SignatureIntegrityException {
         // digest algorithms ID, not currently using them but useful for debug.
@@ -156,12 +160,12 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
                 }
             }
         }
-        /**
-         * EncapsulatedContentInfo ::= SEQUENCE {
-         *    eContentType ContentType,
-         *    eContent [0] EXPLICIT OCTET STRING OPTIONAL }
-         *
-         * ContentType ::= OBJECT IDENTIFIER
+        /*
+          EncapsulatedContentInfo ::= SEQUENCE {
+             eContentType ContentType,
+             eContent [0] EXPLICIT OCTET STRING OPTIONAL }
+
+          ContentType ::= OBJECT IDENTIFIER
          */
         encapsulatedContentInfoData = null;
         ASN1Sequence encapsulatedContentInfo = (ASN1Sequence) signedData.getObjectAt(2);
@@ -306,15 +310,15 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
             throw new SignatureIntegrityException(e);
         }
 
-        /**
-         * SignerInfo ::= SEQUENCE {
-         *    0, version CMSVersion,
-         *    1, sid SignerIdentifier,
-         *    2, digestAlgorithm DigestAlgorithmIdentifier,
-         *    signedAttrs [0] IMPLICIT SignedAttributes OPTIONAL,
-         *    signatureAlgorithm SignatureAlgorithmIdentifier,
-         *    signature SignatureValue,
-         *    unsignedAttrs [1] IMPLICIT UnsignedAttributes OPTIONAL }
+        /*
+          SignerInfo ::= SEQUENCE {
+             0, version CMSVersion,
+             1, sid SignerIdentifier,
+             2, digestAlgorithm DigestAlgorithmIdentifier,
+             signedAttrs [0] IMPLICIT SignedAttributes OPTIONAL,
+             signatureAlgorithm SignatureAlgorithmIdentifier,
+             signature SignatureValue,
+             unsignedAttrs [1] IMPLICIT UnsignedAttributes OPTIONAL }
          */
         // the signerInfos is going to be the last entry in the sequence.
         ASN1Set signerInfos = (ASN1Set) signedData.getObjectAt(signedData.size() - 1);
@@ -323,12 +327,12 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         // If the SignerIdentifier is the CHOICE issuerAndSerialNumber, then the version MUST be 1.
         // If the SignerIdentifier is subjectKeyIdentifier, then the version MUST be 3.
         int signerVersion = ((ASN1Integer) signerInfo.getObjectAt(0)).getValue().intValue();
-        /**
-         * SignerIdentifier ::= CHOICE {
-         *    issuerAndSerialNumber IssuerAndSerialNumber,
-         *    subjectKeyIdentifier [0] SubjectKeyIdentifier }
-         *
-         *    SubjectKeyIdentifier ::= OCTET STRING
+        /*
+          SignerIdentifier ::= CHOICE {
+             issuerAndSerialNumber IssuerAndSerialNumber,
+             subjectKeyIdentifier [0] SubjectKeyIdentifier }
+
+             SubjectKeyIdentifier ::= OCTET STRING
          */
         ASN1Sequence issuerAndSerialNumber = (ASN1Sequence) signerInfo.getObjectAt(1);
         signerCertificate = null;
@@ -371,6 +375,10 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
      * contentType ContentType,
      * content [0] EXPLICIT ANY DEFINED BY contentType }
      * ContentType ::= OBJECT IDENTIFIER
+     *
+     * @param cmsData cms data to parse.
+     * @return ASN1Sequence
+     * @throws SignatureIntegrityException error parsing certificate dat.
      */
     protected ASN1Sequence captureSignedData(byte[] cmsData)
             throws SignatureIntegrityException {
@@ -378,10 +386,10 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         if (cmsSequence == null || cmsSequence.getObjectAt(0) == null) {
             throw new SignatureIntegrityException("ContentInfo does not contain content type.");
         }
-        /**
-         * id-data OBJECT IDENTIFIER ::= { iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1) pkcs7(7) 1 }
-         * Currently not doing anything with this but we may need it at a later date to support different signed data.
-         * But we are looking pkcs7 variants.
+        /*
+          id-data OBJECT IDENTIFIER ::= { iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1) pkcs7(7) 1 }
+          Currently not doing anything with this but we may need it at a later date to support different signed data.
+          But we are looking pkcs7 variants.
          */
         ASN1ObjectIdentifier objectIdentifier = (ASN1ObjectIdentifier) cmsSequence.getObjectAt(0);
         if (objectIdentifier == null ||
@@ -415,11 +423,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
                     signatureAlgorithmIdentifier, digestAlgorithmIdentifier);
             signature.update(attr);
             return signature.verify(signatureValue);
-        } catch (InvalidKeyException e) {
-            throw new SignatureIntegrityException(e);
-        } catch (NoSuchAlgorithmException e) {
-            throw new SignatureIntegrityException(e);
-        } catch (SignatureException e) {
+        } catch (InvalidKeyException | NoSuchAlgorithmException | SignatureException e) {
             throw new SignatureIntegrityException(e);
         }
     }
@@ -451,6 +455,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
      * Takes the DER-encoded PKCS#1 binary data or PKCS#7 binary data object and reads it into an
      * Abstract Syntax Notation One (ASNI.1) object.
      *
+     * @param cmsData certificate data to parse.
      * @return ASN1Sequence representing the Cryptographic Message Syntax (CMS), null if data stream
      * could not be loaded
      */
@@ -499,7 +504,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
     /**
      * Validates the document against the data in the signatureDictionary.
      *
-     * @throws SignatureIntegrityException
+     * @throws SignatureIntegrityException error validating document.
      */
     protected void validateDocument() throws SignatureIntegrityException {
 
@@ -602,9 +607,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
                 }
             }
             lastVerified = new Date();
-        } catch (SignatureException e) {
-            throw new SignatureIntegrityException(e);
-        } catch (IOException e) {
+        } catch (SignatureException | IOException e) {
             throw new SignatureIntegrityException(e);
         }
 
@@ -621,7 +624,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
             }
             // cert validation
             X509Certificate[] cers = certificateChain.toArray(new X509Certificate[0]);
-            ArrayList<X509Certificate> trusted = new ArrayList<X509Certificate>(trustStore.size());
+            ArrayList<X509Certificate> trusted = new ArrayList<>(trustStore.size());
             Enumeration<String> aliases = trustStore.aliases();
             while (aliases.hasMoreElements()) {
                 trusted.add((X509Certificate) trustStore.getCertificate(aliases.nextElement()));

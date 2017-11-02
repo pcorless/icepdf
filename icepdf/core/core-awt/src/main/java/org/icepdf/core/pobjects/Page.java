@@ -185,9 +185,9 @@ public class Page extends Dictionary {
     private Shapes shapes = null;
 
     // the collection of objects listening for page paint events
-    private final List<PaintPageListener> paintPageListeners = new ArrayList<PaintPageListener>(8);
+    private final List<PaintPageListener> paintPageListeners = new ArrayList<>(8);
     // the collection of objects listening for page loading events
-    private final List<PageLoadingListener> pageLoadingListeners = new ArrayList<PageLoadingListener>();
+    private final List<PageLoadingListener> pageLoadingListeners = new ArrayList<>();
 
     // Defines the boundaries of the physical medium on which the page is
     // intended to be displayed on.
@@ -236,7 +236,7 @@ public class Page extends Dictionary {
 
         // if a stream process it as needed
         if (pageContent instanceof Stream) {
-            contents = new ArrayList<Stream>(1);
+            contents = new ArrayList<>(1);
             Stream tmpStream = (Stream) pageContent;
             tmpStream.setPObjectReference(
                     library.getObjectReference(entries, CONTENTS_KEY));
@@ -246,18 +246,18 @@ public class Page extends Dictionary {
         else if (pageContent instanceof List) {
             List conts = (List) pageContent;
             int sz = conts.size();
-            contents = new ArrayList<Stream>(Math.max(sz, 1));
+            contents = new ArrayList<>(Math.max(sz, 1));
             // pull all of the page content references from the library
-            for (int i = 0; i < sz; i++) {
+            for (Object cont : conts) {
                 if (Thread.currentThread().isInterrupted()) {
                     throw new InterruptedException("Page Content initialization thread interrupted");
                 }
-                Object tmp = library.getObject(conts.get(i));
+                Object tmp = library.getObject(cont);
                 if (tmp instanceof Stream) {
                     Stream tmpStream = (Stream) tmp;
                     // prune any zero length streams,
                     if (tmpStream != null && tmpStream.getRawBytes().length > 0) {
-                        tmpStream.setPObjectReference((Reference) conts.get(i));
+                        tmpStream.setPObjectReference((Reference) cont);
                         contents.add(tmpStream);
                     }
                 }
@@ -303,22 +303,22 @@ public class Page extends Dictionary {
         Object annots = library.getObject(entries, ANNOTS_KEY);
         if (annots != null && annots instanceof List) {
             List v = (List) annots;
-            annotations = new ArrayList<Annotation>(v.size() + 1);
+            annotations = new ArrayList<>(v.size() + 1);
             // add annotations
             Object annotObj;
             org.icepdf.core.pobjects.annotations.Annotation a = null;
-            for (int i = 0; i < v.size(); i++) {
+            for (Object aV : v) {
 
                 if (Thread.currentThread().isInterrupted()) {
                     throw new InterruptedException(
                             "Page Annotation initialization thread interrupted");
                 }
 
-                annotObj = v.get(i);
+                annotObj = aV;
                 Reference ref = null;
                 // we might have a reference
                 if (annotObj instanceof Reference) {
-                    ref = (Reference) v.get(i);
+                    ref = (Reference) aV;
                     annotObj = library.getObject(ref);
                 }
 
@@ -366,11 +366,6 @@ public class Page extends Dictionary {
         }
     }
 
-    @Override
-    public void setPObjectReference(Reference reference) {
-        super.setPObjectReference(reference);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
     /**
      * Reset the pages initialized flag and as a result subsequent calls to
      * this page may trigger a call to init().
@@ -410,10 +405,10 @@ public class Page extends Dictionary {
                 notifyPageLoadingStarted(contentCount, resources.getImageCount());
             }
 
-            /**
-             * Finally iterate through the contents vector and concat all of the
-             * the resource streams together so that the content parser can
-             * go to town and build all of the page's shapes.
+            /*
+              Finally iterate through the contents vector and concat all of the
+              the resource streams together so that the content parser can
+              go to town and build all of the page's shapes.
              */
             notifyPageInitializationStarted();
             if (contents != null) {
@@ -482,12 +477,6 @@ public class Page extends Dictionary {
         }
     }
 
-    public void requestInterrupt() {
-        if (shapes != null) {
-            shapes.interruptPaint();
-        }
-    }
-
     /**
      * Sets a page watermark implementation to be painted on top of the page
      * content.  Watermark can be specified for each page or once by calling
@@ -511,6 +500,7 @@ public class Page extends Dictionary {
      *                       painting the page content.
      * @param userRotation   Rotation factor, in degrees, to be applied to the rendered page
      * @param userZoom       Zoom factor to be applied to the rendered page
+     * @throws InterruptedException thread interrupted.
      */
     public void paint(Graphics g, int renderHintType, final int boundary,
                       float userRotation, float userZoom) throws InterruptedException {
@@ -535,6 +525,7 @@ public class Page extends Dictionary {
      *                             state of text object.  The search controller can
      *                             be used to easily search and add highlighted state
      *                             for search terms.
+     * @throws InterruptedException thread interrupted.
      */
     public void paint(Graphics g, int renderHintType, final int boundary,
                       float userRotation, float userZoom,
@@ -619,6 +610,7 @@ public class Page extends Dictionary {
      *                             state of text object.  The search controller can
      *                             be used to easily search and add highlighted state
      *                             for search terms.
+     * @throws InterruptedException thread interrupted.
      */
     public void paintPageContent(Graphics g, int renderHintType, float userRotation, float userZoom,
                                  boolean paintAnnotations, boolean paintSearchHighlight) throws InterruptedException {
@@ -652,8 +644,8 @@ public class Page extends Dictionary {
             float totalRotation = getTotalRotation(userRotation);
             int num = annotations.size();
             Annotation annotation;
-            for (int i = 0; i < num; i++) {
-                annotation = annotations.get(i);
+            for (Annotation annotation1 : annotations) {
+                annotation = annotation1;
                 annotation.render(g2, renderHintType, totalRotation, userZoom, false);
             }
         }
@@ -695,11 +687,8 @@ public class Page extends Dictionary {
         }
         pagePainted = true;
         // painting is complete interrupted or not.
-        if (shapes != null) {
-            notifyPagePaintingEnded(shapes.isInterrupted());
-        } else {
-            notifyPagePaintingEnded(false);
-        }
+        notifyPagePaintingEnded(false);
+
         // one last repaint, just to be sure
         notifyPaintPageListeners();
         // check image count if no images we are done.
@@ -874,7 +863,7 @@ public class Page extends Dictionary {
                     new PObject(this, this.getPObjectReference()));
             stateManager.addChange(annotsPObject);
 
-            this.annotations = new ArrayList<Annotation>();
+            this.annotations = new ArrayList<>();
         }
 
         // update parent page reference.
@@ -1545,6 +1534,7 @@ public class Page extends Dictionary {
      * to page space.
      *
      * @return list of text sprites for the given page.
+     * @throws InterruptedException thread interrupted.
      */
     public PageText getViewText() throws InterruptedException {
         if (!inited) {
@@ -1575,6 +1565,7 @@ public class Page extends Dictionary {
      * be used for straight text extraction.
      *
      * @return vector of Strings of all text objects inside the specified page.
+     * @throws InterruptedException thread interrupted.
      */
     public synchronized PageText getText() throws InterruptedException {
 
@@ -1587,10 +1578,10 @@ public class Page extends Dictionary {
 
         Shapes textBlockShapes = new Shapes();
 
-        /**
-         * Finally iterate through the contents vector and concat all of the
-         * the resouse streams together so that the contant parser can
-         * go to town and build all of the pages shapes.
+        /*
+          Finally iterate through the contents vector and concat all of the
+          the resouse streams together so that the contant parser can
+          go to town and build all of the pages shapes.
          */
         if (contents == null) {
             // Get the value of the page's content entry
@@ -1683,6 +1674,7 @@ public class Page extends Dictionary {
      * this page.
      *
      * @return vector of Images inside the current page
+     * @throws InterruptedException thread interrupted.
      */
     public synchronized List<Image> getImages() throws InterruptedException {
         if (!inited) {
@@ -1810,5 +1802,146 @@ public class Page extends Dictionary {
             client = paintPageListeners.get(i);
             client.paintPage(evt);
         }
+    }
+
+    /**
+     * The Java Graphics coordinate system has the origin at the top-left
+     * of the screen, with Y values increasing as one moves down the screen.
+     * The PDF coordinate system has the origin at the bottom-left of the
+     * document, with Y values increasing as one moved up the document.
+     * As well, PDFs can be displayed both rotated and zoomed.
+     * This method gives an AffineTransform which can be passed to
+     * java.awt.Graphics2D.transform(AffineTransform) so that one can then
+     * use that Graphics2D in the user-perspective PDF coordinate space.
+     *
+     * @param boundary     Constant specifying the page boundary to use when
+     *                     painting the page content.
+     * @param userRotation Rotation factor, in degrees, to be applied to the rendered page
+     * @param userZoom     Zoom factor to be applied to the rendered page
+     * @return AffineTransform for translating from the Java Graphics coordinate system to the
+     * rotated and zoomed PDF
+     * coordinate system.
+     */
+    public AffineTransform getToPageSpaceTransform(final int boundary, float userRotation, float userZoom) {
+        AffineTransform at = getPageTransform(boundary, userRotation, userZoom);
+        try {
+            at = at.createInverse();
+        } catch (NoninvertibleTransformException e) {
+            logger.log(Level.FINE, "Error getting page transform.", e);
+        }
+        return at;
+    }
+
+    /**
+     * Convert the mouse coordinates to the space specified by the pageTransform
+     * matrix.  This is a utility method for converting the mouse coordinates
+     * to page space so that it can be used in a contains calculation for text
+     * selection.
+     *
+     * @param point           point to convert space of
+     * @param affineTransform transform
+     * @return page space mouse coordinates.
+     */
+    public static Point2D.Float convertTo(Point point, AffineTransform affineTransform) {
+        Point2D.Float pageMouseLocation = new Point2D.Float();
+        affineTransform.transform(point, pageMouseLocation);
+        return pageMouseLocation;
+    }
+
+    /**
+     * Convert point to page space coordinate system.
+     *
+     * @param point        point to convert.
+     * @param boundary     Constant specifying the page boundary to use when
+     *                     painting the page content.
+     * @param userRotation Rotation factor, in degrees, to be applied to the rendered page
+     * @param userZoom     Zoom factor to be applied to the rendered page
+     * @return converted point.
+     */
+    public Point2D.Float convertToPageSpace(Point point, final int boundary, float userRotation, float userZoom) {
+        AffineTransform affineTransform = getToPageSpaceTransform(boundary, userRotation, userZoom);
+        return Page.convertTo(point, affineTransform);
+    }
+
+    /**
+     * Converts the rectangle to the space specified by the page transform. This
+     * is a utility method for converting a selection rectangle to page space
+     * so that an intersection can be calculated to determine a selected state.
+     *
+     * @param rectangle       rectangle to convert space of
+     * @param affineTransform transform
+     * @return converted rectangle.
+     */
+    public static Rectangle2D convertTo(Rectangle2D rectangle, AffineTransform affineTransform) {
+        GeneralPath shapePath;
+        shapePath = new GeneralPath(rectangle);
+        shapePath.transform(affineTransform);
+        return shapePath.getBounds2D();
+    }
+
+    /**
+     * Convert the given rectangle to page space coordinate system.
+     *
+     * @param rectangle    shape to convert to page space.
+     * @param boundary     Constant specifying the page boundary to use when
+     *                     painting the page content.
+     * @param userRotation Rotation factor, in degrees, to be applied to the rendered page
+     * @param userZoom     Zoom factor to be applied to the rendered page
+     * @return rectangle converted to page space.
+     */
+    public Rectangle2D convertToPageSpace(Rectangle2D rectangle, final int boundary, float userRotation, float userZoom) {
+        AffineTransform affineTransform = getToPageSpaceTransform(boundary, userRotation, userZoom);
+        return Page.convertTo(rectangle, affineTransform);
+    }
+
+    /**
+     * Converts the rectangle to the specified affineTransform.
+     *
+     * @param rectangle       shape to convert tobe convert to give space.
+     * @param affineTransform transform
+     * @return converted rectangle.
+     */
+    public static Rectangle convertTo(Rectangle rectangle, AffineTransform affineTransform) {
+        Rectangle tBbox = new Rectangle(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
+        return affineTransform.createTransformedShape(tBbox).getBounds();
+    }
+
+    /**
+     * Convert the rectangle to page space.
+     *
+     * @param rectangle    rectangle to convert to page space.
+     * @param boundary     Constant specifying the page boundary to use when
+     *                     painting the page content.
+     * @param userRotation Rotation factor, in degrees, to be applied to the rendered page
+     * @param userZoom     Zoom factor to be applied to the rendered page
+     * @return converted rectangle.
+     */
+    public Rectangle convertToPageSpace(Rectangle rectangle, final int boundary, float userRotation, float userZoom) {
+        AffineTransform affineTransform = getToPageSpaceTransform(boundary, userRotation, userZoom);
+        return Page.convertTo(rectangle, affineTransform);
+    }
+
+    /**
+     * @param shape           shape to be transformed.
+     * @param affineTransform transform.
+     * @return transformed shape.
+     */
+    public static Shape convertTo(Shape shape, AffineTransform affineTransform) {
+        return affineTransform.createTransformedShape(shape);
+    }
+
+    /**
+     * Convetes the specified shape to page space.
+     *
+     * @param shape        shape to transform.
+     * @param boundary     Constant specifying the page boundary to use when
+     *                     painting the page content.
+     * @param userRotation Rotation factor, in degrees, to be applied to the rendered page
+     * @param userZoom     Zoom factor to be applied to the rendered page
+     * @return return transformed shape.
+     */
+    public Shape convertToPageSpace(Shape shape, final int boundary, float userRotation, float userZoom) {
+        AffineTransform affineTransform = getToPageSpaceTransform(boundary, userRotation, userZoom);
+        return Page.convertTo(shape, affineTransform);
     }
 }

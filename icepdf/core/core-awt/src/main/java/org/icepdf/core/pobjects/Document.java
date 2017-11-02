@@ -160,7 +160,7 @@ public class Document {
      * Utility method for setting the origin (filepath or URL) of this Document
      *
      * @param o new origin value
-     * {@link #getDocumentOrigin}
+     *          {@link #getDocumentOrigin}
      */
     private void setDocumentOrigin(String o) {
         origin = o;
@@ -176,7 +176,7 @@ public class Document {
      * Sets the cached file path in the case of opening a file from a URL.
      *
      * @param o new cached file path value
-     * {@link #getDocumentCachedFilePath}
+     *          {@link #getDocumentCachedFilePath}
      */
     private void setDocumentCachedFilePath(String o) {
         cachedFilePath = o;
@@ -440,9 +440,7 @@ public class Document {
                 }
 
                 loaded = true;
-            } catch (PDFException e) {
-                throw e;
-            } catch (PDFSecurityException e) {
+            } catch (PDFException | PDFSecurityException e) {
                 throw e;
             } catch (Exception e) {
                 if (logger.isLoggable(Level.WARNING)) {
@@ -477,10 +475,7 @@ public class Document {
             logger.log(Level.FINE, "Error loading PDF file during linear parse.", e);
             dispose();
             throw e;
-        } catch (PDFSecurityException e) {
-            dispose();
-            throw e;
-        } catch (IOException e) {
+        } catch (PDFSecurityException | IOException e) {
             dispose();
             throw e;
         } catch (Exception e) {
@@ -613,7 +608,7 @@ public class Document {
         PTrailer documentTrailer = null;
 
         // Loop through all objects that where parsed from the data stream
-        List<PObject> documentObjects = new ArrayList<PObject>();
+        List<PObject> documentObjects = new ArrayList<>();
         Object pdfObject;
         while (true) {
             // parse all of the objects in the stream,  objects are added
@@ -821,11 +816,11 @@ public class Document {
      * @throws PDFSecurityException if there is an issue finding encryption libraries.
      */
     private boolean makeSecurityManager(PTrailer documentTrailer) throws PDFSecurityException {
-        /**
-         * Before a security manager can be created or needs to be created
-         * we need the following
-         *      1.  The trailer object must have an encrypt entry
-         *      2.  The trailer object must have an ID entry
+        /*
+          Before a security manager can be created or needs to be created
+          we need the following
+               1.  The trailer object must have an encrypt entry
+               2.  The trailer object must have an ID entry
          */
         boolean madeSecurityManager = false;
         HashMap<Object, Object> encryptDictionary = documentTrailer.getEncrypt();
@@ -944,7 +939,7 @@ public class Document {
      * @return page dimension for the specified page number.
      * {@link #getPageDimension(int, float)}
      */
-    public PDimension getPageDimension(int pageNumber, float userRotation, float userZoom){
+    public PDimension getPageDimension(int pageNumber, float userRotation, float userZoom) {
         Page page = catalog.getPageTree().getPage(pageNumber);
         if (page != null) {
             return page.getSize(userRotation, userZoom);
@@ -1018,6 +1013,7 @@ public class Document {
      *                       painting the page content.
      * @param userRotation   Rotation factor, in degrees, to be applied to the rendered page.
      * @param userZoom       Zoom factor to be applied to the rendered page.
+     * @throws InterruptedException thread interrupted.
      */
     public void paintPage(int pageNumber, Graphics g, final int renderHintType,
                           final int pageBoundary, float userRotation, float userZoom) throws InterruptedException {
@@ -1109,7 +1105,7 @@ public class Document {
                 Object[] argValues = {this, out, documentLength};
                 Method method = incrementalUpdaterClass.getDeclaredMethod(
                         "appendIncrementalUpdate",
-                        new Class[]{Document.class, OutputStream.class, Long.TYPE});
+                        Document.class, OutputStream.class, Long.TYPE);
                 long appendedLength = (Long) method.invoke(null, argValues);
                 return documentLength + appendedLength;
             } catch (Throwable e) {
@@ -1136,6 +1132,7 @@ public class Document {
      *                       so only the following values are valid: 0.0f, 90.0f, 180.0f, 270.0f.
      * @param userZoom       Zoom factor to be applied to the rendered page.
      * @return an Image object of the current page.
+     * @throws InterruptedException thread interrupted.
      */
     public Image getPageImage(int pageNumber,
                               final int renderHintType, final int pageBoundary,
@@ -1168,6 +1165,7 @@ public class Document {
      *                   The page number is zero-based.
      * @return page PageText data Structure.
      * {@link #getPageViewText(int)}
+     * @throws InterruptedException thread interrupted.
      */
     public PageText getPageText(int pageNumber) throws InterruptedException {
         PageTree pageTree = catalog.getPageTree();
@@ -1188,8 +1186,9 @@ public class Document {
      * @param pageNumber Page number of page in which text extraction will act on.
      *                   The page number is zero-based.
      * @return page PageText data Structure.
+     * @throws InterruptedException thread interrupted.
      */
-    public PageText getPageViewText(int pageNumber) throws InterruptedException{
+    public PageText getPageViewText(int pageNumber) throws InterruptedException {
         PageTree pageTree = catalog.getPageTree();
         if (pageNumber >= 0 && pageNumber < pageTree.getNumberOfPages()) {
             Page pg = pageTree.getPage(pageNumber);
@@ -1290,6 +1289,7 @@ public class Document {
      *
      * @param pageNumber page number to act on.  Zero-based page number.
      * @return vector of Images inside the current page
+     * @throws InterruptedException thread interrupted.
      */
     public List<Image> getPageImages(int pageNumber) throws InterruptedException {
         Page pg = catalog.getPageTree().getPage(pageNumber);

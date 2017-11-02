@@ -32,7 +32,7 @@ import java.util.HashMap;
 /**
  * The FormDrawCmd when executed will draw an xForm's shapes to a raster and
  * then paint the raster.  This procedure is only executed if the xForm
- * is part of transparency group that has a alpha value < 1.0f.
+ * is part of transparency group that has a alpha value &lt; 1.0f.
  *
  * @since 5.0
  */
@@ -154,7 +154,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
                             g.getRenderingHints());
                     // compost all the images.
                     if (softMask != null) {
-                        BufferedImage formBuffer = new ImageUtility().createTranslucentCompatibleImage(
+                        BufferedImage formBuffer = ImageUtility.createTranslucentCompatibleImage(
                                 xFormBuffer.getWidth(), xFormBuffer.getHeight());
                         Graphics2D g2d = (Graphics2D) formBuffer.getGraphics();
 //                        java.util.List<Number> compRaw = formSoftMask.getBC();
@@ -189,7 +189,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
             BufferedImage sMaskBuffer = createBufferXObject(parentPage, softMask.getG(), softMask, renderingHints, true);
 //            ImageUtility.displayImage(xFormBuffer, "base " + xForm.getPObjectReference() + " " + xFormBuffer.getHeight() + " x " + xFormBuffer.getHeight());
 //            ImageUtility.displayImage(sMaskBuffer, "smask " + softMask.getG().getPObjectReference() + " " + useLuminosity);
-            if (!(gsSoftMask != null)) {
+            if (gsSoftMask == null) {
                 xFormBuffer = new ImageUtility().applyExplicitSMask(xFormBuffer, sMaskBuffer);
             } else {
                 // todo try and figure out how to apply an AIS=false alpha to an xobject.

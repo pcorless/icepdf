@@ -16,7 +16,6 @@
 package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.PDate;
-import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
@@ -25,16 +24,12 @@ import org.icepdf.ri.common.tools.TextAnnotationHandler;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.common.views.DocumentViewModel;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.NoninvertibleTransformException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -169,7 +164,7 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
         if (annotation != null && annotation.getPopupAnnotation() == null) {
             popupAnnotation = TextAnnotationHandler.createPopupAnnotation(
                     documentViewController.getDocument().getPageTree().getLibrary(),
-                    tBbox, annotation, getPageTransform());
+                    tBbox, annotation, getToPageSpaceTransform());
             annotation.setPopupAnnotation(popupAnnotation);
         } else if (annotation != null) {
             popupAnnotation = annotation.getPopupAnnotation();
@@ -239,30 +234,7 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
         }
     }
 
-    /**
-     * Convert the shapes that make up the annotation to page space so that
-     * they will scale correctly at different zooms.
-     *
-     * @return transformed bbox.
-     */
-    protected Shape convertToPageSpace(Shape shape) {
-        Page currentPage = pageViewComponent.getPage();
-        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-        AffineTransform at = currentPage.getPageTransform(
-                documentViewModel.getPageBoundary(),
-                documentViewModel.getViewRotation(),
-                documentViewModel.getViewZoom());
-        try {
-            at = at.createInverse();
-        } catch (NoninvertibleTransformException e) {
-            logger.log(Level.FINE, "Error converting to page space.", e);
-        }
 
-        shape = at.createTransformedShape(shape);
-
-        return shape;
-
-    }
 
     public boolean isActive() {
         return false;

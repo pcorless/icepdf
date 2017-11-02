@@ -29,7 +29,7 @@ import java.util.LinkedList;
  */
 public class OptionalContentState {
 
-    private LinkedList<OptionalContents> optionContents = new LinkedList<OptionalContents>();
+    private LinkedList<OptionalContents> optionContents = new LinkedList<>();
 
     private boolean isEmpty = true;
 

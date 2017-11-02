@@ -83,7 +83,7 @@ public class FontDescriptor extends Dictionary {
      * @return new instance of a <code>FontDescriptor</code>
      */
     public static FontDescriptor createDescriptor(Library library, AFM afm) {
-        HashMap<Name, Object> properties = new HashMap<Name, Object>(7);
+        HashMap<Name, Object> properties = new HashMap<>(7);
         properties.put(FONT_NAME, afm.getFontName());
         properties.put(FONT_FAMILY, afm.getFamilyName());
         properties.put(FONT_BBOX, afm.getFontBBox());
@@ -252,12 +252,12 @@ public class FontDescriptor extends Dictionary {
             return;
         }
 
-        /**
-         * FontFile1 = A stream containing a Type 1 font program
-         * FontFile2 = A stream containing a TrueType font program
-         * FontFile3 = A stream containing a font program other than Type 1 or
-         * TrueType. The format of the font program is specified by the Subtype entry
-         * in the stream dictionary
+        /*
+          FontFile1 = A stream containing a Type 1 font program
+          FontFile2 = A stream containing a TrueType font program
+          FontFile3 = A stream containing a font program other than Type 1 or
+          TrueType. The format of the font program is specified by the Subtype entry
+          in the stream dictionary
          */
         try {
 

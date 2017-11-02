@@ -84,6 +84,9 @@ public class SearchTextTask {
      * @param caseSensitive case sensitive indicates cases sensitive search
      * @param r2L           right left earch, not currently implemented.
      * @param messageBundle message bundle used for dialog text.
+     * @param cumulative    cumulative search terms.
+     * @param regex         enable regular expression notation
+     * @param showPages     show results tree with page nodes.
      */
     public SearchTextTask(SearchPanel searchPanel,
                           Controller controller,

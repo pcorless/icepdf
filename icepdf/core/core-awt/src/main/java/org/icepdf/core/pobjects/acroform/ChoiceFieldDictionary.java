@@ -134,7 +134,7 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
         }
         if (value != null) {
             ArrayList opts = (ArrayList) value;
-            options = new ArrayList<ChoiceOption>(opts.size());
+            options = new ArrayList<>(opts.size());
             for (Object opt : opts) {
                 if (opt instanceof StringObject) {
                     StringObject tmp = (StringObject) opt;
@@ -183,14 +183,14 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
         value = library.getObject(entries, I_KEY);
         if (value instanceof ArrayList) {
             ArrayList<Number> tmp = (ArrayList) value;
-            indexes = new ArrayList<Integer>(tmp.size());
+            indexes = new ArrayList<>(tmp.size());
             for (Number aTmp : tmp) {
                 indexes.add(aTmp.intValue());
             }
         }
         // we might not have an I_key but should have a value to work with if so we build the index our self.
         if (indexes == null && options != null) {
-            indexes = new ArrayList<Integer>(1);
+            indexes = new ArrayList<>(1);
             for (int i = 0, j = 0, max = options.size(); i < max; i++) {
                 if (options.get(i).getLabel().equals(value)) {
                     indexes.set(j, i);
@@ -225,7 +225,7 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
         if (indexes != null) {
             indexes.clear();
         }else{
-            indexes = new ArrayList<Integer>();
+            indexes = new ArrayList<>();
         }
         for (int i = 0, j = 0, max = options.size(); i < max; i++) {
             if (options.get(i).getLabel().equals(selectedValue)) {

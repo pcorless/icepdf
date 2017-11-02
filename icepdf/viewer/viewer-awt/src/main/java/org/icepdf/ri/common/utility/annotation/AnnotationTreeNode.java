@@ -51,7 +51,7 @@ public class AnnotationTreeNode extends AbstractAnnotationTreeNode<Annotation> {
 
     /**
      * Utility for setting the label via a message bundle resource.
-     *
+     * @param markupAnnotation markup annotation to apply message too.
      * @param messageBundle ri message bundle
      */
     public void applyMessage(Annotation markupAnnotation, ResourceBundle messageBundle) {

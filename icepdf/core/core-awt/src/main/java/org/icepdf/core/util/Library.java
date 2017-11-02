@@ -86,9 +86,9 @@ public class Library {
     // new incremental file loader class.
     private LazyObjectLoader lazyObjectLoader;
     private ConcurrentHashMap<Reference, WeakReference<Object>> refs =
-            new ConcurrentHashMap<Reference, WeakReference<Object>>(1024);
+            new ConcurrentHashMap<>(1024);
     private ConcurrentHashMap<Reference, WeakReference<ICCBased>> lookupReference2ICCBased =
-            new ConcurrentHashMap<Reference, WeakReference<ICCBased>>(256);
+            new ConcurrentHashMap<>(256);
     // Instead of keeping Names names, Dictionary dests, we keep
     //   a reference to the Catalog, which actually owns them
     private Catalog catalog;
@@ -508,7 +508,7 @@ public class Library {
             if (obj instanceof Stream) {
                 Stream stream = (Stream) obj;
                 cs = new ICCBased(this, stream);
-                lookupReference2ICCBased.put(ref, new WeakReference<ICCBased>(cs));
+                lookupReference2ICCBased.put(ref, new WeakReference<>(cs));
             }
         }
         return cs;
@@ -561,7 +561,7 @@ public class Library {
      * @param objectReference PDF object reference object.
      */
     public void addObject(Object object, Reference objectReference) {
-        refs.put(objectReference, new WeakReference<Object>(object));
+        refs.put(objectReference, new WeakReference<>(object));
     }
 
     /**
@@ -761,16 +761,14 @@ public class Library {
         if (commonThreadPool == null || commonThreadPool.isShutdown()) {
             commonThreadPool = new ThreadPoolExecutor(
                     commonPoolThreads, commonPoolThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
-                    new LinkedBlockingQueue<Runnable>());
+                    new LinkedBlockingQueue<>());
             // set a lower thread priority
-            commonThreadPool.setThreadFactory(new ThreadFactory() {
-                public Thread newThread(java.lang.Runnable command) {
-                    Thread newThread = new Thread(command);
-                    newThread.setName("ICEpdf-thread-pool");
-                    newThread.setPriority(Thread.NORM_PRIORITY);
-                    newThread.setDaemon(true);
-                    return newThread;
-                }
+            commonThreadPool.setThreadFactory(command -> {
+                Thread newThread = new Thread(command);
+                newThread.setName("ICEpdf-thread-pool");
+                newThread.setPriority(Thread.NORM_PRIORITY);
+                newThread.setDaemon(true);
+                return newThread;
             });
         }
 
@@ -778,16 +776,14 @@ public class Library {
         if (imageThreadPool == null || imageThreadPool.isShutdown()) {
             imageThreadPool = new ThreadPoolExecutor(
                     imagePoolThreads, imagePoolThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
-                    new LinkedBlockingQueue<Runnable>());
+                    new LinkedBlockingQueue<>());
             // set a lower thread priority
-            imageThreadPool.setThreadFactory(new ThreadFactory() {
-                public Thread newThread(java.lang.Runnable command) {
-                    Thread newThread = new Thread(command);
-                    newThread.setName("ICEpdf-thread-image-pool");
-                    newThread.setPriority(Thread.NORM_PRIORITY);
-                    newThread.setDaemon(true);
-                    return newThread;
-                }
+            imageThreadPool.setThreadFactory(command -> {
+                Thread newThread = new Thread(command);
+                newThread.setName("ICEpdf-thread-image-pool");
+                newThread.setPriority(Thread.NORM_PRIORITY);
+                newThread.setDaemon(true);
+                return newThread;
             });
         }
     }

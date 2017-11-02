@@ -41,7 +41,7 @@ public interface PageLoadingListener {
      *
      * @param event PageLoadingEvent is fired populated with data.
      */
-    public void pageLoadingStarted(PageLoadingEvent event);
+    void pageLoadingStarted(PageLoadingEvent event);
 
     /**
      * Page initialization has started which is the parsing of the Page's
@@ -49,7 +49,7 @@ public interface PageLoadingListener {
      *
      * @param event PageProcessingEvent with data set to false.
      */
-    public void pageInitializationStarted(PageInitializingEvent event);
+    void pageInitializationStarted(PageInitializingEvent event);
 
     /**
      * Page initialization has be ended via successful parse or an interrupt
@@ -59,7 +59,7 @@ public interface PageLoadingListener {
      * @param event PageProcessingEvent can be used to see if page was
      *              successfully parsed or was interrupted.
      */
-    public void pageInitializationEnded(PageInitializingEvent event);
+    void pageInitializationEnded(PageInitializingEvent event);
 
     /**
      * A pages images has been parsed. The PageImageEvent can be used to find out
@@ -68,7 +68,7 @@ public interface PageLoadingListener {
      *
      * @param event PageImageEvent
      */
-    public void pageImageLoaded(PageImageEvent event);
+    void pageImageLoaded(PageImageEvent event);
 
     /**
      * Page painting has begun. The PagePaintingEvent can be used to find out
@@ -76,7 +76,7 @@ public interface PageLoadingListener {
      *
      * @param event PagePaintingEvent
      */
-    public void pagePaintingStarted(PagePaintingEvent event);
+    void pagePaintingStarted(PagePaintingEvent event);
 
     /**
      * Page painting has stopped.  Teh PagePaintingEvent can be used to find out
@@ -84,7 +84,7 @@ public interface PageLoadingListener {
      *
      * @param event PagePaintingEvent
      */
-    public void pagePaintingEnded(PagePaintingEvent event);
+    void pagePaintingEnded(PagePaintingEvent event);
 
     /**
      * Page loading has completed and all images have been loaded, no further
@@ -92,5 +92,5 @@ public interface PageLoadingListener {
      *
      * @param event PageLoadingEvent
      */
-    public void pageLoadingEnded(PageLoadingEvent event);
+    void pageLoadingEnded(PageLoadingEvent event);
 }

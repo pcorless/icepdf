@@ -252,7 +252,7 @@ public class ColorUtil {
 
         Integer ii = (Integer) colors.get(name);
         if (ii != null) {
-            return ii.intValue();
+            return ii;
         }
 
         return -1;
@@ -438,7 +438,7 @@ public class ColorUtil {
                             break L0;
                         }
                     }
-                    break L;
+                    break;
                 case 4:
                     switch (s.charAt(3)) {
                         case 'a':
@@ -507,7 +507,7 @@ public class ColorUtil {
                             }
                             break L;
                     }
-                    break L;
+                    break;
                 case 5:
                     switch (s.charAt(0)) {
                         case 'a':
@@ -562,7 +562,7 @@ public class ColorUtil {
                             }
                             break L;
                     }
-                    break L;
+                    break;
                 case 6:
                     switch (s.charAt(3)) {
                         case 'a':
@@ -618,7 +618,7 @@ public class ColorUtil {
                             id = Id_silver;
                             break L;
                     }
-                    break L;
+                    break;
                 case 7:
                     switch (s.charAt(3)) {
                         case 'b':
@@ -664,7 +664,7 @@ public class ColorUtil {
                             id = Id_thistle;
                             break L;
                     }
-                    break L;
+                    break;
                 case 8:
                     switch (s.charAt(4)) {
                         case 'a':
@@ -714,7 +714,7 @@ public class ColorUtil {
                             id = Id_honeydew;
                             break L;
                     }
-                    break L;
+                    break;
                 case 9:
                     switch (s.charAt(0)) {
                         case 'a':
@@ -863,7 +863,7 @@ public class ColorUtil {
                             id = Id_turquoise;
                             break L;
                     }
-                    break L;
+                    break;
                 case 10:
                     switch (s.charAt(8)) {
                         case 'a':
@@ -935,7 +935,7 @@ public class ColorUtil {
                             id = Id_sandybrown;
                             break L;
                     }
-                    break L;
+                    break;
                 case 11:
                     switch (s.charAt(5)) {
                         case 'a':
@@ -985,7 +985,7 @@ public class ColorUtil {
                             }
                             break L;
                     }
-                    break L;
+                    break;
                 case 12:
                     switch (s.charAt(7)) {
                         case 'g':
@@ -1017,7 +1017,7 @@ public class ColorUtil {
                             id = Id_lightskyblue;
                             break L;
                     }
-                    break L;
+                    break;
                 case 13:
                     switch (s.charAt(9)) {
                         case 'b':
@@ -1067,7 +1067,7 @@ public class ColorUtil {
                             id = Id_palevioletred;
                             break L;
                     }
-                    break L;
+                    break;
                 case 14:
                     switch (s.charAt(6)) {
                         case 'e':
@@ -1101,7 +1101,7 @@ public class ColorUtil {
                             id = Id_lightsteelblue;
                             break L;
                     }
-                    break L;
+                    break;
                 case 15:
                     c = s.charAt(6);
                     if (c == 's') {
@@ -1114,19 +1114,19 @@ public class ColorUtil {
                         X = "mediumvioletred";
                         id = Id_mediumvioletred;
                     }
-                    break L;
+                    break;
                 case 16:
                     X = "mediumaquamarine";
                     id = Id_mediumaquamarine;
-                    break L;
+                    break;
                 case 17:
                     X = "mediumspringgreen";
                     id = Id_mediumspringgreen;
-                    break L;
+                    break;
                 case 20:
                     X = "lightgoldenrodyellow";
                     id = Id_lightgoldenrodyellow;
-                    break L;
+                    break;
             }
             if (X != null && X != s && !X.equals(s)) id = 0;
         }

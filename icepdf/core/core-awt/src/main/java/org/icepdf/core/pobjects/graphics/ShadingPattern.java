@@ -164,8 +164,9 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
     /**
      * Factory method to resolve the shadingDictionary dictionaries ShadingType 4- 6 which are Stream based.
      *
-     * @param library   library for document
-     * @param attribute dictionary for potential shadingDictionary object.
+     * @param library       library for document
+     * @param attribute     dictionary for potential shadingDictionary object.
+     * @param shadingStream content stream of shading data.
      * @return returns a ShadingPattern object based ont he shadingType criteria.
      * if the proper constructor cannot be found then null is returned.
      */
@@ -245,6 +246,7 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
 
     /**
      * Applies the function data to the values array.
+     *
      * @param values values to feed functions.
      * @return new values after function execution.
      */

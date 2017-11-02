@@ -34,8 +34,8 @@ import java.util.HashMap;
  */
 public class AlgorithmIdentifier {
 
-    private static final HashMap<String, String> encryptionAlgorithms = new HashMap<String, String>();
-    private static final HashMap<String, String> digestAlgorithms = new HashMap<String, String>();
+    private static final HashMap<String, String> encryptionAlgorithms = new HashMap<>();
+    private static final HashMap<String, String> digestAlgorithms = new HashMap<>();
 
     static {
         // common encryption numbers/names used in PDF
@@ -91,9 +91,7 @@ public class AlgorithmIdentifier {
         if (provider != null) {
             try {
                 return MessageDigest.getInstance(algorithm, provider);
-            } catch (NoSuchAlgorithmException e) {
-                return MessageDigest.getInstance(algorithm);
-            } catch (NoSuchProviderException e) {
+            } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
                 return MessageDigest.getInstance(algorithm);
             }
         } else {

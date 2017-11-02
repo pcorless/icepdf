@@ -185,13 +185,13 @@ public class OptionalContent extends Dictionary {
                 }
             }
             // ignore AS for now.
-            /**
-             * An array of usage application dictionaries (see Table 103)
-             * specifying which usage dictionary categories (see Table 102)
-             * shall be consulted by conforming readers to automatically set the
-             * states of optional content groups based on external factors,
-             * such as the current system language or viewing magnification,
-             * and when they shall be applied.Order
+            /*
+              An array of usage application dictionaries (see Table 103)
+              specifying which usage dictionary categories (see Table 102)
+              shall be consulted by conforming readers to automatically set the
+              states of optional content groups based on external factors,
+              such as the current system language or viewing magnification,
+              and when they shall be applied.Order
              */
 
             // get the ordering information used by the UI. resolve the ref

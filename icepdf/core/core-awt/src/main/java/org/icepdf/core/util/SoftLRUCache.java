@@ -29,12 +29,12 @@ public class SoftLRUCache<K, V> {
     private ReferenceQueue<? super V> reqQueue;
 
     public SoftLRUCache(int aInitialSize) {
-        lruCache = new LinkedHashMap<K, SoftReference<V>>(
+        lruCache = new LinkedHashMap<>(
                 aInitialSize,
                 0.75f,
                 true
         );
-        reqQueue = new ReferenceQueue<V>();
+        reqQueue = new ReferenceQueue<>();
     }
 
     public V get(K aKey) {
@@ -49,7 +49,7 @@ public class SoftLRUCache<K, V> {
 
     public V put(K aKey, V aValue) {
         diposeStaleEntries();
-        SoftReference<V> oldValue = lruCache.put(aKey, new KeyReference<K, V>(aKey, aValue, reqQueue));
+        SoftReference<V> oldValue = lruCache.put(aKey, new KeyReference<>(aKey, aValue, reqQueue));
         if (oldValue != null) {
             return oldValue.get();
         } else {

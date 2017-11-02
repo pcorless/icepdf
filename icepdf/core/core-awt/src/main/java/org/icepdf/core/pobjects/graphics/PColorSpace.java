@@ -34,9 +34,6 @@ public abstract class PColorSpace extends Dictionary {
     private static final Logger logger =
             Logger.getLogger(PColorSpace.class.toString());
 
-    /**
-     * @return
-     */
     public abstract int getNumComponents();
 
 
@@ -46,19 +43,10 @@ public abstract class PColorSpace extends Dictionary {
         return name.substring(index + 1);
     }
 
-    /**
-     * @param l
-     * @param h
-     */
     PColorSpace(Library l, HashMap h) {
         super(l, h);
     }
 
-    /**
-     * @param library
-     * @param o
-     * @return
-     */
     public static PColorSpace getColorSpace(Library library, Object o) {
         if (o != null) {
             PColorSpace colorSpace = null;
@@ -216,10 +204,6 @@ public abstract class PColorSpace extends Dictionary {
             out[i] = (((float) in[i]) / maxval);
     }
 
-    /**
-     * @param f
-     * @return
-     */
     public static float[] reverse(float f[]) {
         float n[] = new float[f.length];
         //System.out.print("R ");

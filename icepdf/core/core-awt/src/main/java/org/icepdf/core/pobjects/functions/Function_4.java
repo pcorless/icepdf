@@ -66,7 +66,7 @@ public class Function_4 extends Function {
             logger.finer("Type 4 function operands could not be found.");
         }
         // cache for type 4 function results.
-        resultCache = new ConcurrentHashMap<Integer, float[]>();
+        resultCache = new ConcurrentHashMap<>();
     }
 
     /**

@@ -21,15 +21,14 @@ import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.pobjects.fonts.ofont.Encoding;
 
 import java.io.*;
-import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * @author Mark Collette
- *         Date: 18-Feb-2005
- *         Time: 3:53:40 PM
+ * Date: 18-Feb-2005
+ * Time: 3:53:40 PM
  */
 public class Utils {
 
@@ -65,13 +64,14 @@ public class Utils {
     }
 
     /**
+     * Read long with varying bytes length
+     *
      * @param in       InputStream to read from
      * @param numBytes number of bytes to read to make integral value from [0, 8]
      * @return Integral value, which is composed of numBytes bytes, read using big-endian rules from in
-     * @throws IOException
+     * @throws IOException error reading input stream.
      */
     public static long readLongWithVaryingBytesBE(InputStream in, int numBytes) throws IOException {
-//System.out.println("Utils.readLongWithVaryingBytesBE()  numBytes: " + numBytes);
         long val = 0;
         for (int i = 0; i < numBytes; i++) {
             int curr = in.read();
@@ -84,13 +84,14 @@ public class Utils {
     }
 
     /**
+     * Read long with varying bytes length
+     *
      * @param in       InputStream to read from
      * @param numBytes number of bytes to read to make integral value from [0, 4]
      * @return Integral value, which is composed of numBytes bytes, read using big-endian rules from in
-     * @throws IOException
+     * @throws IOException error reading int value
      */
     public static int readIntWithVaryingBytesBE(InputStream in, int numBytes) throws IOException {
-//System.out.println("Utils.readIntWithVaryingBytesBE()  numBytes: " + numBytes);
         int val = 0;
         for (int i = 0; i < numBytes; i++) {
             int curr = in.read();
@@ -142,7 +143,7 @@ public class Utils {
         int unit = si ? 1000 : 1024;
         if (bytes < unit) return bytes + " B";
         int exp = (int) (Math.log(bytes) / Math.log(unit));
-        String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp-1) + (si ? "" : "i");
+        String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
         return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
     }
 
@@ -171,33 +172,6 @@ public class Utils {
             }
         }
         return sb.toString();
-    }
-
-    /**
-     * boolean java.awt.GraphicsEnvironment.isHeadless() does not exist in Java 1.3,
-     * since it was introduced in Java 1.4, so we use reflection to call it,
-     * if it exists.
-     * In the event of not being able to call graphicsEnvironment.isHeadless(),
-     * instead of throwing an Exception, we simply return defaultReturnIfNoMethod
-     *
-     * @param graphicsEnvironment     java.awt.GraphicsEnvironment to call isHeadless() on
-     * @param defaultReturnIfNoMethod Value to return if could not call graphicsEnvironment.isHeadless()
-     */
-    public static boolean reflectGraphicsEnvironmentISHeadlessInstance(Object graphicsEnvironment, boolean defaultReturnIfNoMethod) {
-        try {
-            Class<?> clazz = graphicsEnvironment.getClass();
-            Method isHeadlessInstanceMethod = clazz.getMethod("isHeadlessInstance", new Class[]{});
-            if (isHeadlessInstanceMethod != null) {
-                Object ret = isHeadlessInstanceMethod.invoke(
-                        graphicsEnvironment);
-                if (ret instanceof Boolean)
-                    return (Boolean) ret;
-            }
-        } catch (Throwable t) {
-            logger.log(Level.FINE,
-                    "ImageCache: Java 1.4 Headless support not found.");
-        }
-        return defaultReturnIfNoMethod;
     }
 
     public static String getContentAndReplaceInputStream(InputStream[] inArray, boolean convertToHex) {
@@ -341,9 +315,12 @@ public class Utils {
      * none is specified, then String(byte[]) will use the platform's
      * default encoding. This method is for when encoding is not relevant,
      * when the String simply holds byte values in each char.
-     *
+     * <p>
      * {@link org.icepdf.core.pobjects.LiteralStringObject}
      * {@link org.icepdf.core.pobjects.HexStringObject}
+     *
+     * @param string char sequence to convert to byte array.
+     * @return byte array of input string, encoding untouched.
      */
     public static byte[] convertByteCharSequenceToByteArray(CharSequence string) {
         final int max = string.length();
@@ -363,6 +340,8 @@ public class Utils {
      *
      * {@link org.icepdf.core.pobjects.LiteralStringObject}
      * {@link org.icepdf.core.pobjects.HexStringObject}
+     * @param  bytes to convert.
+     * @return converted bytes
      */
     public static String convertByteArrayToByteString(byte[] bytes) {
         final int max = bytes.length;
@@ -398,7 +377,7 @@ public class Utils {
             // convert teh unicode to characters.
             for (int i = 2; i < titleText.length(); i += 2) {
                 try {
-                    int b1 = ((((int) titleText.charAt(i)) & 0xFF)  << 8 ) |
+                    int b1 = ((((int) titleText.charAt(i)) & 0xFF) << 8) |
                             ((int) titleText.charAt(i + 1)) & 0xFF;
                     //System.err.println(b1 + " " + b2);
                     sb1.append((char) (b1));

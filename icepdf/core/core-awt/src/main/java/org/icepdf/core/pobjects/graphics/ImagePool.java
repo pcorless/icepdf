@@ -77,21 +77,13 @@ public class ImagePool {
 
     public BufferedImage get(Reference ref) {
         if (enabled) {
-//            synchronized (fCache) {
                 return fCache.get(ref);
-//            }
         } else {
             return null;
         }
     }
 
     public boolean containsKey(Reference ref) {
-        if (enabled) {
-//            synchronized (fCache) {
-                return fCache.containsKey(ref);
-//            }
-        } else {
-            return false;
-        }
+        return enabled && fCache.containsKey(ref);
     }
 }

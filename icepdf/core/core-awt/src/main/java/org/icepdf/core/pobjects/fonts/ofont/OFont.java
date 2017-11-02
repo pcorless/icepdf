@@ -66,7 +66,7 @@ public class OFont implements FontFile {
     public OFont(Font awtFont) {
         this.awtFont = awtFont;
         maxCharBounds = new Rectangle2D.Double();
-        this.echarAdvanceCache = new HashMap<String, Point2D.Float>(256);
+        this.echarAdvanceCache = new HashMap<>(256);
     }
 
     private OFont(OFont font) {

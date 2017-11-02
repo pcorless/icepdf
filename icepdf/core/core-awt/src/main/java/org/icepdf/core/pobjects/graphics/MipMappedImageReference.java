@@ -48,7 +48,7 @@ class MipMappedImageReference extends ImageReference {
 
         super(imageStream, graphicsState, resources, imageIndex, page);
 
-        images = new ArrayList<ImageReference>();
+        images = new ArrayList<>();
 
         ImageReference imageReference =
                 new ImageStreamReference(imageStream, graphicsState, resources, imageIndex, page);

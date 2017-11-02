@@ -84,13 +84,11 @@ public class CalRGB extends PColorSpace {
 
 
     public Color getColor(float[] f, boolean fillAndStroke) {
-        if (true) {
-            return new java.awt.Color(f[2], f[1], f[0]);
-        }
+        return new Color(f[2], f[1], f[0]);
         /*        float A = (float)Math.exp(gamma[0]*Math.log(f[2]));
          float B = (float)Math.exp(gamma[1]*Math.log(f[1]));
          float C = (float)Math.exp(gamma[2]*Math.log(f[0]));*/
-        float A = (float) Math.pow(f[2], gamma[0]);
+        /*float A = (float) Math.pow(f[2], gamma[0]);
         float B = (float) Math.pow(f[1], gamma[1]);
         float C = (float) Math.pow(f[0], gamma[2]);
         float X = matrix[0] * A + matrix[3] * B + matrix[6] * C;
@@ -114,7 +112,7 @@ public class CalRGB extends PColorSpace {
         if (Z > 1) {
             Z = 1;
         }
-        return new Color(X, Y, Z);
+        return new Color(X, Y, Z);*/
         //        return  new java.awt.Color(f[2]*255/max_val, f[1]*255/max_val, f[0]*255/max_val);
     }
 }

@@ -22,9 +22,9 @@ public class ShadingType4Pattern extends ShadingMeshPattern {
     private static final Logger logger =
             Logger.getLogger(ShadingType4Pattern.class.toString());
 
-    private ArrayList<Integer> vertexEdgeFlag = new ArrayList<Integer>();
-    private ArrayList<Point2D.Float> coordinates = new ArrayList<Point2D.Float>();
-    private ArrayList<Color> colorComponents = new ArrayList<Color>();
+    private ArrayList<Integer> vertexEdgeFlag = new ArrayList<>();
+    private ArrayList<Point2D.Float> coordinates = new ArrayList<>();
+    private ArrayList<Color> colorComponents = new ArrayList<>();
 
     public ShadingType4Pattern(Library l, HashMap h, Stream meshDataStream) {
         super(l, h, meshDataStream);
@@ -32,9 +32,9 @@ public class ShadingType4Pattern extends ShadingMeshPattern {
 
     public void init(GraphicsState graphicsState) {
 
-        vertexEdgeFlag = new ArrayList<Integer>();
-        coordinates = new ArrayList<Point2D.Float>();
-        colorComponents = new ArrayList<Color>();
+        vertexEdgeFlag = new ArrayList<>();
+        coordinates = new ArrayList<>();
+        colorComponents = new ArrayList<>();
         try {
             while (vertexBitStream.available() > 0) {
                 vertexEdgeFlag.add(readFlag());

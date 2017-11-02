@@ -169,6 +169,7 @@ public class ImageStream extends Stream {
      * @param graphicsState graphic state for image or parent form
      * @param resources     resources containing image reference
      * @return new image object
+     * @throws InterruptedException thread interrupted.
      */
     @SuppressWarnings("unchecked")
     public BufferedImage getImage(GraphicsState graphicsState, Resources resources) throws InterruptedException {
@@ -911,6 +912,10 @@ public class ImageStream extends Stream {
             long options = 0;
             if (k == 0) {
                 compression = 3; // Group 3 1D
+                if (streamData[0] != 0 || streamData[1] >> 4 != 1) {
+                    // no EOL (0b000000000001), try RLE
+                    compression = 2;
+                }
             } else if (k > 0) {
                 // Group 3 2D
                 compression = 3;
@@ -1140,6 +1145,10 @@ public class ImageStream extends Stream {
     /**
      * If BlackIs1 was not specified, then return null, instead of the
      * default value of false, so we can tell if it was given or not
+     *
+     * @param decodeParmsDictionary image stream dictionary
+     * @param library               document library
+     * @return true if black is one, otherwise false.
      */
     public boolean getBlackIs1(Library library, HashMap decodeParmsDictionary) {
         Object blackIs1Obj = library.getObject(decodeParmsDictionary, BLACKIS1_KEY);
@@ -1182,6 +1191,7 @@ public class ImageStream extends Stream {
 
     /**
      * Does the image have an ImageMask.
+     * @return true if the image stream is a mask, otherwise false.
      */
     public boolean isImageMask() {
         return library.getBoolean(entries, IMAGEMASK_KEY);

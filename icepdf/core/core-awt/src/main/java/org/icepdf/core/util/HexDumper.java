@@ -55,7 +55,7 @@ public class HexDumper {
      *
      * @param inputBytes   bytes to convert to hex dump format.
      * @param outputStream output bytes where hex dump is written to.
-     * @throws IOException
+     * @throws IOException error reading input stream.
      */
     public void dump(InputStream inputBytes, OutputStream outputStream) throws IOException {
         byte[] lineBytes = new byte[BYTE_PER_ROW];
@@ -81,7 +81,7 @@ public class HexDumper {
      * @param inputBytes input array > 16 bytes.
      * @param lineBytes  output data.
      * @return length of bytes copied.
-     * @throws IOException
+     * @throws IOException  error reading input stream.
      */
     private int readFully(InputStream inputBytes, byte[] lineBytes) throws IOException {
         for (int i = 0; i < lineBytes.length; ++i) {
@@ -103,7 +103,7 @@ public class HexDumper {
      * Write the memory offset to the start of each line.
      *
      * @param offsetLength line length.
-     * @throws IOException
+     * @throws IOException  error reading input stream.
      */
     protected void writeMemoryOffset(int offsetLength) throws IOException {
         convertByteToHex(printStream, (byte) (offset >>> 8 & 255));
@@ -118,7 +118,7 @@ public class HexDumper {
      *
      * @param byteArray array of data
      * @param length    length of bytes of convert.
-     * @throws IOException
+     * @throws IOException  error reading input stream.
      */
     private void writeHexBytes(byte[] byteArray, int length) throws IOException {
         thisLine[this.currentByte] = byteArray[length];
@@ -133,7 +133,7 @@ public class HexDumper {
     /**
      * Write ASCII data out to end of pritn stream.
      *
-     * @throws IOException
+     * @throws IOException  error reading input stream.
      */
     private void writeASCIISummary() throws IOException {
         // add some column padding

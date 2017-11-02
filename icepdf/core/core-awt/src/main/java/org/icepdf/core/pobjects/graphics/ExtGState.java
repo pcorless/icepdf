@@ -279,7 +279,7 @@ public class ExtGState extends Dictionary {
     /**
      * Gets the blending mode assigned to the GS.
      *
-     * @return
+     * @return external graphic stats blending mode if any, null otherwise.
      */
     public Name getBlendingMode() {
         Object tmp = library.getObject(entries, BM_KEY);
@@ -344,7 +344,7 @@ public class ExtGState extends Dictionary {
                     dashPhase = 0f;
                     dashArray = null;
                 }
-                dashPattern = new ArrayList<Object>(2);
+                dashPattern = new ArrayList<>(2);
                 dashPattern.add(dashArray);
                 dashPattern.add(dashPhase);
             } catch (ClassCastException e) {
@@ -434,7 +434,7 @@ public class ExtGState extends Dictionary {
     /**
      * The overprint mode
      *
-     * @return
+     * @return overprint value.
      */
     public int getOverprintMode() {
         return getInt(OPM_KEY);

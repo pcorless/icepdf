@@ -40,7 +40,7 @@ public class SequenceInputStream extends InputStream {
     }
 
     public SequenceInputStream(List<InputStream> inputStreams, int streamSwitchValue) {
-        List<InputStream> in = new ArrayList<InputStream>();
+        List<InputStream> in = new ArrayList<>();
         for (int i = 0; i < inputStreams.size(); i++) {
             if (i > 0 && streamSwitchValue != -1) {
                 in.add(new ByteArrayInputStream(new byte[]{(byte) streamSwitchValue}));
@@ -150,7 +150,7 @@ public class SequenceInputStream extends InputStream {
         sb.append(getClass().getName());
         sb.append(": ");
 
-        List<InputStream> inputStreams = new ArrayList<InputStream>();
+        List<InputStream> inputStreams = new ArrayList<>();
         while (m_itInputStreams.hasNext()) {
             InputStream in = m_itInputStreams.next();
             sb.append("\n  ");

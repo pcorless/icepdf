@@ -327,8 +327,8 @@ public class EncryptionDictionary extends Dictionary {
         return fileID;
     }
 
-/**
- * Entries common to all encryption dictionaries
+/*
+  Entries common to all encryption dictionaries
  */
 
     /**
@@ -389,8 +389,8 @@ public class EncryptionDictionary extends Dictionary {
         return length;
     }
 
-/**
- * Entries added for standard encryption dictionaries
+/*
+  Entries added for standard encryption dictionaries
  */
 
     /**
@@ -513,6 +513,8 @@ public class EncryptionDictionary extends Dictionary {
      * stream crypt filter specified by StmF.
      * <br>
      * EFF:name
+     *
+     * @return EEF key value.
      */
     public Name getEEF() {
         Object tmp = library.getObject(entries, EEF_KEY);
@@ -556,7 +558,7 @@ public class EncryptionDictionary extends Dictionary {
         return getLiteralString(tmp);
     }
 
-    public  String getLiteralString(Object value){
+    public String getLiteralString(Object value) {
         if (value instanceof LiteralStringObject) {
             return ((StringObject) value).getLiteralString();
         } else if (value instanceof HexStringObject) {
@@ -576,7 +578,7 @@ public class EncryptionDictionary extends Dictionary {
     public boolean isEncryptMetaData() {
         if (entries.containsKey(ENCRYPT_METADATA_KEY)) {
             return library.getBoolean(entries, ENCRYPT_METADATA_KEY);
-        }else{
+        } else {
             // default value if not specified.
             return true;
         }
@@ -598,8 +600,8 @@ public class EncryptionDictionary extends Dictionary {
         isAuthenticatedOwnerPassword = authenticatedOwnerPassword;
     }
 
-    /**
-     * Class utility methods
+    /*
+      Class utility methods
      */
 
     /**

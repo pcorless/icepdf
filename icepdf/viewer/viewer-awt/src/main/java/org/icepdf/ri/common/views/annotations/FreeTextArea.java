@@ -16,10 +16,9 @@ package org.icepdf.ri.common.views.annotations;
  * governing permissions and limitations under the License.
  */
 
-import org.icepdf.ri.util.jxlayer.JXLayer;
-import org.icepdf.ri.util.jxlayer.plaf.LayerUI;
 
 import javax.swing.*;
+import javax.swing.plaf.LayerUI;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
@@ -53,7 +52,7 @@ public class FreeTextArea extends JTextArea {
             public void installUI(JComponent c) {
                 super.installUI(c);
                 // enable mouse motion events for the layer's sub components
-                ((JXLayer<? extends JComponent>) c).setLayerEventMask(
+                ((JLayer<? extends JComponent>) c).setLayerEventMask(
                         AWTEvent.MOUSE_MOTION_EVENT_MASK | AWTEvent.MOUSE_EVENT_MASK);
             }
 
@@ -62,11 +61,11 @@ public class FreeTextArea extends JTextArea {
             public void uninstallUI(JComponent c) {
                 super.uninstallUI(c);
                 // reset the layer event mask
-                ((JXLayer<? extends JComponent>) c).setLayerEventMask(0);
+                ((JLayer<? extends JComponent>) c).setLayerEventMask(0);
             }
 
             @Override
-            public void eventDispatched(AWTEvent ae, JXLayer<? extends JComponent> l) {
+            public void eventDispatched(AWTEvent ae, JLayer<? extends JComponent> l) {
                 MouseEvent e = (MouseEvent) ae;
                 // transform the point in MouseEvent using the current zoom factor
                 float zoom = FreeTextArea.this.zoomProvider.getZoom();
@@ -80,7 +79,7 @@ public class FreeTextArea extends JTextArea {
                 FreeTextArea.this.processMouseMotionEvent(newEvent);
             }
         };
-        new JXLayer<>(this, layerUI);
+        new JLayer<>(this, layerUI);
     }
 
     @Override
