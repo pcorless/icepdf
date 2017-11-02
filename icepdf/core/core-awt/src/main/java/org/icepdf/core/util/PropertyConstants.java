@@ -63,7 +63,8 @@ public class PropertyConstants {
 
     DESTINATION_ADDED = "destinationAdded",
             DESTINATION_UPDATED = "destinationUpdated",
-            DESTINATION_DELETED = "destinationDeleted";
+            DESTINATION_DELETED = "destinationDeleted",
+            ANNOTATION_SUMMARY_BOX_FONT_SIZE_CHANGE = "annotationSummaryBoxFontSizeChange";
 
 
 }
