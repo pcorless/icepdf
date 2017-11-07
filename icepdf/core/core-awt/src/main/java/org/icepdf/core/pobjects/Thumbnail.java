@@ -16,6 +16,7 @@
 
 package org.icepdf.core.pobjects;
 
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;

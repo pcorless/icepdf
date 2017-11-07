@@ -13,7 +13,7 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.core.pobjects.graphics;
+package org.icepdf.core.pobjects.graphics.images.references;
 
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.util.Defs;

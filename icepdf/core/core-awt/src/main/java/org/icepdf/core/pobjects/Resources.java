@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.graphics.*;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;

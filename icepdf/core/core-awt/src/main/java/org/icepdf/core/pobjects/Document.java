@@ -24,6 +24,7 @@ import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.pobjects.graphics.WatermarkCallback;
+import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.Defs;

@@ -13,12 +13,14 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.core.pobjects.graphics;
+package org.icepdf.core.pobjects.graphics.images.references;
 
-import org.icepdf.core.pobjects.ImageStream;
-import org.icepdf.core.pobjects.ImageUtility;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.pobjects.graphics.DeviceGray;
+import org.icepdf.core.pobjects.graphics.GraphicsState;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
+import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
@@ -40,7 +42,7 @@ import java.util.logging.Logger;
 public class SmoothScaledImageReference extends CachedImageReference {
 
     private static final Logger logger =
-            Logger.getLogger(ScaledImageReference.class.toString());
+            Logger.getLogger(SmoothScaledImageReference.class.toString());
 
     private static int maxImageWidth = 7000;
     private static int maxImageHeight = 7000;

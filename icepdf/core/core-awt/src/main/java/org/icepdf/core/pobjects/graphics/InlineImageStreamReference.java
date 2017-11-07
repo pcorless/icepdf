@@ -15,9 +15,11 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
-import org.icepdf.core.pobjects.ImageStream;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
+import org.icepdf.core.pobjects.graphics.images.references.ImagePool;
+import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.util.Library;
 
 import java.awt.image.BufferedImage;

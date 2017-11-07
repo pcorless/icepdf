@@ -1,10 +1,10 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.io.BitStream;
-import org.icepdf.core.pobjects.ImageStream;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.functions.Function;
+import org.icepdf.core.pobjects.graphics.images.ImageParams;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -58,7 +58,7 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
         shadingDictionary = meshDataStream.getEntries();
         bitsPerFlag = library.getInt(shadingDictionary, BITS_PER_FLAG_KEY);
         bitsPerCoordinate = library.getInt(shadingDictionary, BITS_PER_COORDINATE_KEY);
-        bitsPerComponent = library.getInt(shadingDictionary, ImageStream.BITSPERCOMPONENT_KEY);
+        bitsPerComponent = library.getInt(shadingDictionary, ImageParams.BITS_PER_COMPONENT_KEY);
         colorSpace = PColorSpace.getColorSpace(library, library.getObject(shadingDictionary, COLORSPACE_KEY));
         colorSpaceCompCount = colorSpace.getNumComponents();
 
@@ -96,7 +96,7 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
             decode = new float[4 + 2 * colorSpaceCompCount];
         }
 
-        java.util.List<Number> decodeVec = (java.util.List<Number>) library.getObject(shadingDictionary, ImageStream.DECODE_KEY);
+        java.util.List<Number> decodeVec = (java.util.List<Number>) library.getObject(shadingDictionary, ImageParams.DECODE_KEY);
 
         float maxValue = bitsPerCoordinate < 32 ? (float) ((1 << bitsPerCoordinate) - 1) : (float) 2.3283064365386963e-10; // 2^-32;
         for (int i = 0; i <= DECODE_Y_MAX; ) {

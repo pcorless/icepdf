@@ -13,11 +13,12 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.core.pobjects.graphics;
+package org.icepdf.core.pobjects.graphics.images.references;
 
-import org.icepdf.core.pobjects.ImageStream;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.pobjects.graphics.GraphicsState;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.util.Defs;
 
 /**
@@ -104,7 +105,7 @@ public class ImageReferenceFactory {
      * @param imageIndex image index number of total images for the page.
      * @return newly create ImageReference.
      */
-    public static org.icepdf.core.pobjects.graphics.ImageReference getImageReference(
+    public static org.icepdf.core.pobjects.graphics.images.references.ImageReference getImageReference(
             ImageStream imageStream, Resources resources, GraphicsState graphicsState, Integer imageIndex, Page page) {
         switch (imageReferenceType) {
             case SCALED:

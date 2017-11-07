@@ -16,11 +16,11 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.io.SeekableInputConstrainedWrapper;
-import org.icepdf.core.pobjects.ImageUtility;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.graphics.commands.ColorDrawCmd;
+import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.content.ContentParser;

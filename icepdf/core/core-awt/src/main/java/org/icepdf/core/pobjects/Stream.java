@@ -46,19 +46,9 @@ public class Stream extends Dictionary {
     private static final Logger logger =
             Logger.getLogger(Stream.class.toString());
 
-    public static final Name WIDTH_KEY = new Name("Width");
-    public static final Name W_KEY = new Name("W");
-    public static final Name HEIGHT_KEY = new Name("Height");
-    public static final Name H_KEY = new Name("H");
-    public static final Name IMAGEMASK_KEY = new Name("ImageMask");
-    public static final Name IM_KEY = new Name("IM");
-    public static final Name COLORSPACE_KEY = new Name("ColorSpace");
-    public static final Name CS_KEY = new Name("CS");
-    public static final Name DECODEPARAM_KEY = new Name("DecodeParms");
     public static final Name FILTER_KEY = new Name("Filter");
-    public static final Name F_KEY = new Name("F");
-    public static final Name INDEXED_KEY = new Name("Indexed");
-    public static final Name I_KEY = new Name("I");
+    public static final Name DECODEPARAM_KEY = new Name("DecodeParms");
+
 
     // original byte stream that has not been decoded
     protected byte[] rawBytes;
@@ -91,18 +81,8 @@ public class Stream extends Dictionary {
     public Stream(Library l, HashMap h, byte[] rawBytes) {
         super(l, h);
         this.rawBytes = rawBytes;
-        if (library != null) {
-            decodeParams = library.getDictionary(entries, DECODEPARAM_KEY);
-        }
     }
 
-    /**
-     * Sets the PObject referece for this stream.  The reference number and
-     * generation is need by the encryption algorithm.
-     */
-    public void setPObjectReference(Reference reference) {
-        pObjectReference = reference;
-    }
 
     public byte[] getRawBytes() {
         return rawBytes;
@@ -117,21 +97,10 @@ public class Stream extends Dictionary {
         return compressed;
     }
 
-    /**
-     * Gets the parent PObject reference for this stream.
-     *
-     * @return Reference number of parent PObject.
-     * @see #setPObjectReference(org.icepdf.core.pobjects.Reference)
-     */
-    public Reference getPObjectReference() {
-        return pObjectReference;
-    }
-
     protected boolean isImageSubtype() {
         Object subtype = library.getObject(entries, SUBTYPE_KEY);
         return subtype != null && subtype.equals("Image");
     }
-
 
     private byte[] getRawStreamBytes(SeekableInputConstrainedWrapper streamInputWrapper) {
         // copy the raw bytes out to internal storage for later decoding.
@@ -316,7 +285,7 @@ public class Stream extends Dictionary {
     }
 
     @SuppressWarnings("unchecked")
-    protected List<String> getFilterNames() {
+    public List<String> getFilterNames() {
         List<String> filterNames = null;
         Object o = library.getObject(entries, FILTER_KEY);
         if (o instanceof Name) {

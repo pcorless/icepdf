@@ -25,6 +25,7 @@ import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.graphics.TilingPattern;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
 
 import java.io.IOException;
 import java.io.InputStream;

@@ -13,12 +13,13 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.core.pobjects.graphics;
+package org.icepdf.core.pobjects.graphics.images.references;
 
-import org.icepdf.core.pobjects.ImageStream;
-import org.icepdf.core.pobjects.ImageUtility;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.pobjects.graphics.GraphicsState;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
+import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -115,8 +116,7 @@ public class ScaledImageReference extends CachedImageReference {
                     height = (int) Math.ceil(height * scaleFactor);
 
                     BufferedImage scaled;
-                    ImageUtility imageUtility = imageStream.getImageUtility();
-                    if (imageUtility.hasAlpha(image)) {
+                    if (ImageUtility.hasAlpha(image)) {
                         scaled = ImageUtility.createTranslucentCompatibleImage(width, height);
                     } else {
                         scaled = ImageUtility.createCompatibleImage(width, height);

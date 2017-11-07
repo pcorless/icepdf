@@ -13,15 +13,17 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.core.pobjects.graphics;
+package org.icepdf.core.pobjects.graphics.images.references;
 
 import org.icepdf.core.events.PageImageEvent;
 import org.icepdf.core.events.PageLoadingEvent;
 import org.icepdf.core.events.PageLoadingListener;
-import org.icepdf.core.pobjects.ImageStream;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.pobjects.graphics.GraphicsState;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
+import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.util.Defs;
 
 import java.awt.*;
@@ -85,7 +87,7 @@ public abstract class ImageReference implements Callable<BufferedImage> {
             } catch (Throwable e) {
                 logger.warning("There was a problem painting image, falling back to scaled instance " +
                         imageStream.getPObjectReference() +
-                        "(" + imageStream.getWidth() + "x" + imageStream.getHeight() + ")");
+                        "(" + imageStream.getImageParams().getWidth() + "x" + imageStream.getImageParams().getHeight() + ")");
                 int width = image.getWidth(null);
                 Image scaledImage;
                 // do image scaling on larger images.  This improves the softness
@@ -100,7 +102,7 @@ public abstract class ImageReference implements Callable<BufferedImage> {
                 // try drawing the scaled image one more time.
                 aG.drawImage(scaledImage, aX, aY, aW, aH, null);
                 // store the scaled image for future repaints.
-                this.image = imageStream.getImageUtility().createBufferedImage(scaledImage);
+                this.image = ImageUtility.createBufferedImage(scaledImage);
             }
         }
     }

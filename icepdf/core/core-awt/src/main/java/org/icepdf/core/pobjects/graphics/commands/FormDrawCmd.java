@@ -16,10 +16,10 @@
 package org.icepdf.core.pobjects.graphics.commands;
 
 import org.icepdf.core.pobjects.Form;
-import org.icepdf.core.pobjects.ImageUtility;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.*;
+import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.util.Defs;
 
 import java.awt.*;
@@ -172,7 +172,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 }
             } else if (isExtendGraphicState) {
                 BufferedImage shape = createBufferXObject(parentPage, xForm, null, renderingHints, true);
-                xFormBuffer = new ImageUtility().applyExplicitOutline(xFormBuffer, shape);
+                xFormBuffer = ImageUtility.applyExplicitOutline(xFormBuffer, shape);
             }
 //            ImageUtility.displayImage(xFormBuffer, "final" + xForm.getGroup() + " " + xForm.getPObjectReference() +
 //                    xFormBuffer.getHeight() + "x" + xFormBuffer.getHeight());
@@ -190,11 +190,11 @@ public class FormDrawCmd extends AbstractDrawCmd {
 //            ImageUtility.displayImage(xFormBuffer, "base " + xForm.getPObjectReference() + " " + xFormBuffer.getHeight() + " x " + xFormBuffer.getHeight());
 //            ImageUtility.displayImage(sMaskBuffer, "smask " + softMask.getG().getPObjectReference() + " " + useLuminosity);
             if (gsSoftMask == null) {
-                xFormBuffer = new ImageUtility().applyExplicitSMask(xFormBuffer, sMaskBuffer);
+                xFormBuffer = ImageUtility.applyExplicitSMask(xFormBuffer, sMaskBuffer);
             } else {
                 // todo try and figure out how to apply an AIS=false alpha to an xobject.
 //                xFormBuffer = ImageUtility.applyExplicitLuminosity(xFormBuffer, sMaskBuffer);
-                xFormBuffer = new ImageUtility().applyExplicitOutline(xFormBuffer, sMaskBuffer);
+                xFormBuffer = ImageUtility.applyExplicitOutline(xFormBuffer, sMaskBuffer);
             }
             // test for TR function
             if (softMask.getTR() != null) {
