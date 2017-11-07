@@ -15,7 +15,7 @@
  */
 package org.icepdf.ri.common.preferences;
 
-import org.icepdf.core.pobjects.graphics.ImageReference;
+import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.PageNumberTextFieldInputVerifier;
 import org.icepdf.ri.common.views.Controller;

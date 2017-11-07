@@ -16,8 +16,8 @@
 package org.icepdf.ri.common;
 
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.graphics.ImageReference;
-import org.icepdf.core.pobjects.graphics.ImageReferenceFactory;
+import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
+import org.icepdf.core.pobjects.graphics.images.references.ImageReferenceFactory;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;

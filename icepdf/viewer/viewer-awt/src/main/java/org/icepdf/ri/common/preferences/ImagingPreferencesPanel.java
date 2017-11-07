@@ -15,7 +15,7 @@
  */
 package org.icepdf.ri.common.preferences;
 
-import org.icepdf.core.pobjects.graphics.ImageReferenceFactory;
+import org.icepdf.core.pobjects.graphics.images.references.ImageReferenceFactory;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.util.PropertiesManager;
 
