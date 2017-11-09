@@ -57,15 +57,11 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
 
     protected static final Logger logger =
             Logger.getLogger(AbstractAnnotationComponent.class.toString());
-    protected static boolean isInteractiveAnnotationsEnabled;
+
     protected static Color annotationHighlightColor;
     protected static float annotationHighlightAlpha;
 
     static {
-        // enables interactive annotation support.
-        isInteractiveAnnotationsEnabled =
-                Defs.sysPropertyBoolean(
-                        "org.icepdf.core.annotations.interactive.enabled", true);
 
         // sets annotation selected highlight colour
         try {
@@ -154,7 +150,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         isResizable = !(annotation.getFlagReadOnly() || annotation.getFlagLocked());
 
         // lock UI controls.
-        if (isInteractiveAnnotationsEnabled) {
+        if (documentViewModel.isInteractiveAnnotationsEnabled()) {
             addMouseListener(this);
             addMouseMotionListener(this);
 
@@ -420,7 +416,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
 
         if (documentViewModel.getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_SELECTION &&
-                isInteractiveAnnotationsEnabled &&
+                documentViewModel.isInteractiveAnnotationsEnabled() &&
                 !annotation.getFlagReadOnly()) {
             initiateMouseMoved(e);
         }
@@ -432,7 +428,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         // fire the main action associated with the
         if (!actionFired && !(AbstractPageViewComponent.isAnnotationTool(
                 documentViewModel.getViewToolMode())) &&
-                isInteractiveAnnotationsEnabled) {
+                documentViewModel.isInteractiveAnnotationsEnabled()) {
             if (documentViewController.getAnnotationCallback() != null) {
                 // get the A and AA entries.
                 Action action = annotation.getAction();
@@ -446,7 +442,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
     protected boolean additionalActionsHandler(Name additionalActionKey, MouseEvent e) {
         if (!(AbstractPageViewComponent.isAnnotationTool(
                 documentViewModel.getViewToolMode())) &&
-                isInteractiveAnnotationsEnabled) {
+                documentViewModel.isInteractiveAnnotationsEnabled()) {
             if (documentViewController.getAnnotationCallback() != null) {
                 int x = -1, y = -1;
                 if (e != null) {

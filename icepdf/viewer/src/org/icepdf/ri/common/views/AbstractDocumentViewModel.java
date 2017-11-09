@@ -19,6 +19,7 @@ import org.icepdf.core.Memento;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
+import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.UndoCaretaker;
 
 import javax.swing.*;
@@ -63,6 +64,17 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     protected int pageBoundary = Page.BOUNDARY_CROPBOX;
     // page tool settings
     protected int userToolModeFlag, oldUserToolModeFlag;
+    // interactive annotation component interactive flag.
+    protected boolean isInteractiveAnnotationsEnabled;
+    protected static boolean defaultInteractiveAnnotationsEnabled;
+
+    static {
+        // enables interactive annotation support.
+        defaultInteractiveAnnotationsEnabled =
+                Defs.sysPropertyBoolean(
+                        "org.icepdf.core.annotations.interactive.enabled", true);
+    }
+
 
     // 10 pages doesn't take to long to look at, any more and people will notice
     // the rest of the page sizes will be figured out later.
@@ -72,6 +84,8 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         this.currentDocument = currentDocument;
         // create new instance of the undoCaretaker
         undoCaretaker = new UndoCaretaker();
+        // asign default value can be overridden later.
+        isInteractiveAnnotationsEnabled = defaultInteractiveAnnotationsEnabled;
     }
 
     protected abstract AbstractPageViewComponent buildPageViewComponent(DocumentViewModel documentViewModel,
@@ -236,6 +250,14 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     public boolean isViewToolModeSelected(final int viewToolMode) {
         return userToolModeFlag == viewToolMode;
+    }
+
+    public boolean isInteractiveAnnotationsEnabled() {
+        return isInteractiveAnnotationsEnabled;
+    }
+
+    public void setInteractiveAnnotationsEnabled(boolean enabled) {
+        isInteractiveAnnotationsEnabled = enabled;
     }
 
     /**

@@ -293,4 +293,19 @@ public interface DocumentViewModel {
     public void addMemento(Memento oldMementoState,
                            Memento newMementoState);
 
+    /**
+     * Indicates if annotation components will have certain interactive features enabled such a mouse and keyboard
+     * events.
+     *
+     * @return true if enable, false other wise.
+     */
+    public boolean isInteractiveAnnotationsEnabled();
+
+    /**
+     * Set the interactive annotation flag to the specified value
+     *
+     * @param enabled true to enable interactivity, otherwise false.
+     */
+    public void setInteractiveAnnotationsEnabled(boolean enabled);
+
 }

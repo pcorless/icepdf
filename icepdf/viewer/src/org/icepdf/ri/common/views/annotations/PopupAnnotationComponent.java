@@ -131,7 +131,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         // inside the active area of the annotation.
         isMousePressed = true;
 
-        if (isInteractiveAnnotationsEnabled &&
+        if (documentViewModel.isInteractiveAnnotationsEnabled() &&
                 !annotation.getFlagReadOnly()) {
             initiateMouseMoved(e);
         }
