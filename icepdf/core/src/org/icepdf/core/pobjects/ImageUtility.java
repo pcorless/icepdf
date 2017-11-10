@@ -109,8 +109,8 @@ public class ImageUtility {
 
         // minimum size the image has to be before we apply restriction on size when scalling image mask and base image
         // to the same image size.
-        scaleWidth = Defs.intProperty("org.icepdf.core.imageMaskScale.width", 1500);
-        scaleHeight = Defs.intProperty("org.icepdf.core.imageMaskScale.height", 1500);
+        scaleWidth = Defs.intProperty("org.icepdf.core.imageMaskScale.width", 3500);
+        scaleHeight = Defs.intProperty("org.icepdf.core.imageMaskScale.height", 3500);
     }
 
     public ImageUtility() {
