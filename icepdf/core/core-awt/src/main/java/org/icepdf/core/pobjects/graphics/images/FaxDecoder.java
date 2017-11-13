@@ -16,9 +16,12 @@
 package org.icepdf.core.pobjects.graphics.images;
 
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.filters.CCITTFax;
 import org.icepdf.core.pobjects.filters.CCITTFaxDecoder;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
+import org.icepdf.core.util.Library;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -79,14 +82,14 @@ public class FaxDecoder extends AbstractImageDecoder {
         } catch (Throwable e) {
             try {
                 // on a failure then fall back on our implementation.
+                logger.warning("Error during decode falling back on alternative fax decode.");
                 data = imageStream.getDecodedStreamBytes(imageParams.getDataLength());
                 decodedStreamData = ccittFaxDecodeCCITTFaxDecoder(data, k, encodedByteAlign, columns, rows, size);
             } catch (Throwable f) {
                 // on a failure then fall back to JAI
-//                data = imageStream.getDecodedStreamBytes(imageParams.getDataLength());
-//                decodedImage = CCITTFax.attemptDeriveBufferedImageFromBytes(
-//                        data, k, encodedByteAlign, columns, rows, size, graphicsState.getFillColor());
-                f.printStackTrace();
+                logger.warning("Error during decode falling back on JAI decode.");
+                decodedImage = ccittFaxDecodeJAI(imageStream, imageStream.getLibrary(),
+                        imageStream.getEntries(), graphicsState.getFillColor());
             }
         }
 
@@ -98,6 +101,9 @@ public class FaxDecoder extends AbstractImageDecoder {
                 decodedImage = ImageUtility.makeImageWithRasterFromBytes(decodedStreamData, graphicsState, imageParams);
             } catch (Exception e) {
                 logger.log(Level.FINE, "Error building image raster.", e);
+                logger.warning("Error during decode falling back on JAI decode.");
+                decodedImage = ccittFaxDecodeJAI(imageStream, imageStream.getLibrary(),
+                        imageStream.getEntries(), graphicsState.getFillColor());
             }
         }
         return decodedImage;
@@ -180,5 +186,15 @@ public class FaxDecoder extends AbstractImageDecoder {
             }
         }
         return decodedStreamData;
+    }
+
+    public BufferedImage ccittFaxDecodeJAI(ImageStream stream, Library library, HashMap streamDictionary, Color fill) {
+        try {
+            return CCITTFax.attemptDeriveBufferedImageFromBytes(
+                    stream, library, streamDictionary, fill);
+        } catch (Throwable e) {
+            logger.warning("Error decoding using JAI CCITTFax decode.");
+        }
+        return null;
     }
 }
