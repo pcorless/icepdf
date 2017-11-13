@@ -71,7 +71,7 @@ public class Dictionary {
     protected boolean isNew;
 
     // reference of stream, needed for encryption support
-    private Reference pObjectReference;
+    protected Reference pObjectReference;
 
     /**
      * Creates a new instance of a Dictionary.

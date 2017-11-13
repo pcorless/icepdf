@@ -83,10 +83,9 @@ public class PredictorDecode extends ChunkingInputStream {
         Number widthNumber = library.getNumber(entries, WIDTH_VALUE);
         if (widthNumber != null) {
             width = widthNumber.intValue();
-        } else {
-            int columns = library.getInt(decodeParmsDictionary, COLUMNS_VALUE);
-            if (columns > 0) width = columns;
         }
+        int columns = library.getInt(decodeParmsDictionary, COLUMNS_VALUE);
+        if (columns > 0) width = columns;
         // Since DecodeParms.BitsPerComponent has a default value, I don't think we'd
         //   look at entries.ColorSpace to know the number of components. But, here's the info:
         //   /ColorSpace /DeviceGray: 1 comp, /DeviceRBG: 3 comps, /DeviceCMYK: 4 comps, /DeviceN: N comps

@@ -79,10 +79,9 @@ public class FlateDecode extends ChunkingInputStream {
             Number widthNumber = library.getNumber(props, WIDTH_VALUE);
             if (widthNumber != null) {
                 width = widthNumber.intValue();
-            } else {
-                int columns = library.getInt(decodeParmsDictionary, COLUMNS_VALUE);
-                if (columns > 0) width = columns;
             }
+            int columns = library.getInt(decodeParmsDictionary, COLUMNS_VALUE);
+            if (columns > 0) width = columns;
 
             // Since DecodeParms.BitsPerComponent has a default value, I don't think we'd
             //   look at entries.ColorSpace to know the number of components. But, here's the info:
