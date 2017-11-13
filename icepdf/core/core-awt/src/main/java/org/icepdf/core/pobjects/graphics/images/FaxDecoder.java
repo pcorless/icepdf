@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.filters.CCITTFax;
 import org.icepdf.core.pobjects.filters.CCITTFaxDecoder;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
+import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -43,6 +44,13 @@ public class FaxDecoder extends AbstractImageDecoder {
     public static final Name ENCODED_BYTE_ALIGN_KEY = new Name("EncodedByteAlign");
     public static final Name COLUMNS_KEY = new Name("Columns");
     public static final Name ROWS_KEY = new Name("Rows");
+
+    /**
+     * Gets the value of the system property "org.icepdf.core.ccittfax.checkParentBlackIs1".
+     */
+    public static boolean CHECK_PARENT_BLACK_IS_1 =
+            Defs.booleanProperty("org.icepdf.core.ccittfax.checkParentBlackIs1", false);
+    ;
 
 
     public FaxDecoder(ImageStream imageStream, GraphicsState graphicsState) {
@@ -176,7 +184,7 @@ public class FaxDecoder extends AbstractImageDecoder {
     public static byte[] applyBlackIsOne(byte[] decodedStreamData, ImageParams imageParams, HashMap decodeParms) {
         boolean blackIs1 = imageParams.getBlackIs1(decodeParms);
         // double check for blackIs1 in the main dictionary.
-        if (!blackIs1) { //CHECK_PARENT_BLACK_IS_1
+        if (!blackIs1 && CHECK_PARENT_BLACK_IS_1) {
             blackIs1 = imageParams.getBlackIs1(imageParams.getEntries());
         }
         if (!blackIs1) {
