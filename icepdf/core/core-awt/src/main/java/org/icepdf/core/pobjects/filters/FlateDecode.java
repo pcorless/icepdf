@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.filters;
 
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.graphics.images.ImageParams;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
@@ -63,7 +64,7 @@ public class FlateDecode extends ChunkingInputStream {
         int intermediateBufferSize = DEFAULT_BUFFER_SIZE;
 
         // get decode parameters from stream properties
-        HashMap decodeParmsDictionary = library.getDictionary(props, DECODE_PARMS_VALUE);
+        HashMap decodeParmsDictionary = ImageParams.getDecodeParams(library, props);
         predictor = library.getInt(decodeParmsDictionary, PREDICTOR_VALUE);
         if (predictor != PredictorDecode.PREDICTOR_NONE &&
                 predictor != PredictorDecode.PREDICTOR_TIFF_2 &&

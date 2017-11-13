@@ -1,6 +1,7 @@
 package org.icepdf.core.pobjects.filters;
 
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.graphics.images.ImageParams;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
@@ -57,7 +58,6 @@ public class PredictorDecode extends ChunkingInputStream {
      */
     protected static final int PREDICTOR_PNG_OPTIMUM = 15;
 
-    protected static final Name DECODE_PARMS_VALUE = new Name("DecodeParms");
     protected static final Name PREDICTOR_VALUE = new Name("Predictor");
     protected static final Name WIDTH_VALUE = new Name("Width");
     protected static final Name COLUMNS_VALUE = new Name("Columns");
@@ -77,7 +77,7 @@ public class PredictorDecode extends ChunkingInputStream {
     public PredictorDecode(InputStream input, Library library, HashMap entries) {
         super();
         // get decode parameters from stream properties
-        HashMap decodeParmsDictionary = library.getDictionary(entries, DECODE_PARMS_VALUE);
+        HashMap decodeParmsDictionary = ImageParams.getDecodeParams(library, entries);
         predictor = library.getInt(decodeParmsDictionary, PREDICTOR_VALUE);
 
         Number widthNumber = library.getNumber(entries, WIDTH_VALUE);
@@ -233,7 +233,8 @@ public class PredictorDecode extends ChunkingInputStream {
     }
 
     public static boolean isPredictor(Library library, HashMap entries) {
-        HashMap decodeParmsDictionary = library.getDictionary(entries, DECODE_PARMS_VALUE);
+        HashMap decodeParmsDictionary = ImageParams.getDecodeParams(library, entries);
+        ;
         if (decodeParmsDictionary == null) {
             return false;
         }

@@ -99,9 +99,14 @@ public class ImageParams extends Dictionary {
     }
 
     public HashMap getDecodeParams() {
-        HashMap decodeParms = library.getDictionary(entries, DECODE_PARAM_KEY);
-        if (decodeParms.containsKey(K_KEY) || decodeParms.size() > 0) {
-            return decodeParms;
+        return getDecodeParams(library, entries);
+    }
+
+    public static HashMap getDecodeParams(Library library, HashMap entries) {
+        HashMap decodeParams = library.getDictionary(entries, DECODE_PARAM_KEY);
+        if (decodeParams != null &&
+                (decodeParams.containsKey(K_KEY) || decodeParams.size() > 0)) {
+            return decodeParams;
         } else {
             // malformed pdf where k value is store in an indirect reference.
             Object tmp = library.getObject(entries, ImageParams.DECODE_PARAM_KEY);
