@@ -137,13 +137,15 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
                 nameTreeDialog = new NameTreeDialog(
                         controller,
                         true, nameTree);
-                nameTreeDialog.setDestinationName(destinationName);
+                nameTreeDialog.setDestinationName(destinationName.getText());
                 // add the nameTree instance.
                 nameTreeDialog.setVisible(true);
-                nameTreeDialog.dispose();
+
                 // apply the new names
-                linkAnnotation.setNamedDestination(destinationName.getText());
+                linkAnnotation.setNamedDestination(nameTreeDialog.getDestinationName());
                 updateCurrentAnnotation();
+
+                nameTreeDialog.dispose();
             }
         }
     }

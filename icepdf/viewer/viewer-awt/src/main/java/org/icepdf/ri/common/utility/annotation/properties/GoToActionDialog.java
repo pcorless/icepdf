@@ -192,7 +192,7 @@ public class GoToActionDialog extends AnnotationDialogAdapter
                 nameTreeDialog = new NameTreeDialog(
                         controller,
                         true, nameTree);
-                nameTreeDialog.setDestinationName(destinationName);
+                nameTreeDialog.setDestinationName(destinationName.getText());
                 // add the nameTree instance.
                 nameTreeDialog.setVisible(true);
                 nameTreeDialog.dispose();

@@ -45,7 +45,7 @@ public class NameTreeDialog extends EscapeJDialog
 
     private JTree nameJTree;
     private NameTreeNode selectedName;
-    private JLabel destinationName;
+    private String destinationName;
     private JButton okButton;
     private JButton cancelButton;
 
@@ -64,7 +64,7 @@ public class NameTreeDialog extends EscapeJDialog
         if (e.getSource() == okButton) {
             // assign the selected name. 
             if (selectedName != null) {
-                destinationName.setText(selectedName.getName().toString());
+                destinationName = selectedName.getName().toString();
             }
             setVisible(false);
             dispose();
@@ -144,8 +144,12 @@ public class NameTreeDialog extends EscapeJDialog
 
     }
 
-    public void setDestinationName(JLabel destinationName) {
+    public void setDestinationName(String destinationName) {
         this.destinationName = destinationName;
+    }
+
+    public String getDestinationName() {
+        return destinationName;
     }
 
     private void addGB(JPanel layout, Component component,

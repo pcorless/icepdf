@@ -15,6 +15,10 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
+import org.icepdf.core.pobjects.LiteralStringObject;
+import org.icepdf.core.pobjects.NameTree;
+import org.icepdf.core.pobjects.annotations.LinkAnnotation;
+import org.icepdf.ri.common.utility.annotation.properties.NameTreeDialog;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.Controller;
@@ -35,6 +39,7 @@ public class AnnotationPopup extends JPopupMenu implements ActionListener {
     // properties dialog command
     protected JMenuItem propertiesMenuItem;
     protected JMenuItem deleteMenuItem;
+    protected JMenuItem destinationsMenuItem;
 
     protected AnnotationComponent annotationComponent;
 
@@ -54,10 +59,18 @@ public class AnnotationPopup extends JPopupMenu implements ActionListener {
 
         deleteMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.delete.label"));
+
+        destinationsMenuItem = new JMenuItem(
+                messageBundle.getString("viewer.annotation.popup.destinations.label"));
     }
 
     public void buildGui() {
-
+        add(destinationsMenuItem, -1);
+        destinationsMenuItem.addActionListener(this);
+        if (!(annotationComponent.getAnnotation() instanceof LinkAnnotation)) {
+            destinationsMenuItem.setEnabled(false);
+        }
+        addSeparator();
         add(deleteMenuItem, -1);
         deleteMenuItem.addActionListener(this);
         addSeparator();
@@ -73,9 +86,32 @@ public class AnnotationPopup extends JPopupMenu implements ActionListener {
 
         if (source == propertiesMenuItem) {
             controller.showAnnotationProperties(annotationComponent);
-        }
-        if (source == deleteMenuItem) {
+        } else if (source == deleteMenuItem) {
             controller.getDocumentViewController().deleteAnnotation(annotationComponent);
+        } else if (source == destinationsMenuItem) {
+            // test implementation of a NameJTree for destinations.
+            NameTree nameTree = controller.getDocument().getCatalog().getNames().getDestsNameTree();
+            if (nameTree != null) {
+                // create new dialog instance.
+                NameTreeDialog nameTreeDialog = new NameTreeDialog(
+                        controller,
+                        true, nameTree);
+                // get existing names
+                LinkAnnotation annotation = (LinkAnnotation) annotationComponent.getAnnotation();
+                Object dest = annotation.getEntries().get(LinkAnnotation.DESTINATION_KEY);
+                String destName = "";
+                if (dest != null && dest instanceof LiteralStringObject) {
+                    destName = ((LiteralStringObject) dest).getDecryptedLiteralString(
+                            controller.getDocument().getSecurityManager());
+                }
+                nameTreeDialog.setDestinationName(destName);
+                // add the nameTree instance.
+                nameTreeDialog.setVisible(true);
+                // apply the new names
+                annotation.setNamedDestination(nameTreeDialog.getDestinationName());
+                // dispose the dialog
+                nameTreeDialog.dispose();
+            }
         }
     }
 }
