@@ -76,10 +76,11 @@ public class FaxDecoder extends AbstractImageDecoder {
         if (encodedByteAlignObject instanceof Boolean) {
             encodedByteAlign = (Boolean) encodedByteAlignObject;
         }
-        int columns = imageParams.getInt(decodeParms, COLUMNS_KEY);
-        int rows = imageParams.getInt(decodeParms, ROWS_KEY);
-        if (columns == 0) columns = imageParams.getWidth();
-        if (rows == 0) rows = imageParams.getHeight();
+        int columns = imageParams.getWidth();
+        int rows = imageParams.getHeight();
+        if (columns <= 0) imageParams.getInt(decodeParms, COLUMNS_KEY);
+        if (rows <= 0) rows = imageParams.getInt(decodeParms, ROWS_KEY);
+
         int size = rows * ((columns + 7) >> 3);
 
         byte[] data = imageStream.getDecodedStreamBytes(imageParams.getDataLength());
@@ -134,9 +135,17 @@ public class FaxDecoder extends AbstractImageDecoder {
         long options = 0;
         if (k == 0) {
             compression = 3; // Group 3 1D
-            if (streamData[0] != 0 || streamData[1] >> 4 != 1) {
-                // no EOL (0b000000000001), try RLE
+            if (streamData[0] != 0 || (streamData[1] >> 4 != 1 && streamData[1] != 1)) {
+                // leading EOL (0b000000000001) not found, search further and try RLE if not found
                 compression = 2;
+                short b = (short) (((streamData[0] << 8) + streamData[1]) >> 4);
+                for (int i = 12; i < 160; i++) {
+                    b = (short) ((b << 1) + ((streamData[(i / 8)] >> (7 - (i % 8))) & 0x01));
+                    if (b == 1) {
+                        compression = 3;
+                        break;
+                    }
+                }
             }
         } else if (k > 0) {
             // Group 3 2D
