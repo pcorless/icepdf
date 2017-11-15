@@ -63,8 +63,6 @@ public class PopupAnnotation extends Annotation {
      */
     public static final Name OPEN_KEY = new Name("Open");
 
-    protected boolean open;
-
     protected MarkupAnnotation parent;
 
     public PopupAnnotation(Library l, HashMap h) {
@@ -73,7 +71,6 @@ public class PopupAnnotation extends Annotation {
 
     public void init() throws InterruptedException{
         super.init();
-        open = library.getBoolean(entries, OPEN_KEY);
     }
 
     /**
@@ -128,11 +125,10 @@ public class PopupAnnotation extends Annotation {
     }
 
     public boolean isOpen() {
-        return open;
+        return library.getBoolean(entries, OPEN_KEY);
     }
 
     public void setOpen(boolean open) {
-        this.open = open;
         entries.put(OPEN_KEY, open);
     }
 

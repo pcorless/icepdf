@@ -51,6 +51,7 @@ public class PropertyConstants {
     ANNOTATION_ADDED = "annotationAdded",
             ANNOTATION_UPDATED = "annotationUpdated",
             ANNOTATION_DELETED = "annotationDeleted",
+            ANNOTATION_SUMMARY_UPDATED = "annotationSummaryUpdated",
 
     ANNOTATION_BOUNDS = "annotationBounds",
 

@@ -341,7 +341,7 @@ public class Page extends Dictionary {
                         a.init();
                     }
                     if (PRIVATE_PROPERTY_ENABLED && a.getFlagPrivateContents()) {
-                        // check to make sure we don't show n annotation if the username doesn't match the creator
+                        // check to make sure we don't show an annotation if the username doesn't match the creator
                         if (a instanceof MarkupAnnotation) {
                             MarkupAnnotation markupAnnotation = (MarkupAnnotation) a;
                             String creator = markupAnnotation.getTitleText();

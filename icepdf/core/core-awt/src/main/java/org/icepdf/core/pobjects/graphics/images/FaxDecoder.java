@@ -50,7 +50,6 @@ public class FaxDecoder extends AbstractImageDecoder {
      */
     public static boolean CHECK_PARENT_BLACK_IS_1 =
             Defs.booleanProperty("org.icepdf.core.ccittfax.checkParentBlackIs1", false);
-    ;
 
 
     public FaxDecoder(ImageStream imageStream, GraphicsState graphicsState) {
