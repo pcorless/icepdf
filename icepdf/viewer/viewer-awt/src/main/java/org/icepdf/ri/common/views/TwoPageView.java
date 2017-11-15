@@ -172,6 +172,9 @@ public class TwoPageView extends AbstractDocumentView {
         if (keyListenerPageChanger != null) {
             keyListenerPageChanger.uninstall();
         }
+        if (currentPageChanger != null) {
+            currentPageChanger.dispose();
+        }
 
         // trigger a re-layout
         pagesPanel.removeAll();
