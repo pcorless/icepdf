@@ -1331,6 +1331,20 @@ public class DocumentViewControllerImpl
         }
     }
 
+    public void updatedSummaryAnnotation(AnnotationComponent annotationComponent) {
+        if (documentViewModel != null && annotationComponent != null) {
+            if (annotationCallback != null) {
+                annotationCallback.updateAnnotation(annotationComponent);
+            }
+            // fire event notification
+            firePropertyChange(PropertyConstants.ANNOTATION_SUMMARY_UPDATED,
+                    null, annotationComponent);
+
+            // repaint the view.
+            documentView.repaint();
+        }
+    }
+
     public void deleteAnnotation(AnnotationComponent annotationComponent) {
         if (documentViewModel != null && annotationComponent != null) {
 

@@ -89,11 +89,8 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
         if (annotation != null) {
             PopupAnnotation popup = annotation.getPopupAnnotation();
             if (popup != null) {
-                // toggle the visibility of the popup
-                popup.setOpen(!popup.isOpen());
                 // find the popup component
-                ArrayList<AbstractAnnotationComponent> annotationComponents =
-                        pageViewComponent.getAnnotationComponents();
+                ArrayList<AbstractAnnotationComponent> annotationComponents = pageViewComponent.getAnnotationComponents();
                 Reference compReference;
                 Reference popupReference = popup.getPObjectReference();
                 for (AnnotationComponent annotationComponent : annotationComponents) {

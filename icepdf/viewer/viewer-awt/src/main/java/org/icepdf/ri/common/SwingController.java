@@ -3427,8 +3427,15 @@ public class SwingController extends ComponentAdapter
      * Show tabbed pane interface for annotation properties.
      */
     public void showAnnotationProperties(AnnotationComponent annotationComponent) {
+        showAnnotationProperties(annotationComponent, viewer);
+    }
+
+    /**
+     * Show tabbed pane interface for annotation properties centered on the given frame
+     */
+    public void showAnnotationProperties(AnnotationComponent annotationComponent, Frame frame) {
         AnnotationPropertiesDialog annotationPropertiesDialog =
-                new AnnotationPropertiesDialog(viewer, this, messageBundle);
+                new AnnotationPropertiesDialog(frame, this, messageBundle);
         annotationPropertiesDialog.setAnnotationComponent(annotationComponent);
         annotationPropertiesDialog.setVisible(true);
     }

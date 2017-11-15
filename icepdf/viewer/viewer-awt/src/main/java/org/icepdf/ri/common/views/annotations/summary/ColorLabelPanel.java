@@ -37,7 +37,7 @@ public class ColorLabelPanel extends JPanel implements PropertyChangeListener {
     private DragDropColorList.ColorLabel colorLabel;
     private DraggableAnnotationPanel draggableAnnotationPanel;
 
-    public ColorLabelPanel(Controller controller, DragDropColorList.ColorLabel colorLabel) {
+    public ColorLabelPanel(Frame frame, Controller controller, DragDropColorList.ColorLabel colorLabel) {
         super();
         this.colorLabel = colorLabel;
         this.controller = controller;
@@ -47,7 +47,7 @@ public class ColorLabelPanel extends JPanel implements PropertyChangeListener {
         if (colorLabel != null) {
             add(new JLabel("<html><h3>" + colorLabel.getLabel() + "</h3></html>", JLabel.CENTER), BorderLayout.NORTH);
         }
-        draggableAnnotationPanel = new DraggableAnnotationPanel();
+        draggableAnnotationPanel = new DraggableAnnotationPanel(frame);
         add(new JScrollPane(draggableAnnotationPanel), BorderLayout.CENTER);
     }
 
@@ -78,7 +78,7 @@ public class ColorLabelPanel extends JPanel implements PropertyChangeListener {
                 AnnotationSummaryBox annotationSummaryBox = (AnnotationSummaryBox) component;
                 MarkupAnnotation currentMarkupAnnotation = annotationSummaryBox.getAnnotation().getParent();
                 if (markupAnnotation.getPObjectReference().equals(currentMarkupAnnotation.getPObjectReference())) {
-                    annotationSummaryBox.refreshPopupText();
+                    annotationSummaryBox.refreshPopupState();
                     annotationSummaryBox.repaint();
                     break;
                 }

@@ -22,12 +22,11 @@ import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.tools.TextAnnotationHandler;
 import org.icepdf.ri.common.utility.annotation.properties.FreeTextAnnotationPanel;
-import org.icepdf.ri.common.views.AbstractPageViewComponent;
-import org.icepdf.ri.common.views.AnnotationComponent;
-import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.common.views.ResizableBorder;
+import org.icepdf.ri.common.views.*;
+import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryBox;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -43,6 +42,8 @@ import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.AffineTransform;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -70,7 +71,7 @@ import java.util.logging.Level;
  */
 @SuppressWarnings("serial")
 public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupAnnotation>
-        implements TreeSelectionListener, ActionListener, DocumentListener {
+        implements TreeSelectionListener, ActionListener, DocumentListener, PropertyChangeListener {
 
     public static int DEFAULT_WIDTH = 215;
     public static int DEFAULT_HEIGHT = 150;
@@ -134,7 +135,13 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         boolean isVisible = annotation.isOpen();
         setVisible(isVisible);
 
+        ((DocumentViewControllerImpl) documentViewController).addPropertyChangeListener(this);
+    }
 
+    @Override
+    public void dispose() {
+        super.dispose();
+        ((DocumentViewControllerImpl) documentViewController).removePropertyChangeListener(this);
     }
 
     public void mouseMoved(MouseEvent me) {
@@ -212,10 +219,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         Rectangle bounds = getBounds();
         if (bounds.width < DEFAULT_WIDTH || bounds.height < DEFAULT_HEIGHT) {
             setBounds(bounds.x, bounds.y, DEFAULT_WIDTH, DEFAULT_HEIGHT);
-        }
-
-        if (selectedMarkupAnnotation != null) {
-            annotation.setOpen(aFlag);
         }
         if (getParent() != null) getParent().repaint();
     }
@@ -548,6 +551,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 markupAnnotation.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, selected);
                 markupAnnotation.setModifiedDate(PDate.formatDateTime(new Date()));
                 documentViewController.updateAnnotation(findAnnotationComponent(markupAnnotation));
+                documentViewController.updateAnnotation(this);
             }
         }
     }
@@ -563,6 +567,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                     if (popupAnnotation.getParent() != null &&
                             popupAnnotation.getParent().getInReplyToAnnotation() == null) {
                         popupAnnotationComponent.setVisible(visible);
+                        popupAnnotationComponent.getAnnotation().setOpen(visible);
                     }
                 }
             }
@@ -628,7 +633,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         updateContent(e);
     }
 
-    private void updateContent(DocumentEvent e) {
+    protected void updateContent(DocumentEvent e) {
         // get the next text and save it to the selected markup annotation.
         Document document = e.getDocument();
         try {
@@ -666,11 +671,34 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         }
     }
 
-    public void refreshPopupText() {
+    public void refreshPopupState() {
         if (textArea != null) {
+            // update the private/public button.
+            if (privateToggleButton.isVisible()) {
+                privateToggleButton.setSelected(selectedMarkupAnnotation.getFlagPrivateContents());
+            }
+            // update the text
             textArea.getDocument().removeDocumentListener(this);
             textArea.setText(selectedMarkupAnnotation.getContents());
             textArea.getDocument().addDocumentListener(this);
+        }
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        if (PropertyConstants.ANNOTATION_SUMMARY_UPDATED.equals(evt.getPropertyName())) {
+            if (!(this instanceof AnnotationSummaryBox)) {
+                AnnotationSummaryBox annotationSummaryBox = (AnnotationSummaryBox) evt.getNewValue();
+                if (this.getAnnotation().equals(annotationSummaryBox.getAnnotation())) {
+                    // update text
+                    textArea.getDocument().removeDocumentListener(this);
+                    textArea.setText(annotationSummaryBox.textArea.getText());
+                    textArea.getDocument().addDocumentListener(this);
+                    // update private state.
+                    privateToggleButton.setSelected(annotationSummaryBox.privateToggleButton.isSelected());
+                }
+            }
+
         }
     }
 
@@ -824,7 +852,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         documentViewController.addNewAnnotation(comp);
     }
 
-    private AnnotationComponent findAnnotationComponent(Annotation annotation) {
+    protected AnnotationComponent findAnnotationComponent(Annotation annotation) {
         ArrayList<AbstractAnnotationComponent> annotationComponents =
                 pageViewComponent.getAnnotationComponents();
         if (annotationComponents != null && annotation != null) {

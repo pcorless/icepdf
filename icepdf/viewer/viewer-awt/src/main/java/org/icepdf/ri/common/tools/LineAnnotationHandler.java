@@ -221,6 +221,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         popupAnnotationComponent.setBoudsRelativeToParent(
                 bbox.x + (bbox.width / 2), bbox.y + (bbox.height / 2), pageTransform);
         popupAnnotationComponent.setVisible(false);
+        popupAnnotationComponent.getAnnotation().setOpen(false);
 
         // set the annotation tool to he select tool
         if (preferences.getBoolean(PropertiesManager.PROPERTY_ANNOTATION_LINE_SELECTION_ENABLED, false)) {

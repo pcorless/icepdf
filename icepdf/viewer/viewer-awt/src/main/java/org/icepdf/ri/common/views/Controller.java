@@ -99,6 +99,14 @@ public interface Controller extends PropertyChangeListener {
     void showAnnotationProperties(AnnotationComponent annotationComponent);
 
     /**
+     * Show tabbed pane interface for annotation properties.
+     *
+     * @param annotationComponent annotation to show properties of.
+     * @param frame               parent frame for centering dialog.
+     */
+    void showAnnotationProperties(AnnotationComponent annotationComponent, Frame frame);
+
+    /**
      * Not all uses of Controller would result in there existing a Viewer Frame,
      * so this may well return null.
      *

@@ -187,6 +187,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
             popupAnnotationComponent.setBoudsRelativeToParent(
                     bounds.x + bounds.width / 2, bounds.y + bounds.height / 2, pageTransform);
             popupAnnotationComponent.setVisible(false);
+            popupAnnotationComponent.getAnnotation().setOpen(false);
 
         }
         pageViewComponent.repaint();

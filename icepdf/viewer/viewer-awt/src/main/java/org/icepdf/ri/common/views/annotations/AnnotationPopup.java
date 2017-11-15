@@ -34,20 +34,20 @@ import java.util.ResourceBundle;
  *
  * @since 6.3
  */
-public class AnnotationPopup extends JPopupMenu implements ActionListener {
+public class AnnotationPopup<T extends AnnotationComponent> extends JPopupMenu implements ActionListener {
 
     // properties dialog command
     protected JMenuItem propertiesMenuItem;
     protected JMenuItem deleteMenuItem;
     protected JMenuItem destinationsMenuItem;
 
-    protected AnnotationComponent annotationComponent;
+    protected T annotationComponent;
 
     protected PageViewComponentImpl pageViewComponent;
     protected Controller controller;
     protected ResourceBundle messageBundle;
 
-    public AnnotationPopup(AnnotationComponent annotationComponent, Controller controller,
+    public AnnotationPopup(T annotationComponent, Controller controller,
                            AbstractPageViewComponent pageViewComponent) {
         this.annotationComponent = annotationComponent;
         this.pageViewComponent = (PageViewComponentImpl) pageViewComponent;
@@ -77,7 +77,6 @@ public class AnnotationPopup extends JPopupMenu implements ActionListener {
         add(propertiesMenuItem);
         propertiesMenuItem.addActionListener(this);
     }
-
 
     @Override
     public void actionPerformed(ActionEvent e) {

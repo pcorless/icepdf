@@ -100,7 +100,8 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
                     }
                 }
             }
-        } else if (PropertyConstants.ANNOTATION_UPDATED.equals(evt.getPropertyName())) {
+        } else if (PropertyConstants.ANNOTATION_UPDATED.equals(evt.getPropertyName()) ||
+                PropertyConstants.ANNOTATION_SUMMARY_UPDATED.equals(evt.getPropertyName())) {
             if (evt.getNewValue() instanceof PopupAnnotationComponent) {
                 // find the markup annotation
                 PopupAnnotationComponent comp = (PopupAnnotationComponent) evt.getNewValue();
@@ -311,7 +312,6 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
                             }
                         }
                         if ((e.getButton() == MouseEvent.BUTTON3 || e.getButton() == MouseEvent.BUTTON2)) {
-                            DocumentViewController documentViewController = controller.getDocumentViewController();
                             contextMenu = new MarkupAnnotationPopupMenu((MarkupAnnotationComponent) comp,
                                     controller, null, true);
                             contextMenu.show(e.getComponent(), e.getX(), e.getY());

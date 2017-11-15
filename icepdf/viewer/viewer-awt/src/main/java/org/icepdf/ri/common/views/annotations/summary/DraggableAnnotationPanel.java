@@ -15,6 +15,8 @@
  */
 package org.icepdf.ri.common.views.annotations.summary;
 
+import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.ri.common.views.AnnotationSelector;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 
 import javax.swing.*;
@@ -27,8 +29,9 @@ public class DraggableAnnotationPanel extends JPanel {
 
     private static final int DEFAULT_GAP = 8;
 
+    protected Frame frame;
 
-    public DraggableAnnotationPanel(int layout, int hGap, int vHap) {
+    public DraggableAnnotationPanel(Frame frame, int layout, int hGap, int vHap) {
         setLayout(new ColumnLayoutManager(vHap));
 
         MouseHandler mouseHandler = new MouseHandler();
@@ -36,16 +39,8 @@ public class DraggableAnnotationPanel extends JPanel {
         addMouseMotionListener(mouseHandler);
     }
 
-    public DraggableAnnotationPanel(int vgap) {
-        setLayout(new FlowLayout(vgap));
-        MouseHandler mouseHandler = new MouseHandler();
-        addMouseListener(mouseHandler);
-        addMouseMotionListener(mouseHandler);
-    }
-
-
-    public DraggableAnnotationPanel() {
-        this(FlowLayout.CENTER, DEFAULT_GAP, DEFAULT_GAP);
+    public DraggableAnnotationPanel(Frame frame) {
+        this(frame, FlowLayout.CENTER, DEFAULT_GAP, DEFAULT_GAP);
     }
 
     public class MouseHandler extends MouseAdapter {
@@ -55,10 +50,32 @@ public class DraggableAnnotationPanel extends JPanel {
         private Point dragOffset;
 
         @Override
+        public void mouseClicked(MouseEvent e) {
+            if (e.getButton() == MouseEvent.BUTTON3) {
+                Component comp = getComponentAt(e.getPoint());
+                if (comp != null && comp instanceof AnnotationSummaryBox) {
+                    AnnotationSummaryBox annotationSummaryBox = (AnnotationSummaryBox) comp;
+                    JPopupMenu contextMenu = annotationSummaryBox.getContextMenu(frame);
+                    contextMenu.show(e.getComponent(), e.getX(), e.getY());
+                }
+            }
+            if (e.getButton() == MouseEvent.BUTTON1 &&
+                    e.getClickCount() == 2) {
+                Component comp = getComponentAt(e.getPoint());
+                if (comp != null && comp instanceof AnnotationSummaryBox) {
+                    AnnotationSummaryBox annotationSummaryBox = (AnnotationSummaryBox) comp;
+                    Annotation annotation = annotationSummaryBox.getAnnotation().getParent();
+                    AnnotationSelector.SelectAnnotationComponent(annotationSummaryBox.getController(), annotation);
+                }
+            }
+        }
+
+        @Override
         public void mousePressed(MouseEvent e) {
             Component comp = getComponentAt(e.getPoint());
             if (comp != null && comp instanceof AnnotationSummaryBox) {
                 dragComponent = comp;
+                dragComponent.requestFocus();
                 dragComponent.getLocation();
                 lastMovedCompIndex = getComponentIndex(dragComponent);
                 dragOffset = new Point();

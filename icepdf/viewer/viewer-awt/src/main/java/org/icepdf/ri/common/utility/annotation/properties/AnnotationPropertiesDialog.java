@@ -35,7 +35,7 @@ public class AnnotationPropertiesDialog extends EscapeJDialog implements Annotat
     private Controller controller;
     private ResourceBundle messageBundle;
 
-    public AnnotationPropertiesDialog(JFrame frame, SwingController controller,
+    public AnnotationPropertiesDialog(Frame frame, SwingController controller,
                                       ResourceBundle messageBundle) {
         super(frame, true);
         this.controller = controller;

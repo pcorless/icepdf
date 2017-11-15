@@ -220,6 +220,7 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
         popupAnnotationComponent.setBoudsRelativeToParent(
                 bbox.x + (bbox.width / 2), bbox.y + (bbox.height / 2), pageTransform);
         popupAnnotationComponent.setVisible(false);
+        popupAnnotationComponent.getAnnotation().setOpen(false);
 
 
         // set the annotation tool to he select tool

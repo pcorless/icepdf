@@ -41,6 +41,7 @@ import java.util.ResourceBundle;
 public class AnnotationSummaryPanel extends JPanel implements MutableDocument, PropertyChangeListener,
         MouseListener, ComponentListener, ItemListener {
 
+    protected Frame frame;
     protected Controller controller;
     protected ResourceBundle messageBundle;
 
@@ -60,7 +61,8 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
 
     protected ArrayList<ColorLabelPanel> annotationNamedColorPanels;
 
-    public AnnotationSummaryPanel(Controller controller) {
+    public AnnotationSummaryPanel(Frame frame, Controller controller) {
+        this.frame = frame;
         this.controller = controller;
         messageBundle = controller.getMessageBundle();
 
@@ -89,7 +91,7 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
             if (colorLabels != null && colorLabels.size() > 0) {
                 // build a panel for each color
                 for (DragDropColorList.ColorLabel colorLabel : colorLabels) {
-                    ColorLabelPanel annotationColumnPanel = new ColorLabelPanel(controller, colorLabel);
+                    ColorLabelPanel annotationColumnPanel = new ColorLabelPanel(frame, controller, colorLabel);
                     annotationColumnPanel.addPropertyChangeListener(
                             PropertyConstants.ANNOTATION_SUMMARY_BOX_FONT_SIZE_CHANGE,
                             annotationColumnPanel);
@@ -111,7 +113,7 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
                 // check to make sure a label has
             } else {
                 // other wise just one big panel with all the named colors.
-                ColorLabelPanel annotationColumnPanel = new ColorLabelPanel(controller, null);
+                ColorLabelPanel annotationColumnPanel = new ColorLabelPanel(frame, controller, null);
                 annotationColumnPanel.addPropertyChangeListener(
                         PropertyConstants.ANNOTATION_SUMMARY_BOX_FONT_SIZE_CHANGE,
                         annotationColumnPanel);
@@ -242,7 +244,6 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
                                     if (annotationColumnPanel.getColorLabel() != null &&
                                             annotationColumnPanel.getColorLabel().getColor().equals(markupAnnotation.getColor())) {
                                         annotationColumnPanel.updateAnnotation(markupAnnotation);
-                                        refreshPanelLayout();
                                         break;
                                     }
                                 }
@@ -250,7 +251,6 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
                                 // just add the component to the single column
                                 ColorLabelPanel annotationColumnPanel = annotationNamedColorPanels.get(0);
                                 annotationColumnPanel.updateAnnotation(markupAnnotation);
-                                refreshPanelLayout();
                                 break;
                             }
                         }
@@ -363,13 +363,13 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
                 for (ColorLabelPanel colorLabelPanel : annotationNamedColorPanels) {
                     GridBagConstraints constraints = gridBagLayout.getConstraints(colorLabelPanel);
                     if (colorLabelPanel.equals(comp)) {
-                        constraints.weightx = 1;
+                        constraints.weightx = 0.9;
                     } else {
                         constraints.weightx = weightX;
                     }
                     gridBagLayout.setConstraints(colorLabelPanel, constraints);
+                    colorLabelPanel.invalidate();
                 }
-                invalidate();
                 revalidate();
             }
         }

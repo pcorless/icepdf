@@ -46,7 +46,7 @@ public class AnnotationSummaryFrame extends JFrame implements MutableDocument {
                     messageBundle.getString("viewer.window.annotationSummary.title.open.default"));
             setTitle(formatter.format(messageArguments));
 
-            annotationSummaryPanel = new AnnotationSummaryPanel(controller);
+            annotationSummaryPanel = new AnnotationSummaryPanel(this, controller);
             getContentPane().add(annotationSummaryPanel);
             annotationSummaryPanel.refreshDocumentInstance();
         }

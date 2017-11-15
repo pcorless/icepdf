@@ -208,6 +208,7 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
                 e.getY() + scaledSize.height / 2,
                 pageInverseTransform);
         popupAnnotationComponent.setVisible(true);
+        popupAnnotationComponent.getAnnotation().setOpen(true);
 
         // set the annotation tool to he select tool
         if (preferences.getBoolean(PropertiesManager.PROPERTY_ANNOTATION_TEXT_SELECTION_ENABLED, false)) {

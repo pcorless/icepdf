@@ -187,6 +187,8 @@ public interface DocumentViewController {
 
     void updateAnnotation(AnnotationComponent annotationComponent);
 
+    void updatedSummaryAnnotation(AnnotationComponent annotationComponent);
+
     void deleteCurrentAnnotation();
 
     void deleteAnnotation(AnnotationComponent annotationComponent);

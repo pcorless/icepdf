@@ -189,6 +189,7 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
         popupAnnotationComponent.setBoudsRelativeToParent(
                 bBox.x + (bBox.width / 2), bBox.y + (bBox.height / 2), pageTransform);
         popupAnnotationComponent.setVisible(false);
+        popupAnnotationComponent.getAnnotation().setOpen(false);
 
         // set the annotation tool to he select tool
         if (preferences.getBoolean(PropertiesManager.PROPERTY_ANNOTATION_INK_SELECTION_ENABLED, false)) {
