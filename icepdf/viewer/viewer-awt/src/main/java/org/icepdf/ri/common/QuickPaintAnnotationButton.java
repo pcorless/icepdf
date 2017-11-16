@@ -89,12 +89,14 @@ public class QuickPaintAnnotationButton extends AnnotationColorButton {
     public void setColor(Color newColor, boolean fireChangeEvent) {
         super.setColor(newColor, fireChangeEvent);
         // set the colour back to the respective preference
-        Preferences preferences = PropertiesManager.getInstance().getPreferences();
-        preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_QUICK_COLOR, newColor.getRGB());
+        if (newColor != null) {
+            Preferences preferences = PropertiesManager.getInstance().getPreferences();
+            preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_QUICK_COLOR, newColor.getRGB());
 
-        if (fireChangeEvent) {
-            controller.getDocumentViewController().firePropertyChange(
-                    PropertyConstants.ANNOTATION_QUICK_COLOR_CHANGE, null, newColor);
+            if (fireChangeEvent) {
+                controller.getDocumentViewController().firePropertyChange(
+                        PropertyConstants.ANNOTATION_QUICK_COLOR_CHANGE, null, newColor);
+            }
         }
     }
 

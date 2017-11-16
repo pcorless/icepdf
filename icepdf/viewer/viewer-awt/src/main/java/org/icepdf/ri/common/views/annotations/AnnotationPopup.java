@@ -25,6 +25,7 @@ import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.PageViewComponentImpl;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
@@ -78,6 +79,18 @@ public class AnnotationPopup<T extends AnnotationComponent> extends JPopupMenu i
         propertiesMenuItem.addActionListener(this);
     }
 
+    protected void setDeleteMenuItemEnabledState() {
+        if (destinationsMenuItem != null) {
+            destinationsMenuItem.setEnabled(controller.getDocument().getCatalog().getNames() != null);
+        }
+    }
+
+    @Override
+    public void show(Component invoker, int x, int y) {
+        setDeleteMenuItemEnabledState();
+        super.show(invoker, x, y);
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
         Object source = e.getSource();
@@ -89,27 +102,29 @@ public class AnnotationPopup<T extends AnnotationComponent> extends JPopupMenu i
             controller.getDocumentViewController().deleteAnnotation(annotationComponent);
         } else if (source == destinationsMenuItem) {
             // test implementation of a NameJTree for destinations.
-            NameTree nameTree = controller.getDocument().getCatalog().getNames().getDestsNameTree();
-            if (nameTree != null) {
-                // create new dialog instance.
-                NameTreeDialog nameTreeDialog = new NameTreeDialog(
-                        controller,
-                        true, nameTree);
-                // get existing names
-                LinkAnnotation annotation = (LinkAnnotation) annotationComponent.getAnnotation();
-                Object dest = annotation.getEntries().get(LinkAnnotation.DESTINATION_KEY);
-                String destName = "";
-                if (dest != null && dest instanceof LiteralStringObject) {
-                    destName = ((LiteralStringObject) dest).getDecryptedLiteralString(
-                            controller.getDocument().getSecurityManager());
+            if (controller.getDocument().getCatalog().getNames() != null) {
+                NameTree nameTree = controller.getDocument().getCatalog().getNames().getDestsNameTree();
+                if (nameTree != null) {
+                    // create new dialog instance.
+                    NameTreeDialog nameTreeDialog = new NameTreeDialog(
+                            controller,
+                            true, nameTree);
+                    // get existing names
+                    LinkAnnotation annotation = (LinkAnnotation) annotationComponent.getAnnotation();
+                    Object dest = annotation.getEntries().get(LinkAnnotation.DESTINATION_KEY);
+                    String destName = "";
+                    if (dest != null && dest instanceof LiteralStringObject) {
+                        destName = ((LiteralStringObject) dest).getDecryptedLiteralString(
+                                controller.getDocument().getSecurityManager());
+                    }
+                    nameTreeDialog.setDestinationName(destName);
+                    // add the nameTree instance.
+                    nameTreeDialog.setVisible(true);
+                    // apply the new names
+                    annotation.setNamedDestination(nameTreeDialog.getDestinationName());
+                    // dispose the dialog
+                    nameTreeDialog.dispose();
                 }
-                nameTreeDialog.setDestinationName(destName);
-                // add the nameTree instance.
-                nameTreeDialog.setVisible(true);
-                // apply the new names
-                annotation.setNamedDestination(nameTreeDialog.getDestinationName());
-                // dispose the dialog
-                nameTreeDialog.dispose();
             }
         }
     }

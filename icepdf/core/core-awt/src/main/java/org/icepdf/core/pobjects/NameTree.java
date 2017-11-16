@@ -162,6 +162,7 @@ public class NameTree extends Dictionary {
             Object tmp = root.searchForInsertionNode(newName);
             if (tmp != null && tmp instanceof NameNode) {
                 // add the new node and update limits.
+                destination.entries = destination.getRawDestination();
                 destination.setPObjectReference(stateManager.getNewReferencNumber());
                 stateManager.addChange(new PObject(destination, destination.getPObjectReference()));
                 // assign the names destination.
@@ -174,6 +175,7 @@ public class NameTree extends Dictionary {
                 // add a new kid entry at the start or end of, with wide a-z limit
                 if (tmp.equals(NameNode.NOT_FOUND_IS_GREATER)) {
                     // add the new node and update limits.
+                    destination.entries = destination.getRawDestination();
                     destination.setPObjectReference(stateManager.getNewReferencNumber());
                     stateManager.addChange(new PObject(destination, destination.getPObjectReference()));
                     // going to cheat a bit here,  we are going to add the word to the last element of the last

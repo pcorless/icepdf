@@ -54,12 +54,11 @@ public class SummaryPopupMenu extends AnnotationPopup<MarkupAnnotationComponent>
         if (!(annotationComponent.getAnnotation() instanceof LinkAnnotation)) {
             destinationsMenuItem.setEnabled(false);
         }
-        addSeparator();
         add(deleteMenuItem, -1);
         deleteMenuItem.addActionListener(this);
-//        addSeparator();
-//        add(propertiesMenuItem);
-//        propertiesMenuItem.addActionListener(this);
+        addSeparator();
+        add(propertiesMenuItem);
+        propertiesMenuItem.addActionListener(this);
     }
 
     @Override

@@ -28,10 +28,7 @@ import org.icepdf.ri.common.AbstractWorkerPanel;
 import org.icepdf.ri.common.utility.annotation.AnnotationCellRender;
 import org.icepdf.ri.common.utility.annotation.AnnotationTreeNode;
 import org.icepdf.ri.common.views.*;
-import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
-import org.icepdf.ri.common.views.annotations.MarkupAnnotationPopupMenu;
-import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
-import org.icepdf.ri.common.views.annotations.PopupListener;
+import org.icepdf.ri.common.views.annotations.*;
 
 import javax.swing.*;
 import javax.swing.tree.*;
@@ -117,6 +114,21 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
                                 ((DefaultTreeModel) tree.getModel()).nodeChanged(node);
                                 break;
                             }
+                        }
+                    }
+                }
+            } else if (evt.getNewValue() instanceof FreeTextAnnotationComponent) {
+                // find the markup annotation
+                FreeTextAnnotationComponent comp = (FreeTextAnnotationComponent) evt.getNewValue();
+                MarkupAnnotation markupAnnotation = comp.getAnnotation();
+                // only update root pop annotation comment
+                if (!markupAnnotation.isInReplyTo()) {
+                    for (int i = 0; i < rootTreeNode.getChildCount(); i++) {
+                        AnnotationTreeNode node = findAnnotationTreeNode(rootTreeNode.getChildAt(i), markupAnnotation);
+                        if (node != null) {
+                            node.applyMessage(markupAnnotation, messageBundle);
+                            ((DefaultTreeModel) tree.getModel()).nodeChanged(node);
+                            break;
                         }
                     }
                 }

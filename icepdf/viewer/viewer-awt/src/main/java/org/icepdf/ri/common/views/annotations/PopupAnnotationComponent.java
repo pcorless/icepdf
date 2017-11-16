@@ -220,6 +220,20 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         if (bounds.width < DEFAULT_WIDTH || bounds.height < DEFAULT_HEIGHT) {
             setBounds(bounds.x, bounds.y, DEFAULT_WIDTH, DEFAULT_HEIGHT);
         }
+        // scrub the bounds to make sure they are visible.
+        bounds = getBounds();
+        Rectangle pageBounds = pageViewComponent.getBounds();
+        if (!pageBounds.contains(bounds)) {
+            int x = bounds.x;
+            int y = bounds.y;
+            int width = bounds.width;
+            int height = bounds.height;
+            if (width <= 0) width = DEFAULT_WIDTH;
+            if (height <= 0) height = DEFAULT_HEIGHT;
+            if (x + width > pageBounds.width) x = pageBounds.width - width;
+            if (y + height > pageBounds.height) y = pageBounds.height - height;
+            setBounds(x, y, bounds.width, bounds.height);
+        }
         if (getParent() != null) getParent().repaint();
     }
 

@@ -53,6 +53,8 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     private static final Logger logger =
             Logger.getLogger(FreeTextAnnotation.class.toString());
 
+    public static final int INSETS = 5;
+
     /**
      * (Required) The default appearance string that shall be used in formatting
      * the text (see 12.7.3.3, "Variable Text").
@@ -208,7 +210,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         // sets annotation free text fill colour
         try {
             defaultFontSize = Defs.sysPropertyInt(
-                    "org.icepdf.core.views.page.annotation.freeText.font.size", 24);
+                    "org.icepdf.core.views.page.annotation.freeText.font.size", 12);
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
                 logger.warning("Error reading free text annotation fill colour");
@@ -426,8 +428,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         af.translate(0, -bbox.getHeight());
         // adjust of the border offset, offset is define in viewer,
         // so we can't use the constant because of dependency issues.
-        double insets = 5;// * pageTransform.getScaleX();
-        af.translate(insets, insets);
+        af.translate(INSETS, INSETS);
         shapes.add(new TransformDrawCmd(af));
 
         // iterate over each line of text painting the strings.
@@ -507,7 +508,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
         // background colour
         shapes.add(new ShapeDrawCmd(new Rectangle2D.Double(bbox.getX(), bbox.getY(),
-                bbox.getWidth() - insets * 2, bbox.getHeight() - insets * 2)));
+                bbox.getWidth() - INSETS * 2, bbox.getHeight() - INSETS * 2)));
         if (fillType) {
             shapes.add(new ColorDrawCmd(fillColor));
             shapes.add(new FillDrawCmd());

@@ -22,9 +22,11 @@ import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.commands.DrawCmd;
 import org.icepdf.core.pobjects.graphics.commands.TextSpriteDrawCmd;
+import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.utility.annotation.properties.FreeTextAnnotationPanel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.common.views.DocumentViewModel;
 
 import javax.swing.*;
@@ -35,6 +37,7 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.parser.ParserDelegator;
 import java.awt.*;
+import java.awt.event.FocusEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
@@ -63,7 +66,7 @@ import java.util.logging.Logger;
  */
 @SuppressWarnings("serial")
 public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeTextAnnotation>
-        implements PropertyChangeListener {
+        implements PropertyChangeListener, DocumentListener {
 
     private static final Logger logger =
             Logger.getLogger(FreeTextAnnotation.class.toString());
@@ -99,6 +102,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
         }
         // create the textArea to display the text.
         freeTextPane = new ScalableTextArea(documentViewController.getDocumentViewModel());
+
         // line wrap false to force users to add line breaks.
         freeTextPane.setLineWrap(false);
         freeTextPane.setBackground(new Color(0, 0, 0, 0));
@@ -111,21 +115,8 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
             contents = contents.replace('\r', '\n');
             freeTextPane.setText(contents);
         }
-
-        // setup change listener so we now when to set the annotations AP stream
-        freeTextPane.getDocument().addDocumentListener(new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) {
-                contentTextChange = true;
-            }
-
-            public void removeUpdate(DocumentEvent e) {
-                contentTextChange = true;
-            }
-
-            public void changedUpdate(DocumentEvent e) {
-                contentTextChange = true;
-            }
-        });
+        freeTextPane.getDocument().addDocumentListener(this);
+        SpellCheckLoader.addSpellChecker(freeTextPane);
 
         GridLayout grid = new GridLayout(1, 1, 0, 0);
         this.setLayout(grid);
@@ -136,12 +127,11 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
                 KeyboardFocusManager.getCurrentKeyboardFocusManager();
         focusManager.addPropertyChangeListener(this);
 
-        // set the default size hen building from external file
-        if (annotation.getBbox() != null) {
-            setBounds(annotation.getBbox().getBounds());
-        }
         resetAppearanceShapes();
         revalidate();
+
+        // add a listener for popup changes.
+        ((DocumentViewControllerImpl) documentViewController).addPropertyChangeListener(this);
     }
 
     @Override
@@ -208,6 +198,51 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
         resetAppearanceShapes();
     }
 
+    @Override
+    public void insertUpdate(DocumentEvent e) {
+        contentTextChange = true;
+        autoResize();
+        updatePopupText();
+        // fire property change event
+        documentViewController.updateAnnotation(this);
+    }
+
+    @Override
+    public void removeUpdate(DocumentEvent e) {
+        contentTextChange = true;
+        autoResize();
+        updatePopupText();
+        // fire property change event
+        documentViewController.updateAnnotation(this);
+    }
+
+    @Override
+    public void changedUpdate(DocumentEvent e) {
+        contentTextChange = true;
+        autoResize();
+        updatePopupText();
+        // fire property change event
+        documentViewController.updateAnnotation(this);
+    }
+
+    protected void autoResize() {
+        Dimension preferredSize = getPreferredSize();
+        Rectangle bounds = getBounds();
+        // expand only, no contraction
+        int padding = +FreeTextAnnotation.INSETS * 2;
+        setBounds(bounds.x, bounds.y, preferredSize.width + padding, preferredSize.height + padding);
+        resize();
+        refreshAnnotationRect();
+    }
+
+    protected void updatePopupText() {
+        annotation.setContents(freeTextPane.getText());
+        PopupAnnotationComponent popupComponent = getPopupAnnotationComponent();
+        if (popupComponent != null) {
+            popupComponent.refreshPopupState();
+        }
+    }
+
     public void propertyChange(PropertyChangeEvent evt) {
         String prop = evt.getPropertyName();
         Object newValue = evt.getNewValue();
@@ -220,6 +255,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
                 freeText.setEditable(false);
                 if (contentTextChange) {
                     contentTextChange = false;
+                    annotation.setContents(freeText.getText());
                     resetAppearanceShapes();
                     documentViewController.updateAnnotation(this);
                 }
@@ -238,6 +274,19 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
                 }
             }
             repaint();
+        } else if (PropertyConstants.ANNOTATION_UPDATED.equals(evt.getPropertyName()) ||
+                PropertyConstants.ANNOTATION_SUMMARY_UPDATED.equals(evt.getPropertyName())) {
+            if (evt.getNewValue() instanceof PopupAnnotationComponent) {
+                PopupAnnotationComponent annotationSummaryBox = (PopupAnnotationComponent) evt.getNewValue();
+                if (this.equals(annotationSummaryBox.getAnnotationParentComponent())) {
+                    // update text
+                    freeTextPane.getDocument().removeDocumentListener(this);
+                    freeTextPane.setText(annotationSummaryBox.textArea.getText());
+                    autoResize();
+                    resetAppearanceShapes();
+                    freeTextPane.getDocument().addDocumentListener(this);
+                }
+            }
         }
     }
 
@@ -304,6 +353,15 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
         public String getText() {
             return s.toString();
         }
+    }
+
+    public void focusGained(FocusEvent e) {
+        super.focusGained(e);
+
+    }
+
+    public void requestTextAreaFocus() {
+        freeTextPane.requestFocus();
     }
 
 

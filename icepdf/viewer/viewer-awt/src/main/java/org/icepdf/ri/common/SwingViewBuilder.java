@@ -1581,10 +1581,6 @@ public class SwingViewBuilder {
             addToToolBar(toolbar, buildLineAnnotationPropertiesToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_LINK_ENABLED)) {
-            addToToolBar(toolbar, buildLinkAnnotationPropertiesToolButton(iconSize));
-        }
-        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_ARROW_ENABLED)) {
             addToToolBar(toolbar, buildLineArrowAnnotationPropertiesToolButton(iconSize));
         }
@@ -1607,6 +1603,10 @@ public class SwingViewBuilder {
         if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_TEXT_ENABLED)) {
             addToToolBar(toolbar, buildTextAnnotationPropertiesToolButton(iconSize));
+        }
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_LINK_ENABLED)) {
+            addToToolBar(toolbar, buildLinkAnnotationPropertiesToolButton(iconSize));
         }
         return toolbar;
     }

@@ -24,12 +24,16 @@ import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
+import org.icepdf.ri.common.views.annotations.FreeTextAnnotationComponent;
 import org.icepdf.ri.util.PropertiesManager;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.awt.geom.AffineTransform;
 import java.util.Date;
 import java.util.logging.Logger;
+
+import static org.icepdf.core.pobjects.annotations.FreeTextAnnotation.INSETS;
 
 /**
  * FreeTextAnnotationHandler tool is responsible for painting representation of
@@ -49,13 +53,16 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
     private static final Logger logger =
             Logger.getLogger(LineAnnotationHandler.class.toString());
 
+    public static final int DEFAULT_WIDTH = 30;
+    public static final int DEFAULT_HEIGHT = 30;
+
     private FreeTextAnnotation annotation;
 
     /**
      * New Text selection handler.  Make sure to correctly and and remove
      * this mouse and text listeners.
      *
-     * @param pageViewComponent page component that this handler is bound to.
+     * @param pageViewComponent      page component that this handler is bound to.
      * @param documentViewController view controller.
      */
     public FreeTextAnnotationHandler(DocumentViewController documentViewController,
@@ -86,9 +93,10 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
         updateSelectionSize(e.getX(), e.getY(), pageViewComponent);
 
         // check the bounds on rectToDraw to try and avoid creating
-        // an annotation that is very small.
+        // an annotation that is very small.  This occurs when some clicks rather then drags.
         if (rectToDraw.getWidth() < 5 || rectToDraw.getHeight() < 5) {
-            rectToDraw.setSize(new Dimension(15, 25));
+            rectToDraw.setSize(new Dimension(DEFAULT_WIDTH, DEFAULT_HEIGHT));
+            rectToDraw.setLocation(rectToDraw.x, rectToDraw.y - DEFAULT_HEIGHT + INSETS);
         }
 
         // create a fixed sized box based on the default font size.
@@ -103,10 +111,13 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
                         tBbox);
         annotation.setCreationDate(PDate.formatDateTime(new Date()));
         annotation.setTitleText(System.getProperty("user.name"));
-        annotation.setContents(" ");
+        annotation.setContents("");
 
         // apply store settings
         checkAndApplyPreferences();
+
+        AffineTransform pageTransform = getToPageSpaceTransform();
+        annotation.resetAppearanceStream(pageTransform);
 
         // create the annotation object.
         AbstractAnnotationComponent comp =
@@ -120,13 +131,13 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
         // add them to the container, using absolute positioning.
         documentViewController.addNewAnnotation(comp);
 
-        // request focus so that editing can take place.
-        comp.requestFocus();
-
         // set the annotation tool to he select tool
         if (preferences.getBoolean(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SELECTION_ENABLED, false)) {
             documentViewController.getParentController().setDocumentToolMode(DocumentViewModel.DISPLAY_TOOL_SELECTION);
         }
+
+        // request focus so that editing can take place.
+        ((FreeTextAnnotationComponent) comp).requestTextAreaFocus();
 
     }
 
