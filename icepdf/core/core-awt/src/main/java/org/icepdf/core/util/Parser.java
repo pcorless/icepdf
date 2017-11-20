@@ -112,7 +112,7 @@ public class Parser {
                     return null;
                 }
 
-                // check for specific primative object types returned by getToken()
+                // check for specific primitive object types returned by getToken()
                 if (nextToken instanceof StringObject
                         || nextToken instanceof Name
                         || nextToken instanceof Number) {
@@ -130,10 +130,14 @@ public class Parser {
                     // to make sure if an object has been parsed that we don't loose it.
                     if (inObject) {
                         // pop off the object and ref number
-                        stack.pop();
-                        stack.pop();
+                        Number generationNumber = (Number) (stack.pop());
+                        Number objectNumber = (Number) (stack.pop());
                         // return the passed over object on the stack.
-                        return addPObject(library, objectReference);
+                        PObject pObject = addPObject(library, objectReference);
+                        // put the object number and ref number back on the stack.
+                        objectReference = new Reference(objectNumber, generationNumber);
+                        stack.push(objectReference);
+                        return pObject;
                     }
                     // Since we can return objects on "endstream", then we can
                     //  leave straggling "endobj", which would deepnessCount--,
@@ -143,8 +147,7 @@ public class Parser {
                     inObject = true;
                     Number generationNumber = (Number) (stack.pop());
                     Number objectNumber = (Number) (stack.pop());
-                    objectReference = new Reference(objectNumber,
-                            generationNumber);
+                    objectReference = new Reference(objectNumber, generationNumber);
                     // capture the byte offset of this object so we can rebuild
                     // the cross reference entries for lazy loading after CG.
                     if (library.isLinearTraversal() && reader instanceof BufferedMarkedInputStream) {
@@ -398,6 +401,9 @@ public class Parser {
                     stack.push(v);
                 } else if (nextToken.equals("<<")) {
                     deepnessCount++;
+                    if (!stack.empty() && stack.peek() instanceof Reference) {
+                        inObject = true;
+                    }
                     stack.push(nextToken);
                 }
                 // Found a Dictionary
@@ -673,6 +679,10 @@ public class Parser {
      */
     public PObject addPObject(Library library, Reference objectReference) {
         Object o = stack.pop();
+
+        if (objectReference == null && !stack.empty() && stack.peek() instanceof Reference) {
+            objectReference = (Reference) stack.pop();
+        }
 
         // Add the streams object reference which is needed for
         // decrypting encrypted streams
