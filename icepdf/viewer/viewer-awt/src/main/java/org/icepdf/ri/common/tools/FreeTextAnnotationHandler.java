@@ -54,7 +54,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
             Logger.getLogger(LineAnnotationHandler.class.toString());
 
     public static final int DEFAULT_WIDTH = 30;
-    public static final int DEFAULT_HEIGHT = 30;
+    public static final int DEFAULT_HEIGHT = 20;
 
     private FreeTextAnnotation annotation;
 
@@ -76,7 +76,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
     }
 
     public void paintTool(Graphics g) {
-        paintSelectionBox(g, rectToDraw);
+//        paintSelectionBox(g, rectToDraw);
     }
 
     public void mouseClicked(MouseEvent e) {
@@ -92,12 +92,13 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
     public void mouseReleased(MouseEvent e) {
         updateSelectionSize(e.getX(), e.getY(), pageViewComponent);
 
-        // check the bounds on rectToDraw to try and avoid creating
-        // an annotation that is very small.  This occurs when some clicks rather then drags.
-        if (rectToDraw.getWidth() < 5 || rectToDraw.getHeight() < 5) {
-            rectToDraw.setSize(new Dimension(DEFAULT_WIDTH, DEFAULT_HEIGHT));
-            rectToDraw.setLocation(rectToDraw.x, rectToDraw.y - DEFAULT_HEIGHT + INSETS);
-        }
+        // use the mouse location as the start location.
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
+        float scale = documentViewModel.getViewZoom();
+        int width = (int) (DEFAULT_WIDTH * scale);
+        int height = (int) (DEFAULT_HEIGHT * scale);
+        rectToDraw.setLocation(rectToDraw.x - INSETS, rectToDraw.y - height + INSETS * 2);
+        rectToDraw.setSize(new Dimension(width, height));
 
         // create a fixed sized box based on the default font size.
         Rectangle tBbox = convertToPageSpace(rectToDraw).getBounds();

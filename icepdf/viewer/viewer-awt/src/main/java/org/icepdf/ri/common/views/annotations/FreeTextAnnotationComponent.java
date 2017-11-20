@@ -230,7 +230,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
         Rectangle bounds = getBounds();
         // expand only, no contraction
         int padding = +FreeTextAnnotation.INSETS * 2;
-        setBounds(bounds.x, bounds.y, preferredSize.width + padding, preferredSize.height + padding);
+        setBounds(bounds.x, bounds.y, preferredSize.width + padding, preferredSize.height);
         resize();
         refreshAnnotationRect();
     }
