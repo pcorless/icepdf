@@ -98,7 +98,7 @@ public class ThumbnailsPanel extends JPanel implements MutableDocument {
                 });
 
         // load the page components into the layout
-        PageThumbnailComponent pageThumbnailComponent = null;
+        PageThumbnailComponent pageThumbnailComponent;
         Document document = controller.getDocument();
         PageTree pageTree = document.getPageTree();
         int numberOfPages = document.getNumberOfPages();
@@ -120,7 +120,7 @@ public class ThumbnailsPanel extends JPanel implements MutableDocument {
                                 avgPageWidth, avgPageHeight, thumbNailZoom);
             }
             // calculate average page size
-            else {// if (i == MAX_PAGE_SIZE_READ_AHEAD) {
+            else {
                 avgPageWidth /= (MAX_PAGE_SIZE_READ_AHEAD);
                 avgPageHeight /= (MAX_PAGE_SIZE_READ_AHEAD);
                 pageThumbnailComponent =

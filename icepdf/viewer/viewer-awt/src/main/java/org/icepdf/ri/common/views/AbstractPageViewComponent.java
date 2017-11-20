@@ -406,7 +406,7 @@ public abstract class AbstractPageViewComponent
             boolean isFirstProgressivePaint = false;
             try {
                 if (documentViewController != null) page.addPageProcessingListener(pageLoadingListener);
-                // page init, interruptible
+                // page init, interruptable
                 page.init();
                 pageInitializedCallback(page);
 
@@ -425,7 +425,7 @@ public abstract class AbstractPageViewComponent
                 }
                 g2d.setClip(0, 0, imageLocation.width, imageLocation.height);
                 g2d.translate(-imageLocation.x, -imageLocation.y);
-                // paint page interruptible
+                // paint page interruptable
                 page.paint(g2d, GraphicsRenderingHints.SCREEN, pageBoundaryBox, rotation, zoom,
                         paintAnnotations, paintSearchHighlight);
                 g2d.dispose();

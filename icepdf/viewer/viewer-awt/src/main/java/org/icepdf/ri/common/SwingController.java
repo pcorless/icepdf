@@ -241,13 +241,12 @@ public class SwingController extends ComponentAdapter
     protected WindowManagementCallback windowManagementCallback;
     // simple model for swing controller, mainly printer and  file loading state.
     protected ViewModel viewModel;
-    // subcontroller for document view or document page views.
+    // sub controller for document view or document page views.
     protected DocumentViewControllerImpl documentViewController;
 
-    // subcontroller for document text searching.
+    // sub controller for document text searching.
     protected DocumentSearchController documentSearchController;
 
-    // todo subcontroller for document annotations creation.
 
 
     protected Document document;
@@ -1807,7 +1806,7 @@ public class SwingController extends ComponentAdapter
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_FREE_TEXT_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_FREE_TEXT_ANNOTATION);
-                documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_TEXT_SELECTION);
                 setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION) {
                 actualToolMayHaveChanged =

@@ -59,8 +59,7 @@ public class PageThumbnailComponent extends AbstractPageViewComponent implements
                                   int pageNumber,
                                   int width, int height,
                                   float thumbNailZoom) {
-        super(controller.getDocumentViewController().getDocumentViewModel(),
-                pageTree, pageNumber, parentScrollPane, width, height);
+        super(null, pageTree, pageNumber, parentScrollPane, width, height);
 
         this.controller = controller;
 
