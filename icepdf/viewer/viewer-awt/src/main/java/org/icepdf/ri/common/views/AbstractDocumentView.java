@@ -328,13 +328,20 @@ public abstract class AbstractDocumentView
         }
     }
 
+    protected boolean isTextSelectionTool() {
+        return getCurrentToolHandler() != null &&
+                (getCurrentToolHandler() instanceof TextSelectionViewHandler ||
+                        getCurrentToolHandler() instanceof TextSelectionPageHandler ||
+                        getCurrentToolHandler() instanceof HighLightAnnotationHandler);
+    }
+
     /**
      * Checks to see if the mouse has exited the scroll pane viewport on the vertical plane.
      *
      * @return true if the mouse is north or south of the view port, false otherwise.
      */
     private boolean autoScrollViewVertical() {
-        if (documentScrollpane != null) {
+        if (documentScrollpane != null && isTextSelectionTool()) {
             Rectangle viewportBounds = documentScrollpane.getViewport().getViewRect();
             Rectangle viewBounds = getBounds();
             // check for northern edge
@@ -366,7 +373,7 @@ public abstract class AbstractDocumentView
      * @return true if the mouse is east or west of the view port, false otherwise.
      */
     private boolean autoScrollViewHorizontal() {
-        if (documentScrollpane != null) {
+        if (documentScrollpane != null && isTextSelectionTool()) {
             Rectangle viewportBounds = documentScrollpane.getViewport().getViewRect();
             Rectangle viewBounds = getBounds();
             // check for eastern edge
