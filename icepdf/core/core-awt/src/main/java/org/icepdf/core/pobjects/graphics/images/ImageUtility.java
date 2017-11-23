@@ -100,8 +100,8 @@ public class ImageUtility {
 
         // minimum size the image has to be before we apply restriction on size when scalling image mask and base image
         // to the same image size.
-        scaleWidth = Defs.intProperty("org.icepdf.core.imageMaskScale.width", 3500);
-        scaleHeight = Defs.intProperty("org.icepdf.core.imageMaskScale.height", 3500);
+        scaleWidth = Defs.intProperty("org.icepdf.core.imageMaskScale.width", 7500);
+        scaleHeight = Defs.intProperty("org.icepdf.core.imageMaskScale.height", 7500);
     }
 
     private ImageUtility() {
@@ -530,7 +530,7 @@ public class ImageUtility {
             maskImage.getRGB(0, i, baseWidth, 1, maskBnd, 0, baseWidth);
             // apply the soft mask blending
             for (int j = 0; j < baseWidth; j++) {
-                if (maskBnd[j] == 0 || maskBnd[j] == 0xffffff) {
+                if (maskBnd[j] == 0 || maskBnd[j] == 0xffffff || maskBnd[j] == -1) {
                     //  set the pixel as transparent
                     maskBnd[j] = 0xff;
                 } else {
@@ -1037,7 +1037,8 @@ public class ImageUtility {
             }
         } else if (colourSpace instanceof DeviceRGB || colourSpace instanceof CalRGB) {
             if (bitsPerComponent == 8) {
-                boolean usingAlpha = (smaskImage != null || maskImage != null) && colorKeyMask != null;
+                boolean usingAlpha = smaskImage != null || maskImage != null ||
+                        (colorKeyMask != null && colorKeyMask.getMaskMinRGB() != null && colorKeyMask.getMaskMaxRGB() != null);
                 int type = usingAlpha ? BufferedImage.TYPE_INT_ARGB :
                         BufferedImage.TYPE_INT_RGB;
                 img = new BufferedImage(width, height, type);
@@ -1088,7 +1089,8 @@ public class ImageUtility {
                     cmap = cmapTruncated;
                 }
 //                boolean usingIndexedAlpha = maskMinIndex >= 0 && maskMaxIndex >= 0;
-                boolean usingAlpha = (smaskImage != null || maskImage != null) && colorKeyMask != null;
+                boolean usingAlpha = smaskImage != null || maskImage != null ||
+                        (colorKeyMask != null && colorKeyMask.getMaskMinRGB() != null && colorKeyMask.getMaskMaxRGB() != null);
                 if (usingAlpha) {
                     DataBuffer db = new DataBufferByte(data, dataLength);
                     WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));
@@ -1118,7 +1120,8 @@ public class ImageUtility {
                 }
                 boolean usingIndexedAlpha = colorKeyMask != null &&
                         colorKeyMask.getMaskMinIndex() >= 0 && colorKeyMask.getMaskMaxIndex() >= 0;
-                boolean usingAlpha = (smaskImage != null || maskImage != null) && colorKeyMask != null;
+                boolean usingAlpha = smaskImage != null || maskImage != null ||
+                        (colorKeyMask != null && colorKeyMask.getMaskMinRGB() != null && colorKeyMask.getMaskMaxRGB() != null);
                 if (usingIndexedAlpha) {
                     for (int i = colorKeyMask.getMaskMinIndex(); i <= colorKeyMask.getMaskMaxIndex(); i++) {
                         cmap[i] = 0x00000000;
