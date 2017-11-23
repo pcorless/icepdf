@@ -1035,7 +1035,7 @@ public class ImageUtility {
                 int[] dataToRGB = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
                 copyDecodedStreamBytesIntoGray(data, dataToRGB, decode);
             }
-        } else if (colourSpace instanceof DeviceRGB) {
+        } else if (colourSpace instanceof DeviceRGB || colourSpace instanceof CalRGB) {
             if (bitsPerComponent == 8) {
                 boolean usingAlpha = (smaskImage != null || maskImage != null) && colorKeyMask != null;
                 int type = usingAlpha ? BufferedImage.TYPE_INT_ARGB :
