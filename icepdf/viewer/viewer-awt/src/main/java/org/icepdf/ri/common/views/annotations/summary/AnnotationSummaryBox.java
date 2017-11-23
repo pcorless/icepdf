@@ -22,6 +22,8 @@ import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.PageViewComponentImpl;
+import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.util.PropertiesManager;
@@ -32,10 +34,12 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.FocusListener;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Level;
 
-public class AnnotationSummaryBox extends PopupAnnotationComponent {
+public class AnnotationSummaryBox extends PopupAnnotationComponent implements FocusListener {
 
     public AnnotationSummaryBox(PopupAnnotation annotation, DocumentViewController documentViewController,
                                 AbstractPageViewComponent pageViewComponent) {
@@ -43,6 +47,8 @@ public class AnnotationSummaryBox extends PopupAnnotationComponent {
 
         setFocusable(false);
         removeFocusListener(this);
+
+        adjustBounds = false;
 
         commentPanel.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
         // hides a bunch of the controls.
@@ -100,6 +106,24 @@ public class AnnotationSummaryBox extends PopupAnnotationComponent {
 
     public JPopupMenu getContextMenu(Frame frame) {
         MarkupAnnotationComponent comp = (MarkupAnnotationComponent) getAnnotationParentComponent();
+        // page may not have been initialized and thus we don't have a component
+        if (comp == null) {
+            int pageIndex = annotation.getParent().getPageIndex();
+            PageViewComponentImpl pageViewComponent = (PageViewComponentImpl)
+                    documentViewController.getParentController().getDocumentViewController()
+                            .getDocumentViewModel().getPageComponents().get(pageIndex);
+            pageViewComponent.refreshAnnotationComponents(pageViewComponent.getPage(), false);
+            ArrayList<AbstractAnnotationComponent> comps = pageViewComponent.getAnnotationComponents();
+            for (AbstractAnnotationComponent abstractComp : comps) {
+                Annotation pageAnnotation = abstractComp.getAnnotation();
+                Annotation parent = annotation.getParent();
+                if (pageAnnotation != null && parent != null &&
+                        pageAnnotation.getPObjectReference().equals(parent.getPObjectReference())) {
+                    comp = (MarkupAnnotationComponent) abstractComp;
+                    break;
+                }
+            }
+        }
         return new SummaryPopupMenu((MarkupAnnotation) comp.getAnnotation(), comp, documentViewController.getParentController(),
                 frame);
     }

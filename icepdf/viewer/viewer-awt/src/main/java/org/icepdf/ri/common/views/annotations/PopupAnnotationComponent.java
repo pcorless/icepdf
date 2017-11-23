@@ -104,6 +104,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     protected MarkupAnnotation selectedMarkupAnnotation;
 
     protected boolean disableSpellCheck;
+    protected boolean adjustBounds = true;
 
     private String userName = System.getProperty("user.name");
 
@@ -170,28 +171,30 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
         // check to make sure the new bounds will be visible, if not we correct them
         // this reads, ugly, sorry...
-        Rectangle currentBounds = getBounds();
-        Dimension pageSize = pageViewComponent.getSize();
-        if (currentBounds.x != x || currentBounds.y != y) {
-            if (x < 0) {
-                if (currentBounds.width != width) width += x;
-                x = 0;
-            } else if (x + width > pageSize.width) {
-                x = pageSize.width - currentBounds.width;
+        if (adjustBounds) {
+            Rectangle currentBounds = getBounds();
+            Dimension pageSize = pageViewComponent.getSize();
+            if (currentBounds.x != x || currentBounds.y != y) {
+                if (x < 0) {
+                    if (currentBounds.width != width) width += x;
+                    x = 0;
+                } else if (x + width > pageSize.width) {
+                    x = pageSize.width - currentBounds.width;
+                }
+                if (y < 0) {
+                    if (currentBounds.height != height) height += y;
+                    y = 0;
+                } else if (y + height > pageSize.height) {
+                    y = pageSize.height - currentBounds.height;
+                }
             }
-            if (y < 0) {
-                if (currentBounds.height != height) height += y;
-                y = 0;
-            } else if (y + height > pageSize.height) {
-                y = pageSize.height - currentBounds.height;
-            }
-        }
-        if (currentBounds.width != width || currentBounds.height != height) {
-            // we have a resize, make sure the component is contained in the page.
-            if (x + width > pageSize.width) {
-                width = pageSize.width - x;
-            } else if (y + height > pageSize.height) {
-                height = pageSize.height - y;
+            if (currentBounds.width != width || currentBounds.height != height) {
+                // we have a resize, make sure the component is contained in the page.
+                if (x + width > pageSize.width) {
+                    width = pageSize.width - x;
+                } else if (y + height > pageSize.height) {
+                    height = pageSize.height - y;
+                }
             }
         }
         super.setBounds(x, y, width, height);

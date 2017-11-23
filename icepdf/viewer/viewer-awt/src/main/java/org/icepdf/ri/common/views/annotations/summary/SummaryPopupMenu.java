@@ -46,8 +46,7 @@ public class SummaryPopupMenu extends AnnotationPopup<MarkupAnnotationComponent>
         super(annotationComponent, controller, null);
         this.frame = frame;
         this.markupAnnotation = markupAnnotation;
-        this.
-                buildGui();
+        this.buildGui();
     }
 
     public void buildGui() {
