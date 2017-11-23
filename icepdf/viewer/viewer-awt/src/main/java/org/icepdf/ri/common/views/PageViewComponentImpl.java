@@ -1,7 +1,6 @@
 package org.icepdf.ri.common.views;
 
-import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.PageTree;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.ChoiceWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
@@ -69,6 +68,8 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         paintAnnotationComponents(g2d);
         // paint selected and highlighted text.
         paintTextSelection(g2d);
+        // paint destinations, if any
+        paintDestinations(g2d);
 
         // paint annotation handler effect if any.
         if (currentToolHandler != null) {
@@ -303,6 +304,60 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         }
     }
 
+    private void paintDestinations(Graphics g) {
+        Page currentPage = getPage();
+        if (currentPage != null && documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_SELECTION) {
+
+            // make sure we have a name tree to try and paint
+            Catalog catalog = documentViewController.getDocument().getCatalog();
+            if (catalog.getNames() != null && catalog.getNames().getDestsNameTree() != null) {
+
+                NameTree nameTree = catalog.getNames().getDestsNameTree();
+                ArrayList<Destination> destinations = nameTree.findDestinations(currentPage.getPObjectReference());
+
+                if (destinations != null && destinations.size() > 0) {
+                    Graphics2D gg2 = (Graphics2D) g;
+                    // save draw state.
+                    AffineTransform prePaintTransform = gg2.getTransform();
+                    Color oldColor = gg2.getColor();
+                    Stroke oldStroke = gg2.getStroke();
+                    // apply page transform.
+                    AffineTransform at = currentPage.getPageTransform(
+                            documentViewModel.getPageBoundary(),
+                            documentViewModel.getViewRotation(),
+                            documentViewModel.getViewZoom());
+                    gg2.transform(at);
+
+                    gg2.setStroke(new BasicStroke(1f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_MITER));
+                    // paint destination
+                    for (Destination dest : destinations) {
+                        if (dest.getLeft() != null && dest.getTop() != null) {
+                            int x = dest.getLeft().intValue();
+                            int y = dest.getTop().intValue();
+                            int dim = 24;
+                            int xBack = x - (dim / 3);
+                            int yBack = y + (dim / 2);
+                            gg2.setColor(Color.GRAY);
+                            gg2.drawLine(x, y, xBack, yBack);
+                            gg2.setColor(Color.RED);
+                            gg2.fillOval(xBack - 5, yBack - 5, 10, 10);
+                            gg2.setColor(Color.WHITE);
+                            gg2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.30f));
+                            gg2.fillOval(xBack - 3, yBack - 1, 4, 4);
+                            gg2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
+                        }
+                    }
+                    // post paint clean up.
+                    gg2.setColor(oldColor);
+                    gg2.setStroke(oldStroke);
+                    gg2.setTransform(prePaintTransform);
+                }
+            }
+
+        }
+    }
+
     public void focusGained(FocusEvent e) {
         int oldCurrentPage = documentViewModel.getViewCurrentPageIndex();
         documentViewModel.setViewCurrentPageIndex(pageIndex);
@@ -386,61 +441,71 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     }
 
     public void refreshAnnotationComponents(Page page) {
-        if (page != null) {
-            final List<Annotation> annotations = page.getAnnotations();
-            final AbstractPageViewComponent parent = this;
-            SwingUtilities.invokeLater(() -> {
-                if (annotations != null && annotations.size() > 0) {
-                    // we don't want to re-initialize the component as we'll
-                    // get duplicates if the page has be gc'd
-                    if (annotationComponents == null) {
-                        annotationComponents = new ArrayList<>(annotations.size());
-                        Annotation annotation;
-                        for (int i = 0, max = annotations.size(); i < max; i++) {
-                            annotation = annotations.get(i);
-                            // parser can sometimes return an empty array depending on the PDF syntax being used.
-                            if (annotation != null) {
-                                final AbstractAnnotationComponent comp =
-                                        AnnotationComponentFactory.buildAnnotationComponent(
-                                                annotation, documentViewController, parent);
-                                if (comp != null) {
-                                    // add for painting
-                                    annotationComponents.add(comp);
-                                    // add to layout
-                                    if (comp instanceof PopupAnnotationComponent) {
-                                        PopupAnnotationComponent popupAnnotationComponent = (PopupAnnotationComponent) comp;
-                                        // check if we have created the parent markup,  if so add the glue
-                                        MarkupAnnotationComponent markupAnnotationComponent =
-                                                popupAnnotationComponent.getMarkupAnnotationComponent();
-                                        if (markupAnnotationComponent != null) {
-                                            parent.add(new MarkupGlueComponent(markupAnnotationComponent,
-                                                    popupAnnotationComponent), JLayeredPane.DEFAULT_LAYER);
-                                        }
-                                        parent.add(popupAnnotationComponent, JLayeredPane.POPUP_LAYER);
-                                    } else if (comp instanceof MarkupAnnotationComponent) {
-                                        MarkupAnnotationComponent markupAnnotationComponent =
-                                                (MarkupAnnotationComponent) comp;
-                                        PopupAnnotationComponent popupAnnotationComponent =
-                                                markupAnnotationComponent.getPopupAnnotationComponent();
-                                        // we may or may not have create the popup, if so we create the glue
-                                        if (popupAnnotationComponent != null) {
-                                            parent.add(new MarkupGlueComponent(markupAnnotationComponent,
-                                                    popupAnnotationComponent), JLayeredPane.DEFAULT_LAYER);
-                                        }
-                                        parent.add(markupAnnotationComponent, JLayeredPane.PALETTE_LAYER);
-                                    } else {
-                                        parent.add(comp, JLayeredPane.PALETTE_LAYER);
-                                    }
-                                    comp.revalidate();
-                                    comp.repaint();
-                                }
+        refreshAnnotationComponents(page, true);
+    }
 
+    public void refreshAnnotationComponents(Page page, boolean invokeLater) {
+        if (page != null) {
+            if (invokeLater) {
+                final Page finalPage = page;
+                SwingUtilities.invokeLater(() -> initializeAnnotationsComponent(finalPage));
+            } else {
+                initializeAnnotationsComponent(page);
+            }
+        }
+    }
+
+    private void initializeAnnotationsComponent(Page page) {
+        List<Annotation> annotations = page.getAnnotations();
+        AbstractPageViewComponent parent = this;
+        if (annotations != null && annotations.size() > 0) {
+            // we don't want to re-initialize the component as we'll
+            // get duplicates if the page has be gc'd
+            if (annotationComponents == null) {
+                annotationComponents = new ArrayList<>(annotations.size());
+                Annotation annotation;
+                for (int i = 0, max = annotations.size(); i < max; i++) {
+                    annotation = annotations.get(i);
+                    // parser can sometimes return an empty array depending on the PDF syntax being used.
+                    if (annotation != null) {
+                        final AbstractAnnotationComponent comp =
+                                AnnotationComponentFactory.buildAnnotationComponent(
+                                        annotation, documentViewController, parent);
+                        if (comp != null) {
+                            // add for painting
+                            annotationComponents.add(comp);
+                            // add to layout
+                            if (comp instanceof PopupAnnotationComponent) {
+                                PopupAnnotationComponent popupAnnotationComponent = (PopupAnnotationComponent) comp;
+                                // check if we have created the parent markup,  if so add the glue
+                                MarkupAnnotationComponent markupAnnotationComponent =
+                                        popupAnnotationComponent.getMarkupAnnotationComponent();
+                                if (markupAnnotationComponent != null) {
+                                    parent.add(new MarkupGlueComponent(markupAnnotationComponent,
+                                            popupAnnotationComponent), JLayeredPane.DEFAULT_LAYER);
+                                }
+                                parent.add(popupAnnotationComponent, JLayeredPane.POPUP_LAYER);
+                            } else if (comp instanceof MarkupAnnotationComponent) {
+                                MarkupAnnotationComponent markupAnnotationComponent =
+                                        (MarkupAnnotationComponent) comp;
+                                PopupAnnotationComponent popupAnnotationComponent =
+                                        markupAnnotationComponent.getPopupAnnotationComponent();
+                                // we may or may not have create the popup, if so we create the glue
+                                if (popupAnnotationComponent != null) {
+                                    parent.add(new MarkupGlueComponent(markupAnnotationComponent,
+                                            popupAnnotationComponent), JLayeredPane.DEFAULT_LAYER);
+                                }
+                                parent.add(markupAnnotationComponent, JLayeredPane.PALETTE_LAYER);
+                            } else {
+                                parent.add(comp, JLayeredPane.PALETTE_LAYER);
                             }
+                            comp.revalidate();
+                            comp.repaint();
                         }
+
                     }
                 }
-
-            });
+            }
         }
     }
 

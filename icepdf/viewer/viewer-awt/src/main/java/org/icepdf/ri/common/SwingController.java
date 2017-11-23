@@ -5176,6 +5176,7 @@ public class SwingController extends ComponentAdapter
             case PropertyConstants.DESTINATION_UPDATED:
             case PropertyConstants.DESTINATION_DELETED:
                 annotationPanel.getDestinationsPanel().refreshNameTree(evt.getNewValue());
+                getDocumentViewController().getDocumentView().repaint();
                 break;
         }
     }

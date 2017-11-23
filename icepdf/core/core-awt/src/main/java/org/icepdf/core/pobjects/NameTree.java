@@ -313,6 +313,54 @@ public class NameTree extends Dictionary {
 
     }
 
+    /**
+     * Searches for names that have the given page number in the name tree destination.
+     *
+     * @param pageReference page reference to find.
+     * @return list of destinations for the given page index, an empty list if no entries are found.
+     */
+    public ArrayList<Destination> findDestinations(Reference pageReference) {
+        return searchForPageIndex(root, pageReference);
+    }
+
+    public ArrayList<Destination> searchForPageIndex(NameNode rootNode, Reference pageReference) {
+        ArrayList<Destination> destinations = new ArrayList<>();
+        List nameValues = rootNode.getNamesAndValues();
+        if (rootNode.getKidsReferences() != null) {
+            List<NameNode> kids = rootNode.getKidsNodes();
+            for (NameNode kid : kids) {
+                ArrayList<Destination> found = searchForPageIndex(kid, pageReference);
+                if (found != null) {
+                    destinations.addAll(found);
+                }
+            }
+        }
+        if (nameValues != null && nameValues.size() > 0) {
+            for (int i = 1; i < nameValues.size(); i += 2) {
+                Object value = nameValues.get(i);
+                Object tmp = library.getObject(value);
+                // D-> ref -> Destination
+                if (tmp instanceof HashMap) {
+                    HashMap dictionary = (HashMap) tmp;
+                    Object obj = dictionary.get(Destination.D_KEY);
+                    if (obj instanceof List) {
+                        Destination dest = new Destination(library, obj);
+                        if (dest.getPageReference().equals(pageReference)) {
+                            destinations.add(dest);
+                        }
+                    }
+                } else if (tmp instanceof Destination) {
+                    Destination dest = (Destination) tmp;
+                    if (dest.getPageReference().equals(pageReference)) {
+                        destinations.add(dest);
+                    }
+                }
+            }
+        }
+        return destinations;
+    }
+
+
     public NameNode getRoot() {
         return root;
     }
