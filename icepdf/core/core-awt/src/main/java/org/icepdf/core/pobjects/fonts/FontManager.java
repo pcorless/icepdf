@@ -755,9 +755,8 @@ public class FontManager {
                 if (logger.isLoggable(Level.FINEST)) {
                     logger.finest(baseName + " : " + familyName + "  : " + name);
                 }
-                if (name.contains(familyName) ||
-//                        familyName.contains(name) ||
-                        fontName.toLowerCase().contains(baseName)) {
+                if (fontName.toLowerCase().contains(baseName) ||
+                        name.equals(familyName)) {
                     style = (Integer) fontData[2];
                     boolean found = false;
                     // ignore this font, as the cid mapping are not correct, or ther is
