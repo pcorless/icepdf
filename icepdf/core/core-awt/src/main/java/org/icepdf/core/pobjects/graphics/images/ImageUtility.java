@@ -513,6 +513,10 @@ public class ImageUtility {
         // the mask specified no colour.
         baseWidth = baseImage.getWidth();
         baseHeight = baseImage.getHeight();
+        int mask = 0xffffff;
+        if (maskImage.getType() == BufferedImage.TYPE_BYTE_INDEXED) {
+            mask = 0xffffffff;
+        }
 
         boolean hasAlpha = hasAlpha(baseImage);
         BufferedImage argbImage;
@@ -530,7 +534,7 @@ public class ImageUtility {
             maskImage.getRGB(0, i, baseWidth, 1, maskBnd, 0, baseWidth);
             // apply the soft mask blending
             for (int j = 0; j < baseWidth; j++) {
-                if (maskBnd[j] == 0 || maskBnd[j] == 0xffffff || maskBnd[j] == -1) {
+                if (maskBnd[j] == 0 || maskBnd[j] == mask) {
                     //  set the pixel as transparent
                     maskBnd[j] = 0xff;
                 } else {
@@ -970,8 +974,14 @@ public class ImageUtility {
 
         boolean isImageMask = imageParams.isImageMask();
         ColorKeyMask colorKeyMask = null;
+        int[] maskMinRGB = null;
+        int[] maskMaxRGB = null;
         if (!isImageMask) {
             colorKeyMask = imageParams.getColorKeyMask();
+            if (colorKeyMask != null) {
+                maskMinRGB = colorKeyMask.getMaskMinRGB();
+                maskMaxRGB = colorKeyMask.getMaskMaxRGB();
+            }
         }
 
         // check if the ICCBased colour has an alternative that
@@ -1038,16 +1048,15 @@ public class ImageUtility {
         } else if (colourSpace instanceof DeviceRGB || colourSpace instanceof CalRGB) {
             if (bitsPerComponent == 8) {
                 boolean usingAlpha = smaskImage != null || maskImage != null ||
-                        (colorKeyMask != null && colorKeyMask.getMaskMinRGB() != null && colorKeyMask.getMaskMaxRGB() != null);
-                int type = usingAlpha ? BufferedImage.TYPE_INT_ARGB :
-                        BufferedImage.TYPE_INT_RGB;
+                        (maskMinRGB != null && maskMaxRGB != null);
+                int type = usingAlpha ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB;
                 img = new BufferedImage(width, height, type);
                 // convert image data to rgb, a little out of order maybe?
                 int[] dataToRGB = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
                 copyDecodedStreamBytesIntoRGB(data, dataToRGB);
                 // apply alpha data.
                 if (usingAlpha) {
-                    img = alterBufferedImageAlpha(img, colorKeyMask.getMaskMinRGB(), colorKeyMask.getMaskMaxRGB());
+                    img = alterBufferedImageAlpha(img, maskMinRGB, maskMaxRGB);
                 }
             }
         } else if (colourSpace instanceof DeviceCMYK) {
@@ -1089,14 +1098,14 @@ public class ImageUtility {
                     cmap = cmapTruncated;
                 }
 //                boolean usingIndexedAlpha = maskMinIndex >= 0 && maskMaxIndex >= 0;
-                boolean usingAlpha = smaskImage != null || maskImage != null ||
-                        (colorKeyMask != null && colorKeyMask.getMaskMinRGB() != null && colorKeyMask.getMaskMaxRGB() != null);
+                boolean usingAlpha = (smaskImage != null || maskImage != null) ||
+                        (maskMinRGB != null && maskMaxRGB != null);
                 if (usingAlpha) {
                     DataBuffer db = new DataBufferByte(data, dataLength);
                     WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));
                     ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, true, -1, db.getDataType());
                     img = new BufferedImage(cm, wr, false, null);
-                    img = alterBufferedImageAlpha(img, colorKeyMask.getMaskMinRGB(), colorKeyMask.getMaskMaxRGB());
+                    img = alterBufferedImageAlpha(img, maskMinRGB, maskMaxRGB);
                 } else {
                     DataBuffer db = new DataBufferByte(data, dataLength);
                     WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));
@@ -1120,8 +1129,8 @@ public class ImageUtility {
                 }
                 boolean usingIndexedAlpha = colorKeyMask != null &&
                         colorKeyMask.getMaskMinIndex() >= 0 && colorKeyMask.getMaskMaxIndex() >= 0;
-                boolean usingAlpha = smaskImage != null || maskImage != null ||
-                        (colorKeyMask != null && colorKeyMask.getMaskMinRGB() != null && colorKeyMask.getMaskMaxRGB() != null);
+                boolean usingAlpha = (smaskImage != null || maskImage != null) ||
+                        (maskMinRGB != null && maskMaxRGB != null);
                 if (usingIndexedAlpha) {
                     for (int i = colorKeyMask.getMaskMinIndex(); i <= colorKeyMask.getMaskMaxIndex(); i++) {
                         cmap[i] = 0x00000000;

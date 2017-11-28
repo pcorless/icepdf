@@ -98,21 +98,26 @@ public class ImageStream extends Stream {
             decodedImage = new RawDecoder(this, graphicsState).decode();
         }
         if (decodedImage != null) {
-//            ImageUtility.displayImage(decodedImage, pObjectReference.toString());
-//            ImageUtility.writeImage(decodedImage, pObjectReference.toString(), "D:\\log\\");
             if (imageParams.isImageMask()) {
                 decodedImage = ImageUtility.applyExplicitMask(decodedImage, graphicsState.getFillColor());
             }
-
+//            ImageUtility.displayImage(decodedImage, pObjectReference.toString());
             // apply common mask and sMask processing
-            if (imageParams.getSMask(graphicsState) != null) {
-                decodedImage = ImageUtility.applyExplicitSMask(decodedImage, imageParams.getSMask(graphicsState).decode());
+            ImageDecoder smaskDecoder = imageParams.getSMask(graphicsState);
+            if (smaskDecoder != null) {
+                BufferedImage smaskImage = smaskDecoder.decode();
+//                ImageUtility.displayImage(smaskImage, "SMask " + entries.get(SMASK_KEY).toString());
+                decodedImage = ImageUtility.applyExplicitSMask(decodedImage, smaskImage);
             }
-            if (imageParams.getMask(graphicsState) != null) {
-                decodedImage = ImageUtility.applyExplicitMask(decodedImage, imageParams.getMask(graphicsState).decode());
+            ImageDecoder maskDecoder = imageParams.getMask(graphicsState);
+            if (maskDecoder != null) {
+                BufferedImage maskImage = maskDecoder.decode();
+//                ImageUtility.displayImage(maskImage, "Mask " + entries.get(MASK_KEY).toString());
+                decodedImage = ImageUtility.applyExplicitMask(decodedImage, maskImage);
             }
+//            if (maskDecoder != null || smaskDecoder != null)
+//                ImageUtility.displayImage(decodedImage, "Final " + pObjectReference.toString());
         }
-
         // add the image to the pool, just encase it get painted again.
         if (pObjectReference != null) {
             library.getImagePool().put(pObjectReference, decodedImage);
