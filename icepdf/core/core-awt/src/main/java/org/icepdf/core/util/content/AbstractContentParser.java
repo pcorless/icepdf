@@ -52,6 +52,10 @@ public abstract class AbstractContentParser implements ContentParser {
     private static boolean enabledOverPrint;
     private static boolean enabledFontFallback;
 
+    private static boolean strokeAdjustmentEnabled;
+    private static float strokeAdjustmentThreshold;
+    private static float strokeAdjustmentValue;
+
     static {
         // decide if large images will be scaled
         disableTransparencyGroups =
@@ -66,6 +70,16 @@ public abstract class AbstractContentParser implements ContentParser {
         enabledFontFallback =
                 Defs.sysPropertyBoolean("org.icepdf.core.enabledFontFallback",
                         false);
+
+        strokeAdjustmentEnabled =
+                Defs.sysPropertyBoolean("org.icepdf.core.strokeAdjustmentEnabled",
+                        false);
+
+        strokeAdjustmentThreshold =
+                Defs.floatProperty("org.icepdf.core.strokeAdjustmentThreshold", 0.09f);
+
+        strokeAdjustmentValue =
+                Defs.floatProperty("org.icepdf.core.strokeAdjustmentValue", 0.2f);
     }
 
     public static final float OVERPAINT_ALPHA = 0.4f;
@@ -796,6 +810,9 @@ public abstract class AbstractContentParser implements ContentParser {
         // apply any type3 font scalling which is set via the glyph2User space affine transform.
         if (!stack.isEmpty()) {
             float scale = ((Number) stack.pop()).floatValue() * glyph2UserSpaceScale;
+            if (strokeAdjustmentEnabled && scale < strokeAdjustmentThreshold) {
+                scale = strokeAdjustmentValue;
+            }
             graphicState.setLineWidth(scale);
             setStroke(shapes, graphicState);
         }
