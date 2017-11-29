@@ -96,6 +96,17 @@ public class Defs {
         return defaultValue;
     }
 
+    public static float floatProperty(String name, float defaultValue) {
+        String value = property(name);
+        if (value != null) {
+            try {
+                return Float.parseFloat(value);
+            } catch (NumberFormatException ex) {
+                logger.log(Level.FINE, "Failed to parse property.", ex);
+            }
+        }
+        return defaultValue;
+    }
 
     /**
      * Shortcut for <code>booleanProperty(name, false)</code>
