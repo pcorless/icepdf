@@ -133,7 +133,9 @@ public class Catalog extends Dictionary {
         if (tmp != null) {
             names = new Names(library, (HashMap) tmp);
             names.init();
-            names.setPObjectReference((Reference) entries.get(NAMES_KEY));
+            if (entries.get(NAMES_KEY) instanceof Reference) {
+                names.setPObjectReference((Reference) entries.get(NAMES_KEY));
+            }
         }
 
         // load the Acroform data.
