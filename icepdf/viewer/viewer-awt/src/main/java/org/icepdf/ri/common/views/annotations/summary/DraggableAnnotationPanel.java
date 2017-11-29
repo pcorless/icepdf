@@ -59,9 +59,8 @@ public class DraggableAnnotationPanel extends JPanel {
             if (e.getButton() == MouseEvent.BUTTON3) {
                 Component comp = getComponentAt(e.getPoint());
                 if (comp != null && comp instanceof AnnotationSummaryBox) {
-                    // todo rethink for null components.
                     AnnotationSummaryBox annotationSummaryBox = (AnnotationSummaryBox) comp;
-                    JPopupMenu contextMenu = annotationSummaryBox.getContextMenu(frame);
+                    JPopupMenu contextMenu = annotationSummaryBox.getContextMenu(frame, this);
                     contextMenu.show(e.getComponent(), e.getX(), e.getY());
                 }
             }
@@ -79,7 +78,7 @@ public class DraggableAnnotationPanel extends JPanel {
         @Override
         public void mousePressed(MouseEvent e) {
             Component comp = getComponentAt(e.getPoint());
-            if (comp != null && comp instanceof AnnotationSummaryBox) {
+            if (e.getButton() == MouseEvent.BUTTON1 && comp != null && comp instanceof AnnotationSummaryBox) {
                 dragComponent = comp;
                 dragComponent.requestFocus();
                 // bring the component to the front.
@@ -96,9 +95,28 @@ public class DraggableAnnotationPanel extends JPanel {
         public void mouseReleased(MouseEvent e) {
             if (isDragging) moveComponent(dragComponent);
             isDragging = false;
+            dragComponent = null;
         }
 
-        protected void moveComponent(Component dragComponent) {
+        public void checkForOverlap(Component dragComponent) {
+            int padding = 10;
+            Component[] comps = getComponents();
+            Arrays.sort(comps, new ComponentBoundsCompare());
+            Component comp, comp2;
+            // adjust for any overlap
+            for (int i = 0; i < comps.length - 1; i++) {
+                comp = comps[i];
+                comp2 = comps[i + 1];
+                Rectangle nextBounds = comp2.getBounds();
+                if (comp.getBounds().intersects(nextBounds)) {
+                    // over top but just below the top so we shift it back down.
+                    comp2.setLocation(nextBounds.x, comp.getY() + comp.getHeight() + padding);
+                    checkForOverlap(comp2);
+                }
+            }
+        }
+
+        public void moveComponent(Component dragComponent) {
             if (dragComponent != null) {
                 int padding = 10;
                 Component[] comps = getComponents();
@@ -208,7 +226,7 @@ public class DraggableAnnotationPanel extends JPanel {
             // find last/tallest width
             for (Component comp : children) {
                 width = target.getWidth() - paddingTwo;
-                height = Math.max(previousHeight, comp.getLocation().y + comp.getHeight() + padding);
+                height = Math.max(previousHeight, comp.getLocation().y + comp.getPreferredSize().height + padding);
                 previousHeight = height;
             }
             height += padding;
@@ -267,7 +285,7 @@ public class DraggableAnnotationPanel extends JPanel {
             Component[] comps = parent.getComponents();
             for (Component comp : comps) {
                 currentComp = comp.getBounds();
-                preferredSize = comp.getSize();
+                preferredSize = comp.getPreferredSize();
                 int x = padding;
                 int y = currentComp.y;
                 // size width

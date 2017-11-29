@@ -54,12 +54,14 @@ public class AnnotationPopup<T extends AnnotationComponent> extends JPopupMenu i
         this.pageViewComponent = (PageViewComponentImpl) pageViewComponent;
         this.controller = controller;
         this.messageBundle = controller.getMessageBundle();
+        boolean modifyDocument = controller.havePermissionToModifyDocument();
 
         propertiesMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.properties.label"));
 
         deleteMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.delete.label"));
+        deleteMenuItem.setEnabled(modifyDocument);
 
         destinationsMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.destinations.label"));

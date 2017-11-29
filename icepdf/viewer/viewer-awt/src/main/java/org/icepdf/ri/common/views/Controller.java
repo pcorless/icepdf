@@ -140,6 +140,20 @@ public interface Controller extends PropertyChangeListener {
     boolean havePermissionToExtractContent();
 
     /**
+     * Check to see if document has permission to be printed.
+     *
+     * @return true if content printing should be allowed.
+     */
+    boolean havePermissionToPrint();
+
+    /**
+     * Check to see if document can be modified.
+     *
+     * @return true if content editing is  allowed.
+     */
+    boolean havePermissionToModifyDocument();
+
+    /**
      * Print the given document
      *
      * @param showDialog If true show a print dialog before starting to print

@@ -15,14 +15,16 @@
  */
 package org.icepdf.ri.common.views.annotations.summary;
 
-import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.annotations.AnnotationPopup;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.util.logging.Logger;
 
 /**
@@ -33,28 +35,37 @@ import java.util.logging.Logger;
  *
  * @since 6.3
  */
-public class SummaryPopupMenu extends AnnotationPopup<MarkupAnnotationComponent> {
+public class SummaryPopupMenu extends AnnotationPopup<MarkupAnnotationComponent> implements ItemListener {
 
     private static final Logger logger =
             Logger.getLogger(SummaryPopupMenu.class.toString());
 
+    protected AnnotationSummaryBox annotationSummaryBox;
     protected MarkupAnnotation markupAnnotation;
     protected Frame frame;
+    protected JCheckBoxMenuItem showHideTextBlockMenuItem;
+    protected DraggableAnnotationPanel.MouseHandler mouseHandler;
 
-    public SummaryPopupMenu(MarkupAnnotation markupAnnotation, MarkupAnnotationComponent annotationComponent,
-                            Controller controller, Frame frame) {
+    public SummaryPopupMenu(AnnotationSummaryBox annotationSummaryBox, MarkupAnnotation markupAnnotation, MarkupAnnotationComponent annotationComponent,
+                            Controller controller, Frame frame, DraggableAnnotationPanel.MouseHandler mouseHandler) {
         super(annotationComponent, controller, null);
         this.frame = frame;
         this.markupAnnotation = markupAnnotation;
+        this.annotationSummaryBox = annotationSummaryBox;
+        this.mouseHandler = mouseHandler;
         this.buildGui();
     }
 
     public void buildGui() {
-        if (!(annotationComponent.getAnnotation() instanceof LinkAnnotation)) {
-            destinationsMenuItem.setEnabled(false);
-        }
-        add(deleteMenuItem, -1);
+        showHideTextBlockMenuItem = new JCheckBoxMenuItem(
+                messageBundle.getString("viewer.annotation.popup.showHidTextBlock.label"));
+        showHideTextBlockMenuItem.setSelected(annotationSummaryBox.isShowTextBlockVisible());
+        showHideTextBlockMenuItem.addItemListener(this);
+        add(showHideTextBlockMenuItem);
+        addSeparator();
+        add(deleteMenuItem);
         deleteMenuItem.addActionListener(this);
+        deleteMenuItem.setEnabled(controller.havePermissionToModifyDocument());
         addSeparator();
         add(propertiesMenuItem);
         propertiesMenuItem.addActionListener(this);
@@ -64,11 +75,20 @@ public class SummaryPopupMenu extends AnnotationPopup<MarkupAnnotationComponent>
     public void actionPerformed(ActionEvent e) {
         Object source = e.getSource();
         if (source == null) return;
-
         if (source == propertiesMenuItem) {
             controller.showAnnotationProperties(annotationComponent, frame);
         } else if (source == deleteMenuItem) {
             controller.getDocumentViewController().deleteAnnotation(annotationComponent);
+        }
+    }
+
+    @Override
+    public void itemStateChanged(ItemEvent e) {
+        if (e.getSource() == showHideTextBlockMenuItem) {
+            annotationSummaryBox.toggleTextBlockVisibility();
+            annotationSummaryBox.invalidate();
+            annotationSummaryBox.validate();
+            SwingUtilities.invokeLater(() -> mouseHandler.checkForOverlap(annotationSummaryBox));
         }
     }
 }

@@ -41,6 +41,8 @@ import java.util.logging.Level;
 
 public class AnnotationSummaryBox extends PopupAnnotationComponent implements FocusListener {
 
+    protected boolean showTextBlock = true;
+
     public AnnotationSummaryBox(PopupAnnotation annotation, DocumentViewController documentViewController,
                                 AbstractPageViewComponent pageViewComponent) {
         super(annotation, documentViewController, pageViewComponent, true);
@@ -66,6 +68,15 @@ public class AnnotationSummaryBox extends PopupAnnotationComponent implements Fo
         PropertiesManager propertiesManager = documentViewController.getParentController().getPropertiesManager();
         setFontSize(propertiesManager.getPreferences().getInt(
                 PropertiesManager.PROPERTY_ANNOTATION_SUMMARY_FONT_SIZE, new JLabel().getFont().getSize()));
+    }
+
+    public void toggleTextBlockVisibility() {
+        showTextBlock = !showTextBlock;
+        textArea.setVisible(showTextBlock);
+    }
+
+    public boolean isShowTextBlockVisible() {
+        return showTextBlock;
     }
 
     protected void updateContent(DocumentEvent e) {
@@ -104,7 +115,7 @@ public class AnnotationSummaryBox extends PopupAnnotationComponent implements Fo
         return documentViewController.getParentController();
     }
 
-    public JPopupMenu getContextMenu(Frame frame) {
+    public JPopupMenu getContextMenu(Frame frame, DraggableAnnotationPanel.MouseHandler mouseHandler) {
         MarkupAnnotationComponent comp = (MarkupAnnotationComponent) getAnnotationParentComponent();
         // page may not have been initialized and thus we don't have a component
         if (comp == null) {
@@ -124,8 +135,9 @@ public class AnnotationSummaryBox extends PopupAnnotationComponent implements Fo
                 }
             }
         }
-        return new SummaryPopupMenu((MarkupAnnotation) comp.getAnnotation(), comp, documentViewController.getParentController(),
-                frame);
+        return new SummaryPopupMenu(this, (MarkupAnnotation) comp.getAnnotation(), comp,
+                documentViewController.getParentController(),
+                frame, mouseHandler);
     }
 
     public void setFontSize(float size) {

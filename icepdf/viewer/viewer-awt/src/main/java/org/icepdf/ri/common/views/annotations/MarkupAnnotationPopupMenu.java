@@ -63,26 +63,32 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
 
     public void buildGui() {
         PropertiesManager propertiesManager = PropertiesManager.getInstance();
-
+        boolean modifyDocument = controller.havePermissionToModifyDocument();
         if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_ANNOTATION_MARKUP_REPLY_TO)) {
             replyMenuItem = new JMenuItem(
                     messageBundle.getString("viewer.annotation.popup.reply.label"));
             // build out reply and delete
             replyMenuItem.addActionListener(this);
+            replyMenuItem.setEnabled(modifyDocument);
             add(replyMenuItem);
         }
         // status change commands.
         statusNoneMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.status.none.label"));
+        statusNoneMenuItem.setEnabled(modifyDocument);
         statusAcceptedItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.status.accepted.label"));
+        statusAcceptedItem.setEnabled(modifyDocument);
         statusCancelledMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.status.cancelled.label"));
+        statusCancelledMenuItem.setEnabled(modifyDocument);
         statusCompletedMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.status.completed.label"));
+        statusCompletedMenuItem.setEnabled(modifyDocument);
         statusRejectedMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.status.rejected.label"));
+        statusRejectedMenuItem.setEnabled(modifyDocument);
         // generic commands, open/minimize all
         openAllMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.openAll.label"));
@@ -92,6 +98,7 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
         // build out delete
         deleteMenuItem.addActionListener(this);
         add(deleteMenuItem);
+        destinationsMenuItem.setEnabled(modifyDocument);
         addSeparator();
 
         if (propertiesManager.checkAndStoreBooleanProperty(
