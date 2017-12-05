@@ -89,7 +89,6 @@ public abstract class AbstractWorkerPanel extends JPanel implements MutableDocum
 
     @Override
     public void disposeDocument() {
-        this.removeAll();
         // clean up the timer.
         if (timer != null && timer.isRunning()) timer.stop();
     }
