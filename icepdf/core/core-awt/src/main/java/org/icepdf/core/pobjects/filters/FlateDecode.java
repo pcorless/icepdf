@@ -63,6 +63,8 @@ public class FlateDecode extends ChunkingInputStream {
 
         int intermediateBufferSize = DEFAULT_BUFFER_SIZE;
 
+        int length = library.getInt(props, new Name("Length"));
+
         // get decode parameters from stream properties
         HashMap decodeParmsDictionary = ImageParams.getDecodeParams(library, props);
         predictor = library.getInt(decodeParmsDictionary, PREDICTOR_VALUE);
@@ -103,6 +105,10 @@ public class FlateDecode extends ChunkingInputStream {
 
             // Make buffer exactly large enough for one row of data (without predictor)
             intermediateBufferSize = Utils.numBytesToHoldBits(width * numComponents * bitsPerComponent);
+        } else {
+            if (length < intermediateBufferSize) {
+                intermediateBufferSize = 2048;
+            }
         }
 
         // Create the inflater input stream which will do the encoding
