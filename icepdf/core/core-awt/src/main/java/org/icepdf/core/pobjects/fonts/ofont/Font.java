@@ -417,6 +417,8 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         // font substitution found flag
         isFontSubstitution = true;
 //        isAFMFont = true;
+        // awt font reference just for debugging purposes.
+        java.awt.Font awtFont = null;
 
         // get most types of embedded fonts from here
         if (fontDescriptor != null && fontDescriptor.getEmbeddedFont() != null) {
@@ -437,7 +439,8 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
 
                 // if a match is found assign it as the real font
                 if (fontName.toString().equalsIgnoreCase(basefont)) {
-                    font = new OFont(new java.awt.Font(font1.getFamily(), style, 1));
+                    awtFont = new java.awt.Font(font1.getFamily(), style, 1);
+                    font = new OFont(awtFont);
                     basefont = font1.getPSName();
                     isFontSubstitution = true;
                     break;
@@ -456,7 +459,8 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                 if (FontUtil.normalizeString(
                         font1.getFamily()).equalsIgnoreCase(fontFamily)) {
                     // create new font with font family name and style
-                    font = new OFont(new java.awt.Font(font1.getFamily(), style, 1));
+                    awtFont = new java.awt.Font(font1.getFamily(), style, 1);
+                    font = new OFont(awtFont);
                     basefont = font1.getFontName();
                     isFontSubstitution = true;
                     break;
@@ -466,10 +470,8 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         // if still null, shouldn't be, assigned the basefont name
         if (font == null) {
             try {
-                font = new OFont(java.awt.Font.getFont(basefont,
-                        new java.awt.Font(basefont,
-                                style,
-                                12)));
+                awtFont = new java.awt.Font(basefont, style, 12);
+                font = new OFont(java.awt.Font.getFont(basefont, awtFont));
                 basefont = font.getName();
             } catch (Exception e) {
                 if (logger.isLoggable(Level.WARNING)) {
@@ -493,8 +495,8 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                     font.getName().toLowerCase().contains("stoneserif") ||
                     font.getName().toLowerCase().contains("georgia") ||
                     font.getName().toLowerCase().contains("bitstream cyberbit"))) {
-                font = new OFont(new java.awt.Font("serif",
-                        font.getStyle(), (int) font.getSize()));
+                awtFont = new java.awt.Font("serif", font.getStyle(), (int) font.getSize());
+                font = new OFont(awtFont);
                 basefont = "serif";
             }
             // see if we working with a monospaced font
@@ -512,8 +514,8 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                     font.getName().toLowerCase().contains("gillsans") ||
                     font.getName().toLowerCase().contains("akzidenz") ||
                     font.getName().toLowerCase().contains("grotesk"))) {
-                font = new OFont(new java.awt.Font("sansserif",
-                        font.getStyle(), (int) font.getSize()));
+                awtFont = new java.awt.Font("sansserif", font.getStyle(), (int) font.getSize());
+                font = new OFont(awtFont);
                 basefont = "sansserif";
             }
             // see if we working with a mono spaced font
@@ -523,21 +525,22 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                     font.getName().toLowerCase().contains("prestige") ||
                     font.getName().toLowerCase().contains("eversonmono") ||
                     font.getName().toLowerCase().contains("Everson Mono"))) {
-                font = new OFont(new java.awt.Font("monospaced",
-                        font.getStyle(), (int) font.getSize()));
+                awtFont = new java.awt.Font("monospaced", font.getStyle(), (int) font.getSize());
+                font = new OFont(awtFont);
                 basefont = "monospaced";
             }
             // if all else fails go with the serif as it is the most common font family
             else {
-                font = new OFont(new java.awt.Font("serif",
-                        font.getStyle(), (int) font.getSize()));
+                awtFont = new java.awt.Font("serif", font.getStyle(), (int) font.getSize());
+                font = new OFont(awtFont);
                 basefont = "serif";
             }
         }
         // finally if we have an empty font then we default to serif so that
         // we can try and render the character codes.
         if (font == null) {
-            font = new OFont(new java.awt.Font("serif", style, 12));
+            awtFont = new java.awt.Font("serif", style, 12);
+            font = new OFont(awtFont);
             basefont = "serif";
         }
 
@@ -546,8 +549,8 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         font = font.deriveFont(encoding, toUnicodeCMap);
 
         if (logger.isLoggable(Level.FINE)) {
-            logger.fine(name + " - " + encodingName + " " + basefont + " " +
-                    font.toString() + " " + isFontSubstitution);
+            logger.fine(name + " - " + encodingName + " " + basefont + " " + font.getName() + " " +
+                    awtFont.toString() + " " + isFontSubstitution);
         }
 
         inited = true;
