@@ -17,6 +17,8 @@ package org.icepdf.ri.common.utility.annotation.markup;
 
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
+import org.icepdf.core.pobjects.annotations.PopupAnnotation;
+import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.*;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
@@ -50,6 +52,13 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
 
     private static final Logger logger =
             Logger.getLogger(MarkupAnnotationPanel.class.toString());
+
+    public static boolean PRIVATE_PROPERTY_ENABLED;
+
+    static {
+        PRIVATE_PROPERTY_ENABLED = Defs.booleanProperty(
+                "org.icepdf.core.page.annotation.privateProperty.enabled", false);
+    }
 
     public String COLUMN_PROPERTY = "Column";
 
@@ -198,10 +207,59 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
                 parentPanel.setSelectedTab(PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_MARKUP);
                 quickPaintAnnotationButton.setColor(annotationComponent.getAnnotation().getColor(), false);
                 quickPaintAnnotationButton.setEnabled(true);
+                // update the status bar
+                applyAnnotationStatusLabel(annotationComponent.getAnnotation());
+            }
+        } else if (propertyName.equals(PropertyConstants.ANNOTATION_UPDATED) ||
+                propertyName.equals(PropertyConstants.ANNOTATION_SUMMARY_UPDATED)) {
+            AnnotationComponent annotationComponent = (AnnotationComponent) newValue;
+            if (annotationComponent != null &&
+                    annotationComponent.getAnnotation() instanceof MarkupAnnotation) {
+                // update the status bar
+                applyAnnotationStatusLabel(annotationComponent.getAnnotation());
+            } else if (annotationComponent != null &&
+                    annotationComponent.getAnnotation() instanceof PopupAnnotation) {
+                // update the status bar
+                applyAnnotationStatusLabel(((PopupAnnotation) annotationComponent.getAnnotation()).getParent());
             }
         }
     }
 
+    /**
+     * Apply <Public | Private> | <Color label name, if exists> message format for any named colours
+     *
+     * @param annotation annotation to generate status lable from.
+     */
+    protected void applyAnnotationStatusLabel(Annotation annotation) {
+        // check for a colour label.
+
+        ArrayList<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
+        String colorLabelString = null;
+        if (colorLabels != null) {
+            for (DragDropColorList.ColorLabel colorLabel : colorLabels) {
+                if (annotation.getColor() != null && colorLabel.getColor().equals(annotation.getColor())) {
+                    colorLabelString = colorLabel.getLabel();
+                    break;
+                }
+            }
+        }
+        StringBuilder statusLabel = new StringBuilder();
+        // append private/public start.
+        if (PRIVATE_PROPERTY_ENABLED) {
+            if (annotation.getFlagPrivateContents()) {
+                statusLabel.append(messageBundle.getString("viewer.utilityPane.markupAnnotation.view.privateToggleButton.label"));
+            } else {
+                statusLabel.append(messageBundle.getString("viewer.utilityPane.markupAnnotation.view.publicToggleButton.label"));
+            }
+        }
+        if (colorLabelString != null) {
+            if (PRIVATE_PROPERTY_ENABLED) statusLabel.append(" | ");
+            statusLabel.append(colorLabelString);
+        }
+        if (statusLabel.length() > 0) {
+            markupAnnotationHandlerPanel.setProgressLabel(statusLabel.toString());
+        }
+    }
 
     public QuickPaintAnnotationButton getQuickPaintAnnotationButton() {
         return quickPaintAnnotationButton;
