@@ -120,11 +120,9 @@ public class NameTreeEditDialog extends EscapeJDialog implements ActionListener 
             } else {
                 // fire property change event to rebuild name tree.
                 if (nameTreeNode != null) {
-//                    nameTreeNode = new NameTreeNode(new LiteralStringObject(name), destination);
                     controller.getDocumentViewController().firePropertyChange(PropertyConstants.DESTINATION_UPDATED,
                             oldDestination, destination);
                 } else {
-//                    nameTreeNode = new NameTreeNode(new LiteralStringObject(name), destination);
                     controller.getDocumentViewController().firePropertyChange(PropertyConstants.DESTINATION_ADDED,
                             null, destination);
                 }
