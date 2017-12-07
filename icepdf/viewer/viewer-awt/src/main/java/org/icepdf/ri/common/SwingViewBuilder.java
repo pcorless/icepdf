@@ -1270,6 +1270,16 @@ public class SwingViewBuilder {
         return btn;
     }
 
+    public JButton buildShowAnnotationUtilityButton(final String imageSize) {
+        JButton btn = makeToolbarButton(
+                messageBundle.getString("viewer.toolbar.tool.annotationUtility.label"),
+                messageBundle.getString("viewer.toolbar.tool.annotationUtility.tooltip"),
+                "utility_pane", imageSize, buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setShowAnnotationUtilityPaneButton(btn);
+        return btn;
+    }
+
     public JToggleButton buildShowHideUtilityPaneButton() {
         JToggleButton btn = makeToolbarToggleButton(
                 messageBundle.getString("viewer.toolbar.utilityPane.label"),
@@ -1544,13 +1554,14 @@ public class SwingViewBuilder {
             addToToolBar(toolbar, buildTextAnnotationToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_UTILITY)) {
+            addToToolBar(toolbar, buildShowAnnotationUtilityButton(iconSize));
+        }
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_PREVIEW)) {
             addToToolBar(toolbar, buildAnnotationPreviewButton(iconSize));
         }
-//        if (propertiesManager.checkAndStoreBooleanProperty(
-//                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_TEXT)) {
-//            addToToolBar(toolbar, buildTextAnnotationToolButton(iconSize));
-//        }
+
         return toolbar;
     }
 

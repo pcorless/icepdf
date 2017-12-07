@@ -171,6 +171,7 @@ public class SwingController extends ComponentAdapter
     private JButton printButton;
     private JButton searchButton;
     private JToggleButton showHideUtilityPaneButton;
+    private JButton showAnnotationUtilityPaneButton;
     private JButton firstPageButton;
     private JButton previousPageButton;
     private JButton nextPageButton;
@@ -841,6 +842,16 @@ public class SwingController extends ComponentAdapter
      */
     public void setShowHideUtilityPaneButton(JToggleButton btn) {
         showHideUtilityPaneButton = btn;
+        btn.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param btn button to assign
+     */
+    public void setShowAnnotationUtilityPaneButton(JButton btn) {
+        showAnnotationUtilityPaneButton = btn;
         btn.addActionListener(this);
     }
 
@@ -1542,6 +1553,7 @@ public class SwingController extends ComponentAdapter
         setEnabled(printButton, opened && canPrint && !pdfCollection);
         setEnabled(searchButton, opened && searchPanel != null && !pdfCollection);
         setEnabled(showHideUtilityPaneButton, opened && utilityTabbedPane != null);
+        setEnabled(showAnnotationUtilityPaneButton, opened && utilityTabbedPane != null);
         setEnabled(currentPageNumberTextField, opened && nPages > 1 && !pdfCollection);
         if (numberOfPagesLabel != null) {
 
@@ -2052,6 +2064,8 @@ public class SwingController extends ComponentAdapter
                 ));
         reflectSelectionInButton(showHideUtilityPaneButton,
                 isUtilityPaneVisible());
+        reflectSelectionInButton(showAnnotationUtilityPaneButton,
+                isAnnotationUtilityPaneVisible());
         reflectSelectionInButton(formHighlightButton,
                 viewModel.isWidgetAnnotationHighlight());
         reflectSelectionInButton(annotationEditingModeButton,
@@ -4121,6 +4135,10 @@ public class SwingController extends ComponentAdapter
         return (utilityTabbedPane != null) && utilityTabbedPane.isVisible();
     }
 
+    public boolean isAnnotationUtilityPaneVisible() {
+        return utilityTabbedPane != null && utilityTabbedPane.isVisible() && annotationPanel.isVisible();
+    }
+
     /**
      * Makes the component visible or invisible.
      *
@@ -4278,7 +4296,7 @@ public class SwingController extends ComponentAdapter
     public void showAnnotationPanel(AnnotationComponent selectedAnnotation) {
         if (utilityTabbedPane != null) {
             // Pass the selected annotation to the link panel
-            if (annotationPanel != null && selectedAnnotation != null) {
+            if (annotationPanel != null) {
                 annotationPanel.setEnabled(true);
             }
             setUtilityPaneVisible(true);
@@ -4582,6 +4600,8 @@ public class SwingController extends ComponentAdapter
                         rotateRight();
                     } else if (source == showHideUtilityPaneMenuItem || source == showHideUtilityPaneButton) {
                         toggleUtilityPaneVisibility();
+                    } else if (source == showAnnotationUtilityPaneButton) {
+                        showAnnotationPanel(null);
                     } else if (source == formHighlightButton) {
                         toggleFormHighlight();
                     } else if (source == annotationEditingModeButton) {
