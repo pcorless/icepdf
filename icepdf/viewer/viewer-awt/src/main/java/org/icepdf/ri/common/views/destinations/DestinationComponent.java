@@ -210,7 +210,9 @@ public class DestinationComponent extends JComponent implements FocusListener, M
     @Override
     public void mouseClicked(MouseEvent e) {
         requestFocus();
-        if (e.getClickCount() == 1 && e.getButton() == MouseEvent.BUTTON3) {
+        if (documentViewController.getDocumentViewModel().getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_SELECTION &&
+                e.getClickCount() == 1 && e.getButton() == MouseEvent.BUTTON3) {
             contextMenu.show(e.getComponent(), e.getX(), e.getY());
         }
         repaint();
