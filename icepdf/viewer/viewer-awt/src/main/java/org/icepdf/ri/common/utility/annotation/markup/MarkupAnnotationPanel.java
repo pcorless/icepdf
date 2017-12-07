@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.*;
+import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
@@ -69,6 +70,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
     private Controller controller;
     protected ResourceBundle messageBundle;
 
+    private AnnotationPanel parentPanel;
     private JPanel markupAnnotationPanel;
 
     private JTextField searchTextField;
@@ -150,6 +152,10 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         this.setEnabled(false);
     }
 
+    public void setParentPanel(AnnotationPanel parentPanel) {
+        this.parentPanel = parentPanel;
+    }
+
     public void setAnnotationUtilityToolbar(JToolBar annotationUtilityToolbar) {
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.weightx = 1.0;
@@ -189,6 +195,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
             AnnotationComponent annotationComponent = (AnnotationComponent) newValue;
             if (annotationComponent != null &&
                     annotationComponent.getAnnotation() instanceof MarkupAnnotation) {
+                parentPanel.setSelectedTab(PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_MARKUP);
                 quickPaintAnnotationButton.setColor(annotationComponent.getAnnotation().getColor(), false);
                 quickPaintAnnotationButton.setEnabled(true);
             }

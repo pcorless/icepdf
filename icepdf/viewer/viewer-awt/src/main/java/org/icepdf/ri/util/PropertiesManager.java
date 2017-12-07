@@ -137,6 +137,7 @@ public class PropertiesManager {
     public static final String PROPERTY_VIEWPREF_HIDEMENUBAR = "application.viewerpreferences.hidemenubar";
     public static final String PROPERTY_VIEWPREF_FITWINDOW = "application.viewerpreferences.fitwindow";
     public static final String PROPERTY_VIEWPREF_FORM_HIGHLIGHT = "application.viewerpreferences.form.highlight";
+    public static final String PROPERTY_VIEWPREF_ANNOTATION_EDIT_MODE = "application.viewerpreferences.annotation.editmode";
     // annotation handler default to selection tool after annotation is created.
     public static final String PROPERTY_ANNOTATION_HIGHLIGHT_SELECTION_ENABLED = "application.annotation.highlight.selection.enabled";
     public static final String PROPERTY_ANNOTATION_LINE_SELECTION_ENABLED = "application.annotation.line.selection.enabled";
@@ -158,6 +159,7 @@ public class PropertiesManager {
     public static final String PROPERTY_ANNOTATION_PROPERTIES_INK_ENABLED = "application.annotation.properties.ink.enabled";
     public static final String PROPERTY_ANNOTATION_PROPERTIES_FREE_TEXT_ENABLED = "application.annotation.properties.freetext.enabled";
     public static final String PROPERTY_ANNOTATION_PROPERTIES_TEXT_ENABLED = "application.annotation.properties.text.enabled";
+    public static final String PROPERTY_ANNOTATION_EDITING_MODE_ENABLED = "application.annotation.editing.mode.enabled";
     // Individual controls for the annotation toolbar button commands
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_SELECTION = "application.toolbar.annotation.selection.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_HIGHLIGHT = "application.toolbar.annotation.highlight.enabled";

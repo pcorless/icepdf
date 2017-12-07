@@ -15,13 +15,20 @@
  */
 package org.icepdf.ri.common.utility.annotation.destinations;
 
-import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.Destination;
+import org.icepdf.core.pobjects.NameTree;
+import org.icepdf.core.pobjects.Names;
+import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.MutableDocument;
 import org.icepdf.ri.common.NameJTree;
 import org.icepdf.ri.common.NameTreeNode;
 import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
+import org.icepdf.ri.common.views.DocumentViewControllerImpl;
+import org.icepdf.ri.common.views.PageComponentSelector;
+import org.icepdf.ri.common.views.destinations.DestinationComponent;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
@@ -35,6 +42,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.Enumeration;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
@@ -52,7 +61,7 @@ import java.util.prefs.Preferences;
  * @since 6.3
  */
 public class DestinationsPanel extends JPanel
-        implements MutableDocument, TreeSelectionListener, MouseListener, ActionListener {
+        implements MutableDocument, TreeSelectionListener, MouseListener, ActionListener, PropertyChangeListener {
 
     private static final Logger logger =
             Logger.getLogger(DestinationsPanel.class.toString());
@@ -65,6 +74,7 @@ public class DestinationsPanel extends JPanel
     private org.icepdf.ri.common.views.Controller controller;
     private ResourceBundle messageBundle;
 
+    private AnnotationPanel parentPanel;
     private NameJTree nameJTree;
 
     private JPopupMenu contextMenu;
@@ -110,6 +120,39 @@ public class DestinationsPanel extends JPanel
         setFocusable(true);
 
         addPropertyChangeListener(PropertyConstants.DESTINATION_UPDATED, controller);
+        ((DocumentViewControllerImpl) controller.getDocumentViewController()).addPropertyChangeListener(this);
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        Object newValue = evt.getNewValue();
+        Object oldValue = evt.getOldValue();
+        String propertyName = evt.getPropertyName();
+        if (propertyName.equals(PropertyConstants.DESTINATION_SELECTED) ||
+                propertyName.equals(PropertyConstants.DESTINATION_FOCUS_GAINED)) {
+            DestinationComponent destinationComponent = (DestinationComponent) newValue;
+            if (destinationComponent != null &&
+                    destinationComponent.getDestination() != null) {
+                // expand the tree to selected the given destination
+                selectedDestinationComponentPath(destinationComponent);
+            }
+        }
+    }
+
+    public void setParentPanel(AnnotationPanel parentPanel) {
+        this.parentPanel = parentPanel;
+    }
+
+    public void removeNameTreeNode(Destination destination) {
+        Enumeration e = ((NameTreeNode) nameJTree.getModel().getRoot()).depthFirstEnumeration();
+        while (e.hasMoreElements()) {
+            NameTreeNode currentNode = (NameTreeNode) e.nextElement();
+            if (currentNode.getName() != null &&
+                    currentNode.getName().toString().equals(destination.getNamedDestination())) {
+                // remove the node
+                ((DefaultTreeModel) nameJTree.getModel()).removeNodeFromParent(currentNode);
+            }
+        }
     }
 
     public void refreshNameTree(Object node) {
@@ -145,6 +188,23 @@ public class DestinationsPanel extends JPanel
         }
     }
 
+    public void selectedDestinationComponentPath(DestinationComponent node) {
+        Names names = controller.getDocument().getCatalog().getNames();
+        if (names != null && names.getDestsNameTree() != null) {
+            // find and select a node with the same node.)
+            Enumeration e = ((NameTreeNode) nameJTree.getModel().getRoot()).depthFirstEnumeration();
+            while (e.hasMoreElements()) {
+                NameTreeNode currentNode = (NameTreeNode) e.nextElement();
+                if (currentNode.getName() != null &&
+                        currentNode.getName().toString().equals(
+                                node.getDestination().getNamedDestination())) {
+                    // expand the node
+                    nameJTree.setSelectionPath(new TreePath(currentNode.getPath()));
+                }
+            }
+        }
+    }
+
     @Override
     public void refreshDocumentInstance() {
         refreshNameTree(null);
@@ -154,7 +214,6 @@ public class DestinationsPanel extends JPanel
     public void disposeDocument() {
 
     }
-
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -166,11 +225,11 @@ public class DestinationsPanel extends JPanel
                 NameTreeEditDialog nameTreeEditDialog = new NameTreeEditDialog(controller, nameTreeNode);
                 nameTreeEditDialog.setVisible(true);
             } else if (source == deleteNameTreeNode) {
-                Catalog catalog = controller.getDocument().getCatalog();
-                catalog.deleteNamedDestination(nameTreeNode.getName().toString());
+                Destination destination = new Destination(controller.getDocument().getCatalog().getLibrary(),
+                        nameTreeNode.getReference());
+                destination.setNamedDestination(nameTreeNode.getName().toString());
                 controller.getDocumentViewController().firePropertyChange(PropertyConstants.DESTINATION_DELETED,
-                        nameTreeNode, null);
-                ((DefaultTreeModel) nameJTree.getModel()).removeNodeFromParent(nameTreeNode);
+                        destination, null);
             }
         }
     }
@@ -199,7 +258,9 @@ public class DestinationsPanel extends JPanel
                             tmp = library.getObject((Reference) tmp);
                         }
                         Destination dest = new Destination(library, tmp);
-                        controller.getDocumentViewController().setDestinationTarget(dest);
+                        dest.setNamedDestination(selectedNode.getName().toString());
+                        // set the focus.
+                        PageComponentSelector.SelectDestinationComponent(controller, dest);
                     }
                 } else if (e.getClickCount() == 1 && e.getButton() == MouseEvent.BUTTON3) {
                     NameTreeNode selectedNode = (NameTreeNode) node;

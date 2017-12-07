@@ -24,8 +24,8 @@ import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrity
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.common.AbstractTask;
 import org.icepdf.ri.common.AbstractWorkerPanel;
-import org.icepdf.ri.common.views.AnnotationSelector;
 import org.icepdf.ri.common.views.Controller;
+import org.icepdf.ri.common.views.PageComponentSelector;
 import org.icepdf.ri.common.views.annotations.signatures.CertificatePropertiesDialog;
 import org.icepdf.ri.common.views.annotations.signatures.SignaturePropertiesDialog;
 import org.icepdf.ri.common.views.annotations.signatures.SignatureValidationDialog;
@@ -289,7 +289,7 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
             if (((NodeSelectionListener) nodeSelectionListener).getSignatureTreeNode() != null) {
                 final SignatureTreeNode signatureTreeNode = ((NodeSelectionListener) nodeSelectionListener).getSignatureTreeNode();
                 SignatureWidgetAnnotation signatureWidgetAnnotation = signatureTreeNode.getOutlineItem();
-                AnnotationSelector.SelectAnnotationComponent(controller, signatureWidgetAnnotation);
+                PageComponentSelector.SelectAnnotationComponent(controller, signatureWidgetAnnotation);
             }
         }
     }

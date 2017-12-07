@@ -31,7 +31,7 @@ public class NamedDestinations extends Dictionary {
      * @param name Name to looking up in NamedDestinations list.
      * @return Destination for the given name, null otherwise.
      */
-    public Destination getDestination(Name name) {
+    public Destination getDestination(String name) {
         Object tmp = entries.get(name);
         if (tmp != null && tmp instanceof ArrayList) {
             return new Destination(library, tmp);

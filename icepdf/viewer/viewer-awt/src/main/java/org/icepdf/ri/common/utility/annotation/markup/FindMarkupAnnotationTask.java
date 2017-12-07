@@ -25,8 +25,8 @@ import org.icepdf.ri.common.AbstractTask;
 import org.icepdf.ri.common.DragDropColorList;
 import org.icepdf.ri.common.SwingWorker;
 import org.icepdf.ri.common.utility.signatures.SigVerificationTask;
-import org.icepdf.ri.common.views.AnnotationSelector;
 import org.icepdf.ri.common.views.Controller;
+import org.icepdf.ri.common.views.PageComponentSelector;
 
 import javax.swing.*;
 import java.awt.*;
@@ -273,7 +273,7 @@ public class FindMarkupAnnotationTask extends AbstractTask<FindMarkupAnnotationT
             if (previousMarkupAnnotation == null ||
                     previousMarkupAnnotation.getPageIndex() != markupAnnotation.getPageIndex()) {
                 if (markupAnnotation.getPageIndex() < 0) {
-                    AnnotationSelector.AssignAnnotationPage(controller, markupAnnotation);
+                    PageComponentSelector.AssignAnnotationPage(controller, markupAnnotation);
                 }
                 pageLabel = pageLabelFormat.format(new Object[]{markupAnnotation.getPageIndex() + 1});
             }

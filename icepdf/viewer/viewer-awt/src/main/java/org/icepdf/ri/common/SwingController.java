@@ -46,6 +46,7 @@ import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
 import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryFrame;
+import org.icepdf.ri.common.views.destinations.DestinationComponent;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
 import org.icepdf.ri.util.PropertiesManager;
 import org.icepdf.ri.util.TextExtractionTask;
@@ -139,6 +140,7 @@ public class SwingController extends ComponentAdapter
     private JMenuItem undoMenuItem;
     private JMenuItem redoMenuItem;
     private JMenuItem copyMenuItem;
+    private JMenuItem copyContextMenuItem;
     private JMenuItem deleteMenuItem;
     private JMenuItem selectAllMenuItem;
     private JMenuItem deselectAllMenuItem;
@@ -206,6 +208,7 @@ public class SwingController extends ComponentAdapter
     private JToggleButton freeTextAnnotationToolButton;
     private AnnotationColorToggleButton textAnnotationToolButton;
     private JButton annotationSummaryButton;
+    private JToggleButton annotationEditingModeButton;
     private JToggleButton formHighlightButton;
     // annotation properties toolbar.
     private JToggleButton linkAnnotationPropertiesToolButton;
@@ -246,7 +249,6 @@ public class SwingController extends ComponentAdapter
 
     // sub controller for document text searching.
     protected DocumentSearchController documentSearchController;
-
 
 
     protected Document document;
@@ -507,6 +509,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param mi menu item to assign
      */
     public void setReduMenuItem(JMenuItem mi) {
@@ -521,6 +524,14 @@ public class SwingController extends ComponentAdapter
      */
     public void setCopyMenuItem(JMenuItem mi) {
         copyMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    public void setCopyContextMenuItem(JMenuItem mi) {
+        if (copyContextMenuItem != null) {
+            copyContextMenuItem.removeActionListener(this);
+        }
+        copyContextMenuItem = mi;
         mi.addActionListener(this);
     }
 
@@ -775,6 +786,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param mi menu item to assign
      */
     public void setAboutMenuItem(JMenuItem mi) {
@@ -784,6 +796,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setOpenFileButton(JButton btn) {
@@ -793,6 +806,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setSaveAsFileButton(JButton btn) {
@@ -802,6 +816,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setPrintButton(JButton btn) {
@@ -811,6 +826,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setSearchButton(JButton btn) {
@@ -820,6 +836,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setShowHideUtilityPaneButton(JToggleButton btn) {
@@ -829,6 +846,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setFirstPageButton(JButton btn) {
@@ -838,6 +856,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setPreviousPageButton(JButton btn) {
@@ -847,6 +866,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setNextPageButton(JButton btn) {
@@ -856,6 +876,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setLastPageButton(JButton btn) {
@@ -865,6 +886,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param textField current page number text field value.
      */
     public void setCurrentPageNumberTextField(JTextField textField) {
@@ -876,6 +898,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param lbl number of pages label.
      */
     public void setNumberOfPagesLabel(JLabel lbl) {
@@ -884,6 +907,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setZoomOutButton(JButton btn) {
@@ -893,8 +917,9 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param zcb zoom level combo box values.
-     * @param zl default zoom level.
+     * @param zl  default zoom level.
      */
     public void setZoomComboBox(JComboBox zcb, float[] zl) {
         zoomComboBox = zcb;
@@ -905,6 +930,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setZoomInButton(JButton btn) {
@@ -914,6 +940,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setFitActualSizeButton(JToggleButton btn) {
@@ -923,6 +950,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setFitHeightButton(JToggleButton btn) {
@@ -932,6 +960,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setFontEngineButton(JToggleButton btn) {
@@ -941,6 +970,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setFitWidthButton(JToggleButton btn) {
@@ -950,6 +980,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setRotateLeftButton(JButton btn) {
@@ -959,6 +990,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setRotateRightButton(JButton btn) {
@@ -968,6 +1000,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setPanToolButton(JToggleButton btn) {
@@ -977,6 +1010,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setZoomInToolButton(JToggleButton btn) {
@@ -986,6 +1020,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setTextSelectToolButton(JToggleButton btn) {
@@ -995,6 +1030,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setSelectToolButton(JToggleButton btn) {
@@ -1004,6 +1040,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setLinkAnnotationToolButton(JToggleButton btn) {
@@ -1013,6 +1050,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setStrikeOutAnnotationToolButton(JToggleButton btn) {
@@ -1022,6 +1060,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setUnderlineAnnotationToolButton(JToggleButton btn) {
@@ -1031,6 +1070,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setLineAnnotationToolButton(JToggleButton btn) {
@@ -1040,6 +1080,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setLineArrowAnnotationToolButton(JToggleButton btn) {
@@ -1049,6 +1090,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setSquareAnnotationToolButton(JToggleButton btn) {
@@ -1058,6 +1100,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setCircleAnnotationToolButton(JToggleButton btn) {
@@ -1067,6 +1110,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setInkAnnotationToolButton(JToggleButton btn) {
@@ -1076,6 +1120,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setFreeTextAnnotationToolButton(JToggleButton btn) {
@@ -1088,8 +1133,14 @@ public class SwingController extends ComponentAdapter
         btn.addActionListener(this);
     }
 
+    public void setAnnotationEditingModeToolButton(JToggleButton btn) {
+        this.annotationEditingModeButton = btn;
+        btn.addActionListener(this);
+    }
+
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setLinkAnnotationPropertiesToolButton(JToggleButton btn) {
@@ -1099,6 +1150,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setHighlightAnnotationToolButton(AnnotationColorToggleButton btn) {
@@ -1108,6 +1160,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setHighlightAnnotationPropertiesToolButton(JToggleButton btn) {
@@ -1117,6 +1170,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setStrikeOutAnnotationPropertiesToolButton(JToggleButton btn) {
@@ -1126,6 +1180,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setUnderlineAnnotationPropertiesToolButton(JToggleButton btn) {
@@ -1135,6 +1190,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setLineAnnotationPropertiesToolButton(JToggleButton btn) {
@@ -1144,6 +1200,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setLineArrowAnnotationPropertiesToolButton(JToggleButton btn) {
@@ -1153,6 +1210,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setSquareAnnotationPropertiesToolButton(JToggleButton btn) {
@@ -1162,6 +1220,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setCircleAnnotationPropertiesToolButton(JToggleButton btn) {
@@ -1171,6 +1230,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setInkAnnotationPropertiesToolButton(JToggleButton btn) {
@@ -1180,6 +1240,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setFreeTextAnnotationPropertiesToolButton(JToggleButton btn) {
@@ -1189,6 +1250,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setTextAnnotationToolButton(AnnotationColorToggleButton btn) {
@@ -1199,6 +1261,7 @@ public class SwingController extends ComponentAdapter
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
      * for the form highlight button.
+     *
      * @param btn button to assign
      */
     public void setFormHighlightButton(JToggleButton btn) {
@@ -1208,6 +1271,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setTextAnnotationPropertiesToolButton(JToggleButton btn) {
@@ -1217,6 +1281,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param btn button to assign
      */
     public void setZoomDynamicToolButton(JToggleButton btn) {
@@ -1226,6 +1291,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param toolbar assignment of complete toolbar.
      */
     public void setCompleteToolBar(JToolBar toolbar) {
@@ -1234,7 +1300,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
-     * @param tree outline tree component
+     *
+     * @param tree   outline tree component
      * @param scroll outline scroll parent.
      */
     public void setOutlineComponents(JTree tree, JScrollPane scroll) {
@@ -1245,6 +1312,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param sp search panel
      */
     public void setSearchPanel(SearchPanel sp) {
@@ -1253,7 +1321,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
-     * @param atp  attachment panel
+     *
+     * @param atp attachment panel
      */
     public void setAttachmentPanel(AttachmentPanel atp) {
         attachmentPanel = atp;
@@ -1261,6 +1330,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param tn thumbnails panel.
      */
     public void setThumbnailsPanel(ThumbnailsPanel tn) {
@@ -1269,6 +1339,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param tn layers panel.
      */
     public void setLayersPanel(LayersPanel tn) {
@@ -1286,7 +1357,8 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
-     * @param util  utility tabbed pane.
+     *
+     * @param util utility tabbed pane.
      */
     public void setUtilityTabbedPane(JTabbedPane util) {
         utilityTabbedPane = util;
@@ -1294,6 +1366,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param embeddableComponent indicates usage of component viewer.
      */
     public void setIsEmbeddedComponent(boolean embeddableComponent) {
@@ -1305,6 +1378,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param splitPane main split pain that divides utility from page view pane.
      */
     public void setUtilityAndDocumentSplitPane(JSplitPane splitPane) {
@@ -1318,6 +1392,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param lbl status label value.
      */
     public void setStatusLabel(JLabel lbl) {
@@ -1326,6 +1401,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling.
+     *
      * @param v paren view frame.
      */
     public void setViewerFrame(JFrame v) {
@@ -1504,6 +1580,7 @@ public class SwingController extends ComponentAdapter
         setEnabled(textAnnotationToolButton, opened && canModify && !pdfCollection);
         setEnabled(annotationSummaryButton, opened && canModify && !pdfCollection);
         setEnabled(annotationPreviewMenuItem, opened && canModify && !pdfCollection);
+        setEnabled(annotationEditingModeButton, opened && !pdfCollection);
         setEnabled(linkAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
         setEnabled(highlightAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
         setEnabled(strikeOutAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
@@ -1528,6 +1605,7 @@ public class SwingController extends ComponentAdapter
             reflectDocumentViewModeInButtons();
             reflectToolInToolButtons();
             reflectFormHighlightButtons();
+            reflectAnnotationEditModeButtons();
         }
     }
 
@@ -1737,8 +1815,8 @@ public class SwingController extends ComponentAdapter
      * and removes mouse properties from the display panel. </li>
      * </ul>
      *
-     * @see #getDocumentViewToolMode
      * @param argToolName DocumentViewModel tool name.
+     * @see #getDocumentViewToolMode
      */
     public void setDisplayTool(final int argToolName) {
         try {
@@ -1976,6 +2054,8 @@ public class SwingController extends ComponentAdapter
                 isUtilityPaneVisible());
         reflectSelectionInButton(formHighlightButton,
                 viewModel.isWidgetAnnotationHighlight());
+        reflectSelectionInButton(annotationEditingModeButton,
+                viewModel.isAnnotationEditingMode());
     }
 
     /**
@@ -2002,6 +2082,13 @@ public class SwingController extends ComponentAdapter
             return;
         }
         reflectSelectionInButton(formHighlightButton, viewModel.isWidgetAnnotationHighlight());
+    }
+
+    private void reflectAnnotationEditModeButtons() {
+        if (document == null) {
+            return;
+        }
+        reflectSelectionInButton(annotationEditingModeButton, viewModel.isAnnotationEditingMode());
     }
 
     /**
@@ -2108,6 +2195,7 @@ public class SwingController extends ComponentAdapter
         try {
             File pdfFile = new File(filename);
             openFileInSomeViewer(pdfFile);
+            ViewModel.setDefaultFile(pdfFile);
         } catch (Exception e) {
             logger.warning("Error loading " + filename);
         }
@@ -2190,7 +2278,7 @@ public class SwingController extends ComponentAdapter
      *
      * @param document         document to set securityCallback on .
      * @param securityCallback security callback for prompting users or owner passwords.
-     * @throws PDFException general PDF parsing error.
+     * @throws PDFException         general PDF parsing error.
      * @throws PDFSecurityException security exception likely incorrect user or owner password.
      */
     protected void setupSecurityHandler(Document document, SecurityCallback securityCallback) throws
@@ -2757,6 +2845,9 @@ public class SwingController extends ComponentAdapter
         boolean showFormHighlight = propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_VIEWPREF_FORM_HIGHLIGHT, true);
         setFormHighlightVisible(showFormHighlight);
+        boolean showAnnotationEditingMode = propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_VIEWPREF_ANNOTATION_EDIT_MODE, false);
+        setAnnotationEditModeVisible(showAnnotationEditingMode);
 
         // check if there are layers and enable/disable the tab as needed
         OptionalContent optionalContent = document.getCatalog().getOptionalContent();
@@ -3034,6 +3125,7 @@ public class SwingController extends ComponentAdapter
         freeTextAnnotationPropertiesToolButton = null;
         textAnnotationPropertiesToolButton = null;
         formHighlightButton = null;
+        annotationEditingModeButton = null;
 
         fontEngineButton = null;
 
@@ -3300,9 +3392,9 @@ public class SwingController extends ComponentAdapter
     /**
      * If there is a WindowManagementCallback in place, then this will invoke its quit method
      *
+     * @return true indicates save was execute, false; cancelled.
      * @see #setWindowManagementCallback
      * @see #getWindowManagementCallback
-     * @return true indicates save was execute, false; cancelled.
      */
     public boolean saveChangesDialog() {
         // check if document changes have been made, if so ask the user if they
@@ -3705,7 +3797,8 @@ public class SwingController extends ComponentAdapter
     /**
      * When the user selects an OutlineItem from the Outlines (Bookmarks) JTree,
      * this displays the relevant target portion of the PDF Document
-     * @param outlineItem  navigate to this outlines items destination.
+     *
+     * @param outlineItem navigate to this outlines items destination.
      */
     public void followOutlineItem(OutlineItem outlineItem) {
         if (outlineItem == null)
@@ -3977,6 +4070,7 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Set the ViewerModel's fit setting to fit the whole page, and update the display
+     *
      * @param fitMode fit mode.
      * @param refresh true to refresh document page view.
      */
@@ -4072,6 +4166,18 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
+     * Set the form highlight mode for the viewer.
+     *
+     * @param visible true enables the highlight mode, otherwise; false.
+     */
+    private void setAnnotationEditModeVisible(boolean visible) {
+        viewModel.setIsAnnotationEditingMode(visible);
+
+        // repaint the page.
+        documentViewController.getDocumentView().repaint();
+    }
+
+    /**
      * Flips the visibility of the utility pane to the opposite of what it was
      *
      * @see #setUtilityPaneVisible(boolean)
@@ -4091,6 +4197,19 @@ public class SwingController extends ComponentAdapter
         reflectFormHighlightButtons();
 
         setFormHighlightVisible(viewModel.isWidgetAnnotationHighlight());
+    }
+
+    /**
+     * Flips the visibility of the form highlight functionality ot hte opposite of what it was.
+     */
+    public void toggleAnnotationEditMode() {
+        viewModel.setIsAnnotationEditingMode(!viewModel.isAnnotationEditingMode());
+        // write the property for next viewing.
+        propertiesManager.getPreferences().putBoolean(PropertiesManager.PROPERTY_VIEWPREF_ANNOTATION_EDIT_MODE,
+                viewModel.isAnnotationEditingMode());
+        reflectAnnotationEditModeButtons();
+
+        setAnnotationEditModeVisible(viewModel.isAnnotationEditingMode());
     }
 
     /**
@@ -4161,15 +4280,37 @@ public class SwingController extends ComponentAdapter
             // Pass the selected annotation to the link panel
             if (annotationPanel != null && selectedAnnotation != null) {
                 annotationPanel.setEnabled(true);
-//                annotationPanel.setAnnotationComponent(selectedAnnotation);
             }
             setUtilityPaneVisible(true);
-
             // select the annotationPanel tab
-            if (annotationPanel != null && utilityTabbedPane.getSelectedComponent() != annotationPanel) {
-                safelySelectUtilityPanel(annotationPanel);
+            if (annotationPanel != null) {
+                boolean show = safelySelectUtilityPanel(annotationPanel);
+                if (show) {
+                    annotationPanel.setSelectedTab(PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_MARKUP);
+                }
             }
+        }
+    }
 
+    /* Make the Annotation Link Panel visible, and if necessary, the utility pane that encloses it
+     *
+     * @param selectedAnnotation the annotation to show in the panel
+     * @see #setUtilityPaneVisible(boolean)
+     */
+    public void showAnnotationDestinationPanel(DestinationComponent selectedDestination) {
+        if (utilityTabbedPane != null) {
+            // Pass the selected annotation to the link panel
+            if (annotationPanel != null && selectedDestination != null) {
+                annotationPanel.setEnabled(true);
+            }
+            setUtilityPaneVisible(true);
+            // select the annotationPanel tab
+            if (annotationPanel != null) {
+                boolean show = safelySelectUtilityPanel(annotationPanel);
+                if (show) {
+                    annotationPanel.setSelectedTab(PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_DESTINATIONS);
+                }
+            }
         }
     }
 
@@ -4393,7 +4534,8 @@ public class SwingController extends ComponentAdapter
                     } else if (source == deleteMenuItem) {
                         documentViewController.deleteCurrentAnnotation();
                         reflectUndoCommands();
-                    } else if (source == copyMenuItem) {
+                    } else if (source == copyMenuItem ||
+                            source == copyContextMenuItem) {
                         if (document != null &&
                                 havePermissionToExtractContent() &&
                                 !(documentViewController.getDocumentViewModel().isSelectAll() &&
@@ -4442,6 +4584,8 @@ public class SwingController extends ComponentAdapter
                         toggleUtilityPaneVisibility();
                     } else if (source == formHighlightButton) {
                         toggleFormHighlight();
+                    } else if (source == annotationEditingModeButton) {
+                        toggleAnnotationEditMode();
                     } else if (source == firstPageMenuItem || source == firstPageButton) {
                         showPage(0);
                     } else if (source == previousPageMenuItem || source == previousPageButton) {
@@ -5113,6 +5257,26 @@ public class SwingController extends ComponentAdapter
                     }
                 }
                 break;
+            // annotation is selected or has focus
+            case PropertyConstants.DESTINATION_FOCUS_GAINED:
+            case PropertyConstants.DESTINATION_FOCUS_LOST:
+                // enable the delete menu
+                setEnabled(deleteMenuItem, true);
+                // get the current selected tool, we only care about the select tool or
+                // link annotation tool.
+                if (documentViewController.getToolMode() ==
+                        DocumentViewModelImpl.DISPLAY_TOOL_SELECTION) {
+                    DestinationComponent destinationComponent = (DestinationComponent) newValue;
+                    if (destinationComponent != null &&
+                            destinationComponent.getDestination() != null) {
+                        // set the annotationPane with the new annotation component
+                        if (logger.isLoggable(Level.FINE)) {
+                            logger.fine("selected destination " + destinationComponent);
+                        }
+                        showAnnotationDestinationPanel(destinationComponent);
+                    }
+                }
+                break;
             // annotation is deselected
             case PropertyConstants.ANNOTATION_DESELECTED:
                 if (documentViewController.getToolMode() ==
@@ -5173,9 +5337,37 @@ public class SwingController extends ComponentAdapter
                 }
                 break;
             case PropertyConstants.DESTINATION_ADDED:
+                // add the new destination as a page component.
+                Destination destination = (Destination) evt.getNewValue();
+                if (annotationPanel != null && annotationPanel.getDestinationsPanel() != null) {
+                    annotationPanel.getDestinationsPanel().refreshNameTree(null);
+                }
+                documentViewController.addNewDestination(destination);
+                getDocumentViewController().getDocumentView().repaint();
+                break;
             case PropertyConstants.DESTINATION_UPDATED:
+                Destination newDestination = (Destination) evt.getNewValue();
+                Destination oldDestination = (Destination) evt.getOldValue();
+                // the tree dialog does the catalog insertion so we don't have to worry about that
+                // but we do need to refresh the tree as the name may have changed.
+                if (annotationPanel != null && annotationPanel.getDestinationsPanel() != null) {
+                    annotationPanel.getDestinationsPanel().refreshNameTree(null);
+                }
+                // we need to update the destination page component
+                documentViewController.updateDestination(oldDestination, newDestination);
+                getDocumentViewController().getDocumentView().repaint();
+                break;
             case PropertyConstants.DESTINATION_DELETED:
-                annotationPanel.getDestinationsPanel().refreshNameTree(evt.getNewValue());
+                destination = (Destination) evt.getOldValue();
+                // remove the destination
+                Catalog catalog = getDocument().getCatalog();
+                catalog.deleteNamedDestination(destination.getNamedDestination().toString());
+                // update the tree and remove this node.
+                if (annotationPanel != null && annotationPanel.getDestinationsPanel() != null) {
+                    annotationPanel.getDestinationsPanel().removeNameTreeNode(destination);
+                }
+                // remove the destination component from the the page component
+                documentViewController.deleteDestination(destination);
                 getDocumentViewController().getDocumentView().repaint();
                 break;
         }

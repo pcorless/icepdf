@@ -52,7 +52,7 @@ import java.util.logging.Logger;
  * @since 5.0
  */
 public abstract class AbstractAnnotationComponent<T extends Annotation> extends JComponent implements FocusListener,
-        MouseInputListener, AnnotationComponent {
+        MouseInputListener, AnnotationComponent, ResizeableComponent {
 
     protected static final Logger logger =
             Logger.getLogger(AbstractAnnotationComponent.class.toString());

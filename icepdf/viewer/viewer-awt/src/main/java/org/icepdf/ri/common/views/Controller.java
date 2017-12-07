@@ -17,6 +17,7 @@ package org.icepdf.ri.common.views;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.search.DocumentSearchController;
+import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.WindowManagementCallback;
 import org.icepdf.ri.util.PropertiesManager;
 
@@ -44,6 +45,13 @@ public interface Controller extends PropertyChangeListener {
      * @return Document root of the PDF file.
      */
     Document getDocument();
+
+    /**
+     * Gets the model for the controller.  Most data is actually stored in the documentViewModel.
+     *
+     * @return controller model
+     */
+    ViewModel getViewModel();
 
     /**
      * When viewing a PDF file, one or more pages may be viewed at

@@ -111,6 +111,8 @@ public interface DocumentViewController {
 
     int setCurrentPagePrevious();
 
+    void setComponentTarget(PageViewComponent pageComponent, Component component);
+
     void setDestinationTarget(Destination destination);
 
     int getCurrentPageIndex();
@@ -192,6 +194,12 @@ public interface DocumentViewController {
     void deleteCurrentAnnotation();
 
     void deleteAnnotation(AnnotationComponent annotationComponent);
+
+    void addNewDestination(Destination destination);
+
+    void updateDestination(Destination oldDestination, Destination destination);
+
+    void deleteDestination(Destination destination);
 
     void undo();
 

@@ -123,7 +123,7 @@ public class NameTree extends Dictionary {
      * The addition of a node to a name tree is relatively complex but because we are assuming this will only be used
      * in limit capacity as name tree's best to be created a PDF encoder.
      *
-     * @param newName label for name node.
+     * @param newName     label for name node.
      * @param destination associated destination
      * @return true if insertion was successful, false otherwise.
      */
@@ -336,8 +336,9 @@ public class NameTree extends Dictionary {
             }
         }
         if (nameValues != null && nameValues.size() > 0) {
-            for (int i = 1; i < nameValues.size(); i += 2) {
-                Object value = nameValues.get(i);
+            for (int i = 0; i < nameValues.size(); i += 2) {
+                Object name = library.getObject(nameValues.get(i));
+                Object value = nameValues.get(i + 1);
                 Object tmp = library.getObject(value);
                 // D-> ref -> Destination
                 if (tmp instanceof HashMap) {
@@ -347,19 +348,20 @@ public class NameTree extends Dictionary {
                         Destination dest = new Destination(library, obj);
                         if (dest.getPageReference().equals(pageReference)) {
                             destinations.add(dest);
+                            if (name != null) dest.setNamedDestination(name.toString());
                         }
                     }
                 } else if (tmp instanceof Destination) {
                     Destination dest = (Destination) tmp;
                     if (dest.getPageReference().equals(pageReference)) {
                         destinations.add(dest);
+                        if (name != null) dest.setNamedDestination(name.toString());
                     }
                 }
             }
         }
         return destinations;
     }
-
 
     public NameNode getRoot() {
         return root;

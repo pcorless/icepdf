@@ -16,6 +16,7 @@
 package org.icepdf.ri.common.tools;
 
 import org.icepdf.core.util.PropertyConstants;
+import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
@@ -54,38 +55,54 @@ public class TextSelectionViewHandler extends TextSelection
 
     public void mouseClicked(MouseEvent e) {
 
-        // clear all selected text.
-        documentViewController.clearSelectedText();
-        clearSelectionState();
+        if (e.getButton() == MouseEvent.BUTTON1) {
+            // clear all selected text.
+            documentViewController.clearSelectedText();
+            clearSelectionState();
 
-        // check if we are over a page
-        PageViewComponentImpl pageComponent = isOverPageComponent(parentComponent, e);
+            // check if we are over a page
+            PageViewComponentImpl pageComponent = isOverPageComponent(parentComponent, e);
 
-        if (pageComponent != null) {
-            pageComponent.requestFocus();
-            // click word and line selection
-            MouseEvent modeEvent = SwingUtilities.convertMouseEvent(parentComponent, e, pageComponent);
-            pageComponent.getTextSelectionPageHandler().wordLineSelection(
-                    modeEvent.getClickCount(), modeEvent.getPoint(), pageComponent);
+            if (pageComponent != null) {
+                pageComponent.requestFocus();
+                // click word and line selection
+                MouseEvent modeEvent = SwingUtilities.convertMouseEvent(parentComponent, e, pageComponent);
+                pageComponent.getTextSelectionPageHandler().wordLineSelection(
+                        modeEvent.getClickCount(), modeEvent.getPoint(), pageComponent);
+            }
         }
     }
 
     public void mousePressed(MouseEvent e) {
-        // clear all selected text.
-        documentViewController.clearSelectedText();
-        clearSelectionState();
 
-        lastMousePressedLocation = e.getPoint();
+        if (e.getButton() == MouseEvent.BUTTON1) {
+            // clear all selected text.
+            documentViewController.clearSelectedText();
+            clearSelectionState();
 
-        // start selection box.
-        resetRectangle(e.getX(), e.getY());
+            lastMousePressedLocation = e.getPoint();
 
-        // check if we are over a page
-        PageViewComponentImpl pageComponent = isOverPageComponent(parentComponent, e);
-        if (pageComponent != null) {
-            pageComponent.requestFocus();
-            MouseEvent modeEvent = SwingUtilities.convertMouseEvent(parentComponent, e, pageComponent);
-            pageComponent.getTextSelectionPageHandler().selectionStart(modeEvent.getPoint(), pageComponent, true);
+            // start selection box.
+            resetRectangle(e.getX(), e.getY());
+
+            // check if we are over a page
+            PageViewComponentImpl pageComponent = isOverPageComponent(parentComponent, e);
+            if (pageComponent != null) {
+                pageComponent.requestFocus();
+                MouseEvent modeEvent = SwingUtilities.convertMouseEvent(parentComponent, e, pageComponent);
+                pageComponent.getTextSelectionPageHandler().selectionStart(modeEvent.getPoint(), pageComponent, true);
+            }
+        } else if (e.getButton() == MouseEvent.BUTTON3) {
+            // show context menu for adding selected text to the clipboard.
+            boolean canExtract = documentViewController.getParentController().havePermissionToExtractContent();
+            if (canExtract && documentViewController.getSelectedText() != null) {
+                SwingController swingController = (SwingController) documentViewController.getParentController();
+                JPopupMenu contextMenu = new JPopupMenu();
+                JMenuItem copyMenuItem = new JMenuItem(swingController.getMessageBundle().getString("viewer.menu.edit.copy.label"));
+                contextMenu.add(copyMenuItem);
+                swingController.setCopyContextMenuItem(copyMenuItem);
+                contextMenu.show(parentComponent, e.getX(), e.getY());
+            }
         }
     }
 

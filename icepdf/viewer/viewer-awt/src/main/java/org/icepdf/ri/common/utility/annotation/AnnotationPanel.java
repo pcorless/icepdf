@@ -50,11 +50,13 @@ public class AnnotationPanel extends JPanel implements MutableDocument {
 
     public void addMarkupAnnotationPanel(MarkupAnnotationPanel panel, String title) {
         markupAnnotationPanel = panel;
+        markupAnnotationPanel.setParentPanel(this);
         annotationTabbedPane.add(markupAnnotationPanel, title);
     }
 
     public void addDestinationPanel(DestinationsPanel panel, String title) {
         destinationsPanel = panel;
+        destinationsPanel.setParentPanel(this);
         annotationTabbedPane.add(destinationsPanel, title);
     }
 

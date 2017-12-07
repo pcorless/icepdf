@@ -132,8 +132,7 @@ public abstract class AbstractWorkerPanel extends JPanel implements MutableDocum
         rootTreeNode.setAllowsChildren(true);
         treeModel = new DefaultTreeModel(rootTreeNode);
         tree = new JTree(treeModel);
-        tree.getSelectionModel().setSelectionMode(
-                TreeSelectionModel.SINGLE_TREE_SELECTION);
+        tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         tree.setRootVisible(true);
         tree.setScrollsOnExpand(true);
         // setup a custom cell render

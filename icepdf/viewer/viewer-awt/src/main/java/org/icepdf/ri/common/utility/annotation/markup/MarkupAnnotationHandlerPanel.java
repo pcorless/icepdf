@@ -168,7 +168,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
             Object node = selectedTreePath.getLastPathComponent();
             if (node instanceof AnnotationTreeNode) {
                 AnnotationTreeNode annotationTreeNode = (AnnotationTreeNode) selectedTreePath.getLastPathComponent();
-                return AnnotationSelector.SelectAnnotationComponent(controller, annotationTreeNode.getAnnotation());
+                return PageComponentSelector.SelectAnnotationComponent(controller, annotationTreeNode.getAnnotation());
             }
 
 
@@ -308,7 +308,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
                     AnnotationTreeNode formNode = (AnnotationTreeNode) node;
                     // on double click, navigate to page and set focus of component.
                     Annotation annotation = formNode.getAnnotation();
-                    AnnotationComponent comp = AnnotationSelector.SelectAnnotationComponent(controller, annotation);
+                    AnnotationComponent comp = PageComponentSelector.SelectAnnotationComponent(controller, annotation);
                     if (comp instanceof MarkupAnnotationComponent) {
                         if (e.getButton() == MouseEvent.BUTTON1) {
                             DocumentViewController documentViewController = controller.getDocumentViewController();

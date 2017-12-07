@@ -43,6 +43,7 @@ public class ViewModel {
     private PrintHelper printHelper;
 
     private boolean isWidgetAnnotationHighlight;
+    private boolean isAnnotationEditingMode;
 
     public static File getDefaultFile() {
         return defaultFile;
@@ -135,11 +136,29 @@ public class ViewModel {
     }
 
     /**
+     * Indicates that annotation editign tools will be painted is enabled.
+     *
+     * @return true if enabled, otherwise false.
+     */
+    public boolean isAnnotationEditingMode() {
+        return isAnnotationEditingMode;
+    }
+
+    /**
      * Sets the value of widgetAnnotation highlight model.
      *
      * @param isWidgetAnnotationHighlight true to enable highlight, otherwise false.
      */
     public void setIsWidgetAnnotationHighlight(boolean isWidgetAnnotationHighlight) {
         this.isWidgetAnnotationHighlight = isWidgetAnnotationHighlight;
+    }
+
+    /**
+     * Sets the value of annotation edit mode flag.
+     *
+     * @param isAnnotationEditingMode true to enable tools, otherwise false.
+     */
+    public void setIsAnnotationEditingMode(boolean isAnnotationEditingMode) {
+        this.isAnnotationEditingMode = isAnnotationEditingMode;
     }
 }

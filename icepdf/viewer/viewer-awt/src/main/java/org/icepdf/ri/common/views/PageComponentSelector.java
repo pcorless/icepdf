@@ -15,19 +15,22 @@
  */
 package org.icepdf.ri.common.views;
 
+import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
+import org.icepdf.ri.common.views.destinations.DestinationComponent;
 
 import java.util.ArrayList;
 
 /**
- * Utility for locating an AnnotationComponent on a page and setup up focus within int he context of the
- * DocumentView.
+ * Utility for locating a Component on a page and setup up focus within int he context of the
+ * DocumentView.  This is mainly used for finding Annotation or Destination components.
  */
-public class AnnotationSelector {
+public class PageComponentSelector {
 
     /**
      * Utility to find a Annotation's JComponent within a AbstractPageComponent implementation.
@@ -73,7 +76,48 @@ public class AnnotationSelector {
                     if (widgetAnnotation.getPObjectReference().equals(
                             annotationComponent.getAnnotation().getPObjectReference())) {
                         annotationComponent.requestFocus();
+                        controller.getDocumentViewController().setComponentTarget(pageViewComponent, annotationComponent);
                         return annotationComponent;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Utility to find a destination's JComponent within a AbstractPageComponent implementation.
+     *
+     * @param controller  swing controller.
+     * @param destination destination to do search for wrapping component.
+     * @return true if component could be found, false otherwise.
+     */
+    public static DestinationComponent SelectDestinationComponent(Controller controller, Destination destination) {
+        // turn out the parent is seldom used correctly and generally just points to page zero.
+        // so we need to do a deep search for the annotation.
+        Document document = controller.getDocument();
+        java.util.List<AbstractPageViewComponent> pageViewComponentList =
+                controller.getDocumentViewController().getDocumentViewModel().getPageComponents();
+        Reference pageReference = destination.getPageReference();
+        if (pageReference != null) {
+            Library library = document.getCatalog().getLibrary();
+            Object potentialPage = library.getObject(pageReference);
+            if (potentialPage instanceof Page) {
+                Page page = (Page) potentialPage;
+                int pageIndex = page.getPageIndex();
+                if (controller.getCurrentPageNumber() != pageIndex) {
+                    controller.getDocumentViewController().setCurrentPageIndex(pageIndex);
+                }
+                PageViewComponentImpl pageViewComponent = (PageViewComponentImpl) pageViewComponentList.get(pageIndex);
+                ArrayList<DestinationComponent> destinationComponents = pageViewComponent.getDestinationComponents();
+                if (destinationComponents != null) {
+                    for (DestinationComponent destinationComponent : destinationComponents) {
+                        if (destination.getNamedDestination().equals(destinationComponent.getDestination().getNamedDestination())) {
+                            destinationComponent.requestFocus();
+                            // move the the scroll pane to make up for the component bounds
+                            controller.getDocumentViewController().setComponentTarget(pageViewComponent, destinationComponent);
+                            return destinationComponent;
+                        }
                     }
                 }
             }

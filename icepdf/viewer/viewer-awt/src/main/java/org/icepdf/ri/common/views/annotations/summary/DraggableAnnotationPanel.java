@@ -16,7 +16,7 @@
 package org.icepdf.ri.common.views.annotations.summary;
 
 import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.ri.common.views.AnnotationSelector;
+import org.icepdf.ri.common.views.PageComponentSelector;
 
 import javax.swing.*;
 import java.awt.*;
@@ -70,7 +70,7 @@ public class DraggableAnnotationPanel extends JPanel {
                 if (comp != null && comp instanceof AnnotationSummaryBox) {
                     AnnotationSummaryBox annotationSummaryBox = (AnnotationSummaryBox) comp;
                     Annotation annotation = annotationSummaryBox.getAnnotation().getParent();
-                    AnnotationSelector.SelectAnnotationComponent(annotationSummaryBox.getController(), annotation);
+                    PageComponentSelector.SelectAnnotationComponent(annotationSummaryBox.getController(), annotation);
                 }
             }
         }

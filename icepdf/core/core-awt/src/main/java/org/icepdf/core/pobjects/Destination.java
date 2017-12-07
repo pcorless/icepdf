@@ -88,7 +88,7 @@ public class Destination extends Dictionary {
     private Float zoom;
 
     // named Destination name, can be a name or String
-    private Name namedDestination;
+    private String namedDestination;
 
     // initiated flag
     private boolean inited;
@@ -115,6 +115,12 @@ public class Destination extends Dictionary {
         destination.add(null);
         object = destination;
         init();
+    }
+
+    public void setLocation(float left, float top) {
+        this.left = left;
+        this.top = top;
+        resetDestArray(ref, type, left, top, null, null);
     }
 
     /**
@@ -148,24 +154,20 @@ public class Destination extends Dictionary {
         // find named Destinations, this however is incomplete
         // @see #parser for more detailed information
         else if (object instanceof Name || object instanceof StringObject) {
-            String s;
             // Make sure to decrypt this attribute
             if (object instanceof StringObject) {
                 StringObject stringObject = (StringObject) object;
-                s = stringObject.getDecryptedLiteralString(library.getSecurityManager());
+                namedDestination = stringObject.getDecryptedLiteralString(library.getSecurityManager());
             } else {
-                s = object.toString();
+                namedDestination = object.toString();
             }
             boolean found = false;
             Catalog catalog = library.getCatalog();
 
-            // store the name
-            namedDestination = new Name(s);
-
             if (catalog != null && catalog.getNames() != null) {
                 NameTree nameTree = catalog.getNames().getDestsNameTree();
                 if (nameTree != null) {
-                    Object o = nameTree.searchName(s);
+                    Object o = nameTree.searchName(namedDestination);
                     if (o != null) {
                         if (o instanceof PObject) {
                             o = ((PObject) o).getObject();
@@ -317,7 +319,7 @@ public class Destination extends Dictionary {
      *
      * @return name of destination if present, null otherwise.
      */
-    public Name getNamedDestination() {
+    public String getNamedDestination() {
         return namedDestination;
     }
 
@@ -327,18 +329,15 @@ public class Destination extends Dictionary {
      *
      * @param dest destination to associate with.
      */
-    public void setNamedDestination(Name dest) {
+    public void setNamedDestination(String dest) {
         namedDestination = dest;
-        // only write out destination as names so we don't have worry about
-        // encryption.
-        object = dest;
         // re-parse as object should point to a new destination.
         inited = false;
         init();
     }
 
     /**
-     * Sets the destination syntax to the specified value.  The Destinatoin
+     * Sets the destination syntax to the specified value.  The Destination
      * object clears the named destination and re initializes itself after the
      * assignment has been made.
      *
@@ -346,7 +345,6 @@ public class Destination extends Dictionary {
      */
     public void setDestinationSyntax(List destinationSyntax) {
         // clear named destination
-        namedDestination = null;
         object = destinationSyntax;
         // re-parse as object should point to a new destination.
         inited = false;
@@ -372,6 +370,43 @@ public class Destination extends Dictionary {
         }
         return null;
     }
+
+
+    public void resetDestArray(Reference pageReference, Name fitType, Object... params) {
+        List destArray = null;
+        if (fitType.equals(Destination.TYPE_FIT) ||
+                fitType.equals(Destination.TYPE_FITB)) {
+            destArray = Destination.destinationSyntax(pageReference, fitType);
+        }
+        // just top enabled
+        else if (fitType.equals(Destination.TYPE_FITH) ||
+                fitType.equals(Destination.TYPE_FITBH) ||
+                fitType.equals(Destination.TYPE_FITV) ||
+                fitType.equals(Destination.TYPE_FITBV)) {
+            Object top = params[0];
+            destArray = Destination.destinationSyntax(
+                    pageReference, fitType, top);
+        }
+        // special xyz case
+        else if (fitType.equals(Destination.TYPE_XYZ)) {
+            Object left = params[0];
+            Object top = params[1];
+            Object zoom = params[2];
+            destArray = Destination.destinationSyntax(
+                    pageReference, fitType, left, top, zoom);
+        }
+        // special FitR
+        else if (fitType.equals(Destination.TYPE_FITR)) {
+            Object left = params[0];
+            Object bottom = params[1];
+            Object right = params[2];
+            Object top = params[3];
+            destArray = Destination.destinationSyntax(
+                    pageReference, fitType, left, bottom, right, top);
+        }
+        setDestinationSyntax(destArray);
+    }
+
 
     /**
      * Utility for creating a /Fit or FitB syntax vector.

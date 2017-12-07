@@ -19,6 +19,7 @@ import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.tools.*;
+import org.icepdf.ri.common.views.destinations.DestinationComponent;
 
 import javax.swing.*;
 import java.awt.*;
@@ -137,31 +138,39 @@ public abstract class AbstractDocumentView
         String prop = evt.getPropertyName();
         Object newValue = evt.getNewValue();
         Object oldValue = evt.getOldValue();
-        if ("focusOwner".equals(prop) &&
-                newValue instanceof AnnotationComponent) {
-            // the correct annotations for the properties pane
-            if (logger.isLoggable(Level.FINE)) {
-                logger.fine("Selected Annotation " + newValue);
+        if ("focusOwner".equals(prop)) {
+            DocumentViewController documentViewController = getParentViewController();
+            if (newValue instanceof AnnotationComponent) {
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine("Selected Annotation " + newValue);
+                }
+                documentViewController.firePropertyChange(
+                        PropertyConstants.ANNOTATION_FOCUS_GAINED, evt.getOldValue(), evt.getNewValue());
+            } else if (newValue instanceof DestinationComponent) {
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine("Selected destination " + newValue);
+                }
+                documentViewController.firePropertyChange(
+                        PropertyConstants.DESTINATION_FOCUS_GAINED,
+                        evt.getOldValue(),
+                        evt.getNewValue());
             }
-            DocumentViewController documentViewController =
-                    getParentViewController();
-            documentViewController.firePropertyChange(
-                    PropertyConstants.ANNOTATION_FOCUS_GAINED,
-                    evt.getOldValue(),
-                    evt.getNewValue());
 
-        } else if ("focusOwner".equals(prop) &&
-                oldValue instanceof AnnotationComponent) {
-            // the correct annotations for the properties pane
-            if (logger.isLoggable(Level.FINE)) {
-                logger.fine("Deselected Annotation " + oldValue);
+        } else if ("focusOwner".equals(prop)) {
+            DocumentViewController documentViewController = getParentViewController();
+            if (oldValue instanceof AnnotationComponent) {
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine("Deselected Annotation " + oldValue);
+                }
+                documentViewController.firePropertyChange(
+                        PropertyConstants.ANNOTATION_FOCUS_LOST, evt.getOldValue(), evt.getNewValue());
+            } else if (oldValue instanceof AnnotationComponent) {
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine("Deselected destination " + oldValue);
+                }
+                documentViewController.firePropertyChange(
+                        PropertyConstants.DESTINATION_FOCUS_LOST, evt.getOldValue(), evt.getNewValue());
             }
-            DocumentViewController documentViewController =
-                    getParentViewController();
-            documentViewController.firePropertyChange(
-                    PropertyConstants.ANNOTATION_FOCUS_LOST,
-                    evt.getOldValue(),
-                    evt.getNewValue());
         }
     }
 

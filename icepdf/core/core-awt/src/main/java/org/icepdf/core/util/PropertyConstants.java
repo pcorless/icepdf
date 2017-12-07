@@ -62,10 +62,17 @@ public class PropertyConstants {
 
     ANNOTATION_QUICK_COLOR_CHANGE = "annotationQuikcColorPropertyChange",
 
+    DESTINATION_FOCUS_GAINED = "destinationFocusGained",
+            DESTINATION_FOCUS_LOST = "destinationFocusLost",
+
+    DESTINATION_SELECTED = "destinationSelected",
+            DESTINATION_DESELECTED = "destinationDeselected",
+
     DESTINATION_ADDED = "destinationAdded",
             DESTINATION_UPDATED = "destinationUpdated",
             DESTINATION_DELETED = "destinationDeleted",
-            ANNOTATION_SUMMARY_BOX_FONT_SIZE_CHANGE = "annotationSummaryBoxFontSizeChange";
+
+    ANNOTATION_SUMMARY_BOX_FONT_SIZE_CHANGE = "annotationSummaryBoxFontSizeChange";
 
 
 }

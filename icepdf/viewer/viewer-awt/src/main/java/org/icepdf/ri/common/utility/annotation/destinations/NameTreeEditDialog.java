@@ -69,6 +69,19 @@ public class NameTreeEditDialog extends EscapeJDialog implements ActionListener 
         this.name = treeNode.getName().toString();
         // figure out what the destination package is.
         this.destination = new Destination(controller.getDocument().getCatalog().getLibrary(), treeNode.getReference());
+        this.destination.setNamedDestination(treeNode.getName().toString());
+        setGui();
+    }
+
+    public NameTreeEditDialog(org.icepdf.ri.common.views.Controller controller, Destination destination) {
+        super(controller.getViewerFrame(), true);
+        this.controller = controller;
+        nameTreeNode = new NameTreeNode(new LiteralStringObject(destination.getNamedDestination()),
+                destination.getPageReference());
+        messageBundle = controller.getMessageBundle();
+        this.name = destination.getNamedDestination();
+        // figure out what the destination package is.
+        this.destination = destination;
         setGui();
     }
 
@@ -83,12 +96,15 @@ public class NameTreeEditDialog extends EscapeJDialog implements ActionListener 
             Catalog catalog = controller.getDocument().getCatalog();
             String oldName = nameTreeNode == null ? name : nameTreeNode.getName().toString();
             name = nameTextField.getText();
+            Destination oldDestination = destination;
+
             destination = implicitDestinationPanel.getDestination(catalog.getLibrary());
             if (name == null) {
                 errorLabel.setText(messageBundle.getString(
                         "viewer.utilityPane.destinations.dialog.error.emptyName.label"));
                 return;
             } else {
+                destination.setNamedDestination(name);
                 errorLabel.setText("");
             }
 
@@ -104,13 +120,13 @@ public class NameTreeEditDialog extends EscapeJDialog implements ActionListener 
             } else {
                 // fire property change event to rebuild name tree.
                 if (nameTreeNode != null) {
-                    nameTreeNode = new NameTreeNode(new LiteralStringObject(name), destination);
+//                    nameTreeNode = new NameTreeNode(new LiteralStringObject(name), destination);
                     controller.getDocumentViewController().firePropertyChange(PropertyConstants.DESTINATION_UPDATED,
-                            oldName, nameTreeNode);
+                            oldDestination, destination);
                 } else {
-                    nameTreeNode = new NameTreeNode(new LiteralStringObject(name), destination);
+//                    nameTreeNode = new NameTreeNode(new LiteralStringObject(name), destination);
                     controller.getDocumentViewController().firePropertyChange(PropertyConstants.DESTINATION_ADDED,
-                            oldName, nameTreeNode);
+                            null, destination);
                 }
                 setVisible(false);
                 dispose();

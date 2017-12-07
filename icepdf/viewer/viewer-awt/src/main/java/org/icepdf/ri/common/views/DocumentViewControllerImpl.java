@@ -16,15 +16,14 @@
 package org.icepdf.ri.common.views;
 
 import org.icepdf.core.SecurityCallback;
-import org.icepdf.core.pobjects.Destination;
-import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.pobjects.NamedDestinations;
-import org.icepdf.core.pobjects.PageTree;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.search.DocumentSearchController;
+import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
+import org.icepdf.ri.common.views.destinations.DestinationComponent;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
@@ -33,6 +32,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.KeyListener;
+import java.awt.geom.Point2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -359,6 +359,22 @@ public class DocumentViewControllerImpl
     public synchronized void setViewKeyListener(KeyListener l) {
         if (documentView != null)
             ((JComponent) documentView).addKeyListener(l);
+    }
+
+    public void setComponentTarget(PageViewComponent pageComponent, Component component) {
+        if (documentView == null || documentViewModel == null) {
+            return;
+        }
+
+        // get the component location and normalize it to page space.
+        Page page = getPageTree().getPage(pageComponent.getPageIndex());
+        Point compLocation = component.getLocation();
+        Point2D.Float pageSpacePoint = page.convertToPageSpace(compLocation, documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(), documentViewModel.getViewZoom());
+
+        // create a synthetic destination based on the component location page reference.
+        Destination destination = new Destination(page, (int) pageSpacePoint.x, (int) pageSpacePoint.y);
+        setDestinationTarget(destination);
     }
 
     public void setDestinationTarget(Destination destination) {
@@ -1368,6 +1384,83 @@ public class DocumentViewControllerImpl
             documentView.repaint();
         }
     }
+
+    public void addNewDestination(Destination destination) {
+        if (documentViewModel != null && destination != null) {
+            Library library = document.getCatalog().getLibrary();
+            Page page = (Page) library.getObject(destination.getPageReference());
+            int pageIndex = page.getPageIndex();
+            PageViewComponentImpl pageViewComponent = (PageViewComponentImpl)
+                    documentViewModel.getPageComponents().get(pageIndex);
+            pageViewComponent.refreshDestinationComponents(pageViewComponent.getPage(), false);
+        }
+    }
+
+    public void updateDestination(Destination oldDestination, Destination destination) {
+        if (documentViewModel != null && destination != null) {
+            if (destination.getPageReference() != null) {
+                Library library = document.getCatalog().getLibrary();
+                Page page = (Page) library.getObject(destination.getPageReference());
+                int pageIndex = page.getPageIndex();
+                // page is the same then we just do the update
+                if (oldDestination.getPageReference().equals(destination.getPageReference())) {
+                    PageViewComponentImpl pageViewComponent = (PageViewComponentImpl)
+                            documentViewModel.getPageComponents().get(pageIndex);
+                    List<DestinationComponent> destinationComponents = pageViewComponent.getDestinationComponents();
+                    for (DestinationComponent destinationComponent : destinationComponents) {
+                        if (destinationComponent.getDestination().getNamedDestination()
+                                .equals(oldDestination.getNamedDestination())) {
+                            destinationComponent.updateDestination(destination);
+                            break;
+                        }
+                    }
+                }
+                // else we need to to remove the old component and add the new destination component.
+                else {
+                    // remove the old component
+                    Page oldPage = (Page) library.getObject(oldDestination.getPageReference());
+                    int oldPagIndex = oldPage.getPageIndex();
+                    PageViewComponentImpl pageViewComponent = (PageViewComponentImpl)
+                            documentViewModel.getPageComponents().get(oldPagIndex);
+                    List<DestinationComponent> destinationComponents = pageViewComponent.getDestinationComponents();
+                    for (DestinationComponent destinationComponent : destinationComponents) {
+                        if (destinationComponent.getDestination().getNamedDestination()
+                                .equals(oldDestination.getNamedDestination())) {
+                            pageViewComponent.removeDestination(destinationComponent);
+                            break;
+                        }
+                    }
+                    // add the new component
+                    addNewDestination(destination);
+                }
+
+            }
+            // repaint the view.
+            documentView.repaint();
+        }
+    }
+
+    public void deleteDestination(Destination destination) {
+        if (documentViewModel != null && destination != null) {
+            if (destination.getPageReference() != null) {
+                Library library = document.getCatalog().getLibrary();
+                Page page = (Page) library.getObject(destination.getPageReference());
+                int pageIndex = page.getPageIndex();
+                PageViewComponentImpl pageViewComponent = (PageViewComponentImpl)
+                        documentViewModel.getPageComponents().get(pageIndex);
+                List<DestinationComponent> destinationComponents = pageViewComponent.getDestinationComponents();
+                for (DestinationComponent destinationComponent : destinationComponents) {
+                    if (destinationComponent.getDestination().getNamedDestination().equals(destination.getNamedDestination())) {
+                        pageViewComponent.removeDestination(destinationComponent);
+                        break;
+                    }
+                }
+            }
+            // repaint the view.
+            documentView.repaint();
+        }
+    }
+
 
     public void undo() {
         // repaint the view.

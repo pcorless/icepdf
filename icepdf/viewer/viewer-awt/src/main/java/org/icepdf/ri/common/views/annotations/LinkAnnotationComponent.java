@@ -16,6 +16,7 @@
 package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.ri.common.utility.annotation.properties.LinkAnnotationPanel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
@@ -26,6 +27,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
 
 /**
@@ -43,14 +46,16 @@ import java.awt.geom.Rectangle2D;
 @SuppressWarnings("serial")
 public class LinkAnnotationComponent extends AbstractAnnotationComponent<LinkAnnotation> {
 
+    protected Color highlightColor = new Color(Integer.parseInt("83A3D3", 16));
+    protected Color linkColor = new Color(Integer.parseInt("990033", 16));
+
     public LinkAnnotationComponent(LinkAnnotation annotation, DocumentViewController documentViewController,
                                    AbstractPageViewComponent pageViewComponent) {
         super(annotation, documentViewController, pageViewComponent);
         isShowInvisibleBorder = true;
 
-        AnnotationPopup annotationPopup = new AnnotationPopup(this,
-                documentViewController.getParentController(),
-                getPageViewComponent());
+        AnnotationPopup<LinkAnnotationComponent> annotationPopup = new AnnotationPopup<>(this,
+                documentViewController.getParentController(), getPageViewComponent());
         annotationPopup.buildGui();
 
         contextMenu = annotationPopup;
@@ -72,6 +77,58 @@ public class LinkAnnotationComponent extends AbstractAnnotationComponent<LinkAnn
     public void paintComponent(Graphics g) {
         // sniff out tool bar state to set correct annotation border
         isEditable = isAnnotationEditable();
+
+        // check for the annotation editing mode and draw the link effect so it's easier to see.
+        if (documentViewController.getParentController().getViewModel().isAnnotationEditingMode()) {
+            Graphics2D g2d = (Graphics2D) g;
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            Composite composite = g2d.getComposite();
+            Color color = g2d.getColor();
+            AffineTransform affineTransform = g2d.getTransform();
+            // draw the main box
+            g2d.setColor(highlightColor);
+            g2d.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
+            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
+            g2d.fillRect(0, 0, getWidth(), getHeight());
+
+            // draw the link arrow
+            int width = 15;
+            int height = 10;
+            if (height > getHeight() - 4) {
+                height = getHeight() - 4;
+            }
+            int indent = 4;
+            GeneralPath generalPath = new GeneralPath();
+            generalPath.moveTo(0, 0);
+            generalPath.lineTo(width - indent, 0);
+            generalPath.lineTo(width, height / 2);
+            generalPath.lineTo(width - indent, height);
+            generalPath.lineTo(0, height);
+            generalPath.lineTo(indent, height / 2);
+            generalPath.closePath();
+
+            DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
+            Page currentPage = pageViewComponent.getPage();
+            AffineTransform at = currentPage.getPageTransform(
+                    documentViewModel.getPageBoundary(),
+                    documentViewModel.getViewRotation(),
+                    documentViewModel.getViewZoom());
+            at.setTransform(at.getScaleX(), 0, 0, -at.getScaleY(), 0, 0);
+
+            Shape shape = at.createTransformedShape(generalPath);
+            Rectangle bounds = shape.getBounds();
+            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.40f));
+            g2d.translate(getWidth() - bounds.width - 2, getHeight() - bounds.height - 2);
+            g2d.setColor(linkColor);
+            g2d.fill(shape);
+            g2d.setColor(Color.DARK_GRAY);
+            g2d.draw(shape);
+
+            // reset the context.
+            g2d.setComposite(composite);
+            g2d.setColor(color);
+            g2d.setTransform(affineTransform);
+        }
 
         // paint rollover effects.
         DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();

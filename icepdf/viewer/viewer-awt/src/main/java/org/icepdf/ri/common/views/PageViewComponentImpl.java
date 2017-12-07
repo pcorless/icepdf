@@ -11,6 +11,7 @@ import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.tools.*;
 import org.icepdf.ri.common.views.annotations.*;
+import org.icepdf.ri.common.views.destinations.DestinationComponent;
 
 import javax.swing.*;
 import java.awt.*;
@@ -39,6 +40,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
 
     // annotations component for this pageViewComp.
     protected ArrayList<AbstractAnnotationComponent> annotationComponents;
+    protected ArrayList<DestinationComponent> destinationComponents;
 
     public PageViewComponentImpl(DocumentViewModel documentViewModel, PageTree pageTree, final int pageIndex,
                                  JScrollPane parentScrollPane, int width, int height) {
@@ -204,6 +206,16 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         return annotationComponents;
     }
 
+
+    /**
+     * Gets a list of the annotation components used in this page view.
+     *
+     * @return list of annotation components, can be null.
+     */
+    public ArrayList<DestinationComponent> getDestinationComponents() {
+        return destinationComponents;
+    }
+
     /**
      * Gets the page components TextSelectionPageHandler.  Each page has one and it directly accessed by the
      * TextSelectionViewHandler.  All other tools are created/disposed as the tools are selected.
@@ -306,55 +318,37 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
 
     private void paintDestinations(Graphics g) {
         Page currentPage = getPage();
-        if (currentPage != null && documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_SELECTION) {
+        if (currentPage != null &&
+                documentViewController.getParentController().getViewModel().isAnnotationEditingMode()) {
 
             // make sure we have a name tree to try and paint
-            Catalog catalog = documentViewController.getDocument().getCatalog();
-            if (catalog.getNames() != null && catalog.getNames().getDestsNameTree() != null) {
-
-                NameTree nameTree = catalog.getNames().getDestsNameTree();
-                ArrayList<Destination> destinations = nameTree.findDestinations(currentPage.getPObjectReference());
-
-                if (destinations != null && destinations.size() > 0) {
-                    Graphics2D gg2 = (Graphics2D) g;
-                    // save draw state.
-                    AffineTransform prePaintTransform = gg2.getTransform();
-                    Color oldColor = gg2.getColor();
-                    Stroke oldStroke = gg2.getStroke();
-                    // apply page transform.
-                    AffineTransform at = currentPage.getPageTransform(
-                            documentViewModel.getPageBoundary(),
-                            documentViewModel.getViewRotation(),
-                            documentViewModel.getViewZoom());
-                    gg2.transform(at);
-
-                    gg2.setStroke(new BasicStroke(1f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_MITER));
-                    // paint destination
-                    for (Destination dest : destinations) {
-                        if (dest.getLeft() != null && dest.getTop() != null) {
-                            int x = dest.getLeft().intValue();
-                            int y = dest.getTop().intValue();
-                            int dim = 24;
-                            int xBack = x - (dim / 3);
-                            int yBack = y + (dim / 2);
-                            gg2.setColor(Color.GRAY);
-                            gg2.drawLine(x, y, xBack, yBack);
-                            gg2.setColor(Color.RED);
-                            gg2.fillOval(xBack - 5, yBack - 5, 10, 10);
-                            gg2.setColor(Color.WHITE);
-                            gg2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.30f));
-                            gg2.fillOval(xBack - 3, yBack - 1, 4, 4);
-                            gg2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
-                        }
+            if (destinationComponents != null && destinationComponents.size() > 0) {
+                Graphics2D g2d = (Graphics2D) g;
+                // save draw state.
+                AffineTransform prePaintTransform = g2d.getTransform();
+                Color oldColor = g2d.getColor();
+                Stroke oldStroke = g2d.getStroke();
+                // apply page transform.
+                AffineTransform at = currentPage.getPageTransform(
+                        documentViewModel.getPageBoundary(),
+                        documentViewModel.getViewRotation(),
+                        documentViewModel.getViewZoom());
+                g2d.transform(at);
+                g2d.setStroke(new BasicStroke(1f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_MITER));
+                DestinationComponent destinationComponent;
+                Destination dest;
+                for (int i = 0; i < destinationComponents.size(); i++) {
+                    destinationComponent = destinationComponents.get(i);
+                    dest = destinationComponent.getDestination();
+                    if (dest.getLeft() != null && dest.getTop() != null) {
+                        DestinationComponent.paintDestination(dest, g2d);
                     }
-                    // post paint clean up.
-                    gg2.setColor(oldColor);
-                    gg2.setStroke(oldStroke);
-                    gg2.setTransform(prePaintTransform);
                 }
+                // post paint clean up.
+                g2d.setColor(oldColor);
+                g2d.setStroke(oldStroke);
+                g2d.setTransform(prePaintTransform);
             }
-
         }
     }
 
@@ -376,6 +370,11 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                 PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE.equals(propertyConstant)) {
             if (annotationComponents != null) {
                 for (AbstractAnnotationComponent comp : annotationComponents) {
+                    comp.validate();
+                }
+            }
+            if (destinationComponents != null) {
+                for (DestinationComponent comp : destinationComponents) {
                     comp.validate();
                 }
             }
@@ -428,8 +427,15 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         }
     }
 
+    public void removeDestination(DestinationComponent destinationComponent) {
+        destinationComponents.remove(destinationComponent);
+        this.remove(destinationComponent);
+    }
+
+
     public void pageInitializedCallback(Page page) {
         refreshAnnotationComponents(page);
+        refreshDestinationComponents(page);
     }
 
     public void pageTeardownCallback() {
@@ -438,6 +444,21 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
             // callback on the awt thread so we don't try and paint something we just removed
             annotationComponents = null;
         });
+    }
+
+    public void refreshDestinationComponents(Page page) {
+        refreshDestinationComponents(page, true);
+    }
+
+    public void refreshDestinationComponents(Page page, boolean invokeLater) {
+        if (page != null) {
+            if (invokeLater) {
+                final Page finalPage = page;
+                SwingUtilities.invokeLater(() -> initializeDestinationComponents(finalPage));
+            } else {
+                initializeDestinationComponents(page);
+            }
+        }
     }
 
     public void refreshAnnotationComponents(Page page) {
@@ -503,6 +524,29 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                             comp.repaint();
                         }
 
+                    }
+                }
+            }
+        }
+    }
+
+    private void initializeDestinationComponents(Page page) {
+        if (page != null) {
+            // make sure we have a name tree to try and paint
+            Catalog catalog = documentViewController.getDocument().getCatalog();
+            if (catalog.getNames() != null && catalog.getNames().getDestsNameTree() != null) {
+                NameTree nameTree = catalog.getNames().getDestsNameTree();
+                ArrayList<Destination> destinations = nameTree.findDestinations(page.getPObjectReference());
+                AbstractPageViewComponent parent = this;
+                if (destinations != null && destinations.size() > 0) {
+                    destinationComponents = new ArrayList<>(destinations.size());
+                    // create the destination
+                    for (Destination dest : destinations) {
+                        DestinationComponent comp = new DestinationComponent(dest, documentViewController, this);
+                        parent.add(comp, JLayeredPane.PALETTE_LAYER);
+                        destinationComponents.add(comp);
+                        comp.revalidate();
+                        comp.repaint();
                     }
                 }
             }

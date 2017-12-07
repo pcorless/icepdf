@@ -1608,6 +1608,11 @@ public class SwingViewBuilder {
                 PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_LINK_ENABLED)) {
             addToToolBar(toolbar, buildLinkAnnotationPropertiesToolButton(iconSize));
         }
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_ANNOTATION_EDITING_MODE_ENABLED)) {
+            toolbar.addSeparator();
+            addToToolBar(toolbar, buildAnnotationEditingModeToolButton(iconSize));
+        }
         return toolbar;
     }
 
@@ -1783,6 +1788,16 @@ public class SwingViewBuilder {
                 "link_annot", imageSize, buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setLinkAnnotationPropertiesToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildAnnotationEditingModeToolButton(final String imageSize) {
+        JToggleButton btn = makeToolbarToggleButtonSmall(
+                messageBundle.getString("viewer.toolbar.tool.annotationEditingMode.label"),
+                messageBundle.getString("viewer.toolbar.tool.annotationEditingMode.tooltip"),
+                "annot_tools", imageSize, buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setAnnotationEditingModeToolButton(btn);
         return btn;
     }
 

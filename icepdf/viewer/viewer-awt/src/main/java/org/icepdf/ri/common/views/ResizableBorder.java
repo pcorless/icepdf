@@ -112,7 +112,7 @@ public class ResizableBorder extends AbstractBorder {
 
     public void paintBorder(Component component, Graphics g, int x, int y,
                             int w, int h) {
-        boolean isSelected = false;
+        boolean isSelected = true;
         boolean isBorderStyle = false;
 
         boolean isEditable = false;
@@ -122,8 +122,8 @@ public class ResizableBorder extends AbstractBorder {
         boolean isShowInvisibleBorder = false;
 
         // get render flags from component.
-        if (component instanceof AnnotationComponent) {
-            AnnotationComponent annot = (AnnotationComponent) component;
+        if (component instanceof ResizeableComponent) {
+            ResizeableComponent annot = (ResizeableComponent) component;
             isSelected = annot.isSelected();
             isBorderStyle = annot.isBorderStyle();
 
@@ -197,12 +197,12 @@ public class ResizableBorder extends AbstractBorder {
     public int getCursor(MouseEvent me) {
         Component c = me.getComponent();
         boolean isEditable = false;
-        boolean isMovable = false;
+        boolean isMovable = true;
         boolean isResizable = false;
 
         // get render flags from component.
-        if (c instanceof AnnotationComponent) {
-            AnnotationComponent annot = (AnnotationComponent) c;
+        if (c instanceof ResizeableComponent) {
+            ResizeableComponent annot = (ResizeableComponent) c;
             isEditable = annot.isEditable();
             isResizable = annot.isResizable();
             isMovable = annot.isMovable();
@@ -212,7 +212,7 @@ public class ResizableBorder extends AbstractBorder {
         int h = c.getHeight();
 
         // show resize cursors for link annotations
-        if (isResizable) {
+        if (isEditable && isResizable) {
             for (int i = 0; i < locations.length; i++) {
                 Rectangle rect = getRectangle(0, 0, w, h, locations[i]);
                 if (rect != null && rect.contains(me.getPoint()))
