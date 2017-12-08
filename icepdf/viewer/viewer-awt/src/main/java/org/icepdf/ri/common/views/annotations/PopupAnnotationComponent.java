@@ -23,6 +23,7 @@ import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
+import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.tools.TextAnnotationHandler;
 import org.icepdf.ri.common.utility.annotation.properties.FreeTextAnnotationPanel;
 import org.icepdf.ri.common.views.*;
@@ -600,6 +601,9 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                         documentViewController.getDocument().getPageTree().getLibrary(),
                         selectedMarkupAnnotation.getUserSpaceRectangle().getBounds(),
                         getToPageSpaceTransform());
+        // set the private contents flag.
+        ViewModel viewModel = documentViewController.getParentController().getViewModel();
+        markupAnnotation.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, !viewModel.getAnnotationPrivacy());
         markupAnnotation.setTitleText(title);
         markupAnnotation.setContents(content);
         markupAnnotation.setState(state);

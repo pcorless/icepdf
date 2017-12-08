@@ -173,6 +173,7 @@ public class PropertiesManager {
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_INK = "application.toolbar.annotation.ink.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_FREE_TEXT = "application.toolbar.annotation.freetext.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_TEXT = "application.toolbar.annotation.text.enabled";
+    public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_PERMISSION = "application.toolbar.annotation.permission.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_UTILITY = "application.toolbar.annotation.toolbar.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_PREVIEW = "application.toolbar.annotation.preview.enabled";
     // Individual control of the markup annotation context menu
@@ -244,6 +245,9 @@ public class PropertiesManager {
     // annotation summary panel font size and name.
     public static final String PROPERTY_ANNOTATION_SUMMARY_FONT_NAME = "application.viewer.annotation.summary.font.name";
     public static final String PROPERTY_ANNOTATION_SUMMARY_FONT_SIZE = "application.viewer.annotation.summary.font.size";
+
+    // stored state of last used public/private annotation flag.
+    public static final String PROPERTY_ANNOTATION_LAST_USED_PUBLIC_FLAG = "application.viewer.annotation.public.flag";
 
     private static PropertiesManager propertiesManager;
 

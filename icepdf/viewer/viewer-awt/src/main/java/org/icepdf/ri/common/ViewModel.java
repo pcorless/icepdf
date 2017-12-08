@@ -45,6 +45,8 @@ public class ViewModel {
     private boolean isWidgetAnnotationHighlight;
     private boolean isAnnotationEditingMode;
 
+    private boolean annotationPrivacyPublic;
+
     public static File getDefaultFile() {
         return defaultFile;
     }
@@ -160,5 +162,23 @@ public class ViewModel {
      */
     public void setIsAnnotationEditingMode(boolean isAnnotationEditingMode) {
         this.isAnnotationEditingMode = isAnnotationEditingMode;
+    }
+
+    /**
+     * Gets the annotation privacy flag value.
+     *
+     * @return true indicates a public annotation and false a private annotation state.
+     */
+    public boolean getAnnotationPrivacy() {
+        return annotationPrivacyPublic;
+    }
+
+    /**
+     * Sets the annotation privacy flag value
+     *
+     * @param annotationPrivacyPublic true for public, false for private.
+     */
+    public void setAnnotationPrivacy(boolean annotationPrivacyPublic) {
+        this.annotationPrivacyPublic = annotationPrivacyPublic;
     }
 }

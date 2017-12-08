@@ -1415,6 +1415,19 @@ public class SwingViewBuilder {
         return btn;
     }
 
+    public JComboBox buildAnnotationPermissionCombBox() {
+        JComboBox<String> tmp = new JComboBox<>();
+        tmp.setToolTipText(messageBundle.getString(
+                "viewer.utilityPane.markupAnnotation.view.publicToggleButton.tooltip.label"));
+        tmp.setPreferredSize(new Dimension(65, iconSize.equals(Images.SIZE_LARGE) ? 32 : 24));
+        tmp.addItem(messageBundle.getString("viewer.utilityPane.markupAnnotation.view.publicToggleButton.label"));
+        tmp.addItem(messageBundle.getString("viewer.utilityPane.markupAnnotation.view.privateToggleButton.label"));
+        tmp.setEditable(true);
+        if (viewerController != null)
+            viewerController.setAnnotationPermissionComboBox(tmp);
+        return tmp;
+    }
+
     public JToolBar buildFitToolBar() {
         JToolBar toolbar = new JToolBar();
         commonToolBarSetup(toolbar, false);
@@ -1552,6 +1565,10 @@ public class SwingViewBuilder {
         if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_TEXT)) {
             addToToolBar(toolbar, buildTextAnnotationToolButton(iconSize));
+        }
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_PERMISSION)) {
+            addToToolBar(toolbar, buildAnnotationPermissionCombBox());
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_UTILITY)) {

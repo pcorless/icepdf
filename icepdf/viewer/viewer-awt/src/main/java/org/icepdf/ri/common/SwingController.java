@@ -181,6 +181,7 @@ public class SwingController extends ComponentAdapter
     private JButton zoomInButton;
     private JButton zoomOutButton;
     private JComboBox zoomComboBox;
+    private JComboBox annotationPrivacyComboBox;
     private JToggleButton fitActualSizeButton;
     private JToggleButton fitHeightButton;
     private JToggleButton fitWidthButton;
@@ -949,6 +950,11 @@ public class SwingController extends ComponentAdapter
         btn.addActionListener(this);
     }
 
+    public void setAnnotationPermissionComboBox(JComboBox zcb) {
+        annotationPrivacyComboBox = zcb;
+        zcb.addItemListener(this);
+    }
+
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
      *
@@ -1603,6 +1609,7 @@ public class SwingController extends ComponentAdapter
         setEnabled(circleAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
         setEnabled(inkAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
         setEnabled(freeTextAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
+        setEnabled(annotationPrivacyComboBox, opened && !pdfCollection);
         setEnabled(textAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
         setEnabled(formHighlightButton, opened && !pdfCollection && hasForms());
         setEnabled(fontEngineButton, opened && !pdfCollection);
@@ -1618,6 +1625,7 @@ public class SwingController extends ComponentAdapter
             reflectToolInToolButtons();
             reflectFormHighlightButtons();
             reflectAnnotationEditModeButtons();
+            reflectAnnotationDefaultPrivacy();
         }
     }
 
@@ -1796,6 +1804,27 @@ public class SwingController extends ComponentAdapter
 
     private boolean reflectingZoomInZoomComboBox = false;
 
+    private void setAnnotationPrivacy(boolean isPublic) {
+        // store the value in the view model
+        viewModel.setAnnotationPrivacy(isPublic);
+
+        // and save the value to backing store.
+        Preferences preferences = PropertiesManager.getInstance().getPreferences();
+        preferences.putBoolean(PropertiesManager.PROPERTY_ANNOTATION_LAST_USED_PUBLIC_FLAG, isPublic);
+    }
+
+    private void reflectAnnotationDefaultPrivacy() {
+        // check properties to get last state.
+        Preferences preferences = PropertiesManager.getInstance().getPreferences();
+        boolean annotationPrivacy = preferences.getBoolean(
+                PropertiesManager.PROPERTY_ANNOTATION_LAST_USED_PUBLIC_FLAG, true);
+
+        // store the current state in the model and annotation tool handlers will pull from the current state.
+        viewModel.setAnnotationPrivacy(annotationPrivacy);
+
+        // set the default value of the combo box.
+        annotationPrivacyComboBox.setSelectedIndex(annotationPrivacy ? 0 : 1);
+    }
 
     /**
      * Gets the current display tool value for the display panel.
@@ -3102,6 +3131,10 @@ public class SwingController extends ComponentAdapter
             zoomComboBox.removeItemListener(this);
             zoomComboBox = null;
         }
+        if (annotationPrivacyComboBox != null) {
+            annotationPrivacyComboBox.removeActionListener(this);
+            annotationPrivacyComboBox = null;
+        }
 
         fitActualSizeButton = null;
         fitHeightButton = null;
@@ -4394,14 +4427,14 @@ public class SwingController extends ComponentAdapter
         }
 
         // Hide the menubar?
-        if ((viewerPref != null) && (viewerPref.hasHideMenubar())) {
+        if (viewerPref != null && viewerPref.hasHideMenubar()) {
             if (viewerPref.getHideMenubar()) {
                 if ((viewer != null) && (viewer.getJMenuBar() != null)) {
                     viewer.getJMenuBar().setVisible(false);
                 }
             }
         } else {
-            if ((viewer != null) && (viewer.getJMenuBar() != null)) {
+            if (viewer != null && viewer.getJMenuBar() != null) {
                 viewer.getJMenuBar().setVisible(
                         !propertiesManager.checkAndStoreBooleanProperty(
                                 PropertiesManager.PROPERTY_VIEWPREF_HIDEMENUBAR,
@@ -4410,19 +4443,16 @@ public class SwingController extends ComponentAdapter
         }
 
         // Fit the GUI frame to the size of the document?
-        if ((viewerPref != null) && (viewerPref.hasFitWindow())) {
+        if (viewerPref != null && viewerPref.hasFitWindow()) {
             if (viewerPref.getFitWindow()) {
                 if (viewer != null) {
-                    viewer.setSize(
-                            documentViewController.getDocumentView().getDocumentSize());
+                    viewer.setSize(documentViewController.getDocumentView().getDocumentSize());
                 }
             }
         } else {
-            if ((propertiesManager.checkAndStoreBooleanProperty(
-                    PropertiesManager.PROPERTY_VIEWPREF_FITWINDOW, false)) &&
-                    (viewer != null)) {
-                viewer.setSize(
-                        documentViewController.getDocumentView().getDocumentSize());
+            if (propertiesManager.checkAndStoreBooleanProperty(
+                    PropertiesManager.PROPERTY_VIEWPREF_FITWINDOW, false) && viewer != null) {
+                viewer.setSize(documentViewController.getDocumentView().getDocumentSize());
             }
         }
     }
@@ -4705,6 +4735,10 @@ public class SwingController extends ComponentAdapter
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setZoomFromZoomComboBox();
                     // Since combo box is an entry component, we don't force focus to the document
+                }
+            } else if (source == annotationPrivacyComboBox) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    setAnnotationPrivacy(annotationPrivacyComboBox.getSelectedIndex() == 0);
                 }
             } else if (source == fitActualSizeButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {

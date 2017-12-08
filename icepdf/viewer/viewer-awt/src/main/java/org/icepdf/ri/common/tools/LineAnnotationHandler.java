@@ -23,6 +23,7 @@ import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.LineAnnotation;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
+import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.AnnotationCallback;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -176,6 +177,11 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
                         documentViewController.getDocument().getPageTree().getLibrary(),
                         Annotation.SUBTYPE_LINE,
                         tBbox);
+
+        // set the private contents flag.
+        ViewModel viewModel = documentViewController.getParentController().getViewModel();
+        annotation.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, !viewModel.getAnnotationPrivacy());
+
         annotation.setStartArrow(startLineEnding);
         annotation.setEndArrow(endLineEnding);
         annotation.setStartOfLine(points[0]);

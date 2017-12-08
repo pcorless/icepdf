@@ -26,6 +26,7 @@ import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.Defs;
+import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
@@ -154,6 +155,9 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
                             documentViewModel.getDocument().getPageTree().getLibrary(),
                             highLightType,
                             tBbox);
+            // set the private contents flag.
+            ViewModel viewModel = documentViewController.getParentController().getViewModel();
+            annotation.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, !viewModel.getAnnotationPrivacy());
 
             // pass outline shapes and bounds to create the highlight shapes
             annotation.setContents(contents != null && enableHighlightContents ? contents : highLightType.toString());

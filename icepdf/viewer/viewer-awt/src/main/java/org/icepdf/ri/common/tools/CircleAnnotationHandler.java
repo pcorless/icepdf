@@ -21,6 +21,7 @@ import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.CircleAnnotation;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
+import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
@@ -180,6 +181,10 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
                         documentViewController.getDocument().getPageTree().getLibrary(),
                         Annotation.SUBTYPE_CIRCLE,
                         tBbox);
+
+        // set the private contents flag.
+        ViewModel viewModel = documentViewController.getParentController().getViewModel();
+        annotation.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, !viewModel.getAnnotationPrivacy());
 
         checkAndApplyPreferences();
         annotation.setCreationDate(PDate.formatDateTime(new Date()));

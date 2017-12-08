@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
+import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
@@ -110,6 +111,10 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
                         documentViewController.getDocument().getPageTree().getLibrary(),
                         Annotation.SUBTYPE_FREE_TEXT,
                         tBbox);
+        // set the private contents flag.
+        ViewModel viewModel = documentViewController.getParentController().getViewModel();
+        annotation.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, !viewModel.getAnnotationPrivacy());
+
         annotation.setCreationDate(PDate.formatDateTime(new Date()));
         annotation.setTitleText(System.getProperty("user.name"));
         annotation.setContents("");

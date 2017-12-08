@@ -23,6 +23,7 @@ import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
+import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
@@ -139,6 +140,10 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
 
         // setup some default state
         checkAndApplyPreferences();
+
+        // set the private contents flag.
+        ViewModel viewModel = documentViewController.getParentController().getViewModel();
+        textAnnotation.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, !viewModel.getAnnotationPrivacy());
 
         textAnnotation.setIconName(new Name(defaultIcon));
         textAnnotation.setColor(defaultFillColor);
