@@ -1823,7 +1823,9 @@ public class SwingController extends ComponentAdapter
         viewModel.setAnnotationPrivacy(annotationPrivacy);
 
         // set the default value of the combo box.
-        annotationPrivacyComboBox.setSelectedIndex(annotationPrivacy ? 0 : 1);
+        if (annotationPrivacyComboBox != null) {
+            annotationPrivacyComboBox.setSelectedIndex(annotationPrivacy ? 0 : 1);
+        }
     }
 
     /**
