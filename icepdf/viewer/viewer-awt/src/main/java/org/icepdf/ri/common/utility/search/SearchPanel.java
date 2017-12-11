@@ -385,14 +385,15 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                         // move the cursor so we can easily show hits on the page with f3
                         controller.getDocumentSearchController().setCurrentPage(pageIndex);
                         // find the word in the current pageText, object may be stale.
-                        wordText = pageText.find(wordText);
                         if (wordText != null) {
-                            wordText.setHasHighlightCursor(true);
-                            wordText.setHighlightCursor(true);
-                            // update the selection model.
-                            DocumentSearchController searchController =
-                                    controller.getDocumentSearchController();
-                            searchController.setCurrentSearchHit(pageIndex, wordText);
+                            wordText = pageText.find(wordText);
+                            if (wordText != null) {
+                                wordText.setHasHighlightCursor(true);
+                                wordText.setHighlightCursor(true);
+                                // update the selection model.
+                                DocumentSearchController searchController = controller.getDocumentSearchController();
+                                searchController.setCurrentSearchHit(pageIndex, wordText);
+                            }
                         }
                     } catch (Throwable e1) {
                         logger.finer("Page text retrieval interrupted.");

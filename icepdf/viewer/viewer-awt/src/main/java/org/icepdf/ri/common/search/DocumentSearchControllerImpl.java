@@ -169,7 +169,8 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                         if (wordString.length() == 1) {
                             char c = wordString.charAt(0);
                             if (WordText.isWhiteSpace(c)) {
-//                                searchPhraseHits.add(word);
+                                // show the space as highlighted
+                                searchPhraseHits.add(word);
                                 continue;
                             }
                         }
@@ -491,7 +492,13 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                             for (int j = searchWordCursor, maxj = words.size(); j < maxj; j++) {
                                 word = words.get(j);
                                 if (word.isHighlighted()) {
-                                    word.setHighlightCursor(true);
+                                    // highlight the rest of the words
+                                    for (; j < maxj; j++) {
+                                        if (!word.isHighlighted()) {
+                                            break;
+                                        }
+                                        words.get(j).setHighlightCursor(true);
+                                    }
                                     searchModel.setSearchPageCursor(i);
                                     searchModel.setSearchLineCursor(k);
                                     searchModel.setSearchWordCursor(j);
@@ -518,7 +525,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * Navigate tot he page that the current word is on.
      *
      * @param pageIndex page number to navigate to
-     * @param word       word that has been marked as a cursor.
+     * @param word      word that has been marked as a cursor.
      */
     public void showWord(int pageIndex, WordText word) {
         viewerController.showPage(pageIndex);
@@ -561,7 +568,13 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                                 for (int j = searchWordCursor; j >= 0; j--) {
                                     word = words.get(j);
                                     if (word.isHighlighted()) {
-                                        word.setHighlightCursor(true);
+                                        // highlight the rest of the words
+                                        for (; j >= 0; j--) {
+                                            if (!word.isHighlighted()) {
+                                                break;
+                                            }
+                                            words.get(j).setHighlightCursor(true);
+                                        }
                                         searchModel.setSearchPageCursor(i);
                                         searchModel.setSearchLineCursor(k);
                                         searchModel.setSearchWordCursor(j);
@@ -644,7 +657,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * @param pageIndex page indext to clear
      */
     public void clearSearchHighlight(int pageIndex) {
-        // clear cache and terms list 
+        // clear cache and terms list
         searchModel.clearSearchResults(pageIndex);
     }
 
@@ -714,7 +727,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     protected ArrayList<String> searchPhraseParser(String phrase) {
         // trim white space, not really useful.
         phrase = phrase.trim();
-        // found words. 
+        // found words.
         ArrayList<String> words = new ArrayList<>();
         char c;
         char cPrev = 0;

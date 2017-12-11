@@ -1580,7 +1580,7 @@ public class Page extends Dictionary {
 
         /*
           Finally iterate through the contents vector and concat all of the
-          the resouse streams together so that the contant parser can
+          the resource streams together so that the content parser can
           go to town and build all of the pages shapes.
          */
         if (contents == null) {

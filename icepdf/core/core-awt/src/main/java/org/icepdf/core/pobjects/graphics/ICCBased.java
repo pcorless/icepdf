@@ -36,6 +36,8 @@ public class ICCBased extends PColorSpace {
     private static final Logger logger =
             Logger.getLogger(ICCBased.class.toString());
 
+    private static final Object lock = new Object();
+
     public static final Name ICCBASED_KEY = new Name("ICCBased");
     public static final Name N_KEY = new Name("N");
 
@@ -75,27 +77,28 @@ public class ICCBased extends PColorSpace {
     /**
      *
      */
-    public synchronized void init() {
+    public void init() {
         if (inited) {
             return;
         }
-
-        byte[] in;
-        try {
-            stream.init();
-            in = stream.getDecodedStreamBytes(0);
-            if (logger.isLoggable(Level.FINEST)) {
-                String content = Utils.convertByteArrayToByteString(in);
-                logger.finest("Content = " + content);
+        synchronized (lock) {
+            byte[] in;
+            try {
+                stream.init();
+                in = stream.getDecodedStreamBytes(0);
+                if (logger.isLoggable(Level.FINEST)) {
+                    String content = Utils.convertByteArrayToByteString(in);
+                    logger.finest("Content = " + content);
+                }
+                if (in != null) {
+                    ICC_Profile profile = ICC_Profile.getInstance(in);
+                    colorSpace = new ICC_ColorSpace(profile);
+                }
+            } catch (Exception e) {
+                logger.log(Level.FINE, "Error Processing ICCBased Colour Profile", e);
             }
-            if (in != null) {
-                ICC_Profile profile = ICC_Profile.getInstance(in);
-                colorSpace = new ICC_ColorSpace(profile);
-            }
-        } catch (Exception e) {
-            logger.log(Level.FINE, "Error Processing ICCBased Colour Profile", e);
+            inited = true;
         }
-        inited = true;
     }
 
     /**
@@ -144,18 +147,20 @@ public class ICCBased extends PColorSpace {
 
     public Color getColor(float[] f, boolean fillAndStroke) {
         init();
-        if (colorSpace != null && !failed) {
-            try {
-                // generate a key for the colour
-                int key = generateKey(f);
-                if (f.length <= 3) {
-                    return addColorToCache(iccColorCache3B, key, colorSpace, f);
-                } else {
-                    return addColorToCache(iccColorCache4B, key, colorSpace, f);
+        synchronized (lock) {
+            if (colorSpace != null && !failed) {
+                try {
+                    // generate a key for the colour
+                    int key = generateKey(f);
+                    if (f.length <= 3) {
+                        return addColorToCache(iccColorCache3B, key, colorSpace, f);
+                    } else {
+                        return addColorToCache(iccColorCache4B, key, colorSpace, f);
+                    }
+                } catch (Exception e) {
+                    logger.log(Level.FINE, "Error getting ICCBased colour", e);
+                    failed = true;
                 }
-            } catch (Exception e) {
-                logger.log(Level.FINE, "Error getting ICCBased colour", e);
-                failed = true;
             }
         }
         return alternate.getColor(f);

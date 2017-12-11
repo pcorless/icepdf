@@ -305,11 +305,15 @@ public class PageText implements TextSelect {
     }
 
     public void clearHighlightedCursor() {
-        for (LineText lineText : pageLines) {
-            lineText.clearHighlightedCursor();
+        if (pageLines != null) {
+            for (LineText lineText : pageLines) {
+                lineText.clearHighlightedCursor();
+            }
         }
-        for (LineText lineText : sortedPageLines) {
-            lineText.clearHighlightedCursor();
+        if (sortedPageLines != null) {
+            for (LineText lineText : sortedPageLines) {
+                lineText.clearHighlightedCursor();
+            }
         }
         // check optional content.
         if (optionalPageLines != null) {
