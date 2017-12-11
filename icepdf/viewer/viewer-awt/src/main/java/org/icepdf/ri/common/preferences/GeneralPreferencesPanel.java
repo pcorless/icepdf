@@ -18,14 +18,18 @@ package org.icepdf.ri.common.preferences;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.ri.common.ColorChooserButton;
 import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.utility.annotation.properties.ValueLabelItem;
 import org.icepdf.ri.common.views.AbstractDocumentView;
 import org.icepdf.ri.common.views.PageViewDecorator;
+import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ResourceBundle;
@@ -36,7 +40,7 @@ import java.util.prefs.Preferences;
  *
  * @since 6.3
  */
-public class GeneralPreferencesPanel extends JPanel implements PropertyChangeListener {
+public class GeneralPreferencesPanel extends JPanel implements PropertyChangeListener, ItemListener {
 
     // layouts constraint
     private GridBagConstraints constraints;
@@ -50,6 +54,8 @@ public class GeneralPreferencesPanel extends JPanel implements PropertyChangeLis
     private ColorChooserButton paperColorChooserButton;
     private ColorChooserButton paperBorderColorChooserButton;
     private ColorChooserButton viewBackgroundColorChooserButton;
+
+    private JComboBox<ValueLabelItem> iconSizeComboBox;
 
     public GeneralPreferencesPanel(SwingController controller, PropertiesManager propertiesManager,
                                    ResourceBundle messageBundle) {
@@ -167,10 +173,48 @@ public class GeneralPreferencesPanel extends JPanel implements PropertyChangeLis
         constraints.insets = new Insets(5, 5, 5, 5);
         addGB(this, pageViewPreferences, 0, 1, 1, 1);
 
+        // tool bar settings.
+        JPanel toolbarPreferences = new JPanel(new GridBagLayout());
+        generalPreferences.setAlignmentY(JPanel.TOP_ALIGNMENT);
+
+        toolbarPreferences.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
+                messageBundle.getString("viewer.dialog.viewerPreferences.section.general.iconSize.border.label"),
+                TitledBorder.LEFT,
+                TitledBorder.DEFAULT_POSITION));
+
+        ValueLabelItem[] sizeList = new ValueLabelItem[]{
+                new ValueLabelItem(Boolean.TRUE,
+                        messageBundle.getString("viewer.dialog.viewerPreferences.section.general.iconSize.small.label")),
+                new ValueLabelItem(Boolean.FALSE,
+                        messageBundle.getString("viewer.dialog.viewerPreferences.section.general.iconSize.large.label"))};
+        iconSizeComboBox = new JComboBox<>(sizeList);
+        iconSizeComboBox.setSelectedIndex(
+                preferences.get(PropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_SMALL).equals(Images.SIZE_SMALL)
+                        ? 0 : 1);
+        iconSizeComboBox.addItemListener(this);
+        constraints.anchor = GridBagConstraints.WEST;
+        addGB(toolbarPreferences, new JLabel(
+                        messageBundle.getString("viewer.dialog.viewerPreferences.section.general.iconSize.label")),
+                0, 0, 1, 1);
+        constraints.anchor = GridBagConstraints.EAST;
+        constraints.fill = GridBagConstraints.NONE;
+        addGB(toolbarPreferences, iconSizeComboBox, 1, 0, 1, 1);
+        constraints.anchor = GridBagConstraints.NORTH;
+        constraints.fill = GridBagConstraints.BOTH;
+        constraints.insets = new Insets(5, 5, 5, 5);
+        addGB(this, toolbarPreferences, 0, 2, 1, 1);
+
         // little spacer
         constraints.weighty = 1.0;
-        addGB(this, new Label(" "), 0, 2, 1, 1);
+        addGB(this, new Label(" "), 0, 3, 1, 1);
+    }
 
+    public void itemStateChanged(ItemEvent e) {
+        Object source = e.getItemSelectable();
+        if (source == iconSizeComboBox) {
+            preferences.put(PropertiesManager.PROPERTY_ICON_DEFAULT_SIZE,
+                    iconSizeComboBox.getSelectedIndex() == 0 ? Images.SIZE_SMALL : Images.SIZE_LARGE);
+        }
     }
 
     @Override
@@ -191,6 +235,9 @@ public class GeneralPreferencesPanel extends JPanel implements PropertyChangeLis
         } else if (source == paperBorderColorChooserButton) {
             PageViewDecorator.pageBorderColor = paperBorderColorChooserButton.getBackground();
             preferences.putInt(PropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, PageViewDecorator.pageBorderColor.getRGB());
+        } else if (source == viewBackgroundColorChooserButton) {
+            AbstractDocumentView.backgroundColour = viewBackgroundColorChooserButton.getBackground();
+            preferences.putInt(PropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, AbstractDocumentView.backgroundColour.getRGB());
         } else if (source == viewBackgroundColorChooserButton) {
             AbstractDocumentView.backgroundColour = viewBackgroundColorChooserButton.getBackground();
             preferences.putInt(PropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, AbstractDocumentView.backgroundColour.getRGB());
