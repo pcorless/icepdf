@@ -90,14 +90,21 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
 
     }
 
-    public void mouseReleased(MouseEvent e) {
-        updateSelectionSize(e.getX(), e.getY(), pageViewComponent);
+    public void createFreeTextAnnotation(int x, int y) {
+        createFreeTextAnnotation(x, y, true);
+    }
+
+    public void createFreeTextAnnotation(int x, int y, boolean setSelectionTool) {
+        updateSelectionSize(x, y, pageViewComponent);
 
         // use the mouse location as the start location.
         DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         float scale = documentViewModel.getViewZoom();
         int width = (int) (DEFAULT_WIDTH * scale);
         int height = (int) (DEFAULT_HEIGHT * scale);
+        if (rectToDraw == null) {
+            rectToDraw = new Rectangle(x, y, 1, 1);
+        }
         rectToDraw.setLocation(rectToDraw.x - INSETS, rectToDraw.y - height + INSETS * 2);
         rectToDraw.setSize(new Dimension(width, height));
 
@@ -138,13 +145,18 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
         documentViewController.addNewAnnotation(comp);
 
         // set the annotation tool to he select tool
-        if (preferences.getBoolean(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SELECTION_ENABLED, false)) {
+        if (setSelectionTool && preferences.getBoolean(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SELECTION_ENABLED, false)) {
             documentViewController.getParentController().setDocumentToolMode(DocumentViewModel.DISPLAY_TOOL_SELECTION);
         }
 
         // request focus so that editing can take place.
         ((FreeTextAnnotationComponent) comp).requestTextAreaFocus();
 
+    }
+
+
+    public void mouseReleased(MouseEvent e) {
+        createFreeTextAnnotation(e.getX(), e.getY());
     }
 
     protected void checkAndApplyPreferences() {
@@ -167,7 +179,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
         String fontName = preferences.get(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_FONT, "Helvetica");
         annotation.setFontName(fontName);
         // apply font size
-        int fontSize = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SIZE, 24);
+        int fontSize = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SIZE, FreeTextAnnotation.defaultFontSize);
         annotation.setFontSize(fontSize);
         // opacity
         int opacity = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_OPACITY, 255);

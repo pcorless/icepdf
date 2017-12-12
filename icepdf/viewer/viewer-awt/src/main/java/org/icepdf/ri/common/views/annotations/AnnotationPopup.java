@@ -42,6 +42,8 @@ public class AnnotationPopup<T extends AnnotationComponent> extends JPopupMenu i
     protected JMenuItem deleteMenuItem;
     protected JMenuItem destinationsMenuItem;
 
+    protected int x, y;
+
     protected T annotationComponent;
 
     protected PageViewComponentImpl pageViewComponent;
@@ -90,6 +92,8 @@ public class AnnotationPopup<T extends AnnotationComponent> extends JPopupMenu i
     @Override
     public void show(Component invoker, int x, int y) {
         setDeleteMenuItemEnabledState();
+        this.x = x;
+        this.y = y;
         super.show(invoker, x, y);
     }
 

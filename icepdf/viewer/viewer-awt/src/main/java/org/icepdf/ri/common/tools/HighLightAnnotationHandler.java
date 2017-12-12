@@ -100,7 +100,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
     public void mouseReleased(MouseEvent e) {
 
         // get the selection bounds
-        ArrayList<Shape> highlightBounds = getSelectedTextBounds();
+        ArrayList<Shape> highlightBounds = getSelectedTextBounds(pageViewComponent, getPageTransform());
 
         // clear the selection
         super.mouseReleased(e);
@@ -126,7 +126,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
 
         // get the geometric path of the selected text
         if (highlightBounds == null) {
-            highlightBounds = getSelectedTextBounds();
+            highlightBounds = getSelectedTextBounds(pageViewComponent, getPageTransform());
         }
         // grab the selected text
         String contents = enableHighlightContents && highlightBounds != null ? getSelectedText() : "";
@@ -228,15 +228,14 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
         return selectedText;
     }
 
-    private ArrayList<Shape> getSelectedTextBounds() {
+    public static ArrayList<Shape> getSelectedTextBounds(AbstractPageViewComponent pageViewComponent,
+                                                         AffineTransform pageTransform) {
         Page currentPage = pageViewComponent.getPage();
         ArrayList<Shape> highlightBounds = null;
         if (currentPage != null && currentPage.isInitiated()) {
             try {
                 PageText pageText = currentPage.getViewText();
                 if (pageText != null) {
-                    // get page transformation
-                    AffineTransform pageTransform = getPageTransform();
                     // paint the sprites
                     GeneralPath textPath;
                     ArrayList<LineText> pageLines = pageText.getPageLines();

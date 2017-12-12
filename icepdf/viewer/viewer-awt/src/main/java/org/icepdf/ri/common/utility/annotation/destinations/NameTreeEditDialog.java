@@ -61,6 +61,15 @@ public class NameTreeEditDialog extends EscapeJDialog implements ActionListener 
         setGui();
     }
 
+    public NameTreeEditDialog(Controller controller, Page page, String name, int x, int y) {
+        super(controller.getViewerFrame(), true);
+        this.controller = controller;
+        messageBundle = controller.getMessageBundle();
+        destination = new Destination(page, x, y);
+        this.name = name;
+        setGui();
+    }
+
     public NameTreeEditDialog(org.icepdf.ri.common.views.Controller controller, NameTreeNode treeNode) {
         super(controller.getViewerFrame(), true);
         this.controller = controller;

@@ -27,7 +27,9 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+import java.awt.geom.GeneralPath;
 import java.util.ArrayList;
+import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
 /**
@@ -95,15 +97,72 @@ public class TextSelectionViewHandler extends TextSelection
         } else if (e.getButton() == MouseEvent.BUTTON3) {
             // show context menu for adding selected text to the clipboard.
             boolean canExtract = documentViewController.getParentController().havePermissionToExtractContent();
-            if (canExtract && documentViewController.getSelectedText() != null) {
-                SwingController swingController = (SwingController) documentViewController.getParentController();
-                JPopupMenu contextMenu = new JPopupMenu();
-                JMenuItem copyMenuItem = new JMenuItem(swingController.getMessageBundle().getString("viewer.menu.edit.copy.label"));
-                contextMenu.add(copyMenuItem);
-                swingController.setCopyContextMenuItem(copyMenuItem);
+            if (canExtract && documentViewController.getSelectedText() != null &&
+                    !documentViewController.getSelectedText().isEmpty()) {
+                PageViewComponentImpl pageComponent = isOverPageComponent(parentComponent, e);
+                JPopupMenu contextMenu = buildContextMenu(pageComponent);
                 contextMenu.show(parentComponent, e.getX(), e.getY());
             }
         }
+    }
+
+    private Rectangle getSelectionBounds(PageViewComponentImpl pageComponent) {
+        ArrayList<Shape> highlightBounds = HighLightAnnotationHandler.getSelectedTextBounds(pageComponent,
+                getPageTransform(pageComponent));
+        GeneralPath highlightPath = new GeneralPath();
+        for (Shape bounds : highlightBounds) {
+            highlightPath.append(bounds, false);
+        }
+        // get the bounds before convert to page space
+        return highlightPath.getBounds();
+    }
+
+    protected JPopupMenu buildContextMenu(PageViewComponentImpl pageComponent) {
+        SwingController controller = (SwingController) documentViewController.getParentController();
+        boolean modifyDocument = controller.havePermissionToModifyDocument();
+        ResourceBundle messageBundle = controller.getMessageBundle();
+        JPopupMenu contextMenu = new JPopupMenu();
+        // copy command
+        JMenuItem copyMenuItem = new JMenuItem(controller.getMessageBundle().getString("viewer.menu.edit.copy.label"));
+        controller.setCopyContextMenuItem(copyMenuItem);
+        contextMenu.add(copyMenuItem);
+        contextMenu.addSeparator();
+        // destination
+        JMenuItem addDestinationMenuItem = new JMenuItem(
+                messageBundle.getString("viewer.utilityPane.view.selectionTool.contextMenu.add.label"));
+        addDestinationMenuItem.setEnabled(modifyDocument);
+        addDestinationMenuItem.addActionListener(e -> {
+            // grab the start of the text selection
+            Point point = getSelectionBounds(pageComponent).getLocation();
+            new DestinationHandler(controller.getDocumentViewController(),
+                    pageComponent).createNewDestination(
+                    controller.getDocumentViewController().getSelectedText(), point.x, point.y);
+        });
+        contextMenu.add(addDestinationMenuItem);
+        contextMenu.addSeparator();
+        // highlight
+        JMenuItem addHighlightMenuItem = new JMenuItem(
+                messageBundle.getString("viewer.annotation.popup.addAnnotation.hightlight.label"));
+        addHighlightMenuItem.setEnabled(modifyDocument);
+        addHighlightMenuItem.addActionListener(e ->
+                new HighLightAnnotationHandler(controller.getDocumentViewController(), pageComponent)
+                        .createTextMarkupAnnotation(null));
+        contextMenu.add(addHighlightMenuItem);
+        // underline
+        JMenuItem addUnderlineMenuItem = new JMenuItem(
+                messageBundle.getString("viewer.annotation.popup.addAnnotation.underline.label"));
+        addUnderlineMenuItem.setEnabled(modifyDocument);
+        addUnderlineMenuItem.addActionListener(e -> new UnderLineAnnotationHandler(controller.getDocumentViewController(), pageComponent)
+                .createTextMarkupAnnotation(null));
+        contextMenu.add(addUnderlineMenuItem);
+        // strikeout.
+        JMenuItem addStrikeOutMenuItem = new JMenuItem(
+                messageBundle.getString("viewer.annotation.popup.addAnnotation.strikeout.label"));
+        addStrikeOutMenuItem.setEnabled(modifyDocument);
+        addStrikeOutMenuItem.addActionListener(e -> new StrikeOutAnnotationHandler(controller.getDocumentViewController(), pageComponent)
+                .createTextMarkupAnnotation(null));
+        contextMenu.add(addStrikeOutMenuItem);
+        return contextMenu;
     }
 
     public void mouseReleased(MouseEvent e) {

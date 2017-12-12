@@ -15,12 +15,17 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
+import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
+import org.icepdf.ri.common.tools.DestinationHandler;
+import org.icepdf.ri.common.tools.FreeTextAnnotationHandler;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.Controller;
+import org.icepdf.ri.common.views.PageViewComponentImpl;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -48,6 +53,9 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
     // generic commands, open/minimize all
     protected JMenuItem openAllMenuItem;
     protected JMenuItem minimizeAllMenuItem;
+    // add/create annotation shortcuts
+    protected JMenuItem addDestinationMenuItem;
+    protected JMenuItem addFreeTextMenuItem;
 
     // delete root annotation and all child popup annotations.
     protected boolean deleteRoot;
@@ -64,15 +72,7 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
     public void buildGui() {
         PropertiesManager propertiesManager = PropertiesManager.getInstance();
         boolean modifyDocument = controller.havePermissionToModifyDocument();
-        if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_ANNOTATION_MARKUP_REPLY_TO)) {
-            replyMenuItem = new JMenuItem(
-                    messageBundle.getString("viewer.annotation.popup.reply.label"));
-            // build out reply and delete
-            replyMenuItem.addActionListener(this);
-            replyMenuItem.setEnabled(modifyDocument);
-            add(replyMenuItem);
-        }
+
         // status change commands.
         statusNoneMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.status.none.label"));
@@ -95,11 +95,38 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
         minimizeAllMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.minimizeAll.label"));
 
-        // build out delete
-        deleteMenuItem.addActionListener(this);
-        add(deleteMenuItem);
-        destinationsMenuItem.setEnabled(modifyDocument);
-        addSeparator();
+        // annotation and destination creation shortcuts.
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_SHOW_ANNOTATION_MARKUP_ADD_ANNOTATIONS)) {
+            // annotation creation menus.
+            addDestinationMenuItem = new JMenuItem(
+                    messageBundle.getString("viewer.utilityPane.view.selectionTool.contextMenu.add.label"));
+            addDestinationMenuItem.setEnabled(modifyDocument);
+            addDestinationMenuItem.addActionListener(this);
+            addFreeTextMenuItem = new JMenuItem(
+                    messageBundle.getString("viewer.annotation.popup.addAnnotation.freeText.label"));
+            addFreeTextMenuItem.setEnabled(modifyDocument);
+            // addition of set status menu
+            JMenu submenu = new JMenu(
+                    messageBundle.getString("viewer.annotation.popup.addAnnotation.label"));
+            addDestinationMenuItem.setEnabled(modifyDocument);
+            submenu.add(addDestinationMenuItem);
+            addFreeTextMenuItem.addActionListener(this);
+            submenu.addSeparator();
+            submenu.add(addFreeTextMenuItem);
+            add(submenu);
+            addSeparator();
+        }
+
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_SHOW_ANNOTATION_MARKUP_REPLY_TO)) {
+            replyMenuItem = new JMenuItem(
+                    messageBundle.getString("viewer.annotation.popup.reply.label"));
+            // build out reply and delete
+            replyMenuItem.addActionListener(this);
+            replyMenuItem.setEnabled(modifyDocument);
+            add(replyMenuItem);
+        }
 
         if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_ANNOTATION_MARKUP_SET_STATUS)) {
@@ -125,10 +152,13 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
         add(openAllMenuItem);
         minimizeAllMenuItem.addActionListener(this);
         add(minimizeAllMenuItem);
-        addSeparator();
+
+        // delete
         add(deleteMenuItem);
         deleteMenuItem.addActionListener(this);
         addSeparator();
+
+        // properties
         add(propertiesMenuItem);
         propertiesMenuItem.addActionListener(this);
     }
@@ -189,6 +219,16 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
             PopupAnnotationComponent popupAnnotationComponent = annotationComponent.getPopupAnnotationComponent();
             if (popupAnnotationComponent != null)
                 controller.showAnnotationProperties(popupAnnotationComponent.getAnnotationParentComponent());
+        } else if (source == addDestinationMenuItem) {
+            Point point = annotationComponent.getLocation();
+            pageViewComponent = (PageViewComponentImpl) annotationComponent.getPageViewComponent();
+            new DestinationHandler(controller.getDocumentViewController(),
+                    pageViewComponent).createNewDestination(
+                    annotationComponent.getAnnotation().getContents(), point.x, point.y);
+        } else if (source == addFreeTextMenuItem) {
+            Point point = annotationComponent.getLocation();
+            new FreeTextAnnotationHandler(controller.getDocumentViewController(), pageViewComponent)
+                    .createFreeTextAnnotation(point.x, point.y - FreeTextAnnotation.defaultFontSize, false);
         }
     }
 }

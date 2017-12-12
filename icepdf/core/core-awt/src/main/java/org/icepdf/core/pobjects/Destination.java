@@ -571,12 +571,8 @@ public class Destination extends Dictionary {
      * destination
      */
     public Object getEncodedDestination() {
-        // write out the destination name
-        if (namedDestination != null) {
-            return namedDestination;
-        }
         // build and return a fector of changed valued.
-        else if (object instanceof List) {
+        if (object instanceof List) {
             List<Object> v = new ArrayList<>(7);
             if (ref != null) {
                 v.add(ref);

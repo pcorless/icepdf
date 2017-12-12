@@ -178,6 +178,7 @@ public class PropertiesManager {
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_PREVIEW = "application.toolbar.annotation.preview.enabled";
     // Individual control of the markup annotation context menu
     public static final String PROPERTY_SHOW_ANNOTATION_MARKUP_REPLY_TO = "application.annotation.show.markup.replyTo";
+    public static final String PROPERTY_SHOW_ANNOTATION_MARKUP_ADD_ANNOTATIONS = "application.annotation.show.markup.addAnnotations";
     public static final String PROPERTY_SHOW_ANNOTATION_MARKUP_SET_STATUS = "application.annotation.show.markup.setStatus";
 
     // private/public annotation property, last used stored, default is true or public.

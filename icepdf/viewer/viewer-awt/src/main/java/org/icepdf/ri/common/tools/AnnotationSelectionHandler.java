@@ -15,7 +15,6 @@
  */
 package org.icepdf.ri.common.tools;
 
-import org.icepdf.ri.common.utility.annotation.destinations.NameTreeEditDialog;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 
@@ -41,6 +40,7 @@ public class AnnotationSelectionHandler extends CommonToolHandler
 
     private JPopupMenu contextMenu;
     private JMenuItem addMenuItem;
+    private JMenuItem freeTextMenuItem;
     private int x, y;
 
     public AnnotationSelectionHandler(DocumentViewController documentViewController,
@@ -51,10 +51,16 @@ public class AnnotationSelectionHandler extends CommonToolHandler
 
         ResourceBundle messageBundle = documentViewController.getParentController().getMessageBundle();
         contextMenu = new JPopupMenu();
+        // create destination menu item
         addMenuItem = new JMenuItem(messageBundle.getString(
-                "viewer.utilityPane.destinations.view.selectionTool.contextMenu.add.label"));
+                "viewer.utilityPane.view.selectionTool.contextMenu.add.label"));
         addMenuItem.addActionListener(this);
         contextMenu.add(addMenuItem);
+        // create free text menu item.
+        freeTextMenuItem = new JMenuItem(messageBundle.getString(
+                "viewer.utilityPane.view.selectionTool.contextMenu.addFreeText.label"));
+        freeTextMenuItem.addActionListener(this);
+        contextMenu.add(freeTextMenuItem);
     }
 
     public void mouseClicked(MouseEvent e) {
@@ -75,10 +81,9 @@ public class AnnotationSelectionHandler extends CommonToolHandler
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == addMenuItem) {
             // convert bbox and start and end line points.
-            Rectangle bBox = new Rectangle(x, y, 1, 1);
-            Rectangle tBbox = convertToPageSpace(bBox).getBounds();
-            new NameTreeEditDialog(documentViewController.getParentController(),
-                    pageViewComponent.getPage(), tBbox.x, tBbox.y).setVisible(true);
+            new DestinationHandler(documentViewController, pageViewComponent).createNewDestination(x, y);
+        } else if (e.getSource() == freeTextMenuItem) {
+            new FreeTextAnnotationHandler(documentViewController, pageViewComponent).createFreeTextAnnotation(x, y);
         }
     }
 
