@@ -115,7 +115,9 @@ public class FindMarkupAnnotationTask extends AbstractTask<FindMarkupAnnotationT
             final MarkupAnnotationPanel.SortColumn sortType,
             final MarkupAnnotationPanel.FilterSubTypeColumn filterType,
             final MarkupAnnotationPanel.FilterAuthorColumn filterAuthor,
-            final Color filterColor) {
+            final Color filterColor,
+            final boolean isRegex,
+            final boolean isCaseSensitive) {
         final SwingWorker worker = new SwingWorker() {
             public Object construct() {
                 current = 0;
@@ -123,7 +125,7 @@ public class FindMarkupAnnotationTask extends AbstractTask<FindMarkupAnnotationT
                 canceled = false;
                 taskStatusMessage = null;
                 return new FindMarkupAnnotationTask.ActualTask(
-                        searchPattern, sortType, filterType, filterAuthor, filterColor);
+                        searchPattern, sortType, filterType, filterAuthor, filterColor, isRegex, isCaseSensitive);
             }
         };
         worker.setThreadPriority(Thread.NORM_PRIORITY);
@@ -138,7 +140,9 @@ public class FindMarkupAnnotationTask extends AbstractTask<FindMarkupAnnotationT
                    MarkupAnnotationPanel.SortColumn sortType,
                    MarkupAnnotationPanel.FilterSubTypeColumn filterType,
                    MarkupAnnotationPanel.FilterAuthorColumn filterAuthor,
-                   Color filterColor) {
+                   Color filterColor,
+                   boolean isRegex,
+                   boolean isCaseSensitive) {
 
             taskRunning = true;
 
@@ -208,12 +212,19 @@ public class FindMarkupAnnotationTask extends AbstractTask<FindMarkupAnnotationT
                                                 }
                                             }
                                             // app search regex
-                                            if (searchPattern != null) {
+                                            if (isRegex && searchPattern != null) {
                                                 Matcher matcher = searchPattern.matcher(
                                                         ((MarkupAnnotation) annotation).getContents());
                                                 filter = !matcher.find();
+                                            } else if (searchPattern != null) {
+                                                String annotationText = ((MarkupAnnotation) annotation).getContents();
+                                                if (isCaseSensitive && annotationText != null) {
+                                                    filter = !annotationText.contains(searchPattern.pattern());
+                                                } else if (annotationText != null) {
+                                                    filter = !annotationText.toLowerCase().contains(
+                                                            searchPattern.pattern().toLowerCase());
+                                                }
                                             }
-
                                             // apply the filter flag
                                             if (!filter) {
                                                 markupAnnotations.add(markupAnnotation);

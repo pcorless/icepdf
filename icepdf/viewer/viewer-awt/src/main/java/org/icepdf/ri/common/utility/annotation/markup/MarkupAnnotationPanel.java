@@ -41,6 +41,9 @@ import java.util.prefs.Preferences;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import static org.icepdf.ri.util.PropertiesManager.PROPERTY_SEARCH_MARKUP_PANEL_CASE_SENSITIVE_ENABLED;
+import static org.icepdf.ri.util.PropertiesManager.PROPERTY_SEARCH_MARKUP_PANEL_REGEX_ENABLED;
+
 /**
  * MarkupAnnotationPanel allows users to easily search, sort, filter and view markup annotations and their popup
  * annotation children.  The view main purpose to make working with a large number of markup annotations as easy
@@ -85,6 +88,9 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
     private JTextField searchTextField;
     private JButton searchButton;
     private JButton clearSearchButton;
+
+    private JCheckBox regexCheckbox;
+    private JCheckBox caseSensitiveCheckbox;
 
     private DropDownButton filterDropDownButton;
     private JMenu colorFilterMenuItem;
@@ -299,6 +305,22 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
                 "viewer.utilityPane.markupAnnotation.search.clearButton.tooltip"));
         clearSearchButton.addActionListener(this);
 
+        preferences = controller.getPropertiesManager().getPreferences();
+        boolean isRegex = preferences.getBoolean(PROPERTY_SEARCH_MARKUP_PANEL_REGEX_ENABLED, true);
+        boolean isCaseSensitive = preferences.getBoolean(PROPERTY_SEARCH_MARKUP_PANEL_CASE_SENSITIVE_ENABLED, false);
+
+        regexCheckbox = new JCheckBox(messageBundle.getString(
+                "viewer.utilityPane.search.regexCheckbox.label"), isRegex);
+        regexCheckbox.addActionListener(this);
+        caseSensitiveCheckbox = new JCheckBox(messageBundle.getString(
+                "viewer.utilityPane.search.caseSenstiveCheckbox.label"), isCaseSensitive);
+        caseSensitiveCheckbox.addActionListener(this);
+
+        if (isRegex || isCaseSensitive) {
+            regexCheckbox.setEnabled(isRegex);
+            caseSensitiveCheckbox.setEnabled(isCaseSensitive);
+        }
+
         constraints.fill = GridBagConstraints.BOTH;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(0, 0, 0, 1);
@@ -311,6 +333,18 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         addGB(searchPanel, searchButton, 1, 0, 1, 1);
         constraints.weightx = 0.05;
         addGB(searchPanel, clearSearchButton, 2, 0, 1, 1);
+
+        // add case sensitive button
+        constraints.insets = new Insets(1, 1, 1, 5);
+        constraints.weightx = 1.0;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        // search configuration panel
+        JPanel searchConfigurationPanel = new JPanel(new GridBagLayout());
+        // add whole word checkbox
+        addGB(searchConfigurationPanel, regexCheckbox, 0, 0, 1, 1);
+        // add whole word checkbox
+        addGB(searchConfigurationPanel, caseSensitiveCheckbox, 1, 0, 1, 1);
+        addGB(searchPanel, searchConfigurationPanel, 0, 1, 3, 1);
 
         constraints.fill = GridBagConstraints.BOTH;
         constraints.weightx = 1.0;
@@ -505,7 +539,9 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
             // todo we can add search flags at a later date, via drop down on search or checkboxes.
         }
 
-        markupAnnotationHandlerPanel.sortAndFilterAnnotationData(searchPattern, sortType, filterType, filterAuthor, filterColor);
+        markupAnnotationHandlerPanel.sortAndFilterAnnotationData(
+                searchPattern, sortType, filterType, filterAuthor, filterColor,
+                regexCheckbox.isSelected(), caseSensitiveCheckbox.isSelected());
     }
 
     @Override
@@ -521,6 +557,12 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         } else if (source == clearSearchButton) {
             searchTextField.setText("");
             sortAndFilterAnnotationData();
+        } else if (source == regexCheckbox) {
+            caseSensitiveCheckbox.setEnabled(!regexCheckbox.isSelected());
+            preferences.putBoolean(PROPERTY_SEARCH_MARKUP_PANEL_REGEX_ENABLED, regexCheckbox.isSelected());
+        } else if (source == caseSensitiveCheckbox) {
+            regexCheckbox.setEnabled(!caseSensitiveCheckbox.isSelected());
+            preferences.putBoolean(PROPERTY_SEARCH_MARKUP_PANEL_CASE_SENSITIVE_ENABLED, caseSensitiveCheckbox.isSelected());
         }
     }
 

@@ -59,6 +59,8 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
     private MarkupAnnotationPanel.FilterSubTypeColumn filterType;
     private MarkupAnnotationPanel.FilterAuthorColumn filterAuthor;
     private Color filterColor;
+    private boolean isRegex;
+    private boolean isCaseSensitive;
 
     public MarkupAnnotationHandlerPanel(Controller controller, MarkupAnnotationPanel parentMarkupAnnotationPanel) {
         super(controller);
@@ -195,12 +197,16 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
     public void sortAndFilterAnnotationData(Pattern searchPattern, MarkupAnnotationPanel.SortColumn sortType,
                                             MarkupAnnotationPanel.FilterSubTypeColumn filterType,
                                             MarkupAnnotationPanel.FilterAuthorColumn filterAuthor,
-                                            Color filterColor) {
+                                            Color filterColor,
+                                            boolean isRegex,
+                                            boolean isCaseSensitive) {
         this.searchPattern = searchPattern;
         this.sortType = sortType;
         this.filterType = filterType;
         this.filterAuthor = filterAuthor;
         this.filterColor = filterColor;
+        this.isRegex = isRegex;
+        this.isCaseSensitive = isCaseSensitive;
 
         refreshMarkupTree();
     }
@@ -248,8 +254,12 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
                     workerTask = findMarkupAnnotationTask;
                     progressBar.setMaximum(findMarkupAnnotationTask.getLengthOfTask());
                     // start the task and the timer
-                    findMarkupAnnotationTask.getTask().startTask(searchPattern, sortType, filterType, filterAuthor, filterColor);
-                    timer.start();
+                    if (filterAuthor != null && sortType != null) {
+                        findMarkupAnnotationTask.getTask().startTask(
+                                searchPattern, sortType, filterType, filterAuthor, filterColor,
+                                isRegex, isCaseSensitive);
+                        timer.start();
+                    }
                 }
             }
         }
