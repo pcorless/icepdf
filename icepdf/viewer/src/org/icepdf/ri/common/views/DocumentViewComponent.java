@@ -17,6 +17,7 @@
 package org.icepdf.ri.common.views;
 
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.util.Library;
 import org.icepdf.ri.viewer.WindowManager;
