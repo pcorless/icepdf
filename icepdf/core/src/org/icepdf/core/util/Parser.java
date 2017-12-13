@@ -18,6 +18,7 @@ package org.icepdf.core.util;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.io.*;
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Font;
@@ -28,10 +29,7 @@ import org.icepdf.core.pobjects.graphics.TilingPattern;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -113,7 +111,7 @@ public class Parser {
                     return null;
                 }
 
-                // check for specific primative object types returned by getToken()
+                // check for specific primitive object types returned by getToken()
                 if (nextToken instanceof StringObject
                         || nextToken instanceof Name
                         || nextToken instanceof Number) {
@@ -131,10 +129,14 @@ public class Parser {
                     // to make sure if an object has been parsed that we don't loose it.
                     if (inObject) {
                         // pop off the object and ref number
-                        stack.pop();
-                        stack.pop();
+                        Number generationNumber = (Number) (stack.pop());
+                        Number objectNumber = (Number) (stack.pop());
                         // return the passed over object on the stack.
-                        return addPObject(library, objectReference);
+                        PObject pObject = addPObject(library, objectReference);
+                        // put the object number and ref number back on the stack.
+                        objectReference = new Reference(objectNumber, generationNumber);
+                        stack.push(objectReference);
+                        return pObject;
                     }
                     // Since we can return objects on "endstream", then we can
                     //  leave straggling "endobj", which would deepnessCount--,
@@ -144,8 +146,7 @@ public class Parser {
                     inObject = true;
                     Number generationNumber = (Number) (stack.pop());
                     Number objectNumber = (Number) (stack.pop());
-                    objectReference = new Reference(objectNumber,
-                            generationNumber);
+                    objectReference = new Reference(objectNumber, generationNumber);
                     // capture the byte offset of this object so we can rebuild
                     // the cross reference entries for lazy loading after CG.
                     if (library.isLinearTraversal() && reader instanceof BufferedMarkedInputStream) {
@@ -391,9 +392,7 @@ public class Parser {
                         }
                         // we need a mutable array so copy into an arrayList
                         // so we can't use Arrays.asList().
-                        for (int i = 0; i < size; i++) {
-                            v.add(tmp[i]);
-                        }
+                        v.addAll(Arrays.asList(tmp).subList(0, size));
                         stack.pop(); // "["
                     } else {
                         stack.clear();
@@ -401,6 +400,9 @@ public class Parser {
                     stack.push(v);
                 } else if (nextToken.equals("<<")) {
                     deepnessCount++;
+                    if (!stack.empty() && stack.peek() instanceof Reference) {
+                        inObject = true;
+                    }
                     stack.push(nextToken);
                 }
                 // Found a Dictionary
@@ -534,9 +536,6 @@ public class Parser {
         return stack.pop();
     }
 
-    /**
-     *
-     */
     public String peek2() throws IOException {
         reader.mark(2);
         char c[] = new char[2];
@@ -548,8 +547,11 @@ public class Parser {
     }
 
     /**
+     * Read inline image.
+     *
+     * @param out output stream to write to.
      * @return true if ate the ending EI delimiter
-     * @throws java.io.IOException
+     * @throws java.io.IOException error writing output stream.
      */
     public boolean readLineForInlineImage(OutputStream out) throws IOException {
         // The encoder might not have put EI on its own line (as it should),
@@ -677,6 +679,10 @@ public class Parser {
     public PObject addPObject(Library library, Reference objectReference) {
         Object o = stack.pop();
 
+        if (objectReference == null && !stack.empty() && stack.peek() instanceof Reference) {
+            objectReference = (Reference) stack.pop();
+        }
+
         // Add the streams object reference which is needed for
         // decrypting encrypted streams
         if (o instanceof Stream) {
@@ -760,12 +766,12 @@ public class Parser {
         }
         while (isWhitespace(currentChar));
 
-        /**
-         *  look the start of different primitive pdf objects
-         * ( - strints
-         * [ - arrays
-         * % - comments
-         * numbers.
+        /*
+           look the start of different primitive pdf objects
+          ( - strints
+          [ - arrays
+          % - comments
+          numbers.
          */
         if (currentChar == '(') {
             // mark that we are currrently processing a string
@@ -829,8 +835,8 @@ public class Parser {
 
         stringBuffer.append(currentChar);
 
-        /**
-         * Finally parse the contents of a complex token
+        /*
+          Finally parse the contents of a complex token
          */
 
         int parenthesisCount = 0;
@@ -879,20 +885,20 @@ public class Parser {
                         }
                     }
                     // look for  "\" character
-                    /**
-                     * The escape sequences can be as follows:
-                     *   \n  - line feed (LF)
-                     *   \r  - Carriage return (CR)
-                     *   \t  - Horizontal tab  (HT)
-                     *   \b  - backspace (BS)
-                     *   \f  - form feed (FF)
-                     *   \(  - left parenthesis
-                     *   \)  - right parenthesis
-                     *   \\  - backslash
-                     *   \ddd - character code ddd (octal)
-                     *
-                     * Note: (\0053) denotes a string containing two characters,
-                     *       \005 (Control-E) followed by the digit 3.
+                    /*
+                      The escape sequences can be as follows:
+                        \n  - line feed (LF)
+                        \r  - Carriage return (CR)
+                        \t  - Horizontal tab  (HT)
+                        \b  - backspace (BS)
+                        \f  - form feed (FF)
+                        \(  - left parenthesis
+                        \)  - right parenthesis
+                        \\  - backslash
+                        \ddd - character code ddd (octal)
+
+                      Note: (\0053) denotes a string containing two characters,
+                            \005 (Control-E) followed by the digit 3.
                      */
                     if (currentChar == '\\') {
                         // read next char
@@ -1009,8 +1015,8 @@ public class Parser {
         }
         while (!complete);
 
-        /**
-         * Return what we found
+        /*
+          Return what we found
          */
         // if a hex string decode it as needed
         if (hexString) {
@@ -1224,6 +1230,7 @@ public class Parser {
      * White space characters defined by ' ', '\t', '\r', '\n', '\f'
      *
      * @param c true if character is white space
+     * @return true if char is whitespace, false otherwise.
      */
     public static boolean isWhitespace(char c) {
         return ((c == ' ') || (c == '\t') || (c == '\r') ||
