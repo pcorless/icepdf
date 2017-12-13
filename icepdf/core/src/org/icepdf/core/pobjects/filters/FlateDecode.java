@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.filters;
 
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.graphics.images.ImageParams;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
@@ -62,8 +63,10 @@ public class FlateDecode extends ChunkingInputStream {
 
         int intermediateBufferSize = DEFAULT_BUFFER_SIZE;
 
+        int length = library.getInt(props, new Name("Length"));
+
         // get decode parameters from stream properties
-        HashMap decodeParmsDictionary = library.getDictionary(props, DECODE_PARMS_VALUE);
+        HashMap decodeParmsDictionary = ImageParams.getDecodeParams(library, props);
         predictor = library.getInt(decodeParmsDictionary, PREDICTOR_VALUE);
         if (predictor != PredictorDecode.PREDICTOR_NONE &&
                 predictor != PredictorDecode.PREDICTOR_TIFF_2 &&
@@ -79,10 +82,9 @@ public class FlateDecode extends ChunkingInputStream {
             Number widthNumber = library.getNumber(props, WIDTH_VALUE);
             if (widthNumber != null) {
                 width = widthNumber.intValue();
-            } else {
-                int columns = library.getInt(decodeParmsDictionary, COLUMNS_VALUE);
-                if (columns > 0) width = columns;
             }
+            int columns = library.getInt(decodeParmsDictionary, COLUMNS_VALUE);
+            if (columns > 0) width = columns;
 
             // Since DecodeParms.BitsPerComponent has a default value, I don't think we'd
             //   look at entries.ColorSpace to know the number of components. But, here's the info:
@@ -103,6 +105,10 @@ public class FlateDecode extends ChunkingInputStream {
 
             // Make buffer exactly large enough for one row of data (without predictor)
             intermediateBufferSize = Utils.numBytesToHoldBits(width * numComponents * bitsPerComponent);
+        } else {
+            if (length < intermediateBufferSize) {
+                intermediateBufferSize = 2048;
+            }
         }
 
         // Create the inflater input stream which will do the encoding
