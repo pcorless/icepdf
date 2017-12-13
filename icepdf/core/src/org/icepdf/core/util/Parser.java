@@ -25,6 +25,7 @@ import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.graphics.TilingPattern;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -334,7 +335,7 @@ public class Parser {
                     if (stream == null && subtype != null) {
                         // new form object
                         if (subtype.equals("Image")) {
-                            stream = new ImageStream(library, streamHash, streamInputWrapper);
+                            stream = new org.icepdf.core.pobjects.graphics.images.ImageStream(library, streamHash, streamInputWrapper);
                         } else if (subtype.equals("Form") && !"Pattern".equals(type)) {
                             stream = new Form(library, streamHash, streamInputWrapper);
                         } else if (subtype.equals("Form") && "Pattern".equals(type)) {

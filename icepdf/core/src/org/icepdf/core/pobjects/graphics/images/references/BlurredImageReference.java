@@ -1,8 +1,9 @@
-package org.icepdf.core.pobjects.graphics;
+package org.icepdf.core.pobjects.graphics.images.references;
 
-import org.icepdf.core.pobjects.ImageStream;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.pobjects.graphics.GraphicsState;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
@@ -40,16 +41,17 @@ public class BlurredImageReference extends CachedImageReference {
 
     private static int dimension, minWidth, minHeight;
 
-    static{
+    static {
         dimension = Defs.intProperty("org.icepdf.core.imageReference.blurred.dimension", 3);
         minWidth = Defs.intProperty("org.icepdf.core.imageReference.blurred.minwidth", 1800);
         minHeight = Defs.intProperty("org.icepdf.core.imageReference.blurred.minheight", 2200);
     }
 
     private static float[] matrix;
-    static{
+
+    static {
         float size = dimension * dimension;
-        matrix = new float[(int)size];
+        matrix = new float[(int) size];
         for (int i = 0; i < size; i++) {
             matrix[i] = 1.0f / size;
         }

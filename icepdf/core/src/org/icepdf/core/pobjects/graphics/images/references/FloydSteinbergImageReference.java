@@ -1,6 +1,6 @@
-package org.icepdf.core.pobjects.graphics;
+package org.icepdf.core.pobjects.graphics.images.references;
  /*
-import org.icepdf.core.pobjects.ImageStream;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.util.Library;
 

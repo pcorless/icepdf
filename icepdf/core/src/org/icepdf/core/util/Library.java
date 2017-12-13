@@ -23,7 +23,7 @@ import org.icepdf.core.pobjects.acroform.SignatureHandler;
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.graphics.ICCBased;
-import org.icepdf.core.pobjects.graphics.ImagePool;
+import org.icepdf.core.pobjects.graphics.images.references.ImagePool;
 import org.icepdf.core.pobjects.security.SecurityManager;
 
 import java.awt.geom.Rectangle2D;

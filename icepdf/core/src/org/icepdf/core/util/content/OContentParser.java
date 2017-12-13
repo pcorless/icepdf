@@ -17,10 +17,17 @@ package org.icepdf.core.util.content;
 
 import org.icepdf.core.io.ByteDoubleArrayInputStream;
 import org.icepdf.core.io.SequenceInputStream;
-import org.icepdf.core.pobjects.*;
-import org.icepdf.core.pobjects.graphics.*;
+import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.OptionalContents;
+import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.pobjects.graphics.GlyphOutlineClip;
+import org.icepdf.core.pobjects.graphics.GraphicsState;
+import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.commands.GlyphOutlineDrawCmd;
 import org.icepdf.core.pobjects.graphics.commands.ImageDrawCmd;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
+import org.icepdf.core.pobjects.graphics.images.references.InlineImageStreamReference;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Parser;
@@ -1112,8 +1119,8 @@ public class OContentParser extends AbstractContentParser {
 
             byte[] data = buf.toByteArray();
             // create the image stream
-            ImageStream st = new ImageStream(library, iih, data);
-            ImageReference imageStreamReference =
+            ImageStream st = new org.icepdf.core.pobjects.graphics.images.ImageStream(library, iih, data);
+            org.icepdf.core.pobjects.graphics.images.references.ImageReference imageStreamReference =
                     new InlineImageStreamReference(st, graphicState, resources, 0, null);
 //            ImageUtility.displayImage(imageStreamReference.getImage(), "BI");
             AffineTransform af = new AffineTransform(graphicState.getCTM());

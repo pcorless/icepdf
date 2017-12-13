@@ -13,11 +13,12 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.core.pobjects.graphics;
+package org.icepdf.core.pobjects.graphics.images.references;
 
-import org.icepdf.core.pobjects.ImageStream;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.pobjects.graphics.GraphicsState;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.util.Defs;
 
 /**
@@ -44,38 +45,52 @@ public class ImageReferenceFactory {
     // allow scaling of large images to improve clarity on screen
 
     public enum ImageReference {
-        DEFAULT, SCALED, MIP_MAP, SMOOTH_SCALED, BLURRED // FLOYD_STEINBERG
+        DEFAULT, SCALED, MIP_MAP, SMOOTH_SCALED, BLURRED
+
+
     }
 
-    private static ImageReference scaleType;
+    public static ImageReference imageReferenceType;
 
     static {
         // decide if large images will be scaled
-        String imageReferencetype =
+        String imageReferenceType =
                 Defs.sysProperty("org.icepdf.core.imageReference",
                         "default");
-        if ("scaled".equals(imageReferencetype)) {
-            scaleType = ImageReference.SCALED;
-        } else if ("mipmap".equals(imageReferencetype)) {
-            scaleType = ImageReference.MIP_MAP;
-        } else if ("smoothScaled".equals(imageReferencetype)) {
-            scaleType = ImageReference.SMOOTH_SCALED;
-        } else if ("blurred".equals(imageReferencetype)) {
-            scaleType = ImageReference.BLURRED;
-        } else {
-            scaleType = ImageReference.DEFAULT;
-        }
+        ImageReferenceFactory.imageReferenceType = getImageReferenceType(imageReferenceType);
     }
 
     private ImageReferenceFactory() {
     }
 
-    public static ImageReference getScaleType() {
-        return scaleType;
+    public static ImageReference getImageReferenceType() {
+        return imageReferenceType;
     }
 
-    public static void setScaleType(ImageReference scaleType) {
-        ImageReferenceFactory.scaleType = scaleType;
+    public static void setImageReferenceType(ImageReference imageReferenceType) {
+        ImageReferenceFactory.imageReferenceType = imageReferenceType;
+    }
+
+    /**
+     * Takes a given imageReferenceType name and returns the associated enum type.
+     *
+     * @param imageReferenceType image type to get enum for.
+     * @return associated ImageReference enum or ImageReference.DEFAULT if no mapping can be found.
+     */
+    public static ImageReference getImageReferenceType(String imageReferenceType) {
+        ImageReference scaleType;
+        if ("scaled".equals(imageReferenceType) || "SCALED".equals(imageReferenceType)) {
+            scaleType = ImageReference.SCALED;
+        } else if ("mipmap".equals(imageReferenceType) || "MIP_MAP".equals(imageReferenceType)) {
+            scaleType = ImageReference.MIP_MAP;
+        } else if ("smoothScaled".equals(imageReferenceType) || "SMOOTH_SCALED".equals(imageReferenceType)) {
+            scaleType = ImageReference.SMOOTH_SCALED;
+        } else if ("blurred".equals(imageReferenceType) || "BLURRED".equals(imageReferenceType)) {
+            scaleType = ImageReference.BLURRED;
+        } else {
+            scaleType = ImageReference.DEFAULT;
+        }
+        return scaleType;
     }
 
     /**
@@ -86,12 +101,13 @@ public class ImageReferenceFactory {
      * @param imageStream   image data
      * @param resources     parent resource object.
      * @param graphicsState image graphic state.
+     * @param page page that image belongs to .
+     * @param imageIndex image index number of total images for the page.
      * @return newly create ImageReference.
      */
-    public static org.icepdf.core.pobjects.graphics.ImageReference
-    getImageReference(ImageStream imageStream, Resources resources, GraphicsState graphicsState,
-                      Integer imageIndex, Page page) {
-        switch (scaleType) {
+    public static org.icepdf.core.pobjects.graphics.images.references.ImageReference getImageReference(
+            ImageStream imageStream, Resources resources, GraphicsState graphicsState, Integer imageIndex, Page page) {
+        switch (imageReferenceType) {
             case SCALED:
                 return new ScaledImageReference(imageStream, graphicsState, resources, imageIndex, page);
             case SMOOTH_SCALED:

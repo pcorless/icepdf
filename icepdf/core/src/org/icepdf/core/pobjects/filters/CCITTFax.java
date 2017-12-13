@@ -18,8 +18,9 @@ package org.icepdf.core.pobjects.filters;
 
 import org.icepdf.core.io.BitStream;
 import org.icepdf.core.io.ZeroPaddedInputStream;
-import org.icepdf.core.pobjects.ImageStream;
 import org.icepdf.core.pobjects.Stream;
+import org.icepdf.core.pobjects.graphics.images.ImageParams;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
@@ -33,9 +34,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.icepdf.core.pobjects.filters.FlateDecode.COLUMNS_VALUE;
+import static org.icepdf.core.pobjects.graphics.images.FaxDecoder.K_KEY;
 
 /**
  * Many facsimile and document imaging file formats support a form of lossless
@@ -304,7 +307,7 @@ public class CCITTFax {
      * Map bitstream values to tw and mw codes.
      *
      * @param inb bit stream containing the CCITT data
-     * @throws java.io.IOException
+     * @throws java.io.IOException error during decode.
      */
     static int findWhite(BitStream inb, Code code) throws IOException {
         return findTone(inb, code, twcodes, mwcodes);
@@ -313,7 +316,7 @@ public class CCITTFax {
     /**
      * Finds the next black occruence in the stream
      *
-     * @throws java.io.IOException
+     * @throws java.io.IOException  error during decode.
      */
     static int findBlack(BitStream inb, Code code) throws IOException {
         return findTone(inb, code, tbcodes, mbcodes);
@@ -346,9 +349,6 @@ public class CCITTFax {
         return 0;
     }
 
-    /**
-     * @throws java.io.IOException
-     */
     static void addRun(int x, G4State s, BitStream out) throws IOException {
         s.runLength += x;
         s.cur[s.curIndex++] = s.runLength;
@@ -361,9 +361,6 @@ public class CCITTFax {
         s.runLength = 0;
     }
 
-    /**
-     * @throws java.io.IOException
-     */
     static int readmode(BitStream inb, Code code) throws IOException {
         code.reset();
         while (!inb.atEndOfFile()) {
@@ -408,9 +405,6 @@ public class CCITTFax {
         s.b1 += s.ref[s.refIndex++];
     }
 
-    /**
-     * @throws java.io.IOException
-     */
     static void decodeHorizontal(BitStream in, BitStream out, G4State s, Code code) throws IOException {
         int rl;
         do {
@@ -430,9 +424,6 @@ public class CCITTFax {
         out.close();
     }
 
-    /**
-     * @throws java.io.IOException
-     */
     static void resetRuns(BitStream outb, G4State state) throws IOException {
         //System.err.println("EOL! "+state.a0);
         state.white = true;
@@ -469,8 +460,6 @@ public class CCITTFax {
         outb.close();
     }
 
-    /**
-     */
     public static void Group4Decode(InputStream in, OutputStream out, int width, boolean blackIs1) {
         BitStream inb = new BitStream(in);
         BitStream outb = new BitStream(out);
@@ -570,16 +559,15 @@ public class CCITTFax {
         if (!USE_JAI_IMAGE_LIBRARY)
             return null;
 
-        boolean imageMask = stream.isImageMask();
-        List decodeArray = (List) library.getObject(streamDictionary, ImageStream.DECODE_KEY);
+        ImageParams imageParams = stream.getImageParams();
+        boolean imageMask = stream.getImageParams().isImageMask();
+        float[] decodeArray = imageParams.getDecode();
         // get decode parameters from stream properties
-        HashMap decodeParmsDictionary = library.getDictionary(streamDictionary, ImageStream.DECODEPARMS_KEY);
-        boolean blackIs1 = stream.getBlackIs1(library, decodeParmsDictionary);
+        HashMap decodeParmsDictionary = imageParams.getDecodeParams();
+        boolean blackIs1 = imageParams.getBlackIs1(decodeParmsDictionary);
         // double check for blackIs1 in the main dictionary.
-        if (!blackIs1 && ImageStream.CHECK_PARENT_BLACK_IS_1) {
-            blackIs1 = stream.getBlackIs1(library, streamDictionary);
-        }
-        float k = library.getFloat(decodeParmsDictionary, ImageStream.K_KEY);
+
+        int k = imageParams.getInt(decodeParmsDictionary, K_KEY);
 
         short compression = TIFF_COMPRESSION_NONE_default;
         if (k < 0) compression = TIFF_COMPRESSION_GROUP4;
@@ -655,10 +643,10 @@ public class CCITTFax {
             if (blackIs1) {
                 pdfStatesBlackAndWhite = true;
             }
-            int width = library.getInt(streamDictionary, ImageStream.WIDTH_KEY);
-            int height = library.getInt(streamDictionary, ImageStream.HEIGHT_KEY);
+            int width = library.getInt(streamDictionary, ImageParams.WIDTH_KEY);
+            int height = library.getInt(streamDictionary, ImageParams.HEIGHT_KEY);
 
-            Object columnsObj = library.getObject(decodeParmsDictionary, ImageStream.COLUMNS_KEY);
+            Object columnsObj = library.getObject(decodeParmsDictionary, COLUMNS_VALUE);
             if (columnsObj != null && columnsObj instanceof Number) {
                 int columns = ((Number) columnsObj).intValue();
                 if (columns > width)
@@ -668,7 +656,7 @@ public class CCITTFax {
             Utils.setIntIntoByteArrayBE(width, fakeHeaderBytes, 0x1E);       // ImageWidth
             Utils.setIntIntoByteArrayBE(height, fakeHeaderBytes, 0x2A);      // ImageLength
             Object bitsPerComponent =                                          // BitsPerSample
-                    library.getObject(streamDictionary, ImageStream.BITSPERCOMPONENT_KEY);
+                    library.getObject(streamDictionary, ImageParams.BITS_PER_COMPONENT_KEY);
             if (bitsPerComponent != null && bitsPerComponent instanceof Number) {
                 Utils.setShortIntoByteArrayBE(((Number) bitsPerComponent).shortValue(), fakeHeaderBytes, 0x36);
             }
@@ -724,8 +712,8 @@ public class CCITTFax {
                 }
             }
         } else {
-            int width = library.getInt(streamDictionary, ImageStream.WIDTH_KEY);
-            int height = library.getInt(streamDictionary, ImageStream.HEIGHT_KEY);
+            int width = library.getInt(streamDictionary, ImageParams.WIDTH_KEY);
+            int height = library.getInt(streamDictionary, ImageParams.HEIGHT_KEY);
             int approxLen = width * height;
             img = deriveBufferedImageFromTIFFBytes(input, library, approxLen, width, height, compression);
         }
@@ -812,7 +800,7 @@ public class CCITTFax {
     }
 
     private static BufferedImage applyImageMaskAndDecodeArray(
-            BufferedImage img, boolean imageMask, Boolean blackIs1, List decode, Color fill) {
+            BufferedImage img, boolean imageMask, Boolean blackIs1, float[] decode, Color fill) {
         // If the image we actually have is monochrome, and so is useful as an image mask
         ColorModel cm = img.getColorModel();
         if (cm instanceof IndexColorModel && cm.getPixelSize() == 1) {
@@ -825,7 +813,7 @@ public class CCITTFax {
 
             boolean defaultDecode =
                     (decode == null) ||
-                            (0.0f == ((Number) decode.get(0)).floatValue());
+                            (0.0f == ((Number) decode[0]).floatValue());
             // From empirically testing 6 of the 9 possible combinations of
             //  BlackIs1 {true, false, not given} and Decode {[0 1], [1 0], not given}
             //  this is the rule. Unknown combinations:

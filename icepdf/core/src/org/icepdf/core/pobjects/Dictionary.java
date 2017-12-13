@@ -71,7 +71,7 @@ public class Dictionary {
     protected boolean isNew;
 
     // reference of stream, needed for encryption support
-    private Reference pObjectReference;
+    protected Reference pObjectReference;
 
     /**
      * Creates a new instance of a Dictionary.
@@ -118,6 +118,7 @@ public class Dictionary {
 
     /**
      * Initiate the Dictionary. Retrieve any needed attributes.
+     * @throws InterruptedException initialization interrupted.
      */
     public void init() throws InterruptedException {
     }

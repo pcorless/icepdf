@@ -16,6 +16,7 @@
 
 package org.icepdf.core.pobjects;
 
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -37,7 +38,7 @@ public class Thumbnail extends Dictionary {
     public static final Name WIDTH_KEY = new Name("Width");
     public static final Name HEIGHT_KEY = new Name("Height");
 
-    private ImageStream thumbStream;
+    private org.icepdf.core.pobjects.graphics.images.ImageStream thumbStream;
     private boolean initialized;
 
     // thumb image
@@ -52,9 +53,9 @@ public class Thumbnail extends Dictionary {
         if (thumb != null) {
             if (thumb instanceof ImageStream) {
                 // get the thumb image.
-                thumbStream = (ImageStream) thumb;
+                thumbStream = (org.icepdf.core.pobjects.graphics.images.ImageStream) thumb;
             } else {
-                thumbStream = new ImageStream(library, ((Stream) thumb).getEntries(),
+                thumbStream = new org.icepdf.core.pobjects.graphics.images.ImageStream(library, ((Stream) thumb).getEntries(),
                         ((Stream) thumb).getRawBytes());
             }
             // grab its bounds.

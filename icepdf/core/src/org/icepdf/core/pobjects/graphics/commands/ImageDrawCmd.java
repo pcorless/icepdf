@@ -16,9 +16,9 @@
 package org.icepdf.core.pobjects.graphics.commands;
 
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.graphics.ImageReference;
 import org.icepdf.core.pobjects.graphics.OptionalContentState;
 import org.icepdf.core.pobjects.graphics.PaintTimer;
+import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.util.Defs;
 
 import java.awt.*;

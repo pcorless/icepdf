@@ -5,6 +5,7 @@ import org.icepdf.core.pobjects.ImageStream;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.functions.Function;
+import org.icepdf.core.pobjects.graphics.images.ImageParams;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -58,7 +59,7 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
         shadingDictionary = meshDataStream.getEntries();
         bitsPerFlag = library.getInt(shadingDictionary, BITS_PER_FLAG_KEY);
         bitsPerCoordinate = library.getInt(shadingDictionary, BITS_PER_COORDINATE_KEY);
-        bitsPerComponent = library.getInt(shadingDictionary, ImageStream.BITSPERCOMPONENT_KEY);
+        bitsPerComponent = library.getInt(shadingDictionary, ImageParams.BITS_PER_COMPONENT_KEY);
         colorSpace = PColorSpace.getColorSpace(library, library.getObject(shadingDictionary, COLORSPACE_KEY));
         colorSpaceCompCount = colorSpace.getNumComponents();
 

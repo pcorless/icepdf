@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.graphics.*;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -209,7 +210,7 @@ public class Resources extends Dictionary {
     public Image getImage(Name s, GraphicsState graphicsState) {
 
         // check xobjects for stream
-        ImageStream st = (ImageStream) library.getObject(xobjects, s);
+        org.icepdf.core.pobjects.graphics.images.ImageStream st = (org.icepdf.core.pobjects.graphics.images.ImageStream) library.getObject(xobjects, s);
         if (st == null) {
             return null;
         }
@@ -230,8 +231,8 @@ public class Resources extends Dictionary {
     public ImageStream getImageStream(Name s) {
         // check xobjects for stream
         Object st = library.getObject(xobjects, s);
-        if (st instanceof ImageStream) {
-            return (ImageStream) st;
+        if (st instanceof org.icepdf.core.pobjects.graphics.images.ImageStream) {
+            return (org.icepdf.core.pobjects.graphics.images.ImageStream) st;
         }
         return null;
     }
@@ -252,7 +253,7 @@ public class Resources extends Dictionary {
             for (Object tmp : xobjects.values()) {
                 if (tmp instanceof Reference) {
                     tmp = library.getObject((Reference) tmp);
-                    if (tmp instanceof ImageStream) {
+                    if (tmp instanceof org.icepdf.core.pobjects.graphics.images.ImageStream) {
                         count++;
                     }
                 }

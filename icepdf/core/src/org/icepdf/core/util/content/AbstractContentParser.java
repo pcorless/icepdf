@@ -20,6 +20,8 @@ import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.pobjects.graphics.*;
 import org.icepdf.core.pobjects.graphics.commands.*;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
+import org.icepdf.core.pobjects.graphics.images.references.ImageReferenceFactory;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Defs;
@@ -652,7 +654,7 @@ public abstract class AbstractContentParser implements ContentParser {
         }
         // Image XObject
         else if (viewParse) {
-            ImageStream imageStream = (ImageStream) xObject;
+            ImageStream imageStream = (org.icepdf.core.pobjects.graphics.images.ImageStream) xObject;
             if (imageStream != null) {
                 Object oc = imageStream.getObject(OptionalContent.OC_KEY);
                 if (oc != null) {
@@ -667,7 +669,7 @@ public abstract class AbstractContentParser implements ContentParser {
                 }
 
                 // create an ImageReference for future decoding
-                ImageReference imageReference = ImageReferenceFactory.getImageReference(
+                org.icepdf.core.pobjects.graphics.images.references.ImageReference imageReference = ImageReferenceFactory.getImageReference(
                         imageStream, resources, graphicState,
                         imageIndex.get(), page);
                 imageIndex.incrementAndGet();
