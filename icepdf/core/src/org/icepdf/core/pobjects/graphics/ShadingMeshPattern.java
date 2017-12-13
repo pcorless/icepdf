@@ -96,7 +96,7 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
             decode = new float[4 + 2 * colorSpaceCompCount];
         }
 
-        java.util.List<Number> decodeVec = (java.util.List<Number>) library.getObject(shadingDictionary, ImageStream.DECODEPARAM_KEY);
+        java.util.List<Number> decodeVec = (java.util.List<Number>) library.getObject(shadingDictionary, ImageParams.DECODE_KEY);
 
         float maxValue = bitsPerCoordinate < 32 ? (float) ((1 << bitsPerCoordinate) - 1) : (float) 2.3283064365386963e-10; // 2^-32;
         for (int i = 0; i <= DECODE_Y_MAX; ) {
