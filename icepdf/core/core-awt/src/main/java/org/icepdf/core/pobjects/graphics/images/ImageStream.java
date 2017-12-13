@@ -125,20 +125,6 @@ public class ImageStream extends Stream {
         return decodedImage;
     }
 
-    /**
-     * Utility to to the image work, the public version pretty much just
-     * parses out image dictionary parameters.  This method start the actual
-     * image decoding.
-     *
-     * @param graphicsState graphic state used to render image.
-     * @return buffered image of decoded image stream, null if an error occurred.
-     */
-    private BufferedImage getImage(GraphicsState graphicsState) {
-
-
-        return null;
-    }
-
     public int getWidth() {
         return imageParams.getWidth();
     }
