@@ -22,6 +22,7 @@ import org.icepdf.ri.common.tools.FreeTextAnnotationHandler;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.PageViewComponentImpl;
+import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
@@ -100,12 +101,14 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
                 PropertiesManager.PROPERTY_SHOW_ANNOTATION_MARKUP_ADD_ANNOTATIONS)) {
             // annotation creation menus.
             addDestinationMenuItem = new JMenuItem(
-                    messageBundle.getString("viewer.utilityPane.view.selectionTool.contextMenu.add.label"));
+                    messageBundle.getString("viewer.utilityPane.view.selectionTool.contextMenu.addDestination.label"));
             addDestinationMenuItem.setEnabled(modifyDocument);
             addDestinationMenuItem.addActionListener(this);
+            addDestinationMenuItem.setIcon(new ImageIcon(Images.get("destination_20.png")));
             addFreeTextMenuItem = new JMenuItem(
                     messageBundle.getString("viewer.annotation.popup.addAnnotation.freeText.label"));
             addFreeTextMenuItem.setEnabled(modifyDocument);
+            addFreeTextMenuItem.setIcon(new ImageIcon(Images.get("freetext_annot_a_20.png")));
             // addition of set status menu
             JMenu submenu = new JMenu(
                     messageBundle.getString("viewer.annotation.popup.addAnnotation.label"));
