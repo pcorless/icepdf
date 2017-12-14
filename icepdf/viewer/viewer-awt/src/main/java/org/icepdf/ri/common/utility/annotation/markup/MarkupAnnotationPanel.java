@@ -15,9 +15,7 @@
  */
 package org.icepdf.ri.common.utility.annotation.markup;
 
-import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
-import org.icepdf.core.pobjects.annotations.PopupAnnotation;
+import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.*;
@@ -204,6 +202,38 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
                 } else {
                     markupAnnotationHandlerPanel.repaint();
                 }
+                // store the last used colour for the annoation type
+                if (annotation != null) {
+                    if (annotation instanceof TextMarkupAnnotation) {
+                        TextMarkupAnnotation textMarkupAnnotation = (TextMarkupAnnotation) annotation;
+                        if (textMarkupAnnotation.getSubType().equals(TextMarkupAnnotation.SUBTYPE_UNDERLINE)) {
+                            preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_COLOR,
+                                    ((Color) newValue).getRGB());
+                        } else if (textMarkupAnnotation.getSubType().equals(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT)) {
+                            preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_STRIKE_OUT_COLOR,
+                                    ((Color) newValue).getRGB());
+                        }
+                    } else if (annotation instanceof LineAnnotation) {
+                        preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_LINE_COLOR,
+                                ((Color) newValue).getRGB());
+                    } else if (annotation instanceof SquareAnnotation) {
+                        preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_SQUARE_COLOR,
+                                ((Color) newValue).getRGB());
+                    } else if (annotation instanceof CircleAnnotation) {
+                        preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_CIRCLE_COLOR,
+                                ((Color) newValue).getRGB());
+                    } else if (annotation instanceof InkAnnotation) {
+                        preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_INK_COLOR,
+                                ((Color) newValue).getRGB());
+                    } else if (annotation instanceof FreeTextAnnotation) {
+                        // set the free text font colour,
+//                        ((FreeTextAnnotation)annotation).setFontColor((Color) newValue);
+//                        annotationComponent.resetAppearanceShapes();
+//                        annotationComponent.repaint();
+//                        preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_COLOR,
+//                                ((Color) newValue).getRGB());
+                    }
+                }
             }
         } else if (propertyName.equals(PropertyConstants.ANNOTATION_SELECTED) ||
                 propertyName.equals(PropertyConstants.ANNOTATION_FOCUS_GAINED)) {
@@ -337,6 +367,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         // add case sensitive button
         constraints.insets = new Insets(1, 1, 1, 5);
         constraints.weightx = 1.0;
+        constraints.weighty = 0.01;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         // search configuration panel
         JPanel searchConfigurationPanel = new JPanel(new GridBagLayout());
