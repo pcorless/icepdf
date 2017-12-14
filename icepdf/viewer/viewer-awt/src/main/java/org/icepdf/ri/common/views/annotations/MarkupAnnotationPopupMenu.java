@@ -15,7 +15,6 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
-import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
 import org.icepdf.ri.common.tools.DestinationHandler;
 import org.icepdf.ri.common.tools.FreeTextAnnotationHandler;
@@ -231,7 +230,7 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
         } else if (source == addFreeTextMenuItem) {
             Point point = annotationComponent.getLocation();
             new FreeTextAnnotationHandler(controller.getDocumentViewController(), pageViewComponent)
-                    .createFreeTextAnnotation(point.x, point.y - FreeTextAnnotation.defaultFontSize, false);
+                    .createFreeTextAnnotation(point.x, point.y, false);
         }
     }
 }
