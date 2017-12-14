@@ -4256,12 +4256,15 @@ public class SwingController extends ComponentAdapter
      * Flips the visibility of the form highlight functionality ot hte opposite of what it was.
      */
     public void toggleAnnotationEditMode() {
-        viewModel.setIsAnnotationEditingMode(!viewModel.isAnnotationEditingMode());
+        setAnnotationEditMode(!viewModel.isAnnotationEditingMode());
+    }
+
+    public void setAnnotationEditMode(boolean enabled) {
+        viewModel.setIsAnnotationEditingMode(enabled);
         // write the property for next viewing.
         propertiesManager.getPreferences().putBoolean(PropertiesManager.PROPERTY_VIEWPREF_ANNOTATION_EDIT_MODE,
                 viewModel.isAnnotationEditingMode());
         reflectAnnotationEditModeButtons();
-
         setAnnotationEditModeVisible(viewModel.isAnnotationEditingMode());
     }
 

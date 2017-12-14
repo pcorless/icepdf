@@ -107,6 +107,13 @@ public interface Controller extends PropertyChangeListener {
     void showAnnotationProperties(AnnotationComponent annotationComponent);
 
     /**
+     * Sets visibility of the form highlight functionality ot hte opposite of what it was.
+     *
+     * @param enabled true to enable mode; otherwise, false;
+     */
+    void setAnnotationEditMode(boolean enabled);
+
+    /**
      * Show tabbed pane interface for annotation properties.
      *
      * @param annotationComponent annotation to show properties of.

@@ -46,6 +46,9 @@ public class DestinationHandler extends CommonToolHandler {
     }
 
     public void createNewDestination(int x, int y) {
+        // turn on the annotation editing mode.
+        documentViewController.getParentController().setAnnotationEditMode(true);
+
         // convert bbox and start and end line points.
         Rectangle bBox = new Rectangle(x, y, 1, 1);
         Rectangle tBbox = convertToPageSpace(bBox).getBounds();
