@@ -103,13 +103,14 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
         int width = (int) (DEFAULT_WIDTH * scale);
         int height = (int) (DEFAULT_HEIGHT * scale);
         if (rectToDraw == null) {
-            rectToDraw = new Rectangle(x, y, 1, 1);
+            rectToDraw = new Rectangle(x, y, width, height);
         }
-        rectToDraw.setLocation(rectToDraw.x - INSETS, rectToDraw.y - height + INSETS * 2);
+        rectToDraw.setLocation(rectToDraw.x, rectToDraw.y);
         rectToDraw.setSize(new Dimension(width, height));
 
         // create a fixed sized box based on the default font size.
         Rectangle tBbox = convertToPageSpace(rectToDraw).getBounds();
+        tBbox.setLocation(tBbox.x - INSETS, tBbox.y - tBbox.height - INSETS);
 
         // create annotations types that that are rectangle based;
         // which is actually just link annotations

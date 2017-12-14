@@ -230,7 +230,7 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
         } else if (source == addFreeTextMenuItem) {
             Point point = annotationComponent.getLocation();
             new FreeTextAnnotationHandler(controller.getDocumentViewController(), pageViewComponent)
-                    .createFreeTextAnnotation(point.x, point.y, false);
+                    .createFreeTextAnnotation(point.x, point.y - annotationComponent.getHeight(), false);
         }
     }
 }
