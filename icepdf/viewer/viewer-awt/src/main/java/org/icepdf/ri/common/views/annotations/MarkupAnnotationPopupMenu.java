@@ -21,6 +21,7 @@ import org.icepdf.ri.common.tools.DestinationHandler;
 import org.icepdf.ri.common.tools.FreeTextAnnotationHandler;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.Controller;
+import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.PageViewComponentImpl;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.PropertiesManager;
@@ -57,7 +58,7 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
     protected JMenuItem minimizeAllMenuItem;
     // add/create annotation shortcuts
     protected JMenuItem addDestinationMenuItem;
-    protected JMenuItem addFreeTextMenuItem;
+    protected JMenuItem addFreeTextMenuItem1, addFreeTextMenuItem2;
 
     // delete root annotation and all child popup annotations.
     protected boolean deleteRoot;
@@ -106,18 +107,24 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
             addDestinationMenuItem.setEnabled(modifyDocument);
             addDestinationMenuItem.addActionListener(this);
             addDestinationMenuItem.setIcon(new ImageIcon(Images.get("destination_20.png")));
-            addFreeTextMenuItem = new JMenuItem(
+            addFreeTextMenuItem1 = new JMenuItem(
                     messageBundle.getString("viewer.annotation.popup.addAnnotation.freeText.label"));
-            addFreeTextMenuItem.setEnabled(modifyDocument);
-            addFreeTextMenuItem.setIcon(new ImageIcon(Images.get("freetext_annot_a_20.png")));
+            addFreeTextMenuItem1.setEnabled(modifyDocument);
+            addFreeTextMenuItem1.setIcon(new ImageIcon(Images.get("freetext_annot_a_20.png")));
+            addFreeTextMenuItem1.addActionListener(this);
+            addFreeTextMenuItem2 = new JMenuItem(
+                    messageBundle.getString("viewer.annotation.popup.addAnnotation.freeText.label"));
+            addFreeTextMenuItem2.setEnabled(modifyDocument);
+            addFreeTextMenuItem2.setIcon(new ImageIcon(Images.get("freetext_annot_a_20.png")));
+            addFreeTextMenuItem2.addActionListener(this);
             // addition of set status menu
             JMenu submenu = new JMenu(
                     messageBundle.getString("viewer.annotation.popup.addAnnotation.label"));
             addDestinationMenuItem.setEnabled(modifyDocument);
             submenu.add(addDestinationMenuItem);
-            addFreeTextMenuItem.addActionListener(this);
             submenu.addSeparator();
-            submenu.add(addFreeTextMenuItem);
+            submenu.add(addFreeTextMenuItem2);
+            add(addFreeTextMenuItem1);
             add(submenu);
             addSeparator();
         }
@@ -229,12 +236,14 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
             new DestinationHandler(controller.getDocumentViewController(),
                     pageViewComponent).createNewDestination(
                     annotationComponent.getAnnotation().getContents(), point.x, point.y);
-        } else if (source == addFreeTextMenuItem) {
+        } else if (source == addFreeTextMenuItem1 ||
+                source == addFreeTextMenuItem2) {
             Point point = annotationComponent.getLocation();
             Preferences preferences = PropertiesManager.getInstance().getPreferences();
             int fontSize = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SIZE, 12) +
                     (FreeTextAnnotation.INSETS / 2);
             fontSize *= controller.getDocumentViewController().getZoom();
+            controller.setDocumentToolMode(DocumentViewModel.DISPLAY_TOOL_SELECTION);
             new FreeTextAnnotationHandler(controller.getDocumentViewController(), pageViewComponent)
                     .createFreeTextAnnotation(point.x, point.y - fontSize, false);
         }
