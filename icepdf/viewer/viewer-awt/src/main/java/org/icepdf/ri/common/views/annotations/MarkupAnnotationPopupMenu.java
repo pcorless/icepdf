@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
+import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
 import org.icepdf.ri.common.tools.DestinationHandler;
 import org.icepdf.ri.common.tools.FreeTextAnnotationHandler;
@@ -29,6 +30,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.prefs.Preferences;
 
 /**
  * Markup specific annotation context menu support, includes delete and properties commands,
@@ -229,8 +231,12 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
                     annotationComponent.getAnnotation().getContents(), point.x, point.y);
         } else if (source == addFreeTextMenuItem) {
             Point point = annotationComponent.getLocation();
+            Preferences preferences = PropertiesManager.getInstance().getPreferences();
+            int fontSize = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SIZE, 12) +
+                    (FreeTextAnnotation.INSETS / 2);
+            fontSize *= controller.getDocumentViewController().getZoom();
             new FreeTextAnnotationHandler(controller.getDocumentViewController(), pageViewComponent)
-                    .createFreeTextAnnotation(point.x, point.y - annotationComponent.getHeight(), false);
+                    .createFreeTextAnnotation(point.x, point.y - fontSize, false);
         }
     }
 }
