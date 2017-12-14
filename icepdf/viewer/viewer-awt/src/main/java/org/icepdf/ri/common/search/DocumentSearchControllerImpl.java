@@ -309,7 +309,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                         if (wordString.length() == 1) {
                             char c = wordString.charAt(0);
                             if (WordText.isWhiteSpace(c)) {
-//                                searchPhraseHits.add(word);
+                                searchPhraseHits.add(word);
                                 continue;
                             }
                         }
