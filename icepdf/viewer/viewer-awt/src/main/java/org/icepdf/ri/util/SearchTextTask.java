@@ -193,6 +193,7 @@ public class SearchTextTask {
 
             // break on bad input
             if ("".equals(pattern) || " ".equals(pattern)) {
+                done = true;
                 return;
             }
 

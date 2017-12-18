@@ -20,12 +20,15 @@ import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.search.DocumentSearchController;
+import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.MutableDocument;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.SearchTextTask;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.*;
@@ -55,10 +58,17 @@ import static org.icepdf.ri.util.PropertiesManager.*;
  */
 @SuppressWarnings("serial")
 public class SearchPanel extends JPanel implements ActionListener, MutableDocument,
-        TreeSelectionListener {
+        TreeSelectionListener, DocumentListener {
 
     private static final Logger logger =
             Logger.getLogger(SearchPanel.class.toString());
+
+    private static int maxPagesForLiveSearch;
+
+    static {
+        maxPagesForLiveSearch = Defs.intProperty(
+                "org.icepdf.ri.common.utility.search.maxPages.liveSearch", 50);
+    }
 
     // markup for search context.
     public static final String HTML_TAG_START = "<html>";
@@ -172,6 +182,12 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         }
         if (progressBar != null) {
             progressBar.setVisible(false);
+        }
+        // check length of document to see if we can keep all the page text memory and do live searches
+        if (document.getNumberOfPages() < maxPagesForLiveSearch) {
+            searchTextField.getDocument().addDocumentListener(this);
+        } else {
+            searchTextField.getDocument().removeDocumentListener(this);
         }
         isSearching = false;
     }
@@ -523,6 +539,99 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         return documentTitle;
     }
 
+    @Override
+    public void insertUpdate(DocumentEvent e) {
+        isSearching = false;
+        if (searchTextTask != null) {
+            searchTextTask.stop();
+            timer.stop();
+            resetTree();
+        }
+        startStopSearch();
+    }
+
+    @Override
+    public void removeUpdate(DocumentEvent e) {
+        isSearching = false;
+        if (searchTextTask != null) {
+            searchTextTask.stop();
+            timer.stop();
+            resetTree();
+        }
+        startStopSearch();
+    }
+
+    @Override
+    public void changedUpdate(DocumentEvent e) {
+        isSearching = false;
+        if (searchTextTask != null) {
+            searchTextTask.stop();
+            timer.stop();
+            resetTree();
+        }
+        startStopSearch();
+    }
+
+    protected void startStopSearch() {
+        if (!timer.isRunning()) {
+            // update gui components
+            findMessage.setVisible(true);
+            progressBar.setVisible(true);
+
+            // clean the previous results and repaint the tree
+            resetTree();
+
+            // reset high light states.
+            controller.getDocumentSearchController().clearAllSearchHighlight();
+            controller.getDocumentViewController().getViewContainer().repaint();
+
+            // do a quick check to make sure we have valida expression.
+            if (regexCheckbox.isSelected()) {
+                try {
+                    Pattern.compile(searchTextField.getText());
+                } catch (PatternSyntaxException e) {
+                    // log and show the error in the status label.
+                    logger.warning("Error processing search pattern syntax");
+                    findMessage.setText(e.getMessage());
+                    return;
+                }
+            }
+
+            // start a new search text task
+            searchTextTask = new SearchTextTask(this,
+                    controller,
+                    searchTextField.getText(),
+                    wholeWordCheckbox.isSelected(),
+                    caseSensitiveCheckbox.isSelected(),
+                    cumulativeCheckbox.isSelected(),
+                    showPagesCheckbox.isSelected(),
+                    false,
+                    regexCheckbox.isSelected(),
+                    messageBundle);
+            isSearching = true;
+
+            // set state of search button
+            searchButton.setText(messageBundle.getString(
+                    "viewer.utilityPane.search.stopButton.label"));
+            clearSearchButton.setEnabled(false);
+            caseSensitiveCheckbox.setEnabled(false);
+            wholeWordCheckbox.setEnabled(false);
+            cumulativeCheckbox.setEnabled(false);
+            showPagesCheckbox.setEnabled(false);
+
+            // start the task and the timer
+            searchTextTask.go();
+            timer.start();
+        } else {
+            isSearching = false;
+            clearSearchButton.setEnabled(true);
+            caseSensitiveCheckbox.setEnabled(true);
+            wholeWordCheckbox.setEnabled(true);
+            cumulativeCheckbox.setEnabled(true);
+            showPagesCheckbox.setEnabled(true);
+        }
+    }
+
     /**
      * Two main actions are handle here, search and clear search.
      *
@@ -531,63 +640,8 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     public void actionPerformed(ActionEvent event) {
         Object source = event.getSource();
         // Start/ stop a search
-        if (searchTextField.getText().length() > 0 &&
-                (source == searchTextField || source == searchButton)) {
-
-            if (!timer.isRunning()) {
-                // update gui components
-                findMessage.setVisible(true);
-                progressBar.setVisible(true);
-
-                // clean the previous results and repaint the tree
-                resetTree();
-
-                // do a quick check to make sure we have valida expression.
-                if (regexCheckbox.isSelected()) {
-                    try {
-                        Pattern.compile(searchTextField.getText());
-                    } catch (PatternSyntaxException e) {
-                        // log and show the error in the status label.
-                        logger.warning("Error processing search pattern syntax");
-                        findMessage.setText(e.getMessage());
-                        return;
-                    }
-
-                }
-
-                // start a new search text task
-                searchTextTask = new SearchTextTask(this,
-                        controller,
-                        searchTextField.getText(),
-                        wholeWordCheckbox.isSelected(),
-                        caseSensitiveCheckbox.isSelected(),
-                        cumulativeCheckbox.isSelected(),
-                        showPagesCheckbox.isSelected(),
-                        false,
-                        regexCheckbox.isSelected(),
-                        messageBundle);
-                isSearching = true;
-
-                // set state of search button
-                searchButton.setText(messageBundle.getString(
-                        "viewer.utilityPane.search.stopButton.label"));
-                clearSearchButton.setEnabled(false);
-                caseSensitiveCheckbox.setEnabled(false);
-                wholeWordCheckbox.setEnabled(false);
-                cumulativeCheckbox.setEnabled(false);
-                showPagesCheckbox.setEnabled(false);
-
-                // start the task and the timer
-                searchTextTask.go();
-                timer.start();
-            } else {
-                isSearching = false;
-                clearSearchButton.setEnabled(true);
-                caseSensitiveCheckbox.setEnabled(true);
-                wholeWordCheckbox.setEnabled(true);
-                cumulativeCheckbox.setEnabled(true);
-                showPagesCheckbox.setEnabled(true);
-            }
+        if (source == searchTextField || source == searchButton) {
+            startStopSearch();
         } else if (source == clearSearchButton) {
             // clear input
             searchTextField.setText("");

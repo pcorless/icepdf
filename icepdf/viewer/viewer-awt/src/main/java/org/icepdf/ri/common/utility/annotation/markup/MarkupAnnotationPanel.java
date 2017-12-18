@@ -27,6 +27,8 @@ import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -49,7 +51,8 @@ import static org.icepdf.ri.util.PropertiesManager.PROPERTY_SEARCH_MARKUP_PANEL_
  *
  * @since 6.3
  */
-public class MarkupAnnotationPanel extends JPanel implements ActionListener, PropertyChangeListener, MutableDocument {
+public class MarkupAnnotationPanel extends JPanel implements ActionListener, PropertyChangeListener,
+        MutableDocument, DocumentListener {
 
     private static final Logger logger =
             Logger.getLogger(MarkupAnnotationPanel.class.toString());
@@ -323,6 +326,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         JPanel searchPanel = new JPanel(new GridBagLayout());
         searchTextField = new JTextField();
         searchTextField.addActionListener(this);
+        searchTextField.getDocument().addDocumentListener(this);
         // todo do add graphics for search and clear (binocular an cross...)
         searchButton = new JButton(messageBundle.getString(
                 "viewer.utilityPane.markupAnnotation.search.searchButton.label"));
@@ -573,6 +577,36 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         markupAnnotationHandlerPanel.sortAndFilterAnnotationData(
                 searchPattern, sortType, filterType, filterAuthor, filterColor,
                 regexCheckbox.isSelected(), caseSensitiveCheckbox.isSelected());
+    }
+
+    @Override
+    public void insertUpdate(DocumentEvent e) {
+        try {
+            sortAndFilterAnnotationData();
+        } catch (PatternSyntaxException syntaxException) {
+            logger.warning("Error processing search pattern syntax");
+            markupAnnotationHandlerPanel.setProgressLabel(syntaxException.getMessage());
+        }
+    }
+
+    @Override
+    public void removeUpdate(DocumentEvent e) {
+        try {
+            sortAndFilterAnnotationData();
+        } catch (PatternSyntaxException syntaxException) {
+            logger.warning("Error processing search pattern syntax");
+            markupAnnotationHandlerPanel.setProgressLabel(syntaxException.getMessage());
+        }
+    }
+
+    @Override
+    public void changedUpdate(DocumentEvent e) {
+        try {
+            sortAndFilterAnnotationData();
+        } catch (PatternSyntaxException syntaxException) {
+            logger.warning("Error processing search pattern syntax");
+            markupAnnotationHandlerPanel.setProgressLabel(syntaxException.getMessage());
+        }
     }
 
     @Override
