@@ -21,7 +21,6 @@ import org.icepdf.ri.common.tools.DestinationHandler;
 import org.icepdf.ri.common.tools.FreeTextAnnotationHandler;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.Controller;
-import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.PageViewComponentImpl;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.PropertiesManager;
@@ -243,7 +242,7 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
             int fontSize = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SIZE, 12) +
                     (FreeTextAnnotation.INSETS / 2);
             fontSize *= controller.getDocumentViewController().getZoom();
-            controller.setDocumentToolMode(DocumentViewModel.DISPLAY_TOOL_SELECTION);
+//            controller.setDocumentToolMode(DocumentViewModel.DISPLAY_TOOL_SELECTION);
             new FreeTextAnnotationHandler(controller.getDocumentViewController(), pageViewComponent)
                     .createFreeTextAnnotation(point.x, point.y - fontSize, false);
         }
