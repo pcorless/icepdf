@@ -137,7 +137,7 @@ public class OptionalContentMembership extends Dictionary implements OptionalCon
                         return true;
                     }
                 }
-                return false;
+                return true;
             }
         },
         ANY_OFF {
