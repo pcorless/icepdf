@@ -450,6 +450,7 @@ public class Page extends Dictionary {
             // empty page, nothing to do.
             else {
                 shapes = new Shapes();
+                inited = true;
                 logger.log(Level.WARNING, "Error initializing Page, no page content.");
             }
         } catch (InterruptedException e) {
