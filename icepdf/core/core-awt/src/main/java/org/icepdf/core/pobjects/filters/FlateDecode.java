@@ -24,6 +24,7 @@ import org.icepdf.core.util.Utils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
 /**
@@ -105,14 +106,18 @@ public class FlateDecode extends ChunkingInputStream {
 
             // Make buffer exactly large enough for one row of data (without predictor)
             intermediateBufferSize = Utils.numBytesToHoldBits(width * numComponents * bitsPerComponent);
-        } else {
-            if (length < intermediateBufferSize) {
-                intermediateBufferSize = 2048;
-            }
         }
 
         // Create the inflater input stream which will do the encoding
-        setInputStream(new InflaterInputStream(input));
+        try {
+            // skip zlib header
+            input.read();
+            input.read();
+        } catch (IOException e) {
+            // e.printStackTrace();
+        }
+        // force support GZIP compatible compression
+        setInputStream(new InflaterInputStream(input, new Inflater(true)));
         setBufferSize(intermediateBufferSize);
     }
 
