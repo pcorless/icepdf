@@ -44,6 +44,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.icepdf.core.util.Parser.PARSE_MODE_NORMAL;
+
 /**
  * <p>The <code>Document</code> class represents a PDF document and provides
  * access to the hierarchy of objects contained in the body section of the
@@ -496,7 +498,7 @@ public class Document {
      *                              or there is an error decrypting the file.
      */
     private void loadDocumentViaXRefs(SeekableInput in)
-            throws PDFException, PDFSecurityException, IOException {
+            throws PDFException, PDFSecurityException, IOException, InterruptedException {
         //if( true ) throw new RuntimeException("Fallback to linear traversal");
         int offset = skipPastAnyPrefixJunk(in);
         long xrefPosition = getInitialCrossReferencePosition(in) + offset;
@@ -593,17 +595,15 @@ public class Document {
      *                              or there is an error decrypting the file.
      */
     private void loadDocumentViaLinearTraversal(SeekableInput seekableInput)
-            throws PDFException, PDFSecurityException, IOException {
+            throws PDFException, PDFSecurityException, InterruptedException, IOException {
 
         InputStream in = seekableInput.getInputStream();
-
-        int objectsOffset = skipPastAnyPrefixJunk(in);
-
+//        int objectsOffset = skipPastAnyPrefixJunk(in);
         library.setLinearTraversal();
 
         // NOTE: when we implement linerized document we should be able to
         //       rework this method.
-        Parser parser = new Parser(in);
+        Parser parser = new Parser(in, PARSE_MODE_NORMAL, 16384);
 
         // document Trailer, holds encryption info
         PTrailer documentTrailer = null;

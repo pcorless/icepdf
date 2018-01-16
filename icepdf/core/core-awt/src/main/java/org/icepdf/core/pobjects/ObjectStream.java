@@ -62,7 +62,6 @@ public class ObjectStream extends Stream {
         long firstObjectsOffset = library.getLong(entries, FIRST_KEY);
         // get the stream data
         decodedStream = new SeekableByteArrayInputStream(getDecodedStreamBytes(0));
-//        decodedStream.beginThreadAccess();
         objectNumbers = new int[numObjects];
         objectOffset = new long[numObjects];
         try {
@@ -75,28 +74,21 @@ public class ObjectStream extends Stream {
             logger.log(Level.SEVERE,
                     "Error loading object stream instance: ", e);
         }
-//        finally {
-//            decodedStream.endThreadAccess();
-//        }
-
     }
 
     public Object loadObject(Library library, int objectIndex) {
-//System.out.println("ObjectStream.loadObject()  objectIndex: " + objectIndex);
         init();
         if (objectNumbers == null ||
                 objectOffset == null ||
                 objectNumbers.length != objectOffset.length ||
                 objectIndex < 0 ||
                 objectIndex >= objectNumbers.length) {
-//System.out.println("ObjectStream.loadObject()  init failed");
             return null;
         }
 
         try {
             int objectNumber = objectNumbers[objectIndex];
             long position = objectOffset[objectIndex];
-//System.out.println("ObjectStream.loadObject()  objectNumber: " + objectNumber + ", position: " + position);
             decodedStream.beginThreadAccess();
             decodedStream.seekAbsolute(position);
             Parser parser = new Parser(decodedStream, Parser.PARSE_MODE_OBJECT_STREAM);
@@ -119,8 +111,6 @@ public class ObjectStream extends Stream {
                 ((Dictionary) ob).setPObjectReference(
                         new Reference(objectNumber, 0));
             }
-
-//System.out.println("ObjectStream.loadObject()  ob: " + ob + ",  ob.class: " + ob.getClass().getName());
             return ob;
         } catch (Exception e) {
             logger.log(Level.FINE, "Error loading PDF object.", e);

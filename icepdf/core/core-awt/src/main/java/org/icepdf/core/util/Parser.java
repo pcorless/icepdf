@@ -71,6 +71,11 @@ public class Parser {
         this(r, PARSE_MODE_NORMAL);
     }
 
+    public Parser(InputStream r, int pm, int bufferSize) {
+        reader = new BufferedMarkedInputStream(r, bufferSize);
+        parseMode = pm;
+    }
+
     public Parser(InputStream r, int pm) {
         reader = new BufferedMarkedInputStream(r);
         parseMode = pm;
@@ -85,397 +90,315 @@ public class Parser {
      * a I/O error is encountered.
      * @throws PDFException error getting object from library
      */
-    public Object getObject(Library library) throws PDFException {
+    public Object getObject(Library library) throws PDFException, InterruptedException, IOException {
         int deepnessCount = 0;
         boolean inObject = false; // currently parsing tokens in an object
         boolean complete = false; // flag used for do loop.
         Object nextToken;
         Reference objectReference = null;
-        try {
-            reader.mark(1);
-            do { //while (!complete);
-                // keep track of currently parsed objects reference
-                // get the next token inside the object stream
-                try {
-                    // capture the byte offset of this object so we can rebuild
-                    // the cross reference entries for lazy loading after CG.
-                    if (library.isLinearTraversal() && reader instanceof BufferedMarkedInputStream) {
-                        offSetStack.push(((BufferedMarkedInputStream) reader).getMarkedPosition());
-                    }
+        reader.mark(1);
+        do { //while (!complete);
+            // keep track of currently parsed objects reference
+            // get the next token inside the object stream
+            // capture the byte offset of this object so we can rebuild
+            // the cross reference entries for lazy loading after CG.
+            if (library.isLinearTraversal() && reader instanceof BufferedMarkedInputStream) {
+                offSetStack.push(((BufferedMarkedInputStream) reader).getMarkedPosition());
+            }
+            nextToken = getToken();
 
-                    nextToken = getToken();
-                    // commented out for performance reasons
-                    //Thread.yield();
-                } catch (IOException e) {
-                    // eat it as it is what is expected
-//                    logger.warning("IO reading error.");
-                    return null;
+            // likely reach the end of the stream.
+            if (nextToken == null) {
+                return null;
+            }
+            // commented out for performance reasons
+            //Thread.yield();
+            // check for specific primitive object types returned by getToken()
+            else if (nextToken instanceof StringObject
+                    || nextToken instanceof Name
+                    || nextToken instanceof Number) {
+                // Very Important, store the PDF object reference information,
+                // as it is needed when to decrypt an encrypted string.
+                if (nextToken instanceof StringObject) {
+                    StringObject tmp = (StringObject) nextToken;
+                    tmp.setReference(objectReference);
                 }
-
-                // check for specific primitive object types returned by getToken()
-                if (nextToken instanceof StringObject
-                        || nextToken instanceof Name
-                        || nextToken instanceof Number) {
-                    // Very Important, store the PDF object reference information,
-                    // as it is needed when to decrypt an encrypted string.
-                    if (nextToken instanceof StringObject) {
-                        StringObject tmp = (StringObject) nextToken;
-                        tmp.setReference(objectReference);
-                    }
-                    stack.push(nextToken);
-                }
-                // mark that we have entered a object declaration
-                else if (nextToken.equals("obj")) {
-                    // a rare parsing error is that endobj is missing, so we need
-                    // to make sure if an object has been parsed that we don't loose it.
-                    if (inObject) {
-                        // pop off the object and ref number
-                        Number generationNumber = (Number) (stack.pop());
-                        Number objectNumber = (Number) (stack.pop());
-                        // return the passed over object on the stack.
-                        PObject pObject = addPObject(library, objectReference);
-                        // put the object number and ref number back on the stack.
-                        objectReference = new Reference(objectNumber, generationNumber);
-                        stack.push(objectReference);
-                        return pObject;
-                    }
-                    // Since we can return objects on "endstream", then we can
-                    //  leave straggling "endobj", which would deepnessCount--,
-                    //  even though they're done in a separate method invocation
-                    // Hence, "obj" does /deepnessCount = 1/ instead of /deepnessCount++/
-                    deepnessCount = 0;
-                    inObject = true;
+                stack.push(nextToken);
+            }
+            // mark that we have entered a object declaration
+            else if (nextToken.equals("obj")) {
+                // a rare parsing error is that endobj is missing, so we need
+                // to make sure if an object has been parsed that we don't loose it.
+                if (inObject) {
+                    // pop off the object and ref number
                     Number generationNumber = (Number) (stack.pop());
                     Number objectNumber = (Number) (stack.pop());
+                    // return the passed over object on the stack.
+                    PObject pObject = addPObject(library, objectReference);
+                    // put the object number and ref number back on the stack.
                     objectReference = new Reference(objectNumber, generationNumber);
-                    // capture the byte offset of this object so we can rebuild
-                    // the cross reference entries for lazy loading after CG.
-                    if (library.isLinearTraversal() && reader instanceof BufferedMarkedInputStream) {
-                        offSetStack.pop();
-                        offSetStack.pop();
-                        linearTraversalOffset = offSetStack.pop();
-                        offSetStack.clear();
+                    stack.push(objectReference);
+                    return pObject;
+                }
+                // Since we can return objects on "endstream", then we can
+                //  leave straggling "endobj", which would deepnessCount--,
+                //  even though they're done in a separate method invocation
+                // Hence, "obj" does /deepnessCount = 1/ instead of /deepnessCount++/
+                deepnessCount = 0;
+                inObject = true;
+                Number generationNumber = (Number) (stack.pop());
+                Number objectNumber = (Number) (stack.pop());
+                objectReference = new Reference(objectNumber, generationNumber);
+                // capture the byte offset of this object so we can rebuild
+                // the cross reference entries for lazy loading after CG.
+                if (library.isLinearTraversal() && reader instanceof BufferedMarkedInputStream) {
+                    offSetStack.pop();
+                    offSetStack.pop();
+                    linearTraversalOffset = offSetStack.pop();
+                    offSetStack.clear();
+                }
+            }
+            // mark that we have reached the end of the object
+            else if (nextToken.equals("endobj") || nextToken.equals("endobject")
+                    || nextToken.equals("enbobj")) {
+                if (inObject) {
+                    return addPObject(library, objectReference);
+                }
+            }
+            // found endstream object, we will return the PObject containing
+            // the stream as there can be no further tokens.  This addresses
+            // an incorrect a syntax error with OpenOffice document where
+            // the endobj tag is missing on some Stream objects.
+            else if (nextToken.equals("endstream")) {
+                deepnessCount--;
+                // do nothing, but don't add it to the stack
+                if (inObject) {
+                    return addPObject(library, objectReference);
+                }
+            }
+            // found a stream object, streams are allways defined inside
+            // of a object so we will always have a dictionary (hash) that
+            // has the length and filter definitions in it
+            else if (nextToken.equals("stream")) {
+                deepnessCount++;
+                // pop dictionary that defines the stream
+                Object tmp = stack.pop();
+                HashMap streamHash;
+                if (tmp instanceof Dictionary) {
+                    streamHash = ((Dictionary) tmp).getEntries();
+                } else {
+                    streamHash = (HashMap) tmp;
+                }
+                // find the length of the stream
+                int streamLength = library.getInt(streamHash, Dictionary.LENGTH_KEY);
+
+                SeekableInputConstrainedWrapper streamInputWrapper;
+                // a stream token's end of line marker can be either:
+                // - a carriage return and a line feed
+                // - just a line feed, and not by a carriage return alone.
+
+                // check for carriage return and line feed, but reset if
+                // just a carriage return as it is a valid stream byte
+                reader.mark(2);
+
+                // alway eat a 13,against the spec but we have several examples of this.
+                int curChar = reader.read();
+                if (curChar == 13) {
+                    reader.mark(1);
+                    if (reader.read() != 10) {
+                        reader.reset();
                     }
                 }
-                // mark that we have reached the end of the object
-                else if (nextToken.equals("endobj") || nextToken.equals("endobject")
-                        || nextToken.equals("enbobj")) {
-                    if (inObject) {
-                        // set flag to false, as we are done parsing an Object
-                        inObject = false;
-                        // return PObject,
-                        offSetStack.clear();
-                        return addPObject(library, objectReference);
-                        // else, we ignore as the endStream token also returns a
-                        // PObject.
+                // always eat a 10
+                else if (curChar == 10) {
+                    // eat the stream character
+                }
+                // reset the rest
+                else {
+                    reader.reset();
+                }
+
+                if (reader instanceof SeekableInput) {
+                    SeekableInput streamDataInput = (SeekableInput) reader;
+                    long filePositionOfStreamData = streamDataInput.getAbsolutePosition();
+                    long lengthOfStreamData;
+                    // If the stream has a length that we can currently use
+                    // such as a R that has been parsed or an integer
+                    if (streamLength > 0) {
+                        lengthOfStreamData = streamLength;
+                        streamDataInput.seekRelative(streamLength);
+                        // Read any extraneous data coming after the length, but before endstream
+                        lengthOfStreamData += skipUntilEndstream(null);
                     } else {
-//                        return null;
+                        lengthOfStreamData = captureStreamData(null);
                     }
+                    streamInputWrapper = new SeekableInputConstrainedWrapper(
+                            streamDataInput, filePositionOfStreamData, lengthOfStreamData);
+                } else { // reader is just regular InputStream (BufferedInputStream)
+                    // stream  NOT SeekableInput
+                    ConservativeSizingByteArrayOutputStream out;
+                    // If the stream in from a regular InputStream,
+                    //  then the PDF was probably linearly traversed,
+                    //  in which case it doesn't matter if they have
+                    //  specified the stream length, because we can't
+                    //  trust that anyway
+                    if (!library.isLinearTraversal() && streamLength > 0) {
+                        byte[] buffer = new byte[streamLength];
+                        int totalRead = 0;
+                        while (totalRead < buffer.length) {
+                            int currRead = reader.read(buffer, totalRead, buffer.length - totalRead);
+                            if (currRead <= 0)
+                                break;
+                            totalRead += currRead;
+                        }
+                        out = new ConservativeSizingByteArrayOutputStream(
+                                buffer);
+                        // Read any extraneous data coming after the length, but before endstream
+                        skipUntilEndstream(out);
+                    }
+                    // if stream doesn't have a length, read the stream
+                    // until end stream has been found
+                    else {
+                        //  stream  NOT SeekableInput  No trusted streamLength");
+                        out = new ConservativeSizingByteArrayOutputStream(
+                                16 * 1024);
+                        captureStreamData(out);
+                    }
+
+                    int size = out.size();
+                    out.trim();
+                    byte[] buffer = out.relinquishByteArray();
+
+                    SeekableInput streamDataInput = new SeekableByteArrayInputStream(buffer);
+                    long filePositionOfStreamData = 0L;
+                    streamInputWrapper = new SeekableInputConstrainedWrapper(
+                            streamDataInput, filePositionOfStreamData, size);
                 }
-                // found endstream object, we will return the PObject containing
-                // the stream as there can be no further tokens.  This addresses
-                // an incorrect a syntax error with OpenOffice document where
-                // the endobj tag is missing on some Stream objects.
-                else if (nextToken.equals("endstream")) {
-                    deepnessCount--;
-                    // do nothing, but don't add it to the stack
-                    if (inObject) {
-                        inObject = false;
-                        // return PObject,
-                        offSetStack.clear();
-                        return addPObject(library, objectReference);
-                    }
-                }
 
-                // found a stream object, streams are allways defined inside
-                // of a object so we will always have a dictionary (hash) that
-                // has the length and filter definitions in it
-                else if (nextToken.equals("stream")) {
-                    deepnessCount++;
-                    // pop dictionary that defines the stream
-                    Object tmp = stack.pop();
-                    HashMap streamHash;
-                    if (tmp instanceof Dictionary) {
-                        streamHash = ((Dictionary) tmp).getEntries();
-                    } else {
-                        streamHash = (HashMap) tmp;
-                    }
-                    // find the length of the stream
-                    int streamLength = library.getInt(streamHash, Dictionary.LENGTH_KEY);
-
-                    SeekableInputConstrainedWrapper streamInputWrapper;
-                    try {
-                        // a stream token's end of line marker can be either:
-                        // - a carriage return and a line feed
-                        // - just a line feed, and not by a carriage return alone.
-
-                        // check for carriage return and line feed, but reset if
-                        // just a carriage return as it is a valid stream byte
-                        reader.mark(2);
-
-                        // alway eat a 13,against the spec but we have several examples of this.
-                        int curChar = reader.read();
-                        if (curChar == 13) {
-                            reader.mark(1);
-                            if (reader.read() != 10) {
-                                reader.reset();
-                            }
-                        }
-                        // always eat a 10
-                        else if (curChar == 10) {
-                            // eat the stream character
-                        }
-                        // reset the rest
-                        else {
-                            reader.reset();
-                        }
-
-                        if (reader instanceof SeekableInput) {
-                            SeekableInput streamDataInput = (SeekableInput) reader;
-                            long filePositionOfStreamData = streamDataInput.getAbsolutePosition();
-                            long lengthOfStreamData;
-                            // If the stream has a length that we can currently use
-                            // such as a R that has been parsed or an integer
-                            if (streamLength > 0) {
-                                lengthOfStreamData = streamLength;
-                                streamDataInput.seekRelative(streamLength);
-                                // Read any extraneous data coming after the length, but before endstream
-                                lengthOfStreamData += skipUntilEndstream(null);
-                            } else {
-                                lengthOfStreamData = captureStreamData(null);
-                            }
-                            streamInputWrapper = new SeekableInputConstrainedWrapper(
-                                    streamDataInput, filePositionOfStreamData, lengthOfStreamData);
-                        } else { // reader is just regular InputStream (BufferedInputStream)
-                            // stream  NOT SeekableInput
-                            ConservativeSizingByteArrayOutputStream out;
-                            // If the stream in from a regular InputStream,
-                            //  then the PDF was probably linearly traversed,
-                            //  in which case it doesn't matter if they have
-                            //  specified the stream length, because we can't
-                            //  trust that anyway
-                            if (!library.isLinearTraversal() && streamLength > 0) {
-                                byte[] buffer = new byte[streamLength];
-                                int totalRead = 0;
-                                while (totalRead < buffer.length) {
-                                    int currRead = reader.read(buffer, totalRead, buffer.length - totalRead);
-                                    if (currRead <= 0)
-                                        break;
-                                    totalRead += currRead;
-                                }
-                                out = new ConservativeSizingByteArrayOutputStream(
-                                        buffer);
-                                // Read any extraneous data coming after the length, but before endstream
-                                skipUntilEndstream(out);
-                            }
-                            // if stream doesn't have a length, read the stream
-                            // until end stream has been found
-                            else {
-                                //  stream  NOT SeekableInput  No trusted streamLength");
-                                out = new ConservativeSizingByteArrayOutputStream(
-                                        16 * 1024);
-                                captureStreamData(out);
-                            }
-
-                            int size = out.size();
-                            out.trim();
-                            byte[] buffer = out.relinquishByteArray();
-
-                            SeekableInput streamDataInput = new SeekableByteArrayInputStream(buffer);
-                            long filePositionOfStreamData = 0L;
-                            streamInputWrapper = new SeekableInputConstrainedWrapper(
-                                    streamDataInput, filePositionOfStreamData, size);
-                        }
-                    } catch (IOException e) {
-                        if (logger.isLoggable(Level.FINE)) {
-                            logger.log(Level.FINE, "Error getting next object", e);
-                        }
-                        return null;
-                    }
-                    PTrailer trailer = null;
-                    // set the stream know objects if possible
-                    Stream stream = null;
-                    Name type = (Name) library.getObject(streamHash, Dictionary.TYPE_KEY);
-                    Name subtype = (Name) library.getObject(streamHash, Dictionary.SUBTYPE_KEY);
-                    if (type != null) {
-                        // found a xref stream which is made up it's own entry format
-                        // different then an standard xref table, mainly used to
-                        // access cross-reference entries but also to compress xref tables.
-                        if (type.equals("XRef")) {
-                            stream = new Stream(library, streamHash, streamInputWrapper);
-                            stream.init();
-                            InputStream in = stream.getDecodedByteArrayInputStream();
-                            CrossReference xrefStream = new CrossReference();
-                            if (in != null) {
+                PTrailer trailer = null;
+                // set the stream know objects if possible
+                Stream stream = null;
+                Name type = (Name) library.getObject(streamHash, Dictionary.TYPE_KEY);
+                Name subtype = (Name) library.getObject(streamHash, Dictionary.SUBTYPE_KEY);
+                if (type != null) {
+                    // found a xref stream which is made up it's own entry format
+                    // different then an standard xref table, mainly used to
+                    // access cross-reference entries but also to compress xref tables.
+                    if (type.equals("XRef")) {
+                        stream = new Stream(library, streamHash, streamInputWrapper);
+                        stream.init();
+                        InputStream in = stream.getDecodedByteArrayInputStream();
+                        CrossReference xrefStream = new CrossReference();
+                        if (in != null) {
+                            try {
+                                xrefStream.addXRefStreamEntries(library, streamHash, in);
+                            } finally {
                                 try {
-                                    xrefStream.addXRefStreamEntries(library, streamHash, in);
-                                } finally {
-                                    try {
-                                        in.close();
-                                    } catch (Throwable e) {
-                                        logger.log(Level.WARNING, "Error appending stream entries.", e);
-                                    }
+                                    in.close();
+                                } catch (Throwable e) {
+                                    logger.log(Level.WARNING, "Error appending stream entries.", e);
                                 }
                             }
+                        }
 
-                            // XRef dict is both Trailer dict and XRef stream dict.
-                            // PTrailer alters its dict, so copy it to keep everything sane
-                            HashMap trailerHash = (HashMap) streamHash.clone();
-                            trailer = new PTrailer(library, trailerHash, null, xrefStream);
-                        } else if (type.equals("ObjStm")) {
-                            stream = new ObjectStream(library, streamHash, streamInputWrapper);
-                        } else if (type.equals("XObject") && subtype.equals("Image")) {
-                            stream = new ImageStream(library, streamHash, streamInputWrapper);
-                        }
-                        // new Tiling Pattern Object, will have a stream.
-                        else if (type.equals("Pattern")) {
-                            stream = new TilingPattern(library, streamHash, streamInputWrapper);
-                        }
+                        // XRef dict is both Trailer dict and XRef stream dict.
+                        // PTrailer alters its dict, so copy it to keep everything sane
+                        HashMap trailerHash = (HashMap) streamHash.clone();
+                        trailer = new PTrailer(library, trailerHash, null, xrefStream);
+                    } else if (type.equals("ObjStm")) {
+                        stream = new ObjectStream(library, streamHash, streamInputWrapper);
+                    } else if (type.equals("XObject") && subtype.equals("Image")) {
+                        stream = new ImageStream(library, streamHash, streamInputWrapper);
                     }
-                    if (stream == null && subtype != null) {
-                        // new form object
-                        if (subtype.equals("Image")) {
-                            stream = new ImageStream(library, streamHash, streamInputWrapper);
-                        } else if (subtype.equals("Form") && !"Pattern".equals(type)) {
-                            stream = new Form(library, streamHash, streamInputWrapper);
-                        } else if (subtype.equals("Form") && "Pattern".equals(type)) {
-                            stream = new TilingPattern(library, streamHash, streamInputWrapper);
-                        }
-                    }
-                    if (trailer != null) {
-                        stack.push(trailer);
-                    } else {
-                        // finally create a generic stream object which will be parsed
-                        // at a later time
-                        if (stream == null) {
-                            stream = new Stream(library, streamHash, streamInputWrapper);
-                        }
-                        stack.push(stream);
-                        // forcing a object return just encase the length is wrong
-                        // and we don't get to the endstream.
-                        return addPObject(library, objectReference);
+                    // new Tiling Pattern Object, will have a stream.
+                    else if (type.equals("Pattern")) {
+                        stream = new TilingPattern(library, streamHash, streamInputWrapper);
                     }
                 }
-                // end if (stream)
+                if (stream == null && subtype != null) {
+                    // new form object
+                    if (subtype.equals("Image")) {
+                        stream = new ImageStream(library, streamHash, streamInputWrapper);
+                    } else if (subtype.equals("Form") && !"Pattern".equals(type)) {
+                        stream = new Form(library, streamHash, streamInputWrapper);
+                    } else if (subtype.equals("Form") && "Pattern".equals(type)) {
+                        stream = new TilingPattern(library, streamHash, streamInputWrapper);
+                    }
+                }
+                if (trailer != null) {
+                    stack.push(trailer);
+                } else {
+                    // finally create a generic stream object which will be parsed
+                    // at a later time
+                    if (stream == null) {
+                        stream = new Stream(library, streamHash, streamInputWrapper);
+                    }
+                    stack.push(stream);
+                    // forcing a object return just encase the length is wrong
+                    // and we don't get to the endstream.
+                    return addPObject(library, objectReference);
+                }
+            }
+            // end if (stream)
 
-                // boolean objects are added to stack
-                else if (nextToken.equals("true")) {
-                    stack.push(true);
-                } else if (nextToken.equals("false")) {
-                    stack.push(false);
+            // boolean objects are added to stack
+            else if (nextToken.equals("true")) {
+                stack.push(true);
+            } else if (nextToken.equals("false")) {
+                stack.push(false);
+            }
+            // Indirect Reference object found
+            else if (nextToken.equals("R")) {
+                // generationNumber number important for revisions
+                Number generationNumber = (Number) (stack.pop());
+                Number objectNumber = (Number) (stack.pop());
+                stack.push(new Reference(objectNumber,
+                        generationNumber));
+            } else if (nextToken.equals("[")) {
+                deepnessCount++;
+                stack.push(nextToken);
+            }
+            // Found an array
+            else if (nextToken.equals("]")) {
+                deepnessCount--;
+                final int searchPosition = stack.search("[");
+                int size = searchPosition - 1;
+                if (size < 0) {
+                    logger.warning("Negative array size, a  malformed content " +
+                            "stream has likely been encountered.");
+                    size = 0;
                 }
-                // Indirect Reference object found
-                else if (nextToken.equals("R")) {
-                    // generationNumber number important for revisions
-                    Number generationNumber = (Number) (stack.pop());
-                    Number objectNumber = (Number) (stack.pop());
-                    stack.push(new Reference(objectNumber,
-                            generationNumber));
-                } else if (nextToken.equals("[")) {
-                    deepnessCount++;
-                    stack.push(nextToken);
+                List<Object> v = new ArrayList<>(size);
+                Object[] tmp = new Object[size];
+                if (searchPosition > 0) {
+                    for (int i = size - 1; i >= 0; i--) {
+                        tmp[i] = stack.pop();
+                    }
+                    // we need a mutable array so copy into an arrayList
+                    // so we can't use Arrays.asList().
+                    v.addAll(Arrays.asList(tmp).subList(0, size));
+                    stack.pop(); // "["
+                } else {
+                    stack.clear();
                 }
-                // Found an array
-                else if (nextToken.equals("]")) {
-                    deepnessCount--;
-                    final int searchPosition = stack.search("[");
-                    int size = searchPosition - 1;
-                    if (size < 0) {
-                        logger.warning("Negative array size, a  malformed content " +
-                                "stream has likely been encountered.");
-                        size = 0;
-                    }
-                    List<Object> v = new ArrayList<>(size);
-                    Object[] tmp = new Object[size];
-                    if (searchPosition > 0) {
-                        for (int i = size - 1; i >= 0; i--) {
-                            tmp[i] = stack.pop();
-                        }
-                        // we need a mutable array so copy into an arrayList
-                        // so we can't use Arrays.asList().
-                        v.addAll(Arrays.asList(tmp).subList(0, size));
-                        stack.pop(); // "["
-                    } else {
-                        stack.clear();
-                    }
-                    stack.push(v);
-                } else if (nextToken.equals("<<")) {
-                    deepnessCount++;
-                    if (!stack.empty() && stack.peek() instanceof Reference) {
-                        inObject = true;
-                    }
-                    stack.push(nextToken);
+                stack.push(v);
+            } else if (nextToken.equals("<<")) {
+                deepnessCount++;
+                if (!stack.empty() && stack.peek() instanceof Reference) {
+                    inObject = true;
                 }
-                // Found a Dictionary
-                else if (nextToken.equals(">>")) {
-                    deepnessCount--;
-                    // check for extra >> which we want to ignore
-                    if (!isTrailer && deepnessCount >= 0) {
-                        if (!stack.isEmpty()) {
-                            HashMap<Object, Object> hashMap = new HashMap<>();
-                            Object obj = stack.pop();
-                            // put all of the dictionary definistion into the
-                            // the hashTabl
-                            while (!((obj instanceof String)
-                                    && (obj.equals("<<"))) && !stack.isEmpty()) {
-                                Object key = stack.pop();
-                                hashMap.put(key, obj);
-                                if (!stack.isEmpty()) {
-                                    obj = stack.pop();
-                                } else {
-                                    break;
-                                }
-                            }
-                            obj = hashMap.get(Dictionary.TYPE_KEY);
-                            if (obj == null) {
-                                // PDF-927,  incorrect /type def.
-                                obj = hashMap.get(new Name("type"));
-                            }
-                            // Process the know first level dictionaries.
-                            if (obj != null && obj instanceof Name) {
-                                Name n = (Name) obj;
-                                if (n.equals(Catalog.TYPE)) {
-                                    stack.push(new Catalog(library, hashMap));
-                                } else if (n.equals(PageTree.TYPE)) {
-                                    stack.push(new PageTree(library, hashMap));
-                                } else if (n.equals(Page.TYPE)) {
-                                    stack.push(new Page(library, hashMap));
-                                } else if (n.equals(Font.TYPE)) {
-                                    // do a quick check to make sure we don't have a fontDescriptor
-                                    // FontFile is specific to font descriptors.
-                                    boolean fontDescriptor = hashMap.get(FontDescriptor.FONT_FILE) != null ||
-                                            hashMap.get(FontDescriptor.FONT_FILE_2) != null ||
-                                            hashMap.get(FontDescriptor.FONT_FILE_3) != null;
-                                    if (!fontDescriptor) {
-                                        stack.push(FontFactory.getInstance()
-                                                .getFont(library, hashMap));
-                                    } else {
-                                        stack.push(new FontDescriptor(library, hashMap));
-                                    }
-                                } else if (n.equals(FontDescriptor.TYPE)) {
-                                    stack.push(new FontDescriptor(library, hashMap));
-                                } else if (n.equals(CMap.TYPE)) {
-                                    stack.push(hashMap);
-                                } else if (n.equals(Annotation.TYPE)) {
-                                    stack.push(Annotation.buildAnnotation(library, hashMap));
-                                } else if (n.equals(OptionalContentGroup.TYPE)) {
-                                    stack.push(new OptionalContentGroup(library, hashMap));
-                                } else if (n.equals(OptionalContentMembership.TYPE)) {
-                                    stack.push(new OptionalContentMembership(library, hashMap));
-                                } else
-                                    stack.push(hashMap);
-                            }
-                            // everything else gets pushed onto the stack
-                            else {
-                                stack.push(hashMap);
-                            }
-                        }
-                    } else if (isTrailer && deepnessCount == 0) {
-                        // we have an xref entry
+                stack.push(nextToken);
+            }
+            // Found a Dictionary
+            else if (nextToken.equals(">>")) {
+                deepnessCount--;
+                // check for extra >> which we want to ignore
+                if (!isTrailer && deepnessCount >= 0) {
+                    if (!stack.isEmpty()) {
                         HashMap<Object, Object> hashMap = new HashMap<>();
                         Object obj = stack.pop();
-                        // put all of the dictionary definition into the
-                        // the new map.
+                        // put all of the dictionary definistion into the
+                        // the hashTabl
                         while (!((obj instanceof String)
                                 && (obj.equals("<<"))) && !stack.isEmpty()) {
                             Object key = stack.pop();
@@ -486,53 +409,109 @@ public class Parser {
                                 break;
                             }
                         }
-                        return hashMap;
+                        obj = hashMap.get(Dictionary.TYPE_KEY);
+                        if (obj == null) {
+                            // PDF-927,  incorrect /type def.
+                            obj = hashMap.get(new Name("type"));
+                        }
+                        // Process the know first level dictionaries.
+                        if (obj != null && obj instanceof Name) {
+                            Name n = (Name) obj;
+                            if (n.equals(Catalog.TYPE)) {
+                                stack.push(new Catalog(library, hashMap));
+                            } else if (n.equals(PageTree.TYPE)) {
+                                stack.push(new PageTree(library, hashMap));
+                            } else if (n.equals(Page.TYPE)) {
+                                stack.push(new Page(library, hashMap));
+                            } else if (n.equals(Font.TYPE)) {
+                                // do a quick check to make sure we don't have a fontDescriptor
+                                // FontFile is specific to font descriptors.
+                                boolean fontDescriptor = hashMap.get(FontDescriptor.FONT_FILE) != null ||
+                                        hashMap.get(FontDescriptor.FONT_FILE_2) != null ||
+                                        hashMap.get(FontDescriptor.FONT_FILE_3) != null;
+                                if (!fontDescriptor) {
+                                    stack.push(FontFactory.getInstance()
+                                            .getFont(library, hashMap));
+                                } else {
+                                    stack.push(new FontDescriptor(library, hashMap));
+                                }
+                            } else if (n.equals(FontDescriptor.TYPE)) {
+                                stack.push(new FontDescriptor(library, hashMap));
+                            } else if (n.equals(CMap.TYPE)) {
+                                stack.push(hashMap);
+                            } else if (n.equals(Annotation.TYPE)) {
+                                stack.push(Annotation.buildAnnotation(library, hashMap));
+                            } else if (n.equals(OptionalContentGroup.TYPE)) {
+                                stack.push(new OptionalContentGroup(library, hashMap));
+                            } else if (n.equals(OptionalContentMembership.TYPE)) {
+                                stack.push(new OptionalContentMembership(library, hashMap));
+                            } else
+                                stack.push(hashMap);
+                        }
+                        // everything else gets pushed onto the stack
+                        else {
+                            stack.push(hashMap);
+                        }
                     }
-                }
-                // found traditional XrefTable found in all documents.
-                else if (nextToken.equals("xref")) {
-                    // parse out hte traditional
-                    CrossReference xrefTable = new CrossReference();
-                    xrefTable.addXRefTableEntries(this);
-                    stack.push(xrefTable);
-                } else if (nextToken.equals("trailer")) {
-                    CrossReference xrefTable = null;
-                    if (stack.peek() instanceof CrossReference)
-                        xrefTable = (CrossReference) stack.pop();
-                    stack.clear();
-                    isTrailer = true;
-                    HashMap trailerDictionary = (HashMap) getObject(library);
-                    isTrailer = false;
-                    return new PTrailer(library, trailerDictionary, xrefTable, null);
-                }
-                // comments
-                else if (nextToken instanceof String &&
-                        ((String) nextToken).startsWith("%")) {
-                    // Comment, ignored for now
-                }
-                // corner case for encoder error "endobjxref"
-                else if (nextToken instanceof String &&
-                        ((String) nextToken).startsWith("endobj")) {
-                    if (inObject) {
-                        // set flag to false, as we are done parsing an Object
-                        inObject = false;
-                        // return PObject,
-                        return addPObject(library, objectReference);
+                } else if (isTrailer && deepnessCount == 0) {
+                    // we have an xref entry
+                    HashMap<Object, Object> hashMap = new HashMap<>();
+                    Object obj = stack.pop();
+                    // put all of the dictionary definition into the
+                    // the new map.
+                    while (!((obj instanceof String)
+                            && (obj.equals("<<"))) && !stack.isEmpty()) {
+                        Object key = stack.pop();
+                        hashMap.put(key, obj);
+                        if (!stack.isEmpty()) {
+                            obj = stack.pop();
+                        } else {
+                            break;
+                        }
                     }
-                }
-                // everything else gets pushed onto the stack
-                else {
-                    stack.push(nextToken);
-                }
-                if (parseMode == PARSE_MODE_OBJECT_STREAM && deepnessCount == 0 && stack.size() > 0) {
-                    return stack.pop();
+                    return hashMap;
                 }
             }
-            while (!complete);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Fatal error parsing PDF file stream.", e);
-            return null;
+            // found traditional XrefTable found in all documents.
+            else if (nextToken.equals("xref")) {
+                // parse out hte traditional
+                CrossReference xrefTable = new CrossReference();
+                xrefTable.addXRefTableEntries(this);
+                stack.push(xrefTable);
+            } else if (nextToken.equals("trailer")) {
+                CrossReference xrefTable = null;
+                if (stack.peek() instanceof CrossReference)
+                    xrefTable = (CrossReference) stack.pop();
+                stack.clear();
+                isTrailer = true;
+                HashMap trailerDictionary = (HashMap) getObject(library);
+                isTrailer = false;
+                return new PTrailer(library, trailerDictionary, xrefTable, null);
+            }
+            // comments
+            else if (nextToken instanceof String &&
+                    ((String) nextToken).startsWith("%")) {
+                // Comment, ignored for now
+            }
+            // corner case for encoder error "endobjxref"
+            else if (nextToken instanceof String &&
+                    ((String) nextToken).startsWith("endobj")) {
+                if (inObject) {
+                    // set flag to false, as we are done parsing an Object
+                    inObject = false;
+                    // return PObject,
+                    return addPObject(library, objectReference);
+                }
+            }
+            // everything else gets pushed onto the stack
+            else {
+                stack.push(nextToken);
+            }
+            if (parseMode == PARSE_MODE_OBJECT_STREAM && deepnessCount == 0 && stack.size() > 0) {
+                return stack.pop();
+            }
         }
+        while (!complete);
         // return the top of the stack
         return stack.pop();
     }
@@ -761,7 +740,7 @@ public class Parser {
             currentByte = reader.read();
             // input stream interrupted
             if (currentByte < 0) {
-                throw new IOException();
+                return null;
             }
             currentChar = (char) currentByte;
         }

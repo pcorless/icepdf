@@ -52,8 +52,7 @@ public class BufferedMarkedInputStream extends BufferedInputStream {
 
     @Override
     public synchronized void reset() throws IOException {
-        if (markpos > 0)
-            fillCount -= (pos - markpos);
+        if (markpos >= 0) fillCount -= (pos - markpos);
         super.reset();
     }
 }
