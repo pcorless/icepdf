@@ -480,10 +480,18 @@ public class Library {
         List v = (List) getObject(dictionaryEntries, key);
         if (v != null) {
             // s by default contains data in the Cartesian plain.
-            return new PRectangle(v).toJava2dCoordinates();
-        } else {
-            return null;
+            if (v.get(0) instanceof Number) {
+                return new PRectangle(v).toJava2dCoordinates();
+            } // crazy corner case that contains each number as reference.
+            else if (v.get(0) instanceof Reference) {
+                v.set(0, getObject(v.get(0)));
+                v.set(1, getObject(v.get(1)));
+                v.set(2, getObject(v.get(2)));
+                v.set(3, getObject(v.get(3)));
+                return new PRectangle(v).toJava2dCoordinates();
+            }
         }
+        return null;
     }
 
     /**
