@@ -245,6 +245,8 @@ public abstract class Font extends Dictionary {
         // Type of the font, type 0, 1, 2, 3 etc.
         subtype = library.getName(entries, SUBTYPE_KEY);
 
+        encoding = library.getName(entries, ENCODING_KEY);
+
         // figure out type
         if (subtype != null) {
             subTypeFormat = (subtype.getName().toLowerCase().equals("type0") ||
@@ -336,9 +338,6 @@ public abstract class Font extends Dictionary {
      * @return font encoding name.
      */
     public Name getEncoding() {
-        if (encoding == null) {
-            encoding = library.getName(entries, ENCODING_KEY);
-        }
         return encoding;
     }
 

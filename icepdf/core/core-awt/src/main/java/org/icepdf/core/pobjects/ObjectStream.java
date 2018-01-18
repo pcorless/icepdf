@@ -85,11 +85,11 @@ public class ObjectStream extends Stream {
                 objectIndex >= objectNumbers.length) {
             return null;
         }
-
         try {
+            decodedStream.beginThreadAccess();
             int objectNumber = objectNumbers[objectIndex];
             long position = objectOffset[objectIndex];
-            decodedStream.beginThreadAccess();
+            long previousPosition = decodedStream.getAbsolutePosition();
             decodedStream.seekAbsolute(position);
             Parser parser = new Parser(decodedStream, Parser.PARSE_MODE_OBJECT_STREAM);
             // Parser.getObject() either does 1 of 3 things:
@@ -111,6 +111,9 @@ public class ObjectStream extends Stream {
                 ((Dictionary) ob).setPObjectReference(
                         new Reference(objectNumber, 0));
             }
+            // put the cursor back in the original position just encase we are dealing
+            // with two object in the same stream.
+            decodedStream.seekAbsolute(previousPosition);
             return ob;
         } catch (Exception e) {
             logger.log(Level.FINE, "Error loading PDF object.", e);
