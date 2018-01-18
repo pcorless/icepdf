@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -123,14 +122,7 @@ public class FaxDecoder extends AbstractImageDecoder {
             InvocationTargetException, InstantiationException, IOException {
 
         byte[] decodedStreamData = new byte[size];
-
-        Class<?> tmDecoder = Class.forName("com.twelvemonkeys.imageio.plugins.tiff.CCITTFaxDecoderStream");
-        Constructor tmDecoderConst = tmDecoder.getConstructor(InputStream.class, int.class, int.class, int.class, long.class);
-        tmDecoderConst.setAccessible(true);
-        Method tmDecoderSetByteAligned = tmDecoder.getMethod("setOptionByteAligned", boolean.class);
-        tmDecoderSetByteAligned.setAccessible(true);
-
-        int compression = 0;
+        int compression;
         long options = 0;
         if (k == 0) {
             compression = 3; // Group 3 1D
@@ -155,9 +147,14 @@ public class FaxDecoder extends AbstractImageDecoder {
             compression = 4;
         }
 
+        Class<?> tmDecoder = Class.forName("com.twelvemonkeys.imageio.plugins.tiff.CCITTFaxDecoderStream");
+        Constructor tmDecoderConst = tmDecoder.getConstructor(
+                InputStream.class, int.class, int.class, int.class, long.class, boolean.class);
+        tmDecoderConst.setAccessible(true);
+
         ByteArrayInputStream bis = new ByteArrayInputStream(streamData);
-        InputStream decoderStream = (InputStream) tmDecoderConst.newInstance(bis, columns, compression, 1, options);
-        tmDecoderSetByteAligned.invoke(decoderStream, encodedByteAlign);
+        InputStream decoderStream = (InputStream) tmDecoderConst.newInstance(
+                bis, columns, compression, 1, options, encodedByteAlign);
 
         DataInputStream dis = new DataInputStream(decoderStream);
         dis.readFully(decodedStreamData);
