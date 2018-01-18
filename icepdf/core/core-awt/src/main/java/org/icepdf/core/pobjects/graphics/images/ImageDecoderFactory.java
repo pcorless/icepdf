@@ -16,7 +16,9 @@
 package org.icepdf.core.pobjects.graphics.images;
 
 import org.icepdf.core.pobjects.graphics.GraphicsState;
+import org.icepdf.core.util.Defs;
 
+import javax.imageio.ImageIO;
 import java.util.List;
 
 public class ImageDecoderFactory {
@@ -26,6 +28,12 @@ public class ImageDecoderFactory {
     private static final String[] DCT_DECODE_FILTERS = new String[]{"DCTDecode", "/DCT", "DCT"};
     private static final String[] JBIG2_DECODE_FILTERS = new String[]{"JBIG2Decode"};
     private static final String[] JPX_DECODE_FILTERS = new String[]{"JPXDecode"};
+
+    // setup no caching for imageio.
+    static {
+        ImageIO.setUseCache(Defs.sysPropertyBoolean(
+                "org.icepdf.core.imagedecoder.imageio.caching.enabled", false));
+    }
 
     // singleton
     private static ImageDecoderFactory imageDecoderFactory;
