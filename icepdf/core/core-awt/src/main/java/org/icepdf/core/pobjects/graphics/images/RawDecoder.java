@@ -141,7 +141,7 @@ public class RawDecoder extends AbstractImageDecoder {
                             // But, when it is DeviceRGB, we don't want the performance hit
                             //  of converting the pixels via the PColorSpace, so we'll
                             //  break this into the two cases
-                            if (isDeviceRGB) {
+                            if (isDeviceRGB && bitsPerComponent == 8) {
                                 // binary values  so either 0 or 1, we must convert to 0-255
                                 red = in.getBits(bitsPerComponent) * 255;
                                 green = in.getBits(bitsPerComponent) * 255;
