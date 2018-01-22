@@ -95,8 +95,14 @@ public class OptionalContentMembership extends Dictionary implements OptionalCon
                     ocgs.add((OptionalContentGroup) ocg);
                 }
             }
+
         }
-        policy = VisibilityPolicy.getPolicy(library.getName(entries, P_KEY));
+        if (ocgs.size() > 0) {
+            policy = VisibilityPolicy.getPolicy(library.getName(entries, P_KEY));
+        } else {
+            // if no ocgs, then everything should be visible
+            policy = VisibilityPolicy.ALL_ON;
+        }
 
         inited = true;
     }
@@ -137,7 +143,7 @@ public class OptionalContentMembership extends Dictionary implements OptionalCon
                         return true;
                     }
                 }
-                return true;
+                return false;
             }
         },
         ANY_OFF {
