@@ -136,6 +136,11 @@ public class OContentParser extends AbstractContentParser {
 
                 tok = parser.getStreamObject();
 
+                // no more tokens break out.
+                if (tok == null) {
+                    break;
+                }
+
                 // add any names and numbers and every thing else on the
                 // stack for future reference
                 if (!(tok instanceof String)) {
