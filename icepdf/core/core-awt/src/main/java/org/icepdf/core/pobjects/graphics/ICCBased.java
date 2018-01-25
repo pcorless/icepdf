@@ -95,7 +95,7 @@ public class ICCBased extends PColorSpace {
                     colorSpace = new ICC_ColorSpace(profile);
                 }
             } catch (Exception e) {
-                logger.log(Level.FINE, "Error Processing ICCBased Colour Profile", e);
+                logger.log(Level.FINE, "Error Processing ICCBased Colour Profile, falling back on alternative.");
             }
             inited = true;
         }

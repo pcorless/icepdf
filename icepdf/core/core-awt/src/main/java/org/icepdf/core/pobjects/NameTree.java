@@ -346,7 +346,7 @@ public class NameTree extends Dictionary {
                     Object obj = dictionary.get(Destination.D_KEY);
                     if (obj instanceof List) {
                         Destination dest = new Destination(library, obj);
-                        if (dest.getPageReference().equals(pageReference)) {
+                        if (pageReference.equals(dest.getPageReference())) {
                             destinations.add(dest);
                             if (name != null) dest.setNamedDestination(name.toString());
                         }

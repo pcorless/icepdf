@@ -1836,22 +1836,8 @@ public abstract class AbstractContentParser implements ContentParser {
                 tilingPattern.setParentGraphicState(graphicState);
                 tilingPattern.init(graphicState);
                 // 4.) Restore the saved graphics state
-                graphicState = graphicState.restore();
-                // 1x1 tiles don't seem to paint so we'll resort to using the
-                // first pattern colour or the uncolour.
-                if ((tilingPattern.getbBoxMod() != null &&
-                        (tilingPattern.getbBoxMod().getWidth() > 1 ||
-                                tilingPattern.getbBoxMod().getHeight() > 1))) {
-                    shapes.add(new TilingPatternDrawCmd(tilingPattern));
-                } else {
-                    // draw partial fill colour
-                    if (tilingPattern.getPaintType() ==
-                            TilingPattern.PAINTING_TYPE_UNCOLORED_TILING_PATTERN) {
-                        shapes.add(new ColorDrawCmd(tilingPattern.getUnColored()));
-                    } else {
-                        shapes.add(new ColorDrawCmd(tilingPattern.getFirstColor()));
-                    }
-                }
+                graphicState.restore();
+                shapes.add(new TilingPatternDrawCmd(tilingPattern));
                 shapes.add(new ShapeDrawCmd(geometricPath));
                 shapes.add(new DrawDrawCmd());
             } else if (pattern != null &&
@@ -1954,22 +1940,9 @@ public abstract class AbstractContentParser implements ContentParser {
                 tilingPattern.setParentGraphicState(graphicState);
                 tilingPattern.init(graphicState);
                 // 4.) Restore the saved graphics state
-                graphicState = graphicState.restore();
+                graphicState.restore();
                 // tiles nee to be 1x1 or larger to paint so we'll resort to using the
-                // first pattern colour or the uncolour.
-                if (tilingPattern.getbBoxMod() != null &&
-                        (tilingPattern.getbBoxMod().getWidth() >= 0.5 ||
-                                tilingPattern.getbBoxMod().getHeight() >= 0.5)) {
-                    shapes.add(new TilingPatternDrawCmd(tilingPattern));
-                } else {
-                    // draw partial fill colour
-                    if (tilingPattern.getPaintType() ==
-                            TilingPattern.PAINTING_TYPE_UNCOLORED_TILING_PATTERN) {
-                        shapes.add(new ColorDrawCmd(tilingPattern.getUnColored()));
-                    } else {
-                        shapes.add(new ColorDrawCmd(tilingPattern.getFirstColor()));
-                    }
-                }
+                shapes.add(new TilingPatternDrawCmd(tilingPattern));
                 shapes.add(new ShapeDrawCmd(geometricPath));
                 shapes.add(new FillDrawCmd());
             } else if (pattern != null &&
@@ -2055,9 +2028,9 @@ public abstract class AbstractContentParser implements ContentParser {
      * Adds a new Alpha Composite object ot the shapes stack.
      *
      * @param graphicsState current graphics state
-     * @param shapes - current shapes vector to add Alpha Composite to
-     * @param rule   - rule to apply to the alphaComposite.
-     * @param alpha  - alpha value, opaque = 1.0f.
+     * @param shapes        - current shapes vector to add Alpha Composite to
+     * @param rule          - rule to apply to the alphaComposite.
+     * @param alpha         - alpha value, opaque = 1.0f.
      */
     protected static void setAlpha(Shapes shapes, GraphicsState graphicsState, int rule, float alpha) {
         // Build the alpha composite object and add it to the shapes but only
