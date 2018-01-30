@@ -37,6 +37,25 @@
             <artifactId>bcpkix-jdk15on</artifactId>
             <version>${bouncy.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-tiff</artifactId>
+            <version>${twelve-monkey.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>jbig2-imageio</artifactId>
+            <version>${jbig2.version}</version>
+        </dependency>
+
+        <!--<dependency>
+            <groupId>com.github.jai-imageio</groupId>
+            <artifactId>jai-imageio-jpeg2000</artifactId>
+            <version>${jai.version}</version>
+        </dependency>-->
+
     </dependencies>
 
     <dependencyManagement>

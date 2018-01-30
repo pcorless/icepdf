@@ -170,8 +170,7 @@ public class NewAnnotationPostPageLoad {
                                         AnnotationComponentFactory.buildAnnotationComponent(
                                                 linkAnnotation,
                                                 controller.getDocumentViewController(),
-                                                pageViewComponent,
-                                                controller.getDocumentViewController().getDocumentViewModel());
+                                                pageViewComponent);
                                 // create a new URI action
                                 org.icepdf.core.pobjects.actions.Action action =
                                         createURIAction(document.getPageTree().getLibrary(),

@@ -9,6 +9,9 @@ allprojects {
 
     repositories {
         mavenCentral()
+        maven {
+            url "http://anonsvn.icesoft.org/repo/maven2/snapshots/"
+        }
     }
 
     tasks.withType(Javadoc) {
@@ -54,7 +57,7 @@ distributions {
                 from 'licenses'
             }
             // maven auto generated pom files.
- /*           into ('maven2') {
+            into ('maven2') {
                 from 'core/core-awt/build/publications/coreJar/pom-default.xml'
                 rename { String fileName ->
                     fileName.replace("pom-default.xml", "icepdf-core.xml")
@@ -69,7 +72,7 @@ distributions {
             // examples
             into ('examples') {
                 from 'examples'
-            }*/
+            }
             // readme.
             into (''){
                 from 'readme.html'
