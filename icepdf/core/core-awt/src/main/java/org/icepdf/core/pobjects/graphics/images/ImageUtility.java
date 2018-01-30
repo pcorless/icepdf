@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2017 ICEsoft Technologies Canada Corp.
+ * Copyright 2006-2018 ICEsoft Technologies Canada Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -217,6 +217,7 @@ public class ImageUtility {
                     @Override
                     public void paint(Graphics g_) {
                         super.paint(g_);
+                        ((Graphics2D) g_).scale(5, 5);
                         g_.setColor(Color.green);
                         g_.fillRect(0, 0, 10000, 10000);
                         g_.drawImage(bufferedImage, 0, 0, f);
