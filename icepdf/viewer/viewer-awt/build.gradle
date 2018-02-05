@@ -15,7 +15,7 @@ publishing {
         viewerJar(MavenPublication) {
             groupId 'org.icepdf.os'
             artifactId 'icepdf-viewer'
-            version "${VERSION + '-' + RELEASE_TYPE}"
+            version "${VERSION}"
 
             pom.withXml {
                 asNode().appendNode('description', 'ICEpdf core rendering library.')
