@@ -70,9 +70,9 @@ distributions {
                 }
             }
             // examples
-            into ('examples') {
-                from 'examples'
-            }
+//            into ('examples') {
+//                from 'examples'
+//            }
             // readme.
             into (''){
                 from 'readme.html'
