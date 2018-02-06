@@ -31,7 +31,7 @@ defaultTasks 'taskReport', 'dependencyReport', 'sourcesJar', 'genPomFileForCoreJ
 distributions {
     os {
         baseName = 'icepdf-os'
-        version "${VERSION + '-' + RELEASE_TYPE}"
+        version "${VERSION + (RELEASE_TYPE?.trim()? '-' + RELEASE_TYPE:'')}"
         contents {
             duplicatesStrategy = 'exclude'
             into('libs-source') {
