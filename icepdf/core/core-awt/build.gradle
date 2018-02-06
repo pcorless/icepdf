@@ -5,8 +5,8 @@ def baseJarName = 'icepdf'
 def baseAppendixName = 'core'
 def bouncyVersion = '1.57'
 def jaiVersion = '1.3.0'
-def monkeyVersion = '3.4-SNAPSHOT'
-def jbig2Version = '3.0.0-SNAPSHOT'
+def monkeyVersion = '3.4-r6.3'
+def jbig2Version = '3.0.0-r6.3'
 
 // generatePomFileForCoreJarPublication
 publishing {
