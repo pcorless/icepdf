@@ -43,11 +43,23 @@ jar {
     appendix 'viewer'
     version "${VERSION}"
     classifier "${RELEASE_TYPE}"
+
+    doFirst {
+        manifest {
+            attributes ('Created-By': System.getProperty('java.version') + ' (' + System.getProperty('java.vendor') + ')')
+            // executable jar
+            attributes("Main-Class": 'org.icepdf.ri.viewer.Main')
+            if (!configurations.runtime.isEmpty()) {
+                attributes('Class-Path':
+                        configurations.runtime.collect{it.name}.join(' '))
+            }
+        }
+    }
+
     manifest {
-        attributes("Main-Class": 'org.icepdf.ri.viewer.Main')
         // section names attributes
         attributes("Implementation-Title": "${baseName + '-' + appendix}", "${sectionName}")
-        attributes("Implementation-Version": "${version + '-' + classifier}", "${sectionName}")
+        attributes("Implementation-Version": "${VERSION + (RELEASE_TYPE?.trim()? '-' + RELEASE_TYPE:'')}", "${sectionName}")
         attributes("Implementation-Vendor": "${COMPANY}", "${sectionName}")
     }
 }
@@ -61,7 +73,7 @@ task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
     manifest {
         attributes("Implementation-Title": "${baseName + '-' + appendix}", "${sectionName}")
-        attributes("Implementation-Version": "${version + '-' + classifier}", "${sectionName}")
+        attributes("Implementation-Version": "${VERSION + (RELEASE_TYPE?.trim()? '-' + RELEASE_TYPE:'')}", "${sectionName}")
         attributes("Implementation-Vendor": "${COMPANY}", "${sectionName}")
     }
     from sourceSets.main.allSource

@@ -49,8 +49,9 @@ jar() {
     version "${VERSION}"
     classifier "${RELEASE_TYPE}"
     manifest {
+        attributes('Created-By': System.getProperty('java.version') + ' (' + System.getProperty('java.vendor') + ')')
         attributes("Implementation-Title": "${baseName + '-' + appendix}", "${sectionName}")
-        attributes("Implementation-Version": "${version + '-' + classifier}", "${sectionName}")
+        attributes("Implementation-Version": "${VERSION + (RELEASE_TYPE?.trim()? '-' + RELEASE_TYPE:'')}", "${sectionName}")
         attributes("Implementation-Vendor": "${COMPANY}", "${sectionName}")
     }
 }
@@ -65,7 +66,7 @@ task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
     manifest {
         attributes("Implementation-Title": "${baseName + '-' + appendix}", "${sectionName}")
-        attributes("Implementation-Version": "${version + '-' + classifier}", "${sectionName}")
+        attributes("Implementation-Version": "${VERSION + (RELEASE_TYPE?.trim()? '-' + RELEASE_TYPE:'')}", "${sectionName}")
         attributes("Implementation-Vendor": "${COMPANY}", "${sectionName}")
     }
     from sourceSets.main.allSource
