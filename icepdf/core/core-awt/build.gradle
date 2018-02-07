@@ -3,10 +3,6 @@ description 'ICEpdf core library jar project'
 def sectionName = 'org/icepdf/core/'
 def baseJarName = 'icepdf'
 def baseAppendixName = 'core'
-def bouncyVersion = '1.57'
-def jaiVersion = '1.3.0'
-def monkeyVersion = '3.4-SNAPSHOT'
-def jbig2Version = '3.0.0-SNAPSHOT'
 
 // generatePomFileForCoreJarPublication
 publishing {
@@ -106,12 +102,12 @@ clean {
 
 dependencies {
     // signature validation.
-    compile 'org.bouncycastle:bcprov-jdk15on:' + "${bouncyVersion}"
-    compile 'org.bouncycastle:bcprov-ext-jdk15on:' + "${bouncyVersion}"
-    compile 'org.bouncycastle:bcpkix-jdk15on:' + "${bouncyVersion}"
+    compile 'org.bouncycastle:bcprov-jdk15on:' + "${BOUNCY_VERSION}"
+    compile 'org.bouncycastle:bcprov-ext-jdk15on:' + "${BOUNCY_VERSION}"
+    compile 'org.bouncycastle:bcpkix-jdk15on:' + "${BOUNCY_VERSION}"
     // tiff, jpeg2000 and jbig decoding
-    compile 'com.twelvemonkeys.imageio:imageio-tiff:'  + "${monkeyVersion}"
-//    compile 'com.github.jai-imageio:jai-imageio-jpeg2000:' + "${jaiVersion}"
-    compile 'org.apache.pdfbox:jbig2-imageio:' + "${jbig2Version}"
+    compile 'com.twelvemonkeys.imageio:imageio-tiff:'  + "${MONKEY_VERSION}"
+//    compile 'com.github.jai-imageio:jai-imageio-jpeg2000:' + "${JAI_VERSION}"
+    compile 'org.apache.pdfbox:jbig2-imageio:' + "${JBIG2_VERSION}"
 
 }
