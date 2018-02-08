@@ -2370,6 +2370,7 @@ public class SwingViewBuilder {
         tmp.setBorder(BorderFactory.createEmptyBorder());
         tmp.setContentAreaFilled(false);
         tmp.setFocusPainted(false);
+        tmp.setPreferredSize(new Dimension(imageWidth, imageHeight));
 
         return tmp;
     }
