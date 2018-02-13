@@ -265,7 +265,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
     }
 
     /**
-     * Apply <Public | Private> | <Color label name, if exists> message format for any named colours
+     * Apply &lt;Public | Private&gt; | &lt;Color label name, if exists&gt; message format for any named colours
      *
      * @param annotation annotation to generate status lable from.
      */

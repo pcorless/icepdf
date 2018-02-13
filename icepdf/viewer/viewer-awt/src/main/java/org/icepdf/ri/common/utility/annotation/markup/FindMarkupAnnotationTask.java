@@ -109,6 +109,8 @@ public class FindMarkupAnnotationTask extends AbstractTask<FindMarkupAnnotationT
      * @param filterType annotation type filter column value
      * @param searchPattern search pattern
      * @param sortType  sort type
+     * @param isRegex regex notation enabled.
+     * @param isCaseSensitive case sensitivity
      */
     public void startTask(
             final Pattern searchPattern,
