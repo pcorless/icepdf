@@ -67,6 +67,7 @@ public class Separation extends PColorSpace {
 
     // named colour reference if valid conversion took place
     protected Color namedColor;
+    protected HashMap<Float, Color> namedColorCache = new HashMap<>();
     // alternative colour space, named colour can not be resolved.
     protected PColorSpace alternate;
     // transform for colour tint, named function type
@@ -165,16 +166,21 @@ public class Separation extends PColorSpace {
         if (namedColor != null) {
             // apply tint
             tint = components[0];
-            // apply tint as an alpha value.
-            float[] colour = namedColor.getComponents(null);
-//                namedColor = new Color(colour[0] * tint, colour[1] * tint, colour[2] * tint);
-            Color namedColor = new Color(colour[0], colour[1], colour[2], tint);
-            // The color model doesn't actually have transparency, so white with an alpha of 0.
-            // is still just white, not transparent.
-            if (tint < 0.1f && colour[0] == 0 && colour[1] == 0 && colour[2] == 0) {
-                return Color.WHITE;
+            Color cachedNamedColor = namedColorCache.get(tint);
+            if (cachedNamedColor == null) {
+                // apply tint as an alpha value.
+                float[] colour = namedColor.getComponents(null);
+                float tint2 = 1 - tint;
+                Color namedColor = new Color(
+                        tint2 + (colour[0] * tint),
+                        tint2 + (colour[1] * tint),
+                        tint2 + (colour[2] * tint));
+                namedColorCache.put(tint, namedColor);
+                return namedColor;
+            } else {
+                return cachedNamedColor;
             }
-            return namedColor;
+
         }
 
         // the function couldn't be initiated then use the alternative colour

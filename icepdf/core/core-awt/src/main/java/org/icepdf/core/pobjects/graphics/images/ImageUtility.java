@@ -217,7 +217,7 @@ public class ImageUtility {
                     @Override
                     public void paint(Graphics g_) {
                         super.paint(g_);
-                        ((Graphics2D) g_).scale(5, 5);
+                        ((Graphics2D) g_).scale(1, 1);
                         g_.setColor(Color.green);
                         g_.fillRect(0, 0, 10000, 10000);
                         g_.drawImage(bufferedImage, 0, 0, f);
@@ -225,11 +225,9 @@ public class ImageUtility {
                         g_.drawRect(0, 0, bufferedImage.getWidth() - 2, bufferedImage.getHeight() - 2);
                     }
                 };
+                image.setSize(new Dimension(bufferedImage.getWidth(), bufferedImage.getHeight()));
                 image.setPreferredSize(new Dimension(bufferedImage.getWidth(), bufferedImage.getHeight()));
-                image.setSize(new Dimension(width, height));
 
-                JPanel test = new JPanel();
-                test.setPreferredSize(new Dimension(width, height));
                 JScrollPane tmp = new JScrollPane(image);
                 tmp.revalidate();
                 f.setSize(new Dimension(width, height));
