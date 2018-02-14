@@ -47,7 +47,15 @@ public abstract class PColorSpace extends Dictionary {
         super(l, h);
     }
 
-    public static PColorSpace getColorSpace(Library library, Object o) {
+    /**
+     * Gets the colour space object represent by o.  This method is synchronized to insure we don't
+     * accidently end up with two copies of the same object.
+     *
+     * @param library document library
+     * @param o       object to try and make into a valid color space.
+     * @return a valid color space or null if an error occurred.
+     */
+    public static synchronized PColorSpace getColorSpace(Library library, Object o) {
         if (o != null) {
             PColorSpace colorSpace = null;
             Reference ref = null;

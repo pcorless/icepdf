@@ -68,6 +68,7 @@ public class Separation extends PColorSpace {
     // named colour reference if valid conversion took place
     protected Color namedColor;
     protected HashMap<Float, Color> namedColorCache = new HashMap<>();
+    protected final Object cacheLock = new Object();
     // alternative colour space, named colour can not be resolved.
     protected PColorSpace alternate;
     // transform for colour tint, named function type
@@ -165,22 +166,23 @@ public class Separation extends PColorSpace {
         // in a additive device then it should be used over the alternate colour.
         if (namedColor != null) {
             // apply tint
-            tint = components[0];
-            Color cachedNamedColor = namedColorCache.get(tint);
-            if (cachedNamedColor == null) {
-                // apply tint as an alpha value.
-                float[] colour = namedColor.getComponents(null);
-                float tint2 = 1 - tint;
-                Color namedColor = new Color(
-                        tint2 + (colour[0] * tint),
-                        tint2 + (colour[1] * tint),
-                        tint2 + (colour[2] * tint));
-                namedColorCache.put(tint, namedColor);
-                return namedColor;
-            } else {
-                return cachedNamedColor;
+            synchronized (cacheLock) {
+                tint = components[0];
+                Color cachedNamedColor = namedColorCache.get(tint);
+                if (cachedNamedColor == null) {
+                    // apply tint as an alpha value.
+                    float[] colour = namedColor.getComponents(null);
+                    float tint2 = 1 - tint;
+                    Color namedColor = new Color(
+                            tint2 + (colour[0] * tint),
+                            tint2 + (colour[1] * tint),
+                            tint2 + (colour[2] * tint));
+                    namedColorCache.put(tint, namedColor);
+                    return namedColor;
+                } else {
+                    return cachedNamedColor;
+                }
             }
-
         }
 
         // the function couldn't be initiated then use the alternative colour
