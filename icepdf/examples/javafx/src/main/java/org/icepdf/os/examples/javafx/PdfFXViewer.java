@@ -99,17 +99,17 @@ public class PdfFXViewer extends Application {
                 FontPropertiesManager.getInstance().loadOrReadSystemFonts();
 
                 PropertiesManager properties = PropertiesManager.getInstance();
-                properties.checkAndStoreFloatProperty(PropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL, 1.25f);
-                properties.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_UTILITY_OPEN, false);
-                properties.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_UTILITY_SAVE, false);
-                properties.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_UTILITY_PRINT, false);
+                properties.getPreferences().putFloat(PropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL, 1.25f);
+                properties.getPreferences().putBoolean(PropertiesManager.PROPERTY_SHOW_UTILITY_OPEN, false);
+                properties.getPreferences().putBoolean(PropertiesManager.PROPERTY_SHOW_UTILITY_SAVE, false);
+                properties.getPreferences().putBoolean(PropertiesManager.PROPERTY_SHOW_UTILITY_PRINT, false);
                 // hide the status bar
-                properties.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_STATUSBAR, false);
+                properties.getPreferences().putBoolean(PropertiesManager.PROPERTY_SHOW_STATUSBAR, false);
                 // hide a few toolbars, just to show how the prefered size of the viewer changes.
-                properties.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_FIT, false);
-                properties.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_ROTATE, false);
-                properties.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_TOOL, false);
-                properties.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_FORMS, false);
+                properties.getPreferences().putBoolean(PropertiesManager.PROPERTY_SHOW_TOOLBAR_FIT, false);
+                properties.getPreferences().putBoolean(PropertiesManager.PROPERTY_SHOW_TOOLBAR_ROTATE, false);
+                properties.getPreferences().putBoolean(PropertiesManager.PROPERTY_SHOW_TOOLBAR_TOOL, false);
+                properties.getPreferences().putBoolean(PropertiesManager.PROPERTY_SHOW_TOOLBAR_FORMS, false);
 
                 swingController.getDocumentViewController().setAnnotationCallback(
                         new org.icepdf.ri.common.MyAnnotationCallback(swingController.getDocumentViewController()));

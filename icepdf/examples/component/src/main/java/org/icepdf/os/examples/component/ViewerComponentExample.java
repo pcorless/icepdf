@@ -45,9 +45,9 @@ public class ViewerComponentExample {
                 FontPropertiesManager.getInstance().loadOrReadSystemFonts();
 
                 PropertiesManager properties = PropertiesManager.getInstance();
-                properties.checkAndStoreFloatProperty(PropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL, 1.25f);
+                properties.getPreferences().putFloat(PropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL, 1.25f);
 
-                SwingViewBuilder factory = new SwingViewBuilder(controller);
+                SwingViewBuilder factory = new SwingViewBuilder(controller, properties);
 
                 // add interactive mouse link annotation support via callback
                 controller.getDocumentViewController().setAnnotationCallback(
