@@ -4171,7 +4171,8 @@ public class SwingController extends ComponentAdapter
     }
 
     public boolean isAnnotationUtilityPaneVisible() {
-        return utilityTabbedPane != null && utilityTabbedPane.isVisible() && annotationPanel.isVisible();
+        return utilityTabbedPane != null && utilityTabbedPane.isVisible() &&
+                annotationPanel != null && annotationPanel.isVisible();
     }
 
     /**
