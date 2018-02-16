@@ -405,7 +405,7 @@ public class TilingPattern extends Stream implements Pattern {
         canvas.setRenderingHints(renderingHints);
         // if we have a really small tile we risk paint just black at low zoom levels,  to avoid this we'll set
         // an alpha composite to avoid obscuring any content.
-        if (imageWidth <= 2 || imageHeight <= 2) {
+        if (imageWidth <= 5 || imageHeight <= 5) {
             canvas.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.15f));
         }
 
