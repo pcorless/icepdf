@@ -169,6 +169,36 @@ public class FontManager {
             "/usr/sfw/share/a2ps/afm/",
             "/usr/sfw/share/ghostscript/fonts/");
 
+    // array indexes for font data stored in properties.
+    private static final int FONT_NAME = 0;
+    private static final int FONT_FAMILY = 1;
+    private static final int FONT_DECORATIONS = 2;
+    private static final int FONT_PATH = 3;
+
+    /**
+     * Mutable list of font names that are excluded from font font substitution.
+     */
+    public static List<String> BASE_NAME_EXCLUSION_LIST = Arrays.asList(
+            "opensymbol",
+            "starsymbol",
+            "symbolmt",
+            "arial-black",
+            "arial-blackitalic",
+            "new",
+            // mapping issue with standard ascii, not sure why, TimesNewRomanPSMT is ok.
+            "timesnewromanps",
+            // doesn't seem to the correct cid mapping otf version anyways.
+            "kozminpro-regular"
+    );
+
+    /**
+     * Mutable list of font file names that are excluded from font font substitution. Font names must also
+     * include the file extension.
+     */
+    public static List<String> FONT_FILE_NAME_EXCLUSION_LIST = Arrays.asList(
+//        "HEB____.TTF"
+    );
+
     /**
      * Change the base font name from lucidasans which is a Java Physical Font
      * name.  The name should be change to one of Java's logical font names:
@@ -239,10 +269,10 @@ public class FontManager {
         // separated by the "|" character.
         while (fontIterator.hasNext()) {
             currentFont = (Object[]) fontIterator.next();
-            name = (String) currentFont[0];
-            family = (String) currentFont[1];
-            decorations = (Integer) currentFont[2];
-            path = (String) currentFont[3];
+            name = (String) currentFont[FONT_NAME];
+            family = (String) currentFont[FONT_FAMILY];
+            decorations = (Integer) currentFont[FONT_DECORATIONS];
+            path = (String) currentFont[FONT_PATH];
             // add the new entry
             fontProperites.put(name, family + "|" + decorations + "|" + path);
         }
@@ -269,6 +299,7 @@ public class FontManager {
             Integer decorations;
             String path;
             StringTokenizer tokens;
+            Object[] fontProperty;
             // read in font information
             for (String fontKey : fontKeys) {
                 name = fontKey;
@@ -278,7 +309,11 @@ public class FontManager {
                 decorations = new Integer(tokens.nextToken());
                 path = tokens.nextToken();
                 if (name != null && family != null && path != null) {
-                    fontList.add(new Object[]{name, family, decorations, path});
+                    // check exclusion list
+                    fontProperty = new Object[]{name, family, decorations, path};
+                    if (!checkExclusionLists(fontProperty)) {
+                        fontList.add(new Object[]{name, family, decorations, path});
+                    }
                 } else {
                     throw new IllegalArgumentException(errorString);
                 }
@@ -419,10 +454,13 @@ public class FontManager {
             // normalize name
             String fontName = font.getName().toLowerCase();
             // Add new font data to the font list
-            fontList.add(new Object[]{font.getName().toLowerCase(), // original PS name
+            Object[] fontProperty = new Object[]{font.getName().toLowerCase(), // original PS name
                     FontUtil.normalizeString(font.getFamily()), // family name
                     guessFontStyle(fontName), // weight and decorations, mainly bold,italic
-                    fontPath});  // path to font on OS
+                    fontPath};
+            if (!checkExclusionLists(fontProperty)) {
+                fontList.add(fontProperty);  // path to font on OS
+            }
             if (logger.isLoggable(Level.FINER)) {
                 logger.finer("Adding system font: " + font.getName() + " " + fontPath);
             }
@@ -689,7 +727,7 @@ public class FontManager {
             // get first font that has a matching style
             for (int i = fontList.size() - 1; i >= 0; i--) {
                 fontData = fontList.get(i);
-                style = (Integer) fontData[2];
+                style = (Integer) fontData[FONT_DECORATIONS];
                 if (((decorations & BOLD_ITALIC) == BOLD_ITALIC) &&
                         ((style & BOLD_ITALIC) == BOLD_ITALIC)) {
                     found = true;
@@ -749,31 +787,18 @@ public class FontManager {
         if (fontList != null) {
             for (int i = fontList.size() - 1; i >= 0; i--) {
                 fontData = fontList.get(i);
-                baseName = (String) fontData[0];
-                familyName = (String) fontData[1];
-                path = (String) fontData[3];
+                baseName = (String) fontData[FONT_NAME];
+                familyName = (String) fontData[FONT_FAMILY];
+                path = (String) fontData[FONT_PATH];
                 if (logger.isLoggable(Level.FINEST)) {
                     logger.finest(baseName + " : " + familyName + "  : " + name);
                 }
-                if (fontName.toLowerCase().contains(baseName) ||
-                        name.equals(familyName)) {
+                if (fontName.toLowerCase().contains(baseName) || name.equals(familyName)) {
                     style = (Integer) fontData[2];
                     boolean found = false;
                     // ignore this font, as the cid mapping are not correct, or ther is
                     // just look and feel issues with them.
-                    if (baseName.equals("opensymbol") ||
-                            baseName.equals("starsymbol")
-                            || baseName.equals("symbolmt")
-                            || baseName.equals("arial-black")
-                            || baseName.equals("arial-blackitalic")
-                            || baseName.equals("new")
-                            // mapping issue with standard ascii, not sure why, TimesNewRomanPSMT is ok.
-                            || baseName.equals("timesnewromanps")
-                            // doesn't seem to the correct cid mapping otf version anyways.
-                            || baseName.equals("kozminpro-regular")
-                            ) {
-                        //found = false;
-                    } else if (((decorations & BOLD_ITALIC) == BOLD_ITALIC) &&
+                    if (((decorations & BOLD_ITALIC) == BOLD_ITALIC) &&
                             ((style & BOLD_ITALIC) == BOLD_ITALIC)) {
                         found = true;
                     } else if (((decorations & BOLD) == BOLD) &&
@@ -1070,27 +1095,18 @@ public class FontManager {
         if (fontList != null) {
             for (int i = fontList.size() - 1; i >= 0; i--) {
                 fontData = fontList.get(i);
-                baseName = (String) fontData[0];
-                familyName = (String) fontData[1];
+                baseName = (String) fontData[FONT_NAME];
+                style = (Integer) fontData[FONT_DECORATIONS];
+                familyName = (String) fontData[FONT_FAMILY];
                 if (logger.isLoggable(Level.FINEST)) {
                     logger.finest(baseName + " : " + familyName + "  : " + name);
                 }
                 if (name.contains(familyName) ||
                         fontName.toLowerCase().contains(baseName)) {
-                    style = (Integer) fontData[2];
                     boolean found = false;
                     // ignore this font, as the cid mapping are not correct, or ther is
                     // just look and feel issues with them.
-                    if (baseName.equals("opensymbol") ||
-                            baseName.equals("starsymbol")
-                            || baseName.equals("arial-black")
-                            || baseName.equals("arial-blackitalic")
-                            || baseName.equals("new")
-                            // mapping issue with standard ascii, not sure why, TimesNewRomanPSMT is ok.
-                            || baseName.equals("timesnewromanps")
-                            ) {
-                        //found = false;
-                    } else if (((decorations & BOLD_ITALIC) == BOLD_ITALIC) &&
+                    if (((decorations & BOLD_ITALIC) == BOLD_ITALIC) &&
                             ((style & BOLD_ITALIC) == BOLD_ITALIC)) {
                         found = true;
                     } else if (((decorations & BOLD) == BOLD) &&
@@ -1195,6 +1211,28 @@ public class FontManager {
             style += " Plain";
         }
         return style;
+    }
+
+    private static boolean checkExclusionLists(Object[] fontData) {
+        // check against know font base names that cause problems
+        String baseName = (String) fontData[FONT_NAME];
+        if (BASE_NAME_EXCLUSION_LIST != null && BASE_NAME_EXCLUSION_LIST.size() > 0) {
+            for (String fontName : BASE_NAME_EXCLUSION_LIST) {
+                if (fontName != null && fontName.equals(baseName)) {
+                    return true;
+                }
+            }
+        }
+        // check against actual font names as a worst case scenario.
+        String fontFileName = (String) fontData[FONT_PATH];
+        if (FONT_FILE_NAME_EXCLUSION_LIST != null && FONT_FILE_NAME_EXCLUSION_LIST.size() > 0) {
+            for (String fontPath : FONT_FILE_NAME_EXCLUSION_LIST) {
+                if (fontFileName != null && fontFileName.endsWith(fontPath)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
