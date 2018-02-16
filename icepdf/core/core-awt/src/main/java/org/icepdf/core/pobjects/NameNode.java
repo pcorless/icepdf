@@ -75,7 +75,7 @@ public class NameNode extends Dictionary {
     }
 
     public boolean isEmpty() {
-        return kidsReferences.size() == 0;
+        return kidsReferences != null && kidsReferences.size() == 0;
     }
 
     public boolean hasLimits() {
@@ -174,8 +174,7 @@ public class NameNode extends Dictionary {
     }
 
     public List<NameNode> getKidsNodes() {
-
-        int sz = kidsReferences.size();
+        int sz = kidsReferences != null ? kidsReferences.size() : 0;
         List<NameNode> kidsNodes = null;
         if (sz > 0) {
             kidsNodes = new ArrayList<>(sz);
@@ -191,9 +190,7 @@ public class NameNode extends Dictionary {
                     }
                 }
             }
-
         }
-
         return kidsNodes;
     }
 
