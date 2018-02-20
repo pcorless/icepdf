@@ -494,7 +494,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                                 if (word.isHighlighted()) {
                                     // highlight the rest of the words
                                     for (; j < maxj; j++) {
-                                        if (!word.isHighlighted()) {
+                                        if (!words.get(j).isHighlighted()) {
                                             break;
                                         }
                                         words.get(j).setHighlightCursor(true);
@@ -570,7 +570,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                                     if (word.isHighlighted()) {
                                         // highlight the rest of the words
                                         for (; j >= 0; j--) {
-                                            if (!word.isHighlighted()) {
+                                            if (!words.get(j).isHighlighted()) {
                                                 break;
                                             }
                                             words.get(j).setHighlightCursor(true);
