@@ -2305,7 +2305,7 @@ public class SwingController extends ComponentAdapter
                     final String filePath = toker.nextToken();
                     JMenuItem mi = SwingViewBuilder.makeMenuItem(
                             fileName,
-                            SwingViewBuilder.buildKeyStroke(KeyEvent.VK_0 + count,
+                            SwingViewBuilder.buildKeyStroke(KeyEvent.VK_1 + count,
                                     KeyEventConstants.MODIFIER_OPEN_FILE));
                     mi.addActionListener(e -> openFileInSomeViewer(filePath));
                     recentFilesSubMenu.add(mi);

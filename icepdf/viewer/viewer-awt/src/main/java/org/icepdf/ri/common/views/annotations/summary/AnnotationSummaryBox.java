@@ -68,6 +68,8 @@ public class AnnotationSummaryBox extends PopupAnnotationComponent implements Fo
         PropertiesManager propertiesManager = documentViewController.getParentController().getPropertiesManager();
         setFontSize(propertiesManager.getPreferences().getInt(
                 PropertiesManager.PROPERTY_ANNOTATION_SUMMARY_FONT_SIZE, new JLabel().getFont().getSize()));
+        // remove super mouse listener as it interferes with the drag and drop.
+        removeMouseWheelListener(this);
     }
 
     public void toggleTextBlockVisibility() {
@@ -138,13 +140,6 @@ public class AnnotationSummaryBox extends PopupAnnotationComponent implements Fo
         return new SummaryPopupMenu(this, (MarkupAnnotation) comp.getAnnotation(), comp,
                 documentViewController.getParentController(),
                 frame, mouseHandler);
-    }
-
-    public void setFontSize(float size) {
-        Font font = textArea.getFont().deriveFont(size);
-        textArea.setFont(font);
-        titleLabel.setFont(font);
-        creationLabel.setFont(font);
     }
 
 }

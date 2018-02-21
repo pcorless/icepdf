@@ -66,13 +66,15 @@ import java.util.logging.Level;
  * but in this case PopupAnnotationComponent paints itself along with controls
  * for editing, replying and deleting TextAnnotation comments.
  * appearance stream.
+ * <br>
+ * Font size can be change via a wheel mouse or crt-0 (reset), ctr--(zoom out) and crt-+ (zoom in).
  *
  * @see FreeTextAnnotationPanel
  * @since 5.0
  */
 @SuppressWarnings("serial")
 public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupAnnotation>
-        implements TreeSelectionListener, ActionListener, DocumentListener, PropertyChangeListener {
+        implements TreeSelectionListener, ActionListener, DocumentListener, PropertyChangeListener, MouseWheelListener {
 
     public static int DEFAULT_WIDTH = 215;
     public static int DEFAULT_HEIGHT = 150;
@@ -133,6 +135,9 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         }
 
         buildGUI();
+
+        // setup font scaling binding
+        addFontSizeBindings();
 
         boolean isVisible = annotation.isOpen();
         setVisible(isVisible);
@@ -554,6 +559,58 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 TextAnnotation.STATE_MODEL_REVIEW, status);
     }
 
+    private void addFontSizeBindings() {
+
+        addMouseWheelListener(this);
+
+        InputMap inputMap = getInputMap(WHEN_FOCUSED);
+        ActionMap actionMap = getActionMap();
+
+        /// ctrl-- to increase font size.
+        KeyStroke key = KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, InputEvent.CTRL_MASK);
+        inputMap.put(key, "font-size-increase");
+        actionMap.put("font-size-increase", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (hasFocus()) {
+                    setFontSize(getFontSize() + 1);
+                }
+            }
+        });
+
+        // ctrl-0 to dfeault font size.
+        key = KeyStroke.getKeyStroke(KeyEvent.VK_0, InputEvent.CTRL_MASK);
+        inputMap.put(key, "font-size-default");
+        actionMap.put("font-size-default", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (hasFocus()) {
+                    setFontSize(new JLabel().getFont().getSize());
+                }
+            }
+        });
+
+        // ctrl-- to decrease font size.
+        key = KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, InputEvent.CTRL_MASK);
+        inputMap.put(key, "font-size-decrease");
+        actionMap.put("font-size-decrease", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (hasFocus()) {
+                    setFontSize(getFontSize() - 1);
+                }
+            }
+        });
+    }
+
+
+    @Override
+    public void mouseWheelMoved(MouseWheelEvent e) {
+        if (hasFocus()) {
+            setFontSize(getFontSize() - e.getWheelRotation());
+        }
+    }
+
     public void actionPerformed(ActionEvent e) {
         Object source = e.getSource();
         if (source == null)
@@ -953,6 +1010,17 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             return Color.BLACK;
         }
 
+    }
+
+    public void setFontSize(float size) {
+        Font font = textArea.getFont().deriveFont(size);
+        textArea.setFont(font);
+        titleLabel.setFont(font);
+        creationLabel.setFont(font);
+    }
+
+    public int getFontSize() {
+        return textArea.getFont().getSize();
     }
 
     class PopupTreeListener extends MouseAdapter {
