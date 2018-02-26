@@ -195,13 +195,13 @@ public class Form extends Stream {
                     logger.finer("Parsing form " + getPObjectReference());
                 }
                 shapes = cp.parse(new byte[][]{in}, null).getShapes();
+                inited = true;
             } catch (Throwable e) {
                 // reset shapes vector, we don't want to mess up the paint stack
                 shapes = new Shapes();
                 logger.log(Level.FINE, "Error parsing Form content stream.", e);
             }
         }
-        inited = true;
     }
 
     public Resources getResources() {
