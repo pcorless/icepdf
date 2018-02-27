@@ -55,13 +55,17 @@ public class AppearanceState extends Dictionary {
         }
         // gather the state info for the appearance.
         if (streamOrDictionary instanceof Form) {
-            Form form = (Form) streamOrDictionary;
-            form.init();
-            originalContentStream = new String(((Form) streamOrDictionary).getDecodedStreamBytes());
-            resources = form.getResources();
-            shapes = form.getShapes();
-            matrix = form.getMatrix();
-            bbox = form.getBBox();
+            try {
+                Form form = (Form) streamOrDictionary;
+                form.init();
+                originalContentStream = new String(((Form) streamOrDictionary).getDecodedStreamBytes());
+                resources = form.getResources();
+                shapes = form.getShapes();
+                matrix = form.getMatrix();
+                bbox = form.getBBox();
+            } catch (InterruptedException e) {
+                logger.log(Level.WARNING, "Could not initialized AppearanceState", e);
+            }
         } else if (streamOrDictionary instanceof Stream) {
             Stream stream = (Stream) streamOrDictionary;
             resources = library.getResources(stream.getEntries(), Annotation.RESOURCES_VALUE);

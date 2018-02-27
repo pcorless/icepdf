@@ -23,6 +23,7 @@ import org.icepdf.core.util.Library;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -99,9 +100,13 @@ public class SoftMask extends Dictionary {
         }
         Object GKey = library.getObject(entries, G_KEY);
         if (GKey != null && GKey instanceof Form) {
-            softMask = (Form) GKey;
-            softMask.init();
-            return softMask;
+            try {
+                softMask = (Form) GKey;
+                softMask.init();
+                return softMask;
+            } catch (InterruptedException e) {
+                logger.log(Level.WARNING, "Could not initialized softMask external graphics state", e);
+            }
         }
         return null;
     }

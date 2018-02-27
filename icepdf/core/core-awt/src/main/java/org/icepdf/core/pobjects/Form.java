@@ -164,7 +164,7 @@ public class Form extends Stream {
     /**
      *
      */
-    public synchronized void init() {
+    public synchronized void init() throws InterruptedException {
         if (inited) {
             return;
         }
@@ -196,8 +196,15 @@ public class Form extends Stream {
                 }
                 shapes = cp.parse(new byte[][]{in}, null).getShapes();
                 inited = true;
+            } catch (InterruptedException e) {
+                // the initialization was interrupted so we need to make sure we bubble up the exception
+                // as we need to let any chained forms know so we can invalidate the page correctly
+                shapes = new Shapes();
+                logger.log(Level.FINE, "Parsing form interrupted parsing Form content stream.", e);
+                throw new InterruptedException(e.getMessage());
             } catch (Throwable e) {
-                // reset shapes vector, we don't want to mess up the paint stack
+                // some parsing or other wise unrecoverable problem, we'll try to render the page none the less.
+                // but not this form object.
                 shapes = new Shapes();
                 logger.log(Level.FINE, "Error parsing Form content stream.", e);
             }

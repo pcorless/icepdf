@@ -27,6 +27,7 @@ import org.icepdf.core.util.Library;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.util.HashMap;
+import java.util.logging.Level;
 
 /**
  * Text field (field type Text) is a box or space for text fill-in data typically
@@ -114,7 +115,11 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
                 } else {
                     appearanceStream.getEntries().remove(Stream.FILTER_KEY);
                 }
-                appearanceStream.init();
+                try {
+                    appearanceStream.init();
+                } catch (InterruptedException e) {
+                    logger.log(Level.WARNING, "Could not initialized TextWidgetAnnotation", e);
+                }
             }
         }
     }

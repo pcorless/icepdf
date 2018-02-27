@@ -582,9 +582,17 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                 // and finally add it to the form.
                 form.getEntries().put(new Name("Resources"), resources);
                 form.setRawBytes("".getBytes());
-                form.init();
+                try {
+                    form.init();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             } else {
-                form.init();
+                try {
+                    form.init();
+                } catch (InterruptedException e) {
+                    logger.log(Level.WARNING, "Could not initialized FreeTexttAnnotation", e);
+                }
                 newFont = form.getResources().getFont(EMBEDDED_FONT_NAME);
                 Reference reference = newFont.getPObjectReference();
                 newFont = new org.icepdf.core.pobjects.fonts.ofont.Font(library, fontDictionary);

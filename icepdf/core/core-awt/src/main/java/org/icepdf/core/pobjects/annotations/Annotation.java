@@ -32,6 +32,7 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.*;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -1799,10 +1800,14 @@ public abstract class Annotation extends Dictionary {
             } else if (stream != null) {
                 // build out an appearance stream, corner case iText 2.1
                 // didn't correctly set type = form on the appearance stream obj.
-                form = new Form(library, stream.getEntries(), null);
-                form.setPObjectReference(stream.getPObjectReference());
-                form.setRawBytes(stream.getDecodedStreamBytes());
-                form.init();
+                try {
+                    form = new Form(library, stream.getEntries(), null);
+                    form.setPObjectReference(stream.getPObjectReference());
+                    form.setRawBytes(stream.getDecodedStreamBytes());
+                    form.init();
+                } catch (InterruptedException e) {
+                    logger.log(Level.WARNING, "Could not initialized Annotation appearance stream", e);
+                }
             }
         }// else a stream, we won't support this for annotations.
         else {

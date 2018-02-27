@@ -551,7 +551,7 @@ public abstract class AbstractContentParser implements ContentParser {
     protected static GraphicsState consume_Do(GraphicsState graphicState, Stack stack,
                                               Shapes shapes, Resources resources,
                                               boolean viewParse, // events
-                                              AtomicInteger imageIndex, Page page) {
+                                              AtomicInteger imageIndex, Page page) throws InterruptedException {
         Name xobjectName = (Name) stack.pop();
         if (resources == null) return graphicState;
         // Form XObject
