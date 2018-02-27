@@ -76,6 +76,9 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
         // listen for annotations changes.
         ((DocumentViewControllerImpl) controller.getDocumentViewController()).addPropertyChangeListener(this);
         addComponentListener(this);
+
+        // add key listeners for ctr, 0, -, = : reset, decrease and increase font size.
+        addFontSizeBindings();
     }
 
     @Override
@@ -141,13 +144,56 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
                     (int) fontSizeBox.getModel().getElementAt(fontSizeBox.getSelectedIndex()).getValue());
             ValueLabelItem tmp = (ValueLabelItem) fontSizeBox.getSelectedItem();
             // fire the font size property change event.
-            if (annotationNamedColorPanels != null) {
-                for (ColorLabelPanel colorLabelPanel : annotationNamedColorPanels) {
-                    colorLabelPanel.firePropertyChange(PropertyConstants.ANNOTATION_SUMMARY_BOX_FONT_SIZE_CHANGE,
-                            0, (int) tmp.getValue());
-                }
+            updateSummaryFontSizes(0, (int) tmp.getValue());
+        }
+    }
+
+    private void updateSummaryFontSizes(int oldFontSizeIndex, int newFontSizeIndex) {
+        if (annotationNamedColorPanels != null) {
+            for (ColorLabelPanel colorLabelPanel : annotationNamedColorPanels) {
+                colorLabelPanel.firePropertyChange(PropertyConstants.ANNOTATION_SUMMARY_BOX_FONT_SIZE_CHANGE,
+                        oldFontSizeIndex, newFontSizeIndex);
             }
         }
+    }
+
+    private void addFontSizeBindings() {
+        InputMap inputMap = getInputMap(WHEN_FOCUSED);
+        ActionMap actionMap = getActionMap();
+
+        /// ctrl-- to increase font size.
+        KeyStroke key = KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, InputEvent.CTRL_MASK);
+        inputMap.put(key, "font-size-increase");
+        actionMap.put("font-size-increase", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (fontSizeBox.getSelectedIndex() + 1 < fontSizeBox.getItemCount()) {
+                    fontSizeBox.setSelectedIndex(fontSizeBox.getSelectedIndex() + 1);
+                }
+            }
+        });
+
+        // ctrl-0 to dfeault font size.
+        key = KeyStroke.getKeyStroke(KeyEvent.VK_0, InputEvent.CTRL_MASK);
+        inputMap.put(key, "font-size-default");
+        actionMap.put("font-size-default", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                fontSizeBox.setSelectedIndex(DEFAULT_FONT_SIZE);
+            }
+        });
+
+        // ctrl-- to decrease font size.
+        key = KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, InputEvent.CTRL_MASK);
+        inputMap.put(key, "font-size-decrease");
+        actionMap.put("font-size-decrease", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (fontSizeBox.getSelectedIndex() - 1 >= 0) {
+                    fontSizeBox.setSelectedIndex(fontSizeBox.getSelectedIndex() - 1);
+                }
+            }
+        });
     }
 
     protected void buildStatusToolBarPanel() {
