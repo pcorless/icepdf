@@ -72,8 +72,6 @@ public class ProductInfo {
     public String getVersion(){
         StringBuilder info = new StringBuilder();
         info.append(VERSION);
-        info.append( " " );
-        info.append( RELEASE_TYPE );
         return info.toString();
     }
 
