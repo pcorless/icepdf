@@ -29,6 +29,7 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
 
 import static org.icepdf.core.pobjects.acroform.ChoiceFieldDictionary.ChoiceFieldType;
 
@@ -146,7 +147,11 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
             } else {
                 appearanceStream.getEntries().remove(Stream.FILTER_KEY);
             }
-            appearanceStream.init();
+            try {
+                appearanceStream.init();
+            } catch (InterruptedException e) {
+                logger.log(Level.WARNING, "Could not initialized ChoiceWidgetAnnotation", e);
+            }
         }
     }
 
