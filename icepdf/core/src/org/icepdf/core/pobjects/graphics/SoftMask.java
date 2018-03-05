@@ -23,6 +23,7 @@ import org.icepdf.core.util.Library;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
