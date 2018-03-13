@@ -118,10 +118,6 @@ public class ImageStream extends Stream {
 //            if (maskDecoder != null || smaskDecoder != null)
 //                ImageUtility.displayImage(decodedImage, "Final " + pObjectReference.toString());
         }
-        // add the image to the pool, just encase it get painted again.
-        if (pObjectReference != null) {
-            library.getImagePool().put(pObjectReference, decodedImage);
-        }
         return decodedImage;
     }
 
