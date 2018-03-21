@@ -64,8 +64,6 @@ public class FlateDecode extends ChunkingInputStream {
 
         int intermediateBufferSize = DEFAULT_BUFFER_SIZE;
 
-        int length = library.getInt(props, new Name("Length"));
-
         // get decode parameters from stream properties
         HashMap decodeParmsDictionary = ImageParams.getDecodeParams(library, props);
         predictor = library.getInt(decodeParmsDictionary, PREDICTOR_VALUE);

@@ -30,7 +30,7 @@ public class YCbCrRasterOp implements RasterOp {
         int lastY = -1, lastCb = -1, lastCr = -1;
         int rVal = 0, gVal = 0, bVal = 0;
         int bands = src.getNumBands();
-        for (int pixel = 0, intPixels = 0; pixel < srcPixels.length; pixel += bands, intPixels++) {
+        for (int pixel = 0, intPixels = 0, max = srcPixels.length - 2; pixel < max; pixel += bands, intPixels++) {
 
             Y = srcPixels[pixel] & 0xff;
             Cb = srcPixels[pixel + 1] & 0xff;

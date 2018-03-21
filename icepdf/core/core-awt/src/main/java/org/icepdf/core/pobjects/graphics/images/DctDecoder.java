@@ -43,6 +43,9 @@ public class DctDecoder extends AbstractImageDecoder {
     private static final int JPEG_ENC_YCCK = 4;
     private static final int JPEG_ENC_GRAY = 5;
 
+    private static final int TRANSFORM_POSITION = 11;
+    private static final String ADOBE = "Adobe";
+
     DctDecoder(ImageStream imageStream, GraphicsState graphicsState) {
         super(imageStream, graphicsState);
     }
@@ -112,18 +115,22 @@ public class DctDecoder extends AbstractImageDecoder {
 
             // check the encoding type for colour conversion.
             jpegEncoding = getJPEGEncoding(data, dataRead);
+            if (jpegEncoding == 0) {
+                // try and find the Adobe transfer meta data.
+                jpegEncoding = getAdobeTransform(imageInputStream);
+            }
             PColorSpace colourSpace = imageParams.getColourSpace();
             int bitsPerComponent = imageParams.getBitsPerComponent();
             float[] decode = imageParams.getDecode();
+            int bands = wr.getNumBands();
 
             if (jpegEncoding == JPEG_ENC_RGB && bitsPerComponent == 8) {
                 tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
-            } else if (jpegEncoding == JPEG_ENC_CMYK && bitsPerComponent == 8) {
+            } else if (jpegEncoding == JPEG_ENC_CMYK && bitsPerComponent == 8 && bands > 1) {
                 tmpImage = ImageUtility.convertCmykToRgb(wr, decode);
-            } else if (jpegEncoding == JPEG_ENC_YCbCr && bitsPerComponent == 8 &&
-                    !(colourSpace instanceof Indexed)) {
+            } else if (jpegEncoding == JPEG_ENC_YCbCr && bitsPerComponent == 8 && bands > 1) {
                 tmpImage = ImageUtility.convertYCbCrToRGB(wr, decode);
-            } else if (jpegEncoding == JPEG_ENC_YCCK && bitsPerComponent == 8) {
+            } else if (jpegEncoding == JPEG_ENC_YCCK && bitsPerComponent == 8 && bands > 1) {
                 // YCCK to RGB works better if an CMYK intermediate is used, but slower.
                 tmpImage = ImageUtility.convertYCCKToRgb(wr, decode);
             } else if (jpegEncoding == JPEG_ENC_GRAY && bitsPerComponent == 8) {
@@ -275,5 +282,46 @@ public class DctDecoder extends AbstractImageDecoder {
                 jpegEncoding = JPEG_ENC_CMYK;
         }
         return jpegEncoding;
+    }
+
+    // See AdobeDCT in https://github.com/haraldk/TwelveMonkeys/
+    private int getAdobeTransform(ImageInputStream iis) throws IOException {
+        int a = 0;
+        iis.seek(0);
+        int by;
+        while ((by = iis.read()) != -1) {
+            if (ADOBE.charAt(a) == by) {
+                a++;
+                if (a != ADOBE.length()) {
+                    continue;
+                }
+                // match
+                a = 0;
+                long afterAdobePos = iis.getStreamPosition();
+                iis.seek(afterAdobePos - 9);
+                int tag = iis.readUnsignedShort();
+                if (tag != 0xFFEE) {
+                    iis.seek(afterAdobePos);
+                    continue;
+                }
+                int len = iis.readUnsignedShort();
+                if (len > TRANSFORM_POSITION) {
+                    byte[] app14 = new byte[Math.max(len, TRANSFORM_POSITION + 1)];
+                    if (iis.read(app14) > TRANSFORM_POSITION) {
+                        int value = app14[TRANSFORM_POSITION];
+                        if (value == 0) {
+                            return JPEG_ENC_UNKNOWN_PROBABLY_YCbCr;
+                        } else if (value == 1) {
+                            return JPEG_ENC_YCbCr;
+                        } else if (value == 2) {
+                            return JPEG_ENC_YCCK;
+                        }
+                    }
+                }
+            } else {
+                a = 0;
+            }
+        }
+        return JPEG_ENC_UNKNOWN_PROBABLY_YCbCr;
     }
 }

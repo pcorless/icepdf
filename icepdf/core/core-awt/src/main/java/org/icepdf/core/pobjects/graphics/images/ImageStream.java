@@ -101,7 +101,8 @@ public class ImageStream extends Stream {
             if (imageParams.isImageMask()) {
                 decodedImage = ImageUtility.applyExplicitMask(decodedImage, graphicsState.getFillColor());
             }
-//            ImageUtility.displayImage(decodedImage, pObjectReference.toString());
+//            ImageUtility.displayImage(decodedImage, pObjectReference.toString() + decodedImage.getWidth() +
+//                    " " + "x" + decodedImage.getHeight());
             // apply common mask and sMask processing
             ImageDecoder smaskDecoder = imageParams.getSMask(graphicsState);
             if (smaskDecoder != null) {
