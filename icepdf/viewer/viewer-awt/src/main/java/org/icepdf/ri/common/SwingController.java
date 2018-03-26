@@ -15,6 +15,9 @@
  */
 package org.icepdf.ri.common;
 
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.stage.FileChooser;
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
@@ -26,6 +29,7 @@ import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.search.DocumentSearchController;
+import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.util.Utils;
@@ -112,6 +116,12 @@ public class SwingController extends ComponentAdapter
 
     protected static final Logger logger =
             Logger.getLogger(SwingController.class.toString());
+
+    private static boolean useJFXDialog;
+
+    static {
+        useJFXDialog = Defs.booleanProperty("org.icepdf.ri.viewer.jfx.dialog", false);
+    }
 
     public static final int CURSOR_OPEN_HAND = 1;
     public static final int CURSOR_CLOSE_HAND = 2;
@@ -2179,46 +2189,90 @@ public class SwingController extends ComponentAdapter
      * select which file to open.
      */
     public void openFile() {
-        // Create and display a file open dialog
-        final JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        fileChooser.addChoosableFileFilter(FileExtensionUtils.getPDFFileFilter());
-        if (ViewModel.getDefaultFile() != null) {
-            fileChooser.setCurrentDirectory(ViewModel.getDefaultFile());
-            fileChooser.setSelectedFile(ViewModel.getDefaultFile());
-            fileChooser.ensureFileIsVisible(ViewModel.getDefaultFile());
-        }
-        // show the dialog
-        fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.openFile.title"));
-        int returnVal = fileChooser.showOpenDialog(viewer);
-
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-            final File file = fileChooser.getSelectedFile();
-            // trying to get rid of shadow left by file chooser
-            fileChooser.setVisible(false);
-            // make sure file being opened is valid
-            String extension = FileExtensionUtils.getExtension(file);
-            if (extension != null) {
-                if (extension.equals(FileExtensionUtils.pdf)) {
-                    if (viewer != null) {
-                        viewer.toFront();
-                        viewer.requestFocus();
-                    }
-                    openFileInSomeViewer(file);
-                } else {
-                    org.icepdf.ri.util.Resources.showMessageDialog(viewer,
-                            JOptionPane.INFORMATION_MESSAGE,
-                            messageBundle,
-                            "viewer.dialog.openFile.error.title",
-                            "viewer.dialog.openFile.error.msg",
-                            file.getPath());
-                }
-
-                // save the default directory
-                ViewModel.setDefaultFile(file);
+        if (!useJFXDialog) {
+            // Create and display a file open dialog
+            final JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            fileChooser.addChoosableFileFilter(FileExtensionUtils.getPDFFileFilter());
+            if (ViewModel.getDefaultFile() != null) {
+                fileChooser.setCurrentDirectory(ViewModel.getDefaultFile());
+                fileChooser.setSelectedFile(ViewModel.getDefaultFile());
+                fileChooser.ensureFileIsVisible(ViewModel.getDefaultFile());
             }
+            // show the dialog
+            fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.openFile.title"));
+            int returnVal = fileChooser.showOpenDialog(viewer);
+
+            if (returnVal == JFileChooser.APPROVE_OPTION) {
+                final File file = fileChooser.getSelectedFile();
+                // trying to get rid of shadow left by file chooser
+                fileChooser.setVisible(false);
+                // make sure file being opened is valid
+                String extension = FileExtensionUtils.getExtension(file);
+                if (extension != null) {
+                    if (extension.equals(FileExtensionUtils.pdf)) {
+                        if (viewer != null) {
+                            viewer.toFront();
+                            viewer.requestFocus();
+                        }
+                        openFileInSomeViewer(file);
+                    } else {
+                        org.icepdf.ri.util.Resources.showMessageDialog(viewer,
+                                JOptionPane.INFORMATION_MESSAGE,
+                                messageBundle,
+                                "viewer.dialog.openFile.error.title",
+                                "viewer.dialog.openFile.error.msg",
+                                file.getPath());
+                    }
+
+                    // save the default directory
+                    ViewModel.setDefaultFile(file);
+                }
+            }
+            fileChooser.setVisible(false);
+        } else {
+            // loads JFX subsystem.
+            new JFXPanel();
+
+            // load the JFX file chooser on the
+            Platform.runLater(() -> {
+                FileChooser fileChooser = new FileChooser();
+                fileChooser.setTitle(messageBundle.getString("viewer.dialog.openFile.title"));
+                File file = ViewModel.getDefaultFile();
+                fileChooser.getExtensionFilters().addAll(
+                        new FileChooser.ExtensionFilter("PDF", "*.pdf"));
+                fileChooser.setInitialDirectory(file.getParentFile());
+                if (file.isFile()) {
+                    fileChooser.setInitialFileName(file.getName());
+                }
+                File selectedFile = fileChooser.showOpenDialog(null);
+                if (selectedFile != null) {
+                    String extension = FileExtensionUtils.getExtension(selectedFile);
+                    if (extension != null) {
+                        if (extension.equals(FileExtensionUtils.pdf)) {
+                            SwingUtilities.invokeLater(() -> {
+                                if (viewer != null) {
+                                    viewer.toFront();
+                                    viewer.requestFocus();
+                                }
+                                openFileInSomeViewer(selectedFile.getAbsolutePath());
+                            });
+                        } else {
+                            SwingUtilities.invokeLater(() -> {
+                                org.icepdf.ri.util.Resources.showMessageDialog(viewer,
+                                        JOptionPane.INFORMATION_MESSAGE,
+                                        messageBundle,
+                                        "viewer.dialog.openFile.error.title",
+                                        "viewer.dialog.openFile.error.msg",
+                                        selectedFile.getPath());
+                            });
+                        }
+                        // save the default directory
+                        ViewModel.setDefaultFile(selectedFile);
+                    }
+                }
+            });
         }
-        fileChooser.setVisible(false);
     }
 
     private void openFileInSomeViewer(File file) {
@@ -3245,19 +3299,11 @@ public class SwingController extends ComponentAdapter
      */
     public void saveFile() {
 
-        // Create and display a file saving dialog
-        final JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
-        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        fileChooser.addChoosableFileFilter(FileExtensionUtils.getPDFFileFilter());
-        if (ViewModel.getDefaultFile() != null) {
-            fileChooser.setCurrentDirectory(ViewModel.getDefaultFile());
-        }
-
         // See if we can come up with a default file name
         // We want the bytes from whence, but the file name of origin
         String origin = document.getDocumentOrigin();
         String originalFileName = null;
+        String newFileName = null;
         if (origin != null) {
             int lastSeparator = Math.max(
                     Math.max(
@@ -3269,19 +3315,54 @@ public class SwingController extends ComponentAdapter
                 originalFileName = origin.substring(lastSeparator + 1);
                 if (originalFileName.length() > 0) {
                     // Set the selected file to a slightly modified name of the original
-                    fileChooser.setSelectedFile(new File(generateNewSaveName(originalFileName)));
+                    newFileName = generateNewSaveName(originalFileName);
                 } else {
-                    originalFileName = null;
+                    newFileName = null;
                 }
             }
         }
 
-        // show the dialog
-        int returnVal = fileChooser.showSaveDialog(viewer);
+        // Create and display a file saving dialog
+        if (!useJFXDialog) {
+            final JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            fileChooser.addChoosableFileFilter(FileExtensionUtils.getPDFFileFilter());
+            if (ViewModel.getDefaultFile() != null) {
+                fileChooser.setCurrentDirectory(ViewModel.getDefaultFile());
+            }
+            if (newFileName != null) {
+                fileChooser.setSelectedFile(new File(newFileName));
+            }
+            // show the dialog
+            if (fileChooser.showSaveDialog(viewer) == JFileChooser.APPROVE_OPTION) {
+                saveFileChecks(originalFileName, fileChooser.getSelectedFile());
+            }
+        } else {
+            // loads JFX subsystem.
+            new JFXPanel();
 
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-            File file = fileChooser.getSelectedFile();
+            // load the JFX file chooser on the
+            String finalOriginalFileName = originalFileName;
+            String finalNewFileName = newFileName;
+            Platform.runLater(() -> {
+                FileChooser fileChooser = new FileChooser();
+                fileChooser.setTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
+                fileChooser.getExtensionFilters().addAll(
+                        new FileChooser.ExtensionFilter("PDF", "*.pdf"));
+                fileChooser.setInitialDirectory(ViewModel.getDefaultFile().getParentFile());
+                if (finalNewFileName != null) {
+                    fileChooser.setInitialFileName(finalNewFileName);
+                }
 
+                File file = fileChooser.showSaveDialog(null);
+                SwingUtilities.invokeLater(() -> saveFileChecks(finalOriginalFileName, file));
+            });
+        }
+    }
+
+    protected void saveFileChecks(String originalFileName, File file) {
+        if (file != null) {
             // make sure file path being saved to is valid
             String extension = FileExtensionUtils.getExtension(file);
             if (extension == null) {
@@ -3301,8 +3382,8 @@ public class SwingController extends ComponentAdapter
                         "viewer.dialog.saveAs.extensionError.msg",
                         file.getName());
                 saveFile();
-            } else if ((originalFileName != null) &&
-                    (originalFileName.equalsIgnoreCase(file.getName()))) {
+            } else if (originalFileName != null &&
+                    originalFileName.equalsIgnoreCase(file.getName())) {
                 // Ensure a unique filename
                 org.icepdf.ri.util.Resources.showMessageDialog(
                         viewer,
@@ -3378,8 +3459,7 @@ public class SwingController extends ComponentAdapter
             if (endIndex < 0) {
                 result = fileName + "-new." + FileExtensionUtils.pdf;
             } else {
-                result = fileName.substring(0, endIndex) + "-new." +
-                        FileExtensionUtils.pdf;
+                result = fileName.substring(0, endIndex) + "-new." + FileExtensionUtils.pdf;
             }
             return result;
         }
@@ -3452,10 +3532,9 @@ public class SwingController extends ComponentAdapter
             boolean documentChanges = document.getStateManager().isChanged();
             if (documentChanges && Document.foundIncrementalUpdater) {
 
-                Object[] colorArgument = new Object[]{document.getDocumentOrigin()};
                 MessageFormat formatter = new MessageFormat(
                         messageBundle.getString("viewer.dialog.saveOnClose.noUpdates.msg"));
-                String dialogMessage = formatter.format(colorArgument);
+                String dialogMessage = formatter.format(new Object[]{document.getDocumentOrigin()});
 
                 int res = JOptionPane.showConfirmDialog(viewer,
                         dialogMessage,
