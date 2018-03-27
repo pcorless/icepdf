@@ -273,6 +273,8 @@ public abstract class AbstractPageViewComponent
                     pageRotation != pageBufferStore.getPageRotation()) {
                 g2d.transform(calculateBufferAffineTransform());
                 pageBufferStore.setDirty(true);
+                // force one more paint to make sure we build a new buffer using the current zoom and rotation.
+                repaint();
             }
             g2d.drawImage(pageImage, paintingClip.x, paintingClip.y, null);
         }
