@@ -15,8 +15,11 @@
  */
 package org.icepdf.ri.common;
 
+import org.icepdf.ri.common.views.DocumentViewModelImpl;
+
 import javax.print.CancelablePrintJob;
 import javax.print.PrintException;
+import javax.swing.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,6 +37,7 @@ public class PrinterTask implements Runnable {
 
     // PrinterJob to print
     private PrintHelper printHelper;
+    private SwingController controller;
     private CancelablePrintJob cancelablePrintJob;
 
     /**
@@ -41,20 +45,26 @@ public class PrinterTask implements Runnable {
      *
      * @param printHelper print helper
      */
-    public PrinterTask(PrintHelper printHelper) {
+    public PrinterTask(PrintHelper printHelper, SwingController controller) {
         this.printHelper = printHelper;
+        this.controller = controller;
     }
 
     /**
      * Threads Runnable method.
      */
     public void run() {
+        final int documentIcon = controller.getDocumentViewToolMode();
         try {
+            // set cursor for document view
+            SwingUtilities.invokeLater(() -> controller.setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_WAIT));
             if (printHelper != null) {
                 cancelablePrintJob = printHelper.cancelablePrint();
             }
         } catch (PrintException ex) {
             logger.log(Level.FINE, "Error during printing.", ex);
+        } finally {
+            SwingUtilities.invokeLater(() -> controller.setDisplayTool(documentIcon));
         }
     }
 

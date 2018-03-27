@@ -432,7 +432,7 @@ public class PrintHelper implements Printable {
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            logger.log(Level.SEVERE, "Printing: Page initialization and painting was interrupted", e);
+            logger.log(Level.FINEST, "Printing: Page initialization and painting was interrupted: " + pageIndex);
         }
 
         // Paint content to page buffer to reduce spool size but quality will suffer.
@@ -490,16 +490,18 @@ public class PrintHelper implements Printable {
             calculateTotalPagesToPrint();
 
             DocPrintJob printerJob = printService.createPrintJob();
-            printerJob.print(
-                    new SimpleDoc(this,
-                            DocFlavor.SERVICE_FORMATTED.PRINTABLE,
-                            null),
-                    printRequestAttributeSet);
+            if (printerJob instanceof CancelablePrintJob) {
+                CancelablePrintJob cancelablePrintJob = (CancelablePrintJob) printerJob;
+                cancelablePrintJob.print(
+                        new SimpleDoc(this,
+                                DocFlavor.SERVICE_FORMATTED.PRINTABLE,
+                                null),
+                        printRequestAttributeSet);
 
-            return (CancelablePrintJob) printerJob;
-        } else {
-            return null;
+                return cancelablePrintJob;
+            }
         }
+        return null;
     }
 
     public void print(PrintJobWatcher printJobWatcher) throws PrintException {

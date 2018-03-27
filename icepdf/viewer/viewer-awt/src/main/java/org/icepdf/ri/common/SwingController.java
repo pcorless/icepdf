@@ -1845,7 +1845,7 @@ public class SwingController extends ComponentAdapter
      * display panel.
      * @see #setDisplayTool
      */
-    private int getDocumentViewToolMode() {
+    protected int getDocumentViewToolMode() {
         return documentViewController.getToolMode();
     }
 
@@ -3722,7 +3722,7 @@ public class SwingController extends ComponentAdapter
 
         Runnable runner = () -> initialisePrinting(withDialog);
         Thread t = new Thread(runner);
-        t.setPriority(Thread.MIN_PRIORITY);
+        t.setPriority(Thread.NORM_PRIORITY);
         t.start();
     }
 
@@ -3742,41 +3742,49 @@ public class SwingController extends ComponentAdapter
             renablePrintUI();
             return;
         }
-        // create a new print helper, one-to-one with document, make sure that
-        // previous printer properties are preserved. default values listed
-        // below are for NA_letter in millimeters.
-        PrintHelper printHelper = viewModel.getPrintHelper();
-        if (printHelper == null) {
-            MediaSizeName mediaSizeName = loadDefaultPrinterProperties();
-            // create the new print help
-            printHelper = new PrintHelper(documentViewController.getViewContainer(),
-                    getPageTree(), documentViewController.getRotation(),
-                    mediaSizeName, PrintQuality.NORMAL);
-        } else {
-            printHelper = new PrintHelper(documentViewController.getViewContainer(),
-                    getPageTree(), documentViewController.getRotation(),
-                    printHelper.getDocAttributeSet(),
-                    printHelper.getPrintRequestAttributeSet());
-        }
-        viewModel.setPrintHelper(printHelper);
+        final int documentIcon = getDocumentViewToolMode();
+        try {
+            // set cursor for document view
+            SwingUtilities.invokeLater(() -> setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_WAIT));
+            // create a new print helper, one-to-one with document, make sure that
+            // previous printer properties are preserved. default values listed
+            // below are for NA_letter in millimeters.
+            PrintHelper printHelper = viewModel.getPrintHelper();
+            if (printHelper == null) {
+                MediaSizeName mediaSizeName = loadDefaultPrinterProperties();
+                // create the new print help
+                printHelper = new PrintHelper(documentViewController.getViewContainer(),
+                        getPageTree(), documentViewController.getRotation(),
+                        mediaSizeName, PrintQuality.NORMAL);
+            } else {
+                printHelper = new PrintHelper(documentViewController.getViewContainer(),
+                        getPageTree(), documentViewController.getRotation(),
+                        printHelper.getDocAttributeSet(),
+                        printHelper.getPrintRequestAttributeSet());
+            }
+            viewModel.setPrintHelper(printHelper);
 
-        // set the printer to show a print dialog
-        canPrint = printHelper.setupPrintService(
-                0,
-                document.getNumberOfPages() - 1,
-                viewModel.getPrintCopies(),           // default number of copies.
-                viewModel.isShrinkToPrintableArea(),        // shrink to printable area
-                withDialog  // show print dialog
-        );
-        // save new printer attributes to properties
-        savePrinterProperties(printHelper);
-        // if user cancelled the print job from the dialog, don't start printing
-        // in the background.
-        if (!canPrint) {
-            renablePrintUI();
-            return;
+            // set the printer to show a print dialog
+            canPrint = printHelper.setupPrintService(
+                    0,
+                    document.getNumberOfPages() - 1,
+                    viewModel.getPrintCopies(),           // default number of copies.
+                    viewModel.isShrinkToPrintableArea(),        // shrink to printable area
+                    withDialog  // show print dialog
+            );
+            // save new printer attributes to properties
+            savePrinterProperties(printHelper);
+            // if user cancelled the print job from the dialog, don't start printing
+            // in the background.
+            if (!canPrint) {
+                renablePrintUI();
+                return;
+            }
+            startBackgroundPrinting(printHelper);
+        } finally {
+            SwingUtilities.invokeLater(() -> setDisplayTool(documentIcon));
         }
-        startBackgroundPrinting(printHelper);
+
     }
 
     /**
@@ -3857,49 +3865,51 @@ public class SwingController extends ComponentAdapter
             // launch progress dialog
             printProgressMonitor = new ProgressMonitor(viewer,
                     messageBundle.getString("viewer.dialog.printing.status.start.msg"),
-                    "", 0, printHelper.getNumberOfPages());
+                    "", 1, printHelper.getNumberOfPages());
         });
 
         final Thread printingThread = Thread.currentThread();
 
         // create background printer job
-        final PrinterTask printerTask = new PrinterTask(printHelper);
+        final PrinterTask printerTask = new PrinterTask(printHelper, this);
         // create activity monitor
-        printActivityMonitor = new Timer(500,
+        printActivityMonitor = new Timer(250,
                 event -> {
-
                     int limit = printHelper.getNumberOfPages();
                     int current = printHelper.getCurrentPage();
-                    // update progress and label
-                    printProgressMonitor.setProgress(current);
-
                     // progress bar for printing
                     Object[] messageArguments = new Object[]{
-                            String.valueOf(current),
-                            String.valueOf(limit)
-                    };
+                            String.valueOf(current + 1),
+                            String.valueOf(limit)};
                     MessageFormat formatter =
                             new MessageFormat(
                                     messageBundle.getString("viewer.dialog.printing.status.progress.msg"));
-                    printProgressMonitor.setNote(formatter.format(messageArguments));
+                    SwingUtilities.invokeLater(() -> {
+                        printProgressMonitor.setProgress(current);
+                        printProgressMonitor.setNote(formatter.format(messageArguments));
+                    });
 
                     // check for job completed or cancelled.
                     if (!printingThread.isAlive() || printProgressMonitor.isCanceled()) {
-                        // stop the timers, monitors and thread.
-                        printProgressMonitor.close();
-                        printActivityMonitor.stop();
                         printerTask.cancel();
-                        // enable print UI controls.
-                        if (printMenuItem != null) {
-                            printMenuItem.setEnabled(true);
-                        }
-                        if (printButton != null) {
-                            printButton.setEnabled(true);
-                        }
+                        // make sure kill the printing thread, otherwise we'll keep going for none cancellable jobs.
+                        printingThread.interrupt();
+                        // stop the timers, monitors and thread.
+                        SwingUtilities.invokeLater(() -> {
+                            printProgressMonitor.close();
+                            printActivityMonitor.stop();
+                            // enable print UI controls.
+                            if (printMenuItem != null) {
+                                printMenuItem.setEnabled(true);
+                            }
+                            if (printButton != null) {
+                                printButton.setEnabled(true);
+                            }
+                        });
                     }
                 });
         // start the timer.
-        printActivityMonitor.start();
+        SwingUtilities.invokeLater(() -> printActivityMonitor.start());
 
         // start print job
         printerTask.run();
