@@ -123,6 +123,10 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
 
         addGB(this, namedColorsPanel, 0, 0, 1, 1);
         addGB(this, recentColorsPanel, 0, 1, 1, 1);
+
+        // little spacer
+        constraints.weighty = 1.0;
+        addGB(this, new Label(" "), 0, 2, 1, 1);
     }
 
     private void buildNamedColors(JPanel panel, ResourceBundle messageBundle) {

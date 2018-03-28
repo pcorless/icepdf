@@ -28,9 +28,26 @@ import java.util.prefs.Preferences;
 
 
 /**
- * <p>This class provides a very basic Properties Management system for the
- * viewer application.  Settings such as window location and temporary file
- * information is managed by this class.</p>
+ * <p>This class provides a wrapper for persisting the viewer ri's settings.  The class also provides mechanisms for
+ * loading default properties.  The class is divided into two sub concepts; the first being local properties (not sticky)
+ * that are only persisted by command and the second being a preferences object that automatically saves values (sticky).
+ * </p>
+ * <p><b>Local Properties</b>
+ * The SwingViewBuilder uses local properties to build the AWT Viewer.  The viewer will always have a default state
+ * which can be altered with the checkAndStore*Property() methods.  A given viewer configuration state can be persisted
+ * to the preference object with a call to saveStoreProperties().  Once local properties are persisted the only way
+ * to restore the default state is to call clearPreferences() or configure a customer ICEpdfDefault.properties file.
+ * </p>
+ *
+ * <p><b>Preferences</b>
+ * The preferences object can be directly accessed via the accessor to directly access the preference api.
+ * </p>
+ *
+ * <p><b>Default Properties</b>
+ * The default viewer ri ships with a ICEpdfDefault.properties file that can be used to load default viewer properties
+ * for custom builds. This mechanism can be easier to implement then manually manipulating the PropertyManagers before
+ * the a swing view is created.
+ * </p>
  *
  * @since 6.3
  */
@@ -181,9 +198,6 @@ public class PropertiesManager {
     public static final String PROPERTY_SHOW_ANNOTATION_MARKUP_ADD_ANNOTATIONS = "application.annotation.show.markup.addAnnotations";
     public static final String PROPERTY_SHOW_ANNOTATION_MARKUP_SET_STATUS = "application.annotation.show.markup.setStatus";
 
-    // private/public annotation property, last used stored, default is true or public.
-    public static final String PROPERTY_ANNOTATION_VISIBILITY_PERMISSION = "application.viewer.preference.annotation.permission.public";
-
     // highlight annotation default colour as defined by the last used colour for each type.
     public static final String PROPERTY_ANNOTATION_HIGHLIGHT_BUTTON_COLOR = "application.viewer.preference.annotation.highlight.button.color";
     public static final String PROPERTY_ANNOTATION_HIGHLIGHT_COLOR = "application.viewer.preference.annotation.highlight.color";
@@ -256,12 +270,15 @@ public class PropertiesManager {
 
     private static PropertiesManager propertiesManager;
 
+    // static store of properties which are persisted to backing store.
     private static Preferences preferences = Preferences.userNodeForPackage(PropertiesManager.class);
-
+    // local properties, that aren't persisted and can override properties in the store if root accessor are used.
+    private static Properties localProperties;
+    // default properties file included int the viewer jar
     private static Properties defaultProps;
 
     private PropertiesManager() {
-
+        localProperties = new Properties();
     }
 
     /**
@@ -295,10 +312,10 @@ public class PropertiesManager {
      */
     public String checkAndStoreStringProperty(String propertyName, String defaultVal) {
         // Get the desired property, defaulting to the defaultVal parameter
-        String returnValue = preferences.get(propertyName, defaultVal);
+        String returnValue = localProperties.getProperty(propertyName, defaultVal);
         // Set the property back into the manager
         // This is necessary in the cases where a property didn't exist, but needs to be added to the file
-        preferences.put(propertyName, returnValue);
+        localProperties.put(propertyName, returnValue);
         return returnValue;
     }
 
@@ -318,10 +335,11 @@ public class PropertiesManager {
      */
     public boolean checkAndStoreBooleanProperty(String propertyName, boolean defaultVal) {
         // Get the desired property, defaulting to the defaultVal parameter
-        boolean returnValue = preferences.getBoolean(propertyName, defaultVal);
+        boolean returnValue = Boolean.parseBoolean(
+                localProperties.getProperty(propertyName, Boolean.toString(defaultVal)));
         // Set the property back into the manager
         // This is necessary in the cases where a property didn't exist, but needs to be added to the file
-        preferences.putBoolean(propertyName, returnValue);
+        localProperties.put(propertyName, returnValue);
         return returnValue;
     }
 
@@ -341,10 +359,10 @@ public class PropertiesManager {
      */
     public double checkAndStoreDoubleProperty(String propertyName, double defaultVal) {
         // Get the desired property, defaulting to the defaultVal parameter
-        double returnValue = preferences.getDouble(propertyName, defaultVal);
+        double returnValue = Double.parseDouble(localProperties.getProperty(propertyName, Double.toString(defaultVal)));
         // Set the property back into the manager
         // This is necessary in the cases where a property didn't exist, but needs to be added to the file
-        preferences.putDouble(propertyName, returnValue);
+        localProperties.put(propertyName, returnValue);
         return returnValue;
     }
 
@@ -364,10 +382,10 @@ public class PropertiesManager {
      */
     public int checkAndStoreIntProperty(String propertyName, int defaultVal) {
         // Get the desired property, defaulting to the defaultVal parameter
-        int returnValue = preferences.getInt(propertyName, defaultVal);
+        int returnValue = Integer.parseInt(localProperties.getProperty(propertyName, Integer.toString(defaultVal)));
         // Set the property back into the manager
         // This is necessary in the cases where a property didn't exist, but needs to be added to the file
-        preferences.putInt(propertyName, returnValue);
+        localProperties.put(propertyName, returnValue);
         return returnValue;
     }
 
@@ -387,10 +405,10 @@ public class PropertiesManager {
      */
     public float checkAndStoreFloatProperty(String propertyName, float defaultVal) {
         // Get the desired property, defaulting to the defaultVal parameter
-        float returnValue = preferences.getFloat(propertyName, defaultVal);
+        float returnValue = Float.parseFloat(localProperties.getProperty(propertyName, Float.toString(defaultVal)));
         // Set the property back into the manager
         // This is necessary in the cases where a property didn't exist, but needs to be added to the file
-        preferences.putFloat(propertyName, returnValue);
+        localProperties.put(propertyName, returnValue);
         return returnValue;
     }
 
@@ -408,7 +426,7 @@ public class PropertiesManager {
     public float[] checkAndStoreFloatArrayProperty(String propertyName, float[] defaultVal) {
 
         // Get the desired property, defaulting to the defaultVal parameter
-        String propertyString = preferences.get(propertyName, null);
+        String propertyString = localProperties.getProperty(propertyName);
         float[] toReturn = defaultVal;
         try {
             // Ensure we have a property string to parse
@@ -440,7 +458,7 @@ public class PropertiesManager {
 
                 // Set the property back into the manager
                 // This is necessary in the cases where a property didn't exist, but needs to be added to the file
-                preferences.put(propertyName, commaBuffer.toString());
+                localProperties.put(propertyName, commaBuffer.toString());
             }
         } catch (Exception failedProperty) {
             /* ignore on failure as we'll just return defaultVal */
@@ -480,6 +498,39 @@ public class PropertiesManager {
             }
         }
         return defaultValue;
+    }
+
+    /**
+     * All of the properties that are stored in the local properties can be persisted to the backing store via this
+     * method call.  The local properties are stored via the checkAndStore*() method calls and should only be used
+     * when configuring the viewer components functionality.   Once these properties have been persisted they are
+     * now sticky and will persist for all viewer instances.
+     */
+    public void saveStoredProperties() {
+        Enumeration keys = localProperties.keys();
+        while (keys.hasMoreElements()) {
+            String key = (String) keys.nextElement();
+            preferences.put(key, localProperties.getProperty(key));
+        }
+    }
+
+    /**
+     * This utility method removes all entries in the preferences backing store.  This method does not remove the
+     * preferences node and thus the font manager font cache is unaffected.
+     */
+    public void clearPreferences() {
+        try {
+            String[] keys = preferences.keys();
+            for (String key : keys) {
+                preferences.remove(key);
+            }
+        } catch (Throwable ex) {
+            // log the error
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.log(Level.WARNING, "Error clearing preferences cache", ex);
+            }
+        }
+
     }
 
     /**

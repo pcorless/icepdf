@@ -432,8 +432,7 @@ public class SwingViewBuilder {
         // set default view mode type, fit page, fit width, no-fit.
         this.documentPageFitMode = documentPageFitMode;
         // apply default button size
-        iconSize = propertiesManager.checkAndStoreStringProperty(
-                PropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE);
+        iconSize = propertiesManager.getPreferences().get(PropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE);
     }
 
     /**
@@ -1567,7 +1566,7 @@ public class SwingViewBuilder {
             addToToolBar(toolbar, buildTextAnnotationToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_PERMISSION)) {
+                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_PERMISSION, false)) {
             addToToolBar(toolbar, buildAnnotationPermissionCombBox());
         }
         if (propertiesManager.checkAndStoreBooleanProperty(

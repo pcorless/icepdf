@@ -117,8 +117,8 @@ public class PreferencesDialog extends EscapeJDialog {
 
         this.setLayout(new BorderLayout(5, 5));
         this.add(layoutPanel, BorderLayout.NORTH);
-
-        setSize(550, 450);
+//        this.pack();
+        setSize(550, 460);
         setLocationRelativeTo(frame);
     }
 
