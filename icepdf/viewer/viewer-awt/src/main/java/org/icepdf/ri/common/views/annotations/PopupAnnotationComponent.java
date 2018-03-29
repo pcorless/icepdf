@@ -41,10 +41,16 @@ import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.dnd.*;
 import java.awt.event.*;
 import java.awt.geom.AffineTransform;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.File;
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -74,7 +80,8 @@ import java.util.logging.Level;
  */
 @SuppressWarnings("serial")
 public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupAnnotation>
-        implements TreeSelectionListener, ActionListener, DocumentListener, PropertyChangeListener, MouseWheelListener {
+        implements TreeSelectionListener, ActionListener, DocumentListener, PropertyChangeListener, MouseWheelListener,
+        DropTargetListener {
 
     public static int DEFAULT_WIDTH = 215;
     public static int DEFAULT_HEIGHT = 150;
@@ -143,6 +150,11 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         setVisible(isVisible);
 
         ((DocumentViewControllerImpl) documentViewController).addPropertyChangeListener(this);
+
+        // add drag and drop listeners
+        new DropTarget(this, // component
+                DnDConstants.ACTION_COPY_OR_MOVE, // actions
+                this); // DropTargetListener
     }
 
     @Override
@@ -727,6 +739,24 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         }
     }
 
+    public void updateContent(String content) {
+        // get the next text and save it to the selected markup annotation.
+        if (content != null && content.length() > 0) {
+            // update the annotations internals.
+            selectedMarkupAnnotation.setModifiedDate(PDate.formatDateTime(new Date()));
+            selectedMarkupAnnotation.setContents(content);
+            // should already be on the awt thread but just encase,  we update the textArea too.
+            SwingUtilities.invokeLater(() -> {
+                textArea.getDocument().removeDocumentListener(PopupAnnotationComponent.this);
+                textArea.setText(content);
+                textArea.getDocument().addDocumentListener(PopupAnnotationComponent.this);
+            });
+
+            // add them to the container, using absolute positioning.
+            documentViewController.updateAnnotation(this);
+        }
+    }
+
     public void valueChanged(TreeSelectionEvent e) {
         DefaultMutableTreeNode node = (DefaultMutableTreeNode)
                 commentTree.getLastSelectedPathComponent();
@@ -979,6 +1009,75 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             commentPanel.setBackground(color);
             resetComponentColors();
         }
+    }
+
+    @Override
+    public void dragEnter(DropTargetDragEvent dtde) {
+        if (!isDragAcceptable(dtde)) {
+            dtde.rejectDrag();
+        }
+    }
+
+    @Override
+    public void dragOver(DropTargetDragEvent dtde) {
+
+    }
+
+    @Override
+    public void dropActionChanged(DropTargetDragEvent dtde) {
+        if (!isDragAcceptable(dtde)) {
+            dtde.rejectDrag();
+        }
+    }
+
+    @Override
+    public void dragExit(DropTargetEvent dte) {
+
+    }
+
+    @Override
+    public void drop(DropTargetDropEvent dtde) {
+        try {
+            // check to make sure that event type is ok
+            if (!isDropAcceptable(dtde)) {
+                dtde.rejectDrop();
+                return;
+            }
+            // accept the drop action, must do this to proceed
+            dtde.acceptDrop(DnDConstants.ACTION_COPY);
+            Transferable transferable = dtde.getTransferable();
+            DataFlavor[] flavors = transferable.getTransferDataFlavors();
+            for (DataFlavor dataFlavor : flavors) {
+                // Check to see if a file was dropped on the viewer frame
+                if (dataFlavor.equals(DataFlavor.javaFileListFlavor)) {
+                    List fileList = (List) transferable.getTransferData(dataFlavor);
+                    // load all the files that where dragged
+                    for (Object aFileList : fileList) {
+                        File file = (File) aFileList;
+                        AnnotationFileDropHandler annotationFileDropHandler = AnnotationFileDropHandler.getInstance();
+                        annotationFileDropHandler.handlePopupAnnotationFileDrop(file, this);
+                    }
+                }
+            }
+            dtde.dropComplete(true);
+
+        } catch (IOException ioe) {
+            logger.log(Level.FINE, "IO exception during file drop", ioe);
+        } catch (UnsupportedFlavorException ufe) {
+            logger.log(Level.FINE, "Drag and drop not supported", ufe);
+        }
+    }
+
+    // Utility method which alows copy or move drag actions
+    private boolean isDragAcceptable(DropTargetDragEvent event) {
+        // check to make sure that we only except the copy action
+        return (event.getDropAction() & DnDConstants.ACTION_COPY_OR_MOVE) != 0;
+    }
+
+    // Utility method which allows copy or move drop actions
+    private boolean isDropAcceptable(DropTargetDropEvent event) {
+        // check to make sure that we only except the copy action
+        return (event.getDropAction() & DnDConstants.ACTION_COPY_OR_MOVE) != 0;
     }
 
     /**
