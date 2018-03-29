@@ -1566,7 +1566,7 @@ public class SwingViewBuilder {
             addToToolBar(toolbar, buildTextAnnotationToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_PERMISSION, false)) {
+                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_PERMISSION)) {
             addToToolBar(toolbar, buildAnnotationPermissionCombBox());
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
