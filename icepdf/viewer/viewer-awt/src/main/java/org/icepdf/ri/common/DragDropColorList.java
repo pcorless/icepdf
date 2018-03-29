@@ -22,6 +22,7 @@ import org.icepdf.ri.util.PropertiesManager;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.datatransfer.Transferable;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 import java.util.prefs.Preferences;
@@ -166,7 +167,7 @@ public class DragDropColorList extends JList<DragDropColorList.ColorLabel> {
         firePropertyChange(PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE, null, true);
     }
 
-    public static class ColorLabel {
+    public static class ColorLabel implements Serializable {
         private Color color;
         private String label;
 

@@ -15,13 +15,10 @@
  */
 package org.icepdf.ri.common;
 
-import javax.activation.ActivationDataFlavor;
-import javax.activation.DataHandler;
 import javax.swing.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
-import java.io.IOException;
 
 /**
  * Great little implementation that does the lifting to allow for drag and drop rows in using a list.  This is
@@ -31,7 +28,7 @@ import java.io.IOException;
  */
 public class ListItemTransferHandler extends TransferHandler {
 
-    private final DataFlavor dataFlavor;
+    private static DataFlavor dataFlavor;
 
     private int[] indices;
     //Location where items were added
@@ -40,8 +37,12 @@ public class ListItemTransferHandler extends TransferHandler {
     private int addCount;
 
     public ListItemTransferHandler() {
-        this.dataFlavor = new ActivationDataFlavor(
-                Object[].class, DataFlavor.javaJVMLocalObjectMimeType, "Array of items");
+        try {
+            dataFlavor = new DataFlavor(DataFlavor.javaJVMLocalObjectMimeType +
+                    ";class=\"" + Object[].class.getName() + "\"");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -49,7 +50,7 @@ public class ListItemTransferHandler extends TransferHandler {
         JList<Object> list = (JList<Object>) component;
         indices = list.getSelectedIndices();
         Object[] transferObjects = list.getSelectedValuesList().toArray();
-        return new DataHandler(transferObjects, dataFlavor.getMimeType());
+        return new ObjectSelection(transferObjects);
     }
 
     @Override
@@ -88,7 +89,7 @@ public class ListItemTransferHandler extends TransferHandler {
                 target.addSelectionInterval(idx, idx);
             }
             return true;
-        } catch (UnsupportedFlavorException | IOException e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
 
@@ -118,6 +119,31 @@ public class ListItemTransferHandler extends TransferHandler {
         indices = null;
         addCount = 0;
         addIndex = -1;
+    }
+
+
+    class ObjectSelection implements Transferable {
+
+        private Object[] data;
+
+        ObjectSelection(Object[] data) {
+            this.data = data;
+        }
+
+        public DataFlavor[] getTransferDataFlavors() {
+            return new DataFlavor[]{dataFlavor};
+        }
+
+        public boolean isDataFlavorSupported(DataFlavor flavor) {
+            return dataFlavor.equals(flavor);
+        }
+
+        public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException {
+            if (!dataFlavor.equals(flavor)) {
+                throw new UnsupportedFlavorException(flavor);
+            }
+            return data;
+        }
     }
 
 }
