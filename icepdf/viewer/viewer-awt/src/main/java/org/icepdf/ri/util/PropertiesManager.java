@@ -278,7 +278,7 @@ public class PropertiesManager {
     private static Properties defaultProps;
 
     private PropertiesManager() {
-        localProperties = new Properties();
+
     }
 
     /**
@@ -538,27 +538,23 @@ public class PropertiesManager {
      * backing store. This is only done on first launch.
      */
     private static void setupDefaultProperties() {
-        // check if we have a default key file path key, if not we need to load the default properties
-        // and add them to the preferences backing store.
-        if (preferences.get(PROPERTY_DEFAULT_FILE_PATH, null) == null) {
-            try {
-                InputStream in = getResourceAsStream(DEFAULT_PROP_FILE_PATH, DEFAULT_PROP_FILE);
-                try {
-                    defaultProps = new Properties();
-                    defaultProps.load(in);
-                    Enumeration keys = defaultProps.keys();
-                    while (keys.hasMoreElements()) {
-                        String key = (String) keys.nextElement();
-                        preferences.put(key, defaultProps.getProperty(key));
-                    }
-                } finally {
-                    if (in != null) in.close();
+        // load the default values every time into our local store.
+        try (InputStream in = getResourceAsStream(DEFAULT_PROP_FILE_PATH, DEFAULT_PROP_FILE)) {
+            defaultProps = new Properties();
+            defaultProps.load(in);
+            localProperties = new Properties(defaultProps);
+            // we only set the default preferences on first load.
+            if (preferences.get(PROPERTY_DEFAULT_FILE_PATH, null) == null) {
+                Enumeration keys = defaultProps.keys();
+                while (keys.hasMoreElements()) {
+                    String key = (String) keys.nextElement();
+                    preferences.put(key, defaultProps.getProperty(key));
                 }
-            } catch (Throwable ex) {
-                // log the error
-                if (logger.isLoggable(Level.WARNING)) {
-                    logger.log(Level.WARNING, "Error loading default properties cache", ex);
-                }
+            }
+        } catch (Throwable ex) {
+            // log the error
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.log(Level.WARNING, "Error loading default properties cache", ex);
             }
         }
     }
