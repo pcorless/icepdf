@@ -491,16 +491,15 @@ public abstract class AbstractContentParser implements ContentParser {
         // apply the cm just as we would a tm
         if (inTextBlock) {
             // update the textBlockBase with the cm matrix
-            af = new AffineTransform(textBlockBase);
-            // apply the transform
-            // corner case of a negative ShearX causing layout issue,  only one case in a text block
-            if (c < 0) c = Math.abs(c);
+            AffineTransform af2 = new AffineTransform(graphicState.getTextState().tlmatrix);
             graphicState.getTextState().tmatrix = new AffineTransform(a, b, c, d, e, f);
-            af.concatenate(graphicState.getTextState().tmatrix);
-            graphicState.set(af);
+            af2.concatenate(graphicState.getTextState().tmatrix);
+            graphicState.set(af2);
+            graphicState.scale(1, -1);
             // update the textBlockBase as the tm was specified in the BT block
             // and we still need to keep the offset.
-            textBlockBase.setTransform(new AffineTransform(graphicState.getCTM()));
+            textBlockBase.setTransform(af2);
+            graphicState.getTextState().tlmatrix.setTransform(af2);
         }
     }
 
@@ -941,15 +940,11 @@ public abstract class AbstractContentParser implements ContentParser {
                 hits--;
             }
         }
+
         AffineTransform af = new AffineTransform(textBlockBase);
-
-        // grab old values.
-//        double oldTransY = graphicState.getCTM().getTranslateY();
-//        double oldScaleY = graphicState.getCTM().getScaleY();
-
-        // apply the transform
         graphicState.getTextState().tmatrix = new AffineTransform(tm);
         af.concatenate(graphicState.getTextState().tmatrix);
+        graphicState.getTextState().tlmatrix.setTransform(af);
         graphicState.set(af);
         graphicState.scale(1, -1);
 
