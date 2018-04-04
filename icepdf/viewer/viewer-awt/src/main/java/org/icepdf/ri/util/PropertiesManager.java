@@ -541,15 +541,19 @@ public class PropertiesManager {
         // load the default values every time into our local store.
         try (InputStream in = getResourceAsStream(DEFAULT_PROP_FILE_PATH, DEFAULT_PROP_FILE)) {
             defaultProps = new Properties();
-            defaultProps.load(in);
-            localProperties = new Properties(defaultProps);
-            // we only set the default preferences on first load.
-            if (preferences.get(PROPERTY_DEFAULT_FILE_PATH, null) == null) {
-                Enumeration keys = defaultProps.keys();
-                while (keys.hasMoreElements()) {
-                    String key = (String) keys.nextElement();
-                    preferences.put(key, defaultProps.getProperty(key));
+            if (in != null) {
+                defaultProps.load(in);
+                localProperties = new Properties(defaultProps);
+                // we only set the default preferences on first load.
+                if (preferences.get(PROPERTY_DEFAULT_FILE_PATH, null) == null) {
+                    Enumeration keys = defaultProps.keys();
+                    while (keys.hasMoreElements()) {
+                        String key = (String) keys.nextElement();
+                        preferences.put(key, defaultProps.getProperty(key));
+                    }
                 }
+            } else if (logger.isLoggable(Level.FINER)) {
+                logger.finer("Default properties file could not be found on the class path. ");
             }
         } catch (Throwable ex) {
             // log the error
