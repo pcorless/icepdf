@@ -543,7 +543,6 @@ public class PropertiesManager {
             defaultProps = new Properties();
             if (in != null) {
                 defaultProps.load(in);
-                localProperties = new Properties(defaultProps);
                 // we only set the default preferences on first load.
                 if (preferences.get(PROPERTY_DEFAULT_FILE_PATH, null) == null) {
                     Enumeration keys = defaultProps.keys();
@@ -561,6 +560,8 @@ public class PropertiesManager {
                 logger.log(Level.WARNING, "Error loading default properties cache", ex);
             }
         }
+        // copy over the default properties.
+        localProperties = new Properties(defaultProps);
     }
 
     private static InputStream getResourceAsStream(String prefix, String resourcePath) {
