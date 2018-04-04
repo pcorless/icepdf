@@ -31,6 +31,8 @@ import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.common.views.annotations.*;
 
 import javax.swing.*;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -45,7 +47,8 @@ import java.util.regex.Pattern;
  * has several control to sort and filter the data returned by this task.
  */
 @SuppressWarnings("serial")
-public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements PropertyChangeListener {
+public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
+        implements PropertyChangeListener, TreeSelectionListener {
 
     // task to complete in separate thread
     private AbstractTask<FindMarkupAnnotationTask> findMarkupAnnotationTask;
@@ -76,6 +79,8 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
         // build frame of tree but SigVerificationTask does the work.
         buildUI();
 
+        // tree selection listener to auto scroll to destinations respective location.
+        tree.addTreeSelectionListener(this);
     }
 
     @Override
@@ -293,6 +298,24 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
 
     }
 
+    @Override
+    public void valueChanged(TreeSelectionEvent e) {
+        if (tree == null)
+            return;
+        TreePath treePath = tree.getSelectionPath();
+        if (treePath == null)
+            return;
+
+        Object node = treePath.getLastPathComponent();
+        if (node instanceof AnnotationTreeNode) {
+            AnnotationTreeNode formNode = (AnnotationTreeNode) node;
+            Annotation annotation = formNode.getAnnotation();
+            PageComponentSelector.SelectAnnotationComponent(controller, annotation, false);
+        }
+        // return focus so that dropDownArrowButton keys will work on list
+        tree.requestFocus();
+    }
+
     /**
      * NodeSelectionListener handles the root node context menu creation display and command execution.
      */
@@ -318,7 +341,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
                     AnnotationTreeNode formNode = (AnnotationTreeNode) node;
                     // on double click, navigate to page and set focus of component.
                     Annotation annotation = formNode.getAnnotation();
-                    AnnotationComponent comp = PageComponentSelector.SelectAnnotationComponent(controller, annotation);
+                    AnnotationComponent comp = PageComponentSelector.SelectAnnotationComponent(controller, annotation, false);
                     if (comp instanceof MarkupAnnotationComponent) {
                         if (e.getButton() == MouseEvent.BUTTON1) {
                             DocumentViewController documentViewController = controller.getDocumentViewController();
@@ -330,7 +353,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
                                 parentMarkupAnnotationPanel.getQuickPaintAnnotationButton().setColor(
                                         markupAnnotationComponent.getAnnotation().getColor(), false);
                             } else if (e.getClickCount() == 2) {
-                                markupAnnotationComponent.togglePopupAnnotationVisibility();
+                                markupAnnotationComponent.requestFocus();
                             }
                         }
                         if ((e.getButton() == MouseEvent.BUTTON3 || e.getButton() == MouseEvent.BUTTON2)) {
