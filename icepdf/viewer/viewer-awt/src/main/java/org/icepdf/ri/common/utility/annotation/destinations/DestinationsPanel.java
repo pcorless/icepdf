@@ -205,6 +205,20 @@ public class DestinationsPanel extends JPanel
         }
     }
 
+    private void navigateToDestination(NameTreeNode node) {
+        if (node.getReference() != null && node.isLeaf()) {
+            Object tmp = node.getReference();
+            Library library = controller.getDocument().getCatalog().getLibrary();
+            if (tmp instanceof Reference) {
+                tmp = library.getObject((Reference) tmp);
+            }
+            Destination dest = new Destination(library, tmp);
+            dest.setNamedDestination(node.getName().toString());
+            // set the focus.
+            PageComponentSelector.SelectDestinationComponent(controller, dest);
+        }
+    }
+
     @Override
     public void refreshDocumentInstance() {
         refreshNameTree(null);
@@ -236,7 +250,18 @@ public class DestinationsPanel extends JPanel
 
     @Override
     public void valueChanged(TreeSelectionEvent e) {
+        if (nameJTree == null)
+            return;
+        TreePath treePath = nameJTree.getSelectionPath();
+        if (treePath == null)
+            return;
 
+        Object node = treePath.getLastPathComponent();
+        if (node instanceof NameTreeNode) {
+            navigateToDestination((NameTreeNode) node);
+        }
+        // return focus so that dropDownArrowButton keys will work on list
+        nameJTree.requestFocus();
     }
 
     @Override
@@ -252,15 +277,7 @@ public class DestinationsPanel extends JPanel
                     // on double click we navigate to the nameTree's node
                     NameTreeNode selectedNode = (NameTreeNode) node;
                     if (selectedNode.getReference() != null && selectedNode.isLeaf()) {
-                        Object tmp = selectedNode.getReference();
-                        Library library = controller.getDocument().getCatalog().getLibrary();
-                        if (tmp instanceof Reference) {
-                            tmp = library.getObject((Reference) tmp);
-                        }
-                        Destination dest = new Destination(library, tmp);
-                        dest.setNamedDestination(selectedNode.getName().toString());
-                        // set the focus.
-                        PageComponentSelector.SelectDestinationComponent(controller, dest);
+                        navigateToDestination((NameTreeNode) node);
                     }
                 } else if (e.getClickCount() == 1 && e.getButton() == MouseEvent.BUTTON3) {
                     NameTreeNode selectedNode = (NameTreeNode) node;

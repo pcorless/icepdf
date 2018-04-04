@@ -40,6 +40,19 @@ public class PageComponentSelector {
      * @return true if component could be found, false otherwise.
      */
     public static AnnotationComponent SelectAnnotationComponent(Controller controller, Annotation widgetAnnotation) {
+        return SelectAnnotationComponent(controller, widgetAnnotation, true);
+    }
+
+    /**
+     * Utility to find a Annotation's JComponent within a AbstractPageComponent implementation.
+     *
+     * @param controller       swing controller.
+     * @param widgetAnnotation annotation to do search for wrapping component.
+     * @param select select the annotation component applying focus to the component.
+     * @return true if component could be found, false otherwise.
+     */
+    public static AnnotationComponent SelectAnnotationComponent(Controller controller, Annotation widgetAnnotation,
+                                                                boolean select) {
         // turn out the parent is seldom used correctly and generally just points to page zero.
         // so we need to do a deep search for the annotation.
         Document document = controller.getDocument();
@@ -75,7 +88,7 @@ public class PageComponentSelector {
                 for (AbstractAnnotationComponent annotationComponent : annotationComponents) {
                     if (widgetAnnotation.getPObjectReference().equals(
                             annotationComponent.getAnnotation().getPObjectReference())) {
-                        annotationComponent.requestFocus();
+                        if (select) annotationComponent.requestFocus();
                         controller.getDocumentViewController().setComponentTarget(pageViewComponent, annotationComponent);
                         return annotationComponent;
                     }
