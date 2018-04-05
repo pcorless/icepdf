@@ -103,6 +103,7 @@ public class PropertiesManager {
     public static final String PROPERTY_SHOW_TOOLBAR_PAGENAV = "application.toolbar.show.pagenav";
     public static final String PROPERTY_SHOW_TOOLBAR_ZOOM = "application.toolbar.show.zoom";
     public static final String PROPERTY_SHOW_TOOLBAR_FIT = "application.toolbar.show.fit";
+    public static final String PROPERTY_SHOW_TOOLBAR_FULL_SCREEN = "application.toolbar.show.fullscreen";
     public static final String PROPERTY_SHOW_TOOLBAR_ROTATE = "application.toolbar.show.rotate";
     public static final String PROPERTY_SHOW_TOOLBAR_TOOL = "application.toolbar.show.tool";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION = "application.toolbar.show.annotation";
@@ -278,7 +279,6 @@ public class PropertiesManager {
     private static Properties defaultProps;
 
     private PropertiesManager() {
-
     }
 
     /**
@@ -295,10 +295,87 @@ public class PropertiesManager {
         return propertiesManager;
     }
 
+    /**
+     * Gets the Preferences backing store for persisting static properties and settings.
+     *
+     * @return reference to the application preferences backing store.
+     */
     public Preferences getPreferences() {
         return preferences;
     }
 
+    /**
+     * Sets the local property over writing any previous value stored in the default properties file.
+     *
+     * @param propertyName name of property to write.
+     * @param value        property value.
+     */
+    public void set(String propertyName, String value) {
+        localProperties.put(propertyName, value);
+    }
+
+    /**
+     * Removes the
+     *
+     * @param propertyName
+     */
+    public void remove(String propertyName) {
+        localProperties.remove(propertyName);
+    }
+
+    /**
+     * All of the properties that are stored in the local properties can be persisted to the backing store via this
+     * method call.  The local properties are stored via the checkAndStore*() method calls and should only be used
+     * when configuring the viewer components functionality.   Once these properties have been persisted they are
+     * now sticky and will persist for all viewer instances.
+     */
+    public void saveLocalProperties() {
+        Enumeration keys = localProperties.keys();
+        while (keys.hasMoreElements()) {
+            String key = (String) keys.nextElement();
+            preferences.put(key, localProperties.getProperty(key));
+        }
+    }
+
+    /**
+     * Sets the local double property over writing any previous value stored in the default properties file.
+     *
+     * @param propertyName name of property to write.
+     * @param value        property value.
+     */
+    public void setDouble(String propertyName, double value) {
+        set(propertyName, Double.toString(value));
+    }
+
+    /**
+     * Sets the local float property over writing any previous value stored in the default properties file.
+     *
+     * @param propertyName name of property to write.
+     * @param value        property value.
+     */
+    public void setFloat(String propertyName, float value) {
+        set(propertyName, Float.toString(value));
+    }
+
+    /**
+     * Sets the local integer property over writing any previous value stored in the default properties file.
+     *
+     * @param propertyName name of property to write.
+     * @param value        property value.
+     */
+    public void setInt(String propertyName, int value) {
+        set(propertyName, Integer.toString(value));
+    }
+
+    /**
+     * Sets the local boolean property over writing any previous value stored in the default properties file.
+     *
+     * @param propertyName name of property to write.
+     * @param value        property value.
+     */
+    public void setBoolean(String propertyName, boolean value) {
+        set(propertyName, value ? "true" : "false");
+    }
 
     /**
      * Method to check the value of a string property
@@ -498,20 +575,6 @@ public class PropertiesManager {
             }
         }
         return defaultValue;
-    }
-
-    /**
-     * All of the properties that are stored in the local properties can be persisted to the backing store via this
-     * method call.  The local properties are stored via the checkAndStore*() method calls and should only be used
-     * when configuring the viewer components functionality.   Once these properties have been persisted they are
-     * now sticky and will persist for all viewer instances.
-     */
-    public void saveStoredProperties() {
-        Enumeration keys = localProperties.keys();
-        while (keys.hasMoreElements()) {
-            String key = (String) keys.nextElement();
-            preferences.put(key, localProperties.getProperty(key));
-        }
     }
 
     /**
