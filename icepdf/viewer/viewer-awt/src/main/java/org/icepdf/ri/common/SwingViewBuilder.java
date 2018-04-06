@@ -817,6 +817,8 @@ public class SwingViewBuilder {
         addToMenu(viewMenu, buildFitPageMenuItem());
         addToMenu(viewMenu, buildFitWidthMenuItem());
         viewMenu.addSeparator();
+        addToMenu(viewMenu, buildFullScreenMenuItem());
+        viewMenu.addSeparator();
         addToMenu(viewMenu, buildZoomInMenuItem());
         addToMenu(viewMenu, buildZoomOutMenuItem());
         viewMenu.addSeparator();
@@ -855,6 +857,16 @@ public class SwingViewBuilder {
                 buildKeyStroke(KeyEventConstants.KEY_CODE_FIT_WIDTH, KeyEventConstants.MODIFIER_FIT_WIDTH));
         if (viewerController != null && mi != null)
             viewerController.setFitWidthMenuItem(mi);
+        return mi;
+    }
+
+    public JMenuItem buildFullScreenMenuItem() {
+        JMenuItem mi = makeMenuItem(
+                messageBundle.getString("viewer.menu.view.fullScreen.label"),
+                "fullscreen", Images.SIZE_SMALL,
+                buildKeyStroke(KeyEventConstants.KEY_CODE_FULL_SCREEN, KeyEventConstants.MODIFIER_FULL_SCREEN));
+        if (viewerController != null && mi != null)
+            viewerController.setFullScreenMenuItem(mi);
         return mi;
     }
 
@@ -1160,6 +1172,8 @@ public class SwingViewBuilder {
             addToToolBar(toolbar, buildPageNavigationToolBar());
         if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_ZOOM))
             addToToolBar(toolbar, buildZoomToolBar());
+        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_FULL_SCREEN))
+            addToToolBar(toolbar, buildFullScreenToolBar());
         if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_FIT))
             addToToolBar(toolbar, buildFitToolBar());
         if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_ROTATE))
@@ -1436,6 +1450,13 @@ public class SwingViewBuilder {
         return toolbar;
     }
 
+    public JToolBar buildFullScreenToolBar() {
+        JToolBar toolbar = new JToolBar();
+        commonToolBarSetup(toolbar, false);
+        addToToolBar(toolbar, buildFullScreenButton());
+        return toolbar;
+    }
+
     public JToggleButton buildFitActualSizeButton() {
         JToggleButton btn = makeToolbarToggleButton(
                 messageBundle.getString("viewer.toolbar.pageFit.actualsize.label"),
@@ -1473,6 +1494,16 @@ public class SwingViewBuilder {
                 "fit_width", iconSize, buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setFitWidthButton(btn);
+        return btn;
+    }
+
+    public JButton buildFullScreenButton() {
+        JButton btn = makeToolbarButton(
+                messageBundle.getString("viewer.toolbar.pageFit.fullscreen.label"),
+                messageBundle.getString("viewer.toolbar.pageFit.fullscreen.tooltip"),
+                "fullscreen", iconSize, buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setFullScreenButton(btn);
         return btn;
     }
 

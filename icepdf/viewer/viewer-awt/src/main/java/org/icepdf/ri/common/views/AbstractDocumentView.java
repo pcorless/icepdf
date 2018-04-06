@@ -82,8 +82,7 @@ public abstract class AbstractDocumentView
     public static int layoutInserts = 0;
 
     protected DocumentViewController documentViewController;
-
-    protected JScrollPane documentScrollpane;
+    protected DocumentViewModel documentViewModel;
     protected JPanel pagesPanel;
     protected boolean disposing;
 
@@ -105,7 +104,9 @@ public abstract class AbstractDocumentView
                                 JScrollPane documentScrollpane,
                                 DocumentViewModel documentViewModel) {
         this.documentViewController = documentViewController;
-        this.documentScrollpane = documentScrollpane;
+        this.documentViewModel = documentViewModel;
+        // update the scroll pane reference,  this is mainly just for the full screen mode so the tools work as expected
+        documentViewModel.setDocumentViewScrollPane(documentScrollpane);
 
         setFocusable(true);
         // add focus listener
@@ -199,7 +200,7 @@ public abstract class AbstractDocumentView
         }
 
         // mouse/wheel listener
-        documentScrollpane.removeMouseWheelListener(mouseWheelZoom);
+        documentViewModel.getDocumentViewScrollPane().removeMouseWheelListener(mouseWheelZoom);
         removeMouseListener(this);
         removeMouseMotionListener(this);
         // stop the auto scroll timer
@@ -224,7 +225,7 @@ public abstract class AbstractDocumentView
             removeMouseListener(currentTool);
             removeMouseMotionListener(currentTool);
             if (currentTool instanceof TextSelectionViewHandler) {
-                documentScrollpane.removeMouseWheelListener((TextSelectionViewHandler) currentTool);
+                documentViewModel.getDocumentViewScrollPane().removeMouseWheelListener((TextSelectionViewHandler) currentTool);
             }
         }
         return currentTool;
@@ -246,7 +247,7 @@ public abstract class AbstractDocumentView
     public void setToolMode(final int viewToolMode) {
         uninstallCurrentTool();
         // assign the correct tool handler
-        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
+        JScrollPane documentScrollpane = documentViewModel.getDocumentViewScrollPane();
         switch (viewToolMode) {
             case DocumentViewModel.DISPLAY_TOOL_PAN:
                 currentTool = new PanningHandler(documentViewController,
@@ -350,6 +351,7 @@ public abstract class AbstractDocumentView
      * @return true if the mouse is north or south of the view port, false otherwise.
      */
     private boolean autoScrollViewVertical() {
+        JScrollPane documentScrollpane = documentViewModel.getDocumentViewScrollPane();
         if (documentScrollpane != null && isTextSelectionTool()) {
             Rectangle viewportBounds = documentScrollpane.getViewport().getViewRect();
             Rectangle viewBounds = getBounds();
@@ -382,6 +384,7 @@ public abstract class AbstractDocumentView
      * @return true if the mouse is east or west of the view port, false otherwise.
      */
     private boolean autoScrollViewHorizontal() {
+        JScrollPane documentScrollpane = documentViewModel.getDocumentViewScrollPane();
         if (documentScrollpane != null && isTextSelectionTool()) {
             Rectangle viewportBounds = documentScrollpane.getViewport().getViewRect();
             Rectangle viewBounds = getBounds();
@@ -435,9 +438,5 @@ public abstract class AbstractDocumentView
         } else {
             return null;
         }
-    }
-
-    public JScrollPane getDocumentScrollpane() {
-        return documentScrollpane;
     }
 }

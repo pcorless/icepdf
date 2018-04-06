@@ -46,9 +46,6 @@ public class OneColumnPageView extends AbstractDocumentView {
 
         super(documentDocumentViewController, documentScrollpane, documentViewModel);
 
-        // used to redirect mouse events
-        this.documentScrollpane = documentScrollpane;
-
         // put all the gui elements together
         buildGUI();
 
@@ -60,7 +57,7 @@ public class OneColumnPageView extends AbstractDocumentView {
         // add page changing key listeners
         keyListenerPageChanger =
                 KeyListenerPageColumnChanger.install(this.documentViewController.getParentController(),
-                        this.documentScrollpane, this, currentPageChanger);
+                        documentViewModel.getDocumentViewScrollPane(), this, currentPageChanger);
     }
 
     private void buildGUI() {

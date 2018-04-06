@@ -52,6 +52,8 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     // select all state flag, optimization for painting select all state lazily
     private boolean selectAll;
     protected List<AbstractPageViewComponent> pageComponents;
+    // scroll pane used to contain the view
+    protected JScrollPane documentViewScrollPane;
     // annotation memento caretaker
     protected UndoCaretaker undoCaretaker;
     // currently selected annotation
@@ -76,7 +78,6 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     protected abstract AbstractPageViewComponent buildPageViewComponent(DocumentViewModel documentViewModel,
                                                                         PageTree pageTree, final int pageIndex,
-                                                                        JScrollPane parentScrollPane,
                                                                         int width, int height);
 
     public Document getDocument() {
@@ -308,6 +309,24 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         if (this.currentAnnotation != null) {
             this.currentAnnotation.setSelected(true);
         }
+    }
+
+    /**
+     * Get the scroll pane used to contain the page view components.
+     *
+     * @return parent page view scroll pane.
+     */
+    public JScrollPane getDocumentViewScrollPane() {
+        return documentViewScrollPane;
+    }
+
+    /**
+     * Sets the parent scroll pane used by this view.
+     *
+     * @param documentViewScrollPane parent scroll pane
+     */
+    public void setDocumentViewScrollPane(JScrollPane documentViewScrollPane) {
+        this.documentViewScrollPane = documentViewScrollPane;
     }
 
     /**

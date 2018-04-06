@@ -58,6 +58,7 @@ public class CollectionDocumentView extends AbstractDocumentView {
         this.add(pagesPanel,
                 BorderLayout.CENTER);
 
+        JScrollPane documentScrollpane = documentViewModel.getDocumentViewScrollPane();
         documentScrollpane.getViewport().addChangeListener(e -> {
             JViewport tmp = (JViewport) e.getSource();
             Dimension dim = layout.computeSize(tmp.getWidth(), pagesPanel);

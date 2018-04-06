@@ -18,6 +18,7 @@ package org.icepdf.ri.common.views;
 import org.icepdf.core.Memento;
 import org.icepdf.core.pobjects.Document;
 
+import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -292,5 +293,9 @@ public interface DocumentViewModel {
      */
     void addMemento(Memento oldMementoState,
                     Memento newMementoState);
+
+    JScrollPane getDocumentViewScrollPane();
+
+    void setDocumentViewScrollPane(JScrollPane documentViewScrollPane);
 
 }

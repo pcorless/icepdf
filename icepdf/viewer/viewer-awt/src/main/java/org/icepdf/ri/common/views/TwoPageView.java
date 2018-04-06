@@ -49,9 +49,6 @@ public class TwoPageView extends AbstractDocumentView {
 
         super(documentDocumentViewController, documentScrollpane, documentViewModel);
 
-        // used to redirect mouse events
-        this.documentScrollpane = documentScrollpane;
-
         // assign view alignment
         this.viewAlignment = viewAlignment;
 
@@ -62,11 +59,11 @@ public class TwoPageView extends AbstractDocumentView {
         pageChangerListener =
                 MouseWheelListenerPageChanger.install(
                         this.documentViewController.getParentController(),
-                        this.documentScrollpane, this);
+                        documentScrollpane, this);
 
         keyListenerPageChanger =
                 KeyListenerPageChanger.install(this.documentViewController.getParentController(),
-                        this.documentScrollpane, this);
+                        documentScrollpane, this);
 
         // add the first of many tools need for this views and others like it.
         currentPageChanger =
@@ -137,7 +134,7 @@ public class TwoPageView extends AbstractDocumentView {
                     count++;
                 }
             }
-            documentScrollpane.validate();
+            documentViewModel.getDocumentViewScrollPane().validate();
 
             // make sure we have setup all pages with callback call.
             for (PageViewComponent pageViewCom : pageComponents) {
@@ -166,8 +163,8 @@ public class TwoPageView extends AbstractDocumentView {
         disposing = true;
         // remove utilities
         if (pageChangerListener != null) {
-            MouseWheelListenerPageChanger.uninstall(documentScrollpane,
-                    pageChangerListener);
+            JScrollPane documentScrollpane = documentViewModel.getDocumentViewScrollPane();
+            MouseWheelListenerPageChanger.uninstall(documentScrollpane, pageChangerListener);
         }
         if (keyListenerPageChanger != null) {
             keyListenerPageChanger.uninstall();

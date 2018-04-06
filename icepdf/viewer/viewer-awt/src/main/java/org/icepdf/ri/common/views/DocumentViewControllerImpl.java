@@ -85,6 +85,10 @@ public class DocumentViewControllerImpl
      */
     public static final int USE_ATTACHMENTS_VIEW = 7;
     /**
+     * Displays single page full screen view.
+     */
+    public static final int FULL_SCREEN_VIEW = 8;
+    /**
      * Zoom factor used when zooming in or out.
      */
     public static final float ZOOM_FACTOR = 1.2F;
@@ -102,14 +106,14 @@ public class DocumentViewControllerImpl
 
     protected JScrollPane documentViewScrollPane;
 
-    protected int viewportWidth, oldViewportWidth;
-    protected int viewportHeight, oldViewportHeight;
     protected int viewType, oldViewType;
-    protected int viewportFitMode, oldViewportFitMode;
+    protected int viewportFitMode;
     protected int cursorType;
+
     protected SwingController viewerController;
     protected AnnotationCallback annotationCallback;
     protected SecurityCallback securityCallback;
+
     protected PropertyChangeSupport changes = new PropertyChangeSupport(this);
 
     public DocumentViewControllerImpl(final SwingController viewerController) {
@@ -158,12 +162,11 @@ public class DocumentViewControllerImpl
             documentViewModel.dispose();
             documentViewModel = null;
         }
-        documentViewModel = createDocumentViewMode(document, documentViewScrollPane);
+        documentViewModel = createDocumentViewMode(document);
 
         // setup view type
         setViewType();
 
-        // remove re-size listener.
         documentViewScrollPane.addComponentListener(this);
         documentViewScrollPane.validate();
     }
@@ -172,12 +175,11 @@ public class DocumentViewControllerImpl
      * Initialize a DocumentViewModel implementation.  Can be over ridden to provide custom DocumentViewModel
      * implementation.
      *
-     * @param document               document that will be opened
-     * @param documentViewScrollPane parent scrollPane of view.
+     * @param document document that will be opened
      * @return DocumentViewModel for this view.
      */
-    protected DocumentViewModel createDocumentViewMode(Document document, JScrollPane documentViewScrollPane) {
-        return new DocumentViewModelImpl(document, documentViewScrollPane);
+    protected DocumentViewModel createDocumentViewMode(Document document) {
+        return new DocumentViewModelImpl(document);
     }
 
     // we should be resetting some view settings, mainly zoom, rotation, tool and current page
@@ -512,14 +514,13 @@ public class DocumentViewControllerImpl
      * @param documentViewType view type,
      */
     public void setViewType(final int documentViewType) {
-        oldViewType = viewType;
         viewType = documentViewType;
         // build the new view;
         if (oldViewType != viewType) {
             setViewType();
+            oldViewType = viewType != FULL_SCREEN_VIEW ? viewType : oldViewType;
             firePropertyChange(PropertyConstants.DOCUMENT_VIEW_TYPE_CHANGE, oldViewType, viewType);
         }
-
     }
 
     /**
@@ -527,7 +528,9 @@ public class DocumentViewControllerImpl
      */
     public void revertViewType() {
         viewType = oldViewType;
+        oldViewType = -1;
         setViewType(viewType);
+        viewerController.setPageViewMode(viewType, true);
     }
 
     /**
@@ -555,9 +558,13 @@ public class DocumentViewControllerImpl
         // notify the view of the tool change
         documentView.setToolMode(documentViewModel.getViewToolMode());
 
-        // add the new view the scroll pane
-        documentViewScrollPane.setViewportView((Component) documentView);
-        documentViewScrollPane.validate();
+        // fork for the unusual nature of the full screen mode.
+        if (viewType != FULL_SCREEN_VIEW) {
+            documentViewScrollPane.setViewportView((Component) documentView);
+            documentViewScrollPane.validate();
+        } else {
+            ((FullScreenDocumentView) documentView).display();
+        }
 
         // re-apply the fit mode
         viewerController.setPageFitMode(viewportFitMode, true);
@@ -580,36 +587,32 @@ public class DocumentViewControllerImpl
             documentView =
                     new OnePageView(this, documentViewScrollPane, documentViewModel);
         } else if (viewType == TWO_COLUMN_LEFT_VIEW) {
-            documentView =
-                    new TwoColumnPageView(this, documentViewScrollPane,
-                            documentViewModel,
-                            DocumentView.LEFT_VIEW);
+            documentView = new TwoColumnPageView(this, documentViewScrollPane,
+                    documentViewModel,
+                    DocumentView.LEFT_VIEW);
         } else if (viewType == TWO_PAGE_LEFT_VIEW) {
-            documentView =
-                    new TwoPageView(this, documentViewScrollPane,
-                            documentViewModel,
-                            DocumentView.LEFT_VIEW);
+            documentView = new TwoPageView(this, documentViewScrollPane,
+                    documentViewModel,
+                    DocumentView.LEFT_VIEW);
         } else if (viewType == TWO_COLUMN_RIGHT_VIEW) {
-            documentView =
-                    new TwoColumnPageView(this, documentViewScrollPane,
-                            documentViewModel,
-                            DocumentView.RIGHT_VIEW);
+            documentView = new TwoColumnPageView(this, documentViewScrollPane,
+                    documentViewModel,
+                    DocumentView.RIGHT_VIEW);
         } else if (viewType == TWO_PAGE_RIGHT_VIEW) {
-            documentView =
-                    new TwoPageView(this, documentViewScrollPane,
-                            documentViewModel,
-                            DocumentView.RIGHT_VIEW);
+            documentView = new TwoPageView(this, documentViewScrollPane,
+                    documentViewModel,
+                    DocumentView.RIGHT_VIEW);
         } else if (viewType == USE_ATTACHMENTS_VIEW) {
-            documentView =
-                    new CollectionDocumentView(this, documentViewScrollPane,
-                            documentViewModel);
+            documentView = new CollectionDocumentView(this, documentViewScrollPane,
+                    documentViewModel);
+        } else if (viewType == FULL_SCREEN_VIEW) {
+            documentView = new FullScreenDocumentView(this);
         } else {
             documentView =
                     new OneColumnPageView(this, documentViewScrollPane, documentViewModel);
         }
 
         ((JComponent) documentView).addPropertyChangeListener(this);
-
     }
 
     public void propertyChange(PropertyChangeEvent evt) {
@@ -891,8 +894,7 @@ public class DocumentViewControllerImpl
             // can ge assigned.
             if (changed) {
                 // notify the view of the tool change
-                if (documentView != null)
-                    documentView.setToolMode(viewToolMode);
+                if (documentView != null) documentView.setToolMode(viewToolMode);
 
                 // notify the page components of the tool change.
                 List<AbstractPageViewComponent> pageComponents =
@@ -921,9 +923,9 @@ public class DocumentViewControllerImpl
     public void setViewCursor(final int cursorType) {
         this.cursorType = cursorType;
         Cursor cursor = getViewCursor(cursorType);
-        if (documentViewScrollPane != null) {
-            if (documentViewScrollPane.getViewport() != null)
-                documentViewScrollPane.getViewport().setCursor(cursor);
+        if (documentViewModel != null && documentViewModel.getDocumentViewScrollPane() != null) {
+            if (documentViewModel.getDocumentViewScrollPane().getViewport() != null)
+                documentViewModel.getDocumentViewScrollPane().getViewport().setCursor(cursor);
         }
     }
 

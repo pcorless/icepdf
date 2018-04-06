@@ -49,9 +49,6 @@ public class TwoColumnPageView extends AbstractDocumentView {
 
         super(documentDocumentViewController, documentScrollpane, documentViewModel);
 
-        // used to redirect mouse events
-        this.documentScrollpane = documentScrollpane;
-
         // assign view alignment
         this.viewAlignment = viewAlignment;
 
@@ -67,7 +64,7 @@ public class TwoColumnPageView extends AbstractDocumentView {
         keyListenerPageChanger =
                 KeyListenerPageColumnChanger.install(
                         this.documentViewController.getParentController(),
-                        this.documentScrollpane, this, currentPageChanger);
+                        documentScrollpane, this, currentPageChanger);
     }
 
     private void buildGUI() {

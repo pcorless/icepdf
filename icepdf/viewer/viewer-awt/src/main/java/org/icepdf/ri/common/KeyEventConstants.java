@@ -53,6 +53,9 @@ public class KeyEventConstants {
     public static final int KEY_CODE_FIT_WIDTH = KeyEvent.VK_3;
     public static final int MODIFIER_FIT_WIDTH = MENU_SHORTCUT_KEY_MASK;
 
+    public static final int KEY_CODE_FULL_SCREEN = KeyEvent.VK_L;
+    public static final int MODIFIER_FULL_SCREEN = MENU_SHORTCUT_KEY_MASK;
+
     public static final int KEY_CODE_ZOOM_IN = KeyEvent.VK_I;
     public static final int MODIFIER_ZOOM_IN = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_MASK;
     public static final int KEY_CODE_ZOOM_OUT = KeyEvent.VK_O;

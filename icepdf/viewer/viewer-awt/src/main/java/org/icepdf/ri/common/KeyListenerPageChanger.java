@@ -49,24 +49,26 @@ public class KeyListenerPageChanger extends KeyAdapter {
      * @param documentView document view to apply listener to.
      * @return KeyListenerPageChanger that was installed.
      */
-    public static KeyListenerPageChanger install(Controller c, JScrollPane s,
-                                                 AbstractDocumentView documentView) {
+    public static KeyListenerPageChanger install(Controller c, JScrollPane s, AbstractDocumentView documentView) {
         KeyListenerPageChanger listener = null;
         if (c != null && s != null) {
             listener = new KeyListenerPageChanger(c, s, documentView);
             s.addKeyListener(listener);
+            documentView.addKeyListener(listener);
         }
         return listener;
     }
 
     public void uninstall() {
+        if (documentView != null) {
+            documentView.removeKeyListener(this);
+        }
         if (scroll != null) {
             scroll.removeKeyListener(this);
         }
     }
 
-    protected KeyListenerPageChanger(Controller c, JScrollPane s,
-                                     AbstractDocumentView documentView) {
+    protected KeyListenerPageChanger(Controller c, JScrollPane s, AbstractDocumentView documentView) {
         controller = c;
         scroll = s;
         this.documentView = documentView;

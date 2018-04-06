@@ -42,9 +42,9 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     protected ArrayList<AbstractAnnotationComponent> annotationComponents;
     protected ArrayList<DestinationComponent> destinationComponents;
 
-    public PageViewComponentImpl(DocumentViewModel documentViewModel, PageTree pageTree, final int pageIndex,
-                                 JScrollPane parentScrollPane, int width, int height) {
-        super(documentViewModel, pageTree, pageIndex, parentScrollPane, width, height);
+    public PageViewComponentImpl(DocumentViewModel documentViewModel, PageTree pageTree,
+                                 final int pageIndex, int width, int height) {
+        super(documentViewModel, pageTree, pageIndex, width, height);
         setFocusable(true);
         addFocusListener(this);
         // text selection handler

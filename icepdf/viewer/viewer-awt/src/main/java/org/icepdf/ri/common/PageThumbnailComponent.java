@@ -59,7 +59,7 @@ public class PageThumbnailComponent extends AbstractPageViewComponent implements
                                   int pageNumber,
                                   int width, int height,
                                   float thumbNailZoom) {
-        super(null, pageTree, pageNumber, parentScrollPane, width, height);
+        super(null, pageTree, pageNumber, width, height);
 
         this.controller = controller;
 
@@ -78,6 +78,7 @@ public class PageThumbnailComponent extends AbstractPageViewComponent implements
     protected void calculateBufferLocation() {
         // grab a reference to the graphics configuration via the AWT thread,  if we get it on the worker thread
         // it sometimes return null.
+        JScrollPane parentScrollPane = documentViewController.getDocumentViewModel().getDocumentViewScrollPane();
         graphicsConfiguration = parentScrollPane.getGraphicsConfiguration();
 
         // page location in the the entire view.

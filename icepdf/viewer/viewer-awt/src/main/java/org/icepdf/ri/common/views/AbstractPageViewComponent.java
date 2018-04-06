@@ -79,7 +79,6 @@ public abstract class AbstractPageViewComponent
     protected DocumentViewController documentViewController;
 
     // scrollPane is very important for optimization of multiple page views.
-    protected JScrollPane parentScrollPane;
     protected PageTree pageTree;
     protected int pageIndex;
 
@@ -95,10 +94,9 @@ public abstract class AbstractPageViewComponent
     protected FutureTask<Object> pageImageCaptureTask;
 
     public AbstractPageViewComponent(DocumentViewModel documentViewModel, PageTree pageTree,
-                                     final int pageIndex, JScrollPane parentScrollPane, int width, int height) {
+                                     final int pageIndex, int width, int height) {
         // needed to propagate mouse events.
         this.documentViewModel = documentViewModel;
-        this.parentScrollPane = parentScrollPane;
         this.pageTree = pageTree;
         this.pageIndex = pageIndex;
 
@@ -230,6 +228,7 @@ public abstract class AbstractPageViewComponent
      */
     private boolean isPageIntersectViewport() {
         Rectangle pageBounds = documentViewModel != null ? documentViewModel.getPageBounds(pageIndex) : getBounds();
+        JScrollPane parentScrollPane = documentViewController.getDocumentViewModel().getDocumentViewScrollPane();
         return pageBounds != null && this.isShowing() &&
                 pageBounds.intersects(parentScrollPane.getViewport().getViewRect());
     }
@@ -287,6 +286,7 @@ public abstract class AbstractPageViewComponent
      */
     protected void calculateBufferLocation() {
 
+        JScrollPane parentScrollPane = documentViewController.getDocumentViewModel().getDocumentViewScrollPane();
         // grab a reference to the graphics configuration via the AWT thread,  if we get it on the worker thread
         // it sometimes return null.
         graphicsConfiguration = parentScrollPane.getGraphicsConfiguration();

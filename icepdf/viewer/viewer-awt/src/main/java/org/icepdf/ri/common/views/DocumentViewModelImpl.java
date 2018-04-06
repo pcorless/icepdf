@@ -18,7 +18,6 @@ package org.icepdf.ri.common.views;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PageTree;
 
-import javax.swing.*;
 import java.util.ArrayList;
 
 /**
@@ -32,7 +31,7 @@ import java.util.ArrayList;
  */
 public class DocumentViewModelImpl extends AbstractDocumentViewModel {
 
-    public DocumentViewModelImpl(Document document, JScrollPane parentScrollPane) {
+    public DocumentViewModelImpl(Document document) {
         // construct abstract parent
         super(document);
 
@@ -49,13 +48,12 @@ public class DocumentViewModelImpl extends AbstractDocumentViewModel {
             // also a way to pass in an average document size.
             if (i < MAX_PAGE_SIZE_READ_AHEAD) {
                 pageViewComponent =
-                        buildPageViewComponent(this, pageTree, i, parentScrollPane, 0, 0);
+                        buildPageViewComponent(this, pageTree, i, 0, 0);
                 avgPageWidth += pageViewComponent.getPreferredSize().width;
                 avgPageHeight += pageViewComponent.getPreferredSize().height;
             } else if (i > MAX_PAGE_SIZE_READ_AHEAD) {
                 pageViewComponent =
                         buildPageViewComponent(this, pageTree, i,
-                                parentScrollPane,
                                 avgPageWidth, avgPageHeight);
             }
             // calculate average page size
@@ -63,7 +61,6 @@ public class DocumentViewModelImpl extends AbstractDocumentViewModel {
                 avgPageWidth /= (MAX_PAGE_SIZE_READ_AHEAD);
                 avgPageHeight /= (MAX_PAGE_SIZE_READ_AHEAD);
                 pageViewComponent = buildPageViewComponent(this, pageTree, i,
-                                parentScrollPane,
                                 avgPageWidth, avgPageHeight);
             }
             pageComponents.add(pageViewComponent);
@@ -72,7 +69,7 @@ public class DocumentViewModelImpl extends AbstractDocumentViewModel {
 
     protected AbstractPageViewComponent buildPageViewComponent(
             DocumentViewModel documentViewModel, PageTree pageTree, final int pageIndex,
-            JScrollPane parentScrollPane, int width, int height){
-        return new PageViewComponentImpl(this, pageTree, pageIndex, parentScrollPane, width, height);
+            int width, int height) {
+        return new PageViewComponentImpl(this, pageTree, pageIndex, width, height);
     }
 }

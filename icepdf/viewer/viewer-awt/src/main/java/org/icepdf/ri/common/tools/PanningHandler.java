@@ -57,9 +57,9 @@ public class PanningHandler implements ToolHandler {
 
             // Get data about the current view port position
             Adjustable verticalScrollbar =
-                    documentViewController.getVerticalScrollBar();
+                    documentViewModel.getDocumentViewScrollPane().getVerticalScrollBar();
             Adjustable horizontalScrollbar =
-                    documentViewController.getHorizontalScrollBar();
+                    documentViewModel.getDocumentViewScrollPane().getHorizontalScrollBar();
 
             if (verticalScrollbar != null && horizontalScrollbar != null) {
                 // calculate how much the view port should be moved
@@ -83,9 +83,9 @@ public class PanningHandler implements ToolHandler {
         if (documentViewController != null) {
 
             Adjustable verticalScrollbar =
-                    documentViewController.getVerticalScrollBar();
+                    documentViewModel.getDocumentViewScrollPane().getVerticalScrollBar();
             Adjustable horizontalScrollbar =
-                    documentViewController.getHorizontalScrollBar();
+                    documentViewModel.getDocumentViewScrollPane().getHorizontalScrollBar();
 
             lastMousePosition.setLocation(
                     e.getPoint().getX() - horizontalScrollbar.getValue(),

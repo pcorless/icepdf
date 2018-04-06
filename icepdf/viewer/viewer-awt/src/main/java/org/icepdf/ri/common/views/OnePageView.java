@@ -44,22 +44,17 @@ public class OnePageView extends AbstractDocumentView {
 
         super(documentDocumentViewController, documentScrollpane, documentViewModel);
 
-        // used to redirect mouse events
-        this.documentScrollpane = documentScrollpane;
-
         // put all the gui elements together
         buildGUI();
 
         // add page changing key listeners
-        pageChangerListener =
-                MouseWheelListenerPageChanger.install(
-                        this.documentViewController.getParentController(),
-                        this.documentScrollpane, this);
+        pageChangerListener = MouseWheelListenerPageChanger.install(
+                this.documentViewController.getParentController(),
+                documentScrollpane, this);
 
-        keyListenerPageChanger =
-                KeyListenerPageChanger.install(
-                        this.documentViewController.getParentController(),
-                        this.documentScrollpane, this);
+        keyListenerPageChanger = KeyListenerPageChanger.install(
+                this.documentViewController.getParentController(),
+                documentScrollpane, this);
 
     }
 
@@ -91,9 +86,7 @@ public class OnePageView extends AbstractDocumentView {
     public void updateDocumentView() {
 
         DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-        java.util.List<AbstractPageViewComponent> pageComponents =
-                documentViewModel.getPageComponents();
-
+        java.util.List<AbstractPageViewComponent> pageComponents = documentViewModel.getPageComponents();
         if (pageComponents != null) {
 
             PageViewComponent pageViewComponent =
@@ -105,9 +98,9 @@ public class OnePageView extends AbstractDocumentView {
 
                 pageViewComponent.setDocumentViewCallback(this);
                 // add component to layout
-                pagesPanel.add(new PageViewDecorator(
-                        (AbstractPageViewComponent) pageViewComponent));
-                ((AbstractPageViewComponent) pageViewComponent).validate();
+                pagesPanel.add(buildPageDecoration((AbstractPageViewComponent) pageViewComponent));
+                ((AbstractPageViewComponent) pageViewComponent).revalidate();
+                ((AbstractPageViewComponent) pageViewComponent).repaint();
             }
 
             // make sure we have setup all pages with callback call.
@@ -117,6 +110,10 @@ public class OnePageView extends AbstractDocumentView {
                 }
             }
         }
+    }
+
+    protected JComponent buildPageDecoration(AbstractPageViewComponent pageViewComponent) {
+        return new PageViewDecorator(pageViewComponent);
     }
 
     /**
@@ -137,6 +134,7 @@ public class OnePageView extends AbstractDocumentView {
         disposing = true;
         // remove utilities
         if (pageChangerListener != null) {
+            JScrollPane documentScrollpane = documentViewModel.getDocumentViewScrollPane();
             MouseWheelListenerPageChanger.uninstall(documentScrollpane,
                     pageChangerListener);
         }

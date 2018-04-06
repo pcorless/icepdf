@@ -157,6 +157,7 @@ public class SwingController extends ComponentAdapter
     private JMenuItem fitActualSizeMenuItem;
     private JMenuItem fitPageMenuItem;
     private JMenuItem fitWidthMenuItem;
+    private JMenuItem fullScreenMenuItem;
     private JMenuItem zoomInMenuItem;
     private JMenuItem zoomOutMenuItem;
     private JMenuItem rotateLeftMenuItem;
@@ -195,6 +196,7 @@ public class SwingController extends ComponentAdapter
     private JToggleButton fitActualSizeButton;
     private JToggleButton fitHeightButton;
     private JToggleButton fitWidthButton;
+    private JButton fullScreenButton;
     private JToggleButton fontEngineButton;
     private JToggleButton facingPageViewContinuousButton;
     private JToggleButton singlePageViewContinuousButton;
@@ -617,6 +619,11 @@ public class SwingController extends ComponentAdapter
         mi.addActionListener(this);
     }
 
+    public void setFullScreenMenuItem(JMenuItem mi) {
+        fullScreenMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
      *
@@ -1003,6 +1010,11 @@ public class SwingController extends ComponentAdapter
     public void setFitWidthButton(JToggleButton btn) {
         fitWidthButton = btn;
         btn.addItemListener(this);
+    }
+
+    public void setFullScreenButton(JButton btn) {
+        fullScreenButton = btn;
+        btn.addActionListener(this);
     }
 
     /**
@@ -1531,6 +1543,7 @@ public class SwingController extends ComponentAdapter
         setEnabled(fitActualSizeMenuItem, opened && !pdfCollection);
         setEnabled(fitPageMenuItem, opened && !pdfCollection);
         setEnabled(fitWidthMenuItem, opened && !pdfCollection);
+        setEnabled(fullScreenMenuItem, opened && !pdfCollection);
 
         setEnabled(zoomInMenuItem, opened && !pdfCollection);
         setEnabled(zoomOutMenuItem, opened && !pdfCollection);
@@ -1543,8 +1556,6 @@ public class SwingController extends ComponentAdapter
 //        setEnabled(facingPageViewNonContinuousMenuItem , opened );
 //        setEnabled(singlePageViewNonContinuousMenuItem , opened );
 
-        setEnabled(fitPageMenuItem, opened && !pdfCollection);
-        setEnabled(fitWidthMenuItem, opened && !pdfCollection);
         if (showHideToolBarMenuItem != null) {
             boolean vis = (completeToolBar != null) && completeToolBar.isVisible();
             showHideToolBarMenuItem.setText(
@@ -1588,6 +1599,7 @@ public class SwingController extends ComponentAdapter
         setEnabled(fitActualSizeButton, opened && !pdfCollection);
         setEnabled(fitHeightButton, opened && !pdfCollection);
         setEnabled(fitWidthButton, opened && !pdfCollection);
+        setEnabled(fullScreenButton, opened && !pdfCollection);
         setEnabled(rotateLeftButton, opened && !pdfCollection);
         setEnabled(rotateRightButton, opened && !pdfCollection);
         setEnabled(panToolButton, opened && !pdfCollection);
@@ -3140,6 +3152,7 @@ public class SwingController extends ComponentAdapter
         fitActualSizeMenuItem = null;
         fitPageMenuItem = null;
         fitWidthMenuItem = null;
+        fullScreenMenuItem = null;
         zoomInMenuItem = null;
         zoomOutMenuItem = null;
         rotateLeftMenuItem = null;
@@ -3195,6 +3208,7 @@ public class SwingController extends ComponentAdapter
         fitActualSizeButton = null;
         fitHeightButton = null;
         fitWidthButton = null;
+        fullScreenButton = null;
 
         rotateLeftButton = null;
         rotateRightButton = null;
@@ -4120,7 +4134,6 @@ public class SwingController extends ComponentAdapter
 
             reflectPageChangeInComponents();
 
-
             PageTree pageTree = getPageTree();
 
             if (currentPageNumberTextField != null)
@@ -4223,6 +4236,10 @@ public class SwingController extends ComponentAdapter
         // update button state.
         reflectZoomInZoomComboBox();
         reflectFitInFitButtons();
+    }
+
+    public void setFullScreenMode() {
+        setPageViewMode(DocumentViewControllerImpl.FULL_SCREEN_VIEW, true);
     }
 
     public void setPageViewMode(final int viewMode, boolean refresh) {
@@ -4715,6 +4732,9 @@ public class SwingController extends ComponentAdapter
                         // Clicking only seems to invoke an itemStateChanged() event
                         //  so this is probably redundant
                         setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_WIDTH, false);
+                    } else if (source == fullScreenMenuItem || source == fullScreenButton) {
+                        setFullScreenMode();
+                        cancelSetFocus = true;
                     } else if (source == zoomInMenuItem || source == zoomInButton) {
                         zoomIn();
                     } else if (source == zoomOutMenuItem || source == zoomOutButton) {

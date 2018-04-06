@@ -225,6 +225,8 @@ public interface DocumentViewController {
 
     String getSelectedText();
 
+    void revertViewType();
+
     void firePropertyChange(String event, int oldValue, int newValue);
 
     void firePropertyChange(String event, Object oldValue, Object newValue);
