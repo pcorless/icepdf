@@ -1035,17 +1035,24 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
     }
 
+    /**
+     * When a file is dropped on this component, the respective file's extension is used to find a FileDropHandler that
+     * is registered with the AnnotationFileDropHandler.  If a FileDropHandler is found for the extension then the
+     * file is passed to the FileDropHandler object along with the instnce of the annotation for processing.
+     *
+     * @param dropTargetDropEvent drop target drop event
+     */
     @Override
-    public void drop(DropTargetDropEvent dtde) {
+    public void drop(DropTargetDropEvent dropTargetDropEvent) {
         try {
             // check to make sure that event type is ok
-            if (!isDropAcceptable(dtde)) {
-                dtde.rejectDrop();
+            if (!isDropAcceptable(dropTargetDropEvent)) {
+                dropTargetDropEvent.rejectDrop();
                 return;
             }
             // accept the drop action, must do this to proceed
-            dtde.acceptDrop(DnDConstants.ACTION_COPY);
-            Transferable transferable = dtde.getTransferable();
+            dropTargetDropEvent.acceptDrop(DnDConstants.ACTION_COPY);
+            Transferable transferable = dropTargetDropEvent.getTransferable();
             DataFlavor[] flavors = transferable.getTransferDataFlavors();
             for (DataFlavor dataFlavor : flavors) {
                 // Check to see if a file was dropped on the viewer frame
@@ -1059,7 +1066,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                     }
                 }
             }
-            dtde.dropComplete(true);
+            dropTargetDropEvent.dropComplete(true);
 
         } catch (IOException ioe) {
             logger.log(Level.FINE, "IO exception during file drop", ioe);
