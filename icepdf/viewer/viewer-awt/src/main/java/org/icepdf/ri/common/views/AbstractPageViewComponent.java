@@ -227,8 +227,9 @@ public abstract class AbstractPageViewComponent
      * @throws NullPointerException if the parent scrollPane is null.
      */
     private boolean isPageIntersectViewport() {
-        Rectangle pageBounds = documentViewModel != null ? documentViewModel.getPageBounds(pageIndex) : getBounds();
-        JScrollPane parentScrollPane = documentViewController.getDocumentViewModel().getDocumentViewScrollPane();
+        Rectangle pageBounds = (documentViewModel != null && documentViewModel.getPageComponents() != null) ?
+                documentViewModel.getPageBounds(pageIndex) : getBounds();
+        JScrollPane parentScrollPane = documentViewModel.getDocumentViewScrollPane();
         return pageBounds != null && this.isShowing() &&
                 pageBounds.intersects(parentScrollPane.getViewport().getViewRect());
     }
@@ -286,7 +287,7 @@ public abstract class AbstractPageViewComponent
      */
     protected void calculateBufferLocation() {
 
-        JScrollPane parentScrollPane = documentViewController.getDocumentViewModel().getDocumentViewScrollPane();
+        JScrollPane parentScrollPane = documentViewModel.getDocumentViewScrollPane();
         // grab a reference to the graphics configuration via the AWT thread,  if we get it on the worker thread
         // it sometimes return null.
         graphicsConfiguration = parentScrollPane.getGraphicsConfiguration();

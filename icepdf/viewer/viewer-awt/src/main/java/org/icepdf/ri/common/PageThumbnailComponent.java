@@ -21,9 +21,9 @@ import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
-import org.icepdf.ri.common.views.Controller;
+import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.DocumentViewModel;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -46,22 +46,20 @@ public class PageThumbnailComponent extends AbstractPageViewComponent implements
     private static final Logger logger =
             Logger.getLogger(PageThumbnailComponent.class.toString());
 
-    private Controller controller;
-
-    public PageThumbnailComponent(Controller controller,
-                                  JScrollPane parentScrollPane, PageTree pageTree,
+    public PageThumbnailComponent(DocumentViewController documentViewController,
+                                  DocumentViewModel documentViewModel, PageTree pageTree,
                                   int pageNumber, float thumbNailZoom) {
-        this(controller, parentScrollPane, pageTree, pageNumber, 0, 0, thumbNailZoom);
+        this(documentViewController, documentViewModel, pageTree, pageNumber, 0, 0, thumbNailZoom);
     }
 
-    public PageThumbnailComponent(Controller controller,
-                                  JScrollPane parentScrollPane, PageTree pageTree,
+    public PageThumbnailComponent(DocumentViewController documentViewController,
+                                  DocumentViewModel documentViewModel, PageTree pageTree,
                                   int pageNumber,
                                   int width, int height,
                                   float thumbNailZoom) {
-        super(null, pageTree, pageNumber, width, height);
+        super(documentViewModel, pageTree, pageNumber, width, height);
 
-        this.controller = controller;
+        this.documentViewController = documentViewController;
 
         // current state.
         pageZoom = thumbNailZoom;
@@ -78,12 +76,11 @@ public class PageThumbnailComponent extends AbstractPageViewComponent implements
     protected void calculateBufferLocation() {
         // grab a reference to the graphics configuration via the AWT thread,  if we get it on the worker thread
         // it sometimes return null.
-        JScrollPane parentScrollPane = documentViewController.getDocumentViewModel().getDocumentViewScrollPane();
-        graphicsConfiguration = parentScrollPane.getGraphicsConfiguration();
+        graphicsConfiguration = documentViewModel.getDocumentViewScrollPane().getGraphicsConfiguration();
 
         // page location in the the entire view.
         Rectangle pageLocation = this.getBounds();
-        Rectangle viewPort = parentScrollPane.getViewport().getViewRect();
+        Rectangle viewPort = documentViewModel.getDocumentViewScrollPane().getViewport().getViewRect();
 
         // check if we need create or refresh the back pageBufferPadding.
         if (viewPort.intersects(pageLocation) && pageBufferStore.getImageReference() == null) {
@@ -103,8 +100,8 @@ public class PageThumbnailComponent extends AbstractPageViewComponent implements
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (controller != null) {
-            controller.getDocumentViewController().setCurrentPageIndex(pageIndex);
+        if (documentViewController != null) {
+            documentViewController.getParentController().getDocumentViewController().setCurrentPageIndex(pageIndex);
         }
     }
 

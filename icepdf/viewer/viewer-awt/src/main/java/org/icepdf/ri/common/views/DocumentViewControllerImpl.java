@@ -136,12 +136,9 @@ public class DocumentViewControllerImpl
                 }
             }
         };
-        InputMap inputMap = documentViewScrollPane.getInputMap(
-                JComponent.WHEN_IN_FOCUSED_WINDOW);
-        inputMap.put(KeyStroke.getKeyStroke("DELETE"),
-                "removeSelectedAnnotation");
-        documentViewScrollPane.getActionMap().put("removeSelectedAnnotation",
-                deleteAnnotation);
+        InputMap inputMap = documentViewScrollPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        inputMap.put(KeyStroke.getKeyStroke("DELETE"), "removeSelectedAnnotation");
+        documentViewScrollPane.getActionMap().put("removeSelectedAnnotation", deleteAnnotation);
     }
 
     public Document getDocument() {
@@ -165,10 +162,11 @@ public class DocumentViewControllerImpl
         documentViewModel = createDocumentViewMode(document);
 
         // setup view type
-        setViewType();
-
-        documentViewScrollPane.addComponentListener(this);
-        documentViewScrollPane.validate();
+        if (document != null) {
+            setViewType();
+            documentViewScrollPane.addComponentListener(this);
+            documentViewScrollPane.validate();
+        }
     }
 
     /**

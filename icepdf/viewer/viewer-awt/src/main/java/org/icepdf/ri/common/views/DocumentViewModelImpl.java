@@ -31,39 +31,43 @@ import java.util.ArrayList;
  */
 public class DocumentViewModelImpl extends AbstractDocumentViewModel {
 
+
     public DocumentViewModelImpl(Document document) {
         // construct abstract parent
         super(document);
 
         // load the page components into the layout
-        AbstractPageViewComponent pageViewComponent = null;
-        PageTree pageTree = document.getPageTree();
-        int numberOfPages = document.getNumberOfPages();
-        int avgPageWidth = 0;
-        int avgPageHeight = 0;
+        AbstractPageViewComponent pageViewComponent;
 
-        // add components for every page in the document
-        pageComponents = new ArrayList<>(numberOfPages);
-        for (int i = 0; i < numberOfPages; i++) {
-            // also a way to pass in an average document size.
-            if (i < MAX_PAGE_SIZE_READ_AHEAD) {
-                pageViewComponent =
-                        buildPageViewComponent(this, pageTree, i, 0, 0);
-                avgPageWidth += pageViewComponent.getPreferredSize().width;
-                avgPageHeight += pageViewComponent.getPreferredSize().height;
-            } else if (i > MAX_PAGE_SIZE_READ_AHEAD) {
-                pageViewComponent =
-                        buildPageViewComponent(this, pageTree, i,
-                                avgPageWidth, avgPageHeight);
+        if (document != null) {
+            PageTree pageTree = document.getPageTree();
+            int numberOfPages = document.getNumberOfPages();
+            int avgPageWidth = 0;
+            int avgPageHeight = 0;
+
+            // add components for every page in the document
+            pageComponents = new ArrayList<>(numberOfPages);
+            for (int i = 0; i < numberOfPages; i++) {
+                // also a way to pass in an average document size.
+                if (i < MAX_PAGE_SIZE_READ_AHEAD) {
+                    pageViewComponent =
+                            buildPageViewComponent(this, pageTree, i, 0, 0);
+                    avgPageWidth += pageViewComponent.getPreferredSize().width;
+                    avgPageHeight += pageViewComponent.getPreferredSize().height;
+                } else if (i > MAX_PAGE_SIZE_READ_AHEAD) {
+                    pageViewComponent =
+                            buildPageViewComponent(this, pageTree, i,
+                                    avgPageWidth, avgPageHeight);
+                }
+                // calculate average page size
+                else {// if (i == MAX_PAGE_SIZE_READ_AHEAD) {
+                    avgPageWidth /= (MAX_PAGE_SIZE_READ_AHEAD);
+                    avgPageHeight /= (MAX_PAGE_SIZE_READ_AHEAD);
+                    pageViewComponent = buildPageViewComponent(this, pageTree, i,
+                            avgPageWidth, avgPageHeight);
+                }
+                pageComponents.add(pageViewComponent);
             }
-            // calculate average page size
-            else {// if (i == MAX_PAGE_SIZE_READ_AHEAD) {
-                avgPageWidth /= (MAX_PAGE_SIZE_READ_AHEAD);
-                avgPageHeight /= (MAX_PAGE_SIZE_READ_AHEAD);
-                pageViewComponent = buildPageViewComponent(this, pageTree, i,
-                                avgPageWidth, avgPageHeight);
-            }
-            pageComponents.add(pageViewComponent);
         }
     }
 

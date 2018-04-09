@@ -260,8 +260,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
                 Component parentComponent = pageViewComponentImpl;
                 Dimension size = pageViewComponentImpl.getPreferredSize();
                 pageBounds.setSize(size.width, size.height);
-                while (parentComponent != null &&
-                        !(parentComponent instanceof DocumentView)) {
+                while (parentComponent != null && !(parentComponent instanceof DocumentView)) {
                     pageBounds.x += parentComponent.getBounds().x;
                     pageBounds.y += parentComponent.getBounds().y;
                     parentComponent = parentComponent.getParent();

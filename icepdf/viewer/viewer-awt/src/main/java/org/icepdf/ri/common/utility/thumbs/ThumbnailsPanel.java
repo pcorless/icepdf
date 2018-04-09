@@ -20,8 +20,8 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.ri.common.MutableDocument;
 import org.icepdf.ri.common.PageThumbnailComponent;
-import org.icepdf.ri.common.views.Controller;
-import org.icepdf.ri.common.views.ModifiedFlowLayout;
+import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
@@ -81,8 +81,7 @@ public class ThumbnailsPanel extends JPanel implements MutableDocument {
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         scrollPane.getVerticalScrollBar().setUnitIncrement(20);
         scrollPane.getHorizontalScrollBar().setUnitIncrement(20);
-        this.add(scrollPane,
-                BorderLayout.CENTER);
+        this.add(scrollPane, BorderLayout.CENTER);
 
         scrollPane.getViewport().addChangeListener(e -> {
             JViewport tmp = (JViewport) e.getSource();
@@ -105,33 +104,36 @@ public class ThumbnailsPanel extends JPanel implements MutableDocument {
         int avgPageWidth = 0;
         int avgPageHeight = 0;
 
+        // create a new controller just for the thumbnail so we can contain the thumbnail panels scroll pane
+        DocumentViewController thumbnailViewController = new DocumentViewControllerImpl((SwingController) controller);
+        // null document as we don't want to create a new page hierarchy but we do want a view model with comps.
+        thumbnailViewController.setDocument(null);
+        DocumentViewModel thumbNailViewModel = thumbnailViewController.getDocumentViewModel();
+        thumbNailViewModel.setDocumentViewScrollPane(scrollPane);
+
         // add components for every page in the document
         for (int i = 0; i < numberOfPages; i++) {
             // also a way to pass in an average document size.
             if (i < MAX_PAGE_SIZE_READ_AHEAD) {
-                pageThumbnailComponent =
-                        new PageThumbnailComponent(
-                                controller, scrollPane, pageTree, i, thumbNailZoom);
+                pageThumbnailComponent = new PageThumbnailComponent(
+                        thumbnailViewController, thumbNailViewModel, pageTree, i, thumbNailZoom);
                 avgPageWidth += pageThumbnailComponent.getPreferredSize().width;
                 avgPageHeight += pageThumbnailComponent.getPreferredSize().height;
             } else if (i > MAX_PAGE_SIZE_READ_AHEAD) {
-                pageThumbnailComponent =
-                        new PageThumbnailComponent(controller, scrollPane, pageTree, i,
-                                avgPageWidth, avgPageHeight, thumbNailZoom);
+                pageThumbnailComponent = new PageThumbnailComponent(thumbnailViewController, thumbNailViewModel,
+                        pageTree, i, avgPageWidth, avgPageHeight, thumbNailZoom);
             }
             // calculate average page size
             else {
-                avgPageWidth /= (MAX_PAGE_SIZE_READ_AHEAD);
-                avgPageHeight /= (MAX_PAGE_SIZE_READ_AHEAD);
+                avgPageWidth /= MAX_PAGE_SIZE_READ_AHEAD;
+                avgPageHeight /= MAX_PAGE_SIZE_READ_AHEAD;
                 pageThumbnailComponent =
-                        new PageThumbnailComponent(controller, scrollPane, pageTree, i,
+                        new PageThumbnailComponent(thumbnailViewController, thumbNailViewModel, pageTree, i,
                                 avgPageWidth, avgPageHeight, thumbNailZoom);
             }
             pageThumbsPanel.add(pageThumbnailComponent);
         }
-
         pageThumbsPanel.revalidate();
         scrollPane.validate();
-
     }
 }

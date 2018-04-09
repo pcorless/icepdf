@@ -7,6 +7,7 @@ import org.icepdf.core.events.PagePaintingEvent;
 import org.icepdf.ri.common.views.DocumentViewController;
 
 import javax.swing.*;
+import java.awt.*;
 
 /**
  * DefaultPageViewLoadingListener takes advantage of the PageLoadingListener
@@ -18,10 +19,12 @@ public class DefaultPageViewLoadingListener extends PageViewLoadingListener {
 
     private JComponent pageComponent;
     private DocumentViewController documentViewController;
+    private Cursor previousCursor;
 
     public DefaultPageViewLoadingListener(JComponent pageComponent,
                                           DocumentViewController documentViewController) {
         this.pageComponent = pageComponent;
+        previousCursor = this.pageComponent.getCursor();
         this.documentViewController = documentViewController;
     }
 
@@ -68,7 +71,7 @@ public class DefaultPageViewLoadingListener extends PageViewLoadingListener {
     @Override
     public void pagePaintingEnded(PagePaintingEvent event) {
         // null will make the parent view icon be the default.
-        SwingUtilities.invokeLater(() -> pageComponent.setCursor(null));
+        SwingUtilities.invokeLater(() -> pageComponent.setCursor(previousCursor));
     }
 
     public void pageLoadingEnded(PageLoadingEvent event) {
