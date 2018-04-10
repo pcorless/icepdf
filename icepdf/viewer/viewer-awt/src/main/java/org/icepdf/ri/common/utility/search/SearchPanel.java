@@ -21,9 +21,12 @@ import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.Defs;
+import org.icepdf.ri.common.DropDownButton;
 import org.icepdf.ri.common.MutableDocument;
 import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.SwingViewBuilder;
 import org.icepdf.ri.images.Images;
+import org.icepdf.ri.util.PropertiesManager;
 import org.icepdf.ri.util.SearchTextTask;
 
 import javax.swing.*;
@@ -96,11 +99,12 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     // clear search
     private JButton clearSearchButton;
     // search option check boxes.
-    private JCheckBox caseSensitiveCheckbox;
-    private JCheckBox wholeWordCheckbox;
-    private JCheckBox regexCheckbox;
-    private JCheckBox cumulativeCheckbox;
-    private JCheckBox showPagesCheckbox;
+    private DropDownButton filterDropDownButton;
+    private JCheckBoxMenuItem caseSensitiveCheckbox;
+    private JCheckBoxMenuItem wholeWordCheckbox;
+    private JCheckBoxMenuItem regexCheckbox;
+    private JCheckBoxMenuItem cumulativeCheckbox;
+    private JCheckBoxMenuItem showPagesCheckbox;
     // page index of the last added node.
     private int lastNodePageIndex;
 
@@ -254,6 +258,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
 
         // apply default preferences
         preferences = controller.getPropertiesManager().getPreferences();
+        String iconSize = preferences.get(PropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE);
         boolean isRegex = preferences.getBoolean(PROPERTY_SEARCH_PANEL_REGEX_ENABLED, true);
         boolean isWholeWord = preferences.getBoolean(PROPERTY_SEARCH_PANEL_WHOLE_WORDS_ENABLED, false);
         boolean isCaseSensitive = preferences.getBoolean(PROPERTY_SEARCH_PANEL_CASE_SENSITIVE_ENABLED, false);
@@ -261,25 +266,34 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         boolean isShowPages = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SHOW_PAGES_ENABLED, true);
 
         // search options check boxes.
-        wholeWordCheckbox = new JCheckBox(messageBundle.getString(
+        filterDropDownButton = new DropDownButton(controller, "",
+                messageBundle.getString("viewer.utilityPane.markupAnnotation.toolbar.filter.filterButton.tooltip"),
+                "filter", iconSize, SwingViewBuilder.buildButtonFont());
+        wholeWordCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
                 "viewer.utilityPane.search.wholeWordCheckbox.label"), isWholeWord);
         wholeWordCheckbox.addActionListener(this);
-        regexCheckbox = new JCheckBox(messageBundle.getString(
+        regexCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
                 "viewer.utilityPane.search.regexCheckbox.label"), isRegex);
         regexCheckbox.addActionListener(this);
-        caseSensitiveCheckbox = new JCheckBox(messageBundle.getString(
+        caseSensitiveCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
                 "viewer.utilityPane.search.caseSenstiveCheckbox.label"), isCaseSensitive);
         caseSensitiveCheckbox.addActionListener(this);
         if (isRegex || isWholeWord) {
             regexCheckbox.setEnabled(isRegex);
             wholeWordCheckbox.setEnabled(isWholeWord);
         }
-        cumulativeCheckbox = new JCheckBox(messageBundle.getString(
+        cumulativeCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
                 "viewer.utilityPane.search.cumlitiveCheckbox.label"), isCumulative);
         cumulativeCheckbox.addActionListener(this);
-        showPagesCheckbox = new JCheckBox(messageBundle.getString(
+        showPagesCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
                 "viewer.utilityPane.search.showPagesCheckbox.label"), isShowPages);
         showPagesCheckbox.addActionListener(this);
+        filterDropDownButton.add(regexCheckbox);
+        filterDropDownButton.add(wholeWordCheckbox);
+        filterDropDownButton.add(caseSensitiveCheckbox);
+        filterDropDownButton.add(cumulativeCheckbox);
+        filterDropDownButton.addSeparator();
+        filterDropDownButton.add(showPagesCheckbox);
 
         // Build search GUI
         GridBagLayout layout = new GridBagLayout();
@@ -289,81 +303,57 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         constraints.weighty = 0;
         constraints.anchor = GridBagConstraints.NORTH;
         constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(10, 5, 1, 5);
+        constraints.insets = new Insets(5, 1, 1, 5);
 
         // content Panel
         JPanel searchPanel = new JPanel(layout);
         this.setLayout(new BorderLayout());
-        this.add(new JScrollPane(searchPanel,
-                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED), BorderLayout.CENTER);
+        this.add(searchPanel);
 
         // add the search label
-        addGB(searchPanel, searchLabel, 0, 0, 2, 1);
+        addGB(searchPanel, searchLabel, 0, 0, 3, 1);
 
         // add the search input field
-        constraints.insets = new Insets(1, 1, 1, 5);
+        constraints.insets = new Insets(1, 1, 1, 1);
         constraints.weightx = 1.0;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         addGB(searchPanel, searchTextField, 0, 1, 2, 1);
 
         // add start/stop search button
-        constraints.insets = new Insets(1, 1, 1, 5);
-        constraints.weightx = 1.0;
-        constraints.fill = GridBagConstraints.EAST;
-        addGB(searchPanel, searchButton, 0, 2, 1, 1);
-
-        // add clear search button
-        constraints.insets = new Insets(1, 1, 1, 5);
         constraints.weightx = 0;
-        constraints.fill = GridBagConstraints.REMAINDER;
-        addGB(searchPanel, clearSearchButton, 1, 2, 1, 1);
-
-        // add case sensitive button
-        constraints.insets = new Insets(5, 1, 1, 5);
-        constraints.weightx = 1.0;
         constraints.fill = GridBagConstraints.HORIZONTAL;
-        // search configuration panel
-        JPanel searchConfigurationPanel = new JPanel(new GridBagLayout());
-        // add whole word checkbox
-        addGB(searchConfigurationPanel, regexCheckbox, 0, 0, 1, 1);
-        // add whole word checkbox
-        addGB(searchConfigurationPanel, wholeWordCheckbox, 1, 0, 1, 1);
-        // case sensitivity
         constraints.insets = new Insets(1, 1, 1, 5);
-        addGB(searchConfigurationPanel, caseSensitiveCheckbox, 0, 1, 1, 1);
-        // add cumulative checkbox
-        addGB(searchConfigurationPanel, cumulativeCheckbox, 1, 1, 1, 1);
-        // add show pages checkbox
-        addGB(searchConfigurationPanel, showPagesCheckbox, 0, 2, 2, 1);
-        addGB(searchPanel, searchConfigurationPanel, 0, 4, 2, 1);
+        addGB(searchPanel, searchButton, 2, 1, 1, 1);
+        // add filter button.
+        constraints.weightx = 0;
+        addGB(searchPanel, filterDropDownButton, 0, 2, 1, 1);
+        // add clear search button
+        addGB(searchPanel, clearSearchButton, 2, 2, 1, 1);
 
         // Add Results label
         constraints.insets = new Insets(10, 5, 1, 5);
         constraints.fill = GridBagConstraints.NONE;
-        addGB(searchPanel, new JLabel(messageBundle.getString(
-                "viewer.utilityPane.search.results.label")),
-                0, 5, 2, 1);
+        addGB(searchPanel, new JLabel(messageBundle.getString("viewer.utilityPane.search.results.label")),
+                0, 3, 3, 1);
 
         // add the lit to scroll pane
         constraints.fill = GridBagConstraints.BOTH;
         constraints.insets = new Insets(1, 5, 1, 5);
         constraints.weightx = 1.0;
         constraints.weighty = 1.0;
-        addGB(searchPanel, scrollPane, 0, 6, 2, 1);
+        addGB(searchPanel, scrollPane, 0, 4, 3, 1);
 
         // add find message
         constraints.insets = new Insets(1, 5, 1, 5);
         constraints.weighty = 0;
-        constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.EAST;
         findMessage.setAlignmentX(JLabel.RIGHT_ALIGNMENT);
-        addGB(searchPanel, findMessage, 0, 7, 2, 1);
+        addGB(searchPanel, findMessage, 0, 5, 3, 1);
 
         // add progress
         constraints.insets = new Insets(5, 5, 1, 5);
         constraints.fill = GridBagConstraints.HORIZONTAL;
-        addGB(searchPanel, progressBar, 0, 8, 2, 1);
+        addGB(searchPanel, progressBar, 0, 6, 3, 1);
     }
 
     public void setVisible(boolean flag) {
