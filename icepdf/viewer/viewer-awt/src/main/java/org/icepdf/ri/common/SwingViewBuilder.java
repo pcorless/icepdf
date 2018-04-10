@@ -853,7 +853,7 @@ public class SwingViewBuilder {
     public JMenuItem buildFitWidthMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.view.fitWidth.label"),
-                null, null,
+                "fit_width", Images.SIZE_SMALL,
                 buildKeyStroke(KeyEventConstants.KEY_CODE_FIT_WIDTH, KeyEventConstants.MODIFIER_FIT_WIDTH));
         if (viewerController != null && mi != null)
             viewerController.setFitWidthMenuItem(mi);

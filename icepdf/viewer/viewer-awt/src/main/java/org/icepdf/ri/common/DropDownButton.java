@@ -92,6 +92,10 @@ public class DropDownButton extends JButton
         popupMenu.add(menuItem);
     }
 
+    public void addSeparator() {
+        popupMenu.addSeparator();
+    }
+
     @Override
     public void mouseClicked(MouseEvent e) {
         if (e.getButton() == MouseEvent.BUTTON1) {

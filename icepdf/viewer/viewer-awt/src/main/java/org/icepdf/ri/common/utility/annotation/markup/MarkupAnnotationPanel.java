@@ -90,9 +90,6 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
     private JButton searchButton;
     private JButton clearSearchButton;
 
-    private JCheckBox regexCheckbox;
-    private JCheckBox caseSensitiveCheckbox;
-
     private DropDownButton filterDropDownButton;
     private JMenu colorFilterMenuItem;
 
@@ -103,6 +100,9 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
     private ArrayList<Action> filterTypeActions;
     private Action filterTypeAction;
     private Action filterColorAction;
+
+    private JCheckBoxMenuItem regexMenuItem;
+    private JCheckBoxMenuItem caseSensitiveMenutItem;
 
     private QuickPaintAnnotationButton quickPaintAnnotationButton;
 
@@ -162,6 +162,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         filterTypeActions.add(new FilterTypeAction(messageBundle.getString(
                 "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byType.freeText.label"), FilterSubTypeColumn.FREETEXT));
 
+        preferences = controller.getPropertiesManager().getPreferences();
         buildGUI();
 
         // Start the panel disabled until an action is clicked
@@ -312,7 +313,6 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         constraints.weighty = 1.0;
         constraints.anchor = GridBagConstraints.NORTHWEST;
         constraints.insets = new Insets(0, 0, 0, 0);
-
         markupAnnotationPanel = new JPanel(new GridBagLayout());
         addGB(this, markupAnnotationPanel, 0, 1, 1, 1);
 
@@ -339,22 +339,6 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
                 "viewer.utilityPane.markupAnnotation.search.clearButton.tooltip"));
         clearSearchButton.addActionListener(this);
 
-        preferences = controller.getPropertiesManager().getPreferences();
-        boolean isRegex = preferences.getBoolean(PROPERTY_SEARCH_MARKUP_PANEL_REGEX_ENABLED, true);
-        boolean isCaseSensitive = preferences.getBoolean(PROPERTY_SEARCH_MARKUP_PANEL_CASE_SENSITIVE_ENABLED, false);
-
-        regexCheckbox = new JCheckBox(messageBundle.getString(
-                "viewer.utilityPane.search.regexCheckbox.label"), isRegex);
-        regexCheckbox.addActionListener(this);
-        caseSensitiveCheckbox = new JCheckBox(messageBundle.getString(
-                "viewer.utilityPane.search.caseSenstiveCheckbox.label"), isCaseSensitive);
-        caseSensitiveCheckbox.addActionListener(this);
-
-        if (isRegex || isCaseSensitive) {
-            regexCheckbox.setEnabled(isRegex);
-            caseSensitiveCheckbox.setEnabled(isCaseSensitive);
-        }
-
         constraints.fill = GridBagConstraints.BOTH;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(0, 0, 0, 1);
@@ -367,19 +351,6 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         addGB(searchPanel, searchButton, 1, 0, 1, 1);
         constraints.weightx = 0.05;
         addGB(searchPanel, clearSearchButton, 2, 0, 1, 1);
-
-        // add case sensitive button
-        constraints.insets = new Insets(1, 1, 1, 5);
-        constraints.weightx = 1.0;
-        constraints.weighty = 0.01;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        // search configuration panel
-        JPanel searchConfigurationPanel = new JPanel(new GridBagLayout());
-        // add whole word checkbox
-        addGB(searchConfigurationPanel, regexCheckbox, 0, 0, 1, 1);
-        // add whole word checkbox
-        addGB(searchConfigurationPanel, caseSensitiveCheckbox, 1, 0, 1, 1);
-        addGB(searchPanel, searchConfigurationPanel, 0, 1, 3, 1);
 
         constraints.fill = GridBagConstraints.BOTH;
         constraints.weightx = 1.0;
@@ -409,7 +380,6 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
                 this.sortAction = sortAction;
             }
         }
-        // todo consider adding descent/ascend sort separator and buttons.
 
         // build out the base filter
         filterDropDownButton = new DropDownButton(controller, "",
@@ -433,10 +403,29 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
 
         refreshColorPanel();
 
+        // regex and case sensitivity configuration.
+        boolean isRegex = preferences.getBoolean(PROPERTY_SEARCH_MARKUP_PANEL_REGEX_ENABLED, true);
+        boolean isCaseSensitive = preferences.getBoolean(PROPERTY_SEARCH_MARKUP_PANEL_CASE_SENSITIVE_ENABLED, false);
+        // add case sensitive button
+        regexMenuItem = new JCheckBoxMenuItem(messageBundle.getString(
+                "viewer.utilityPane.search.regexCheckbox.label"), isRegex);
+        regexMenuItem.addActionListener(this);
+        caseSensitiveMenutItem = new JCheckBoxMenuItem(messageBundle.getString(
+                "viewer.utilityPane.search.caseSenstiveCheckbox.label"), isCaseSensitive);
+        caseSensitiveMenutItem.addActionListener(this);
+
+        if (isRegex || isCaseSensitive) {
+            regexMenuItem.setEnabled(isRegex);
+            caseSensitiveMenutItem.setEnabled(isCaseSensitive);
+        }
+
         // put it all together.
         filterDropDownButton.add(authorFilterMenuItem);
         filterDropDownButton.add(colorFilterMenuItem);
         filterDropDownButton.add(typeFilterMenuItem);
+        filterDropDownButton.addSeparator();
+        filterDropDownButton.add(regexMenuItem);
+        filterDropDownButton.add(caseSensitiveMenutItem);
 
         quickPaintAnnotationButton = new QuickPaintAnnotationButton(
                 controller,
@@ -450,7 +439,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
 
         constraints.fill = GridBagConstraints.BOTH;
         constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(0, 0, 0, 1);
+        constraints.insets = new Insets(1, 0, 1, 1);
         constraints.weightx = 0.05;
         constraints.weighty = 0;
 
@@ -576,7 +565,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
 
         markupAnnotationHandlerPanel.sortAndFilterAnnotationData(
                 searchPattern, sortType, filterType, filterAuthor, filterColor,
-                regexCheckbox.isSelected(), caseSensitiveCheckbox.isSelected());
+                regexMenuItem.isSelected(), caseSensitiveMenutItem.isSelected());
     }
 
     @Override
@@ -622,12 +611,12 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         } else if (source == clearSearchButton) {
             searchTextField.setText("");
             sortAndFilterAnnotationData();
-        } else if (source == regexCheckbox) {
-            caseSensitiveCheckbox.setEnabled(!regexCheckbox.isSelected());
-            preferences.putBoolean(PROPERTY_SEARCH_MARKUP_PANEL_REGEX_ENABLED, regexCheckbox.isSelected());
-        } else if (source == caseSensitiveCheckbox) {
-            regexCheckbox.setEnabled(!caseSensitiveCheckbox.isSelected());
-            preferences.putBoolean(PROPERTY_SEARCH_MARKUP_PANEL_CASE_SENSITIVE_ENABLED, caseSensitiveCheckbox.isSelected());
+        } else if (source == regexMenuItem) {
+            caseSensitiveMenutItem.setEnabled(!regexMenuItem.isSelected());
+            preferences.putBoolean(PROPERTY_SEARCH_MARKUP_PANEL_REGEX_ENABLED, regexMenuItem.isSelected());
+        } else if (source == caseSensitiveMenutItem) {
+            regexMenuItem.setEnabled(!caseSensitiveMenutItem.isSelected());
+            preferences.putBoolean(PROPERTY_SEARCH_MARKUP_PANEL_CASE_SENSITIVE_ENABLED, caseSensitiveMenutItem.isSelected());
         }
     }
 
