@@ -280,7 +280,9 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         }
 
         // we need to do the search for  each term.
-        for (SearchTerm term : terms) {
+        SearchTerm term;
+        for (int j = 0; j < terms.size(); j++) {
+            term = ((ArrayList<SearchTerm>) terms).get(j);
 
             // found word index to keep track of when we have found a hit
             int searchPhraseHitCount = 0;
@@ -309,15 +311,14 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                         if (wordString.length() == 1) {
                             char c = wordString.charAt(0);
                             if (WordText.isWhiteSpace(c)) {
-                                searchPhraseHits.add(word);
+                                //searchPhraseHits.add(word);
                                 continue;
                             }
                         }
 
                         // word matches, we have to match full word hits
                         if (term.isWholeWord()) {
-                            if (wordString.equals(
-                                    term.getTerms().get(searchPhraseHitCount))) {
+                            if (wordString.equals(term.getTerms().get(searchPhraseHitCount))) {
                                 // add word to potentials
                                 searchPhraseHits.add(word);
                                 searchPhraseHitCount++;
@@ -332,8 +333,10 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                             Matcher matcher = pattern.matcher(wordString);
                             if (matcher.find()) {
                                 // add word to potentials
-                                searchPhraseHits.add(word);
-                                searchPhraseHitCount++;
+                                if (!word.isWhiteSpace()) {
+                                    searchPhraseHits.add(word);
+                                    searchPhraseHitCount++;
+                                }
                             }
                         }
                         // otherwise we look for an index of hits
@@ -362,25 +365,28 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                             spaces = spaces < 0 ? 0 : spaces;
                             int start = i - searchPhraseHitCount - spaces - wordPadding + 1;
                             start = start < 0 ? 0 : start;
-                            int end = i - searchPhraseHitCount - spaces + 1;
+                            int end = i - searchPhraseHitCount - spaces;
                             end = end < 0 ? 0 : end;
+                            // add post padding indexes.
+                            int start2 = i + 1;
+                            start2 = start2 > lineWordsSize ? lineWordsSize : start2;
+                            int end2 = start2 + wordPadding;
+                            end2 = end2 > lineWordsSize ? lineWordsSize : end2;
+
                             for (int p = start; p < end; p++) {
                                 hitWords.add(lineWords.get(p));
                             }
 
-                            // iterate of found, highlighting words
-                            for (WordText wordHit : searchPhraseHits) {
+                            // highlight the found words.
+                            WordText wordHit;
+                            for (int w = (end == 0) ? 0 : end + 1; w < start2; w++) {
+                                wordHit = lineWords.get(w);
                                 wordHit.setHighlighted(true);
                                 wordHit.setHasHighlight(true);
+                                hitWords.add(wordHit);
                             }
-                            hitWords.addAll(searchPhraseHits);
 
-                            // add word padding to front of line
-                            start = i + 1;
-                            start = start > lineWordsSize ? lineWordsSize : start;
-                            end = start + wordPadding;
-                            end = end > lineWordsSize ? lineWordsSize : end;
-                            for (int p = start; p < end; p++) {
+                            for (int p = start2; p < end2; p++) {
                                 hitWords.add(lineWords.get(p));
                             }
 

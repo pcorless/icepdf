@@ -443,8 +443,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         if ((textResults != null) && (textResults.size() > 0)) {
             DefaultMutableTreeNode parentNode;
             // insert parent page number note.
-            if ((showPages) &&
-                    (lastNodePageIndex != pageNumber)) {
+            if (showPages && lastNodePageIndex != pageNumber) {
                 parentNode = new DefaultMutableTreeNode(
                         new FindEntry(title, pageNumber, null), true);
                 treeModel.insertNodeInto(parentNode, rootTreeNode,
