@@ -105,6 +105,9 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     private JCheckBoxMenuItem regexCheckbox;
     private JCheckBoxMenuItem cumulativeCheckbox;
     private JCheckBoxMenuItem showPagesCheckbox;
+    private JCheckBoxMenuItem commentsCheckbox;
+    private JCheckBoxMenuItem outlinesCheckbox;
+    private JCheckBoxMenuItem destinationsCheckbox;
     // page index of the last added node.
     private int lastNodePageIndex;
 
@@ -263,6 +266,11 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         boolean isWholeWord = preferences.getBoolean(PROPERTY_SEARCH_PANEL_WHOLE_WORDS_ENABLED, false);
         boolean isCaseSensitive = preferences.getBoolean(PROPERTY_SEARCH_PANEL_CASE_SENSITIVE_ENABLED, false);
         boolean isCumulative = preferences.getBoolean(PROPERTY_SEARCH_PANEL_CUMULATIVE_ENABLED, false);
+
+        boolean isComments = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SEARCH_COMMENTS_ENABLED, false);
+        boolean isDestinations = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SEARCH_DEST_ENABLED, false);
+        boolean isOutlines = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SEARCH_OUTLINES_ENABLED, false);
+
         boolean isShowPages = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SHOW_PAGES_ENABLED, true);
 
         // search options check boxes.
@@ -285,6 +293,15 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         cumulativeCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
                 "viewer.utilityPane.search.cumlitiveCheckbox.label"), isCumulative);
         cumulativeCheckbox.addActionListener(this);
+        commentsCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
+                "viewer.utilityPane.search.comments.label"), isComments);
+        commentsCheckbox.addActionListener(this);
+        destinationsCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
+                "viewer.utilityPane.search.destinations.label"), isDestinations);
+        destinationsCheckbox.addActionListener(this);
+        outlinesCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
+                "viewer.utilityPane.search.outlines.label"), isOutlines);
+        outlinesCheckbox.addActionListener(this);
         showPagesCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
                 "viewer.utilityPane.search.showPagesCheckbox.label"), isShowPages);
         showPagesCheckbox.addActionListener(this);
@@ -292,6 +309,10 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         filterDropDownButton.add(wholeWordCheckbox);
         filterDropDownButton.add(caseSensitiveCheckbox);
         filterDropDownButton.add(cumulativeCheckbox);
+        filterDropDownButton.addSeparator();
+        filterDropDownButton.add(commentsCheckbox);
+        filterDropDownButton.add(destinationsCheckbox);
+        filterDropDownButton.add(outlinesCheckbox);
         filterDropDownButton.addSeparator();
         filterDropDownButton.add(showPagesCheckbox);
 
@@ -311,7 +332,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         this.add(searchPanel);
 
         // add the search label
-        addGB(searchPanel, searchLabel, 0, 0, 3, 1);
+//        addGB(searchPanel, searchLabel, 0, 0, 3, 1);
 
         // add the search input field
         constraints.insets = new Insets(1, 1, 1, 1);
@@ -322,7 +343,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         // add start/stop search button
         constraints.weightx = 0;
         constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.insets = new Insets(1, 1, 1, 5);
+        constraints.insets = new Insets(1, 1, 1, 1);
         addGB(searchPanel, searchButton, 2, 1, 1, 1);
         // add filter button.
         constraints.weightx = 0;
@@ -331,20 +352,18 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         addGB(searchPanel, clearSearchButton, 2, 2, 1, 1);
 
         // Add Results label
-        constraints.insets = new Insets(10, 5, 1, 5);
+        constraints.insets = new Insets(1, 1, 1, 1);
         constraints.fill = GridBagConstraints.NONE;
-        addGB(searchPanel, new JLabel(messageBundle.getString("viewer.utilityPane.search.results.label")),
-                0, 3, 3, 1);
+//        addGB(searchPanel, new JLabel(messageBundle.getString("viewer.utilityPane.search.results.label")),
+//                0, 3, 3, 1);
 
         // add the lit to scroll pane
         constraints.fill = GridBagConstraints.BOTH;
-        constraints.insets = new Insets(1, 5, 1, 5);
         constraints.weightx = 1.0;
         constraints.weighty = 1.0;
         addGB(searchPanel, scrollPane, 0, 4, 3, 1);
 
         // add find message
-        constraints.insets = new Insets(1, 5, 1, 5);
         constraints.weighty = 0;
         constraints.anchor = GridBagConstraints.EAST;
         findMessage.setAlignmentX(JLabel.RIGHT_ALIGNMENT);
