@@ -1515,6 +1515,18 @@ public class SwingController extends ComponentAdapter
         boolean canExtract = havePermissionToExtractContent();
         boolean canModify = havePermissionToModifyDocument();
 
+        // check if full scren is available
+
+        boolean canDoFullScreen = false;
+        try {
+            GraphicsEnvironment graphicsEnvironment = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            GraphicsDevice defaultScreenDevice = graphicsEnvironment.getDefaultScreenDevice();
+            if (defaultScreenDevice != null && defaultScreenDevice.isFullScreenSupported()) {
+                canDoFullScreen = true;
+            }
+        } catch (Exception e) {
+            // quiet eat exception as we are only concerned if we have full screen support.
+        }
         reflectPageChangeInComponents();
 
         // menu items.
@@ -1543,7 +1555,7 @@ public class SwingController extends ComponentAdapter
         setEnabled(fitActualSizeMenuItem, opened && !pdfCollection);
         setEnabled(fitPageMenuItem, opened && !pdfCollection);
         setEnabled(fitWidthMenuItem, opened && !pdfCollection);
-        setEnabled(fullScreenMenuItem, opened && !pdfCollection);
+        setEnabled(fullScreenMenuItem, opened && !pdfCollection && canDoFullScreen);
 
         setEnabled(zoomInMenuItem, opened && !pdfCollection);
         setEnabled(zoomOutMenuItem, opened && !pdfCollection);
@@ -1599,7 +1611,7 @@ public class SwingController extends ComponentAdapter
         setEnabled(fitActualSizeButton, opened && !pdfCollection);
         setEnabled(fitHeightButton, opened && !pdfCollection);
         setEnabled(fitWidthButton, opened && !pdfCollection);
-        setEnabled(fullScreenButton, opened && !pdfCollection);
+        setEnabled(fullScreenButton, opened && !pdfCollection && canDoFullScreen);
         setEnabled(rotateLeftButton, opened && !pdfCollection);
         setEnabled(rotateRightButton, opened && !pdfCollection);
         setEnabled(panToolButton, opened && !pdfCollection);
