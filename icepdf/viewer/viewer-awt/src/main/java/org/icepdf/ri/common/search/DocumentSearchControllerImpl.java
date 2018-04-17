@@ -17,6 +17,8 @@ package org.icepdf.ri.common.search;
 
 import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.Outlines;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
@@ -57,9 +59,9 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             Logger.getLogger(DocumentSearchControllerImpl.class.toString());
 
     // search model contains caching and memory optimizations.
-    protected DocumentSearchModelImpl searchModel;
+    private DocumentSearchModelImpl searchModel;
     // parent controller used to get at RI controllers and models.
-    protected SwingController viewerController;
+    private SwingController viewerController;
     // assigned document for headless searching.
     protected Document document;
 
@@ -129,119 +131,12 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      */
     public int searchHighlightPage(int pageIndex) {
 
-        // get search terms from model and search for each occurrence.
-        Collection<SearchTerm> terms = searchModel.getSearchTerms();
-
-        // search hit count
-        int hitCount = 0;
-
-        // get our our page text reference
-        PageText pageText = getPageText(pageIndex);
-
-        // some pages just don't have any text. 
-        if (pageText == null) {
+        ArrayList<LineText> hits = searchHighlightPage(pageIndex, 0);
+        if (hits != null) {
+            return hits.size();
+        } else {
             return 0;
         }
-
-        // we need to do the search for  each term.
-        for (SearchTerm term : terms) {
-
-            // found word index to keep track of when we have found a hit
-            int searchPhraseHitCount = 0;
-            int searchPhraseFoundCount = term.getTerms().size();
-            // list of found words for highlighting, as hits can span
-            // lines and pages
-            ArrayList<WordText> searchPhraseHits = new ArrayList<>(searchPhraseFoundCount);
-
-            // start iteration over words.
-            ArrayList<LineText> pageLines = pageText.getPageLines();
-            if (pageLines != null) {
-                for (LineText pageLine : pageLines) {
-                    java.util.List<WordText> lineWords = pageLine.getWords();
-                    // compare words against search terms.
-                    String wordString;
-                    for (WordText word : lineWords) {
-                        // apply case sensitivity rule.
-                        wordString = term.isCaseSensitive() ? word.toString() :
-                                word.toString().toLowerCase();
-
-                        // skip if it's white space, so we don't worry about it in the search
-                        if (wordString.length() == 1) {
-                            char c = wordString.charAt(0);
-                            if (WordText.isWhiteSpace(c)) {
-                                // show the space as highlighted
-                                searchPhraseHits.add(word);
-                                continue;
-                            }
-                        }
-
-                        // word matches, we have to match full word hits
-                        if (term.isWholeWord()) {
-                            if (wordString.equals(
-                                    term.getTerms().get(searchPhraseHitCount))) {
-                                // add word to potentials
-                                searchPhraseHits.add(word);
-                                searchPhraseHitCount++;
-                            }
-                            // reset the counters.
-                            else {
-                                searchPhraseHits.clear();
-                                searchPhraseHitCount = 0;
-                            }
-                        } else if (term.isRegex()) {
-                            Pattern pattern = term.getRegexPattern();
-                            Matcher matcher = pattern.matcher(wordString);
-                            if (matcher.find()) {
-                                // add word to potentials
-                                searchPhraseHits.add(word);
-                                searchPhraseHitCount++;
-                            }
-                        }
-                        // otherwise we look for an index of hits
-                        else {
-                            // found a potential hit, depends on the length
-                            // of searchPhrase.
-                            if (wordString.contains(term.getTerms().get(searchPhraseHitCount))) {
-                                // add word to potentials
-                                searchPhraseHits.add(word);
-                                searchPhraseHitCount++;
-                            }
-                            // reset the counters.
-                            else {
-                                searchPhraseHits.clear();
-                                searchPhraseHitCount = 0;
-                            }
-
-                        }
-                        // check if we have found what we're looking for
-                        if (searchPhraseHitCount == searchPhraseFoundCount) {
-                            // iterate of found, highlighting words
-                            for (WordText wordHit : searchPhraseHits) {
-                                wordHit.setHighlighted(true);
-                                wordHit.setHasHighlight(true);
-                            }
-
-                            // rest counts and start over again.
-                            hitCount++;
-                            searchPhraseHits.clear();
-                            searchPhraseHitCount = 0;
-                        }
-
-                    }
-                }
-            }
-        }
-
-        // if we have a hit we'll add it to the model cache
-        if (hitCount > 0) {
-            searchModel.addPageSearchHit(pageIndex, pageText, hitCount);
-            if (logger.isLoggable(Level.FINE)) {
-                logger.fine("Found search hits on page " + pageIndex +
-                        " hit count " + hitCount);
-            }
-        }
-
-        return hitCount;
     }
 
     /**
@@ -287,10 +182,6 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             // found word index to keep track of when we have found a hit
             int searchPhraseHitCount = 0;
             int searchPhraseFoundCount = term.getTerms().size();
-            // list of found words for highlighting, as hits can span
-            // lines and pages
-            ArrayList<WordText> searchPhraseHits =
-                    new ArrayList<>(searchPhraseFoundCount);
 
             // start iteration over words.
             ArrayList<LineText> pageLines = pageText.getPageLines();
@@ -311,7 +202,6 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                         if (wordString.length() == 1) {
                             char c = wordString.charAt(0);
                             if (WordText.isWhiteSpace(c)) {
-                                //searchPhraseHits.add(word);
                                 continue;
                             }
                         }
@@ -320,12 +210,10 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                         if (term.isWholeWord()) {
                             if (wordString.equals(term.getTerms().get(searchPhraseHitCount))) {
                                 // add word to potentials
-                                searchPhraseHits.add(word);
                                 searchPhraseHitCount++;
                             }
                             // reset the counters.
                             else {
-                                searchPhraseHits.clear();
                                 searchPhraseHitCount = 0;
                             }
                         } else if (term.isRegex()) {
@@ -334,7 +222,6 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                             if (matcher.find()) {
                                 // add word to potentials
                                 if (!word.isWhiteSpace()) {
-                                    searchPhraseHits.add(word);
                                     searchPhraseHitCount++;
                                 }
                             }
@@ -345,12 +232,10 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                             // of searchPhrase.
                             if (wordString.contains(term.getTerms().get(searchPhraseHitCount))) {
                                 // add word to potentials
-                                searchPhraseHits.add(word);
                                 searchPhraseHitCount++;
                             }
                             // reset the counters.
                             else {
-                                searchPhraseHits.clear();
                                 searchPhraseHitCount = 0;
                             }
                         }
@@ -392,8 +277,6 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
 
                             // add the hits to our list.
                             searchHits.add(lineText);
-
-                            searchPhraseHits.clear();
                             searchPhraseHitCount = 0;
                         }
 
@@ -406,8 +289,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         if (searchHits.size() > 0) {
             searchModel.addPageSearchHit(pageIndex, pageText, searchHits.size());
             if (logger.isLoggable(Level.FINE)) {
-                logger.fine("Found search hits on page " + pageIndex +
-                        " hit count " + searchHits.size());
+                logger.fine("Found search hits on page " + pageIndex + " hit count " + searchHits.size());
             }
         }
 
@@ -445,6 +327,21 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                 return words;
             }
         }
+        return null;
+    }
+
+    @Override
+    public ArrayList<MarkupAnnotation> searchComments(int pageIndex) {
+        return null;
+    }
+
+    @Override
+    public ArrayList<Destination> searchDestinations() {
+        return null;
+    }
+
+    @Override
+    public ArrayList<Outlines> searchOutlines() {
         return null;
     }
 

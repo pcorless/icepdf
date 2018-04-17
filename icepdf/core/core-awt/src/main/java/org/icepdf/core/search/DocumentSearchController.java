@@ -15,6 +15,9 @@
  */
 package org.icepdf.core.search;
 
+import org.icepdf.core.pobjects.Destination;
+import org.icepdf.core.pobjects.Outlines;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
@@ -96,6 +99,28 @@ public interface DocumentSearchController {
      * @return list of words that match the term and search properties.
      */
     ArrayList<WordText> searchPage(int pageIndex);
+
+    /**
+     * Search page only return MarkupAnnotations that are hits.
+     *
+     * @param pageIndex page index to search
+     * @return any markup annotations that match the search terms,  null if none are found.
+     */
+    ArrayList<MarkupAnnotation> searchComments(int pageIndex);
+
+    /**
+     * Search the document's destination objects for names that match the search terms.
+     *
+     * @return any destination label that match the search terms,  null if none are found.
+     */
+    ArrayList<Destination> searchDestinations();
+
+    /**
+     * Search the document's outlines objects for names that match the search terms.
+     *
+     * @return any destination label that match the search terms,  null if none are found.
+     */
+    ArrayList<Outlines> searchOutlines();
 
     /**
      * Sets the search hit cursor to  a particular page to aid in large page jumps when other

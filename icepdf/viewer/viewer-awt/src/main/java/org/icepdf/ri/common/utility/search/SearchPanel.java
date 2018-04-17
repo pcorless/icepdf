@@ -98,8 +98,6 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     private JButton searchButton;
     // clear search
     private JButton clearSearchButton;
-    // search option check boxes.
-    private DropDownButton filterDropDownButton;
     private JCheckBoxMenuItem caseSensitiveCheckbox;
     private JCheckBoxMenuItem wholeWordCheckbox;
     private JCheckBoxMenuItem regexCheckbox;
@@ -112,13 +110,13 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     private int lastNodePageIndex;
 
     // show progress of search
-    protected JProgressBar progressBar;
+    private JProgressBar progressBar;
 
     // task to complete in separate thread
-    protected SearchTextTask searchTextTask;
+    private SearchTextTask searchTextTask;
 
     // status label for search
-    protected JLabel findMessage;
+    private JLabel findMessage;
 
     // time class to manage gui updates
     protected Timer timer;
@@ -130,8 +128,8 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     private boolean isSearching;
 
     // message bundle for internationalization
-    ResourceBundle messageBundle;
-    MessageFormat searchResultMessageForm;
+    private ResourceBundle messageBundle;
+    private MessageFormat searchResultMessageForm;
 
     /**
      * Create a new instance of SearchPanel.
@@ -191,10 +189,11 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
             progressBar.setVisible(false);
         }
         // check length of document to see if we can keep all the page text memory and do live searches
-        if (document.getNumberOfPages() < maxPagesForLiveSearch) {
-            searchTextField.getDocument().addDocumentListener(this);
-        } else {
+        if (searchTextField != null && searchTextField.getDocument() != null) {
             searchTextField.getDocument().removeDocumentListener(this);
+            if (document != null && document.getNumberOfPages() < maxPagesForLiveSearch) {
+                searchTextField.getDocument().addDocumentListener(this);
+            }
         }
         isSearching = false;
     }
@@ -234,8 +233,8 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         scrollPane.setPreferredSize(new Dimension(150, 75));
 
         // search Label
-        JLabel searchLabel = new JLabel(messageBundle.getString(
-                "viewer.utilityPane.search.searchText.label"));
+//        JLabel searchLabel = new JLabel(messageBundle.getString(
+//                "viewer.utilityPane.search.searchText.label"));
 
         // search input field
         searchTextField = new JTextField("", 15);
@@ -274,7 +273,8 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         boolean isShowPages = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SHOW_PAGES_ENABLED, true);
 
         // search options check boxes.
-        filterDropDownButton = new DropDownButton(controller, "",
+        // search option check boxes.
+        DropDownButton filterDropDownButton = new DropDownButton(controller, "",
                 messageBundle.getString("viewer.utilityPane.markupAnnotation.toolbar.filter.filterButton.tooltip"),
                 "filter", iconSize, SwingViewBuilder.buildButtonFont());
         wholeWordCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
@@ -436,9 +436,9 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
      * @param textResults list of LineText items that match
      * @param showPages   boolean to display or hide the page node
      */
-    public void addFoundEntry(String title, int pageNumber,
-                              List<LineText> textResults,
-                              boolean showPages) {
+    public void addFoundTextEntry(String title, int pageNumber,
+                                  List<LineText> textResults,
+                                  boolean showPages) {
         // add the new results entry.
         if ((textResults != null) && (textResults.size() > 0)) {
             DefaultMutableTreeNode parentNode;
@@ -468,6 +468,15 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
             lastNodePageIndex = pageNumber;
 
         }
+    }
+
+    public void addFoundCommentEntry() {
+    }
+
+    public void addFoundOutlineEntry() {
+    }
+
+    public void addFoundDestinationEntry() {
     }
 
     /**
@@ -519,7 +528,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     /**
      * Reset the tree for a new document or a new search.
      */
-    protected void resetTree() {
+    private void resetTree() {
         tree.setSelectionPath(null);
         rootTreeNode.removeAllChildren();
         treeModel.nodeStructureChanged(rootTreeNode);
@@ -580,7 +589,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         startStopSearch();
     }
 
-    protected void startStopSearch() {
+    private void startStopSearch() {
         if (!timer.isRunning()) {
             // update gui components
             findMessage.setVisible(true);
@@ -606,16 +615,17 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
             }
 
             // start a new search text task
-            searchTextTask = new SearchTextTask(this,
-                    controller,
-                    searchTextField.getText(),
-                    wholeWordCheckbox.isSelected(),
-                    caseSensitiveCheckbox.isSelected(),
-                    cumulativeCheckbox.isSelected(),
-                    showPagesCheckbox.isSelected(),
-                    false,
-                    regexCheckbox.isSelected(),
-                    messageBundle);
+            SearchTextTask.Builder builder = new SearchTextTask.Builder(controller, searchTextField.getText());
+            builder.setCaseSensitive(caseSensitiveCheckbox.isSelected());
+            builder.setWholeWord(wholeWordCheckbox.isSelected());
+            builder.setCumulative(cumulativeCheckbox.isSelected());
+            builder.setShowPages(showPagesCheckbox.isSelected());
+            builder.setRegex(regexCheckbox.isSelected());
+            builder.setDestinations(destinationsCheckbox.isSelected());
+            builder.setOutlines(outlinesCheckbox.isSelected());
+            builder.setComments(commentsCheckbox.isSelected());
+            searchTextTask = new SearchTextTask(builder);
+
             isSearching = true;
 
             // set state of search button
@@ -676,7 +686,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                 // Determine if the user just selected or deselected the Show Pages checkbox
                 // If selected we'll want to combine all the leaf results into page nodes containing a series of results
                 // Otherwise we'll want to explode the parent/node page folders into basic leafs showing the results
-                if (((JCheckBox) event.getSource()).isSelected()) {
+                if (showPagesCheckbox.isSelected()) {
                     if ((rootTreeNode != null) && (rootTreeNode.getChildCount() > 0)) {
                         DefaultMutableTreeNode currentChild; // the current node we're handling
                         DefaultMutableTreeNode storedChildParent = null; // the newest page node we're adding to
@@ -961,7 +971,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
          *
          * @return word marked as search.
          */
-        public WordText getWordText() {
+        WordText getWordText() {
             return wordText;
         }
     }

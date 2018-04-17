@@ -26,7 +26,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.text.MessageFormat;
 import java.util.List;
-import java.util.ResourceBundle;
 
 /**
  * This class is a utility for searching text in a PDF document.  This is only
@@ -37,10 +36,11 @@ import java.util.ResourceBundle;
  */
 public class SearchTextTask {
 
+    public static final int WORD_PADDING = 6;
     // total length of task (total page count), used for progress bar
     private int lengthOfTask;
     // current progress, used for the progress bar
-    private int current = 0;
+    private int current;
     // message displayed on progress bar
     private String dialogMessage;
     // canned internationalized messages.
@@ -59,16 +59,19 @@ public class SearchTextTask {
     private boolean cumulative;
     private boolean showPages;
     private boolean regex;
+    private boolean searchComments;
+    private JCheckBoxMenuItem searchOutlines;
+    private JCheckBoxMenuItem searchDestinations;
     private boolean r2L;
+    private boolean comments;
+    private boolean outlines;
+    private boolean destinations;
 
     // parent swing controller
-    Controller controller;
+    private Controller controller;
 
     // append nodes for found text.
     private SearchPanel searchPanel;
-
-    // message bundle for internationalization
-    private ResourceBundle messageBundle;
 
     private boolean currentlySearching;
 
@@ -77,41 +80,27 @@ public class SearchTextTask {
     /**
      * Creates a new instance of the SearchTextTask.
      *
-     * @param searchPanel   parent search panel that start this task via an action
-     * @param controller    root controller object
-     * @param pattern       pattern to search for
-     * @param wholeWord     ture indicates whole word search
-     * @param caseSensitive case sensitive indicates cases sensitive search
-     * @param r2L           right left earch, not currently implemented.
-     * @param messageBundle message bundle used for dialog text.
-     * @param cumulative    cumulative search terms.
-     * @param regex         enable regular expression notation
-     * @param showPages     show results tree with page nodes.
+     * @param builder searchTextTask builder
      */
-    public SearchTextTask(SearchPanel searchPanel,
-                          Controller controller,
-                          String pattern,
-                          boolean wholeWord,
-                          boolean caseSensitive,
-                          boolean cumulative,
-                          boolean showPages,
-                          boolean r2L,
-                          boolean regex,
-                          ResourceBundle messageBundle) {
-        this.controller = controller;
-        this.pattern = pattern;
-        this.searchPanel = searchPanel;
-        lengthOfTask = controller.getDocument().getNumberOfPages();
-        this.messageBundle = messageBundle;
+    public SearchTextTask(Builder builder) {
+        controller = builder.controller;
+        pattern = builder.pattern;
+
+        wholeWord = builder.wholeWord;
+        caseSensitive = builder.caseSensitive;
+        cumulative = builder.cumulative;
+        regex = builder.regex;
+        showPages = builder.showPages;
+        r2L = builder.r2L;
+        comments = builder.comments;
+        outlines = builder.outlines;
+        destinations = builder.destinations;
+
         this.viewContainer = controller.getDocumentViewController().getViewContainer();
-        this.wholeWord = wholeWord;
-        this.caseSensitive = caseSensitive;
-        this.cumulative = cumulative;
-        this.regex = regex;
-        this.showPages = showPages;
-        this.r2L = r2L;
+        lengthOfTask = controller.getDocument().getNumberOfPages();
 
         // setup searching format format.
+        this.searchPanel = builder.searchPanel;
         if (searchPanel != null) {
             searchingMessageForm = searchPanel.setupSearchingMessageForm();
             searchResultMessageForm = searchPanel.setupSearchResultMessageForm();
@@ -226,11 +215,12 @@ public class SearchTextTask {
                     // update search message in search pane.
                     Object[] messageArguments = {String.valueOf((current + 1)),
                             lengthOfTask, lengthOfTask};
-                    dialogMessage = searchingMessageForm.format(messageArguments);
+                    if (searchingMessageForm != null) {
+                        dialogMessage = searchingMessageForm.format(messageArguments);
+                    }
 
                     // hits per page count
-                    final List<LineText> lineItems =
-                            searchController.searchHighlightPage(current, 6);
+                    final List<LineText> lineItems = searchController.searchHighlightPage(current, WORD_PADDING);
                     int hitCount = lineItems.size();
 
                     // update total hit count
@@ -241,13 +231,13 @@ public class SearchTextTask {
                                 String.valueOf((current + 1)),
                                 hitCount, hitCount};
                         final String nodeText =
-                                searchResultMessageForm.format(messageArguments);
+                                searchResultMessageForm != null ? searchResultMessageForm.format(messageArguments) : "";
                         final int currentPage = i;
                         // add the node to the search panel tree but on the
                         // awt thread.
                         SwingUtilities.invokeLater(() -> {
                             // add the node
-                            searchPanel.addFoundEntry(
+                            searchPanel.addFoundTextEntry(
                                     nodeText,
                                     currentPage,
                                     lineItems,
@@ -290,7 +280,74 @@ public class SearchTextTask {
 
         Object[] messageArguments = {String.valueOf((current + 1)),
                 (current + 1), totalHitCount};
+        if (searchResultMessageForm != null) {
+            dialogMessage = searchCompletionMessageForm.format(messageArguments);
+        }
+    }
 
-        dialogMessage = searchCompletionMessageForm.format(messageArguments);
+    public static class Builder {
+
+        // required model setup
+        private final Controller controller;
+        private final String pattern;
+
+        // parent search panel
+        private SearchPanel searchPanel;
+
+        // optional search controls.
+        private boolean wholeWord;
+        private boolean caseSensitive;
+        private boolean cumulative;
+        private boolean showPages;
+        private boolean r2L;
+        private boolean regex;
+        private boolean comments;
+        private boolean outlines;
+        private boolean destinations;
+
+        public Builder(Controller controller, String pattern) {
+            this.controller = controller;
+            this.pattern = pattern;
+        }
+
+        public void setSearchPanel(SearchPanel searchPanel) {
+            this.searchPanel = searchPanel;
+        }
+
+        public void setWholeWord(boolean wholeWord) {
+            this.wholeWord = wholeWord;
+        }
+
+        public void setCaseSensitive(boolean caseSensitive) {
+            this.caseSensitive = caseSensitive;
+        }
+
+        public void setCumulative(boolean cumulative) {
+            this.cumulative = cumulative;
+        }
+
+        public void setShowPages(boolean showPages) {
+            this.showPages = showPages;
+        }
+
+        public void setR2L(boolean r2L) {
+            this.r2L = r2L;
+        }
+
+        public void setRegex(boolean regex) {
+            this.regex = regex;
+        }
+
+        public void setComments(boolean comments) {
+            this.comments = comments;
+        }
+
+        public void setOutlines(boolean outlines) {
+            this.outlines = outlines;
+        }
+
+        public void setDestinations(boolean destinations) {
+            this.destinations = destinations;
+        }
     }
 }
