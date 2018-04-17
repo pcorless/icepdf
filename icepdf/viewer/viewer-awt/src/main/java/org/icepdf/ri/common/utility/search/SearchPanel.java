@@ -616,15 +616,15 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
 
             // start a new search text task
             SearchTextTask.Builder builder = new SearchTextTask.Builder(controller, searchTextField.getText());
-            builder.setCaseSensitive(caseSensitiveCheckbox.isSelected());
-            builder.setWholeWord(wholeWordCheckbox.isSelected());
-            builder.setCumulative(cumulativeCheckbox.isSelected());
-            builder.setShowPages(showPagesCheckbox.isSelected());
-            builder.setRegex(regexCheckbox.isSelected());
-            builder.setDestinations(destinationsCheckbox.isSelected());
-            builder.setOutlines(outlinesCheckbox.isSelected());
-            builder.setComments(commentsCheckbox.isSelected());
-            searchTextTask = new SearchTextTask(builder);
+            searchTextTask = builder.setSearchPanel(this)
+                    .setCaseSensitive(caseSensitiveCheckbox.isSelected())
+                    .setWholeWord(wholeWordCheckbox.isSelected())
+                    .setCumulative(cumulativeCheckbox.isSelected())
+                    .setShowPages(showPagesCheckbox.isSelected())
+                    .setRegex(regexCheckbox.isSelected())
+                    .setDestinations(destinationsCheckbox.isSelected())
+                    .setOutlines(outlinesCheckbox.isSelected())
+                    .setComments(commentsCheckbox.isSelected()).build();
 
             isSearching = true;
 
