@@ -60,8 +60,6 @@ public class SearchTextTask {
     private boolean showPages;
     private boolean regex;
     private boolean searchComments;
-    private JCheckBoxMenuItem searchOutlines;
-    private JCheckBoxMenuItem searchDestinations;
     private boolean r2L;
     private boolean comments;
     private boolean outlines;
@@ -82,7 +80,7 @@ public class SearchTextTask {
      *
      * @param builder searchTextTask builder
      */
-    public SearchTextTask(Builder builder) {
+    private SearchTextTask(Builder builder) {
         controller = builder.controller;
         pattern = builder.pattern;
 
@@ -235,16 +233,18 @@ public class SearchTextTask {
                         final int currentPage = i;
                         // add the node to the search panel tree but on the
                         // awt thread.
-                        SwingUtilities.invokeLater(() -> {
-                            // add the node
-                            searchPanel.addFoundTextEntry(
-                                    nodeText,
-                                    currentPage,
-                                    lineItems,
-                                    showPages);
-                            // try repainting the container
-                            viewContainer.repaint();
-                        });
+                        if (searchPanel != null) {
+                            SwingUtilities.invokeLater(() -> {
+                                // add the node
+                                searchPanel.addFoundTextEntry(
+                                        nodeText,
+                                        currentPage,
+                                        lineItems,
+                                        showPages);
+                                // try repainting the container
+                                viewContainer.repaint();
+                            });
+                        }
                     }
                     Thread.yield();
                 }
@@ -310,44 +310,58 @@ public class SearchTextTask {
             this.pattern = pattern;
         }
 
-        public void setSearchPanel(SearchPanel searchPanel) {
+        public Builder setSearchPanel(SearchPanel searchPanel) {
             this.searchPanel = searchPanel;
+            return this;
         }
 
-        public void setWholeWord(boolean wholeWord) {
+        public Builder setWholeWord(boolean wholeWord) {
             this.wholeWord = wholeWord;
+            return this;
         }
 
-        public void setCaseSensitive(boolean caseSensitive) {
+        public Builder setCaseSensitive(boolean caseSensitive) {
             this.caseSensitive = caseSensitive;
+            return this;
         }
 
-        public void setCumulative(boolean cumulative) {
+        public Builder setCumulative(boolean cumulative) {
             this.cumulative = cumulative;
+            return this;
         }
 
-        public void setShowPages(boolean showPages) {
+        public Builder setShowPages(boolean showPages) {
             this.showPages = showPages;
+            return this;
         }
 
-        public void setR2L(boolean r2L) {
+        public Builder setR2L(boolean r2L) {
             this.r2L = r2L;
+            return this;
         }
 
-        public void setRegex(boolean regex) {
+        public Builder setRegex(boolean regex) {
             this.regex = regex;
+            return this;
         }
 
-        public void setComments(boolean comments) {
+        public Builder setComments(boolean comments) {
             this.comments = comments;
+            return this;
         }
 
-        public void setOutlines(boolean outlines) {
+        public Builder setOutlines(boolean outlines) {
             this.outlines = outlines;
+            return this;
         }
 
-        public void setDestinations(boolean destinations) {
+        public Builder setDestinations(boolean destinations) {
             this.destinations = destinations;
+            return this;
+        }
+
+        public SearchTextTask build() {
+            return new SearchTextTask(this);
         }
     }
 }
