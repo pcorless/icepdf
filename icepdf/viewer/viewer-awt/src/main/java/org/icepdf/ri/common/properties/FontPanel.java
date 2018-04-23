@@ -45,7 +45,6 @@ public class FontPanel extends JPanel implements ActionListener, WindowListener 
     // message bundle for internationalization
     private ResourceBundle messageBundle;
 
-
     // layouts constraint
     private GridBagConstraints constraints;
 
@@ -112,8 +111,7 @@ public class FontPanel extends JPanel implements ActionListener, WindowListener 
         if (event.getSource() == resetFontCacheButton) {
             // reset the font properties cache.
             resetFontCacheButton.setEnabled(false);
-            org.icepdf.ri.common.SwingWorker worker = new ClearFontCacheWorker(resetFontCacheButton);
-            worker.start();
+            new ClearFontCacheWorker(resetFontCacheButton).execute();
         }
     }
 

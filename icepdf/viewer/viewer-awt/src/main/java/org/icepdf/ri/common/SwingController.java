@@ -2550,11 +2550,14 @@ public class SwingController extends ComponentAdapter
                 final URLConnection urlConnection = location.openConnection();
                 final int size = urlConnection.getContentLength();
                 SwingWorker worker = new SwingWorker() {
-                    public Object construct() {
-                        InputStream in = null;
+                    InputStream in = null;
+
+                    @Override
+                    protected void done() {
                         try {
                             // Create ProgressMonitorInputStream
-                            Object[] messageArguments = {location.toString()};
+                            String pathOrURL = location.toString();
+                            Object[] messageArguments = {pathOrURL};
                             MessageFormat formatter = new MessageFormat(
                                     messageBundle.getString("viewer.dialog.openURL.downloading.msg"));
                             ProgressMonitorInputStream progressMonitorInputStream =
@@ -2564,7 +2567,6 @@ public class SwingController extends ComponentAdapter
                                             new SizeInputStream(urlConnection.getInputStream(), size));
                             // Create a stream on the URL connection
                             in = new BufferedInputStream(progressMonitorInputStream);
-                            String pathOrURL = location.toString();
                             document.setInputStream(in, pathOrURL);
                             // create default security callback is user has not created one
                             setupSecurityHandler(document, documentViewController.getSecurityCallback());
@@ -2611,10 +2613,26 @@ public class SwingController extends ComponentAdapter
                             document = null;
                             logger.log(Level.FINE, "Error opening document.", e);
                         }
+                    }
+
+                    @Override
+                    protected Object doInBackground() throws Exception {
+                        // Create ProgressMonitorInputStream
+                        String pathOrURL = location.toString();
+                        Object[] messageArguments = {pathOrURL};
+                        MessageFormat formatter = new MessageFormat(
+                                messageBundle.getString("viewer.dialog.openURL.downloading.msg"));
+                        ProgressMonitorInputStream progressMonitorInputStream =
+                                new ProgressMonitorInputStream(
+                                        viewer,
+                                        formatter.format(messageArguments),
+                                        new SizeInputStream(urlConnection.getInputStream(), size));
+                        // Create a stream on the URL connection
+                        in = new BufferedInputStream(progressMonitorInputStream);
                         return null;
                     }
                 };
-                worker.start();
+                worker.execute();
 
             } catch (Exception e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
@@ -3514,24 +3532,12 @@ public class SwingController extends ComponentAdapter
             // make sure file being opened is valid
             String extension = FileExtensionUtils.getExtension(file);
             if (extension != null) {
-                // save the default directory
-                ViewModel.setDefaultFile(file);
-
-                TextExtractionTask textExtractionTask =
-                        new TextExtractionTask(document, file, messageBundle);
-
+                int lengthOfTask = document.getNumberOfPages();
                 ProgressMonitor progressMonitor = new ProgressMonitor(
                         viewer, messageBundle.getString("viewer.dialog.exportText.progress.msg"),
-                        "", 0, textExtractionTask.getLengthOfTask());
-                progressMonitor.setProgress(0);
-                progressMonitor.setMillisToDecideToPopup(0);
+                        "", 0, lengthOfTask);
 
-                TextExtractionGlue glue = new TextExtractionGlue(textExtractionTask, progressMonitor);
-                Timer timer = new Timer(1000, glue); // 1000 milliseconds
-                glue.setTimer(timer);
-
-                textExtractionTask.go();
-                timer.start();
+                new TextExtractionTask(document, file, progressMonitor, messageBundle).execute();
             } else {
                 org.icepdf.ri.util.Resources.showMessageDialog(
                         viewer,

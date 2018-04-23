@@ -22,149 +22,122 @@ import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.AbstractTask;
-import org.icepdf.ri.common.SwingWorker;
 import org.icepdf.ri.common.views.Controller;
 
-import javax.swing.*;
 import java.awt.*;
 import java.text.MessageFormat;
 import java.util.HashMap;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * This class is a utility for finding and reporting all font types in a document.  Each page in the document
  * is checked for valid font resources, if found the fonts are added to the calling FontDialog for addition to
  * a JTree of know document fonts.
  *
- *
  * @since 6.1.3
  */
-public class FindFontsTask extends AbstractTask<FindFontsTask> {
+public class FindFontsTask extends AbstractTask<Void, Font> {
+
+    private static final Logger logger = Logger.getLogger(FindFontsTask.class.toString());
 
     // canned internationalized messages.
     private MessageFormat searchingMessageForm;
     // append nodes for found fonts.
-    private FontHandlerPanel fontHandlerPanel;
-
     private Container viewContainer;
 
     /**
      * Creates a new instance of the SearchTextTask.
      *
-     * @param fontHandlerPanel    parent search panel that start this task via an action
-     * @param controller    root controller object
-     * @param messageBundle message bundle used for dialog text.
+     * @param fontHandlerPanel parent search panel that start this task via an action
+     * @param controller       root controller object
+     * @param messageBundle    message bundle used for dialog text.
      */
     public FindFontsTask(FontHandlerPanel fontHandlerPanel,
                          Controller controller,
                          ResourceBundle messageBundle) {
-        super(controller, messageBundle, controller.getDocument().getNumberOfPages());
-        controller = controller;
-        this.fontHandlerPanel = fontHandlerPanel;
-        lengthOfTask = controller.getDocument().getNumberOfPages();
+        super(controller, fontHandlerPanel, messageBundle);
         this.viewContainer = controller.getDocumentViewController().getViewContainer();
         // setup searching format format.
         searchingMessageForm = new MessageFormat(messageBundle.getString("viewer.dialog.fonts.searching.label"));
+
+        lengthOfTask = controller.getDocument().getNumberOfPages();
+        fontHandlerPanel.startProgressControls(lengthOfTask);
+
     }
 
     @Override
-    public FindFontsTask getTask() {
-        return this;
-    }
+    protected Void doInBackground() {
+        try {
+            // little cache of fonts by reference so we don't load a font more then once.
+            HashMap<Reference, Font> fontCache = new HashMap<>();
 
-    /**
-     * Start the task, start searching the document for the pattern.
-     */
-    public void go() {
-        final SwingWorker worker = new SwingWorker() {
-            public Object construct() {
-                current = 0;
-                done = false;
-                canceled = false;
-                taskStatusMessage = null;
-                return new FindFontsTask.ActualTask();
-            }
-        };
-        worker.setThreadPriority(Thread.NORM_PRIORITY);
-        worker.start();
-    }
-
-    /**
-     * The actual long running task.  This runs in a SwingWorker thread.
-     */
-    private class ActualTask {
-        ActualTask() {
-
-            try {
-                taskRunning = true;
-                current = 0;
-                // little cache of fonts by reference so we don't load a font more then once.
-                HashMap<Reference, Font> fontCache = new HashMap<>();
-
-                Document document = controller.getDocument();
-                // iterate over each page in the document
-                for (int i = 0; i < document.getNumberOfPages(); i++) {
-                    // break if needed
-                    if (canceled || done) {
-                        taskStatusMessage = "";
-                        break;
-                    }
-                    // Update task information
-                    current = i;
-
-                    // update search message in results pane.
-                    int percent = (int) ((i / (float) lengthOfTask) * 100);
-                    Object[] messageArguments = {String.valueOf(percent)};
-                    taskStatusMessage = searchingMessageForm.format(messageArguments);
-
-                    Library library = document.getCatalog().getLibrary();
-                    Page page = document.getPageTree().getPage(i);
-                    page.initPageResources();
-                    Resources pageResources = page.getResources();
-                    if (pageResources != null) {
-                        HashMap pageFonts = pageResources.getFonts();
-                        if (pageFonts != null && pageFonts.size() > 0) {
-                            Set fontKeys = pageFonts.keySet();
-                            for (Object fontObjectReference : fontKeys) {
-                                Object fontObject = pageFonts.get(fontObjectReference);
-                                if (fontObject instanceof Reference) {
-                                    Reference fontReference = (Reference) fontObject;
-                                    // check if we already have this font
-                                    if (!fontCache.containsKey(fontReference)) {
-                                        fontObject = library.getObject(fontReference);
-                                        if (fontObject instanceof org.icepdf.core.pobjects.fonts.Font) {
-                                            final Font font = (Font) fontObject;
-                                            font.init();
-                                            fontCache.put(fontReference, font);
-                                            SwingUtilities.invokeLater(() -> {
-                                                // add the node
-                                                fontHandlerPanel.addFoundEntry(font);
-                                                // try repainting the container
-                                                fontHandlerPanel.expandAllNodes();
-                                                viewContainer.repaint();
-                                            });
-                                        }
+            Document document = controller.getDocument();
+            // iterate over each page in the document
+            for (int i = 0; i < document.getNumberOfPages(); i++) {
+                // break if needed
+                if (isCancelled()) {
+                    taskStatusMessage = "";
+                    break;
+                }
+                // update search message in results pane.
+                taskProgress = i;
+                int percent = (int) ((i / (float) lengthOfTask) * 100);
+                Object[] messageArguments = {String.valueOf(percent)};
+                taskStatusMessage = searchingMessageForm.format(messageArguments);
+                Library library = document.getCatalog().getLibrary();
+                Page page = document.getPageTree().getPage(i);
+                page.initPageResources();
+                Resources pageResources = page.getResources();
+                if (pageResources != null) {
+                    HashMap pageFonts = pageResources.getFonts();
+                    if (pageFonts != null && pageFonts.size() > 0) {
+                        Set fontKeys = pageFonts.keySet();
+                        for (Object fontObjectReference : fontKeys) {
+                            Object fontObject = pageFonts.get(fontObjectReference);
+                            if (fontObject instanceof Reference) {
+                                Reference fontReference = (Reference) fontObject;
+                                // check if we already have this font
+                                if (!fontCache.containsKey(fontReference)) {
+                                    fontObject = library.getObject(fontReference);
+                                    if (isCancelled()) {
+                                        taskStatusMessage = "";
+                                        break;
+                                    }
+                                    if (fontObject instanceof org.icepdf.core.pobjects.fonts.Font) {
+                                        final Font font = (Font) fontObject;
+                                        font.init();
+                                        fontCache.put(fontReference, font);
+                                        publish(font);
                                     }
                                 }
                             }
-
                         }
                     }
-                    Thread.yield();
                 }
-                // update the dialog and end the task
-                taskStatusMessage = "";
-
-                done = true;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } finally {
-                taskRunning = false;
             }
-
-            // repaint the view container
-            SwingUtilities.invokeLater(() -> viewContainer.validate());
+            taskStatusMessage = "";
+        } catch (InterruptedException e) {
+            logger.finer("Find fonts task interrupted. ");
         }
+        return null;
+    }
+
+    @Override
+    protected void process(List<Font> fonts) {
+        for (Font font : fonts) {
+            ((FontHandlerPanel) workerPanel).addFoundEntry(font);
+        }
+        workerPanel.updateProgressControls(taskProgress);
+        // try repainting the container
+        workerPanel.expandAllNodes();
+        viewContainer.repaint();
+    }
+
+    @Override
+    protected void done() {
+        workerPanel.endProgressControls();
     }
 }

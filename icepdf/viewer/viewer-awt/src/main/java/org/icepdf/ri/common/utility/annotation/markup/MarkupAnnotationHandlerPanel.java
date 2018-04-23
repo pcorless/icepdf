@@ -23,7 +23,6 @@ import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.util.PropertyConstants;
-import org.icepdf.ri.common.AbstractTask;
 import org.icepdf.ri.common.AbstractWorkerPanel;
 import org.icepdf.ri.common.utility.annotation.AnnotationCellRender;
 import org.icepdf.ri.common.utility.annotation.AnnotationTreeNode;
@@ -50,12 +49,9 @@ import java.util.regex.Pattern;
 public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
         implements PropertyChangeListener, TreeSelectionListener {
 
-    // task to complete in separate thread
-    private AbstractTask<FindMarkupAnnotationTask> findMarkupAnnotationTask;
+    private DefaultMutableTreeNode pageTreeNode;
 
-    protected DefaultMutableTreeNode pageTreeNode;
-
-    protected MarkupAnnotationPanel parentMarkupAnnotationPanel;
+    private MarkupAnnotationPanel parentMarkupAnnotationPanel;
 
     private Pattern searchPattern;
     private MarkupAnnotationPanel.SortColumn sortType;
@@ -239,33 +235,55 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
     }
 
     @Override
+    public void startProgressControls(int lengthOfTask) {
+        progressBar.setVisible(true);
+        progressLabel.setVisible(true);
+        progressBar.setMaximum(lengthOfTask);
+    }
+
+    @Override
+    public void updateProgressControls(int progress) {
+        progressBar.setValue(progress);
+    }
+
+    @Override
+    public void updateProgressControls(int progress, String label) {
+
+    }
+
+    @Override
+    public void updateProgressControls(String label) {
+
+    }
+
+    public void endProgressControls() {
+        progressBar.setVisible(false);
+        progressLabel.setVisible(false);
+    }
+
+    @Override
     protected void buildWorkerTaskUI() {
         // First have to stop any existing validation processes.
         stopWorkerTask();
         Document document = controller.getDocument();
         if (document != null) {
             PageTree pageTree = document.getCatalog().getPageTree();
+            int numberOfPages = pageTree.getNumberOfPages();
             // build out the tree
-            if (pageTree.getNumberOfPages() > 0) {
-                if (!timer.isRunning()) {
-                    // show the progress components.
-                    progressLabel.setVisible(true);
-                    progressBar.setVisible(true);
-                    // start a new verification task
-                    if (findMarkupAnnotationTask == null) {
-                        findMarkupAnnotationTask = new FindMarkupAnnotationTask(this,
-                                controller, messageBundle);
-                    }
-                    workerTask = findMarkupAnnotationTask;
-                    progressBar.setMaximum(findMarkupAnnotationTask.getLengthOfTask());
-                    // start the task and the timer
-                    if (filterAuthor != null && sortType != null) {
-                        findMarkupAnnotationTask.getTask().startTask(
-                                searchPattern, sortType, filterType, filterAuthor, filterColor,
-                                isRegex, isCaseSensitive);
-                        timer.start();
-                    }
-                }
+            if (numberOfPages > 0) {
+                // show the progress components.
+                progressLabel.setVisible(true);
+                progressBar.setVisible(true);
+                progressBar.setMaximum(numberOfPages);
+
+                new FindMarkupAnnotationTask.Builder(this, controller, messageBundle)
+                        .setSearchPattern(searchPattern)
+                        .setSortType(sortType)
+                        .setFilterType(filterType)
+                        .setFilterAuthor(filterAuthor)
+                        .setFilterColor(filterColor)
+                        .setRegex(isRegex)
+                        .setCaseSensitive(isCaseSensitive).build().execute();
             }
         }
     }
@@ -275,11 +293,6 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
         pageTreeNode.setAllowsChildren(true);
         treeModel.insertNodeInto(pageTreeNode, rootTreeNode, rootTreeNode.getChildCount());
     }
-
-//    void addAnnotation(Object annotation) {
-//        descendFormTree(pageTreeNode, annotation);
-//        expandAllNodes();
-//    }
 
     /**
      * Recursively set highlight on all the form fields.

@@ -87,17 +87,19 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     private org.icepdf.ri.common.views.Controller controller;
     private Preferences preferences;
 
-    // tree view of the groups and panels
-    //private ResultsTree resultsTree;
-
     // list box to hold search results
     private JTree tree;
     private DefaultMutableTreeNode rootTreeNode;
+    private DefaultMutableTreeNode textTreeNode;
+    private DefaultMutableTreeNode commentsTreeNode;
+    private DefaultMutableTreeNode outlinesTreeNode;
+    private DefaultMutableTreeNode destinationsTreeNode;
     private DefaultTreeModel treeModel;
     // search start button
     private JButton searchButton;
     // clear search
     private JButton clearSearchButton;
+    private DropDownButton filterDropDownButton;
     private JCheckBoxMenuItem caseSensitiveCheckbox;
     private JCheckBoxMenuItem wholeWordCheckbox;
     private JCheckBoxMenuItem regexCheckbox;
@@ -117,16 +119,6 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
 
     // status label for search
     private JLabel findMessage;
-
-    // time class to manage gui updates
-    protected Timer timer;
-
-    // refresh rate of gui elements
-    private static final int ONE_SECOND = 1000;
-
-    // flag indicating if search is under way.
-    private boolean isSearching;
-
     // message bundle for internationalization
     private ResourceBundle messageBundle;
     private MessageFormat searchResultMessageForm;
@@ -149,18 +141,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     @Override
     public void refreshDocumentInstance() {
         // First have to stop any existing search
-        if (timer != null)
-            timer.stop();
-        if (searchTextTask != null) {
-            searchTextTask.stop();
-            while (searchTextTask.isCurrentlySearching()) {
-                try {
-                    Thread.sleep(50L);
-                } catch (Exception e) {
-                    // intentional
-                }
-            }
-        }
+        stopSearch();
         // get the document from the controller.
         Document document = controller.getDocument();
         if (document != null && progressBar != null) {
@@ -179,7 +160,6 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
             String docTitle = getDocumentTitle();
             rootTreeNode.setUserObject(docTitle);
             rootTreeNode.setAllowsChildren(true);
-            tree.setRootVisible((docTitle != null));
         }
         if (findMessage != null) {
             findMessage.setText("");
@@ -195,7 +175,6 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                 searchTextField.getDocument().addDocumentListener(this);
             }
         }
-        isSearching = false;
     }
 
     @Override
@@ -212,14 +191,24 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         rootTreeNode = new DefaultMutableTreeNode();
         treeModel = new DefaultTreeModel(rootTreeNode);
 
+        // root text node which all entry fall under,  pages or no pages.
+        textTreeNode = new DefaultMutableTreeNode(
+                messageBundle.getString("viewer.utilityPane.search.tree.text.title"), true);
+
+        commentsTreeNode = new DefaultMutableTreeNode(
+                messageBundle.getString("viewer.utilityPane.search.tree.markup.title"), true);
+        outlinesTreeNode = new DefaultMutableTreeNode(
+                messageBundle.getString("viewer.utilityPane.search.tree.outlines.title"), true);
+        destinationsTreeNode = new DefaultMutableTreeNode(
+                messageBundle.getString("viewer.utilityPane.search.tree.destinations.title"), true);
+
         // build and customize the JTree
         tree = new JTree(treeModel);
-        tree.setRootVisible(true);
+        tree.setRootVisible(false);
         tree.setExpandsSelectedPaths(true);
         tree.setShowsRootHandles(true);
         tree.setScrollsOnExpand(true);
-        tree.getSelectionModel().setSelectionMode(
-                TreeSelectionModel.SINGLE_TREE_SELECTION);
+        tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         tree.addTreeSelectionListener(this);
 
         // set look and feel to match outline style
@@ -246,7 +235,6 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         progressBar.setVisible(false);
         findMessage = new JLabel(messageBundle.getString("viewer.utilityPane.search.searching.msg"));
         findMessage.setVisible(false);
-        timer = new Timer(ONE_SECOND, new TimerListener());
 
         // setup search button
         searchButton = new JButton(messageBundle.getString(
@@ -274,7 +262,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
 
         // search options check boxes.
         // search option check boxes.
-        DropDownButton filterDropDownButton = new DropDownButton(controller, "",
+        filterDropDownButton = new DropDownButton(controller, "",
                 messageBundle.getString("viewer.utilityPane.markupAnnotation.toolbar.filter.filterButton.tooltip"),
                 "filter", iconSize, SwingViewBuilder.buildButtonFont());
         wholeWordCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
@@ -373,6 +361,9 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         constraints.insets = new Insets(5, 5, 1, 5);
         constraints.fill = GridBagConstraints.HORIZONTAL;
         addGB(searchPanel, progressBar, 0, 6, 3, 1);
+
+        // finally add our nodes for the tree
+        insertSectionNodes();
     }
 
     public void setVisible(boolean flag) {
@@ -446,10 +437,9 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
             if (showPages && lastNodePageIndex != pageNumber) {
                 parentNode = new DefaultMutableTreeNode(
                         new FindEntry(title, pageNumber, null), true);
-                treeModel.insertNodeInto(parentNode, rootTreeNode,
-                        rootTreeNode.getChildCount());
+                treeModel.insertNodeInto(parentNode, textTreeNode, textTreeNode.getChildCount());
             } else {
-                parentNode = rootTreeNode;
+                parentNode = textTreeNode;
             }
             // add the hit entries.
             for (LineText currentText : textResults) {
@@ -462,7 +452,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
 
             // expand the root node, we only do this once.
             if (lastNodePageIndex == -1) {
-                tree.expandPath(new TreePath(rootTreeNode));
+                tree.expandPath(new TreePath(textTreeNode.getPath()));
             }
 
             lastNodePageIndex = pageNumber;
@@ -493,8 +483,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
             parent = rootTreeNode;
         }
         //It is key to invoke this on the TreeModel, and NOT DefaultMutableTreeNode
-        treeModel.insertNodeInto(childNode, parent,
-                parent.getChildCount());
+        treeModel.insertNodeInto(childNode, parent, parent.getChildCount());
         //Make sure the user can see the lovely new node.
         if (shouldBeVisible) {
             tree.scrollPathToVisible(new TreePath(childNode.getPath()));
@@ -530,10 +519,32 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
      */
     private void resetTree() {
         tree.setSelectionPath(null);
-        rootTreeNode.removeAllChildren();
-        treeModel.nodeStructureChanged(rootTreeNode);
         // rest node count
         lastNodePageIndex = -1;
+
+        // clean up the children
+        textTreeNode.removeAllChildren();
+        commentsTreeNode.removeAllChildren();
+        outlinesTreeNode.removeAllChildren();
+        destinationsTreeNode.removeAllChildren();
+        // re-insert the nodes as they may have changed
+        rootTreeNode.removeAllChildren();
+        insertSectionNodes();
+
+        treeModel.nodeStructureChanged(rootTreeNode);
+    }
+
+    private void insertSectionNodes() {
+        rootTreeNode.insert(textTreeNode, rootTreeNode.getChildCount());
+        if (commentsCheckbox.isSelected()) {
+            rootTreeNode.insert(commentsTreeNode, rootTreeNode.getChildCount());
+        }
+        if (outlinesCheckbox.isSelected()) {
+            rootTreeNode.insert(outlinesTreeNode, rootTreeNode.getChildCount());
+        }
+        if (destinationsCheckbox.isSelected()) {
+            rootTreeNode.insert(destinationsTreeNode, rootTreeNode.getChildCount());
+        }
     }
 
     /**
@@ -558,95 +569,183 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
 
     @Override
     public void insertUpdate(DocumentEvent e) {
-        isSearching = false;
-        if (searchTextTask != null) {
-            searchTextTask.stop();
-            timer.stop();
-            resetTree();
-        }
-        startStopSearch();
+        stopSearch();
+        resetTree();
+        startSearch();
     }
 
     @Override
     public void removeUpdate(DocumentEvent e) {
-        isSearching = false;
-        if (searchTextTask != null) {
-            searchTextTask.stop();
-            timer.stop();
-            resetTree();
-        }
-        startStopSearch();
+        stopSearch();
+        resetTree();
+        startSearch();
     }
 
     @Override
     public void changedUpdate(DocumentEvent e) {
-        isSearching = false;
-        if (searchTextTask != null) {
-            searchTextTask.stop();
-            timer.stop();
-            resetTree();
-        }
-        startStopSearch();
+        stopSearch();
+        resetTree();
+        startSearch();
     }
 
-    private void startStopSearch() {
-        if (!timer.isRunning()) {
-            // update gui components
-            findMessage.setVisible(true);
-            progressBar.setVisible(true);
+    private void stopSearch() {
+        if (searchTextTask != null) {
+            searchTextTask.cancel(true);
+        }
 
-            // clean the previous results and repaint the tree
-            resetTree();
+        filterDropDownButton.setEnabled(true);
+    }
 
-            // reset high light states.
-            controller.getDocumentSearchController().clearAllSearchHighlight();
-            controller.getDocumentViewController().getViewContainer().repaint();
+    private void startSearch() {
 
-            // do a quick check to make sure we have valida expression.
-            if (regexCheckbox.isSelected()) {
-                try {
-                    Pattern.compile(searchTextField.getText());
-                } catch (PatternSyntaxException e) {
-                    // log and show the error in the status label.
-                    logger.warning("Error processing search pattern syntax");
-                    findMessage.setText(e.getMessage());
-                    return;
+        // update gui components
+        findMessage.setVisible(true);
+        progressBar.setVisible(true);
+
+        // clean the previous results and repaint the tree
+        resetTree();
+
+        // reset high light states.
+        controller.getDocumentSearchController().clearAllSearchHighlight();
+        controller.getDocumentViewController().getViewContainer().repaint();
+
+        // do a quick check to make sure we have valida expression.
+        if (regexCheckbox.isSelected()) {
+            try {
+                Pattern.compile(searchTextField.getText());
+            } catch (PatternSyntaxException e) {
+                // log and show the error in the status label.
+                logger.warning("Error processing search pattern syntax");
+                findMessage.setText(e.getMessage());
+                return;
+            }
+        }
+
+        // start a new search text task
+        SearchTextTask.Builder builder = new SearchTextTask.Builder(controller, searchTextField.getText());
+        searchTextTask = builder.setSearchPanel(this)
+                .setCaseSensitive(caseSensitiveCheckbox.isSelected())
+                .setWholeWord(wholeWordCheckbox.isSelected())
+                .setCumulative(cumulativeCheckbox.isSelected())
+                .setShowPages(showPagesCheckbox.isSelected())
+                .setRegex(regexCheckbox.isSelected())
+                .setDestinations(destinationsCheckbox.isSelected())
+                .setOutlines(outlinesCheckbox.isSelected())
+                .setComments(commentsCheckbox.isSelected()).build();
+
+        // set state of search button
+        searchButton.setText(messageBundle.getString("viewer.utilityPane.search.stopButton.label"));
+        filterDropDownButton.setEnabled(false);
+
+        // start the task and the timer
+        searchTextTask.execute();
+    }
+
+    private void clearSearch() {
+        stopSearch();
+        // clear input
+        searchTextField.setText("");
+        // clear the tree.
+        resetTree();
+        // reset high light states.
+        controller.getDocumentSearchController().clearAllSearchHighlight();
+        controller.getDocumentViewController().getViewContainer().repaint();
+    }
+
+    private void showTextNodePages() {
+        if ((textTreeNode != null) && (textTreeNode.getChildCount() > 0)) {
+            DefaultMutableTreeNode currentChild; // the current node we're handling
+            DefaultMutableTreeNode storedChildParent = null; // the newest page node we're adding to
+            int newPageNumber; // page number of the current result node
+            int storedPageNumber = -1; // the page number of the node we're adding to
+            int storedResultCount = 0; // the count of results that are on the storedPageNumber
+            Object[] messageArguments; // arguments used for formatting the labels
+
+            // Loop through the results tree
+            for (int i = 0; i < textTreeNode.getChildCount(); i++) {
+                currentChild = (DefaultMutableTreeNode) textTreeNode.getChildAt(i);
+
+                // Ensure we have a FindEntry object
+                if (currentChild.getUserObject() instanceof FindEntry) {
+                    newPageNumber = ((FindEntry) currentChild.getUserObject()).getPageNumber();
+
+                    // Check if the page number for the current node matches the stored number
+                    // If it does we will want to add the node to the existing page node,
+                    //  otherwise we'll want to create a new page node and start adding to that
+                    if (storedPageNumber == newPageNumber) {
+                        storedResultCount++;
+
+                        if (storedChildParent != null) {
+                            // Remove the old parentless child from the tree
+                            treeModel.removeNodeFromParent(currentChild);
+
+                            // Add the child back to the new page node
+                            storedChildParent.add(currentChild);
+                            currentChild.setParent(storedChildParent);
+
+                            // Reduce the loop count by one since we moved a node from the root to a page node
+                            i--;
+                        }
+                    } else {
+                        // Update the label of the page node, so that the result count is correct
+                        if (storedChildParent != null) {
+                            messageArguments = new Object[]{
+                                    String.valueOf(storedPageNumber + 1),
+                                    storedResultCount, storedResultCount};
+                            storedChildParent.setUserObject(
+                                    new FindEntry(searchResultMessageForm.format(messageArguments),
+                                            storedPageNumber, null));
+                        }
+
+                        // Reset the stored variables
+                        storedPageNumber = newPageNumber;
+                        storedResultCount = 1;
+
+                        treeModel.removeNodeFromParent(currentChild);
+
+                        // Create a new page node and move the current leaf to it
+                        messageArguments = new Object[]{
+                                String.valueOf(storedPageNumber + 1),
+                                storedResultCount, storedResultCount};
+                        storedChildParent = new DefaultMutableTreeNode(
+                                new FindEntry(searchResultMessageForm.format(messageArguments),
+                                        storedPageNumber, null),
+                                true);
+                        storedChildParent.add(currentChild);
+                        currentChild.setParent(storedChildParent);
+
+                        // Put the new page node into the overall tree
+                        treeModel.insertNodeInto(storedChildParent, textTreeNode, i);
+                    }
                 }
             }
+        }
+    }
 
-            // start a new search text task
-            SearchTextTask.Builder builder = new SearchTextTask.Builder(controller, searchTextField.getText());
-            searchTextTask = builder.setSearchPanel(this)
-                    .setCaseSensitive(caseSensitiveCheckbox.isSelected())
-                    .setWholeWord(wholeWordCheckbox.isSelected())
-                    .setCumulative(cumulativeCheckbox.isSelected())
-                    .setShowPages(showPagesCheckbox.isSelected())
-                    .setRegex(regexCheckbox.isSelected())
-                    .setDestinations(destinationsCheckbox.isSelected())
-                    .setOutlines(outlinesCheckbox.isSelected())
-                    .setComments(commentsCheckbox.isSelected()).build();
+    private void hideTextNodePages() {
+        if ((textTreeNode != null) && (textTreeNode.getChildCount() > 0)) {
+            // Now add the children back into the tree, this time without parent nodes
+            DefaultMutableTreeNode currentChild;
+            int rootChildCount = textTreeNode.getChildCount();
 
-            isSearching = true;
+            // Loop through all children page nodes and explode the children out into leafs under the root node
+            // Then we'll remove the parent nodes so we're just left with leafs under the root
+            for (int i = 0; i < rootChildCount; i++) {
+                currentChild = (DefaultMutableTreeNode) textTreeNode.getChildAt(0);
 
-            // set state of search button
-            searchButton.setText(messageBundle.getString(
-                    "viewer.utilityPane.search.stopButton.label"));
-            clearSearchButton.setEnabled(false);
-            caseSensitiveCheckbox.setEnabled(false);
-            wholeWordCheckbox.setEnabled(false);
-            cumulativeCheckbox.setEnabled(false);
-            showPagesCheckbox.setEnabled(false);
-
-            // start the task and the timer
-            searchTextTask.go();
-            timer.start();
-        } else {
-            isSearching = false;
-            clearSearchButton.setEnabled(true);
-            caseSensitiveCheckbox.setEnabled(true);
-            wholeWordCheckbox.setEnabled(true);
-            cumulativeCheckbox.setEnabled(true);
-            showPagesCheckbox.setEnabled(true);
+                if (currentChild.getChildCount() > 0) {
+                    // Get any subchildren and reinsert them as plain leafs on the root
+                    // We need to wrap the user object in a new mutable tree node to stop any conflicts with parent indexes
+                    for (int j = 0; j < currentChild.getChildCount(); j++) {
+                        treeModel.insertNodeInto(
+                                new DefaultMutableTreeNode(
+                                        ((DefaultMutableTreeNode) currentChild.getChildAt(j)).getUserObject(),
+                                        false),
+                                textTreeNode, textTreeNode.getChildCount());
+                    }
+                }
+                treeModel.removeNodeFromParent(currentChild);
+            }
         }
     }
 
@@ -659,17 +758,9 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         Object source = event.getSource();
         // Start/ stop a search
         if (source == searchTextField || source == searchButton) {
-            startStopSearch();
+            startSearch();
         } else if (source == clearSearchButton) {
-            // clear input
-            searchTextField.setText("");
-
-            // clear the tree.
-            resetTree();
-
-            // reset high light states.
-            controller.getDocumentSearchController().clearAllSearchHighlight();
-            controller.getDocumentViewController().getViewContainer().repaint();
+            clearSearch();
         } else if (source == regexCheckbox) {
             wholeWordCheckbox.setEnabled(!regexCheckbox.isSelected());
             preferences.putBoolean(PROPERTY_SEARCH_PANEL_REGEX_ENABLED, regexCheckbox.isSelected());
@@ -680,105 +771,20 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
             preferences.putBoolean(PROPERTY_SEARCH_PANEL_CUMULATIVE_ENABLED, cumulativeCheckbox.isSelected());
         } else if (source == caseSensitiveCheckbox) {
             preferences.putBoolean(PROPERTY_SEARCH_PANEL_CASE_SENSITIVE_ENABLED, caseSensitiveCheckbox.isSelected());
+        } else if (source == commentsCheckbox) {
+            preferences.putBoolean(PROPERTY_SEARCH_PANEL_SEARCH_COMMENTS_ENABLED, commentsCheckbox.isSelected());
+        } else if (source == outlinesCheckbox) {
+            preferences.putBoolean(PROPERTY_SEARCH_PANEL_SEARCH_OUTLINES_ENABLED, outlinesCheckbox.isSelected());
+        } else if (source == destinationsCheckbox) {
+            preferences.putBoolean(PROPERTY_SEARCH_PANEL_SEARCH_DEST_ENABLED, destinationsCheckbox.isSelected());
+
         } else if (source == showPagesCheckbox) {
             if (event.getSource() != null) {
                 preferences.putBoolean(PROPERTY_SEARCH_PANEL_SHOW_PAGES_ENABLED, showPagesCheckbox.isSelected());
-                // Determine if the user just selected or deselected the Show Pages checkbox
-                // If selected we'll want to combine all the leaf results into page nodes containing a series of results
-                // Otherwise we'll want to explode the parent/node page folders into basic leafs showing the results
                 if (showPagesCheckbox.isSelected()) {
-                    if ((rootTreeNode != null) && (rootTreeNode.getChildCount() > 0)) {
-                        DefaultMutableTreeNode currentChild; // the current node we're handling
-                        DefaultMutableTreeNode storedChildParent = null; // the newest page node we're adding to
-                        int newPageNumber; // page number of the current result node
-                        int storedPageNumber = -1; // the page number of the node we're adding to
-                        int storedResultCount = 0; // the count of results that are on the storedPageNumber
-                        Object[] messageArguments; // arguments used for formatting the labels
-
-                        // Loop through the results tree
-                        for (int i = 0; i < rootTreeNode.getChildCount(); i++) {
-                            currentChild = (DefaultMutableTreeNode) rootTreeNode.getChildAt(i);
-
-                            // Ensure we have a FindEntry object
-                            if (currentChild.getUserObject() instanceof FindEntry) {
-                                newPageNumber = ((FindEntry) currentChild.getUserObject()).getPageNumber();
-
-                                // Check if the page number for the current node matches the stored number
-                                // If it does we will want to add the node to the existing page node,
-                                //  otherwise we'll want to create a new page node and start adding to that
-                                if (storedPageNumber == newPageNumber) {
-                                    storedResultCount++;
-
-                                    if (storedChildParent != null) {
-                                        // Remove the old parentless child from the tree
-                                        treeModel.removeNodeFromParent(currentChild);
-
-                                        // Add the child back to the new page node
-                                        storedChildParent.add(currentChild);
-                                        currentChild.setParent(storedChildParent);
-
-                                        // Reduce the loop count by one since we moved a node from the root to a page node
-                                        i--;
-                                    }
-                                } else {
-                                    // Update the label of the page node, so that the result count is correct
-                                    if (storedChildParent != null) {
-                                        messageArguments = new Object[]{
-                                                String.valueOf(storedPageNumber + 1),
-                                                storedResultCount, storedResultCount};
-                                        storedChildParent.setUserObject(
-                                                new FindEntry(searchResultMessageForm.format(messageArguments),
-                                                        storedPageNumber, null));
-                                    }
-
-                                    // Reset the stored variables
-                                    storedPageNumber = newPageNumber;
-                                    storedResultCount = 1;
-
-                                    treeModel.removeNodeFromParent(currentChild);
-
-                                    // Create a new page node and move the current leaf to it
-                                    messageArguments = new Object[]{
-                                            String.valueOf(storedPageNumber + 1),
-                                            storedResultCount, storedResultCount};
-                                    storedChildParent = new DefaultMutableTreeNode(
-                                            new FindEntry(searchResultMessageForm.format(messageArguments),
-                                                    storedPageNumber, null),
-                                            true);
-                                    storedChildParent.add(currentChild);
-                                    currentChild.setParent(storedChildParent);
-
-                                    // Put the new page node into the overall tree
-                                    treeModel.insertNodeInto(storedChildParent, rootTreeNode, i);
-                                }
-                            }
-                        }
-                    }
+                    showTextNodePages();
                 } else {
-                    if ((rootTreeNode != null) && (rootTreeNode.getChildCount() > 0)) {
-                        // Now add the children back into the tree, this time without parent nodes
-                        DefaultMutableTreeNode currentChild;
-                        int rootChildCount = rootTreeNode.getChildCount();
-
-                        // Loop through all children page nodes and explode the children out into leafs under the root node
-                        // Then we'll remove the parent nodes so we're just left with leafs under the root
-                        for (int i = 0; i < rootChildCount; i++) {
-                            currentChild = (DefaultMutableTreeNode) rootTreeNode.getChildAt(0);
-
-                            if (currentChild.getChildCount() > 0) {
-                                // Get any subchildren and reinsert them as plain leafs on the root
-                                // We need to wrap the user object in a new mutable tree node to stop any conflicts with parent indexes
-                                for (int j = 0; j < currentChild.getChildCount(); j++) {
-                                    treeModel.insertNodeInto(
-                                            new DefaultMutableTreeNode(
-                                                    ((DefaultMutableTreeNode) currentChild.getChildAt(j)).getUserObject(),
-                                                    false),
-                                            rootTreeNode, rootTreeNode.getChildCount());
-                                }
-                            }
-                            treeModel.removeNodeFromParent(currentChild);
-                        }
-                    }
+                    hideTextNodePages();
                 }
             }
         }
@@ -888,38 +894,25 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         return messageForm;
     }
 
-    /**
-     * The actionPerformed method in this class
-     * is called each time the Timer "goes off".
-     */
-    class TimerListener implements ActionListener {
-        public void actionPerformed(ActionEvent evt) {
-            progressBar.setValue(searchTextTask.getCurrent());
-            String s = searchTextTask.getMessage();
-            if (s != null) {
-                findMessage.setText(s);
-            }
-            // update the text when the search is completed
-            if (searchTextTask.isDone() || !isSearching) {
-                // update search status
-                findMessage.setText(searchTextTask.getFinalMessage());
-                timer.stop();
-                searchTextTask.stop();
-                // update buttons states. 
-                searchButton.setText(messageBundle.getString("viewer.utilityPane.search.searchButton.label"));
-                clearSearchButton.setEnabled(true);
-                caseSensitiveCheckbox.setEnabled(true);
-                wholeWordCheckbox.setEnabled(true);
-                cumulativeCheckbox.setEnabled(true);
-                showPagesCheckbox.setEnabled(true);
+    public void updateProgressControls(String message) {
+        progressBar.setValue(searchTextTask.getCurrent());
+        if (message != null) {
+            findMessage.setText(message);
+        }
+        // update the text when the search is completed
+        if (searchTextTask.isDone() || searchTextTask.isCancelled()) {
+            // update search status
+            findMessage.setText(message);
+            // update buttons states.
+            searchButton.setText(messageBundle.getString("viewer.utilityPane.search.searchButton.label"));
+            //resetTree();
+            filterDropDownButton.setEnabled(true);
 
-                // update progress bar then hide it.
-                progressBar.setValue(progressBar.getMinimum());
-                progressBar.setVisible(false);
-            }
+            // update progress bar then hide it.
+            progressBar.setValue(progressBar.getMinimum());
+            progressBar.setVisible(false);
         }
     }
-
     /**
      * An Entry objects represents the found pages
      */

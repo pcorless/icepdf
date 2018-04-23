@@ -16,6 +16,7 @@
 package org.icepdf.ri.common;
 
 
+import org.icepdf.core.pobjects.Document;
 import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
@@ -24,7 +25,6 @@ import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.util.ResourceBundle;
 
@@ -56,10 +56,7 @@ public abstract class AbstractWorkerPanel extends JPanel implements MutableDocum
     protected JProgressBar progressBar;
     // optional, status label for validation progress reporting.
     protected JLabel progressLabel;
-    // time class to manage gui updates
-    protected Timer timer;
-    // refresh rate of gui elements
-    private static final int REFRESH_TIME = 100;
+
     // tree node selection listener,
     protected NodeSelectionListener nodeSelectionListener;
 
@@ -68,6 +65,7 @@ public abstract class AbstractWorkerPanel extends JPanel implements MutableDocum
         setFocusable(true);
         this.controller = controller;
         this.messageBundle = this.controller.getMessageBundle();
+
     }
 
     /**
@@ -89,8 +87,10 @@ public abstract class AbstractWorkerPanel extends JPanel implements MutableDocum
 
     @Override
     public void disposeDocument() {
-        // clean up the timer.
-        if (timer != null && timer.isRunning()) timer.stop();
+        // stop the task
+        if (workerTask != null && !workerTask.isDone()) {
+            workerTask.cancel(true);
+        }
     }
 
     /**
@@ -102,7 +102,6 @@ public abstract class AbstractWorkerPanel extends JPanel implements MutableDocum
         progressBar.setVisible(false);
         progressLabel = new JLabel("");
         progressLabel.setVisible(false);
-        timer = new Timer(REFRESH_TIME, this::timerActionPerformed);
 
         // add progress label
         constraints.insets = new Insets(1, 1, 1, 1);
@@ -169,23 +168,13 @@ public abstract class AbstractWorkerPanel extends JPanel implements MutableDocum
     }
 
     /**
-     * Builds the tree nodes for the given implementation of the worker. .
+     * Builds the tree nodes for the given implementation of the worker
      */
     protected abstract void buildWorkerTaskUI();
 
     protected void stopWorkerTask() {
-        if (timer != null) {
-            timer.stop();
-        }
         if (workerTask != null) {
-            workerTask.stop();
-            while (workerTask.isCurrentlyRunning()) {
-                try {
-                    Thread.sleep(50L);
-                } catch (Exception e) {
-                    // intentional
-                }
-            }
+            workerTask.cancel(true);
         }
     }
 
@@ -193,7 +182,6 @@ public abstract class AbstractWorkerPanel extends JPanel implements MutableDocum
      * NodeSelectionListener handles the root node context menu creation display and command execution.
      */
     public class NodeSelectionListener extends MouseAdapter {
-
         protected JTree tree;
         protected JPopupMenu contextMenu;
 
@@ -201,7 +189,6 @@ public abstract class AbstractWorkerPanel extends JPanel implements MutableDocum
             this.tree = tree;
         }
     }
-
 
     /**
      * Travers tree model and try and select a node that has a matching user object.
@@ -231,26 +218,36 @@ public abstract class AbstractWorkerPanel extends JPanel implements MutableDocum
         }
     }
 
-    /**
-     * The actionPerformed method in this class is called each time the Timer "goes off".
-     * @param evt event perform
-     */
-    protected void timerActionPerformed(ActionEvent evt) {
-        progressBar.setValue(workerTask.getCurrentProgress());
-        String s = workerTask.getMessage();
-        if (s != null) {
-            progressLabel.setText(s);
-        }
-        // update the text and stop the timer when the validation is completed or terminated.
-        if (workerTask.isDone() || !workerTask.isCurrentlyRunning()) {
-            // update search status
-            timer.stop();
-            workerTask.stop();
+    public JProgressBar getProgressBar() {
+        return progressBar;
+    }
 
-            // update progress bar then hide it.
-            progressBar.setValue(progressBar.getMinimum());
-            progressBar.setVisible(false);
+    public abstract void startProgressControls(int lengthOfTask);
+
+    public abstract void updateProgressControls(int progress);
+
+    public abstract void updateProgressControls(int progress, String label);
+
+    public abstract void updateProgressControls(String label);
+
+    public abstract void endProgressControls();
+
+    /**
+     * Utility for getting the document title.
+     *
+     * @return document title, if non title then a simple search results
+     * label is returned;
+     */
+    public String getDocumentTitle() {
+        String documentTitle = null;
+        Document document = controller.getDocument();
+        if (document != null && document.getInfo() != null) {
+            documentTitle = document.getInfo().getTitle();
         }
+        if ((documentTitle == null) || (documentTitle.trim().length() == 0)) {
+            return null;
+        }
+        return documentTitle;
     }
 
     /**

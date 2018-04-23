@@ -22,7 +22,6 @@ import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
-import org.icepdf.ri.common.AbstractTask;
 import org.icepdf.ri.common.AbstractWorkerPanel;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.PageComponentSelector;
@@ -50,15 +49,12 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
     private static final Logger logger =
             Logger.getLogger(SignaturesHandlerPanel.class.toString());
 
-    // task to complete in separate thread
-    private AbstractTask<SigVerificationTask> sigVerificationTask;
-
     public SignaturesHandlerPanel(Controller controller) {
         super(controller);
         nodeSelectionListener = new NodeSelectionListener();
         rootNodeLabel = messageBundle.getString("viewer.utilityPane.signatures.tab.title");
         cellRenderer = new SignatureCellRender();
-        // build frame of tree but SigVerificationTask does the work.
+        // build frame of tree but VerifySignatureTask does the work.
         buildUI();
     }
 
@@ -66,7 +62,6 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
         super.buildUI();
         // setup validation progress bar and status label
         buildProgressBar();
-
     }
 
     /**
@@ -158,7 +153,6 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
                             messageBundle, signatureWidgetAnnotation, signatureValidator).setVisible(true);
                 }
             }
-
         }
     }
 
@@ -179,20 +173,61 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
             final ArrayList<SignatureWidgetAnnotation> signatures = interactiveForm.getSignatureFields();
             // build out the tree
             if (signatures.size() > 0) {
-                if (!timer.isRunning()) {
-                    // show the progress components.
-                    progressLabel.setVisible(true);
-                    progressBar.setVisible(true);
-                    // start a new verification task
-                    sigVerificationTask = new SigVerificationTask(this, controller, messageBundle);
-                    workerTask = sigVerificationTask;
-                    progressBar.setMaximum(sigVerificationTask.getLengthOfTask());
-                    // start the task and the timer
-                    sigVerificationTask.getTask().verifyAllSignatures();
-                    timer.start();
-                }
+                // show the progress components.
+                progressLabel.setVisible(true);
+                progressBar.setVisible(true);
+                // start a new verification task
+                new VerifyAllSignaturesTask(controller, this, messageBundle).execute();
             }
         }
+    }
+
+    /**
+     * Shows the SignatureValidationDialog dialog.
+     */
+    private class validationActionListener implements ActionListener {
+        public void actionPerformed(ActionEvent actionEvent) {
+
+            // validate the signature and show the summary dialog.
+            final SignatureTreeNode signatureTreeNode = ((NodeSelectionListener) nodeSelectionListener).getSignatureTreeNode();
+            SignatureWidgetAnnotation signatureWidgetAnnotation = signatureTreeNode.getOutlineItem();
+            try {
+                updateSignature(signatureWidgetAnnotation, signatureTreeNode);
+                showSignatureValidationDialog(signatureWidgetAnnotation);
+                // try repainting the container
+                repaint();
+                // update the dialog and end the task
+            } catch (Exception e) {
+                logger.log(Level.FINER, "Error verifying signature.", e);
+                }
+            // repaint the view container
+            validate();
+        }
+    }
+
+    @Override
+    public void startProgressControls(int lengthOfTask) {
+
+    }
+
+    @Override
+    public void updateProgressControls(int progress) {
+
+    }
+
+    @Override
+    public void updateProgressControls(int progress, String label) {
+
+    }
+
+    @Override
+    public void updateProgressControls(String label) {
+
+    }
+
+    @Override
+    public void endProgressControls() {
+
     }
 
     /**
@@ -200,7 +235,6 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
      */
     public void disposeDocument() {
         super.disposeDocument();
-        sigVerificationTask = null;
     }
 
     /**
@@ -256,28 +290,6 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
 
         private SignatureTreeNode getSignatureTreeNode() {
             return signatureTreeNode;
-        }
-    }
-
-    /**
-     * Shows the SignatureValidationDialog dialog.
-     */
-    private class validationActionListener implements ActionListener {
-        public void actionPerformed(ActionEvent actionEvent) {
-            if (!sigVerificationTask.isCurrentlyRunning()) {
-                // validate the signature and show the summary dialog.
-                final SignatureTreeNode signatureTreeNode = ((NodeSelectionListener) nodeSelectionListener).getSignatureTreeNode();
-                SignatureWidgetAnnotation signatureWidgetAnnotation = signatureTreeNode.getOutlineItem();
-                if (!timer.isRunning()) {
-                    // update gui components
-                    progressLabel.setVisible(true);
-                    progressBar.setVisible(true);
-                    progressBar.setMaximum(1);
-                    // start the task and the timer
-                    sigVerificationTask.getTask().verifySignature(signatureWidgetAnnotation, signatureTreeNode);
-                    timer.start();
-                }
-            }
         }
     }
 

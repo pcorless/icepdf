@@ -34,7 +34,6 @@ public class DropDownButton extends JButton
 
     private static final Logger logger = Logger.getLogger(DropDownButton.class.toString());
 
-
     protected Controller controller;
 
     protected JPopupMenu popupMenu;
@@ -72,6 +71,12 @@ public class DropDownButton extends JButton
 
         addMouseListener(this);
 
+    }
+
+    @Override
+    public void setEnabled(boolean b) {
+        super.setEnabled(b);
+        popupMenu.setEnabled(b);
     }
 
     @Override

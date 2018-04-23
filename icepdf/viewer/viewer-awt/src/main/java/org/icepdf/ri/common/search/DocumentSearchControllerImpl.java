@@ -240,8 +240,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                             }
                         }
                         // check if we have found what we're looking for
-                        if (searchPhraseHitCount == searchPhraseFoundCount) {
-
+                        if (searchPhraseHitCount > 0 && searchPhraseHitCount == searchPhraseFoundCount) {
                             LineText lineText = new LineText();
                             int lineWordsSize = lineWords.size();
                             java.util.List<WordText> hitWords = lineText.getWords();

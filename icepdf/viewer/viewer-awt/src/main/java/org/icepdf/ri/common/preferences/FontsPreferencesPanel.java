@@ -84,8 +84,7 @@ public class FontsPreferencesPanel extends JPanel implements ActionListener {
         if (event.getSource() == resetFontCacheButton) {
             // reset the font properties cache.
             resetFontCacheButton.setEnabled(false);
-            org.icepdf.ri.common.SwingWorker worker = new ClearFontCacheWorker(resetFontCacheButton);
-            worker.start();
+            new ClearFontCacheWorker(resetFontCacheButton).execute();
         }
     }
 

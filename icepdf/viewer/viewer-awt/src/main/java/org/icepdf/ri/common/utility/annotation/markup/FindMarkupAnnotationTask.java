@@ -23,47 +23,47 @@ import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.AbstractTask;
 import org.icepdf.ri.common.DragDropColorList;
-import org.icepdf.ri.common.SwingWorker;
-import org.icepdf.ri.common.utility.signatures.SigVerificationTask;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.PageComponentSelector;
 
-import javax.swing.*;
 import java.awt.*;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Locale;
-import java.util.ResourceBundle;
+import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class FindMarkupAnnotationTask extends AbstractTask<FindMarkupAnnotationTask> {
+public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
 
     private static final Logger logger =
-            Logger.getLogger(SigVerificationTask.class.toString());
+            Logger.getLogger(FindMarkupAnnotationTask.class.toString());
 
-    protected static ArrayList<DragDropColorList.ColorLabel> colorLabels;
+    private static ArrayList<DragDropColorList.ColorLabel> colorLabels;
 
     // status summary labels
-    protected MessageFormat loadingMessage;
-    protected MessageFormat completeMessage;
-    protected MessageFormat completeFilteredMessage;
+    private MessageFormat loadingMessage;
+    private MessageFormat completeMessage;
+    private MessageFormat completeFilteredMessage;
 
     // sort/grouping labels
-    protected MessageFormat pageLabelFormat;
-    protected MessageFormat authorLabelFormat;
-    protected MessageFormat dateLabelFormat;
-    protected MessageFormat colorLabelFormat;
+    private MessageFormat pageLabelFormat;
+    private MessageFormat authorLabelFormat;
+    private MessageFormat dateLabelFormat;
+    private MessageFormat colorLabelFormat;
 
+    private Pattern searchPattern;
+    private MarkupAnnotationPanel.SortColumn sortType;
+    private MarkupAnnotationPanel.FilterSubTypeColumn filterType;
+    private MarkupAnnotationPanel.FilterAuthorColumn filterAuthor;
+    private Color filterColor;
+    private boolean isRegex;
+    private boolean isCaseSensitive;
 
-    // append nodes for found fonts.
-    private MarkupAnnotationHandlerPanel markupAnnotationHandlerPanel;
 
     /**
      * Creates a new instance of the search for markup annotations tasks.
@@ -72,12 +72,10 @@ public class FindMarkupAnnotationTask extends AbstractTask<FindMarkupAnnotationT
      * @param controller                   root controller object
      * @param messageBundle                message bundle used for dialog text.
      */
-    public FindMarkupAnnotationTask(MarkupAnnotationHandlerPanel markupAnnotationHandlerPanel,
-                                    Controller controller,
-                                    ResourceBundle messageBundle) {
-        super(controller, messageBundle, controller.getDocument().getNumberOfPages());
-        this.controller = controller;
-        this.markupAnnotationHandlerPanel = markupAnnotationHandlerPanel;
+    private FindMarkupAnnotationTask(MarkupAnnotationHandlerPanel markupAnnotationHandlerPanel,
+                                     Controller controller,
+                                     ResourceBundle messageBundle) {
+        super(controller, markupAnnotationHandlerPanel, messageBundle);
 
         loadingMessage = new MessageFormat(
                 messageBundle.getString("viewer.utilityPane.markupAnnotation.view.loadingAnnotations.label"));
@@ -96,191 +94,163 @@ public class FindMarkupAnnotationTask extends AbstractTask<FindMarkupAnnotationT
                 messageBundle.getString("viewer.utilityPane.markupAnnotation.view.tree.color.label"));
     }
 
+    private FindMarkupAnnotationTask(Builder builder) {
+        this(builder.markupAnnotationHandlerPanel, builder.controller, builder.messageBundle);
+
+        this.searchPattern = builder.searchPattern;
+        this.sortType = builder.sortType;
+        this.filterType = builder.filterType;
+        this.filterAuthor = builder.filterAuthor;
+        this.filterColor = builder.filterColor;
+        this.isRegex = builder.isRegex;
+        this.isCaseSensitive = builder.isCaseSensitive;
+
+        lengthOfTask = controller.getDocument().getNumberOfPages();
+        workerPanel.startProgressControls(lengthOfTask);
+    }
+
+
     @Override
-    public FindMarkupAnnotationTask getTask() {
-        return this;
-    }
-
-    /**
-     * Start the task, start searching the document for the pattern.
-     * Color
-     * @param filterAuthor author filter column value
-     * @param filterColor color filter column value
-     * @param filterType annotation type filter column value
-     * @param searchPattern search pattern
-     * @param sortType  sort type
-     * @param isRegex regex notation enabled.
-     * @param isCaseSensitive case sensitivity
-     */
-    public void startTask(
-            final Pattern searchPattern,
-            final MarkupAnnotationPanel.SortColumn sortType,
-            final MarkupAnnotationPanel.FilterSubTypeColumn filterType,
-            final MarkupAnnotationPanel.FilterAuthorColumn filterAuthor,
-            final Color filterColor,
-            final boolean isRegex,
-            final boolean isCaseSensitive) {
-        final SwingWorker worker = new SwingWorker() {
-            public Object construct() {
-                current = 0;
-                done = false;
-                canceled = false;
-                taskStatusMessage = null;
-                return new FindMarkupAnnotationTask.ActualTask(
-                        searchPattern, sortType, filterType, filterAuthor, filterColor, isRegex, isCaseSensitive);
-            }
-        };
-        worker.setThreadPriority(Thread.NORM_PRIORITY);
-        worker.start();
-    }
-
-    /**
-     * The actual long running task.  This runs in a SwingWorker thread.
-     */
-    private class ActualTask {
-        ActualTask(Pattern searchPattern,
-                   MarkupAnnotationPanel.SortColumn sortType,
-                   MarkupAnnotationPanel.FilterSubTypeColumn filterType,
-                   MarkupAnnotationPanel.FilterAuthorColumn filterAuthor,
-                   Color filterColor,
-                   boolean isRegex,
-                   boolean isCaseSensitive) {
-
-            taskRunning = true;
-
-            colorLabels = DragDropColorList.retrieveColorLabels();
-            int totalAnnotations = 0;
-            int filteredAnnotationCount = 0;
-            try {
-                current = 0;
-                try {
-                    Document currentDocument = controller.getDocument();
-                    if (currentDocument != null) {
-                        // iterate over markup annotations
-                        Library library = currentDocument.getCatalog().getLibrary();
-                        int pageCount = currentDocument.getPageTree().getNumberOfPages();
-                        ArrayList<MarkupAnnotation> markupAnnotations = new ArrayList<>();
-                        for (int i = 0; i < pageCount; i++) {
-                            // break if needed
-                            if (canceled || done) {
-                                break;
-                            }
-                            // Update task information
-                            current = i;
-                            taskStatusMessage = loadingMessage.format(new Object[]{i + 1, pageCount});
-
-                            String userName = System.getProperty("user.name");
-                            Page page = currentDocument.getPageTree().getPage(i);
-                            if (page != null) {
-                                ArrayList<Reference> annotationReferences = page.getAnnotationReferences();
-                                if (annotationReferences != null && annotationReferences.size() > 0) {
-                                    for (Object annotationReference : annotationReferences) {
-                                        Object annotation = library.getObject(annotationReference);
-                                        if (annotation instanceof MarkupAnnotation) {
-                                            MarkupAnnotation markupAnnotation = (MarkupAnnotation) annotation;
-                                            totalAnnotations++;
-                                            // apply any filters
-                                            // author
-                                            boolean filter = false;
-                                            if (filterAuthor.equals(
-                                                    MarkupAnnotationPanel.FilterAuthorColumn.AUTHOR_OTHER)) {
-                                                if (markupAnnotation.getTitleText() == null ||
-                                                        markupAnnotation.getTitleText().equalsIgnoreCase(userName)) {
-                                                    filter = true;
-                                                }
-                                            } else if (filterAuthor.equals(
-                                                    MarkupAnnotationPanel.FilterAuthorColumn.AUTHOR_CURRENT)) {
-                                                if (markupAnnotation.getTitleText() == null ||
-                                                        !markupAnnotation.getTitleText().equalsIgnoreCase(userName)) {
-                                                    filter = true;
-                                                }
-                                            }
-                                            // color
-                                            if (filterColor != null) {
-                                                if (markupAnnotation.getColor() == null ||
-                                                        markupAnnotation.getColor().getRGB() != filterColor.getRGB()) {
-                                                    filter = true;
-                                                }
-                                            }
-                                            // filter by type
-                                            if (!filterType.equals(MarkupAnnotationPanel.FilterSubTypeColumn.ALL)) {
-                                                if (markupAnnotation.getSubType() != null) {
-                                                    String subType = markupAnnotation.getSubType().toString();
-                                                    if (!subType.equalsIgnoreCase(filterType.toString())) {
-                                                        filter = true;
-                                                    }
-                                                } else {
-                                                    filter = true;
-                                                }
-                                            }
-                                            // app search regex
-                                            if (isRegex && searchPattern != null) {
-                                                Matcher matcher = searchPattern.matcher(
-                                                        ((MarkupAnnotation) annotation).getContents());
-                                                filter = !matcher.find();
-                                            } else if (searchPattern != null) {
-                                                String annotationText = ((MarkupAnnotation) annotation).getContents();
-                                                if (isCaseSensitive && annotationText != null) {
-                                                    filter = !annotationText.contains(searchPattern.pattern());
-                                                } else if (annotationText != null) {
-                                                    filter = !annotationText.toLowerCase().contains(
-                                                            searchPattern.pattern().toLowerCase());
-                                                }
-                                            }
-                                            // apply the filter flag
-                                            if (!filter) {
-                                                markupAnnotations.add(markupAnnotation);
-                                            }
+    protected Void doInBackground() {
+        colorLabels = DragDropColorList.retrieveColorLabels();
+        int totalAnnotations = 0;
+        int filteredAnnotationCount = 0;
+        try {
+            Document currentDocument = controller.getDocument();
+            if (currentDocument != null) {
+                // iterate over markup annotations
+                Library library = currentDocument.getCatalog().getLibrary();
+                int pageCount = currentDocument.getPageTree().getNumberOfPages();
+                ArrayList<MarkupAnnotation> markupAnnotations = new ArrayList<>();
+                for (int i = 0; i < pageCount; i++) {
+                    // break if needed
+                    if (isCancelled()) {
+                        break;
+                    }
+                    taskStatusMessage = loadingMessage.format(new Object[]{i + 1, pageCount});
+                    taskProgress = i;
+                    String userName = System.getProperty("user.name");
+                    Page page = currentDocument.getPageTree().getPage(i);
+                    if (page != null) {
+                        ArrayList<Reference> annotationReferences = page.getAnnotationReferences();
+                        if (annotationReferences != null && annotationReferences.size() > 0) {
+                            for (Object annotationReference : annotationReferences) {
+                                Object annotation = library.getObject(annotationReference);
+                                if (annotation instanceof MarkupAnnotation) {
+                                    MarkupAnnotation markupAnnotation = (MarkupAnnotation) annotation;
+                                    totalAnnotations++;
+                                    // apply any filters
+                                    // author
+                                    boolean filter = false;
+                                    if (filterAuthor.equals(
+                                            MarkupAnnotationPanel.FilterAuthorColumn.AUTHOR_OTHER)) {
+                                        if (markupAnnotation.getTitleText() == null ||
+                                                markupAnnotation.getTitleText().equalsIgnoreCase(userName)) {
+                                            filter = true;
                                         }
+                                    } else if (filterAuthor.equals(
+                                            MarkupAnnotationPanel.FilterAuthorColumn.AUTHOR_CURRENT)) {
+                                        if (markupAnnotation.getTitleText() == null ||
+                                                !markupAnnotation.getTitleText().equalsIgnoreCase(userName)) {
+                                            filter = true;
+                                        }
+                                    }
+                                    // color
+                                    if (filterColor != null) {
+                                        if (markupAnnotation.getColor() == null ||
+                                                markupAnnotation.getColor().getRGB() != filterColor.getRGB()) {
+                                            filter = true;
+                                        }
+                                    }
+                                    // filter by type
+                                    if (!filterType.equals(MarkupAnnotationPanel.FilterSubTypeColumn.ALL)) {
+                                        if (markupAnnotation.getSubType() != null) {
+                                            String subType = markupAnnotation.getSubType().toString();
+                                            if (!subType.equalsIgnoreCase(filterType.toString())) {
+                                                filter = true;
+                                            }
+                                        } else {
+                                            filter = true;
+                                        }
+                                    }
+                                    // app search regex
+                                    if (isRegex && searchPattern != null) {
+                                        Matcher matcher = searchPattern.matcher(
+                                                ((MarkupAnnotation) annotation).getContents());
+                                        filter = !matcher.find();
+                                    } else if (searchPattern != null) {
+                                        String annotationText = ((MarkupAnnotation) annotation).getContents();
+                                        if (isCaseSensitive && annotationText != null) {
+                                            filter = !annotationText.contains(searchPattern.pattern());
+                                        } else if (annotationText != null) {
+                                            filter = !annotationText.toLowerCase().contains(
+                                                    searchPattern.pattern().toLowerCase());
+                                        }
+                                    }
+                                    // apply the filter flag
+                                    if (!filter) {
+                                        markupAnnotations.add(markupAnnotation);
                                     }
                                 }
                             }
                         }
-                        // sort the annotations.
-                        markupAnnotations.sort(new AnnotationComparator(sortType));
-                        filteredAnnotationCount = markupAnnotations.size();
-                        // build the tree
-                        MarkupAnnotation previousMarkupAnnotation = null;
-                        for (MarkupAnnotation markupAnnotation : markupAnnotations) {
-                            if (!markupAnnotation.isInReplyTo()) {
-                                // add group as needed
-                                checkGroupLabelChange(sortType, previousMarkupAnnotation, markupAnnotation);
-                                previousMarkupAnnotation = markupAnnotation;
-                                // add the annotation node
-                                SwingUtilities.invokeLater(() -> {
-                                    // add the node
-                                    markupAnnotationHandlerPanel.addAnnotation(markupAnnotation, searchPattern);
-                                    // try repainting the container
-                                    markupAnnotationHandlerPanel.repaint();
-                                });
-                                Thread.yield();
-                            }
-                        }
                     }
-                    // update status message to show sort and filter results.
-                    if (!filterAuthor.equals(MarkupAnnotationPanel.FilterAuthorColumn.ALL) ||
-                            !filterType.equals(MarkupAnnotationPanel.FilterSubTypeColumn.ALL) ||
-                            filterColor != null) {
-                        taskStatusMessage = completeFilteredMessage.format(new Object[]{filteredAnnotationCount, totalAnnotations});
-                    } else {
-                        taskStatusMessage = completeMessage.format(new Object[]{totalAnnotations, totalAnnotations});
-                    }
-                    done = true;
-                } catch (Exception e) {
-                    logger.log(Level.FINER, "Error loading annotations.", e);
                 }
-            } finally {
-                taskRunning = false;
+                // sort the annotations.
+                markupAnnotations.sort(new AnnotationComparator(sortType));
+                filteredAnnotationCount = markupAnnotations.size();
+                // build the tree
+                MarkupAnnotation previousMarkupAnnotation = null;
+                for (MarkupAnnotation markupAnnotation : markupAnnotations) {
+                    if (!markupAnnotation.isInReplyTo()) {
+                        if (isCancelled()) {
+                            break;
+                        }
+                        // add group as needed
+                        checkGroupLabelChange(sortType, previousMarkupAnnotation, markupAnnotation);
+                        previousMarkupAnnotation = markupAnnotation;
+                        publish(markupAnnotation);
+                    }
+                }
             }
-            // repaint the view container
-            SwingUtilities.invokeLater(() -> markupAnnotationHandlerPanel.validate());
+            // update status message to show sort and filter results.
+            if (!filterAuthor.equals(MarkupAnnotationPanel.FilterAuthorColumn.ALL) ||
+                    !filterType.equals(MarkupAnnotationPanel.FilterSubTypeColumn.ALL) ||
+                    filterColor != null) {
+                taskStatusMessage = completeFilteredMessage.format(new Object[]{filteredAnnotationCount, totalAnnotations});
+            } else {
+                taskStatusMessage = completeMessage.format(new Object[]{totalAnnotations, totalAnnotations});
+            }
+        } catch (Exception e) {
+            logger.log(Level.FINER, "Error loading annotations.", e);
+        }
+
+        return null;
+    }
+
+    @Override
+    protected void process(List<Object> chunks) {
+        for (Object chunk : chunks) {
+            if (chunk instanceof MarkupAnnotation) {
+                // add the node
+                ((MarkupAnnotationHandlerPanel) workerPanel).addAnnotation((MarkupAnnotation) chunk, searchPattern);
+            } else if (chunk instanceof String) {
+                ((MarkupAnnotationHandlerPanel) workerPanel).addPageGroup((String) chunk);
+            }
+            workerPanel.updateProgressControls(taskProgress);
+            workerPanel.repaint();
         }
     }
 
-    protected void checkGroupLabelChange(MarkupAnnotationPanel.SortColumn sortColumn,
-                                         MarkupAnnotation previousMarkupAnnotation,
-                                         MarkupAnnotation markupAnnotation) {
+    @Override
+    protected void done() {
+        workerPanel.endProgressControls();
+        workerPanel.validate();
+    }
 
+    private void checkGroupLabelChange(MarkupAnnotationPanel.SortColumn sortColumn,
+                                       MarkupAnnotation previousMarkupAnnotation,
+                                       MarkupAnnotation markupAnnotation) {
         String pageLabel = null;
         if (MarkupAnnotationPanel.SortColumn.PAGE.equals(sortColumn)) {
             if (previousMarkupAnnotation == null ||
@@ -323,12 +293,7 @@ public class FindMarkupAnnotationTask extends AbstractTask<FindMarkupAnnotationT
         }
 
         if (pageLabel != null) {
-            final String tmpLabel = pageLabel;
-            SwingUtilities.invokeLater(() -> {
-                markupAnnotationHandlerPanel.addPageGroup(tmpLabel);
-                // try repainting the container
-                markupAnnotationHandlerPanel.repaint();
-            });
+            publish(pageLabel);
         }
 
     }
@@ -350,7 +315,7 @@ public class FindMarkupAnnotationTask extends AbstractTask<FindMarkupAnnotationT
 
         private MarkupAnnotationPanel.SortColumn sortColumn;
 
-        public AnnotationComparator(MarkupAnnotationPanel.SortColumn sortColumn) {
+        AnnotationComparator(MarkupAnnotationPanel.SortColumn sortColumn) {
             this.sortColumn = sortColumn;
         }
 
@@ -398,6 +363,70 @@ public class FindMarkupAnnotationTask extends AbstractTask<FindMarkupAnnotationT
                 }
             }
             return 0;
+        }
+    }
+
+    public static class Builder {
+
+        // required model setup
+        private final Controller controller;
+        ResourceBundle messageBundle;
+        private MarkupAnnotationHandlerPanel markupAnnotationHandlerPanel;
+
+        // parent search panel
+        private Pattern searchPattern;
+        private MarkupAnnotationPanel.SortColumn sortType;
+        private MarkupAnnotationPanel.FilterSubTypeColumn filterType;
+        private MarkupAnnotationPanel.FilterAuthorColumn filterAuthor;
+        private Color filterColor;
+        private boolean isRegex;
+        private boolean isCaseSensitive;
+
+        Builder(MarkupAnnotationHandlerPanel markupAnnotationHandlerPanel,
+                Controller controller,
+                ResourceBundle messageBundle) {
+            this.controller = controller;
+            this.messageBundle = messageBundle;
+            this.markupAnnotationHandlerPanel = markupAnnotationHandlerPanel;
+        }
+
+        Builder setSearchPattern(Pattern searchPattern) {
+            this.searchPattern = searchPattern;
+            return this;
+        }
+
+        Builder setSortType(MarkupAnnotationPanel.SortColumn sortType) {
+            this.sortType = sortType;
+            return this;
+        }
+
+        Builder setFilterType(MarkupAnnotationPanel.FilterSubTypeColumn filterType) {
+            this.filterType = filterType;
+            return this;
+        }
+
+        Builder setFilterAuthor(MarkupAnnotationPanel.FilterAuthorColumn filterAuthor) {
+            this.filterAuthor = filterAuthor;
+            return this;
+        }
+
+        Builder setFilterColor(Color filterColor) {
+            this.filterColor = filterColor;
+            return this;
+        }
+
+        Builder setRegex(boolean regex) {
+            isRegex = regex;
+            return this;
+        }
+
+        Builder setCaseSensitive(boolean caseSensitive) {
+            isCaseSensitive = caseSensitive;
+            return this;
+        }
+
+        public FindMarkupAnnotationTask build() {
+            return new FindMarkupAnnotationTask(this);
         }
     }
 }

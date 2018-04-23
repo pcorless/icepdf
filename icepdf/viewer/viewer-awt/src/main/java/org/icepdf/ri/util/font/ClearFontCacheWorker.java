@@ -15,34 +15,37 @@
  */
 package org.icepdf.ri.util.font;
 
-import org.icepdf.ri.common.SwingWorker;
 import org.icepdf.ri.util.FontPropertiesManager;
 
 import javax.swing.*;
+import java.awt.*;
 
 /**
  * Common swing worker for clear the font cache
  *
  * @since 6.3
  */
-public class ClearFontCacheWorker extends SwingWorker {
+public class ClearFontCacheWorker extends SwingWorker<Void, Void> {
 
     private JComponent callingComponent;
 
     public ClearFontCacheWorker(JComponent callingComponent) {
         this.callingComponent = callingComponent;
+        callingComponent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
     }
 
     @Override
-    public Object construct() {
+    protected Void doInBackground() {
         FontPropertiesManager fontPropertiesManager = FontPropertiesManager.getInstance();
         fontPropertiesManager.clearProperties();
         fontPropertiesManager.readDefaultFontProperties();
         fontPropertiesManager.saveProperties();
-        callingComponent.setEnabled(true);
-
-        Runnable doSwingWork = () -> callingComponent.setEnabled(true);
-        SwingUtilities.invokeLater(doSwingWork);
         return null;
+    }
+
+    @Override
+    protected void done() {
+        callingComponent.setEnabled(true);
+        callingComponent.setCursor(null);
     }
 }

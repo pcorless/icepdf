@@ -19,8 +19,9 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
-import org.icepdf.ri.common.SwingWorker;
 
+import javax.swing.*;
+import java.awt.*;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -38,7 +39,7 @@ import java.util.logging.Logger;
  *
  * @since 1.1
  */
-public class TextExtractionTask {
+public class TextExtractionTask extends SwingWorker<Void, StringBuilder> {
 
     private static final Logger logger =
             Logger.getLogger(TextExtractionTask.class.toString());
@@ -47,189 +48,125 @@ public class TextExtractionTask {
     private int lengthOfTask;
 
     // current progress, used for the progress bar
-    private int current = 0;
+    private int current;
 
     // message displayed on progress bar
+    private MessageFormat messageDialogFormat;
+    private MessageFormat messageTextFormat;
     private String dialogMessage;
-
-    // flags for threading
-    private boolean done = false;
-    private boolean canceled = false;
 
     // internationalization
     private ResourceBundle messageBundle;
 
     // PDF document pointer
-    private Document document = null;
+    private Document document;
 
     // File used for text export
-    private File file = null;
+    private File file;
+
+    private ProgressMonitor progressMonitor;
+
+    private static final double[] fileLimits = {0, 1, 2};
+
 
     /**
      * Create a new instance of the TextExtraction object.
      *
      * @param document      document whose text will be extracted.
      * @param file          output file for extracted text.
+     * @param progressMonitor progressMonitor to update with extraction progress
      * @param messageBundle main message bundle for i18n
      */
-    public TextExtractionTask(Document document, File file, ResourceBundle messageBundle) {
+    public TextExtractionTask(Document document, File file, ProgressMonitor progressMonitor, ResourceBundle messageBundle) {
         this.document = document;
         this.file = file;
         lengthOfTask = document.getNumberOfPages();
+        this.progressMonitor = progressMonitor;
         this.messageBundle = messageBundle;
+        // build out dialog messages
+        messageDialogFormat = new MessageFormat(messageBundle.getString(
+                "viewer.exportText.fileStamp.progress.msg"));
+        String[] fileStrings = {
+                messageBundle.getString("viewer.exportText.fileStamp.progress.moreFile.msg"),
+                messageBundle.getString("viewer.exportText.fileStamp.progress.oneFile.msg"),
+                messageBundle.getString("viewer.exportText.fileStamp.progress.moreFile.msg")};
+        ChoiceFormat choiceForm = new ChoiceFormat(fileLimits, fileStrings);
+        Format[] formats = {null, choiceForm, null};
+        messageDialogFormat.setFormats(formats);
+        // build out text file messages
+        messageTextFormat = new MessageFormat(messageBundle.getString("viewer.exportText.pageStamp.msg"));
     }
 
-    /**
-     * Start the task,  created a new SwingWorker for the text extraction
-     * process.
-     */
-    public void go() {
-        final SwingWorker worker = new SwingWorker() {
-            // reset all instance variables
-            public Object construct() {
-                current = 0;
-                done = false;
-                canceled = false;
-                dialogMessage = null;
-                return new ActualTask();
-            }
-        };
-        worker.setThreadPriority(Thread.MIN_PRIORITY);
-        worker.start();
+    @Override
+    protected void done() {
+        progressMonitor.close();
+        Toolkit.getDefaultToolkit().beep();
     }
 
-    /**
-     * Find out how much work needs to be done.
-     *
-     * @return length of task, generally number of pages in document.
-     */
-    public int getLengthOfTask() {
-        return lengthOfTask;
+    @Override
+    protected void process(List<StringBuilder> chunks) {
+        // Update progressMonitor progress
+        progressMonitor.setProgress(current);
+        if (dialogMessage != null) {
+            progressMonitor.setNote(dialogMessage);
+        }
     }
 
-    /**
-     * Find out how much has been done.
-     *
-     * @return gets the current progress, generally the number of pages read so far.
-     */
-    public int getCurrent() {
-        return current;
-    }
+    @Override
+    protected Void doInBackground() {
+        // Extraction of text from pdf procedure
+        try {
+            // create file output stream
+            BufferedWriter fileOutputStream = new BufferedWriter(
+                    new OutputStreamWriter(new FileOutputStream(file), "UTF8"));
+            // Print document information
+            String pageNumber = messageBundle.getString("viewer.exportText.fileStamp.msg");
 
-    /**
-     * Stop the task.
-     */
-    public void stop() {
-        canceled = true;
-        dialogMessage = null;
-    }
+            fileOutputStream.write(pageNumber);
+            fileOutputStream.write(10); // line break
 
-    /**
-     * Find out if the task has completed.
-     *
-     * @return true if task is complete, otherwise false.
-     */
-    public boolean isDone() {
-        return done;
-    }
+            for (int i = 0; i < document.getNumberOfPages(); i++) {
+                // break if needed
+                if (isCancelled()) {
+                    break;
+                }
+                // Update task information
+                current = i;
+                Object[] messageArguments = {String.valueOf((current + 1)), lengthOfTask, lengthOfTask};
+                dialogMessage = messageDialogFormat.format(messageArguments);
 
-    /**
-     * Returns the most recent dialog message, or null
-     * if there is no current dialog message.
-     * @return dialog message already formatted for current progress.
-     */
-    public String getMessage() {
-        return dialogMessage;
-    }
-
-    /**
-     * The actual long running task.  This runs in a SwingWorker thread.
-     */
-    class ActualTask {
-        ActualTask() {
-            // Extraction of text from pdf procedure
-            try {
-                // create file output stream
-                BufferedWriter fileOutputStream = new BufferedWriter(
-                        new OutputStreamWriter(new FileOutputStream(file), "UTF8"));
-                // Print document information
-                String pageNumber =
-                        messageBundle.getString("viewer.exportText.fileStamp.msg");
+                messageArguments = new Object[]{String.valueOf((current + 1))};
+                pageNumber = messageTextFormat.format(messageArguments);
 
                 fileOutputStream.write(pageNumber);
                 fileOutputStream.write(10); // line break
 
-                for (int i = 0; i < document.getNumberOfPages(); i++) {
-                    // break if needed
-                    if (canceled || done) {
-                        break;
-                    }
-
-                    // Update task information
-                    current = i;
-
-                    // Build Internationalized plural phrase.
-                    MessageFormat messageForm =
-                            new MessageFormat(messageBundle.getString(
-                                    "viewer.exportText.fileStamp.progress.msg"));
-                    double[] fileLimits = {0, 1, 2};
-                    String[] fileStrings = {
-                            messageBundle.getString(
-                                    "viewer.exportText.fileStamp.progress.moreFile.msg"),
-                            messageBundle.getString(
-                                    "viewer.exportText.fileStamp.progress.oneFile.msg"),
-                            messageBundle.getString(
-                                    "viewer.exportText.fileStamp.progress.moreFile.msg"),
-                    };
-                    ChoiceFormat choiceForm = new ChoiceFormat(fileLimits,
-                            fileStrings);
-                    Format[] formats = {null, choiceForm, null};
-                    messageForm.setFormats(formats);
-                    Object[] messageArguments = {String.valueOf((current + 1)),
-                            lengthOfTask, lengthOfTask};
-
-                    dialogMessage = messageForm.format(messageArguments);
-
-                    messageForm =
-                            new MessageFormat(messageBundle.getString(
-                                    "viewer.exportText.pageStamp.msg"));
-                    messageArguments = new Object[]{String.valueOf((current + 1))};
-
-                    pageNumber = messageForm.format(messageArguments);
-
-                    fileOutputStream.write(pageNumber);
-                    fileOutputStream.write(10); // line break
-
-                    Page page = document.getPageTree().getPage(i);
-                    List<LineText> pageLines;
-                    if (page.isInitiated()) {
-                        // get a pages already initialized text.
-                        pageLines = document.getPageViewText(i).getPageLines();
-                    } else {
-                        // grap the text the fastest way possible.
-                        pageLines = document.getPageText(i).getPageLines();
-                    }
-                    StringBuilder extractedText;
-                    for (LineText lineText : pageLines) {
-                        extractedText = new StringBuilder();
-                        for (WordText wordText : lineText.getWords()) {
-                            extractedText.append(wordText.getText());
-                        }
-                        extractedText.append('\n');
-                        fileOutputStream.write(extractedText.toString());
-                    }
-
-                    Thread.yield();
-
+                Page page = document.getPageTree().getPage(i);
+                List<LineText> pageLines;
+                if (page.isInitiated()) {
+                    // get a pages already initialized text.
+                    pageLines = document.getPageViewText(i).getPageLines();
+                } else {
+                    // grap the text the fastest way possible.
+                    pageLines = document.getPageText(i).getPageLines();
                 }
-
-                done = true;
-                current = 0;
-                fileOutputStream.flush();
-                fileOutputStream.close();
-            } catch (Throwable e) {
-                logger.log(Level.FINE, "Malformed URL Exception ", e);
+                StringBuilder extractedText = null;
+                for (LineText lineText : pageLines) {
+                    extractedText = new StringBuilder();
+                    for (WordText wordText : lineText.getWords()) {
+                        extractedText.append(wordText.getText());
+                    }
+                    extractedText.append('\n');
+                    fileOutputStream.write(extractedText.toString());
+                }
+                publish(extractedText);
             }
+            current = 0;
+            fileOutputStream.flush();
+            fileOutputStream.close();
+        } catch (Throwable e) {
+            logger.log(Level.FINE, "Malformed URL Exception ", e);
         }
+        return null;
     }
 }

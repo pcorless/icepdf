@@ -15,16 +15,19 @@
  */
 package org.icepdf.ri.util;
 
+import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.Outlines;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.search.DocumentSearchController;
-import org.icepdf.ri.common.SwingWorker;
 import org.icepdf.ri.common.utility.search.SearchPanel;
 import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
 import java.awt.*;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -34,9 +37,9 @@ import java.util.List;
  *
  * @since 1.1
  */
-public class SearchTextTask {
+public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResult> {
 
-    public static final int WORD_PADDING = 6;
+    private static final int WORD_PADDING = 6;
     // total length of task (total page count), used for progress bar
     private int lengthOfTask;
     // current progress, used for the progress bar
@@ -47,11 +50,8 @@ public class SearchTextTask {
     private MessageFormat searchingMessageForm;
     private MessageFormat searchResultMessageForm;
     private MessageFormat searchCompletionMessageForm;
-    // flags for threading
-    private boolean done = false;
-    private boolean canceled = false;
     // keep track of total hits
-    private int totalHitCount = 0;
+    private int totalHitCount;
     // String to search for and parameters from gui
     private String pattern = "";
     private boolean wholeWord;
@@ -59,7 +59,6 @@ public class SearchTextTask {
     private boolean cumulative;
     private boolean showPages;
     private boolean regex;
-    private boolean searchComments;
     private boolean r2L;
     private boolean comments;
     private boolean outlines;
@@ -67,12 +66,8 @@ public class SearchTextTask {
 
     // parent swing controller
     private Controller controller;
-
     // append nodes for found text.
     private SearchPanel searchPanel;
-
-    private boolean currentlySearching;
-
     private Container viewContainer;
 
     /**
@@ -107,32 +102,6 @@ public class SearchTextTask {
     }
 
     /**
-     * Start the task, start searching the document for the pattern.
-     */
-    public void go() {
-        final SwingWorker worker = new SwingWorker() {
-            public Object construct() {
-                current = 0;
-                done = false;
-                canceled = false;
-                dialogMessage = null;
-                return new ActualTask();
-            }
-        };
-        worker.setThreadPriority(Thread.NORM_PRIORITY);
-        worker.start();
-    }
-
-    /**
-     * Number pages that search task has to iterate over.
-     *
-     * @return returns max number of pages in document being search.
-     */
-    public int getLengthOfTask() {
-        return lengthOfTask;
-    }
-
-    /**
      * Gets the page that is currently being searched by this task.
      *
      * @return current page being processed.
@@ -141,147 +110,163 @@ public class SearchTextTask {
         return current;
     }
 
-    /**
-     * Stop the task.
-     */
-    public void stop() {
-        canceled = true;
-        dialogMessage = null;
-    }
-
-    /**
-     * Find out if the task has completed.
-     *
-     * @return true if task is done, false otherwise.
-     */
-    public boolean isDone() {
-        return done;
-    }
-
-    public boolean isCurrentlySearching() {
-        return currentlySearching;
-    }
-
-    /**
-     * Returns the most recent dialog message, or null
-     * if there is no current dialog message.
-     *
-     * @return current message dialog text.
-     */
-    public String getMessage() {
-        return dialogMessage;
-    }
-
-    /**
-     * The actual long running task.  This runs in a SwingWorker thread.
-     */
-    class ActualTask {
-        ActualTask() {
-
-            // break on bad input
-            if ("".equals(pattern) || " ".equals(pattern)) {
-                done = true;
-                return;
-            }
-
-            try {
-                currentlySearching = true;
-                // Extraction of text from pdf procedure
-                totalHitCount = 0;
-                current = 0;
-
-                // get instance of the search controller
-                DocumentSearchController searchController =
-                        controller.getDocumentSearchController();
-                if (!cumulative) {
-                    searchController.clearAllSearchHighlight();
-                }
-                searchController.addSearchTerm(pattern,
-                        caseSensitive, wholeWord, regex);
-
-                Document document = controller.getDocument();
-                // iterate over each page in the document
-                for (int i = 0; i < document.getNumberOfPages(); i++) {
-                    // break if needed
-                    if (canceled || done) {
-                        setDialogMessage();
-                        break;
-                    }
-                    // Update task information
-                    current = i;
-
-                    // update search message in search pane.
-                    Object[] messageArguments = {String.valueOf((current + 1)),
-                            lengthOfTask, lengthOfTask};
-                    if (searchingMessageForm != null) {
-                        dialogMessage = searchingMessageForm.format(messageArguments);
-                    }
-
-                    // hits per page count
-                    final List<LineText> lineItems = searchController.searchHighlightPage(current, WORD_PADDING);
-                    int hitCount = lineItems.size();
-
-                    // update total hit count
-                    totalHitCount += hitCount;
-                    if (hitCount > 0) {
-                        // update search dialog
-                        messageArguments = new Object[]{
-                                String.valueOf((current + 1)),
-                                hitCount, hitCount};
-                        final String nodeText =
-                                searchResultMessageForm != null ? searchResultMessageForm.format(messageArguments) : "";
-                        final int currentPage = i;
-                        // add the node to the search panel tree but on the
-                        // awt thread.
-                        if (searchPanel != null) {
-                            SwingUtilities.invokeLater(() -> {
-                                // add the node
-                                searchPanel.addFoundTextEntry(
-                                        nodeText,
-                                        currentPage,
-                                        lineItems,
-                                        showPages);
-                                // try repainting the container
-                                viewContainer.repaint();
-                            });
-                        }
-                    }
-                    Thread.yield();
-                }
-                // update the dialog and end the task
-                setDialogMessage();
-
-                done = true;
-            } finally {
-                currentlySearching = false;
-            }
-
-            // repaint the view container
-            SwingUtilities.invokeLater(() -> viewContainer.validate());
+    @Override
+    protected Void doInBackground() {
+        // break on bad input
+        if ("".equals(pattern) || " ".equals(pattern)) {
+            return null;
         }
+
+        // Extraction of text from pdf procedure
+        totalHitCount = 0;
+        current = 0;
+
+        // get instance of the search controller
+        DocumentSearchController searchController = controller.getDocumentSearchController();
+        if (!cumulative) {
+            searchController.clearAllSearchHighlight();
+        }
+        searchController.addSearchTerm(pattern, caseSensitive, wholeWord, regex);
+
+        Document document = controller.getDocument();
+        // iterate over each page in the document
+        for (int i = 0; i < document.getNumberOfPages(); i++) {
+            // break if needed
+            if (isCancelled()) {
+                setDialogMessage();
+                break;
+            }
+            // Update task information
+            current = i;
+
+            // update search message in search pane.
+            Object[] messageArguments = {String.valueOf((current + 1)), lengthOfTask, lengthOfTask};
+            if (searchingMessageForm != null) {
+                dialogMessage = searchingMessageForm.format(messageArguments);
+            }
+
+            // one page is initialized we will also search for annotation if selected.
+            final List<LineText> matchLineItems = searchController.searchHighlightPage(current, WORD_PADDING);
+            int hitCount = matchLineItems.size();
+            // update total hit count
+            totalHitCount += hitCount;
+            if (isCancelled()) {
+                break;
+            }
+            if (hitCount > 0) {
+                // update search dialog
+                messageArguments = new Object[]{String.valueOf((current + 1)), hitCount, hitCount};
+                final String nodeText =
+                        searchResultMessageForm != null ? searchResultMessageForm.format(messageArguments) : "";
+                // add the node to the search panel tree
+                if (searchPanel != null) {
+                    publish(new TextResult(matchLineItems, nodeText, i));
+                }
+            } else {
+                publish(new SearchResult());
+            }
+            // search comments
+            if (comments) {
+                if (isCancelled()) {
+                    break;
+                }
+                ArrayList<MarkupAnnotation> matchMarkupAnnotations = searchController.searchComments(current);
+            }
+        }
+        // outlines and destination are outside the page tree so we search for them seperately
+        if (outlines) {
+            if (isCancelled()) {
+                return null;
+            }
+            ArrayList<Outlines> outlinesMatches = searchController.searchOutlines();
+            // todo publish outlines hits
+        }
+        if (destinations) {
+            if (isCancelled()) {
+                return null;
+            }
+            ArrayList<Destination> destinationMatches = searchController.searchDestinations();
+            // todo publish destinations hits.
+        }
+        // update the dialog and end the task
+        setDialogMessage();
+        return null;
     }
 
-    /**
-     * Gets the message that should be displayed when the task has completed.
-     *
-     * @return search completed or stopped final message.
-     */
-    public String getFinalMessage() {
-        setDialogMessage();
-        return dialogMessage;
+    @Override
+    protected void process(List<SearchResult> chunks) {
+
+        for (SearchResult searchResult : chunks) {
+            if (isCancelled()) {
+                break;
+            }
+            if (searchResult instanceof CommentsResult) {
+                //todo
+            } else if (searchResult instanceof TextResult) {
+                TextResult textResult = (TextResult) searchResult;
+                searchPanel.addFoundTextEntry(
+                        textResult.nodeText,
+                        textResult.currentPage,
+                        textResult.lineItems,
+                        showPages);
+            } else if (searchResult instanceof OutlineResult) {
+                //todo
+            } else if (searchResult instanceof DestinationResult) {
+                // todo
+            }
+        }
+        viewContainer.repaint();
+        // update the dialog messages.
+        searchPanel.updateProgressControls(dialogMessage);
+    }
+
+    @Override
+    protected void done() {
+        searchPanel.updateProgressControls(dialogMessage);
+        viewContainer.validate();
     }
 
     /**
      * Utility method for setting the dialog message.
      */
     private void setDialogMessage() {
-
         // Build Internationalized plural phrase.
-
-        Object[] messageArguments = {String.valueOf((current + 1)),
-                (current + 1), totalHitCount};
+        Object[] messageArguments = {String.valueOf((current + 1)), (current + 1), totalHitCount};
         if (searchResultMessageForm != null) {
             dialogMessage = searchCompletionMessageForm.format(messageArguments);
+        }
+    }
+
+    class SearchResult {
+        String nodeText;
+    }
+
+    class TextResult extends SearchResult {
+        List<LineText> lineItems;
+        int currentPage;
+
+        TextResult(List<LineText> lineItems, String nodeText, int currentPage) {
+            this.lineItems = lineItems;
+            this.nodeText = nodeText;
+            this.currentPage = currentPage;
+        }
+    }
+
+    class CommentsResult extends TextResult {
+        CommentsResult(List<LineText> lineItems, String nodeText, int currentPage) {
+            super(lineItems, nodeText, currentPage);
+        }
+    }
+
+    class OutlineResult extends SearchResult {
+        OutlineResult(String nodeText) {
+            this.nodeText = nodeText;
+        }
+    }
+
+    class DestinationResult extends SearchResult {
+        DestinationResult(String nodeText) {
+            this.nodeText = nodeText;
         }
     }
 

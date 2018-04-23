@@ -15,9 +15,7 @@
  */
 package org.icepdf.ri.common.fonts;
 
-import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.fonts.Font;
-import org.icepdf.ri.common.AbstractTask;
 import org.icepdf.ri.common.AbstractWorkerPanel;
 import org.icepdf.ri.common.views.Controller;
 
@@ -35,9 +33,6 @@ public class FontHandlerPanel extends AbstractWorkerPanel {
     private MessageFormat encodingMessageForm;
     private MessageFormat actualTypeMessageForm;
     private MessageFormat actualFontMessageForm;
-
-    // task to complete in separate thread
-    private AbstractTask<FindFontsTask> findFontTask;
 
     public FontHandlerPanel(Controller controller) {
         super(controller);
@@ -73,27 +68,37 @@ public class FontHandlerPanel extends AbstractWorkerPanel {
         buildUI();
 
         // start the task and the timer
-        findFontTask = new FindFontsTask(this, controller, messageBundle);
-        workerTask = findFontTask;
-        findFontTask.getTask().go();
+        workerTask = new FindFontsTask(this, controller, messageBundle);
+        ;
+        workerTask.execute();
 
-        progressBar.setMaximum(findFontTask.getLengthOfTask());
+    }
+
+    @Override
+    public void startProgressControls(int lengthOfTask) {
+        progressBar.setMaximum(lengthOfTask);
         progressBar.setVisible(true);
         progressLabel.setVisible(true);
-
-        timer.start();
     }
 
     @Override
-    public void disposeDocument() {
-        super.disposeDocument();
-        if (findFontTask != null && findFontTask.isCurrentlyRunning()) findFontTask.stop();
+    public void updateProgressControls(int progress) {
+        progressBar.setValue(progress);
     }
 
+    @Override
+    public void updateProgressControls(int progress, String label) {
+
+    }
 
     @Override
-    public void selectTreeNodeUserObject(Object userObject) {
+    public void updateProgressControls(String label) {
 
+    }
+
+    public void endProgressControls() {
+        progressBar.setVisible(false);
+        progressLabel.setVisible(false);
     }
 
     @Override
@@ -101,13 +106,17 @@ public class FontHandlerPanel extends AbstractWorkerPanel {
 
     }
 
+    @Override
+    public void selectTreeNodeUserObject(Object userObject) {
+
+    }
 
     /**
      * Adds a new node item to the treeModel.
      *
      * @param font font used to build node properties.
      */
-    public void addFoundEntry(Font font) {
+    void addFoundEntry(Font font) {
         DefaultMutableTreeNode fontNode = new DefaultMutableTreeNode(font.getBaseFont(), true);
         // add type sub node for type
         insertNode(font.getSubType(), typeMessageForm, fontNode);
@@ -156,21 +165,4 @@ public class FontHandlerPanel extends AbstractWorkerPanel {
                 parent.getChildCount());
     }
 
-    /**
-     * Utility for getting the document title.
-     *
-     * @return document title, if non title then a simple search results
-     * label is returned;
-     */
-    private String getDocumentTitle() {
-        String documentTitle = null;
-        Document document = controller.getDocument();
-        if (document != null && document.getInfo() != null) {
-            documentTitle = document.getInfo().getTitle();
-        }
-        if ((documentTitle == null) || (documentTitle.trim().length() == 0)) {
-            return null;
-        }
-        return documentTitle;
-    }
 }
