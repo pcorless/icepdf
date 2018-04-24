@@ -60,6 +60,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
     private boolean showPages;
     private boolean regex;
     private boolean r2L;
+    private boolean text;
     private boolean comments;
     private boolean outlines;
     private boolean destinations;
@@ -85,6 +86,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         regex = builder.regex;
         showPages = builder.showPages;
         r2L = builder.r2L;
+        text = builder.text;
         comments = builder.comments;
         outlines = builder.outlines;
         destinations = builder.destinations;
@@ -286,6 +288,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         private boolean showPages;
         private boolean r2L;
         private boolean regex;
+        private boolean text;
         private boolean comments;
         private boolean outlines;
         private boolean destinations;
@@ -327,6 +330,11 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
 
         public Builder setRegex(boolean regex) {
             this.regex = regex;
+            return this;
+        }
+
+        public Builder setText(boolean text) {
+            this.text = text;
             return this;
         }
 

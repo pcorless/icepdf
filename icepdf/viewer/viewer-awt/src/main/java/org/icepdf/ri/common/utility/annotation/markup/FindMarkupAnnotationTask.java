@@ -135,6 +135,9 @@ public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
                         ArrayList<Reference> annotationReferences = page.getAnnotationReferences();
                         if (annotationReferences != null && annotationReferences.size() > 0) {
                             for (Object annotationReference : annotationReferences) {
+                                if (isCancelled()) {
+                                    break;
+                                }
                                 Object annotation = library.getObject(annotationReference);
                                 if (annotation instanceof MarkupAnnotation) {
                                     MarkupAnnotation markupAnnotation = (MarkupAnnotation) annotation;

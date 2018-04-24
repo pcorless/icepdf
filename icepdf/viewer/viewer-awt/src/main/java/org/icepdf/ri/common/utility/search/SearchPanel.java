@@ -106,6 +106,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     private JCheckBoxMenuItem cumulativeCheckbox;
     private JCheckBoxMenuItem showPagesCheckbox;
     private JCheckBoxMenuItem commentsCheckbox;
+    private JCheckBoxMenuItem textCheckbox;
     private JCheckBoxMenuItem outlinesCheckbox;
     private JCheckBoxMenuItem destinationsCheckbox;
     // page index of the last added node.
@@ -113,7 +114,6 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
 
     // show progress of search
     private JProgressBar progressBar;
-
     // task to complete in separate thread
     private SearchTextTask searchTextTask;
 
@@ -254,6 +254,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         boolean isCaseSensitive = preferences.getBoolean(PROPERTY_SEARCH_PANEL_CASE_SENSITIVE_ENABLED, false);
         boolean isCumulative = preferences.getBoolean(PROPERTY_SEARCH_PANEL_CUMULATIVE_ENABLED, false);
 
+        boolean isText = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SEARCH_TEXT_ENABLED, true);
         boolean isComments = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SEARCH_COMMENTS_ENABLED, false);
         boolean isDestinations = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SEARCH_DEST_ENABLED, false);
         boolean isOutlines = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SEARCH_OUTLINES_ENABLED, false);
@@ -281,6 +282,9 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         cumulativeCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
                 "viewer.utilityPane.search.cumlitiveCheckbox.label"), isCumulative);
         cumulativeCheckbox.addActionListener(this);
+        textCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
+                "viewer.utilityPane.search.text.label"), isText);
+        textCheckbox.addActionListener(this);
         commentsCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
                 "viewer.utilityPane.search.comments.label"), isComments);
         commentsCheckbox.addActionListener(this);
@@ -298,6 +302,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         filterDropDownButton.add(caseSensitiveCheckbox);
         filterDropDownButton.add(cumulativeCheckbox);
         filterDropDownButton.addSeparator();
+        filterDropDownButton.add(textCheckbox);
         filterDropDownButton.add(commentsCheckbox);
         filterDropDownButton.add(destinationsCheckbox);
         filterDropDownButton.add(outlinesCheckbox);
@@ -535,7 +540,9 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     }
 
     private void insertSectionNodes() {
-        rootTreeNode.insert(textTreeNode, rootTreeNode.getChildCount());
+        if (textCheckbox.isSelected()) {
+            rootTreeNode.insert(textTreeNode, rootTreeNode.getChildCount());
+        }
         if (commentsCheckbox.isSelected()) {
             rootTreeNode.insert(commentsTreeNode, rootTreeNode.getChildCount());
         }
@@ -629,6 +636,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                 .setCumulative(cumulativeCheckbox.isSelected())
                 .setShowPages(showPagesCheckbox.isSelected())
                 .setRegex(regexCheckbox.isSelected())
+                .setText(textCheckbox.isSelected())
                 .setDestinations(destinationsCheckbox.isSelected())
                 .setOutlines(outlinesCheckbox.isSelected())
                 .setComments(commentsCheckbox.isSelected()).build();
@@ -777,6 +785,9 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
             preferences.putBoolean(PROPERTY_SEARCH_PANEL_SEARCH_OUTLINES_ENABLED, outlinesCheckbox.isSelected());
         } else if (source == destinationsCheckbox) {
             preferences.putBoolean(PROPERTY_SEARCH_PANEL_SEARCH_DEST_ENABLED, destinationsCheckbox.isSelected());
+
+        } else if (source == textCheckbox) {
+            preferences.putBoolean(PROPERTY_SEARCH_PANEL_SEARCH_TEXT_ENABLED, textCheckbox.isSelected());
 
         } else if (source == showPagesCheckbox) {
             if (event.getSource() != null) {

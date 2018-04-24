@@ -68,9 +68,9 @@ public class AnnotationTreeNode extends AbstractAnnotationTreeNode<Annotation> {
             while (matcher.find()) {
                 int start = matcher.start();
                 int end = matcher.end();
-                stringBuilder.append(text.substring(lastEnd, start));
+                stringBuilder.append(text, lastEnd, start);
                 stringBuilder.append(SearchPanel.BOLD_TAG_START);
-                stringBuilder.append(text.substring(start, end));
+                stringBuilder.append(text, start, end);
                 stringBuilder.append(SearchPanel.BOLD_TAG_END);
                 lastEnd = end;
             }
