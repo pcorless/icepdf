@@ -2002,7 +2002,7 @@ public class SwingViewBuilder {
         splitpane.setRightComponent(viewController.getViewContainer());
 
         // apply previously set divider location, default is -1
-        int dividerLocation = propertiesManager.checkAndStoreIntProperty(
+        int dividerLocation = propertiesManager.getPreferences().getInt(
                 PropertiesManager.PROPERTY_DIVIDER_LOCATION, 260);
         splitpane.setDividerLocation(dividerLocation);
 
