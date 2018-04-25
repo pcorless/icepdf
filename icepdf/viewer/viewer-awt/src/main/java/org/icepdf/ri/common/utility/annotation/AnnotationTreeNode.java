@@ -37,10 +37,12 @@ public class AnnotationTreeNode extends AbstractAnnotationTreeNode<Annotation> {
 
     private Annotation annotation;
     private Pattern searchPattern;
+    private boolean caseSensitive;
 
-    public AnnotationTreeNode(Annotation annotation, ResourceBundle messageBundle, Pattern searchPattern) {
+    public AnnotationTreeNode(Annotation annotation, ResourceBundle messageBundle, Pattern searchPattern, boolean caseSensitive) {
         this.annotation = annotation;
         this.searchPattern = searchPattern;
+        this.caseSensitive = caseSensitive;
         // setup label.
         applyMessage(annotation, messageBundle);
     }
@@ -55,7 +57,7 @@ public class AnnotationTreeNode extends AbstractAnnotationTreeNode<Annotation> {
      * @param messageBundle ri message bundle
      */
     public void applyMessage(Annotation markupAnnotation, ResourceBundle messageBundle) {
-        String text = markupAnnotation.getContents();
+        String text = caseSensitive ? markupAnnotation.getContents() : markupAnnotation.getContents().toLowerCase();
         this.annotation = markupAnnotation;
         // todo trim to a specific width.
         if (text == null || text.length() == 0) {

@@ -61,7 +61,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
     private boolean isRegex;
     private boolean isCaseSensitive;
 
-    public MarkupAnnotationHandlerPanel(Controller controller, MarkupAnnotationPanel parentMarkupAnnotationPanel) {
+    MarkupAnnotationHandlerPanel(Controller controller, MarkupAnnotationPanel parentMarkupAnnotationPanel) {
         super(controller);
         this.parentMarkupAnnotationPanel = parentMarkupAnnotationPanel;
 
@@ -165,7 +165,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
         }
     }
 
-    public AnnotationComponent getSelectedAnnotation() {
+    AnnotationComponent getSelectedAnnotation() {
         TreePath selectedTreePath = tree.getSelectionPath();
         if (selectedTreePath != null) {
             Object node = selectedTreePath.getLastPathComponent();
@@ -180,7 +180,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
     }
 
 
-    protected AnnotationTreeNode findAnnotationTreeNode(TreeNode treeNode, MarkupAnnotation markupAnnotation) {
+    private AnnotationTreeNode findAnnotationTreeNode(TreeNode treeNode, MarkupAnnotation markupAnnotation) {
         for (int i = 0; i < treeNode.getChildCount(); i++) {
             Object currentChild = treeNode.getChildAt(i);
             if (currentChild instanceof AnnotationTreeNode) {
@@ -230,7 +230,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
         }
     }
 
-    public void setProgressLabel(String label) {
+    void setProgressLabel(String label) {
         progressLabel.setText(label);
     }
 
@@ -263,7 +263,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
 
     @Override
     protected void buildWorkerTaskUI() {
-        // First have to stop any existing validation processes.
+        // First have to stop any existing validation processes.`
         stopWorkerTask();
         Document document = controller.getDocument();
         if (document != null) {
@@ -301,7 +301,8 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
      */
     private void descendFormTree(DefaultMutableTreeNode currentRoot, Object annotationObject, Pattern searchPattern) {
         if (!(annotationObject instanceof AbstractWidgetAnnotation) && annotationObject instanceof Annotation) {
-            AnnotationTreeNode annotationTreeNode = new AnnotationTreeNode((Annotation) annotationObject, messageBundle, searchPattern);
+            AnnotationTreeNode annotationTreeNode =
+                    new AnnotationTreeNode((Annotation) annotationObject, messageBundle, searchPattern, isCaseSensitive);
             treeModel.insertNodeInto(annotationTreeNode, currentRoot, currentRoot.getChildCount());
         }
     }

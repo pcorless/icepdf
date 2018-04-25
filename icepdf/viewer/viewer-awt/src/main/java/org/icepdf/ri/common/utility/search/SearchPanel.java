@@ -16,6 +16,8 @@
 package org.icepdf.ri.common.utility.search;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
@@ -25,22 +27,33 @@ import org.icepdf.ri.common.DropDownButton;
 import org.icepdf.ri.common.MutableDocument;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingViewBuilder;
+import org.icepdf.ri.common.utility.annotation.AnnotationCellRender;
+import org.icepdf.ri.common.utility.annotation.AnnotationTreeNode;
+import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.PageComponentSelector;
+import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.PropertiesManager;
-import org.icepdf.ri.util.SearchTextTask;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
-import javax.swing.tree.*;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.text.ChoiceFormat;
 import java.text.Format;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
@@ -110,7 +123,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     private JCheckBoxMenuItem outlinesCheckbox;
     private JCheckBoxMenuItem destinationsCheckbox;
     // page index of the last added node.
-    private int lastNodePageIndex;
+    private int lastTextNodePageIndex, lastCommentNodePageIndex;
 
     // show progress of search
     private JProgressBar progressBar;
@@ -210,20 +223,13 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         tree.setScrollsOnExpand(true);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         tree.addTreeSelectionListener(this);
+        tree.addMouseListener(new AnnotationNodeSelectionListener());
 
         // set look and feel to match outline style
-        DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
-        renderer.setOpenIcon(new ImageIcon(Images.get("page.gif")));
-        renderer.setClosedIcon(new ImageIcon(Images.get("page.gif")));
-        renderer.setLeafIcon(new ImageIcon(Images.get("page.gif")));
-        tree.setCellRenderer(renderer);
+        tree.setCellRenderer(new AnnotationCellRender());
 
         JScrollPane scrollPane = new JScrollPane(tree);
         scrollPane.setPreferredSize(new Dimension(150, 75));
-
-        // search Label
-//        JLabel searchLabel = new JLabel(messageBundle.getString(
-//                "viewer.utilityPane.search.searchText.label"));
 
         // search input field
         searchTextField = new JTextField("", 15);
@@ -324,9 +330,6 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         this.setLayout(new BorderLayout());
         this.add(searchPanel);
 
-        // add the search label
-//        addGB(searchPanel, searchLabel, 0, 0, 3, 1);
-
         // add the search input field
         constraints.insets = new Insets(1, 1, 1, 1);
         constraints.weightx = 1.0;
@@ -347,8 +350,6 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         // Add Results label
         constraints.insets = new Insets(1, 1, 1, 1);
         constraints.fill = GridBagConstraints.NONE;
-//        addGB(searchPanel, new JLabel(messageBundle.getString("viewer.utilityPane.search.results.label")),
-//                0, 3, 3, 1);
 
         // add the lit to scroll pane
         constraints.fill = GridBagConstraints.BOTH;
@@ -420,6 +421,10 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                         logger.finer("Page text retrieval interrupted.");
                     }
                 }
+            } else if (selectedNode instanceof AnnotationTreeNode) {
+                AnnotationTreeNode formNode = (AnnotationTreeNode) selectedNode;
+                Annotation annotation = formNode.getAnnotation();
+                PageComponentSelector.SelectAnnotationComponent(controller, annotation, false);
             }
         }
     }
@@ -427,19 +432,18 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     /**
      * Adds a new node item to the treeModel.
      *
-     * @param title       display title of tree item
-     * @param pageNumber  page number where the hit(s) occured
-     * @param textResults list of LineText items that match
-     * @param showPages   boolean to display or hide the page node
+     * @param textResult     search result
+     * @param searchTextTask search task conducting the gui build.
      */
-    public void addFoundTextEntry(String title, int pageNumber,
-                                  List<LineText> textResults,
-                                  boolean showPages) {
+    public void addFoundTextEntry(SearchTextTask.TextResult textResult, SearchTextTask searchTextTask) {
+        String title = textResult.nodeText;
+        int pageNumber = textResult.currentPage;
+        List<LineText> textResults = textResult.lineItems;
         // add the new results entry.
         if ((textResults != null) && (textResults.size() > 0)) {
             DefaultMutableTreeNode parentNode;
             // insert parent page number note.
-            if (showPages && lastNodePageIndex != pageNumber) {
+            if (searchTextTask.isCaseSensitive() && lastTextNodePageIndex != pageNumber) {
                 parentNode = new DefaultMutableTreeNode(
                         new FindEntry(title, pageNumber, null), true);
                 treeModel.insertNodeInto(parentNode, textTreeNode, textTreeNode.getChildCount());
@@ -456,16 +460,42 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
             }
 
             // expand the root node, we only do this once.
-            if (lastNodePageIndex == -1) {
+            if (lastTextNodePageIndex == -1) {
                 tree.expandPath(new TreePath(textTreeNode.getPath()));
             }
 
-            lastNodePageIndex = pageNumber;
+            lastTextNodePageIndex = pageNumber;
 
         }
     }
 
-    public void addFoundCommentEntry() {
+    public void addFoundCommentEntry(SearchTextTask.CommentsResult comment, SearchTextTask searchTextTask) {
+        if (comment != null) {
+            int pageNumber = comment.currentPage;
+            DefaultMutableTreeNode parentNode;
+            if (searchTextTask.isShowPages() && lastCommentNodePageIndex != pageNumber) {
+                parentNode = new DefaultMutableTreeNode(
+                        new FindEntry(comment.nodeText, pageNumber, null), true);
+                treeModel.insertNodeInto(parentNode, commentsTreeNode, commentsTreeNode.getChildCount());
+            } else {
+                parentNode = commentsTreeNode;
+            }
+            // add the hits to the tree node.
+            ArrayList<MarkupAnnotation> annotations = comment.markupAnnotations;
+            for (MarkupAnnotation annotation : annotations) {
+                AnnotationTreeNode annotationTreeNode =
+                        new AnnotationTreeNode(annotation, messageBundle, searchTextTask.getSearchPattern(),
+                                searchTextTask.isCaseSensitive());
+                treeModel.insertNodeInto(annotationTreeNode, parentNode, parentNode.getChildCount());
+            }
+
+            // expand the root node, we only do this once.
+            if (lastCommentNodePageIndex == -1) {
+                tree.expandPath(new TreePath(commentsTreeNode.getPath()));
+            }
+            lastCommentNodePageIndex = pageNumber;
+
+        }
     }
 
     public void addFoundOutlineEntry() {
@@ -525,7 +555,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     private void resetTree() {
         tree.setSelectionPath(null);
         // rest node count
-        lastNodePageIndex = -1;
+        lastTextNodePageIndex = lastCommentNodePageIndex = -1;
 
         // clean up the children
         textTreeNode.removeAllChildren();
@@ -660,8 +690,13 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         controller.getDocumentViewController().getViewContainer().repaint();
     }
 
-    private void showTextNodePages() {
-        if ((textTreeNode != null) && (textTreeNode.getChildCount() > 0)) {
+    private void showAllNodePages() {
+        showNodePages(textTreeNode);
+        showNodePages(commentsTreeNode);
+    }
+
+    private void showNodePages(DefaultMutableTreeNode node) {
+        if (node != null && node.getChildCount() > 0) {
             DefaultMutableTreeNode currentChild; // the current node we're handling
             DefaultMutableTreeNode storedChildParent = null; // the newest page node we're adding to
             int newPageNumber; // page number of the current result node
@@ -670,12 +705,17 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
             Object[] messageArguments; // arguments used for formatting the labels
 
             // Loop through the results tree
-            for (int i = 0; i < textTreeNode.getChildCount(); i++) {
-                currentChild = (DefaultMutableTreeNode) textTreeNode.getChildAt(i);
+            for (int i = 0; i < node.getChildCount(); i++) {
+                currentChild = (DefaultMutableTreeNode) node.getChildAt(i);
 
                 // Ensure we have a FindEntry object
-                if (currentChild.getUserObject() instanceof FindEntry) {
-                    newPageNumber = ((FindEntry) currentChild.getUserObject()).getPageNumber();
+                if (currentChild.getUserObject() instanceof FindEntry ||
+                        currentChild instanceof AnnotationTreeNode) {
+                    if (currentChild.getUserObject() instanceof FindEntry) {
+                        newPageNumber = ((FindEntry) currentChild.getUserObject()).getPageNumber();
+                    } else {//if (currentChild instanceof AnnotationTreeNode){
+                        newPageNumber = ((AnnotationTreeNode) currentChild).getAnnotation().getPageIndex();
+                    }
 
                     // Check if the page number for the current node matches the stored number
                     // If it does we will want to add the node to the existing page node,
@@ -723,33 +763,35 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                         currentChild.setParent(storedChildParent);
 
                         // Put the new page node into the overall tree
-                        treeModel.insertNodeInto(storedChildParent, textTreeNode, i);
+                        treeModel.insertNodeInto(storedChildParent, node, i);
                     }
                 }
             }
         }
     }
 
-    private void hideTextNodePages() {
-        if ((textTreeNode != null) && (textTreeNode.getChildCount() > 0)) {
+    private void hideAllNodePages() {
+        hideNodePages(textTreeNode);
+        hideNodePages(commentsTreeNode);
+    }
+
+    private void hideNodePages(DefaultMutableTreeNode node) {
+        if ((node != null) && (node.getChildCount() > 0)) {
             // Now add the children back into the tree, this time without parent nodes
             DefaultMutableTreeNode currentChild;
-            int rootChildCount = textTreeNode.getChildCount();
-
+            int rootChildCount = node.getChildCount();
             // Loop through all children page nodes and explode the children out into leafs under the root node
             // Then we'll remove the parent nodes so we're just left with leafs under the root
             for (int i = 0; i < rootChildCount; i++) {
-                currentChild = (DefaultMutableTreeNode) textTreeNode.getChildAt(0);
-
+                // get the page label
+                currentChild = (DefaultMutableTreeNode) node.getChildAt(0);
                 if (currentChild.getChildCount() > 0) {
                     // Get any subchildren and reinsert them as plain leafs on the root
                     // We need to wrap the user object in a new mutable tree node to stop any conflicts with parent indexes
-                    for (int j = 0; j < currentChild.getChildCount(); j++) {
+                    for (int j = 0, max = currentChild.getChildCount(); j < max; j++) {
                         treeModel.insertNodeInto(
-                                new DefaultMutableTreeNode(
-                                        ((DefaultMutableTreeNode) currentChild.getChildAt(j)).getUserObject(),
-                                        false),
-                                textTreeNode, textTreeNode.getChildCount());
+                                (DefaultMutableTreeNode) currentChild.getChildAt(0),
+                                node, node.getChildCount());
                     }
                 }
                 treeModel.removeNodeFromParent(currentChild);
@@ -785,17 +827,15 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
             preferences.putBoolean(PROPERTY_SEARCH_PANEL_SEARCH_OUTLINES_ENABLED, outlinesCheckbox.isSelected());
         } else if (source == destinationsCheckbox) {
             preferences.putBoolean(PROPERTY_SEARCH_PANEL_SEARCH_DEST_ENABLED, destinationsCheckbox.isSelected());
-
         } else if (source == textCheckbox) {
             preferences.putBoolean(PROPERTY_SEARCH_PANEL_SEARCH_TEXT_ENABLED, textCheckbox.isSelected());
-
         } else if (source == showPagesCheckbox) {
             if (event.getSource() != null) {
                 preferences.putBoolean(PROPERTY_SEARCH_PANEL_SHOW_PAGES_ENABLED, showPagesCheckbox.isSelected());
                 if (showPagesCheckbox.isSelected()) {
-                    showTextNodePages();
+                    showAllNodePages();
                 } else {
-                    hideTextNodePages();
+                    hideAllNodePages();
                 }
             }
         }
@@ -924,6 +964,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
             progressBar.setVisible(false);
         }
     }
+
     /**
      * An Entry objects represents the found pages
      */
@@ -977,6 +1018,39 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
          */
         WordText getWordText() {
             return wordText;
+        }
+    }
+
+    /**
+     * NodeSelectionListener handles the root node context menu creation display and command execution.
+     */
+    private class AnnotationNodeSelectionListener extends MouseAdapter {
+
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            int x = e.getX();
+            int y = e.getY();
+            int row = tree.getRowForLocation(x, y);
+            TreePath path = tree.getPathForRow(row);
+            if (path != null) {
+                Object node = path.getLastPathComponent();
+                if (node instanceof AnnotationTreeNode) {
+                    AnnotationTreeNode formNode = (AnnotationTreeNode) node;
+                    // on double click, navigate to page and set focus of component.
+                    Annotation annotation = formNode.getAnnotation();
+                    AnnotationComponent comp = PageComponentSelector.SelectAnnotationComponent(controller, annotation, false);
+                    if (comp instanceof MarkupAnnotationComponent) {
+                        if (e.getButton() == MouseEvent.BUTTON1) {
+                            DocumentViewController documentViewController = controller.getDocumentViewController();
+                            // toggle the popup annotations visibility on double click
+                            MarkupAnnotationComponent markupAnnotationComponent = (MarkupAnnotationComponent) comp;
+                            if (e.getClickCount() == 2) {
+                                markupAnnotationComponent.requestFocus();
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

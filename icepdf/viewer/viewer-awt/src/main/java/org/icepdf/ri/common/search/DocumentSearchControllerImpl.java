@@ -15,15 +15,14 @@
  */
 package org.icepdf.ri.common.search;
 
-import org.icepdf.core.pobjects.Destination;
-import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.pobjects.Outlines;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.search.SearchTerm;
+import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.SwingController;
 
 import java.awt.geom.Rectangle2D;
@@ -160,8 +159,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * list is returned.
      */
     public ArrayList<LineText> searchHighlightPage(int pageIndex, int wordPadding) {
-        // get search terms from model and search for each occurrence.
-        Collection<SearchTerm> terms = searchModel.getSearchTerms();
+
 
         // search hit list
         ArrayList<LineText> searchHits = new ArrayList<>();
@@ -174,6 +172,8 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             return searchHits;
         }
 
+        // get search terms from model and search for each occurrence.
+        Collection<SearchTerm> terms = searchModel.getSearchTerms();
         // we need to do the search for  each term.
         SearchTerm term;
         for (int j = 0; j < terms.size(); j++) {
@@ -331,7 +331,44 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
 
     @Override
     public ArrayList<MarkupAnnotation> searchComments(int pageIndex) {
-        return null;
+        if (document == null) document = viewerController.getDocument();
+        Page page = document.getPageTree().getPage(pageIndex);
+        Library library = document.getCatalog().getLibrary();
+        ArrayList<Reference> annotationReferences = page.getAnnotationReferences();
+        ArrayList<MarkupAnnotation> foundAnnotations = new ArrayList<>();
+        if (annotationReferences != null && annotationReferences.size() > 0) {
+            // get search terms from model and search for each occurrence.
+            Collection<SearchTerm> terms = searchModel.getSearchTerms();
+            // we need to do the search for  each term.
+            if (terms.size() > 0) {
+                SearchTerm term = ((ArrayList<SearchTerm>) terms).get(0);
+                Pattern searchPattern = term.getRegexPattern();
+                String searchTerm = term.getTerm();
+                for (Object annotationReference : annotationReferences) {
+                    Object annotation = library.getObject(annotationReference);
+                    if (annotation instanceof MarkupAnnotation) {
+                        boolean found = false;
+                        // app search regex
+                        if (term.isRegex() && searchPattern != null) {
+                            Matcher matcher = searchPattern.matcher(
+                                    ((MarkupAnnotation) annotation).getContents());
+                            found = matcher.find();
+                        } else if (searchTerm != null) {
+                            String annotationText = ((MarkupAnnotation) annotation).getContents();
+                            if (term.isCaseSensitive() && annotationText != null) {
+                                found = annotationText.contains(searchTerm);
+                            } else if (annotationText != null) {
+                                found = annotationText.toLowerCase().contains(searchTerm.toLowerCase());
+                            }
+                        }
+                        if (found) {
+                            foundAnnotations.add((MarkupAnnotation) annotation);
+                        }
+                    }
+                }
+            }
+        }
+        return foundAnnotations;
     }
 
     @Override

@@ -13,7 +13,7 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.ri.util;
+package org.icepdf.ri.common.utility.search;
 
 import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
@@ -21,7 +21,6 @@ import org.icepdf.core.pobjects.Outlines;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.search.DocumentSearchController;
-import org.icepdf.ri.common.utility.search.SearchPanel;
 import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
@@ -29,6 +28,7 @@ import java.awt.*;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * This class is a utility for searching text in a PDF document.  This is only
@@ -54,6 +54,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
     private int totalHitCount;
     // String to search for and parameters from gui
     private String pattern = "";
+    private Pattern searchPattern;
     private boolean wholeWord;
     private boolean caseSensitive;
     private boolean cumulative;
@@ -79,6 +80,9 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
     private SearchTextTask(Builder builder) {
         controller = builder.controller;
         pattern = builder.pattern;
+        if (pattern != null && !pattern.isEmpty()) {
+            searchPattern = Pattern.compile(isCaseSensitive() ? pattern : pattern.toLowerCase());
+        }
 
         wholeWord = builder.wholeWord;
         caseSensitive = builder.caseSensitive;
@@ -148,34 +152,40 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
             }
 
             // one page is initialized we will also search for annotation if selected.
-            final List<LineText> matchLineItems = searchController.searchHighlightPage(current, WORD_PADDING);
-            int hitCount = matchLineItems.size();
-            // update total hit count
-            totalHitCount += hitCount;
-            if (isCancelled()) {
-                break;
-            }
-            if (hitCount > 0) {
-                // update search dialog
-                messageArguments = new Object[]{String.valueOf((current + 1)), hitCount, hitCount};
-                final String nodeText =
-                        searchResultMessageForm != null ? searchResultMessageForm.format(messageArguments) : "";
-                // add the node to the search panel tree
-                if (searchPanel != null) {
-                    publish(new TextResult(matchLineItems, nodeText, i));
-                }
-            } else {
-                publish(new SearchResult());
-            }
-            // search comments
-            if (comments) {
+            if (text) {
+                final List<LineText> matchLineItems = searchController.searchHighlightPage(current, WORD_PADDING);
+                int hitCount = matchLineItems.size();
+                // update total hit count
+                totalHitCount += hitCount;
                 if (isCancelled()) {
                     break;
                 }
+                if (hitCount > 0) {
+                    // update search dialog
+                    messageArguments = new Object[]{String.valueOf((current + 1)), hitCount, hitCount};
+                    String nodeText =
+                            searchResultMessageForm != null ? searchResultMessageForm.format(messageArguments) : "";
+                    // add the node to the search panel tree
+                    if (searchPanel != null) {
+                        publish(new TextResult(matchLineItems, nodeText, i));
+                    }
+                } else {
+                    publish(new SearchResult());
+                }
+            }
+            // search comments,  page is already initialized, so we'll take advantage of that.
+            if (comments) {
                 ArrayList<MarkupAnnotation> matchMarkupAnnotations = searchController.searchComments(current);
+                if (matchMarkupAnnotations != null && matchMarkupAnnotations.size() > 0) {
+                    int hitCount = matchMarkupAnnotations.size();
+                    messageArguments = new Object[]{String.valueOf((current + 1)), hitCount, hitCount};
+                    final String nodeText =
+                            searchResultMessageForm != null ? searchResultMessageForm.format(messageArguments) : "";
+                    publish(new CommentsResult(matchMarkupAnnotations, nodeText, current));
+                }
             }
         }
-        // outlines and destination are outside the page tree so we search for them seperately
+        // outlines and destination are outside the page tree so we search for them separately
         if (outlines) {
             if (isCancelled()) {
                 return null;
@@ -203,14 +213,11 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
                 break;
             }
             if (searchResult instanceof CommentsResult) {
-                //todo
+                CommentsResult comment = (CommentsResult) searchResult;
+                searchPanel.addFoundCommentEntry(comment, this);
             } else if (searchResult instanceof TextResult) {
                 TextResult textResult = (TextResult) searchResult;
-                searchPanel.addFoundTextEntry(
-                        textResult.nodeText,
-                        textResult.currentPage,
-                        textResult.lineItems,
-                        showPages);
+                searchPanel.addFoundTextEntry(textResult, this);
             } else if (searchResult instanceof OutlineResult) {
                 //todo
             } else if (searchResult instanceof DestinationResult) {
@@ -239,8 +246,52 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         }
     }
 
+    public String getPattern() {
+        return pattern;
+    }
+
+    public Pattern getSearchPattern() {
+        return searchPattern;
+    }
+
+    public boolean isWholeWord() {
+        return wholeWord;
+    }
+
+    public boolean isCaseSensitive() {
+        return caseSensitive;
+    }
+
+    public boolean isCumulative() {
+        return cumulative;
+    }
+
+    public boolean isShowPages() {
+        return showPages;
+    }
+
+    public boolean isRegex() {
+        return regex;
+    }
+
+    public boolean isText() {
+        return text;
+    }
+
+    public boolean isComments() {
+        return comments;
+    }
+
+    public boolean isOutlines() {
+        return outlines;
+    }
+
+    public boolean isDestinations() {
+        return destinations;
+    }
+
     class SearchResult {
-        String nodeText;
+        public String nodeText;
     }
 
     class TextResult extends SearchResult {
@@ -254,9 +305,14 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         }
     }
 
-    class CommentsResult extends TextResult {
-        CommentsResult(List<LineText> lineItems, String nodeText, int currentPage) {
-            super(lineItems, nodeText, currentPage);
+    class CommentsResult extends SearchResult {
+        ArrayList<MarkupAnnotation> markupAnnotations;
+        int currentPage;
+
+        CommentsResult(ArrayList<MarkupAnnotation> markupAnnotations, String nodeText, int currentPage) {
+            this.markupAnnotations = markupAnnotations;
+            this.nodeText = nodeText;
+            this.currentPage = currentPage;
         }
     }
 

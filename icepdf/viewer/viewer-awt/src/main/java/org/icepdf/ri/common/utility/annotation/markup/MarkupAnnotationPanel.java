@@ -558,14 +558,15 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         // setup search pattern
         Pattern searchPattern = null;
         String searchTerm = searchTextField.getText();
+        boolean caseSensitive = caseSensitiveMenutItem.isSelected();
         if (searchTerm != null && !searchTerm.isEmpty()) {
-            searchPattern = Pattern.compile(searchTerm);
+            searchPattern = Pattern.compile(caseSensitive ? searchTerm : searchTerm.toLowerCase());
             // todo we can add search flags at a later date, via drop down on search or checkboxes.
         }
 
         markupAnnotationHandlerPanel.sortAndFilterAnnotationData(
                 searchPattern, sortType, filterType, filterAuthor, filterColor,
-                regexMenuItem.isSelected(), caseSensitiveMenutItem.isSelected());
+                regexMenuItem.isSelected(), caseSensitive);
     }
 
     @Override
