@@ -15,11 +15,11 @@
  */
 package org.icepdf.ri.common.utility.search;
 
-import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.pobjects.Outlines;
+import org.icepdf.core.pobjects.OutlineItem;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.graphics.text.LineText;
+import org.icepdf.core.search.DestinationResult;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.ri.common.views.Controller;
 
@@ -136,52 +136,54 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
 
         Document document = controller.getDocument();
         // iterate over each page in the document
-        for (int i = 0; i < document.getNumberOfPages(); i++) {
-            // break if needed
-            if (isCancelled()) {
-                setDialogMessage();
-                break;
-            }
-            // Update task information
-            current = i;
-
-            // update search message in search pane.
-            Object[] messageArguments = {String.valueOf((current + 1)), lengthOfTask, lengthOfTask};
-            if (searchingMessageForm != null) {
-                dialogMessage = searchingMessageForm.format(messageArguments);
-            }
-
-            // one page is initialized we will also search for annotation if selected.
-            if (text) {
-                final List<LineText> matchLineItems = searchController.searchHighlightPage(current, WORD_PADDING);
-                int hitCount = matchLineItems.size();
-                // update total hit count
-                totalHitCount += hitCount;
+        if (text || comments) {
+            for (int i = 0; i < document.getNumberOfPages(); i++) {
+                // break if needed
                 if (isCancelled()) {
+                    setDialogMessage();
                     break;
                 }
-                if (hitCount > 0) {
-                    // update search dialog
-                    messageArguments = new Object[]{String.valueOf((current + 1)), hitCount, hitCount};
-                    String nodeText =
-                            searchResultMessageForm != null ? searchResultMessageForm.format(messageArguments) : "";
-                    // add the node to the search panel tree
-                    if (searchPanel != null) {
-                        publish(new TextResult(matchLineItems, nodeText, i));
-                    }
-                } else {
-                    publish(new SearchResult());
+                // Update task information
+                current = i;
+
+                // update search message in search pane.
+                Object[] messageArguments = {String.valueOf((current + 1)), lengthOfTask, lengthOfTask};
+                if (searchingMessageForm != null) {
+                    dialogMessage = searchingMessageForm.format(messageArguments);
                 }
-            }
-            // search comments,  page is already initialized, so we'll take advantage of that.
-            if (comments) {
-                ArrayList<MarkupAnnotation> matchMarkupAnnotations = searchController.searchComments(current);
-                if (matchMarkupAnnotations != null && matchMarkupAnnotations.size() > 0) {
-                    int hitCount = matchMarkupAnnotations.size();
-                    messageArguments = new Object[]{String.valueOf((current + 1)), hitCount, hitCount};
-                    final String nodeText =
-                            searchResultMessageForm != null ? searchResultMessageForm.format(messageArguments) : "";
-                    publish(new CommentsResult(matchMarkupAnnotations, nodeText, current));
+
+                // one page is initialized we will also search for annotation if selected.
+                if (text) {
+                    final List<LineText> matchLineItems = searchController.searchHighlightPage(current, WORD_PADDING);
+                    int hitCount = matchLineItems.size();
+                    // update total hit count
+                    totalHitCount += hitCount;
+                    if (isCancelled()) {
+                        break;
+                    }
+                    if (hitCount > 0) {
+                        // update search dialog
+                        messageArguments = new Object[]{String.valueOf((current + 1)), hitCount, hitCount};
+                        String nodeText =
+                                searchResultMessageForm != null ? searchResultMessageForm.format(messageArguments) : "";
+                        // add the node to the search panel tree
+                        if (searchPanel != null) {
+                            publish(new TextResult(matchLineItems, nodeText, i));
+                        }
+                    } else {
+                        publish(new SearchResult());
+                    }
+                }
+                // search comments,  page is already initialized, so we'll take advantage of that.
+                if (comments) {
+                    ArrayList<MarkupAnnotation> matchMarkupAnnotations = searchController.searchComments(current);
+                    if (matchMarkupAnnotations != null && matchMarkupAnnotations.size() > 0) {
+                        int hitCount = matchMarkupAnnotations.size();
+                        messageArguments = new Object[]{String.valueOf((current + 1)), hitCount, hitCount};
+                        final String nodeText =
+                                searchResultMessageForm != null ? searchResultMessageForm.format(messageArguments) : "";
+                        publish(new CommentsResult(matchMarkupAnnotations, nodeText, current));
+                    }
                 }
             }
         }
@@ -190,15 +192,19 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
             if (isCancelled()) {
                 return null;
             }
-            ArrayList<Outlines> outlinesMatches = searchController.searchOutlines();
-            // todo publish outlines hits
+            ArrayList<OutlineItem> outlinesMatches = searchController.searchOutlines();
+            if (outlinesMatches != null && outlinesMatches.size() > 0) {
+                publish(new OutlineResult(outlinesMatches));
+            }
         }
         if (destinations) {
             if (isCancelled()) {
                 return null;
             }
-            ArrayList<Destination> destinationMatches = searchController.searchDestinations();
-            // todo publish destinations hits.
+            ArrayList<DestinationResult> destinationMatches = searchController.searchDestinations();
+            if (destinationMatches != null && destinationMatches.size() > 0) {
+                publish(new DestinationsResult(destinationMatches));
+            }
         }
         // update the dialog and end the task
         setDialogMessage();
@@ -219,9 +225,11 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
                 TextResult textResult = (TextResult) searchResult;
                 searchPanel.addFoundTextEntry(textResult, this);
             } else if (searchResult instanceof OutlineResult) {
-                //todo
-            } else if (searchResult instanceof DestinationResult) {
-                // todo
+                OutlineResult outlineResult = (OutlineResult) searchResult;
+                searchPanel.addFoundOutlineEntry(outlineResult, this);
+            } else if (searchResult instanceof DestinationsResult) {
+                DestinationsResult destinationsResult = (DestinationsResult) searchResult;
+                searchPanel.addFoundDestinationEntry(destinationsResult, this);
             }
         }
         viewContainer.repaint();
@@ -317,14 +325,18 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
     }
 
     class OutlineResult extends SearchResult {
-        OutlineResult(String nodeText) {
-            this.nodeText = nodeText;
+        ArrayList<OutlineItem> outlinesMatches;
+
+        OutlineResult(ArrayList<OutlineItem> outlinesMatches) {
+            this.outlinesMatches = outlinesMatches;
         }
     }
 
-    class DestinationResult extends SearchResult {
-        DestinationResult(String nodeText) {
-            this.nodeText = nodeText;
+    class DestinationsResult extends SearchResult {
+        ArrayList<DestinationResult> destinationsResult;
+
+        DestinationsResult(ArrayList<DestinationResult> destinationsResult) {
+            this.destinationsResult = destinationsResult;
         }
     }
 

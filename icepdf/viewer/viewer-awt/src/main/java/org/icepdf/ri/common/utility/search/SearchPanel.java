@@ -16,19 +16,20 @@
 package org.icepdf.ri.common.utility.search;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.LiteralStringObject;
+import org.icepdf.core.pobjects.OutlineItem;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
+import org.icepdf.core.search.DestinationResult;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.Defs;
-import org.icepdf.ri.common.DropDownButton;
-import org.icepdf.ri.common.MutableDocument;
-import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.common.SwingViewBuilder;
+import org.icepdf.ri.common.*;
 import org.icepdf.ri.common.utility.annotation.AnnotationCellRender;
 import org.icepdf.ri.common.utility.annotation.AnnotationTreeNode;
+import org.icepdf.ri.common.utility.outline.OutlineItemTreeNode;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.PageComponentSelector;
@@ -425,6 +426,10 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                 AnnotationTreeNode formNode = (AnnotationTreeNode) selectedNode;
                 Annotation annotation = formNode.getAnnotation();
                 PageComponentSelector.SelectAnnotationComponent(controller, annotation, false);
+            } else if (selectedNode instanceof OutlineItemTreeNode) {
+                controller.followOutlineItem((OutlineItemTreeNode) selectedNode);
+            } else if (selectedNode instanceof NameTreeNode) {
+                controller.followDestinationItem((NameTreeNode) selectedNode);
             }
         }
     }
@@ -443,7 +448,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         if ((textResults != null) && (textResults.size() > 0)) {
             DefaultMutableTreeNode parentNode;
             // insert parent page number note.
-            if (searchTextTask.isCaseSensitive() && lastTextNodePageIndex != pageNumber) {
+            if (searchTextTask.isShowPages() && lastTextNodePageIndex != pageNumber) {
                 parentNode = new DefaultMutableTreeNode(
                         new FindEntry(title, pageNumber, null), true);
                 treeModel.insertNodeInto(parentNode, textTreeNode, textTreeNode.getChildCount());
@@ -498,10 +503,27 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         }
     }
 
-    public void addFoundOutlineEntry() {
+    public void addFoundOutlineEntry(SearchTextTask.OutlineResult outlineResult, SearchTextTask searchTextTask) {
+        ArrayList<OutlineItem> outlineItems = outlineResult.outlinesMatches;
+        for (OutlineItem outlineItem : outlineItems) {
+            OutlineItemTreeNode outlineItemTreeNode =
+                    new OutlineItemTreeNode(outlineItem, searchTextTask.getSearchPattern(),
+                            searchTextTask.isCaseSensitive());
+            treeModel.insertNodeInto(outlineItemTreeNode, outlinesTreeNode, outlinesTreeNode.getChildCount());
+        }
+        tree.expandPath(new TreePath(outlinesTreeNode.getPath()));
     }
 
-    public void addFoundDestinationEntry() {
+    public void addFoundDestinationEntry(SearchTextTask.DestinationsResult destinationResult,
+                                         SearchTextTask searchTextTask) {
+        ArrayList<DestinationResult> destinationResults = destinationResult.destinationsResult;
+        for (DestinationResult nameNode : destinationResults) {
+            NameTreeNode nameTreeNode =
+                    new NameTreeNode(new LiteralStringObject(nameNode.getName()), nameNode.getValue(),
+                            searchTextTask.getSearchPattern(), searchTextTask.isCaseSensitive());
+            treeModel.insertNodeInto(nameTreeNode, destinationsTreeNode, destinationsTreeNode.getChildCount());
+        }
+        tree.expandPath(new TreePath(destinationsTreeNode.getPath()));
     }
 
     /**
