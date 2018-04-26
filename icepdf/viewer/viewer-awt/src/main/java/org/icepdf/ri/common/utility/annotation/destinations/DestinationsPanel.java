@@ -18,8 +18,6 @@ package org.icepdf.ri.common.utility.annotation.destinations;
 import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.NameTree;
 import org.icepdf.core.pobjects.Names;
-import org.icepdf.core.pobjects.Reference;
-import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.MutableDocument;
 import org.icepdf.ri.common.NameJTree;
@@ -27,7 +25,6 @@ import org.icepdf.ri.common.NameTreeNode;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
-import org.icepdf.ri.common.views.PageComponentSelector;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
 import org.icepdf.ri.util.PropertiesManager;
 
@@ -205,20 +202,6 @@ public class DestinationsPanel extends JPanel
         }
     }
 
-    private void navigateToDestination(NameTreeNode node) {
-        if (node.getReference() != null && node.isLeaf()) {
-            Object tmp = node.getReference();
-            Library library = controller.getDocument().getCatalog().getLibrary();
-            if (tmp instanceof Reference) {
-                tmp = library.getObject((Reference) tmp);
-            }
-            Destination dest = new Destination(library, tmp);
-            dest.setNamedDestination(node.getName().toString());
-            // set the focus.
-            PageComponentSelector.SelectDestinationComponent(controller, dest);
-        }
-    }
-
     @Override
     public void refreshDocumentInstance() {
         refreshNameTree(null);
@@ -258,7 +241,7 @@ public class DestinationsPanel extends JPanel
 
         Object node = treePath.getLastPathComponent();
         if (node instanceof NameTreeNode) {
-            navigateToDestination((NameTreeNode) node);
+            controller.followDestinationItem((NameTreeNode) node);
         }
         // return focus so that dropDownArrowButton keys will work on list
         nameJTree.requestFocus();
@@ -277,7 +260,7 @@ public class DestinationsPanel extends JPanel
                     // on double click we navigate to the nameTree's node
                     NameTreeNode selectedNode = (NameTreeNode) node;
                     if (selectedNode.getReference() != null && selectedNode.isLeaf()) {
-                        navigateToDestination((NameTreeNode) node);
+                        controller.followDestinationItem((NameTreeNode) node);
                     }
                 } else if (e.getClickCount() == 1 && e.getButton() == MouseEvent.BUTTON3) {
                     NameTreeNode selectedNode = (NameTreeNode) node;

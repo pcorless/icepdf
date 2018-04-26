@@ -20,6 +20,7 @@ import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
+import org.icepdf.core.search.DestinationResult;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.search.SearchTerm;
 import org.icepdf.core.util.Library;
@@ -372,13 +373,92 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     }
 
     @Override
-    public ArrayList<Destination> searchDestinations() {
-        return null;
+    public ArrayList<DestinationResult> searchDestinations() {
+        if (document == null) document = viewerController.getDocument();
+        ArrayList<DestinationResult> foundNames = new ArrayList<>();
+        Names names = document.getCatalog().getNames();
+        if (searchModel.getSearchTerms().size() > 0 &&
+                names != null && names.getDestsNameTree() != null) {
+            NameTree nameTree = names.getDestsNameTree();
+            if (nameTree != null) {
+                Collection<SearchTerm> terms = searchModel.getSearchTerms();
+                SearchTerm term = ((ArrayList<SearchTerm>) terms).get(0);
+                Pattern searchPattern = term.getRegexPattern();
+                String searchTerm = term.getTerm();
+                if (searchPattern == null) {
+                    searchPattern = Pattern.compile(term.isCaseSensitive() ? searchTerm : searchTerm.toLowerCase());
+                }
+                recursiveNameSearch(searchPattern, term.isCaseSensitive(), foundNames, nameTree.getRoot());
+            }
+        }
+        return foundNames;
+    }
+
+    private void recursiveNameSearch(Pattern searchPattern, boolean isCaseSensitive,
+                                     ArrayList<DestinationResult> foundNameNodes, NameNode nameNode) {
+        List kids = nameNode.getKidsReferences();
+        if (kids != null) {
+            int count = nameNode.getKidsReferences().size();
+            for (int i = 0; i < count; i++) {
+                NameNode child = nameNode.getNode(i);
+                if (child.hasLimits()) {
+                    recursiveNameSearch(searchPattern, isCaseSensitive, foundNameNodes, child);
+                }
+            }
+        } else {
+            // interate over the names.
+            if (nameNode.getNamesAndValues() != null) {
+                List namesAndValues = nameNode.getNamesAndValues();
+                for (int i = 0, max = namesAndValues.size() - 1; i < max; i += 2) {
+                    String name = ((StringObject) namesAndValues.get(i)).getLiteralString();
+                    if (name != null && !name.isEmpty()) {
+                        if (!isCaseSensitive) name = name.toLowerCase();
+                        Matcher matcher = searchPattern.matcher(name);
+                        if (matcher.find()) {
+                            foundNameNodes.add(new DestinationResult(name, namesAndValues.get(i + 1)));
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @Override
-    public ArrayList<Outlines> searchOutlines() {
-        return null;
+    public ArrayList<OutlineItem> searchOutlines() {
+        if (document == null) document = viewerController.getDocument();
+        ArrayList<OutlineItem> foundOutlines = new ArrayList<>();
+        Outlines outlines = document.getCatalog().getOutlines();
+        if (outlines != null && searchModel.getSearchTerms().size() > 0) {
+            Collection<SearchTerm> terms = searchModel.getSearchTerms();
+            SearchTerm term = ((ArrayList<SearchTerm>) terms).get(0);
+            Pattern searchPattern = term.getRegexPattern();
+            String searchTerm = term.getTerm();
+            if (searchPattern == null) {
+                searchPattern = Pattern.compile(term.isCaseSensitive() ? searchTerm : searchTerm.toLowerCase());
+            }
+            recursiveOutlineSearch(searchPattern, term.isCaseSensitive(), foundOutlines, outlines.getRootOutlineItem());
+        }
+        return foundOutlines;
+    }
+
+    private void recursiveOutlineSearch(Pattern searchPattern, boolean isCaseSensitive,
+                                        ArrayList<OutlineItem> foundOutlines, OutlineItem item) {
+        int count = item.getSubItemCount();
+        for (int i = 0; i < count; i++) {
+            OutlineItem child = item.getSubItem(i);
+            if (child.getSubItemCount() > 0) {
+                recursiveOutlineSearch(searchPattern, isCaseSensitive, foundOutlines, child);
+            } else {
+                // search the item title for a match.
+                String outlineTitle = child.getTitle();
+                if (outlineTitle != null && !outlineTitle.isEmpty()) {
+                    Matcher matcher = searchPattern.matcher(isCaseSensitive ? outlineTitle : outlineTitle.toLowerCase());
+                    if (matcher.find()) {
+                        foundOutlines.add(child);
+                    }
+                }
+            }
+        }
     }
 
     @Override

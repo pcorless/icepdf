@@ -18,12 +18,15 @@ package org.icepdf.ri.common;
 import org.icepdf.core.pobjects.LiteralStringObject;
 import org.icepdf.core.pobjects.NameNode;
 import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.ri.common.utility.search.SearchPanel;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.text.MessageFormat;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Name tree node.
@@ -82,6 +85,35 @@ public class NameTreeNode extends DefaultMutableTreeNode {
         this.value = value;
         setUserObject(name);
     }
+
+    public NameTreeNode(StringObject name, Object value, Pattern searchPattern, boolean isCaseSensitive) {
+        super();
+        leaf = true;
+        this.name = name;
+        this.value = value;
+        setUserObject(applyMessage(name.toString(), searchPattern, isCaseSensitive));
+    }
+
+    private String applyMessage(String title, Pattern searchPattern, boolean isCaseSensitive) {
+        // pepper the text with html so we can show hits.
+        Matcher matcher = searchPattern.matcher(isCaseSensitive ? title : title.toLowerCase());
+        StringBuilder stringBuilder = new StringBuilder(SearchPanel.HTML_TAG_START);
+        int lastEnd = 0;
+        while (matcher.find()) {
+            int start = matcher.start();
+            int end = matcher.end();
+            stringBuilder.append(title, lastEnd, start);
+            stringBuilder.append(SearchPanel.BOLD_TAG_START);
+            stringBuilder.append(title, start, end);
+            stringBuilder.append(SearchPanel.BOLD_TAG_END);
+            lastEnd = end;
+        }
+        if (lastEnd < title.length()) {
+            stringBuilder.append(title.substring(lastEnd));
+        }
+        return stringBuilder.toString();
+    }
+
 
     public StringObject getName() {
         return name;

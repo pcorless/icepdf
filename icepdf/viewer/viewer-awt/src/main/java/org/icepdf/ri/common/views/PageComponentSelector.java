@@ -116,8 +116,7 @@ public class PageComponentSelector {
             Library library = document.getCatalog().getLibrary();
             Object potentialPage = library.getObject(pageReference);
             if (potentialPage instanceof Page) {
-                Page page = (Page) potentialPage;
-                int pageIndex = page.getPageIndex();
+                int pageIndex = document.getPageTree().getPageNumber(pageReference);
                 if (controller.getCurrentPageNumber() != pageIndex) {
                     controller.getDocumentViewController().setCurrentPageIndex(pageIndex);
                 }

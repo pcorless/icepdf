@@ -2973,7 +2973,7 @@ public class SwingController extends ComponentAdapter
 
         // showUtilityPane will be true the document has an outline, but the
         // visibility can be over-ridden with the property application.utilitypane.show
-        boolean hideUtilityPane = propertiesManager.checkAndStoreBooleanProperty(
+        boolean hideUtilityPane = propertiesManager.getPreferences().getBoolean(
                 PropertiesManager.PROPERTY_HIDE_UTILITYPANE, false);
         // hide utility pane
         if (hideUtilityPane) {
@@ -2983,10 +2983,10 @@ public class SwingController extends ComponentAdapter
         }
 
         // apply state value for whether form highlight is being used or not.
-        boolean showFormHighlight = propertiesManager.checkAndStoreBooleanProperty(
+        boolean showFormHighlight = propertiesManager.getPreferences().getBoolean(
                 PropertiesManager.PROPERTY_VIEWPREF_FORM_HIGHLIGHT, true);
         setFormHighlightVisible(showFormHighlight);
-        boolean showAnnotationEditingMode = propertiesManager.checkAndStoreBooleanProperty(
+        boolean showAnnotationEditingMode = propertiesManager.getPreferences().getBoolean(
                 PropertiesManager.PROPERTY_VIEWPREF_ANNOTATION_EDIT_MODE, false);
         setAnnotationEditModeVisible(showAnnotationEditingMode);
 
@@ -4550,7 +4550,7 @@ public class SwingController extends ComponentAdapter
         } else {
             if (completeToolBar != null) {
                 completeToolBar.setVisible(
-                        !propertiesManager.checkAndStoreBooleanProperty(
+                        !propertiesManager.getPreferences().getBoolean(
                                 PropertiesManager.PROPERTY_VIEWPREF_HIDETOOLBAR,
                                 false));
             }
@@ -4566,7 +4566,7 @@ public class SwingController extends ComponentAdapter
         } else {
             if (viewer != null && viewer.getJMenuBar() != null) {
                 viewer.getJMenuBar().setVisible(
-                        !propertiesManager.checkAndStoreBooleanProperty(
+                        !propertiesManager.getPreferences().getBoolean(
                                 PropertiesManager.PROPERTY_VIEWPREF_HIDEMENUBAR,
                                 false));
             }
@@ -4580,7 +4580,7 @@ public class SwingController extends ComponentAdapter
                 }
             }
         } else {
-            if (propertiesManager.checkAndStoreBooleanProperty(
+            if (propertiesManager.getPreferences().getBoolean(
                     PropertiesManager.PROPERTY_VIEWPREF_FITWINDOW, false) && viewer != null) {
                 viewer.setSize(documentViewController.getDocumentView().getDocumentSize());
             }
@@ -5059,6 +5059,12 @@ public class SwingController extends ComponentAdapter
         if (treePath == null)
             return;
         OutlineItemTreeNode node = (OutlineItemTreeNode) treePath.getLastPathComponent();
+        followOutlineItem(node);
+
+    }
+
+    public void followOutlineItem(OutlineItemTreeNode node) {
+
         OutlineItem o = node.getOutlineItem();
 
         followOutlineItem(o);
@@ -5067,6 +5073,19 @@ public class SwingController extends ComponentAdapter
         outlinesTree.requestFocus();
     }
 
+    public void followDestinationItem(NameTreeNode node) {
+        if (node.getReference() != null && node.isLeaf()) {
+            Object tmp = node.getReference();
+            Library library = getDocument().getCatalog().getLibrary();
+            if (tmp instanceof Reference) {
+                tmp = library.getObject((Reference) tmp);
+            }
+            Destination dest = new Destination(library, tmp);
+            dest.setNamedDestination(node.getName().toString());
+            // set the focus.
+            PageComponentSelector.SelectDestinationComponent(this, dest);
+        }
+    }
 
     //
     // WindowListener interface

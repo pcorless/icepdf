@@ -16,8 +16,11 @@
 package org.icepdf.ri.common.utility.outline;
 
 import org.icepdf.core.pobjects.OutlineItem;
+import org.icepdf.ri.common.utility.search.SearchPanel;
 
 import javax.swing.tree.DefaultMutableTreeNode;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A PDF document may optionally display a document outline on the screen,
@@ -53,6 +56,35 @@ public class OutlineItemTreeNode extends DefaultMutableTreeNode {
 
         // build the tree
         setUserObject(item.getTitle());
+    }
+
+    public OutlineItemTreeNode(OutlineItem item, Pattern searchPattern, boolean isCaseSensitive) {
+        super();
+        this.item = item;
+        loadedChildren = false;
+
+        // build the tree
+        setUserObject(applyMessage(item.getTitle(), searchPattern, isCaseSensitive));
+    }
+
+    private String applyMessage(String title, Pattern searchPattern, boolean isCaseSensitive) {
+        // pepper the text with html so we can show hits.
+        Matcher matcher = searchPattern.matcher(isCaseSensitive ? title : title.toLowerCase());
+        StringBuilder stringBuilder = new StringBuilder(SearchPanel.HTML_TAG_START);
+        int lastEnd = 0;
+        while (matcher.find()) {
+            int start = matcher.start();
+            int end = matcher.end();
+            stringBuilder.append(title, lastEnd, start);
+            stringBuilder.append(SearchPanel.BOLD_TAG_START);
+            stringBuilder.append(title, start, end);
+            stringBuilder.append(SearchPanel.BOLD_TAG_END);
+            lastEnd = end;
+        }
+        if (lastEnd < title.length()) {
+            stringBuilder.append(title.substring(lastEnd));
+        }
+        return stringBuilder.toString();
     }
 
     public OutlineItem getOutlineItem() {

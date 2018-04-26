@@ -2062,7 +2062,7 @@ public class SwingViewBuilder {
                 PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.annotation.tab.title"),
-                    buildAnnotationPanel()); //buildAnnotationPanel()
+                    buildAnnotationPanel());
         }
 
         // Ensure something was added to the utility pane, otherwise reset it to null

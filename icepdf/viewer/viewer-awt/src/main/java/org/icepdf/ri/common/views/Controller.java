@@ -17,8 +17,10 @@ package org.icepdf.ri.common.views;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.search.DocumentSearchController;
+import org.icepdf.ri.common.NameTreeNode;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.WindowManagementCallback;
+import org.icepdf.ri.common.utility.outline.OutlineItemTreeNode;
 import org.icepdf.ri.util.PropertiesManager;
 
 import java.awt.*;
@@ -259,4 +261,18 @@ public interface Controller extends PropertyChangeListener {
      * @return current window manager call back, can be null.
      */
     WindowManagementCallback getWindowManagementCallback();
+
+    /**
+     * Interprets the OutlineItemTreeNode loading ans displaying any associated Destination values.
+     *
+     * @param node node to interpret and navigate to.
+     */
+    void followOutlineItem(OutlineItemTreeNode node);
+
+    /**
+     * Interprets the NameTreeNode loading ans displaying any associated Destination values.
+     *
+     * @param node node to interpret and navigate to.
+     */
+    void followDestinationItem(NameTreeNode node);
 }
