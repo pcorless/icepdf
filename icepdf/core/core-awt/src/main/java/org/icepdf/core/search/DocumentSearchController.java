@@ -15,8 +15,7 @@
  */
 package org.icepdf.core.search;
 
-import org.icepdf.core.pobjects.Destination;
-import org.icepdf.core.pobjects.Outlines;
+import org.icepdf.core.pobjects.OutlineItem;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
@@ -113,14 +112,14 @@ public interface DocumentSearchController {
      *
      * @return any destination label that match the search terms,  null if none are found.
      */
-    ArrayList<Destination> searchDestinations();
+    ArrayList<DestinationResult> searchDestinations();
 
     /**
      * Search the document's outlines objects for names that match the search terms.
      *
      * @return any destination label that match the search terms,  null if none are found.
      */
-    ArrayList<Outlines> searchOutlines();
+    ArrayList<OutlineItem> searchOutlines();
 
     /**
      * Sets the search hit cursor to  a particular page to aid in large page jumps when other
