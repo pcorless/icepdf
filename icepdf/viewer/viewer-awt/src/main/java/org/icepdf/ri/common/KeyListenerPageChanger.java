@@ -20,6 +20,7 @@ import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
 import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
 /**
  * This intercepts KeyEvents for a JScrollPane, and determines if
@@ -87,8 +88,10 @@ public class KeyListenerPageChanger extends KeyAdapter {
                         ? scroll.getVerticalScrollBar()
                         : null;
         int keyCode = e.getKeyCode();
-        if (keyCode == java.awt.event.KeyEvent.VK_PAGE_DOWN ||
-                keyCode == java.awt.event.KeyEvent.VK_DOWN) {
+        if (keyCode == KeyEvent.VK_PAGE_DOWN ||
+                keyCode == KeyEvent.VK_DOWN ||
+                keyCode == KeyEvent.VK_SPACE ||
+                keyCode == KeyEvent.VK_ENTER) {
             if (visibleVerticalScrollBar != null) {
                 int value = visibleVerticalScrollBar.getModel().getValue();
                 int extent = visibleVerticalScrollBar.getModel().getExtent();
@@ -97,17 +100,17 @@ public class KeyListenerPageChanger extends KeyAdapter {
                     deltaPage = documentView.getNextPageIncrement();
             } else
                 deltaPage = documentView.getNextPageIncrement();
-        } else if (keyCode == java.awt.event.KeyEvent.VK_PAGE_UP ||
-                keyCode == java.awt.event.KeyEvent.VK_UP) {
+        } else if (keyCode == KeyEvent.VK_PAGE_UP ||
+                keyCode == KeyEvent.VK_UP) {
             if (visibleVerticalScrollBar != null) {
                 int value = visibleVerticalScrollBar.getModel().getValue();
                 if (value <= 0)
                     deltaPage = -documentView.getPreviousPageIncrement();
             } else
                 deltaPage = -documentView.getPreviousPageIncrement();
-        } else if (keyCode == java.awt.event.KeyEvent.VK_HOME) {
+        } else if (keyCode == KeyEvent.VK_HOME) {
             deltaPage = -controller.getCurrentPageNumber();
-        } else if (keyCode == java.awt.event.KeyEvent.VK_END) {
+        } else if (keyCode == KeyEvent.VK_END) {
             deltaPage = controller.getDocument().getNumberOfPages() - controller.getCurrentPageNumber() - 1;
         }
 
