@@ -412,8 +412,11 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                 for (int i = 0, max = namesAndValues.size() - 1; i < max; i += 2) {
                     String name = ((StringObject) namesAndValues.get(i)).getLiteralString();
                     if (name != null && !name.isEmpty()) {
-                        if (!isCaseSensitive) name = name.toLowerCase();
-                        Matcher matcher = searchPattern.matcher(name);
+                        String matcherString = name;
+                        if (!isCaseSensitive) {
+                            matcherString = name.toLowerCase();
+                        }
+                        Matcher matcher = searchPattern.matcher(matcherString);
                         if (matcher.find()) {
                             foundNameNodes.add(new DestinationResult(name, namesAndValues.get(i + 1)));
                         }

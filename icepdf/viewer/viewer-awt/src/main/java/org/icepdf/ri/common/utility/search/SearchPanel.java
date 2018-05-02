@@ -15,9 +15,7 @@
  */
 package org.icepdf.ri.common.utility.search;
 
-import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.pobjects.LiteralStringObject;
-import org.icepdf.core.pobjects.OutlineItem;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.graphics.text.LineText;
@@ -31,7 +29,6 @@ import org.icepdf.ri.common.utility.annotation.AnnotationCellRender;
 import org.icepdf.ri.common.utility.annotation.AnnotationTreeNode;
 import org.icepdf.ri.common.utility.outline.OutlineItemTreeNode;
 import org.icepdf.ri.common.views.AnnotationComponent;
-import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.PageComponentSelector;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.images.Images;
@@ -42,10 +39,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreePath;
-import javax.swing.tree.TreeSelectionModel;
+import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -55,6 +49,7 @@ import java.text.ChoiceFormat;
 import java.text.Format;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
@@ -311,8 +306,8 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         filterDropDownButton.addSeparator();
         filterDropDownButton.add(textCheckbox);
         filterDropDownButton.add(commentsCheckbox);
-        filterDropDownButton.add(destinationsCheckbox);
         filterDropDownButton.add(outlinesCheckbox);
+        filterDropDownButton.add(destinationsCheckbox);
         filterDropDownButton.addSeparator();
         filterDropDownButton.add(showPagesCheckbox);
 
@@ -1060,10 +1055,10 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                     AnnotationTreeNode formNode = (AnnotationTreeNode) node;
                     // on double click, navigate to page and set focus of component.
                     Annotation annotation = formNode.getAnnotation();
-                    AnnotationComponent comp = PageComponentSelector.SelectAnnotationComponent(controller, annotation, false);
+                    AnnotationComponent comp =
+                            PageComponentSelector.SelectAnnotationComponent(controller, annotation, false);
                     if (comp instanceof MarkupAnnotationComponent) {
                         if (e.getButton() == MouseEvent.BUTTON1) {
-                            DocumentViewController documentViewController = controller.getDocumentViewController();
                             // toggle the popup annotations visibility on double click
                             MarkupAnnotationComponent markupAnnotationComponent = (MarkupAnnotationComponent) comp;
                             if (e.getClickCount() == 2) {
@@ -1071,8 +1066,72 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                             }
                         }
                     }
+                } else if (node instanceof OutlineItemTreeNode) {
+                    // on a double click we'll set focus to the outline pane and navigate to the node in question
+                    if (e.getClickCount() == 2) {
+                        SwingController swingController = (SwingController) controller;
+                        JTree outlineTree = swingController.getOutlineTree();
+                        OutlineItemTreeNode outlineItemTreeNode = (OutlineItemTreeNode) outlineTree.getModel().getRoot();
+                        for (int i = 0, max = outlineItemTreeNode.getChildCount(); i < max; i++) {
+                            OutlineItemTreeNode outlineNode =
+                                    findOutlineTreeNode(outlineItemTreeNode.getChildAt(i), (OutlineItemTreeNode) node);
+                            if (outlineNode != null) {
+                                swingController.showOutlinePanel();
+                                TreePath outlinePath = new TreePath(outlineNode.getPath());
+                                outlineTree.setSelectionPath(outlinePath);
+                                outlineTree.scrollPathToVisible(outlinePath);
+                                break;
+                            }
+                        }
+                    }
+                } else if (node instanceof NameTreeNode) {
+                    // on a double click we'll set focus to the destination tab and expand the tree to the node in question
+                    if (e.getClickCount() == 2) {
+                        SwingController swingController = (SwingController) controller;
+                        Names names = controller.getDocument().getCatalog().getNames();
+                        if (names != null && names.getDestsNameTree() != null) {
+                            NameTree nameTree = names.getDestsNameTree();
+                            DefaultTreeModel destinationModel =
+                                    new DefaultTreeModel(new NameTreeNode(nameTree.getRoot(), messageBundle));
+                            // try to expand back to the same path
+                            NameTreeNode nameTreeNode = (NameTreeNode) node;
+                            // find and select a node with the same node.)
+                            Enumeration nodes = ((NameTreeNode) destinationModel.getRoot()).depthFirstEnumeration();
+                            while (nodes.hasMoreElements()) {
+                                NameTreeNode currentNode = (NameTreeNode) nodes.nextElement();
+                                if (currentNode.getName() != null &&
+                                        currentNode.getName().toString().compareToIgnoreCase(
+                                                nameTreeNode.getName().toString()) == 0) {
+                                    // expand the node
+                                    swingController.showAnnotationDestinationPanel(new TreePath(currentNode.getPath()));
+                                }
+                            }
+                        }
+                    }
                 }
             }
+        }
+
+        private OutlineItemTreeNode findOutlineTreeNode(TreeNode treeNode, OutlineItemTreeNode selectedNode) {
+            OutlineItemTreeNode currentNode = (OutlineItemTreeNode) treeNode;
+            OutlineItem selectedOutlineItem = selectedNode.getOutlineItem();
+            if (selectedOutlineItem.equals(currentNode.getOutlineItem())) {
+                return (OutlineItemTreeNode) treeNode;
+            }
+            for (int i = 0, max = currentNode.getChildCount(); i < max; i++) {
+                OutlineItemTreeNode currentChildNode = (OutlineItemTreeNode) currentNode.getChildAt(i);
+                if (selectedOutlineItem.equals(currentChildNode.getOutlineItem())) {
+                    return currentChildNode;
+                }
+                if (currentChildNode.getChildCount() > 0) {
+                    OutlineItemTreeNode found = findOutlineTreeNode(currentChildNode, selectedNode);
+                    if (found != null) {
+                        return found;
+                    }
+                }
+            }
+
+            return null;
         }
     }
 }

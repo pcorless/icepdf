@@ -196,10 +196,15 @@ public class DestinationsPanel extends JPanel
                         currentNode.getName().toString().equals(
                                 node.getDestination().getNamedDestination())) {
                     // expand the node
-                    nameJTree.setSelectionPath(new TreePath(currentNode.getPath()));
+                    selectDestinationPath(new TreePath(currentNode.getPath()));
                 }
             }
         }
+    }
+
+    public void selectDestinationPath(TreePath treePath) {
+        nameJTree.setSelectionPath(treePath);
+        nameJTree.scrollPathToVisible(treePath);
     }
 
     @Override

@@ -1349,6 +1349,10 @@ public class SwingController extends ComponentAdapter
         outlinesTree.addTreeSelectionListener(this);
     }
 
+    public JTree getOutlineTree() {
+        return outlinesTree;
+    }
+
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
      *
@@ -4491,6 +4495,36 @@ public class SwingController extends ComponentAdapter
                 if (show) {
                     annotationPanel.setSelectedTab(PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_DESTINATIONS);
                 }
+            }
+        }
+    }
+
+    public void showAnnotationDestinationPanel(TreePath path) {
+        if (utilityTabbedPane != null) {
+            // Pass the selected annotation to the link panel
+            if (annotationPanel != null && path != null) {
+                annotationPanel.setEnabled(true);
+            }
+            setUtilityPaneVisible(true);
+            // select the annotationPanel tab
+            if (annotationPanel != null) {
+                boolean show = safelySelectUtilityPanel(annotationPanel);
+                if (show) {
+                    annotationPanel.getDestinationsPanel().selectDestinationPath(path);
+                    annotationPanel.setSelectedTab(PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_DESTINATIONS);
+                }
+            }
+        }
+    }
+
+    /**
+     * Make the outline panel panel visible.
+     */
+    public void showOutlinePanel() {
+        if (utilityTabbedPane != null) {
+            // Pass the selected annotation to the link panel
+            if (outlinesScrollPane != null && utilityTabbedPane != null) {
+                utilityTabbedPane.setSelectedComponent(outlinesScrollPane);
             }
         }
     }

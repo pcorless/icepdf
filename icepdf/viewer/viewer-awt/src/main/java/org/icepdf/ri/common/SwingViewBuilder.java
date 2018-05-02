@@ -1184,6 +1184,8 @@ public class SwingViewBuilder {
             addToToolBar(toolbar, buildAnnotationlToolBar());
         if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_FORMS))
             addToToolBar(toolbar, buildFormsToolBar());
+        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_SEARCH))
+            addToToolBar(toolbar, buildSearchToolBar());
 
         // we only add the configurable font engin in the demo version
         if (isDemo) {
@@ -1616,6 +1618,12 @@ public class SwingViewBuilder {
         JToolBar toolbar = new JToolBar();
         commonToolBarSetup(toolbar, false);
         addToToolBar(toolbar, buildFormHighlightButton(iconSize));
+        return toolbar;
+    }
+
+    public JToolBar buildSearchToolBar() {
+
+        JToolBar toolbar = new JToolBar();
         return toolbar;
     }
 

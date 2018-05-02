@@ -108,6 +108,7 @@ public class PropertiesManager {
     public static final String PROPERTY_SHOW_TOOLBAR_TOOL = "application.toolbar.show.tool";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION = "application.toolbar.show.annotation";
     public static final String PROPERTY_SHOW_TOOLBAR_FORMS = "application.toolbar.show.forms";
+    public static final String PROPERTY_SHOW_TOOLBAR_SEARCH = "application.toolbar.show.search";
     // properties used to hide/show status bar buttons
     public static final String PROPERTY_SHOW_STATUSBAR = "application.statusbar";
     // properties used to hide/show status bar status label

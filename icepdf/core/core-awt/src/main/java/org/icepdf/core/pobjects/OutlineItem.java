@@ -317,4 +317,14 @@ public class OutlineItem extends Dictionary {
             }
         }
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof OutlineItem) {
+            return (getPObjectReference() != null &&
+                    getPObjectReference().equals(((OutlineItem) obj).getPObjectReference())) ||
+                    (getTitle() != null && getTitle().equals(((OutlineItem) obj).getTitle()));
+        }
+        return super.equals(obj);
+    }
 }
