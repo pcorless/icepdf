@@ -344,7 +344,7 @@ public abstract class MarkupAnnotation extends Annotation {
     }
 
     public void setSubject(String subject) {
-        this.subject = setString(SUBTYPE_KEY, subject);
+        this.subject = setString(SUBJ_KEY, subject);
     }
 
     public String toString() {
