@@ -132,7 +132,7 @@ public class FaxDecoder extends AbstractImageDecoder {
                 short b = (short) (((streamData[0] << 8) + streamData[1]) >> 4);
                 for (int i = 12; i < 160; i++) {
                     b = (short) ((b << 1) + ((streamData[(i / 8)] >> (7 - (i % 8))) & 0x01));
-                    if (b == 1) {
+                    if ((b & 0xFFF) == 1) {
                         compression = 3;
                         break;
                     }
