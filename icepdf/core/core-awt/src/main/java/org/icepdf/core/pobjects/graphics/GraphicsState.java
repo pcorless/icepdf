@@ -312,7 +312,7 @@ public class GraphicsState {
         lineJoin = BasicStroke.JOIN_MITER;
         miterLimit = 10;
 
-        fillColor = new Color(0, 0, 0, 0);
+        fillColor = Color.black;
         strokeColor = Color.black;
         strokeAlpha = 1.0f;
         fillAlpha = 1.0f;
@@ -558,11 +558,11 @@ public class GraphicsState {
             parentGraphicState.shapes.add(new ColorDrawCmd(parentGraphicState.getFillColor()));
 
             // apply the old alpha fill, removed as we need to guarantee the stack is in the correct state.
-            parentGraphicState.shapes.add(new AlphaDrawCmd(
-                    AlphaComposite.getInstance(parentGraphicState.getAlphaRule(), parentGraphicState.getFillAlpha())));
-
-            parentGraphicState.shapes.add(new AlphaDrawCmd(
-                    AlphaComposite.getInstance(parentGraphicState.getAlphaRule(), parentGraphicState.getStrokeAlpha())));
+//            parentGraphicState.shapes.add(new AlphaDrawCmd(
+//                    AlphaComposite.getInstance(parentGraphicState.getAlphaRule(), parentGraphicState.getFillAlpha())));
+//
+//            parentGraphicState.shapes.add(new AlphaDrawCmd(
+//                    AlphaComposite.getInstance(parentGraphicState.getAlphaRule(), parentGraphicState.getStrokeAlpha())));
             // stroke Color
 //            parentGraphicState.shapes.add(parentGraphicState.getStrokeColor());
         }
