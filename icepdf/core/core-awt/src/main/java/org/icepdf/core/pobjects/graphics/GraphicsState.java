@@ -312,7 +312,7 @@ public class GraphicsState {
         lineJoin = BasicStroke.JOIN_MITER;
         miterLimit = 10;
 
-        fillColor = Color.black;
+        fillColor = new Color(0, 0, 0, 0);
         strokeColor = Color.black;
         strokeAlpha = 1.0f;
         fillAlpha = 1.0f;
