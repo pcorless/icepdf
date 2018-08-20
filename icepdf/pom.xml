@@ -24,7 +24,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <bouncy.version>1.54</bouncy.version>
-        <twelve-monkey.version>3.4-r6.3</twelve-monkey.version>
+        <twelve-monkey.version>3.4</twelve-monkey.version>
         <jai-imageio.version>1.3.0</jai-imageio.version>
         <jbig2.version>3.0.0-r6.3</jbig2.version>
     </properties>
