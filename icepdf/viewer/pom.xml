@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.icepdf.os</groupId>
         <artifactId>icepdf</artifactId>
-        <version>6.3.1-SNAPSHOT</version>
+        <version>6.3.2-SNAPSHOT</version>
     </parent>
     <artifactId>viewer</artifactId>
     <packaging>pom</packaging>
