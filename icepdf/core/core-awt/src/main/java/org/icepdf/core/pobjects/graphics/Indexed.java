@@ -72,12 +72,22 @@ public class Indexed extends PColorSpace {
             colors = textBytes;
         } else if (dictionary.get(3) instanceof Reference) {
             colors = new byte[colorSpace.getNumComponents() * (hival + 1)];
-            // make sure the colors array is the correct length, so we'll copy
-            // over the data from the stream just to be sure.
-            Stream lookup = (Stream) (library.getObject((Reference) (dictionary.get(3))));
-            if (lookup != null) {
+            Object tmp = (library.getObject((Reference) (dictionary.get(3))));
+            // copy over the colour data, can be a stream or string
+            if (tmp instanceof Stream) {
+                Stream lookup = (Stream) tmp;
                 byte[] colorStream = lookup.getDecodedStreamBytes(0);
                 int length = colors.length < colorStream.length ? colors.length : colorStream.length;
+                System.arraycopy(colorStream, 0, colors, 0, length);
+            } else if (tmp instanceof StringObject) {
+                // treating as raw unencrypted string
+                StringBuilder stringData = ((StringObject) tmp).getHexStringBuffer();
+                int colorStreamLength = stringData.length();
+                byte[] colorStream = new byte[colorStreamLength / 2];
+                int length = colors.length < colorStream.length ? colors.length : colorStream.length;
+                for (int i = 0, j = 0, max = colorStreamLength / 2; i < max; i++, j += 2) {
+                    colorStream[i] = (byte) Integer.parseInt(stringData.substring(j, j + 2), 16);
+                }
                 System.arraycopy(colorStream, 0, colors, 0, length);
             }
         }
