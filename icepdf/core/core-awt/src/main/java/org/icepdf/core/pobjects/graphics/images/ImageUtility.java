@@ -80,20 +80,22 @@ public class ImageUtility {
             0xFFFFFFFF
     };
 
-
-
     private static boolean scaleQuality;
     private static int scaleWidth, scaleHeight;
 
     private static GraphicsConfiguration configuration;
+    private static int compatibleImageType;
 
     static {
         try {
-            configuration = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
+            configuration = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
+                    .getDefaultConfiguration();
         } catch (Throwable e) {
-            // just eat it as we likely have a headless exception and need to fall back to
-            // creating our own buffers.
+            // intentionally left blank
         }
+
+        compatibleImageType = configuration != null ?
+                configuration.createCompatibleImage(1, 1).getType() : -1;
 
         // decide if large images will be scaled
         scaleQuality = Defs.booleanProperty("org.icepdf.core.imageMaskScale.quality", true);
@@ -117,7 +119,7 @@ public class ImageUtility {
      * @return returns an INT_RGB images.
      */
     public static BufferedImage createCompatibleImage(int width, int height) {
-        if (configuration != null) {
+        if (configuration != null && compatibleImageType == BufferedImage.TYPE_INT_RGB) {
             return configuration.createCompatibleImage(width, height);
         } else {
             return new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
@@ -835,9 +837,11 @@ public class ImageUtility {
         return img;
     }
 
-    BufferedImage applyGrayDecode(BufferedImage rgbImage, int bitsPerComponent, float[] decode) {
+    static BufferedImage applyGrayDecode(BufferedImage rgbImage, ImageParams imageParams) {
         WritableRaster wr = rgbImage.getRaster();
         int[] cmap = null;
+        int bitsPerComponent = imageParams.getBitsPerComponent();
+        float[] decode = imageParams.getDecode();
         if (bitsPerComponent == 1) {
             boolean defaultDecode = 0.0f == decode[0];
             cmap = defaultDecode ? GRAY_1_BIT_INDEX_TO_RGB : GRAY_1_BIT_INDEX_TO_RGB_REVERSED;
