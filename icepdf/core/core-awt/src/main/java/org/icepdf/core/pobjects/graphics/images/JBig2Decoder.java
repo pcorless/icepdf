@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects.graphics.images;
 
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
+import org.icepdf.core.pobjects.graphics.DeviceGray;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 
 import javax.imageio.ImageIO;
@@ -95,6 +96,11 @@ public class JBig2Decoder extends AbstractImageDecoder {
                     logger.log(Level.WARNING, "Could not close image input stream.");
                 }
             }
+        }
+
+        // apply decode
+        if (imageStream.getColourSpace() instanceof DeviceGray) {
+            tmpImage = ImageUtility.applyGrayDecode(tmpImage, imageParams);
         }
 
         // apply the fill colour and alpha if masking is enabled.
