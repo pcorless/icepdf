@@ -91,6 +91,11 @@ public class JpxDecoder extends AbstractImageDecoder {
             }
             WritableRaster wr = tmpImage.getRaster();
 
+            // quick sanity check to try and scale really large images before we get into heap trouble.
+            if (isImageReallyBig(wr)) {
+                wr = scaleReallyBigImages(wr);
+            }
+
             PColorSpace colourSpace = imageParams.getColourSpace();
             int bitsPerComponent = imageParams.getBitsPerComponent();
             float[] decode = imageParams.getDecode();

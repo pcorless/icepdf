@@ -113,6 +113,11 @@ public class DctDecoder extends AbstractImageDecoder {
             ImageReadParam param = reader.getDefaultReadParam();
             WritableRaster wr = (WritableRaster) reader.readRaster(0, param);
 
+            // quick sanity check to try and scale really large images before we get into heap trouble.
+            if (isImageReallyBig(wr)) {
+                wr = scaleReallyBigImages(wr);
+            }
+
             // check the encoding type for colour conversion.
             jpegEncoding = getJPEGEncoding(data, dataRead);
             if (jpegEncoding == 0) {
