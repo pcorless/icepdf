@@ -497,8 +497,10 @@ public abstract class AbstractContentParser implements ContentParser {
             graphicState.set(af2);
             graphicState.scale(1, -1);
             // update the textBlockBase as the tm was specified in the BT block
-            // and we still need to keep the offset.
-            textBlockBase.setTransform(af2);
+            // and we still need to keep the offset. Only reset the block on a simple translation
+            if (af2.getScaleX() == 1.0 && af2.getScaleY() == 1.0) {
+                textBlockBase.setTransform(af2);
+            }
             graphicState.getTextState().tlmatrix.setTransform(af2);
         }
     }
