@@ -421,7 +421,7 @@ public class PropertiesManager {
                 localProperties.getProperty(propertyName, Boolean.toString(defaultVal)));
         // Set the property back into the manager
         // This is necessary in the cases where a property didn't exist, but needs to be added to the file
-        localProperties.put(propertyName, returnValue);
+        localProperties.put(propertyName, String.valueOf(returnValue));
         return returnValue;
     }
 
@@ -444,7 +444,7 @@ public class PropertiesManager {
         double returnValue = Double.parseDouble(localProperties.getProperty(propertyName, Double.toString(defaultVal)));
         // Set the property back into the manager
         // This is necessary in the cases where a property didn't exist, but needs to be added to the file
-        localProperties.put(propertyName, returnValue);
+        localProperties.put(propertyName, String.valueOf(returnValue));
         return returnValue;
     }
 
@@ -467,7 +467,7 @@ public class PropertiesManager {
         int returnValue = Integer.parseInt(localProperties.getProperty(propertyName, Integer.toString(defaultVal)));
         // Set the property back into the manager
         // This is necessary in the cases where a property didn't exist, but needs to be added to the file
-        localProperties.put(propertyName, returnValue);
+        localProperties.put(propertyName, String.valueOf(returnValue));
         return returnValue;
     }
 
@@ -490,7 +490,7 @@ public class PropertiesManager {
         float returnValue = Float.parseFloat(localProperties.getProperty(propertyName, Float.toString(defaultVal)));
         // Set the property back into the manager
         // This is necessary in the cases where a property didn't exist, but needs to be added to the file
-        localProperties.put(propertyName, returnValue);
+        localProperties.put(propertyName, String.valueOf(returnValue));
         return returnValue;
     }
 
