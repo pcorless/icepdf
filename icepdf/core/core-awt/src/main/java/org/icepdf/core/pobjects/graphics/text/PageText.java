@@ -20,9 +20,10 @@ import org.icepdf.core.util.Defs;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Rectangle2D;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 
 /**
  * Page text represents the root element of a page's text hierarchy which
@@ -64,6 +65,7 @@ public class PageText implements TextSelect {
     private ArrayList<LineText> sortedPageLines;
 
     private AffineTransform previousTextTransform;
+    private AffineTransform previousXObjectTransform;
 
     private LinkedHashMap<OptionalContents, PageText> optionalPageLines;
 
@@ -241,6 +243,23 @@ public class PageText implements TextSelect {
      * @param transform do matrix transform
      */
     public void applyXObjectTransform(AffineTransform transform) {
+        if (previousXObjectTransform != null) {
+            // back out transform in the less common case a xObject is reused.
+            try {
+                AffineTransform inverse = previousXObjectTransform.createInverse();
+                applyTextTransform(inverse);
+            } catch (NoninvertibleTransformException e) {
+                // intentionally left blank
+            }
+        }
+        previousXObjectTransform = transform;
+        applyTextTransform(transform);
+    }
+
+    /**
+     * Utility to apply specified transform to all glyphs in the pageLine array
+     */
+    private void applyTextTransform(AffineTransform transform) {
         for (LineText lineText : pageLines) {
             lineText.clearBounds();
             for (WordText wordText : lineText.getWords()) {
