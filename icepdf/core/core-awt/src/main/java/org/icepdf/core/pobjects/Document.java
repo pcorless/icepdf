@@ -448,7 +448,7 @@ public class Document {
                     List<Reference> kidsReferences = (List<Reference>) library.getObject(entries, PageTree.KIDS_KEY);
                     kidsReferences.forEach(item -> {
                         Object page = library.getObject(item);
-                        if (!(page instanceof Page)) {
+                        if (!(page instanceof Page || page instanceof PageTree || page instanceof Reference)) {
                             throw new RuntimeException("Error accessing page tree");
                         }
                     });
