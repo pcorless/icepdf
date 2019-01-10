@@ -1550,7 +1550,6 @@ public abstract class AbstractContentParser implements ContentParser {
         float advanceY = textMetrics.getAdvance().y;
 
         if (displayText.length() == 0) {
-            textMetrics.getAdvance().setLocation(textMetrics.getPreviousAdvance(), 0f);
             return;
         }
 
