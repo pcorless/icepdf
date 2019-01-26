@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2018 ICEsoft Technologies Canada Corp.
+ * Copyright 2006-2019 ICEsoft Technologies Canada Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -90,6 +90,11 @@ public class JpxDecoder extends AbstractImageDecoder {
                 imageInputStream.close();
             }
             WritableRaster wr = tmpImage.getRaster();
+
+            // quick sanity check to try and scale really large images before we get into heap trouble.
+            if (isImageReallyBig(wr)) {
+                wr = scaleReallyBigImages(wr);
+            }
 
             PColorSpace colourSpace = imageParams.getColourSpace();
             int bitsPerComponent = imageParams.getBitsPerComponent();

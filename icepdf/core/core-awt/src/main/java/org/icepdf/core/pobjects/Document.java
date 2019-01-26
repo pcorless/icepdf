@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2018 ICEsoft Technologies Canada Corp.
+ * Copyright 2006-2019 ICEsoft Technologies Canada Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -442,6 +442,16 @@ public class Document {
                 // this is the best test to see if everything is in order.
                 if (catalog != null) {
                     catalog.init();
+                    // check to see if we can locate the first level of pages,  to check offset validity
+                    // as sometimes xref 'drift' will still allow the catalog to be parsed but error out later.
+                    HashMap entries = catalog.getPageTree().entries;
+                    List<Reference> kidsReferences = (List<Reference>) library.getObject(entries, PageTree.KIDS_KEY);
+                    kidsReferences.forEach(item -> {
+                        Object page = library.getObject(item);
+                        if (!(page instanceof Page || page instanceof PageTree || page instanceof Reference)) {
+                            throw new RuntimeException("Error accessing page tree");
+                        }
+                    });
                 }
 
                 loaded = true;

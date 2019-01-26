@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2018 ICEsoft Technologies Canada Corp.
+ * Copyright 2006-2019 ICEsoft Technologies Canada Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -112,6 +112,11 @@ public class DctDecoder extends AbstractImageDecoder {
             // the raster data to RGB colours.
             ImageReadParam param = reader.getDefaultReadParam();
             WritableRaster wr = (WritableRaster) reader.readRaster(0, param);
+
+            // quick sanity check to try and scale really large images before we get into heap trouble.
+            if (isImageReallyBig(wr)) {
+                wr = scaleReallyBigImages(wr);
+            }
 
             // check the encoding type for colour conversion.
             jpegEncoding = getJPEGEncoding(data, dataRead);

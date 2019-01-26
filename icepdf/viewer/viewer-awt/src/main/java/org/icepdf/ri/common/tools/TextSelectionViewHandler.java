@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2018 ICEsoft Technologies Canada Corp.
+ * Copyright 2006-2019 ICEsoft Technologies Canada Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -49,6 +49,7 @@ public class TextSelectionViewHandler extends TextSelection
     protected JComponent parentComponent;
 
     protected boolean isDragging;
+    protected boolean isSelecting;
 
     public TextSelectionViewHandler(DocumentViewController documentViewController,
                                     JComponent parentComponent) {
@@ -83,6 +84,7 @@ public class TextSelectionViewHandler extends TextSelection
             documentViewController.clearSelectedText();
             clearSelectionState();
 
+            isSelecting = true;
             lastMousePressedLocation = e.getPoint();
 
             // start selection box.
@@ -173,6 +175,7 @@ public class TextSelectionViewHandler extends TextSelection
     public void mouseReleased(MouseEvent e) {
 
         isDragging = false;
+        isSelecting = false;
 
         // deselect rectangles on other selected pages.
         ArrayList<AbstractPageViewComponent> selectedPages =
@@ -224,7 +227,7 @@ public class TextSelectionViewHandler extends TextSelection
     public void mouseDragged(MouseEvent e) {
 
         // handle text selection drags.
-        if (documentViewController != null) {
+        if (documentViewController != null && isSelecting) {
             isDragging = true;
 
             // update the currently parentComponent box

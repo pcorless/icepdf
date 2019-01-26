@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2018 ICEsoft Technologies Canada Corp.
+ * Copyright 2006-2019 ICEsoft Technologies Canada Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -556,15 +556,6 @@ public class GraphicsState {
 
             // restore the fill color of the last paint
             parentGraphicState.shapes.add(new ColorDrawCmd(parentGraphicState.getFillColor()));
-
-            // apply the old alpha fill, removed as we need to guarantee the stack is in the correct state.
-            parentGraphicState.shapes.add(new AlphaDrawCmd(
-                    AlphaComposite.getInstance(parentGraphicState.getAlphaRule(), parentGraphicState.getFillAlpha())));
-
-            parentGraphicState.shapes.add(new AlphaDrawCmd(
-                    AlphaComposite.getInstance(parentGraphicState.getAlphaRule(), parentGraphicState.getStrokeAlpha())));
-            // stroke Color
-//            parentGraphicState.shapes.add(parentGraphicState.getStrokeColor());
         }
 
         return parentGraphicState;

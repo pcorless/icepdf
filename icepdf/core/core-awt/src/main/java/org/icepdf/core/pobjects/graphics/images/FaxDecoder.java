@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2018 ICEsoft Technologies Canada Corp.
+ * Copyright 2006-2019 ICEsoft Technologies Canada Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -74,10 +74,10 @@ public class FaxDecoder extends AbstractImageDecoder {
         if (encodedByteAlignObject instanceof Boolean) {
             encodedByteAlign = (Boolean) encodedByteAlignObject;
         }
-        int columns = imageParams.getWidth();
-        int rows = imageParams.getHeight();
-        if (columns <= 0) imageParams.getInt(decodeParms, COLUMNS_KEY);
-        if (rows <= 0) rows = imageParams.getInt(decodeParms, ROWS_KEY);
+        int columns = imageParams.getInt(decodeParms, COLUMNS_KEY);
+        int rows = imageParams.getInt(decodeParms, ROWS_KEY);
+        if (columns <= 0) columns = imageParams.getWidth();
+        if (rows <= 0) rows = imageParams.getHeight();
 
         int size = rows * ((columns + 7) >> 3);
 

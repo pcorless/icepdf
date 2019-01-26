@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2018 ICEsoft Technologies Canada Corp.
+ * Copyright 2006-2019 ICEsoft Technologies Canada Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -215,43 +215,46 @@ public class PageTree extends Dictionary {
     }
 
     /**
-     * Gets the page number of the page specifed by a reference.
+     * Gets the page number of the page specified by a reference.
      *
      * @param r reference to a page in the page tree.
      * @return page number of the specified reference.  If no page is found, -1
      * is returned.
      */
     public int getPageNumber(Reference r) {
-        Page pg = (Page) library.getObject(r);
-        if (pg == null)
-            return -1;
-//        pg.init();
-        int globalIndex = 0;
-        Reference currChildRef = r;
-        Reference currParentRef = pg.getParentReference();
-        PageTree currParent = pg.getParent();
-        while (currParentRef != null && currParent != null) {
-            currParent.init();
-            int refIndex = currParent.indexOfKidReference(currChildRef);
-            if (refIndex < 0)
-                return -1;
-            int localIndex = 0;
-            for (int i = 0; i < refIndex; i++) {
-                Object pageOrPages = currParent.getPageOrPagesPotentiallyNotInitedFromReferenceAt(i);
-                if (pageOrPages instanceof Page) {
-                    localIndex++;
-                } else if (pageOrPages instanceof PageTree) {
-                    PageTree peerPageTree = (PageTree) pageOrPages;
-                    peerPageTree.init();
-                    localIndex += peerPageTree.getNumberOfPages();
+        Object obj = library.getObject(r);
+        if (obj instanceof Page) {
+            Page pg = (Page) library.getObject(r);
+            if (pg == null) return -1;
+            //        pg.init();
+            int globalIndex = 0;
+            Reference currChildRef = r;
+            Reference currParentRef = pg.getParentReference();
+            PageTree currParent = pg.getParent();
+            while (currParentRef != null && currParent != null) {
+                currParent.init();
+                int refIndex = currParent.indexOfKidReference(currChildRef);
+                if (refIndex < 0)
+                    return -1;
+                int localIndex = 0;
+                for (int i = 0; i < refIndex; i++) {
+                    Object pageOrPages = currParent.getPageOrPagesPotentiallyNotInitedFromReferenceAt(i);
+                    if (pageOrPages instanceof Page) {
+                        localIndex++;
+                    } else if (pageOrPages instanceof PageTree) {
+                        PageTree peerPageTree = (PageTree) pageOrPages;
+                        peerPageTree.init();
+                        localIndex += peerPageTree.getNumberOfPages();
+                    }
                 }
+                globalIndex += localIndex;
+                currChildRef = currParentRef;
+                currParentRef = (Reference) currParent.entries.get(PARENT_KEY);
+                currParent = currParent.parent;
             }
-            globalIndex += localIndex;
-            currChildRef = currParentRef;
-            currParentRef = (Reference) currParent.entries.get(PARENT_KEY);
-            currParent = currParent.parent;
+            return globalIndex;
         }
-        return globalIndex;
+        return -1;
     }
 
     /**
