@@ -5068,10 +5068,10 @@ public class SwingController extends ComponentAdapter
                 }
             }
 
-            if (doSetFocus) {
-                // setup focus to ensure page up and page down keys work
-                documentViewController.requestViewFocusInWindow();
-            }
+//            if (doSetFocus) {
+//                // setup focus to ensure page up and page down keys work
+//                documentViewController.requestViewFocusInWindow();
+//            }
 
         } finally {
             setDisplayTool(tool);
