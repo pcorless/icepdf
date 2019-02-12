@@ -18,6 +18,7 @@ package org.icepdf.ri.common;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
+import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.GraphicsRenderingHints;
 
 import javax.print.*;
@@ -33,6 +34,7 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterJob;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -53,6 +55,15 @@ public class PrintHelper implements Printable {
 
     // private final as we execute this on teh host system and it must be immutable.
     private static final String PRINTER_STATUS_COMMAND = "lpstat -d";
+
+    private static boolean clippingFixEnabled;
+
+    static {
+        // decide if large images will be scaled
+        clippingFixEnabled =
+                Defs.sysPropertyBoolean("org.icepdf.ri.common.printHelper.clippingFix",
+                        false);
+    }
 
     private PageTree pageTree;
     private Container container;
@@ -419,16 +430,11 @@ public class PrintHelper implements Printable {
 
             // Painting a little rectangle seems to fix a strange clipping issue where some images are
             // clipped by about 75%.  Found this by workaround by accident with our trial version.  The clip
-            // issue only seems to happen if the PDF is make up many image with now paint primitives.
-            printGraphics.setColor(Color.WHITE);
-            printGraphics.drawRect(-9, -9, 10, 10);
-
-
-            // Painting a little rectangle seems to fix a strange clipping issue where some images are
-            // clipped by about 75%.  Found this by workaround by accident with our trial version.  The clip
-            // issue only seems to happen if the PDF is make up many image with now paint primitives.
-            printGraphics.setColor(Color.WHITE);
-            printGraphics.drawRect(-9, -9, 10, 10);
+            // issue only seems to happen if the PDF is make up many image with none paint primitives.
+            if (clippingFixEnabled) {
+                printGraphics.setColor(Color.WHITE);
+                printGraphics.drawRect(-9, -9, 10, 10);
+            }
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -647,7 +653,7 @@ public class PrintHelper implements Printable {
             in.close();
             ret = new StringBuilder(ret.toString().replaceAll("[\r\n]+$", ""));
             ret = new StringBuilder(ret.toString().replaceAll("[^:]*?[:]", "").trim());
-        } catch (IOException e) {
+        } catch (IOException | AccessControlException e) {
             // ignore as we may be ona non unix system,  and life goes on.
         }
         ret = new StringBuilder(ret.toString().replaceAll("[\r\n]+$", ""));
