@@ -244,7 +244,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                         documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION) ||
                         documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_STRIKEOUT_ANNOTATION) ||
                         documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_UNDERLINE_ANNOTATION))
-                ) {
+        ) {
             try {
                 PageText pageText = currentPage.getViewText();
                 if (pageText != null) {
@@ -479,8 +479,9 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     private void initializeAnnotationsComponent(Page page) {
         List<Annotation> annotations = page.getAnnotations();
         AbstractPageViewComponent parent = this;
-        // check if we are on the awt thread for the callback call.
-        documentViewController.getAnnotationCallback().pageAnnotationsInitialized(page);
+        if (documentViewController.getAnnotationCallback() != null) {
+            documentViewController.getAnnotationCallback().pageAnnotationsInitialized(page);
+        }
         if (annotations != null && annotations.size() > 0) {
             // we don't want to re-initialize the component as we'll
             // get duplicates if the page has be gc'd
