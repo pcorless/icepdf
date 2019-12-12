@@ -190,6 +190,8 @@ public class DocumentViewControllerImpl
 
         // dispose the view
         if (documentView != null) {
+            // clean up of last used tool and any listeners
+            documentView.uninstallCurrentTool();
             documentViewScrollPane.remove((JComponent) documentView);
             documentView.dispose();
             documentView = null;
@@ -201,14 +203,11 @@ public class DocumentViewControllerImpl
             documentViewModel = null;
         }
 
-
-//        setFitMode(PAGE_FIT_NONE);
+        setFitMode(PAGE_FIT_NONE);
         setCurrentPageIndex(0);
         setZoom(1);
         setRotation(0);
-//        setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_NONE);
         setViewCursor(DocumentViewControllerImpl.CURSOR_DEFAULT);
-
     }
 
     public Adjustable getHorizontalScrollBar() {
