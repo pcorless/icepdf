@@ -33,8 +33,8 @@ public class Indexed extends PColorSpace {
     public static final Name INDEXED_KEY = new Name("Indexed");
     public static final Name I_KEY = new Name("I");
 
-    PColorSpace colorSpace;
-    int hival;
+    private PColorSpace colorSpace;
+    private int hival;
     byte[] colors = {
             -1, -1, -1, 0, 0, 0
     };
@@ -117,12 +117,12 @@ public class Indexed extends PColorSpace {
             return;
         }
         int numCSComps = colorSpace.getNumComponents();
-        int b1[] = new int[numCSComps];
-        float f1[] = new float[numCSComps];
+        int[] b1 = new int[numCSComps];
+        float[] f1 = new float[numCSComps];
         cols = new Color[hival + 1];
         for (int j = 0; j <= hival; j++) {
             for (int i = 0; i < numCSComps; i++) {
-                b1[numCSComps - 1 - i] = 0xFF & ((int) colors[j * numCSComps + i]);
+                b1[i] = 0xFF & ((int) colors[j * numCSComps + i]);
             }
             colorSpace.normaliseComponentsToFloats(b1, f1, 255.0f);
             cols[j] = colorSpace.getColor(f1, true);

@@ -41,10 +41,6 @@ public class DeviceCMYK extends PColorSpace {
     public static final Name CMYK_KEY = new Name("CMYK");
 
     private static final DeviceGray DEVICE_GRAY = new DeviceGray(null, null);
-
-    // default cmyk value,  > 255 will lighten the image.
-    private static float blackRatio;
-
     // CMYK ICC color profile.
     private static ICC_ColorSpace iccCmykColorSpace;
 
@@ -52,9 +48,6 @@ public class DeviceCMYK extends PColorSpace {
     private static boolean disableICCCmykColorSpace;
 
     static {
-        // black ratio
-        blackRatio = (float) Defs.doubleProperty("org.icepdf.core.cmyk.colorant.black", 1.0);
-
         disableICCCmykColorSpace = Defs.booleanProperty("org.icepdf.core.cmyk.disableICCProfile", false);
 
         // check for a custom CMYK ICC colour profile specified using system properties.
@@ -79,7 +72,7 @@ public class DeviceCMYK extends PColorSpace {
      * @return valid rgb colour object.
      */
     public Color getColor(float[] f, boolean fillAndStroke) {
-        return alternative2(f);
+        return alternative2(f, fillAndStroke);
     }
 
     /*
@@ -187,31 +180,27 @@ public class DeviceCMYK extends PColorSpace {
      *          0.0 and 1.0
      * @return valid rgb colour object.
      */
-    private static Color alternative2(float[] f) {
-        float inCyan = f[3];
-        float inMagenta = f[2];
-        float inYellow = f[1];
-        float inBlack = f[0];
+    private static Color alternative2(float[] f, boolean fillAndStroke) {
+        float inCyan = f[0];
+        float inMagenta = f[1];
+        float inYellow = f[2];
+        float inBlack = f[3];
 
         // check if we have a valid ICC profile to work with
         if (!disableICCCmykColorSpace && iccCmykColorSpace != null) {
             try {
-                f = iccCmykColorSpace.toRGB(reverse(f));
+                f = iccCmykColorSpace.toRGB(f);
                 return new Color(f[0], f[1], f[2]);
             } catch (Throwable e) {
                 logger.warning("Error using iccCmykColorSpace in DeviceCMYK.");
             }
         }
 
-        // soften the amount of black, but exclude explicit black colorant.
-        if (!(inCyan == 0 && inMagenta == 0 && inYellow == 0)) {
-            inBlack = inBlack * blackRatio;
-        }
         // if only the  black colorant then we can treat the colour as gray,
         // cmyk is subtractive.
-        else {
-            f[0] = 1.0f - f[0];
-            return DEVICE_GRAY.getColor(f);
+        if (fillAndStroke && inCyan == 0 && inMagenta == 0 && inYellow == 0) {
+            f[3] = 1.0f - f[3];
+            return DEVICE_GRAY.getColor(new float[]{f[3]});
         }
 
         double c, m, y, aw, ac, am, ay, ar, ag, ab;

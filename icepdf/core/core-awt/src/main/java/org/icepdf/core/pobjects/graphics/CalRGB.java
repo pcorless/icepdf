@@ -84,7 +84,7 @@ public class CalRGB extends PColorSpace {
 
 
     public Color getColor(float[] f, boolean fillAndStroke) {
-        return new Color(f[2], f[1], f[0]);
+        return new Color(f[0], f[1], f[2]);
         /*        float A = (float)Math.exp(gamma[0]*Math.log(f[2]));
          float B = (float)Math.exp(gamma[1]*Math.log(f[1]));
          float C = (float)Math.exp(gamma[2]*Math.log(f[0]));*/

@@ -156,7 +156,6 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
                 // normalize
                 primitives[i] *= decode[j + 1] - decode[j] + decode[j];
             }
-            primitives = PColorSpace.reverse(primitives);
             return colorSpace.getColor(primitives, true);
         } else {
             float value = vertexBitStream.getBits(bitsPerComponent);
@@ -165,7 +164,6 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
             primitives = new float[]{value};
             float[] output = calculateValues(primitives);
             if (output != null) {
-                output = PColorSpace.reverse(output);
                 return colorSpace.getColor(output, true);
             }
         }

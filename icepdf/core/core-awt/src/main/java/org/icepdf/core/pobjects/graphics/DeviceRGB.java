@@ -55,8 +55,8 @@ public class DeviceRGB extends PColorSpace {
      */
     public Color getColor(float[] colours, boolean fillAndStroke) {
 
-        return new Color(validateColorRange(colours[2]),
+        return new Color(validateColorRange(colours[0]),
                 validateColorRange(colours[1]),
-                validateColorRange(colours[0]));
+                validateColorRange(colours[2]));
     }
 }

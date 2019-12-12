@@ -103,9 +103,6 @@ public class DeviceN extends PColorSpace {
                 f2[3] = i < f.length ? f[i] : 0;
             }
         }
-        if (f.length != 4) {
-            f2 = reverse(f2);
-        }
         return f2;
     }
 
@@ -113,7 +110,7 @@ public class DeviceN extends PColorSpace {
         // calculate cmyk color
         if (foundCMYKColorants && f.length == 4) {
             f = assignCMYK(f);
-            return deviceCMYK.getColor((f));
+            return deviceCMYK.getColor(f);
         } else {
             // trim color to match colourant length.
             int size = names.size();
@@ -122,8 +119,8 @@ public class DeviceN extends PColorSpace {
                 System.arraycopy(f, 0, tmp, 0, size);
                 f = tmp;
             }
-            float[] y = tintTransform.calculate(reverse(f));
-            return alternate.getColor(reverse(y));
+            float[] y = tintTransform.calculate(f);
+            return alternate.getColor(y);
         }
     }
 }

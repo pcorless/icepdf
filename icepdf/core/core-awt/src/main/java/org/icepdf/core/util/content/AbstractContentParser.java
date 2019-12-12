@@ -86,7 +86,7 @@ public abstract class AbstractContentParser implements ContentParser {
                 Defs.floatProperty("org.icepdf.core.strokeAdjustmentValue", 0.2f);
     }
 
-    public static final float OVERPAINT_ALPHA = 0.4f;
+    private static final float OVERPAINT_ALPHA = 0.4f;
 
     private static ClipDrawCmd clipDrawCmd = new ClipDrawCmd();
     private static NoClipDrawCmd noClipDrawCmd = new NoClipDrawCmd();
@@ -212,71 +212,54 @@ public abstract class AbstractContentParser implements ContentParser {
 
     protected static void consume_RG(GraphicsState graphicState, Stack stack,
                                      Library library) {
-        float b = ((Number) stack.pop()).floatValue();
-        float gg = ((Number) stack.pop()).floatValue();
-        float r = ((Number) stack.pop()).floatValue();
-        b = Math.max(0.0f, Math.min(1.0f, b));
-        gg = Math.max(0.0f, Math.min(1.0f, gg));
-        r = Math.max(0.0f, Math.min(1.0f, r));
-        // set stoke colour
-        graphicState.setStrokeColorSpace(
-                PColorSpace.getColorSpace(library, DeviceRGB.DEVICERGB_KEY));
-        graphicState.setStrokeColor(new Color(r, gg, b));
+        if (stack.size() >= 3) {
+            // set stoke colour
+            graphicState.setStrokeColorSpace(
+                    PColorSpace.getColorSpace(library, DeviceRGB.DEVICERGB_KEY));
+            graphicState.setStrokeColor(commonRGB(stack));
+        }
     }
 
     protected static void consume_rg(GraphicsState graphicState, Stack stack,
                                      Library library) {
         if (stack.size() >= 3) {
-            float b = ((Number) stack.pop()).floatValue();
-            float gg = ((Number) stack.pop()).floatValue();
-            float r = ((Number) stack.pop()).floatValue();
-            b = Math.max(0.0f, Math.min(1.0f, b));
-            gg = Math.max(0.0f, Math.min(1.0f, gg));
-            r = Math.max(0.0f, Math.min(1.0f, r));
             // set fill colour
             graphicState.setFillColorSpace(
                     PColorSpace.getColorSpace(library, DeviceRGB.DEVICERGB_KEY));
-            graphicState.setFillColor(new Color(r, gg, b));
+            graphicState.setFillColor(commonRGB(stack));
         }
     }
 
-    protected static void consume_K(GraphicsState graphicState, Stack stack,
-                                    Library library) {
+    protected static void consume_K(GraphicsState graphicState, Stack stack, Library library) {
         if (stack.size() >= 4) {
-            float k = ((Number) stack.pop()).floatValue();
-            float y = ((Number) stack.pop()).floatValue();
-            float m = ((Number) stack.pop()).floatValue();
-            float c = ((Number) stack.pop()).floatValue();
-
             PColorSpace pColorSpace =
                     PColorSpace.getColorSpace(library, DeviceCMYK.DEVICECMYK_KEY);
             // set stroke colour
             graphicState.setStrokeColorSpace(pColorSpace);
             graphicState.setStrokeColor(pColorSpace.getColor(
-                    new float[]{k, y, m, c}, true));
+                    commonCMYK(stack), true));
         }
     }
 
-    protected static void consume_k(GraphicsState graphicState, Stack stack,
-                                    Library library) {
-        float k = ((Number) stack.pop()).floatValue();
-        float y = ((Number) stack.pop()).floatValue();
-        float m = ((Number) stack.pop()).floatValue();
-        float c = ((Number) stack.pop()).floatValue();
-        // build a colour space.
-        PColorSpace pColorSpace =
-                PColorSpace.getColorSpace(library, DeviceCMYK.DEVICECMYK_KEY);
-        // set fill colour
-        graphicState.setFillColorSpace(pColorSpace);
-        graphicState.setFillColor(pColorSpace.getColor(
-                new float[]{k, y, m, c}, true));
+    protected static void consume_k(GraphicsState graphicState, Stack stack, Library library) {
+        if (stack.size() >= 4) {
+            // build a colour space.
+            PColorSpace pColorSpace =
+                    PColorSpace.getColorSpace(library, DeviceCMYK.DEVICECMYK_KEY);
+            // set fill colour
+            graphicState.setFillColorSpace(pColorSpace);
+            graphicState.setFillColor(pColorSpace.getColor(
+                    commonCMYK(stack), true));
+        }
     }
 
     protected static void consume_CS(GraphicsState graphicState, Stack stack, Resources resources) {
-        Name n = (Name) stack.pop();
-        // Fill Color ColorSpace, resources call uses factory call to PColorSpace.getColorSpace
-        // which returns an colour space including a pattern
-        graphicState.setStrokeColorSpace(resources.getColorSpace(n));
+        Object tmp = stack.pop();
+        if (tmp instanceof Name) {
+            // Fill Color ColorSpace, resources call uses factory call to PColorSpace.getColorSpace
+            // which returns an colour space including a pattern
+            graphicState.setStrokeColorSpace(resources.getColorSpace(tmp));
+        }
     }
 
     protected static void consume_cs(GraphicsState graphicState, Stack stack, Resources resources) {
@@ -321,16 +304,8 @@ public abstract class AbstractContentParser implements ContentParser {
                     // parsing is of the form 'C1...Cn name scn'
                     // first find out colour space specified by name
                     int compLength = graphicState.getStrokeColorSpace().getNumComponents();
-                    // peek and then pop until a none Float is found
-                    int nCount = 0;
                     // next calculate the colour based ont he space and c1..Cn
-                    float colour[] = new float[compLength];
-                    // peek and pop all of the colour floats
-                    while (!stack.isEmpty() && stack.peek() instanceof Number &&
-                            nCount < compLength) {
-                        colour[nCount] = ((Number) stack.pop()).floatValue();
-                        nCount++;
-                    }
+                    float[] colour = popFloatInOrder(stack, compLength);
                     Color color = graphicState.getStrokeColorSpace().getColor(colour, isTint);
                     graphicState.setStrokeColor(color);
                     tilingPattern.setUnColored(color);
@@ -346,27 +321,7 @@ public abstract class AbstractContentParser implements ContentParser {
             // first get assumed number of components
             int colorSpaceN = graphicState.getStrokeColorSpace().getNumComponents();
 
-            // peek and then pop until a none Float is found
-            int nCount = 0;
-            // set colour to max of 4 which is cymk,
-            int compLength = 4;
-            float colour[] = new float[compLength];
-            // peek and pop all of the colour floats
-            while (!stack.isEmpty() && stack.peek() instanceof Number &&
-                    nCount < compLength) {
-                colour[nCount] = ((Number) stack.pop()).floatValue();
-                nCount++;
-            }
-
-            // check to see if nCount and colorSpaceN are the same
-            if (nCount != colorSpaceN) {
-                // change the colour state to nCount equivalent
-                graphicState.setStrokeColorSpace(
-                        PColorSpace.getColorSpace(library, nCount));
-            }
-            // shrink the array to the correct length
-            float[] f = new float[nCount];
-            System.arraycopy(colour, 0, f, 0, nCount);
+            float[] f = popFloatInOrder(stack, colorSpaceN);
             graphicState.setStrokeColor(graphicState.getStrokeColorSpace().getColor(f, isTint));
         }
     }
@@ -405,15 +360,7 @@ public abstract class AbstractContentParser implements ContentParser {
                     // first find out colour space specified by name
                     int compLength = graphicState.getFillColorSpace().getNumComponents();
                     // peek and then pop until a none Float is found
-                    int nCount = 0;
-                    // next calculate the colour based ont he space and c1..Cn
-                    float colour[] = new float[compLength];
-                    // peek and pop all of the colour floats
-                    while (!stack.isEmpty() && stack.peek() instanceof Number &&
-                            nCount < compLength) {
-                        colour[nCount] = ((Number) stack.pop()).floatValue();
-                        nCount++;
-                    }
+                    float[] colour = popFloatInOrder(stack, compLength);
                     // fill colour to be used when painting.
                     Color color = graphicState.getFillColorSpace().getColor(colour, isTint);
                     graphicState.setFillColor(color);
@@ -428,30 +375,7 @@ public abstract class AbstractContentParser implements ContentParser {
 
             // first get assumed number of components
             int colorSpaceN = graphicState.getFillColorSpace().getNumComponents();
-
-            // peek and then pop until a none Float is found
-            int nCount = 0;
-            // set colour to max of 4 which is cymk,
-            // we have a corner case where 5 components are defined and once
-            // pushed throw the function produce a valid color.
-            int compLength = 5;
-            float colour[] = new float[compLength];
-            // peek and pop all of the colour floats
-            while (!stack.isEmpty() && stack.peek() instanceof Number &&
-                    nCount < compLength) {
-                colour[nCount] = ((Number) stack.pop()).floatValue();
-                nCount++;
-            }
-
-            // check to see if nCount and colorSpaceN are the same
-            if (nCount != colorSpaceN) {
-                // change the colour state to nCount equivalent
-                graphicState.setFillColorSpace(
-                        PColorSpace.getColorSpace(library, nCount));
-            }
-            // shrink the array to the correct length
-            float[] f = new float[nCount];
-            System.arraycopy(colour, 0, f, 0, nCount);
+            float[] f = popFloatInOrder(stack, colorSpaceN);
             graphicState.setFillColor(graphicState.getFillColorSpace().getColor(f, true));
         }
     }
@@ -478,25 +402,26 @@ public abstract class AbstractContentParser implements ContentParser {
 
     protected static void consume_cm(GraphicsState graphicState, Stack stack,
                                      boolean inTextBlock, AffineTransform textBlockBase) {
-        float f = ((Number) stack.pop()).floatValue();
-        float e = ((Number) stack.pop()).floatValue();
-        float d = ((Number) stack.pop()).floatValue();
-        float c = ((Number) stack.pop()).floatValue();
-        float b = ((Number) stack.pop()).floatValue();
-        float a = ((Number) stack.pop()).floatValue();
+        float[] affineTransform = popFloatInOrder(stack, 6);
         // get the current CTM
         AffineTransform af = new AffineTransform(graphicState.getCTM());
         // do the matrix concatenation math
-        af.concatenate(new AffineTransform(a, b, c, d, e, f));
+        af.concatenate(new AffineTransform(
+                affineTransform[0], affineTransform[1], affineTransform[2],
+                affineTransform[3], affineTransform[4], affineTransform[5]));
         // add the transformation to the graphics state
         graphicState.set(af);
         // update the clip, translate by this CM
-        graphicState.updateClipCM(new AffineTransform(a, b, c, d, e, f));
+        graphicState.updateClipCM(new AffineTransform(
+                affineTransform[0], affineTransform[1], affineTransform[2],
+                affineTransform[3], affineTransform[4], affineTransform[5]));
         // apply the cm just as we would a tm
         if (inTextBlock) {
             // update the textBlockBase with the cm matrix
             AffineTransform af2 = new AffineTransform(graphicState.getTextState().tlmatrix);
-            graphicState.getTextState().tmatrix = new AffineTransform(a, b, c, d, e, f);
+            graphicState.getTextState().tmatrix = new AffineTransform(
+                    affineTransform[0], affineTransform[1], affineTransform[2],
+                    affineTransform[3], affineTransform[4], affineTransform[5]);
             af2.concatenate(graphicState.getTextState().tmatrix);
             graphicState.set(af2);
             graphicState.scale(1, -1);
@@ -568,108 +493,106 @@ public abstract class AbstractContentParser implements ContentParser {
             // Try and find the named reference 'xobjectName', pass in a copy
             // of the current graphics state for the new content stream
             Form formXObject = (Form) xObject;
-            if (formXObject != null) {
-                // check if the form is an optional content group.
-                Object oc = formXObject.getObject(OptionalContent.OC_KEY);
-                if (oc != null) {
-                    OptionalContent optionalContent = resources.getLibrary().getCatalog().getOptionalContent();
-                    optionalContent.init();
-                    if (!optionalContent.isVisible(oc)) {
-                        return graphicState;
-                    }
+            // check if the form is an optional content group.
+            Object oc = formXObject.getObject(OptionalContent.OC_KEY);
+            if (oc != null) {
+                OptionalContent optionalContent = resources.getLibrary().getCatalog().getOptionalContent();
+                optionalContent.init();
+                if (!optionalContent.isVisible(oc)) {
+                    return graphicState;
                 }
-                // init form XObject with current gs state but we need to keep the original state for blending
-                GraphicsState xformGraphicsState = new GraphicsState(graphicState);
-                formXObject.setGraphicsState(xformGraphicsState);
-                if (formXObject.isTransparencyGroup()) {
-                    // assign the state to the graphic state for later
-                    // processing during the paint
-                    xformGraphicsState.setTransparencyGroup(formXObject.isTransparencyGroup());
-                    xformGraphicsState.setIsolated(formXObject.isIsolated());
-                    xformGraphicsState.setKnockOut(formXObject.isKnockOut());
-                }
-                // according to spec the formXObject might not have
-                // resources reference as a result we pass in the current
-                // one in the hope that any resources can be found.
-                formXObject.setParentResources(resources);
-                formXObject.init();
-                // 2.) concatenate matrix entry with the current CTM
-                AffineTransform af = new AffineTransform(graphicState.getCTM());
-                af.concatenate(formXObject.getMatrix());
-                shapes.add(new TransformDrawCmd(af));
-                // 3.) Clip according to the form BBox entry
-                if (graphicState.getClip() != null) {
-                    AffineTransform matrix = formXObject.getMatrix();
-                    Area bbox = new Area(formXObject.getBBox());
-                    Area clip = graphicState.getClip();
-                    // create inverse of matrix so we can transform
-                    // the clip to form space.
-                    try {
-                        matrix = matrix.createInverse();
-                    } catch (NoninvertibleTransformException e) {
-                        logger.warning("Error create xObject matrix inverse");
-                    }
-                    // apply the new clip now that they are in the
-                    // same space.
-                    Shape shape = matrix.createTransformedShape(clip);
-                    bbox.intersect(new Area(shape));
-                    shapes.add(new ShapeDrawCmd(bbox));
-                } else {
-                    shapes.add(new ShapeDrawCmd(formXObject.getBBox()));
-                }
-                shapes.add(clipDrawCmd);
-                // 4.) Paint the graphics objects in font stream.
-                // still some work to do do here with regards to BM vs. alpha comp.
-                if ((formXObject.getExtGState() != null &&
-                        (formXObject.getExtGState().getBlendingMode() == null ||
-                                formXObject.getExtGState().getBlendingMode().equals(BlendComposite.NORMAL_VALUE)))) {
-                    setAlpha(formXObject.getShapes(), graphicState, graphicState.getAlphaRule(),
-                            graphicState.getFillAlpha());
-                    setAlpha(shapes, graphicState, graphicState.getAlphaRule(),
-                            graphicState.getFillAlpha());
-                }
-                // If we have a transparency group we paint it
-                // slightly different then a regular xObject as we
-                // need to capture the alpha which is only possible
-                // by paint the xObject to an image.
-                if (!disableTransparencyGroups &&
-                        ((formXObject.getBBox().getWidth() < FormDrawCmd.MAX_IMAGE_SIZE && formXObject.getBBox().getWidth() > 1) &&
-                                (formXObject.getBBox().getHeight() < FormDrawCmd.MAX_IMAGE_SIZE && formXObject.getBBox().getHeight() > 1)
-                                && (formXObject.getExtGState() != null &&
-                                (formXObject.getExtGState().getSMask() != null ||
-                                        (formXObject.getExtGState().getBlendingMode() != null &&
-                                                !formXObject.getExtGState().getBlendingMode().equals(BlendComposite.NORMAL_VALUE))
-                                        || (formXObject.getExtGState().getNonStrokingAlphConstant() < 1
-                                        && formXObject.getExtGState().getNonStrokingAlphConstant() > 0)))
-                        )) {
-                    // add the hold form for further processing.
-                    shapes.add(new FormDrawCmd(formXObject));
-                }
-                // the down side of painting to an image is that we
-                // lose quality if there is a affine transform, so
-                // if it isn't a group transparency we paint old way
-                // by just adding the objects to the shapes stack.
-                else {
-                    shapes.add(new ShapesDrawCmd(formXObject.getShapes()));
-                }
-                // update text sprites with geometric path state
-                if (formXObject.getShapes() != null &&
-                        formXObject.getShapes().getPageText() != null) {
-                    // normalize each sprite.
-                    AffineTransform pageSpace = graphicState.getCTM();
-                    pageSpace.concatenate(formXObject.getMatrix());
-                    formXObject.getShapes().getPageText()
-                            .applyXObjectTransform(pageSpace);
-                    // add the text to the current shapes for extraction and
-                    // selection purposes.
-                    PageText pageText = formXObject.getShapes().getPageText();
-                    if (pageText != null && pageText.getPageLines() != null) {
-                        shapes.getPageText().addPageLines(
-                                pageText.getPageLines());
-                    }
-                }
-                shapes.add(new NoClipDrawCmd());
             }
+            // init form XObject with current gs state but we need to keep the original state for blending
+            GraphicsState xformGraphicsState = new GraphicsState(graphicState);
+            formXObject.setGraphicsState(xformGraphicsState);
+            if (formXObject.isTransparencyGroup()) {
+                // assign the state to the graphic state for later
+                // processing during the paint
+                xformGraphicsState.setTransparencyGroup(formXObject.isTransparencyGroup());
+                xformGraphicsState.setIsolated(formXObject.isIsolated());
+                xformGraphicsState.setKnockOut(formXObject.isKnockOut());
+            }
+            // according to spec the formXObject might not have
+            // resources reference as a result we pass in the current
+            // one in the hope that any resources can be found.
+            formXObject.setParentResources(resources);
+            formXObject.init();
+            // 2.) concatenate matrix entry with the current CTM
+            AffineTransform af = new AffineTransform(graphicState.getCTM());
+            af.concatenate(formXObject.getMatrix());
+            shapes.add(new TransformDrawCmd(af));
+            // 3.) Clip according to the form BBox entry
+            if (graphicState.getClip() != null) {
+                AffineTransform matrix = formXObject.getMatrix();
+                Area bbox = new Area(formXObject.getBBox());
+                Area clip = graphicState.getClip();
+                // create inverse of matrix so we can transform
+                // the clip to form space.
+                try {
+                    matrix = matrix.createInverse();
+                } catch (NoninvertibleTransformException e) {
+                    logger.warning("Error create xObject matrix inverse");
+                }
+                // apply the new clip now that they are in the
+                // same space.
+                Shape shape = matrix.createTransformedShape(clip);
+                bbox.intersect(new Area(shape));
+                shapes.add(new ShapeDrawCmd(bbox));
+            } else {
+                shapes.add(new ShapeDrawCmd(formXObject.getBBox()));
+            }
+            shapes.add(clipDrawCmd);
+            // 4.) Paint the graphics objects in font stream.
+            // still some work to do do here with regards to BM vs. alpha comp.
+            if ((formXObject.getExtGState() != null &&
+                    (formXObject.getExtGState().getBlendingMode() == null ||
+                            formXObject.getExtGState().getBlendingMode().equals(BlendComposite.NORMAL_VALUE)))) {
+                setAlpha(formXObject.getShapes(), graphicState, graphicState.getAlphaRule(),
+                        graphicState.getFillAlpha());
+                setAlpha(shapes, graphicState, graphicState.getAlphaRule(),
+                        graphicState.getFillAlpha());
+            }
+            // If we have a transparency group we paint it
+            // slightly different then a regular xObject as we
+            // need to capture the alpha which is only possible
+            // by paint the xObject to an image.
+            if (!disableTransparencyGroups &&
+                    ((formXObject.getBBox().getWidth() < FormDrawCmd.MAX_IMAGE_SIZE && formXObject.getBBox().getWidth() > 1) &&
+                            (formXObject.getBBox().getHeight() < FormDrawCmd.MAX_IMAGE_SIZE && formXObject.getBBox().getHeight() > 1)
+                            && (formXObject.getExtGState() != null &&
+                            (formXObject.getExtGState().getSMask() != null ||
+                                    (formXObject.getExtGState().getBlendingMode() != null &&
+                                            !formXObject.getExtGState().getBlendingMode().equals(BlendComposite.NORMAL_VALUE))
+                                    || (formXObject.getExtGState().getNonStrokingAlphConstant() < 1
+                                    && formXObject.getExtGState().getNonStrokingAlphConstant() > 0)))
+                    )) {
+                // add the hold form for further processing.
+                shapes.add(new FormDrawCmd(formXObject));
+            }
+            // the down side of painting to an image is that we
+            // lose quality if there is a affine transform, so
+            // if it isn't a group transparency we paint old way
+            // by just adding the objects to the shapes stack.
+            else {
+                shapes.add(new ShapesDrawCmd(formXObject.getShapes()));
+            }
+            // update text sprites with geometric path state
+            if (formXObject.getShapes() != null &&
+                    formXObject.getShapes().getPageText() != null) {
+                // normalize each sprite.
+                AffineTransform pageSpace = graphicState.getCTM();
+                pageSpace.concatenate(formXObject.getMatrix());
+                formXObject.getShapes().getPageText()
+                        .applyXObjectTransform(pageSpace);
+                // add the text to the current shapes for extraction and
+                // selection purposes.
+                PageText pageText = formXObject.getShapes().getPageText();
+                if (pageText != null && pageText.getPageLines() != null) {
+                    shapes.getPageText().addPageLines(
+                            pageText.getPageLines());
+                }
+            }
+            shapes.add(new NoClipDrawCmd());
             //  5.) Restore the saved graphics state
             graphicState = graphicState.restore();
         }
@@ -726,7 +649,7 @@ public abstract class AbstractContentParser implements ContentParser {
                 for (int i = 0; i < sz; i++) {
                     tmp = dashVector.get(i);
                     float dash;
-                    if (tmp != null && tmp instanceof Number) {
+                    if (tmp instanceof Number) {
                         dash = Math.abs(((Number) dashVector.get(i)).floatValue());
                         // java has a hard time with painting dash array with values < 0.05.
                         // null the dash array as we can't pain it PDF-966.
@@ -1075,16 +998,14 @@ public abstract class AbstractContentParser implements ContentParser {
     protected static GeneralPath consume_c(Stack stack,
                                            GeneralPath geometricPath) {
         if (!stack.isEmpty()) {
-            float y3 = ((Number) stack.pop()).floatValue();
-            float x3 = ((Number) stack.pop()).floatValue();
-            float y2 = ((Number) stack.pop()).floatValue();
-            float x2 = ((Number) stack.pop()).floatValue();
-            float y1 = ((Number) stack.pop()).floatValue();
-            float x1 = ((Number) stack.pop()).floatValue();
+            float[] affineTransform = popFloatInOrder(stack, 6);
             if (geometricPath == null) {
                 geometricPath = new GeneralPath();
             }
-            geometricPath.curveTo(x1, y1, x2, y2, x3, y3);
+            geometricPath.curveTo(
+                    affineTransform[0], affineTransform[1],
+                    affineTransform[2], affineTransform[3],
+                    affineTransform[4], affineTransform[5]);
         }
         return geometricPath;
     }
@@ -1094,9 +1015,8 @@ public abstract class AbstractContentParser implements ContentParser {
                                            GeneralPath geometricPath) throws InterruptedException {
         if (geometricPath != null) {
             commonStroke(graphicState, shapes, geometricPath);
-            geometricPath = null;
         }
-        return geometricPath;
+        return null;
     }
 
     protected static GeneralPath consume_F(GraphicsState graphicState,
@@ -1107,8 +1027,7 @@ public abstract class AbstractContentParser implements ContentParser {
             geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
             commonFill(shapes, graphicState, geometricPath);
         }
-        geometricPath = null;
-        return geometricPath;
+        return null;
     }
 
     protected static GeneralPath consume_f(GraphicsState graphicState,
@@ -1119,8 +1038,7 @@ public abstract class AbstractContentParser implements ContentParser {
             geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
             commonFill(shapes, graphicState, geometricPath);
         }
-        geometricPath = null;
-        return geometricPath;
+        return null;
     }
 
     protected static GeneralPath consume_re(Stack stack,
@@ -1228,8 +1146,7 @@ public abstract class AbstractContentParser implements ContentParser {
             geometricPath.setWindingRule(GeneralPath.WIND_EVEN_ODD);
             commonFill(shapes, graphicState, geometricPath);
         }
-        geometricPath = null;
-        return geometricPath;
+        return null;
     }
 
     protected static GeneralPath consume_b(GraphicsState graphicState,
@@ -1294,8 +1211,7 @@ public abstract class AbstractContentParser implements ContentParser {
             commonFill(shapes, graphicState, geometricPath);
             commonStroke(graphicState, shapes, geometricPath);
         }
-        geometricPath = null;
-        return geometricPath;
+        return null;
     }
 
     protected static GraphicsState consume_d0(GraphicsState graphicState, Stack stack) {
@@ -1315,9 +1231,8 @@ public abstract class AbstractContentParser implements ContentParser {
         if (geometricPath != null) {
             geometricPath.closePath();
             commonStroke(graphicState, shapes, geometricPath);
-            geometricPath = null;
         }
-        return geometricPath;
+        return null;
     }
 
     protected static GeneralPath consume_b_star(GraphicsState graphicState,
@@ -1330,26 +1245,20 @@ public abstract class AbstractContentParser implements ContentParser {
             commonStroke(graphicState, shapes, geometricPath);
             commonFill(shapes, graphicState, geometricPath);
         }
-        geometricPath = null;
-        return geometricPath;
+        return null;
     }
 
     protected static GraphicsState consume_d1(GraphicsState graphicState, Stack stack) {
         // save the stack
         graphicState = graphicState.save();
         // need two pops to get  Wx and Wy data
-        float x2 = ((Number) stack.pop()).floatValue();
-        float y2 = ((Number) stack.pop()).floatValue();
-        float x1 = ((Number) stack.pop()).floatValue();
-        float y1 = ((Number) stack.pop()).floatValue();
-        float y = ((Number) stack.pop()).floatValue();
-        float x = ((Number) stack.pop()).floatValue();
+        float[] affineTransform = popFloatInOrder(stack, 6);
         TextState textState = graphicState.getTextState();
         textState.setType3HorizontalDisplacement(
-                new Point2D.Float(x, y));
+                new Point2D.Float(affineTransform[0], affineTransform[1]));
         textState.setType3BBox(new PRectangle(
-                new Point2D.Float(x1, y1),
-                new Point2D.Float(x2, y2)));
+                new Point2D.Float(affineTransform[2], affineTransform[3]),
+                new Point2D.Float(affineTransform[4], affineTransform[5])));
         return graphicState;
     }
 
@@ -1362,12 +1271,11 @@ public abstract class AbstractContentParser implements ContentParser {
             commonStroke(graphicState, shapes, geometricPath);
             commonFill(shapes, graphicState, geometricPath);
         }
-        geometricPath = null;
-        return geometricPath;
+        return null;
     }
 
-    public static void consume_W_star(GraphicsState graphicState,
-                                      GeneralPath geometricPath) {
+    protected static void consume_W_star(GraphicsState graphicState,
+                                         GeneralPath geometricPath) {
         if (geometricPath != null) {
             geometricPath.setWindingRule(GeneralPath.WIND_EVEN_ODD);
             geometricPath.closePath();
@@ -1375,18 +1283,18 @@ public abstract class AbstractContentParser implements ContentParser {
         }
     }
 
-    public static void consume_DP(Stack stack) {
+    protected static void consume_DP(Stack stack) {
         stack.pop(); // properties
         stack.pop(); // name
     }
 
-    public static void consume_MP(Stack stack) {
+    protected static void consume_MP(Stack stack) {
         stack.pop();
     }
 
-    public static void consume_sh(GraphicsState graphicState, Stack stack,
-                                  Shapes shapes,
-                                  Resources resources) throws InterruptedException {
+    protected static void consume_sh(GraphicsState graphicState, Stack stack,
+                                     Shapes shapes,
+                                     Resources resources) throws InterruptedException {
         Object o = stack.peek();
         // if a name then we are dealing with a pattern.
         if (o instanceof Name) {
@@ -1503,7 +1411,7 @@ public abstract class AbstractContentParser implements ContentParser {
      * @param oCGs             optional content group, can be null
      * @param shapes           collection of all shapes for page content being parsed.
      */
-    protected static void drawString(
+    private static void drawString(
             StringBuilder displayText,
             TextMetrics textMetrics,
             TextState textState,
@@ -1669,8 +1577,8 @@ public abstract class AbstractContentParser implements ContentParser {
      * @param rmode        write mode
      * @param graphicState graphics state
      */
-    protected static void drawModeFill(GraphicsState graphicState,
-                                       TextSprite textSprites, Shapes shapes, int rmode) {
+    private static void drawModeFill(GraphicsState graphicState,
+                                     TextSprite textSprites, Shapes shapes, int rmode) {
         textSprites.setRMode(rmode);
         textSprites.setStrokeColor(graphicState.getFillColor());
         shapes.add(new ColorDrawCmd(graphicState.getFillColor()));
@@ -1687,9 +1595,9 @@ public abstract class AbstractContentParser implements ContentParser {
      * @param rmode        write mode
      * @param graphicState current graphics state
      */
-    protected static void drawModeStroke(GraphicsState graphicState,
-                                         TextSprite textSprites, TextState textState,
-                                         Shapes shapes, int rmode) {
+    private static void drawModeStroke(GraphicsState graphicState,
+                                       TextSprite textSprites, TextState textState,
+                                       Shapes shapes, int rmode) {
         // setup textSprite with a strokeColor and the correct rmode
         textSprites.setRMode(rmode);
         textSprites.setStrokeColor(graphicState.getStrokeColor());
@@ -1728,9 +1636,9 @@ public abstract class AbstractContentParser implements ContentParser {
      * @param rmode        write mode
      * @param graphicState current graphics state
      */
-    protected static void drawModeFillStroke(GraphicsState graphicState,
-                                             TextSprite textSprites, TextState textState,
-                                             Shapes shapes, int rmode) {
+    private static void drawModeFillStroke(GraphicsState graphicState,
+                                           TextSprite textSprites, TextState textState,
+                                           Shapes shapes, int rmode) {
         // setup textSprite with a strokeColor and the correct rmode
         textSprites.setRMode(rmode);
         textSprites.setStrokeColor(graphicState.getStrokeColor());
@@ -1764,7 +1672,7 @@ public abstract class AbstractContentParser implements ContentParser {
      * @param geometricPath current path.
      * @throws InterruptedException thread interrupted.
      */
-    protected static void commonStroke(GraphicsState graphicState, Shapes shapes, GeneralPath geometricPath)
+    private static void commonStroke(GraphicsState graphicState, Shapes shapes, GeneralPath geometricPath)
             throws InterruptedException {
 
         // get current fill alpha and concatenate with overprinting if present
@@ -1833,7 +1741,7 @@ public abstract class AbstractContentParser implements ContentParser {
      * @param colorSpace color space of over print
      * @return tweaked over printing alpha
      */
-    protected static float commonOverPrintAlpha(float alpha, PColorSpace colorSpace) {
+    private static float commonOverPrintAlpha(float alpha, PColorSpace colorSpace) {
         if (!enabledOverPrint) {
             return alpha;
         }
@@ -1863,8 +1771,8 @@ public abstract class AbstractContentParser implements ContentParser {
      * @throws NoninvertibleTransformException error calculating current space.
      * @throws InterruptedException            thread interrupted.
      */
-    protected static void commonFill(Shapes shapes, GraphicsState graphicState, GeneralPath geometricPath)
-            throws NoninvertibleTransformException, InterruptedException {
+    private static void commonFill(Shapes shapes, GraphicsState graphicState, GeneralPath geometricPath)
+            throws InterruptedException {
 
         // get current fill alpha and concatenate with overprinting if present
         if (graphicState.isOverprintOther()) {
@@ -1932,11 +1840,40 @@ public abstract class AbstractContentParser implements ContentParser {
         // add old alpha back to stack
 //        if (graphicState.isOverprintOther()) {
 //            setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
-//        }
+//        }`
+    }
+
+    private static Color commonRGB(Stack stack) {
+        float blue = ((Number) stack.pop()).floatValue();
+        float green = ((Number) stack.pop()).floatValue();
+        float red = ((Number) stack.pop()).floatValue();
+        blue = Math.max(0.0f, Math.min(1.0f, blue));
+        green = Math.max(0.0f, Math.min(1.0f, green));
+        red = Math.max(0.0f, Math.min(1.0f, red));
+        return new Color(red, green, blue);
+    }
+
+    private static float[] commonCMYK(Stack stack){
+        float k = ((Number) stack.pop()).floatValue();
+        float y = ((Number) stack.pop()).floatValue();
+        float m = ((Number) stack.pop()).floatValue();
+        float c = ((Number) stack.pop()).floatValue();
+        return new float[]{c, m, y, k};
+    }
+
+    private static float[] popFloatInOrder(Stack stack, int number){
+        float f[] = new float[number];
+        int nCount = number - 1;
+        // peek and pop all of the colour floats
+        while (!stack.isEmpty() && stack.peek() instanceof Number && nCount >= 0) {
+            f[nCount] = ((Number) stack.pop()).floatValue();
+            nCount--;
+        }
+        return f;
     }
 
     /**
-     * Sets the state of the BasicStrok with the latest values from the
+     * Sets the state of the BasicStroke with the latest values from the
      * graphicSate instance value:
      * graphicState.lineWidth - line width
      * graphicState.lineCap - line cap type
@@ -1968,7 +1905,7 @@ public abstract class AbstractContentParser implements ContentParser {
      * @param graphicState current graphics state.
      * @return new text scaling AffineTransform.
      */
-    protected static AffineTransform applyTextScaling(GraphicsState graphicState) {
+    private static AffineTransform applyTextScaling(GraphicsState graphicState) {
         // get the current CTM
         AffineTransform af = new AffineTransform(graphicState.getCTM());
         // the mystery continues,  it appears that only the negative or positive
@@ -1996,7 +1933,7 @@ public abstract class AbstractContentParser implements ContentParser {
      * @param shapes         current shapes vector to add Alpha Composite to
      * @param alphaPaintType fill or stroke operation applying the alpha
      */
-    protected static void setAlpha(Shapes shapes, GraphicsState graphicsState, AlphaPaintType alphaPaintType) {
+    private static void setAlpha(Shapes shapes, GraphicsState graphicsState, AlphaPaintType alphaPaintType) {
         if (graphicsState.getExtGState() != null
                 && graphicsState.getExtGState().getBlendingMode() != null
                 && !graphicsState.getExtGState().getBlendingMode().equals(BlendComposite.NORMAL_VALUE)) {

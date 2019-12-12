@@ -57,7 +57,6 @@ public class PColorSpaceRasterOp implements RasterOp {
                 }
                 // color space caching should help with the number of colors
                 // objects created.
-                PColorSpace.reverseInPlace(values);
                 destPixels[intPixels] = colorSpace.getColor(values).getRGB();
             }
         }

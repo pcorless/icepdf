@@ -153,7 +153,6 @@ public class RawDecoder extends AbstractImageDecoder {
                                 for (int i = 0; i < colorSpaceCompCount; i++) {
                                     f[i] = in.getBits(bitsPerComponent);
                                 }
-                                PColorSpace.reverseInPlace(f);
                                 colorSpace.normaliseComponentsToFloats(f, ff, maxColourValue);
                                 Color color = colorSpace.getColor(ff);
                                 imageBits[x] = color.getRGB();
@@ -169,7 +168,6 @@ public class RawDecoder extends AbstractImageDecoder {
                                     f[i] = maxColourValue - f[i];
                                 }
                             }
-                            PColorSpace.reverseInPlace(f);
                             colorSpace.normaliseComponentsToFloats(f, ff, maxColourValue);
                             Color color = colorSpace.getColor(ff);
                             imageBits[x] = color.getRGB();

@@ -68,8 +68,6 @@ public class ColorKeyMask extends Dictionary {
                     }
                 }
             } else {
-                PColorSpace.reverseInPlace(maskMinOrigCompsInt);
-                PColorSpace.reverseInPlace(maskMaxOrigCompsInt);
                 float[] maskMinOrigComps = new float[colorSpaceCompCount];
                 float[] maskMaxOrigComps = new float[colorSpaceCompCount];
                 colourSpace.normaliseComponentsToFloats(maskMinOrigCompsInt, maskMinOrigComps, (1 << bitsPerComponent) - 1);
@@ -77,8 +75,6 @@ public class ColorKeyMask extends Dictionary {
 
                 Color minColor = colourSpace.getColor(maskMinOrigComps);
                 Color maxColor = colourSpace.getColor(maskMaxOrigComps);
-                PColorSpace.reverseInPlace(maskMinOrigComps);
-                PColorSpace.reverseInPlace(maskMaxOrigComps);
                 maskMinRGB = new int[]{minColor.getRed(), minColor.getGreen(), minColor.getBlue()};
                 maskMaxRGB = new int[]{maxColor.getRed(), maxColor.getGreen(), maxColor.getBlue()};
             }

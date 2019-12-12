@@ -254,7 +254,6 @@ public class ShadingType2Pattern extends ShadingPattern {
         if (function != null) {
             float[] output = calculateValues(input);
             if (output != null) {
-                output = PColorSpace.reverse(output);
                 return colorSpace.getColor(output, true);
             } else {
                 return null;

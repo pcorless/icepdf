@@ -113,9 +113,9 @@ public class Lab extends PColorSpace {
     }
 
     public Color getColor(float[] f, boolean fillAndStroke) {
-        double cie_b = f[0];
+        double cie_b = f[2];
         double cie_a = f[1];
-        double cie_L = f[2];
+        double cie_L = f[0];
 
         double var_Y = (cie_L + 16.0) / (116.0);
         double var_X = var_Y + (cie_a * 0.002);
