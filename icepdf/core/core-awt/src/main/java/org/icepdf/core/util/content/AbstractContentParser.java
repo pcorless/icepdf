@@ -985,27 +985,10 @@ public abstract class AbstractContentParser implements ContentParser {
         StringObject stringObject = (StringObject) stack.pop();
         graphicState.getTextState().cspace = ((Number) stack.pop()).floatValue();
         graphicState.getTextState().wspace = ((Number) stack.pop()).floatValue();
-        graphicState.translate(-textMetrics.getShift(), graphicState.getTextState().leading);
-
-        // apply transparency
-        setAlpha(shapes, graphicState, AlphaPaintType.ALPHA_FILL);
-
-        textMetrics.setShift(0);
-        textMetrics.setPreviousAdvance(0);
-        textMetrics.getAdvance().setLocation(0, 0);
-        TextState textState = graphicState.getTextState();
-
-        AffineTransform tmp = applyTextScaling(graphicState);
-        drawString(stringObject.getLiteralStringBuffer(
-                textState.font.getSubTypeFormat(),
-                textState.font.getFont()),
-                textMetrics, graphicState.getTextState(),
-                shapes, glyphOutlineClip, graphicState, oCGs);
-        graphicState.set(tmp);
-        graphicState.translate(textMetrics.getAdvance().x, 0);
-        float shift = textMetrics.getShift();
-        shift += textMetrics.getAdvance().x;
-        textMetrics.setShift(shift);
+        // push the string back on so we can reuse the single quote layout code
+        stack.push(stringObject);
+        consume_T_star(graphicState, textMetrics, shapes.getPageText(), oCGs);
+        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs);
     }
 
     protected static void consume_single_quote(GraphicsState graphicState, Stack stack,
