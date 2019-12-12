@@ -198,7 +198,9 @@ public abstract class AbstractContentParser implements ContentParser {
         // Stroke Color Gray
         graphicState.setStrokeColorSpace(
                 PColorSpace.getColorSpace(library, DeviceGray.DEVICEGRAY_KEY));
-        graphicState.setStrokeColor(new Color(gray, gray, gray));
+        if (gray <= 1.0f) {
+            graphicState.setStrokeColor(new Color(gray, gray, gray));
+        }
     }
 
     protected static void consume_g(GraphicsState graphicState, Stack stack,
@@ -207,7 +209,9 @@ public abstract class AbstractContentParser implements ContentParser {
         // Fill Color Gray
         graphicState.setFillColorSpace(
                 PColorSpace.getColorSpace(library, DeviceGray.DEVICEGRAY_KEY));
-        graphicState.setFillColor(new Color(gray, gray, gray));
+        if (gray <= 1.0f) {
+            graphicState.setFillColor(new Color(gray, gray, gray));
+        }
     }
 
     protected static void consume_RG(GraphicsState graphicState, Stack stack,
@@ -809,6 +813,8 @@ public abstract class AbstractContentParser implements ContentParser {
             // if no fonts found then we just bail and accept the null pointer
         }
         if (graphicState.getTextState().font != null) {
+            FontFile font = graphicState.getTextState().font.getFont();
+            font.deriveFont(size);
             graphicState.getTextState().currentfont =
                     graphicState.getTextState().font.getFont().deriveFont(size);
         } else {
