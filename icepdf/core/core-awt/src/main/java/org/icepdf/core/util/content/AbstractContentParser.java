@@ -741,6 +741,11 @@ public abstract class AbstractContentParser implements ContentParser {
             if (strokeAdjustmentEnabled && scale < strokeAdjustmentThreshold) {
                 scale = strokeAdjustmentValue;
             }
+            // A line width of 0 shall denote the thinnest line that can be rendered at device resolution: 1 device
+            // pixel wide.  0.15f is about the thinnest line we can draw reliably at low zoom levels
+            if (scale == 0f) {
+                scale = (float)(0.15f / graphicState.getCTM().getScaleX());
+            }
             graphicState.setLineWidth(scale);
             setStroke(shapes, graphicState);
         }
