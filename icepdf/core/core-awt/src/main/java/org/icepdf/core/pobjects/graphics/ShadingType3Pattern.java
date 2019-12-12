@@ -184,9 +184,7 @@ public class ShadingType3Pattern extends ShadingPattern {
         if (function != null) {
             float[] output = calculateValues(input);
             if (output != null) {
-                if (!(colorSpace instanceof DeviceN)) {
-                    output = PColorSpace.reverse(output);
-                }
+                output = PColorSpace.reverse(output);
                 return colorSpace.getColor(output);
             } else {
                 return null;

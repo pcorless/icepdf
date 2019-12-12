@@ -22,8 +22,6 @@ import org.icepdf.core.util.Library;
 import java.awt.*;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * DeviceN colour spaces shall be defined in a similar way to Separation colour
@@ -41,59 +39,47 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class DeviceN extends PColorSpace {
 
-    public static final Name DEVICEN_KEY = new Name("DeviceN");
-    public static final Name COLORANTS_KEY = new Name("Colorants");
+    static final Name DEVICEN_KEY = new Name("DeviceN");
+    static final Name COLORANTS_KEY = new Name("Colorants");
+    public static final Name PROCESS_KEY = new Name("Process");
+    public static final Name SUBTYPE_KEY = new Name("Subtype");
+    public static final Name DEVICEN_SUB_TYPE_KEY = new Name("DeviceN");
+    public static final Name NCHANNEL_SUB_TYPE_KEY = new Name("NChannel");
 
-    List<Name> names;
-    PColorSpace alternate;
-    Function tintTransform;
-    ConcurrentHashMap<Object, Object> colorants = new ConcurrentHashMap<>();
-    PColorSpace colorspaces[];
+    private static DeviceCMYK deviceCMYK = new DeviceCMYK(null, null);
+    private List<Name> names;
+    private PColorSpace alternate;
+    private Function tintTransform;
+    // for debugging purposes, not currently used.
+    private HashMap attributesDictionary;
+    private HashMap processDictionary;
 
-    boolean foundCMYK;
+    private boolean foundCMYKColorants;
 
     @SuppressWarnings("unchecked")
-    DeviceN(Library l, HashMap h, Object o1, Object o2, Object o3, Object o4) {
+    DeviceN(Library l, HashMap h, Object names, Object alternativeSpace, Object tintTransform, Object attributes) {
         super(l, h);
-        names = (java.util.List) o1;
-        alternate = getColorSpace(l, o2);
-        tintTransform = Function.getFunction(l, l.getObject(o3));
-        if (o4 != null) {
-            HashMap h1 = (HashMap) library.getObject(o4);
-            HashMap h2 = (HashMap) library.getObject(h1, COLORANTS_KEY);
-            if (h2 != null) {
-                Set e = h2.keySet();
-                Object oo;
-                for (Object o : e) {
-                    oo = h2.get(o);
-                    colorants.put(o, getColorSpace(library, library.getObject(oo)));
-                }
-            }
-        }
-        colorspaces = new PColorSpace[names.size()];
-        for (int i = 0; i < colorspaces.length; i++) {
-            colorspaces[i] = (PColorSpace) colorants.get(names.get(i).toString());
-        }
-        // check to see if cymk is specified int the names, if so we can
-        // uses the cmyk colour space directly, otherwise we fallback to the alternative
-        // and hope it was setup correctly.
+        this.names = (java.util.List) names;
+        alternate = getColorSpace(l, alternativeSpace);
+        this.tintTransform = Function.getFunction(l, l.getObject(tintTransform));
         int cmykCount = 0;
-        foundCMYK = true;
-        for (Name name : names) {
-            if (name.getName().toLowerCase().startsWith("c")) {
-                cmykCount++;
-            } else if (name.getName().toLowerCase().startsWith("m")) {
-                cmykCount++;
-            } else if (name.getName().toLowerCase().startsWith("y")) {
-                cmykCount++;
-            } else if (name.getName().toLowerCase().startsWith("k")) {
-                cmykCount++;
-            } else if (name.getName().toLowerCase().startsWith("b")) {
+        for (Name name : this.names) {
+            if (name.getName().startsWith("Cyan") ||
+                    name.getName().startsWith("Magenta") ||
+                    name.getName().startsWith("Yellow") ||
+                    name.getName().startsWith("Black")) {
                 cmykCount++;
             }
         }
-        if (cmykCount < 1) {
-            foundCMYK = false;
+        if (cmykCount == 4) {
+            foundCMYKColorants = true;
+        }
+
+        // attributes are required for defining NChannel
+        if (attributes != null) {
+            attributesDictionary = (HashMap) library.getObject(attributes);
+            // setup process
+            processDictionary = (HashMap) library.getObject(attributesDictionary, PROCESS_KEY);
         }
     }
 
@@ -123,30 +109,21 @@ public class DeviceN extends PColorSpace {
         return f2;
     }
 
-
     public Color getColor(float[] f, boolean fillAndStroke) {
         // calculate cmyk color
-        if (foundCMYK && (f.length == 4 )) {
+        if (foundCMYKColorants && f.length == 4) {
             f = assignCMYK(f);
-            return new DeviceCMYK(null, null).getColor((f));
-        }else if (foundCMYK && (f.length == 3)) {
-            f = assignCMYK(reverse(f));
-            return new DeviceCMYK(null, null).getColor((f));
+            return deviceCMYK.getColor((f));
+        } else {
+            // trim color to match colourant length.
+            int size = names.size();
+            if (f.length != names.size()) {
+                float[] tmp = new float[size];
+                System.arraycopy(f, 0, tmp, 0, size);
+                f = tmp;
+            }
+            float[] y = tintTransform.calculate(reverse(f));
+            return alternate.getColor(reverse(y));
         }
-        // check order, mainly look for length > 1 and black not at the end
-        // assumption on a few corner cases is that we are looking for cmyk ordering
-        // and thus black last.
-//        if (f.length > 4 && names.size() > 4) {
-//            String name = names.get(names.size() - 1).getName().toLowerCase();
-//            if (!name.startsWith("b")) {
-//                f = reverse(f);
-//            }
-//        }
-        // otherwise use the alternative colour space.
-        float y[] = tintTransform.calculate(reverse(f));
-        return alternate.getColor(reverse(y));
     }
 }
-
-
-
