@@ -594,7 +594,7 @@ public class PrintHelper implements Printable {
         // check for a default service and make sure it is at index 0. the lookupPrintServices does not
         // aways put the default printer first in the array.
         PrintService defaultService = lookupDefaultPrintService();
-        if (defaultService != null && services.length > 1) {
+        if (defaultService != null && services.length > 0) {
             for (PrintService printService : services) {
                 if (printService.equals(defaultService)) {
                     // found the default printer, now swap it with the first index.
