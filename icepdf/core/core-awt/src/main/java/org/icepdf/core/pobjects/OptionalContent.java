@@ -115,7 +115,7 @@ public class OptionalContent extends Dictionary {
             return;
         }
         // test of a valid definition.
-        if (entries == null || entries.size() == 0){
+        if (entries == null || entries.size() == 0) {
             emptyDefinition = true;
         }
 
@@ -258,7 +258,11 @@ public class OptionalContent extends Dictionary {
     }
 
     public boolean isVisible(OptionalContentGroup ocg) {
-        return groups.containsKey(ocg.getPObjectReference());
+        if (groups.size() > 0) {
+            return groups.containsKey(ocg.getPObjectReference());
+        } else {
+            return true;
+        }
     }
 
     public boolean isVisible(OptionalContentMembership ocmd) {
