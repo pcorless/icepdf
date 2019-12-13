@@ -117,7 +117,7 @@ public class FontManager {
     private static final String[] CHINESE_SIMPLIFIED_FONT_NAMES = {
             "Arial Unicode MS", "PMingLiU", "MingLiU",
             "SimSun", "NSimSun", "Kochi Mincho", "STFangsong", "STSong Light Acro",
-            "Adobe Song Std Acro"
+            "Adobe Song Std Acro", "stsong"
     };
 
     private static final String[] CHINESE_TRADITIONAL_FONT_NAMES = {
@@ -167,7 +167,8 @@ public class FontManager {
             "/usr/X11R6/lib/X11/fonts/",
             "/usr/openwin/lib/",
             "/usr/sfw/share/a2ps/afm/",
-            "/usr/sfw/share/ghostscript/fonts/");
+            "/usr/sfw/share/ghostscript/fonts/",
+            Defs.sysProperty("user.home") + "/.local/share/fonts/");
 
     // array indexes for font data stored in properties.
     private static final int FONT_NAME = 0;
