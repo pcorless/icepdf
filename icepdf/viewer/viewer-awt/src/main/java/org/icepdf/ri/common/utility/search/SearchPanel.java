@@ -330,16 +330,18 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         constraints.insets = new Insets(1, 1, 1, 1);
         constraints.weightx = 1.0;
         constraints.fill = GridBagConstraints.HORIZONTAL;
-        addGB(searchPanel, searchTextField, 0, 1, 2, 1);
+        addGB(searchPanel, searchTextField, 0, 1, 1, 1);
 
         // add start/stop search button
         constraints.weightx = 0;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.insets = new Insets(1, 1, 1, 1);
+        // add filter button and make sure height matches search button
+        filterDropDownButton.setPreferredSize(
+                new Dimension(filterDropDownButton.getPreferredSize().width, searchButton.getPreferredSize().height));
+        addGB(searchPanel, filterDropDownButton, 1, 1, 1, 1);
         addGB(searchPanel, searchButton, 2, 1, 1, 1);
-        // add filter button.
-        constraints.weightx = 0;
-        addGB(searchPanel, filterDropDownButton, 0, 2, 1, 1);
+
         // add clear search button
         addGB(searchPanel, clearSearchButton, 2, 2, 1, 1);
 
