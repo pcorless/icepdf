@@ -27,6 +27,7 @@ import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlinesTree;
 import org.icepdf.ri.common.utility.search.SearchPanel;
+import org.icepdf.ri.common.utility.search.SearchToolBar;
 import org.icepdf.ri.common.utility.signatures.SignaturesHandlerPanel;
 import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
 import org.icepdf.ri.common.views.AbstractDocumentView;
@@ -1185,7 +1186,7 @@ public class SwingViewBuilder {
         if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_FORMS))
             addToToolBar(toolbar, buildFormsToolBar());
         if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_SEARCH))
-            addToToolBar(toolbar, buildSearchToolBar());
+            addToToolBar(toolbar, buildQuickSearchToolBar());
 
         // we only add the configurable font engin in the demo version
         if (isDemo) {
@@ -1363,7 +1364,7 @@ public class SwingViewBuilder {
         pageNumberTextField.setInputVerifier(new PageNumberTextFieldInputVerifier());
 
         /*
-         * Add a key listener and check to make sure the character intered
+         * Add a key listener and check to make sure the character entered
          * is a digit, period, the back_space or delete keys. If not the
          * invalid character is ignored and a system beep is triggered.
          */
@@ -1621,9 +1622,24 @@ public class SwingViewBuilder {
         return toolbar;
     }
 
-    public JToolBar buildSearchToolBar() {
-
-        JToolBar toolbar = new JToolBar();
+    public JToolBar buildQuickSearchToolBar() {
+        JToolBar toolbar = new SearchToolBar(
+                viewerController,
+                messageBundle.getString("viewer.toolbar.tool.search.label"),
+                new DropDownButton(viewerController, "",
+                        messageBundle.getString("viewer.toolbar.tool.search.filter.tooltip"),
+                        "filter", iconSize, SwingViewBuilder.buildButtonFont()),
+                makeToolbarButton(
+                        messageBundle.getString("viewer.toolbar.tool.search.previous.label"),
+                        messageBundle.getString("viewer.toolbar.tool.search.previous.tooltip"),
+                        "back", iconSize, buttonFont),
+                makeToolbarButton(
+                        messageBundle.getString("viewer.toolbar.tool.search.next.label"),
+                        messageBundle.getString("viewer.toolbar.tool.search.next.tooltip"),
+                        "forward", iconSize, buttonFont));
+        if (viewerController != null) {
+            viewerController.setQuickSearchToolBar(toolbar);
+        }
         return toolbar;
     }
 

@@ -78,7 +78,8 @@ public class DocumentSearchModelImpl {
      * @param searchTerm search term, no checking is done for invalid data.
      */
     public void addSearchTerm(SearchTerm searchTerm) {
-        searchTerms.add(searchTerm);
+        if (!searchTerms.contains(searchTerm))
+            searchTerms.add(searchTerm);
     }
 
     /**

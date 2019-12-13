@@ -146,6 +146,10 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         setGui();
     }
 
+    public void setSearchPhrase(String searchPhrase) {
+        clearSearch();
+        searchTextField.setText(searchPhrase);
+    }
 
     @Override
     public void refreshDocumentInstance() {

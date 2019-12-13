@@ -32,8 +32,7 @@ import java.util.regex.Pattern;
 
 /**
  * This class is a utility for searching text in a PDF document.  This is only
- * a reference implementation; there is currently no support for regular
- * expression and other advanced search features.
+ * a reference implementation.
  *
  * @since 1.1
  */

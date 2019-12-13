@@ -263,6 +263,10 @@ public class PropertiesManager {
     public static final String PROPERTY_SEARCH_PANEL_SEARCH_OUTLINES_ENABLED = "application.viewer.utility.search.case.outlines.enabled";
     public static final String PROPERTY_SEARCH_PANEL_SHOW_PAGES_ENABLED = "application.viewer.utility.search.case.pages.enabled";
 
+    public static final String PROPERTY_QUICK_SEARCH_WHOLE_WORDS_ENABLED = "application.viewer.toolbar.search.whole.words.enabled";
+    public static final String PROPERTY_QUICK_SEARCH_CASE_SENSITIVE_ENABLED = "application.viewer.toolbar.search.case.sensitive.enabled";
+    public static final String PROPERTY_QUICK_SEARCH_SEARCH_COMMENTS_ENABLED = "application.viewer.toolbar.search.comments.cumulative.enabled";
+
     // markup search panel settings
     public static final String PROPERTY_SEARCH_MARKUP_PANEL_REGEX_ENABLED = "application.viewer.utility.search.markup.regex.enabled";
     public static final String PROPERTY_SEARCH_MARKUP_PANEL_CASE_SENSITIVE_ENABLED = "application.viewer.utility.search.markup.case.sensitive.enabled";

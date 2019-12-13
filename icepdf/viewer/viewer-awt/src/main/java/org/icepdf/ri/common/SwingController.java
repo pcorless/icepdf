@@ -224,6 +224,8 @@ public class SwingController extends ComponentAdapter
     private JButton annotationSummaryButton;
     private JToggleButton annotationEditingModeButton;
     private JToggleButton formHighlightButton;
+    // search toolbar
+    private JToolBar quickSearchToolBar;
     // annotation properties toolbar.
     private JToggleButton linkAnnotationPropertiesToolButton;
     private JToggleButton highlightAnnotationPropertiesToolButton;
@@ -1309,6 +1311,15 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
+     * Called by SwingViewerBuilder, so that Controller can setup enabled/disabled state
+     *
+     * @param toolBar toolBar to assign
+     */
+    public void setQuickSearchToolBar(JToolBar toolBar) {
+        quickSearchToolBar = toolBar;
+    }
+
+    /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
      *
      * @param btn button to assign
@@ -1651,6 +1662,7 @@ public class SwingController extends ComponentAdapter
         setEnabled(textAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
         setEnabled(formHighlightButton, opened && !pdfCollection && hasForms());
         setEnabled(fontEngineButton, opened && !pdfCollection);
+        setEnabled(quickSearchToolBar, opened && !pdfCollection);
         setEnabled(facingPageViewContinuousButton, opened && !pdfCollection);
         setEnabled(singlePageViewContinuousButton, opened && !pdfCollection);
         setEnabled(facingPageViewNonContinuousButton, opened && !pdfCollection);
@@ -4440,6 +4452,11 @@ public class SwingController extends ComponentAdapter
                 searchPanel.requestFocus();
             }
         }
+    }
+
+    public void showSearchPanel(String searchPhrase) {
+        searchPanel.setSearchPhrase(searchPhrase);
+        showSearchPanel();
     }
 
     public void nextSearchResult() {
