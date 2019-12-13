@@ -43,6 +43,8 @@ import java.util.ArrayList;
 public class TextSelectionPageHandler extends TextSelection
         implements ToolHandler {
 
+    protected boolean isMouseDrag;
+
     /**
      * New Text selection handler.  Make sure to correctly and and remove
      * this mouse and text listeners.
@@ -83,6 +85,7 @@ public class TextSelectionPageHandler extends TextSelection
      */
     public void mouseReleased(MouseEvent e) {
         selectionEnd(e.getPoint(), pageViewComponent);
+        isMouseDrag = false;
     }
 
     /**
@@ -97,6 +100,7 @@ public class TextSelectionPageHandler extends TextSelection
      * Drag&amp;Drop operation.
      */
     public void mouseDragged(MouseEvent e) {
+        isMouseDrag = true;
         Point point = e.getPoint();
         updateSelectionSize(point.x, point.y, pageViewComponent);
         boolean isMovingDown = true;

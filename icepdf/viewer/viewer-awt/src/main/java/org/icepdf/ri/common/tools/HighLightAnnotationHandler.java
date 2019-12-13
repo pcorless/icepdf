@@ -35,7 +35,10 @@ import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.util.PropertiesManager;
 
+import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
@@ -56,12 +59,17 @@ import java.util.Date;
  *
  * @since 5.0
  */
-public class HighLightAnnotationHandler extends TextSelectionPageHandler {
+public class HighLightAnnotationHandler extends TextSelectionPageHandler implements ActionListener {
 
     /**
      * Property when enabled will set the /contents key value to the selected text of the markup annotation.
      */
     private static boolean enableHighlightContents;
+
+    private static final int MULTI_CLICK_INTERVAL =
+            (int) Toolkit.getDefaultToolkit().getDesktopProperty("awt.multiClickInterval");
+    private MouseEvent lastMouseClickEvent;
+    private Timer mouseClickTimer;
 
     static {
         try {
@@ -80,17 +88,33 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
         super(documentViewController, pageViewComponent);
         // default type
         highLightType = Annotation.SUBTYPE_HIGHLIGHT;
+        mouseClickTimer = new Timer(MULTI_CLICK_INTERVAL, this);
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        mouseClickTimer.stop();
+        createMarkupAnnotationFromTextSelection(lastMouseClickEvent);
     }
 
     /**
-     * Override the base functionality as we don't want to support double and
-     * triple click work selection for highlights.
+     * Check for double and triple click word and line selection
      *
-     * @param e mouse event
+     * @param evt mouse event
      */
-    public void mouseClicked(MouseEvent e) {
-        if (pageViewComponent != null) {
-            pageViewComponent.requestFocus();
+    public void mouseClicked(MouseEvent evt) {
+        super.mouseClicked(evt);
+        int clickCount = evt.getClickCount();
+        if (clickCount == 1 || evt.getClickCount() > 3) {
+            mouseClickTimer.stop();
+            return;
+        }
+        lastMouseClickEvent = evt;
+        // 2 comes before 3 so we do all this lifting to avoid double processing 2 and 3 clicks.
+        if (clickCount == 2 && !mouseClickTimer.isRunning()) {
+            mouseClickTimer.restart();
+        } else if (clickCount == 3) {
+            mouseClickTimer.stop();
+            createMarkupAnnotationFromTextSelection(evt);
         }
     }
 
@@ -98,23 +122,11 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
      * Invoked when a mouse button has been released on a component.
      */
     public void mouseReleased(MouseEvent e) {
-
-        // get the selection bounds
-        ArrayList<Shape> highlightBounds = getSelectedTextBounds(pageViewComponent, getPageTransform());
-
-        // clear the selection
-        super.mouseReleased(e);
-
-        // create the text markup annotation.
-        createTextMarkupAnnotation(highlightBounds);
-
-        // set the annotation tool to he select tool
-        if (preferences.getBoolean(PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_SELECTION_ENABLED, false)) {
-            documentViewController.getParentController().setDocumentToolMode(
-                    DocumentViewModel.DISPLAY_TOOL_SELECTION);
+        if (isMouseDrag) {
+            createMarkupAnnotationFromTextSelection(e);
         }
+        super.mouseReleased(e);
     }
-
 
     public void createTextMarkupAnnotation(ArrayList<Shape> highlightBounds) {
         // mke sure we don't create a highlight annotation for every word in the
@@ -226,6 +238,23 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
             logger.fine("HighLightAnnotation initialization interrupted.");
         }
         return selectedText;
+    }
+
+    protected void createMarkupAnnotationFromTextSelection(MouseEvent e) {
+        // get the selection bounds
+        ArrayList<Shape> highlightBounds = getSelectedTextBounds(pageViewComponent, getPageTransform());
+
+        // clear the selection
+        super.mouseReleased(e);
+
+        // create the text markup annotation.
+        createTextMarkupAnnotation(highlightBounds);
+
+        // set the annotation tool to he select tool
+        if (preferences.getBoolean(PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_SELECTION_ENABLED, false)) {
+            documentViewController.getParentController().setDocumentToolMode(
+                    DocumentViewModel.DISPLAY_TOOL_SELECTION);
+        }
     }
 
     public static ArrayList<Shape> getSelectedTextBounds(AbstractPageViewComponent pageViewComponent,
