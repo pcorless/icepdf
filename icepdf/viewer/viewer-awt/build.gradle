@@ -91,10 +91,10 @@ artifacts {
     archives javadocJar
 }
 
-javafx {
-    version = "11"
-    modules = [ 'javafx.controls', 'javafx.swing' ]
-}
+//javafx {
+//    version = "11"
+//    modules = [ 'javafx.controls', 'javafx.swing' ]
+//}
 
 dependencies {
     compile project(':core:core-awt')
