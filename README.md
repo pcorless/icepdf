@@ -8,30 +8,30 @@ ICEpdf is a community-driven project with the goal of supporting and enhancing t
 ## Contributing
 ICEpdf is an open source project and is always looking for more contributors.  To get involved, visit:
 
- <!-- Issue Reporting Guide --> 
+ - [Issue Reporting Guide](wiki/Issue-Reporting-Guide)
  <!-- Code Contribution Guide --> 
  <!-- Frequently Asked Questions -->
- <!-- Good Beginner Bugs -->
+ - [Good Beginner Bugs](https://github.com/pcorless/icepdf/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
  - [Projects](https://github.com/pcorless/icepdf/projects)
   
  ## Getting Started
- Whether you are long time user of the API and new the API there ton of information on the 
- [Wiki](https://github.com/pcorless/icepd/wiki) pages.  Create a pull requests and use the issue tracker, the more 
+ Whether you are long time user of the API or a new user, there ton of information on the 
+ [Wiki](wiki) pages.  Create a pull requests and use the issue tracker, the more 
  help and feedback we get the better we an make the project. 
  
  ## Getting the Code
  To get a local copy of the current code, clone it using git:
  ```
-$ git clone https://github.com/mozilla/pdf.js.git
-$ cd pdf.js
+$ git clone https://github.com/pcorless/icepdf.git
+$ cd icepdf
 ```
  
  ### Building ICEpdf
- In order to to use the library you need to build at least the Core library and if you intend you use the Viewer
+ In order to use the library you need to build at least the Core library and if you intend you use the Viewer
  component you'll also need to build the Viewer library.  The project can be built with Gradle or Maven, we have 
- no preference,  pick one that makes you happy. 
+ no preference,  pick which ever one makes you more happy. 
  
- Builds as is, work best with Java 8 but they can also be easily configured to work with JDK 11+. 
+ Builds as they are currently written work best with Java 8 but they can also be easily configured to work with JDK 11+. 
  
 #### Building With Gradle
 
@@ -160,7 +160,8 @@ controller.openDocument(filePath);
   
  ### Examples
 
-There are bunch of examples located in the root of the project grouped by common usage scenarios.  This 
+There are bunch of examples located in the root of the project grouped by common usage scenarios.  Similarly the 
+wiki contains [Wiki](wiki/examples) information. 
 
  ### API Documentation
  
