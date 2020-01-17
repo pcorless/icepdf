@@ -8,7 +8,7 @@ ICEpdf is a community-driven project with the goal of supporting and enhancing t
 ## Contributing
 ICEpdf is an open source project and is always looking for more contributors.  To get involved, visit:
 
- - [Issue Reporting Guide](wiki/Issue-Reporting-Guide)
+ - [Issue Reporting Guide](https://github.com/pcorless/icepdf/wiki/Issue-Reporting-Guide)
  <!-- Code Contribution Guide --> 
  <!-- Frequently Asked Questions -->
  - [Good Beginner Bugs](https://github.com/pcorless/icepdf/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
@@ -16,7 +16,7 @@ ICEpdf is an open source project and is always looking for more contributors.  T
   
  ## Getting Started
  Whether you are long time user of the API or a new user, there ton of information on the 
- [Wiki](wiki) pages.  Create a pull requests and use the issue tracker, the more 
+ [Wiki](https://github.com/pcorless/icepdf/wiki) pages.  Create a pull requests and use the issue tracker, the more 
  help and feedback we get the better we an make the project. 
  
  ## Getting the Code
@@ -154,14 +154,14 @@ window.setVisible(true);
 controller.openDocument(filePath);
 ```
  
- Make sure to take a look at the Wiki for more examples of extracting content.  
+ Make sure to take a look at the [Wiki](https://github.com/pcorless/icepdf/Examples) for more examples of extracting content.  
  
  ## Learning
   
  ### Examples
 
 There are bunch of examples located in the root of the project grouped by common usage scenarios.  Similarly the 
-wiki contains [Wiki](wiki/examples) information. 
+Wiki contains [example](https://github.com/pcorless/icepdf/Examples) information. 
 
  ### API Documentation
  
