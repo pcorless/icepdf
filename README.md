@@ -11,8 +11,8 @@ ICEpdf is an open source project and is always looking for more contributors.  T
  - [Issue Reporting Guide](https://github.com/pcorless/icepdf/wiki/Issue-Reporting-Guide)
  - [Good Beginner Bugs](https://github.com/pcorless/icepdf/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
  - [Projects](https://github.com/pcorless/icepdf/projects)
+ - [Frequently Asked Questions](https://github.com/pcorless/icepdf/wiki/Frequently-Asked-Questions)
    <!-- Code Contribution Guide --> 
-   <!-- Frequently Asked Questions -->
  ## Getting Started
  Whether you are long time user of the API or a new user, there ton of information on the 
  [Wiki](https://github.com/pcorless/icepdf/wiki) pages.  Create a pull requests and use the issue tracker, the more 
