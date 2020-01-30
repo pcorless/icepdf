@@ -24,15 +24,15 @@ import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.search.DestinationResult;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.Defs;
-import org.icepdf.ri.common.*;
+import org.icepdf.ri.common.MutableDocument;
+import org.icepdf.ri.common.NameTreeNode;
+import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.utility.annotation.AnnotationCellRender;
 import org.icepdf.ri.common.utility.annotation.AnnotationTreeNode;
 import org.icepdf.ri.common.utility.outline.OutlineItemTreeNode;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.PageComponentSelector;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
-import org.icepdf.ri.images.Images;
-import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -53,11 +53,8 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
-import java.util.prefs.Preferences;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-
-import static org.icepdf.ri.util.PropertiesManager.*;
 
 /**
  * This class is the GUI component for the SearchTextTask.  This panel can be
@@ -70,7 +67,7 @@ import static org.icepdf.ri.util.PropertiesManager.*;
  */
 @SuppressWarnings("serial")
 public class SearchPanel extends JPanel implements ActionListener, MutableDocument,
-        TreeSelectionListener, DocumentListener {
+        TreeSelectionListener, DocumentListener, BaseSearchComponent {
 
     private static final Logger logger =
             Logger.getLogger(SearchPanel.class.toString());
@@ -94,7 +91,6 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     private JTextField searchTextField;
     // pointer to document which will be searched
     private org.icepdf.ri.common.views.Controller controller;
-    private Preferences preferences;
 
     // list box to hold search results
     private JTree tree;
@@ -108,16 +104,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     private JButton searchButton;
     // clear search
     private JButton clearSearchButton;
-    private DropDownButton filterDropDownButton;
-    private JCheckBoxMenuItem caseSensitiveCheckbox;
-    private JCheckBoxMenuItem wholeWordCheckbox;
-    private JCheckBoxMenuItem regexCheckbox;
-    private JCheckBoxMenuItem cumulativeCheckbox;
-    private JCheckBoxMenuItem showPagesCheckbox;
-    private JCheckBoxMenuItem commentsCheckbox;
-    private JCheckBoxMenuItem textCheckbox;
-    private JCheckBoxMenuItem outlinesCheckbox;
-    private JCheckBoxMenuItem destinationsCheckbox;
+    private SearchFilterButtonWrapper wrapper;
     // page index of the last added node.
     private int lastTextNodePageIndex, lastCommentNodePageIndex;
 
@@ -252,68 +239,10 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                 "viewer.utilityPane.search.clearSearchButton.label"));
         clearSearchButton.addActionListener(this);
 
-        // apply default preferences
-        preferences = controller.getPropertiesManager().getPreferences();
-        String iconSize = preferences.get(PropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE);
-        boolean isRegex = preferences.getBoolean(PROPERTY_SEARCH_PANEL_REGEX_ENABLED, true);
-        boolean isWholeWord = preferences.getBoolean(PROPERTY_SEARCH_PANEL_WHOLE_WORDS_ENABLED, false);
-        boolean isCaseSensitive = preferences.getBoolean(PROPERTY_SEARCH_PANEL_CASE_SENSITIVE_ENABLED, false);
-        boolean isCumulative = preferences.getBoolean(PROPERTY_SEARCH_PANEL_CUMULATIVE_ENABLED, false);
-
-        boolean isText = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SEARCH_TEXT_ENABLED, true);
-        boolean isComments = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SEARCH_COMMENTS_ENABLED, false);
-        boolean isDestinations = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SEARCH_DEST_ENABLED, false);
-        boolean isOutlines = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SEARCH_OUTLINES_ENABLED, false);
-
-        boolean isShowPages = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SHOW_PAGES_ENABLED, true);
-
         // search options check boxes.
         // search option check boxes.
-        filterDropDownButton = new DropDownButton(controller, "",
-                messageBundle.getString("viewer.utilityPane.markupAnnotation.toolbar.filter.filterButton.tooltip"),
-                "filter", iconSize, SwingViewBuilder.buildButtonFont());
-        wholeWordCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
-                "viewer.utilityPane.search.wholeWordCheckbox.label"), isWholeWord);
-        wholeWordCheckbox.addActionListener(this);
-        regexCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
-                "viewer.utilityPane.search.regexCheckbox.label"), isRegex);
-        regexCheckbox.addActionListener(this);
-        caseSensitiveCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
-                "viewer.utilityPane.search.caseSenstiveCheckbox.label"), isCaseSensitive);
-        caseSensitiveCheckbox.addActionListener(this);
-        if (isRegex || isWholeWord) {
-            regexCheckbox.setEnabled(isRegex);
-            wholeWordCheckbox.setEnabled(isWholeWord);
-        }
-        cumulativeCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
-                "viewer.utilityPane.search.cumlitiveCheckbox.label"), isCumulative);
-        cumulativeCheckbox.addActionListener(this);
-        textCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
-                "viewer.utilityPane.search.text.label"), isText);
-        textCheckbox.addActionListener(this);
-        commentsCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
-                "viewer.utilityPane.search.comments.label"), isComments);
-        commentsCheckbox.addActionListener(this);
-        destinationsCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
-                "viewer.utilityPane.search.destinations.label"), isDestinations);
-        destinationsCheckbox.addActionListener(this);
-        outlinesCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
-                "viewer.utilityPane.search.outlines.label"), isOutlines);
-        outlinesCheckbox.addActionListener(this);
-        showPagesCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
-                "viewer.utilityPane.search.showPagesCheckbox.label"), isShowPages);
-        showPagesCheckbox.addActionListener(this);
-        filterDropDownButton.add(regexCheckbox);
-        filterDropDownButton.add(wholeWordCheckbox);
-        filterDropDownButton.add(caseSensitiveCheckbox);
-        filterDropDownButton.add(cumulativeCheckbox);
-        filterDropDownButton.addSeparator();
-        filterDropDownButton.add(textCheckbox);
-        filterDropDownButton.add(commentsCheckbox);
-        filterDropDownButton.add(outlinesCheckbox);
-        filterDropDownButton.add(destinationsCheckbox);
-        filterDropDownButton.addSeparator();
-        filterDropDownButton.add(showPagesCheckbox);
+        wrapper = new SearchFilterButtonWrapper(this, controller, "viewer.utilityPane.markupAnnotation.toolbar.filter.filterButton.tooltip");
+        wrapper.getShowPagesCheckbox().addActionListener(this);
 
         // Build search GUI
         GridBagLayout layout = new GridBagLayout();
@@ -341,9 +270,9 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.insets = new Insets(1, 1, 1, 1);
         // add filter button and make sure height matches search button
-        filterDropDownButton.setPreferredSize(
-                new Dimension(filterDropDownButton.getPreferredSize().width, searchButton.getPreferredSize().height));
-        addGB(searchPanel, filterDropDownButton, 1, 1, 1, 1);
+        wrapper.getButton().setPreferredSize(
+                new Dimension(wrapper.getButton().getPreferredSize().width, searchButton.getPreferredSize().height));
+        addGB(searchPanel, wrapper.getButton(), 1, 1, 1, 1);
         addGB(searchPanel, searchButton, 2, 1, 1, 1);
 
         // add clear search button
@@ -593,16 +522,16 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     }
 
     private void insertSectionNodes() {
-        if (textCheckbox.isSelected()) {
+        if (wrapper.isText()) {
             rootTreeNode.insert(textTreeNode, rootTreeNode.getChildCount());
         }
-        if (commentsCheckbox.isSelected()) {
+        if (wrapper.isComments()) {
             rootTreeNode.insert(commentsTreeNode, rootTreeNode.getChildCount());
         }
-        if (outlinesCheckbox.isSelected()) {
+        if (wrapper.isOutlines()) {
             rootTreeNode.insert(outlinesTreeNode, rootTreeNode.getChildCount());
         }
-        if (destinationsCheckbox.isSelected()) {
+        if (wrapper.isDestinations()) {
             rootTreeNode.insert(destinationsTreeNode, rootTreeNode.getChildCount());
         }
     }
@@ -648,12 +577,17 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         startSearch();
     }
 
+    @Override
+    public void notifySearchFiltersChanged() {
+
+    }
+
     private void stopSearch() {
         if (searchTextTask != null) {
             searchTextTask.cancel(true);
         }
 
-        filterDropDownButton.setEnabled(true);
+        wrapper.setEnabled(true);
     }
 
     private void startSearch() {
@@ -670,7 +604,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         controller.getDocumentViewController().getViewContainer().repaint();
 
         // do a quick check to make sure we have valida expression.
-        if (regexCheckbox.isSelected()) {
+        if (wrapper.isRegex()) {
             try {
                 Pattern.compile(searchTextField.getText());
             } catch (PatternSyntaxException e) {
@@ -682,21 +616,11 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         }
 
         // start a new search text task
-        SearchTextTask.Builder builder = new SearchTextTask.Builder(controller, searchTextField.getText());
-        searchTextTask = builder.setSearchPanel(this)
-                .setCaseSensitive(caseSensitiveCheckbox.isSelected())
-                .setWholeWord(wholeWordCheckbox.isSelected())
-                .setCumulative(cumulativeCheckbox.isSelected())
-                .setShowPages(showPagesCheckbox.isSelected())
-                .setRegex(regexCheckbox.isSelected())
-                .setText(textCheckbox.isSelected())
-                .setDestinations(destinationsCheckbox.isSelected())
-                .setOutlines(outlinesCheckbox.isSelected())
-                .setComments(commentsCheckbox.isSelected()).build();
+        searchTextTask = wrapper.getSearchTask(this, controller, searchTextField.getText());
 
         // set state of search button
         searchButton.setText(messageBundle.getString("viewer.utilityPane.search.stopButton.label"));
-        filterDropDownButton.setEnabled(false);
+        wrapper.setEnabled(false);
 
         // start the task and the timer
         searchTextTask.execute();
@@ -834,28 +758,9 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
             startSearch();
         } else if (source == clearSearchButton) {
             clearSearch();
-        } else if (source == regexCheckbox) {
-            wholeWordCheckbox.setEnabled(!regexCheckbox.isSelected());
-            preferences.putBoolean(PROPERTY_SEARCH_PANEL_REGEX_ENABLED, regexCheckbox.isSelected());
-        } else if (source == wholeWordCheckbox) {
-            regexCheckbox.setEnabled(!wholeWordCheckbox.isSelected());
-            preferences.putBoolean(PROPERTY_SEARCH_PANEL_WHOLE_WORDS_ENABLED, wholeWordCheckbox.isSelected());
-        } else if (source == cumulativeCheckbox) {
-            preferences.putBoolean(PROPERTY_SEARCH_PANEL_CUMULATIVE_ENABLED, cumulativeCheckbox.isSelected());
-        } else if (source == caseSensitiveCheckbox) {
-            preferences.putBoolean(PROPERTY_SEARCH_PANEL_CASE_SENSITIVE_ENABLED, caseSensitiveCheckbox.isSelected());
-        } else if (source == commentsCheckbox) {
-            preferences.putBoolean(PROPERTY_SEARCH_PANEL_SEARCH_COMMENTS_ENABLED, commentsCheckbox.isSelected());
-        } else if (source == outlinesCheckbox) {
-            preferences.putBoolean(PROPERTY_SEARCH_PANEL_SEARCH_OUTLINES_ENABLED, outlinesCheckbox.isSelected());
-        } else if (source == destinationsCheckbox) {
-            preferences.putBoolean(PROPERTY_SEARCH_PANEL_SEARCH_DEST_ENABLED, destinationsCheckbox.isSelected());
-        } else if (source == textCheckbox) {
-            preferences.putBoolean(PROPERTY_SEARCH_PANEL_SEARCH_TEXT_ENABLED, textCheckbox.isSelected());
-        } else if (source == showPagesCheckbox) {
+        } else if (source == wrapper.getShowPagesCheckbox()) {
             if (event.getSource() != null) {
-                preferences.putBoolean(PROPERTY_SEARCH_PANEL_SHOW_PAGES_ENABLED, showPagesCheckbox.isSelected());
-                if (showPagesCheckbox.isSelected()) {
+                if (wrapper.isShowPages()) {
                     showAllNodePages();
                 } else {
                     hideAllNodePages();
@@ -980,7 +885,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
             // update buttons states.
             searchButton.setText(messageBundle.getString("viewer.utilityPane.search.searchButton.label"));
             //resetTree();
-            filterDropDownButton.setEnabled(true);
+            wrapper.setEnabled(true);
 
             // update progress bar then hide it.
             progressBar.setValue(progressBar.getMinimum());

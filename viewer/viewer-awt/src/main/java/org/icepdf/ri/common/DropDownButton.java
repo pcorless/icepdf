@@ -93,6 +93,9 @@ public class DropDownButton extends JButton
         }
     }
 
+    public void add(JMenuItem menuItem, int idx){
+        popupMenu.add(menuItem, idx);
+    }
     public void add(JMenuItem menuItem) {
         popupMenu.add(menuItem);
     }

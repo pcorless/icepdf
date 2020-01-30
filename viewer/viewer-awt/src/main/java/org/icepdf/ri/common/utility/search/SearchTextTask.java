@@ -68,7 +68,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
     // parent swing controller
     private Controller controller;
     // append nodes for found text.
-    private SearchPanel searchPanel;
+    private BaseSearchComponent searchComponent;
     private Container viewContainer;
 
     /**
@@ -98,11 +98,11 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         lengthOfTask = controller.getDocument().getNumberOfPages();
 
         // setup searching format format.
-        this.searchPanel = builder.searchPanel;
-        if (searchPanel != null) {
-            searchingMessageForm = searchPanel.setupSearchingMessageForm();
-            searchResultMessageForm = searchPanel.setupSearchResultMessageForm();
-            searchCompletionMessageForm = searchPanel.setupSearchCompletionMessageForm();
+        this.searchComponent = builder.searchPanel;
+        if (searchComponent != null) {
+            searchingMessageForm = searchComponent.setupSearchingMessageForm();
+            searchResultMessageForm = searchComponent.setupSearchResultMessageForm();
+            searchCompletionMessageForm = searchComponent.setupSearchCompletionMessageForm();
         }
     }
 
@@ -166,7 +166,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
                         String nodeText =
                                 searchResultMessageForm != null ? searchResultMessageForm.format(messageArguments) : "";
                         // add the node to the search panel tree
-                        if (searchPanel != null) {
+                        if (searchComponent != null) {
                             publish(new TextResult(matchLineItems, nodeText, i));
                         }
                     } else {
@@ -213,32 +213,34 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
     @Override
     protected void process(List<SearchResult> chunks) {
 
-        for (SearchResult searchResult : chunks) {
-            if (isCancelled()) {
-                break;
+        if (searchComponent != null) {
+            for (SearchResult searchResult : chunks) {
+                if (isCancelled()) {
+                    break;
+                }
+                if (searchResult instanceof CommentsResult) {
+                    CommentsResult comment = (CommentsResult) searchResult;
+                    searchComponent.addFoundCommentEntry(comment, this);
+                } else if (searchResult instanceof TextResult) {
+                    TextResult textResult = (TextResult) searchResult;
+                    searchComponent.addFoundTextEntry(textResult, this);
+                } else if (searchResult instanceof OutlineResult) {
+                    OutlineResult outlineResult = (OutlineResult) searchResult;
+                    searchComponent.addFoundOutlineEntry(outlineResult, this);
+                } else if (searchResult instanceof DestinationsResult) {
+                    DestinationsResult destinationsResult = (DestinationsResult) searchResult;
+                    searchComponent.addFoundDestinationEntry(destinationsResult, this);
+                }
             }
-            if (searchResult instanceof CommentsResult) {
-                CommentsResult comment = (CommentsResult) searchResult;
-                searchPanel.addFoundCommentEntry(comment, this);
-            } else if (searchResult instanceof TextResult) {
-                TextResult textResult = (TextResult) searchResult;
-                searchPanel.addFoundTextEntry(textResult, this);
-            } else if (searchResult instanceof OutlineResult) {
-                OutlineResult outlineResult = (OutlineResult) searchResult;
-                searchPanel.addFoundOutlineEntry(outlineResult, this);
-            } else if (searchResult instanceof DestinationsResult) {
-                DestinationsResult destinationsResult = (DestinationsResult) searchResult;
-                searchPanel.addFoundDestinationEntry(destinationsResult, this);
-            }
+            // update the dialog messages.
+            searchComponent.updateProgressControls(dialogMessage);
         }
         viewContainer.repaint();
-        // update the dialog messages.
-        searchPanel.updateProgressControls(dialogMessage);
     }
 
     @Override
     protected void done() {
-        searchPanel.updateProgressControls(dialogMessage);
+        if (searchComponent != null) searchComponent.updateProgressControls(dialogMessage);
         viewContainer.validate();
     }
 
@@ -346,7 +348,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         private final String pattern;
 
         // parent search panel
-        private SearchPanel searchPanel;
+        private BaseSearchComponent searchPanel;
 
         // optional search controls.
         private boolean wholeWord;
@@ -365,7 +367,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
             this.pattern = pattern;
         }
 
-        public Builder setSearchPanel(SearchPanel searchPanel) {
+        public Builder setSearchPanel(BaseSearchComponent searchPanel) {
             this.searchPanel = searchPanel;
             return this;
         }

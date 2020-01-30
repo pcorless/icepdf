@@ -71,7 +71,7 @@ public class SimpleSearchHelper implements PropertyChangeListener {
         switch (propertyName) {
             case PropertyConstants.DOCUMENT_CURRENT_PAGE:
                 currentPage = (int) newValue;
-                System.out.println("current page " + currentPage);
+                //System.out.println("current page " + currentPage);
                 break;
         }
     }

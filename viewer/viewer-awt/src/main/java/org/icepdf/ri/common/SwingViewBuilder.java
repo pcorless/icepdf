@@ -934,6 +934,7 @@ public class SwingViewBuilder {
         addToMenu(documentMenu, buildLastPageMenuItem());
         documentMenu.addSeparator();
         addToMenu(documentMenu, buildSearchMenuItem());
+        addToMenu(documentMenu, buildAdvancedSearchMenuItem());
         addToMenu(documentMenu, buildSearchNextMenuItem());
         addToMenu(documentMenu, buildSearchPreviousMenuItem());
         documentMenu.addSeparator();
@@ -987,6 +988,15 @@ public class SwingViewBuilder {
                 buildKeyStroke(KeyEventConstants.KEY_CODE_SEARCH, KeyEventConstants.MODIFIER_SEARCH));
         if (viewerController != null && mi != null)
             viewerController.setSearchMenuItem(mi);
+        return mi;
+    }
+
+    public JMenuItem buildAdvancedSearchMenuItem() {
+        final JMenuItem mi = makeMenuItem(messageBundle.getString("viewer.toolbar.search.advanced.label"), buildKeyStroke(KeyEventConstants.KEY_CODE_SEARCH, KeyEventConstants.MODIFIER_ADVANCED_SEARCH));
+        if (viewerController!=null && mi!=null){
+            viewerController.setAdvancedSearchMenuItem(mi);
+        }
+        mi.setPreferredSize(new Dimension(0,0));
         return mi;
     }
 
@@ -1626,9 +1636,6 @@ public class SwingViewBuilder {
         JToolBar toolbar = new SearchToolBar(
                 viewerController,
                 messageBundle.getString("viewer.toolbar.tool.search.label"),
-                new DropDownButton(viewerController, "",
-                        messageBundle.getString("viewer.toolbar.tool.search.filter.tooltip"),
-                        "filter", iconSize, SwingViewBuilder.buildButtonFont()),
                 makeToolbarButton(
                         messageBundle.getString("viewer.toolbar.tool.search.previous.label"),
                         messageBundle.getString("viewer.toolbar.tool.search.previous.tooltip"),

@@ -45,6 +45,7 @@ import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlineItemTreeNode;
 import org.icepdf.ri.common.utility.search.SearchPanel;
+import org.icepdf.ri.common.utility.search.SearchToolBar;
 import org.icepdf.ri.common.utility.signatures.SignaturesHandlerPanel;
 import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
 import org.icepdf.ri.common.views.*;
@@ -62,8 +63,8 @@ import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.PrintQuality;
-import javax.swing.*;
 import javax.swing.Timer;
+import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultTreeModel;
@@ -86,8 +87,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -169,6 +170,7 @@ public class SwingController extends ComponentAdapter
     private JMenuItem nextPageMenuItem;
     private JMenuItem lastPageMenuItem;
     private JMenuItem searchMenuItem;
+    private JMenuItem advancedSearchMenuItem;
     private JMenuItem searchNextMenuItem;
     private JMenuItem searchPreviousMenuItem;
     private JMenuItem goToPageMenuItem;
@@ -733,6 +735,16 @@ public class SwingController extends ComponentAdapter
      */
     public void setSearchMenuItem(JMenuItem mi) {
         searchMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerbuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
+     */
+    public void setAdvancedSearchMenuItem(JMenuItem mi) {
+        advancedSearchMenuItem = mi;
         mi.addActionListener(this);
     }
 
@@ -1599,6 +1611,7 @@ public class SwingController extends ComponentAdapter
         }
         setEnabled(showHideUtilityPaneMenuItem, opened && utilityTabbedPane != null);
         setEnabled(searchMenuItem, opened && searchPanel != null && !pdfCollection);
+        setEnabled(advancedSearchMenuItem, opened && searchPanel != null && !pdfCollection);
         setEnabled(searchNextMenuItem, opened && searchPanel != null && !pdfCollection);
         setEnabled(searchPreviousMenuItem, opened && searchPanel != null && !pdfCollection);
         setEnabled(goToPageMenuItem, opened && nPages > 1 && !pdfCollection);
@@ -3212,6 +3225,7 @@ public class SwingController extends ComponentAdapter
         nextPageMenuItem = null;
         lastPageMenuItem = null;
         searchMenuItem = null;
+        advancedSearchMenuItem = null;
         searchNextMenuItem = null;
         searchPreviousMenuItem = null;
         goToPageMenuItem = null;
@@ -4429,6 +4443,15 @@ public class SwingController extends ComponentAdapter
         return false;
     }
 
+    public void showSearch() {
+        SearchToolBar searchBar = (SearchToolBar) quickSearchToolBar;
+        if (searchBar != null) {
+            searchBar.focusTextField();
+        } else {
+            showSearchPanel();
+        }
+    }
+
     /**
      * Make the Search pane visible, and if necessary, the utility pane that encloses it
      *
@@ -4831,6 +4854,9 @@ public class SwingController extends ComponentAdapter
                     } else if (source == lastPageMenuItem || source == lastPageButton) {
                         showPage(getPageTree().getNumberOfPages() - 1);
                     } else if (source == searchMenuItem || source == searchButton) {
+                        cancelSetFocus = true;
+                        showSearch();
+                    } else if (source == advancedSearchMenuItem) {
                         cancelSetFocus = true;
                         showSearchPanel();
                     } else if (source == searchNextMenuItem) {
@@ -5415,7 +5441,11 @@ public class SwingController extends ComponentAdapter
                     showPage(getPageTree().getNumberOfPages() - 1);
                 } else if (c == KeyEventConstants.KEY_CODE_SEARCH &&
                         m == KeyEventConstants.MODIFIER_SEARCH) {
-                    showSearchPanel();
+                    if (e.isShiftDown()) {
+                        showSearchPanel();
+                    } else {
+                        showSearch();
+                    }
                 } else if (c == KeyEventConstants.KEY_CODE_GOTO &&
                         m == KeyEventConstants.MODIFIER_GOTO) {
                     showPageSelectionDialog();
