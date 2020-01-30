@@ -94,9 +94,9 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
 
         // apply annotation values.
         if (annotation.getLineThickness() == 0) {
-            applySelectedValue(linkTypeBox, Annotation.INVISIBLE_RECTANGLE);
+            applySelectedValue(linkTypeBox, false);
         } else {
-            applySelectedValue(linkTypeBox, Annotation.VISIBLE_RECTANGLE);
+            applySelectedValue(linkTypeBox, true);
         }
         applySelectedValue(lineThicknessBox, annotation.getLineThickness());
         applySelectedValue(lineStyleBox, annotation.getLineStyle());
