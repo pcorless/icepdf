@@ -62,8 +62,8 @@ import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.PrintQuality;
-import javax.swing.*;
 import javax.swing.Timer;
+import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultTreeModel;
@@ -86,8 +86,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -4854,13 +4854,14 @@ public class SwingController extends ComponentAdapter
             }
         } catch (Exception e) {
             final Exception f = e;
+            String message = f.getMessage() == null || f.getMessage().isEmpty() ? f.toString() : f.getMessage();
             Runnable doSwingWork = () -> org.icepdf.ri.util.Resources.showMessageDialog(
                     viewer,
                     JOptionPane.INFORMATION_MESSAGE,
                     messageBundle,
                     "viewer.dialog.error.exception.title",
                     "viewer.dialog.error.exception.msg",
-                    f.getMessage());
+                    message);
             SwingUtilities.invokeLater(doSwingWork);
             logger.log(Level.FINE, "Error processing action event.", e);
         }
