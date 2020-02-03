@@ -89,7 +89,7 @@ public final class Resources extends StringResource {
         };
 
         MessageFormat formatter = new MessageFormat(
-                messageBundle.getString(messageKey));
+                messageBundle.getString(messageKey).replace("'", "''"));
 
         JOptionPane.showMessageDialog(
                 parent,
