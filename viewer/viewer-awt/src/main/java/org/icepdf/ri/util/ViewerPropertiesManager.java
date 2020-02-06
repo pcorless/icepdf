@@ -25,6 +25,7 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
+import java.util.prefs.InvalidPreferencesFormatException;
 import java.util.prefs.Preferences;
 
 
@@ -144,6 +145,7 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_SHOW_PREFERENCES_IMAGING = "application.preferences.show.imaging";
     public static final String PROPERTY_SHOW_PREFERENCES_FONTS = "application.preferences.show.fonts";
     public static final String PROPERTY_SHOW_PREFERENCES_ADVANCED = "application.preferences.show.advanced";
+    public static final String PROPERTY_SHOW_PREFERENCES_EXIMPORT = "application.preferences.show.eximport";
     // default utility pane thumbnail zoom size for non-embedded files
     public static final String PROPERTY_UTILITYPANE_THUMBNAILS_ZOOM = "application.utilitypane.thumbnail.zoom";
     // properties used for default zoom levels
@@ -281,7 +283,7 @@ public final class ViewerPropertiesManager {
     private static ViewerPropertiesManager propertiesManager;
 
     // static store of properties which are persisted to backing store.
-    private static final Preferences preferences = Preferences.userNodeForPackage(ViewerPropertiesManager.class);
+    private static Preferences preferences = Preferences.userNodeForPackage(ViewerPropertiesManager.class);
     // local properties, that aren't persisted and can override properties in the store if root accessor are used.
     private static Properties localProperties;
     // default properties file included int the viewer jar
@@ -671,6 +673,49 @@ public final class ViewerPropertiesManager {
         }
         // copy over the default properties.
         localProperties = new SortedProperties(defaultProps);
+    }
+
+    public static boolean importPreferences(File xml) {
+        try (InputStream in = new BufferedInputStream(new FileInputStream(xml))) {
+            Preferences.importPreferences(in);
+            preferences = Preferences.userNodeForPackage(ViewerPropertiesManager.class);
+            updatePropertiesWithPreferences();
+            return true;
+        } catch (IOException | InvalidPreferencesFormatException | BackingStoreException e) {
+            logger.warning("Couldn't load file " + xml.getAbsolutePath());
+            return false;
+        }
+    }
+
+    public static boolean exportPreferences(File xml) {
+        try (OutputStream out = new BufferedOutputStream(new FileOutputStream(xml))) {
+            preferences.exportSubtree(out);
+            return true;
+        } catch (BackingStoreException | IOException e) {
+            logger.warning("Couldn't write to file " + xml.getAbsolutePath());
+            return false;
+        }
+    }
+
+    public static boolean importProperties(File file) {
+        try (InputStream in = new BufferedInputStream(new FileInputStream(file))) {
+            localProperties.load(in);
+            saveLocalProperties();
+            return true;
+        } catch (IOException e) {
+            logger.warning("Couldn't load file " + file.getAbsolutePath());
+            return false;
+        }
+    }
+
+    public static boolean exportProperties(File file) {
+        try (OutputStream out = new BufferedOutputStream(new FileOutputStream(file))) {
+            localProperties.store(out, "IcePDF properties file");
+            return true;
+        } catch (IOException e) {
+            logger.warning("Couldn't write to file " + file.getAbsolutePath());
+            return false;
+        }
     }
 
     private static InputStream getResourceAsStream(String prefix, String resourcePath) {
