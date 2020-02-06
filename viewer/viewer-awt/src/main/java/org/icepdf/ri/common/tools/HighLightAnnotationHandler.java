@@ -33,7 +33,7 @@ import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -211,8 +211,8 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
 
     protected void checkAndApplyPreferences() {
         Color color = null;
-        if (preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_BUTTON_COLOR, -1) != -1) {
-            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_BUTTON_COLOR, 0);
+        if (preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_BUTTON_COLOR, -1) != -1) {
+            int rgb = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_BUTTON_COLOR, 0);
             color = new Color(rgb);
         }
         // apply the settings or system property base colour for the given subtype.
@@ -222,7 +222,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
             annotation.setColor(color);
             annotation.setTextMarkupColor(color);
         }
-        annotation.setOpacity(preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_OPACITY,
+        annotation.setOpacity(preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_OPACITY,
                 TextMarkupAnnotation.HIGHLIGHT_ALPHA));
     }
 
@@ -251,7 +251,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
         createTextMarkupAnnotation(highlightBounds);
 
         // set the annotation tool to he select tool
-        if (preferences.getBoolean(PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_SELECTION_ENABLED, false)) {
+        if (preferences.getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_SELECTION_ENABLED, false)) {
             documentViewController.getParentController().setDocumentToolMode(
                     DocumentViewModel.DISPLAY_TOOL_SELECTION);
         }

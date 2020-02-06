@@ -26,7 +26,7 @@ import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
@@ -66,7 +66,7 @@ public class DestinationsPanel extends JPanel
     // layouts constraint
     protected GridBagConstraints constraints;
 
-    private PropertiesManager propertiesManager;
+    private ViewerPropertiesManager propertiesManager;
     private Preferences preferences;
     private org.icepdf.ri.common.views.Controller controller;
     private ResourceBundle messageBundle;
@@ -78,7 +78,7 @@ public class DestinationsPanel extends JPanel
     private JMenuItem deleteNameTreeNode;
     private JMenuItem editNameTreeNode;
 
-    public DestinationsPanel(SwingController controller, PropertiesManager propertiesManager) {
+    public DestinationsPanel(SwingController controller, ViewerPropertiesManager propertiesManager) {
         messageBundle = controller.getMessageBundle();
         preferences = propertiesManager.getPreferences();
         setLayout(new GridBagLayout());

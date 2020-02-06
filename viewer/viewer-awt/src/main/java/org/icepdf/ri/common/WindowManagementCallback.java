@@ -16,7 +16,7 @@
 package org.icepdf.ri.common;
 
 import org.icepdf.ri.common.views.Controller;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import java.net.URL;
@@ -50,5 +50,5 @@ public interface WindowManagementCallback {
     void quit(Controller controller, JFrame viewer,
               Preferences preferences);
 
-    PropertiesManager getProperties();
+    ViewerPropertiesManager getProperties();
 }

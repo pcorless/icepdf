@@ -25,7 +25,6 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
-import java.util.prefs.InvalidPreferencesFormatException;
 import java.util.prefs.Preferences;
 
 
@@ -53,19 +52,18 @@ import java.util.prefs.Preferences;
  *
  * @since 6.3
  */
-// todo rename class to ViewerPropertiesManager
-public class PropertiesManager {
+public final class ViewerPropertiesManager {
 
     private static final Logger logger =
-            Logger.getLogger(PropertiesManager.class.toString());
+            Logger.getLogger(ViewerPropertiesManager.class.toString());
 
     // use ascii '27' or ESC as the delimiting character when storing multiple values in one property name.
     public static final String PROPERTY_TOKEN_SEPARATOR = "|";
 
     //default file for all not specified properties
-    public static String DEFAULT_PROP_FILE = "ICEpdfDefault.properties";
-    public static String DEFAULT_PROP_FILE_PATH = "org/icepdf/ri/viewer/res/";
-    public static String DEFAULT_MESSAGE_BUNDLE = "org.icepdf.ri.resources.MessageBundle";
+    public static final String DEFAULT_PROP_FILE = "ICEpdfDefault.properties";
+    public static final String DEFAULT_PROP_FILE_PATH = "org/icepdf/ri/viewer/res/";
+    public static final String DEFAULT_MESSAGE_BUNDLE = "org.icepdf.ri.resources.MessageBundle";
 
     public static final String PROPERTY_DEFAULT_FILE_PATH = "application.default.filepath";
     public static final String PROPERTY_DEFAULT_URL = "application.default.url";
@@ -280,16 +278,16 @@ public class PropertiesManager {
     // stored state of last used public/private annotation flag.
     public static final String PROPERTY_ANNOTATION_LAST_USED_PUBLIC_FLAG = "application.viewer.annotation.public.flag";
 
-    private static PropertiesManager propertiesManager;
+    private static ViewerPropertiesManager propertiesManager;
 
     // static store of properties which are persisted to backing store.
-    private static final Preferences preferences = Preferences.userNodeForPackage(PropertiesManager.class);
+    private static final Preferences preferences = Preferences.userNodeForPackage(ViewerPropertiesManager.class);
     // local properties, that aren't persisted and can override properties in the store if root accessor are used.
     private static Properties localProperties;
     // default properties file included int the viewer jar
     private static Properties defaultProps;
 
-    private PropertiesManager() {
+    private ViewerPropertiesManager() {
     }
 
     /**
@@ -297,9 +295,9 @@ public class PropertiesManager {
      *
      * @return singleton instance.
      */
-    public static PropertiesManager getInstance() {
+    public static ViewerPropertiesManager getInstance() {
         if (propertiesManager == null) {
-            propertiesManager = new PropertiesManager();
+            propertiesManager = new ViewerPropertiesManager();
             try {
                 if (preferences.keys().length == 0) {
                     // load default properties from viewer jar and assigned to defaultProps.

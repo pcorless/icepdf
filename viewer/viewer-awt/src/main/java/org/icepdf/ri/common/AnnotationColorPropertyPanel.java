@@ -16,7 +16,7 @@
 package org.icepdf.ri.common;
 
 import org.icepdf.ri.common.views.Controller;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -27,7 +27,7 @@ import java.util.ResourceBundle;
 import java.util.StringTokenizer;
 import java.util.prefs.Preferences;
 
-import static org.icepdf.ri.util.PropertiesManager.PROPERTY_ANNOTATION_RECENT_COLORS;
+import static org.icepdf.ri.util.ViewerPropertiesManager.PROPERTY_ANNOTATION_RECENT_COLORS;
 
 /**
  * @since 6.3
@@ -136,12 +136,12 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
                 new JLabel(messageBundle.getString("viewer.popup.annotation.color.lastused.label")),
                 0, 0, 10, 1);
         // check preferences for a recent colors entry.
-        Preferences preferences = PropertiesManager.getInstance().getPreferences();
+        Preferences preferences = ViewerPropertiesManager.getInstance().getPreferences();
         String rawRecents = preferences.get(PROPERTY_ANNOTATION_RECENT_COLORS, null);
         ArrayList<Color> recentColors = new ArrayList<>(10);
         // if we have some colour parse out the colours
         if (rawRecents != null) {
-            StringTokenizer toker = new StringTokenizer(rawRecents, PropertiesManager.PROPERTY_TOKEN_SEPARATOR);
+            StringTokenizer toker = new StringTokenizer(rawRecents, ViewerPropertiesManager.PROPERTY_TOKEN_SEPARATOR);
             try {
                 while (toker.hasMoreTokens()) {
                     recentColors.add(0, new Color(Integer.parseInt(toker.nextToken())));
@@ -216,7 +216,7 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
     public void actionPerformed(ActionEvent e) {
         Object source = e.getSource();
         if (source.equals(preferencesButton)) {
-            controller.showViewerPreferences(PropertiesManager.PROPERTY_SHOW_PREFERENCES_ANNOTATIONS);
+            controller.showViewerPreferences(ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_ANNOTATIONS);
         } else if (source.equals(colourPickerButton)) {
             // add colour to recent colour list, only show rgb pallet and setup default colour
             Color newColor = RgbColorChooser.showDialog(
@@ -228,10 +228,10 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
                 annotationColorButton.setColor(newColor, false);
                 buildRecentColours(newColor);
                 // store the new recent colour
-                Preferences preferences = PropertiesManager.getInstance().getPreferences();
+                Preferences preferences = ViewerPropertiesManager.getInstance().getPreferences();
                 String rawRecents = preferences.get(PROPERTY_ANNOTATION_RECENT_COLORS, null);
                 if (rawRecents != null) {
-                    rawRecents = newColor.getRGB() + PropertiesManager.PROPERTY_TOKEN_SEPARATOR + rawRecents;
+                    rawRecents = newColor.getRGB() + ViewerPropertiesManager.PROPERTY_TOKEN_SEPARATOR + rawRecents;
                 } else {
                     rawRecents = String.valueOf(newColor.getRGB());
                 }

@@ -24,7 +24,7 @@ import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
 
-import static org.icepdf.ri.util.PropertiesManager.*;
+import static org.icepdf.ri.util.ViewerPropertiesManager.*;
 
 public class SearchToolBar extends JToolBar implements ActionListener {
 

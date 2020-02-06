@@ -24,7 +24,7 @@ import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.images.Images;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -41,8 +41,8 @@ import java.util.prefs.Preferences;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import static org.icepdf.ri.util.PropertiesManager.PROPERTY_SEARCH_MARKUP_PANEL_CASE_SENSITIVE_ENABLED;
-import static org.icepdf.ri.util.PropertiesManager.PROPERTY_SEARCH_MARKUP_PANEL_REGEX_ENABLED;
+import static org.icepdf.ri.util.ViewerPropertiesManager.PROPERTY_SEARCH_MARKUP_PANEL_CASE_SENSITIVE_ENABLED;
+import static org.icepdf.ri.util.ViewerPropertiesManager.PROPERTY_SEARCH_MARKUP_PANEL_REGEX_ENABLED;
 
 /**
  * MarkupAnnotationPanel allows users to easily search, sort, filter and view markup annotations and their popup
@@ -110,7 +110,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
 
     public MarkupAnnotationPanel(SwingController controller) {
         this.messageBundle = controller.getMessageBundle();
-        preferences = PropertiesManager.getInstance().getPreferences();
+        preferences = ViewerPropertiesManager.getInstance().getPreferences();
         this.controller = controller;
         setLayout(new GridBagLayout());
         setAlignmentY(JPanel.TOP_ALIGNMENT);
@@ -211,23 +211,23 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
                     if (annotation instanceof TextMarkupAnnotation) {
                         TextMarkupAnnotation textMarkupAnnotation = (TextMarkupAnnotation) annotation;
                         if (textMarkupAnnotation.getSubType().equals(TextMarkupAnnotation.SUBTYPE_UNDERLINE)) {
-                            preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_COLOR,
+                            preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_COLOR,
                                     ((Color) newValue).getRGB());
                         } else if (textMarkupAnnotation.getSubType().equals(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT)) {
-                            preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_STRIKE_OUT_COLOR,
+                            preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_STRIKE_OUT_COLOR,
                                     ((Color) newValue).getRGB());
                         }
                     } else if (annotation instanceof LineAnnotation) {
-                        preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_LINE_COLOR,
+                        preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_COLOR,
                                 ((Color) newValue).getRGB());
                     } else if (annotation instanceof SquareAnnotation) {
-                        preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_SQUARE_COLOR,
+                        preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_SQUARE_COLOR,
                                 ((Color) newValue).getRGB());
                     } else if (annotation instanceof CircleAnnotation) {
-                        preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_CIRCLE_COLOR,
+                        preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_CIRCLE_COLOR,
                                 ((Color) newValue).getRGB());
                     } else if (annotation instanceof InkAnnotation) {
-                        preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_INK_COLOR,
+                        preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_COLOR,
                                 ((Color) newValue).getRGB());
                     } else if (annotation instanceof FreeTextAnnotation) {
                         // set the free text font colour,
@@ -244,7 +244,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
             AnnotationComponent annotationComponent = (AnnotationComponent) newValue;
             if (annotationComponent != null &&
                     annotationComponent.getAnnotation() instanceof MarkupAnnotation) {
-                parentPanel.setSelectedTab(PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_MARKUP);
+                parentPanel.setSelectedTab(ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_MARKUP);
                 quickPaintAnnotationButton.setColor(annotationComponent.getAnnotation().getColor(), false);
                 quickPaintAnnotationButton.setEnabled(true);
                 // update the status bar
@@ -361,13 +361,13 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
     protected void buildSortFilterToolBar() {
         JPanel filterSortToolPanel = new JPanel(new GridBagLayout());
 
-        String iconSize = preferences.get(PropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE);
+        String iconSize = preferences.get(ViewerPropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE);
 
         DropDownButton sortDropDownButton = new DropDownButton(controller, "",
                 messageBundle.getString("viewer.utilityPane.markupAnnotation.toolbar.sort.sortButton.tooltip"),
                 "sort", iconSize, SwingViewBuilder.buildButtonFont());
 
-        String defaultColumn = preferences.get(PropertiesManager.PROPERTY_ANNOTATION_SORT_COLUMN, SortColumn.PAGE.toString());
+        String defaultColumn = preferences.get(ViewerPropertiesManager.PROPERTY_ANNOTATION_SORT_COLUMN, SortColumn.PAGE.toString());
         ButtonGroup sortMenuGroup = new ButtonGroup();
         JCheckBoxMenuItem sortMenuItem;
         for (Action sortAction : sortActions) {
@@ -394,11 +394,11 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
                 "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byColor.label"));
 
         // build out author submenu, all, current user, other users
-        defaultColumn = preferences.get(PropertiesManager.PROPERTY_ANNOTATION_FILTER_AUTHOR_COLUMN, FilterAuthorColumn.ALL.toString());
+        defaultColumn = preferences.get(ViewerPropertiesManager.PROPERTY_ANNOTATION_FILTER_AUTHOR_COLUMN, FilterAuthorColumn.ALL.toString());
         filterAuthorAction = buildMenuItemGroup(authorFilterMenuItem, filterAuthorActions, defaultColumn, filterAuthorAction);
 
         // build out markup annotation types.
-        defaultColumn = preferences.get(PropertiesManager.PROPERTY_ANNOTATION_FILTER_TYPE_COLUMN, FilterSubTypeColumn.ALL.toString());
+        defaultColumn = preferences.get(ViewerPropertiesManager.PROPERTY_ANNOTATION_FILTER_TYPE_COLUMN, FilterSubTypeColumn.ALL.toString());
         filterTypeAction = buildMenuItemGroup(typeFilterMenuItem, filterTypeActions, defaultColumn, filterTypeAction);
 
         refreshColorPanel();
@@ -480,7 +480,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         colorFilterMenuItem.add(filterColorAllMenuItem);
         filterColorMenuGroup.add(filterColorAllMenuItem);
         ArrayList<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
-        int defaultColor = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FILTER_COLOR_COLUMN, -1);
+        int defaultColor = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FILTER_COLOR_COLUMN, -1);
         JCheckBoxMenuItem filterColorMenuItem;
         if (colorLabels.size() > 0) {
             for (DragDropColorList.ColorLabel colorLabel : colorLabels) {
@@ -639,7 +639,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
 
         public void actionPerformed(ActionEvent ae) {
             sortAction = this;
-            preferences.put(PropertiesManager.PROPERTY_ANNOTATION_SORT_COLUMN,
+            preferences.put(ViewerPropertiesManager.PROPERTY_ANNOTATION_SORT_COLUMN,
                     getValue(COLUMN_PROPERTY).toString());
             sortAndFilterAnnotationData();
         }
@@ -653,7 +653,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
 
         public void actionPerformed(ActionEvent ae) {
             filterTypeAction = this;
-            preferences.put(PropertiesManager.PROPERTY_ANNOTATION_FILTER_TYPE_COLUMN, getValue(COLUMN_PROPERTY).toString());
+            preferences.put(ViewerPropertiesManager.PROPERTY_ANNOTATION_FILTER_TYPE_COLUMN, getValue(COLUMN_PROPERTY).toString());
             sortAndFilterAnnotationData();
         }
     }
@@ -666,7 +666,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
 
         public void actionPerformed(ActionEvent ae) {
             filterAuthorAction = this;
-            preferences.put(PropertiesManager.PROPERTY_ANNOTATION_FILTER_AUTHOR_COLUMN, getValue(COLUMN_PROPERTY).toString());
+            preferences.put(ViewerPropertiesManager.PROPERTY_ANNOTATION_FILTER_AUTHOR_COLUMN, getValue(COLUMN_PROPERTY).toString());
             sortAndFilterAnnotationData();
         }
     }
@@ -691,9 +691,9 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
             filterColorAction = this;
             if (getValue(COLUMN_PROPERTY) != null) {
                 Integer colorValue = ((Color) getValue(COLUMN_PROPERTY)).getRGB();
-                preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_FILTER_COLOR_COLUMN, colorValue);
+                preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FILTER_COLOR_COLUMN, colorValue);
             } else {
-                preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_FILTER_COLOR_COLUMN, -1);
+                preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FILTER_COLOR_COLUMN, -1);
             }
             sortAndFilterAnnotationData();
         }
