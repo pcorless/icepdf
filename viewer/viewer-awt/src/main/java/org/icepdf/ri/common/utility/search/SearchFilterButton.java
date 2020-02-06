@@ -5,17 +5,16 @@ import org.icepdf.ri.common.PersistentJCheckBoxMenuItem;
 import org.icepdf.ri.common.SwingViewBuilder;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.images.Images;
-import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
+import java.util.Arrays;
 import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
 
 import static org.icepdf.ri.util.PropertiesManager.*;
 
-public class SearchFilterButtonWrapper {
+public class SearchFilterButton extends DropDownButton {
 
-    private final DropDownButton filterDropDownButton;
     private final JCheckBoxMenuItem wholeWordCheckbox;
     private final JCheckBoxMenuItem regexCheckbox;
     private final JCheckBoxMenuItem caseSensitiveCheckbox;
@@ -26,9 +25,14 @@ public class SearchFilterButtonWrapper {
     private final JCheckBoxMenuItem outlinesCheckbox;
     private final JCheckBoxMenuItem showPagesCheckbox;
 
-    public SearchFilterButtonWrapper(BaseSearchComponent component, Controller controller, String titleRes) {
+    public SearchFilterButton(BaseSearchModel component, Controller controller, String titleRes) {
+        super(controller,
+                "",
+                controller.getMessageBundle().getString(titleRes),
+                "filter",
+                controller.getPropertiesManager().getPreferences().get(PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE),
+                SwingViewBuilder.buildButtonFont());
         final Preferences preferences = controller.getPropertiesManager().getPreferences();
-        String iconSize = preferences.get(PropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE);
         boolean isRegex = preferences.getBoolean(PROPERTY_SEARCH_PANEL_REGEX_ENABLED, true);
         boolean isWholeWord = preferences.getBoolean(PROPERTY_SEARCH_PANEL_WHOLE_WORDS_ENABLED, false);
         boolean isCaseSensitive = preferences.getBoolean(PROPERTY_SEARCH_PANEL_CASE_SENSITIVE_ENABLED, false);
@@ -41,9 +45,6 @@ public class SearchFilterButtonWrapper {
 
         boolean isShowPages = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SHOW_PAGES_ENABLED, true);
         final ResourceBundle messageBundle = controller.getMessageBundle();
-        filterDropDownButton = new DropDownButton(controller, "",
-                messageBundle.getString(titleRes),
-                "filter", iconSize, SwingViewBuilder.buildButtonFont());
         wholeWordCheckbox = new PersistentJCheckBoxMenuItem(messageBundle.getString(
                 "viewer.utilityPane.search.wholeWordCheckbox.label"), isWholeWord);
         wholeWordCheckbox.addActionListener(actionEvent -> {
@@ -105,26 +106,22 @@ public class SearchFilterButtonWrapper {
             preferences.putBoolean(PROPERTY_SEARCH_PANEL_SHOW_PAGES_ENABLED, isShowPages());
         });
         if (titleRes.contains("utilityPane")) {
-            filterDropDownButton.add(regexCheckbox);
-            filterDropDownButton.add(wholeWordCheckbox);
-            filterDropDownButton.add(caseSensitiveCheckbox);
-            filterDropDownButton.add(cumulativeCheckbox);
-            filterDropDownButton.addSeparator();
-            filterDropDownButton.add(textCheckbox);
-            filterDropDownButton.add(commentsCheckbox);
-            filterDropDownButton.add(outlinesCheckbox);
-            filterDropDownButton.add(destinationsCheckbox);
-            filterDropDownButton.addSeparator();
-            filterDropDownButton.add(showPagesCheckbox);
+            add(regexCheckbox);
+            add(wholeWordCheckbox);
+            add(caseSensitiveCheckbox);
+            add(cumulativeCheckbox);
+            addSeparator();
+            add(textCheckbox);
+            add(commentsCheckbox);
+            add(outlinesCheckbox);
+            add(destinationsCheckbox);
+            addSeparator();
+            add(showPagesCheckbox);
         } else {
-            filterDropDownButton.add(wholeWordCheckbox);
-            filterDropDownButton.add(caseSensitiveCheckbox);
-            filterDropDownButton.add(commentsCheckbox);
+            add(wholeWordCheckbox);
+            add(caseSensitiveCheckbox);
+            add(commentsCheckbox);
         }
-    }
-
-    public DropDownButton getButton() {
-        return filterDropDownButton;
     }
 
     public JCheckBoxMenuItem getWholeWordCheckbox() {
@@ -199,11 +196,7 @@ public class SearchFilterButtonWrapper {
         return showPagesCheckbox.isSelected();
     }
 
-    public void setEnabled(boolean b) {
-        filterDropDownButton.setEnabled(b);
-    }
-
-    public SearchTextTask getSearchTask(BaseSearchComponent panel, Controller controller, String pattern) {
+    public SearchTextTask getSearchTask(BaseSearchModel panel, Controller controller, String pattern) {
         SearchTextTask.Builder builder = new SearchTextTask.Builder(controller, pattern);
         return builder.setSearchPanel(panel)
                 .setCaseSensitive(isCaseSensitive())
@@ -222,5 +215,11 @@ public class SearchFilterButtonWrapper {
         return builder.setCaseSensitive(isCaseSensitive())
                 .setWholeWord(isWholeWord())
                 .setComments(isComments()).build();
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+        Arrays.stream(getComponents()).forEach(c -> c.setEnabled(enabled));
     }
 }

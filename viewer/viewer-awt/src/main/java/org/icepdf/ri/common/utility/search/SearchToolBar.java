@@ -30,14 +30,14 @@ import java.util.ResourceBundle;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-public class SearchToolBar extends JToolBar implements ActionListener, BaseSearchComponent {
+public class SearchToolBar extends JToolBar implements ActionListener, BaseSearchModel {
 
     private JLabel searchLabel;
     private JTextField searchTextField;
     private JButton nextSearchResult;
     private JButton previousSearchButton;
 
-    private SearchFilterButtonWrapper wrapper;
+    private SearchFilterButton searchFilterButton;
     private JMenuItem advancedSearchMenuItem;
 
     private SimpleSearchHelper simpleSearchHelper;
@@ -85,7 +85,7 @@ public class SearchToolBar extends JToolBar implements ActionListener, BaseSearc
         super.setEnabled(enabled);
         searchLabel.setEnabled(enabled);
         searchTextField.setEnabled(enabled);
-        wrapper.setEnabled(enabled);
+        searchFilterButton.setEnabled(enabled);
         nextSearchResult.setEnabled(enabled);
         previousSearchButton.setEnabled(enabled);
     }
@@ -96,7 +96,7 @@ public class SearchToolBar extends JToolBar implements ActionListener, BaseSearc
             simpleSearchHelper.dispose();
         }
 
-        simpleSearchHelper = wrapper.getSimpleSearchHelper(controller, searchTextField.getText());
+        simpleSearchHelper = searchFilterButton.getSimpleSearchHelper(controller, searchTextField.getText());
 
     }
 
@@ -110,21 +110,23 @@ public class SearchToolBar extends JToolBar implements ActionListener, BaseSearc
         controller.getDocumentViewController().getViewContainer().repaint();
 
         searchTextField.setForeground(Color.BLACK);
-        // do a quick check to make sure we have valida expression.
-        if (wrapper.isRegex()) {
-            try {
-                Pattern.compile(searchTextField.getText());
-            } catch (PatternSyntaxException e) {
-                searchTextField.setForeground(Color.RED);
-                return;
+        if (!searchTextField.getText().isEmpty()) {
+            // do a quick check to make sure we have a valid expression.
+            if (searchFilterButton.isRegex()) {
+                try {
+                    Pattern.compile(searchTextField.getText());
+                } catch (PatternSyntaxException e) {
+                    searchTextField.setForeground(Color.RED);
+                    return;
+                }
+
             }
+            searchTextTask = searchFilterButton.getSearchTask(this, controller, searchTextField.getText());
+            searchFilterButton.setEnabled(false);
 
+            // start the task and the timer
+            searchTextTask.execute();
         }
-        searchTextTask = wrapper.getSearchTask(this, controller, searchTextField.getText());
-        wrapper.setEnabled(false);
-
-        // start the task and the timer
-        searchTextTask.execute();
     }
 
     @Override
@@ -179,13 +181,13 @@ public class SearchToolBar extends JToolBar implements ActionListener, BaseSearc
                 "viewer.toolbar.search.advancedSearch.label"));
         advancedSearchMenuItem.addActionListener(this);
 
-        this.wrapper = new SearchFilterButtonWrapper(this, controller, "viewer.toolbar.tool.search.filter.tooltip");
-        wrapper.getButton().add(advancedSearchMenuItem, 0);
+        this.searchFilterButton = new SearchFilterButton(this, controller, "viewer.toolbar.tool.search.filter.tooltip");
+        searchFilterButton.add(advancedSearchMenuItem, 0);
 
         // build out the base structure
         this.add(searchLabel);
         this.add(searchTextField);
-        this.add(wrapper.getButton());
+        this.add(searchFilterButton);
         this.add(previousSearchButton);
         this.add(nextSearchResult);
     }
@@ -199,7 +201,7 @@ public class SearchToolBar extends JToolBar implements ActionListener, BaseSearc
     @Override
     public void updateProgressControls(String message) {
         if (searchTextTask.isCancelled() || searchTextTask.isDone()) {
-            wrapper.setEnabled(true);
+            searchFilterButton.setEnabled(true);
         }
     }
 

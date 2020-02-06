@@ -370,12 +370,12 @@ public class SwingViewBuilder {
     /**
      * Construct a SwingVewBuilder with whichever settings you desire
      *
-     * @param c Controller that will interact with the GUI
-     * @param bf button font.
-     * @param bt show button text.
-     * @param ts text size
-     * @param zl zoom levels
-     * @param documentViewType default document view.
+     * @param c                   Controller that will interact with the GUI
+     * @param bf                  button font.
+     * @param bt                  show button text.
+     * @param ts                  text size
+     * @param zl                  zoom levels
+     * @param documentViewType    default document view.
      * @param documentPageFitMode page fit mode
      */
     public SwingViewBuilder(SwingController c, Font bf, boolean bt, int ts,
@@ -387,15 +387,15 @@ public class SwingViewBuilder {
     /**
      * Construct a SwingVewBuilder with whichever settings you desire
      *
-     * @param c Controller that will interact with the GUI
-     * @param properties properties manager
-     * @param bf button font.
-     * @param bt show button text.
-     * @param ts text size
-     * @param zl zoom levels
-     * @param documentViewType default document view.
+     * @param c                   Controller that will interact with the GUI
+     * @param properties          properties manager
+     * @param bf                  button font.
+     * @param bt                  show button text.
+     * @param ts                  text size
+     * @param zl                  zoom levels
+     * @param documentViewType    default document view.
      * @param documentPageFitMode page fit mode
-     * @param rotation rotation factor
+     * @param rotation            rotation factor
      */
     public SwingViewBuilder(SwingController c, PropertiesManager properties,
                             Font bf, boolean bt, int ts,
@@ -477,8 +477,9 @@ public class SwingViewBuilder {
     /**
      * The Container will contain the PDF document's current page visualization
      * and document outline if available.
+     *
      * @param embeddableComponent true if the component is to be used as an embedded component.
-     * @param cp Container in which to put components for viewing PDF documents
+     * @param cp                  Container in which to put components for viewing PDF documents
      */
     public void buildContents(Container cp, boolean embeddableComponent) {
         cp.setLayout(new BorderLayout());
@@ -993,10 +994,9 @@ public class SwingViewBuilder {
 
     public JMenuItem buildAdvancedSearchMenuItem() {
         final JMenuItem mi = makeMenuItem(messageBundle.getString("viewer.toolbar.search.advanced.label"), buildKeyStroke(KeyEventConstants.KEY_CODE_SEARCH, KeyEventConstants.MODIFIER_ADVANCED_SEARCH));
-        if (viewerController!=null && mi!=null){
+        if (viewerController != null && mi != null) {
             viewerController.setAdvancedSearchMenuItem(mi);
         }
-        mi.setPreferredSize(new Dimension(0,0));
         return mi;
     }
 
@@ -2439,7 +2439,7 @@ public class SwingViewBuilder {
     /**
      * Utility method for creating a menu item.
      *
-     * @param text display text for the menu item
+     * @param text  display text for the menu item
      * @param accel accelerator key
      * @return menu item complete with text and action listener
      */
@@ -2456,7 +2456,7 @@ public class SwingViewBuilder {
      * @param text      display text for the menu item
      * @param imageName display image for the menu item
      * @param imageSize size of the image.
-     * @param accel accelerator key
+     * @param accel     accelerator key
      * @return menu item complete with text, image and action listener
      */
     protected JMenuItem makeMenuItem(String text, String imageName,
@@ -2511,6 +2511,7 @@ public class SwingViewBuilder {
 
     /**
      * Method to attempt to override the system properties with various values form the preferences class.
+     *
      * @param propertiesManager current properties manager.
      */
     protected void overrideHighlightColor(PropertiesManager propertiesManager) {

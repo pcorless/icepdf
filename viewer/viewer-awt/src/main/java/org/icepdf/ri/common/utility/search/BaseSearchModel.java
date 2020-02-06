@@ -2,7 +2,7 @@ package org.icepdf.ri.common.utility.search;
 
 import java.text.MessageFormat;
 
-public interface BaseSearchComponent {
+public interface BaseSearchModel {
     void updateProgressControls(String message);
 
     void addFoundCommentEntry(SearchTextTask.CommentsResult outlineResult, SearchTextTask searchTextTask);

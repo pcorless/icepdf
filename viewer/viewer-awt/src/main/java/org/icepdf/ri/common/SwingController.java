@@ -1680,7 +1680,6 @@ public class SwingController extends ComponentAdapter
         setEnabled(singlePageViewContinuousButton, opened && !pdfCollection);
         setEnabled(facingPageViewNonContinuousButton, opened && !pdfCollection);
         setEnabled(singlePageViewNonContinuousButton, opened && !pdfCollection);
-
         if (opened) {
             reflectZoomInZoomComboBox();
             reflectFitInFitButtons();

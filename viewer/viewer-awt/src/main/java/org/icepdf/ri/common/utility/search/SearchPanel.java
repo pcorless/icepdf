@@ -67,7 +67,7 @@ import java.util.regex.PatternSyntaxException;
  */
 @SuppressWarnings("serial")
 public class SearchPanel extends JPanel implements ActionListener, MutableDocument,
-        TreeSelectionListener, DocumentListener, BaseSearchComponent {
+        TreeSelectionListener, DocumentListener, BaseSearchModel {
 
     private static final Logger logger =
             Logger.getLogger(SearchPanel.class.toString());
@@ -104,7 +104,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     private JButton searchButton;
     // clear search
     private JButton clearSearchButton;
-    private SearchFilterButtonWrapper wrapper;
+    private SearchFilterButton searchFilterButton;
     // page index of the last added node.
     private int lastTextNodePageIndex, lastCommentNodePageIndex;
 
@@ -241,8 +241,8 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
 
         // search options check boxes.
         // search option check boxes.
-        wrapper = new SearchFilterButtonWrapper(this, controller, "viewer.utilityPane.markupAnnotation.toolbar.filter.filterButton.tooltip");
-        wrapper.getShowPagesCheckbox().addActionListener(this);
+        searchFilterButton = new SearchFilterButton(this, controller, "viewer.utilityPane.markupAnnotation.toolbar.filter.filterButton.tooltip");
+        searchFilterButton.getShowPagesCheckbox().addActionListener(this);
 
         // Build search GUI
         GridBagLayout layout = new GridBagLayout();
@@ -270,9 +270,9 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.insets = new Insets(1, 1, 1, 1);
         // add filter button and make sure height matches search button
-        wrapper.getButton().setPreferredSize(
-                new Dimension(wrapper.getButton().getPreferredSize().width, searchButton.getPreferredSize().height));
-        addGB(searchPanel, wrapper.getButton(), 1, 1, 1, 1);
+        searchFilterButton.setPreferredSize(
+                new Dimension(searchFilterButton.getPreferredSize().width, searchButton.getPreferredSize().height));
+        addGB(searchPanel, searchFilterButton, 1, 1, 1, 1);
         addGB(searchPanel, searchButton, 2, 1, 1, 1);
 
         // add clear search button
@@ -522,16 +522,16 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     }
 
     private void insertSectionNodes() {
-        if (wrapper.isText()) {
+        if (searchFilterButton.isText()) {
             rootTreeNode.insert(textTreeNode, rootTreeNode.getChildCount());
         }
-        if (wrapper.isComments()) {
+        if (searchFilterButton.isComments()) {
             rootTreeNode.insert(commentsTreeNode, rootTreeNode.getChildCount());
         }
-        if (wrapper.isOutlines()) {
+        if (searchFilterButton.isOutlines()) {
             rootTreeNode.insert(outlinesTreeNode, rootTreeNode.getChildCount());
         }
-        if (wrapper.isDestinations()) {
+        if (searchFilterButton.isDestinations()) {
             rootTreeNode.insert(destinationsTreeNode, rootTreeNode.getChildCount());
         }
     }
@@ -587,7 +587,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
             searchTextTask.cancel(true);
         }
 
-        wrapper.setEnabled(true);
+        searchFilterButton.setEnabled(true);
     }
 
     private void startSearch() {
@@ -604,7 +604,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         controller.getDocumentViewController().getViewContainer().repaint();
 
         // do a quick check to make sure we have valida expression.
-        if (wrapper.isRegex()) {
+        if (searchFilterButton.isRegex()) {
             try {
                 Pattern.compile(searchTextField.getText());
             } catch (PatternSyntaxException e) {
@@ -616,11 +616,11 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         }
 
         // start a new search text task
-        searchTextTask = wrapper.getSearchTask(this, controller, searchTextField.getText());
+        searchTextTask = searchFilterButton.getSearchTask(this, controller, searchTextField.getText());
 
         // set state of search button
         searchButton.setText(messageBundle.getString("viewer.utilityPane.search.stopButton.label"));
-        wrapper.setEnabled(false);
+        searchFilterButton.setEnabled(false);
 
         // start the task and the timer
         searchTextTask.execute();
@@ -758,9 +758,9 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
             startSearch();
         } else if (source == clearSearchButton) {
             clearSearch();
-        } else if (source == wrapper.getShowPagesCheckbox()) {
+        } else if (source == searchFilterButton.getShowPagesCheckbox()) {
             if (event.getSource() != null) {
-                if (wrapper.isShowPages()) {
+                if (searchFilterButton.isShowPages()) {
                     showAllNodePages();
                 } else {
                     hideAllNodePages();
@@ -885,7 +885,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
             // update buttons states.
             searchButton.setText(messageBundle.getString("viewer.utilityPane.search.searchButton.label"));
             //resetTree();
-            wrapper.setEnabled(true);
+            searchFilterButton.setEnabled(true);
 
             // update progress bar then hide it.
             progressBar.setValue(progressBar.getMinimum());

@@ -93,9 +93,10 @@ public class DropDownButton extends JButton
         }
     }
 
-    public void add(JMenuItem menuItem, int idx){
+    public void add(JMenuItem menuItem, int idx) {
         popupMenu.add(menuItem, idx);
     }
+
     public void add(JMenuItem menuItem) {
         popupMenu.add(menuItem);
     }
@@ -106,7 +107,7 @@ public class DropDownButton extends JButton
 
     @Override
     public void mouseClicked(MouseEvent e) {
-        if (e.getButton() == MouseEvent.BUTTON1) {
+        if (e.getButton() == MouseEvent.BUTTON1 && isEnabled()) {
             popupMenu.show(e.getComponent(), 5, getHeight() - 5);
         }
     }
