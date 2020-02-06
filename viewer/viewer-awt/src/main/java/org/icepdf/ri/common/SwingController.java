@@ -274,6 +274,7 @@ public class SwingController extends ComponentAdapter
     protected static ResourceBundle messageBundle = null;
 
     protected PropertiesManager propertiesManager;
+    private Map<Reference, PObject> savedChanges = new HashMap<>();
 
     /**
      * Create a Controller object, and its associated ViewerModel
@@ -3492,6 +3493,7 @@ public class SwingController extends ComponentAdapter
                     fileOutputStream.flush();
                     buf.close();
                     fileOutputStream.close();
+                    savedChanges = document.getStateManager().getChanges();
                 } catch (MalformedURLException e) {
                     logger.log(Level.FINE, "Malformed URL Exception ", e);
                 } catch (IOException e) {
@@ -3578,8 +3580,8 @@ public class SwingController extends ComponentAdapter
         // want to save the changes.
         if (document != null) {
             boolean documentChanges = document.getStateManager().isChanged();
-            if (documentChanges && Document.foundIncrementalUpdater) {
 
+            if (document.getStateManager().hasChangedSince(savedChanges) && Document.foundIncrementalUpdater) {
                 MessageFormat formatter = new MessageFormat(
                         messageBundle.getString("viewer.dialog.saveOnClose.noUpdates.msg"));
                 String dialogMessage = formatter.format(new Object[]{document.getDocumentOrigin()});
