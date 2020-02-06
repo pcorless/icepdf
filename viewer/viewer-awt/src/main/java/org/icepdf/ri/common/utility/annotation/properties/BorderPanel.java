@@ -50,7 +50,7 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
     private static ValueLabelItem[] LINE_STYLE_LIST;
 
     // link action appearance properties.
-    private JComboBox<ValueLabelItem> linkTypeBox;
+    private JComboBox<ValueLabelItem> borderVisibleBox;
     private JComboBox<ValueLabelItem> lineThicknessBox;
     private JComboBox<ValueLabelItem> lineStyleBox;
     private JButton colorButton;
@@ -94,9 +94,9 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
 
         // apply annotation values.
         if (annotation.getLineThickness() == 0) {
-            applySelectedValue(linkTypeBox, Annotation.INVISIBLE_RECTANGLE);
+            applySelectedValue(borderVisibleBox, false);
         } else {
-            applySelectedValue(linkTypeBox, Annotation.VISIBLE_RECTANGLE);
+            applySelectedValue(borderVisibleBox, true);
         }
         applySelectedValue(lineThicknessBox, annotation.getLineThickness());
         applySelectedValue(lineStyleBox, annotation.getLineStyle());
@@ -113,7 +113,7 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
 
         ValueLabelItem item = (ValueLabelItem) e.getItem();
         if (e.getStateChange() == ItemEvent.SELECTED) {
-            if (e.getSource() == linkTypeBox) {
+            if (e.getSource() == borderVisibleBox) {
                 boolean linkVisible = (Boolean) item.getValue();
                 if (linkVisible) {
                     annotation.getBorderStyle().setStrokeWidth(1f);
@@ -194,12 +194,12 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
         constraints.insets = new Insets(1, 2, 1, 2);
 
         // border type box
-        linkTypeBox = new JComboBox<>(VISIBLE_TYPE_LIST);
-        linkTypeBox.setSelectedIndex(DEFAULT_LINK_TYPE);
-        linkTypeBox.addItemListener(this);
+        borderVisibleBox = new JComboBox<>(VISIBLE_TYPE_LIST);
+        borderVisibleBox.setSelectedIndex(DEFAULT_LINK_TYPE);
+        borderVisibleBox.addItemListener(this);
         addGB(this, new JLabel(messageBundle.getString("viewer.utilityPane.annotation.border.linkType")),
                 0, 0, 1, 1);
-        addGB(this, linkTypeBox, 1, 0, 1, 1);
+        addGB(this, borderVisibleBox, 1, 0, 1, 1);
         // border thickness
         lineThicknessBox = new JComboBox<>(LINE_THICKNESS_LIST);
         lineThicknessBox.setSelectedIndex(DEFAULT_LINE_THICKNESS);
@@ -232,7 +232,7 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
 
-        safeEnable(linkTypeBox, enabled);
+        safeEnable(borderVisibleBox, enabled);
         safeEnable(lineThicknessBox, enabled);
         safeEnable(lineStyleBox, enabled);
         safeEnable(colorButton, enabled);
@@ -246,13 +246,13 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
     private void enableAppearanceInputComponents(boolean visible) {
         if (!visible) {
             // everything but highlight style and link type
-            safeEnable(linkTypeBox, true);
+            safeEnable(borderVisibleBox, true);
             safeEnable(lineThicknessBox, false);
             safeEnable(lineStyleBox, false);
             safeEnable(colorButton, false);
         } else {
             // enable all fields.
-            safeEnable(linkTypeBox, true);
+            safeEnable(borderVisibleBox, true);
             safeEnable(lineThicknessBox, true);
             safeEnable(lineStyleBox, true);
             safeEnable(colorButton, true);

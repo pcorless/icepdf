@@ -4879,13 +4879,14 @@ public class SwingController extends ComponentAdapter
             }
         } catch (Exception e) {
             final Exception f = e;
+            String message = f.getMessage() == null || f.getMessage().isEmpty() ? f.toString() : f.getMessage();
             Runnable doSwingWork = () -> org.icepdf.ri.util.Resources.showMessageDialog(
                     viewer,
                     JOptionPane.INFORMATION_MESSAGE,
                     messageBundle,
                     "viewer.dialog.error.exception.title",
                     "viewer.dialog.error.exception.msg",
-                    f.getMessage());
+                    message);
             SwingUtilities.invokeLater(doSwingWork);
             logger.log(Level.FINE, "Error processing action event.", e);
         }
