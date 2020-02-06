@@ -51,10 +51,7 @@ import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryFrame;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
-import org.icepdf.ri.util.BareBonesBrowserLaunch;
-import org.icepdf.ri.util.PropertiesManager;
-import org.icepdf.ri.util.TextExtractionTask;
-import org.icepdf.ri.util.URLAccess;
+import org.icepdf.ri.util.*;
 import org.icepdf.ri.viewer.WindowManager;
 
 import javax.print.attribute.PrintRequestAttributeSet;
@@ -79,15 +76,14 @@ import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
+import java.net.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -138,6 +134,7 @@ public class SwingController extends ComponentAdapter
     private JMenuItem openURLMenuItem;
     private JMenuItem closeMenuItem;
     private JMenuItem saveAsFileMenuItem;
+    private JMenuItem sendMailMenuItem;
     private JMenuItem exportTextMenuItem;
     private JMenuItem propertiesMenuItem;
     private JMenuItem permissionsMenuItem;
@@ -430,6 +427,16 @@ public class SwingController extends ComponentAdapter
      */
     public void setSaveAsFileMenuItem(JMenuItem mi) {
         saveAsFileMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
+     */
+    public void setSendMailMenuItem(JMenuItem mi) {
+        sendMailMenuItem = mi;
         mi.addActionListener(this);
     }
 
@@ -1547,6 +1554,7 @@ public class SwingController extends ComponentAdapter
         // menu items.
         setEnabled(closeMenuItem, opened);
         setEnabled(saveAsFileMenuItem, opened);
+        setEnabled(sendMailMenuItem, opened);
         setEnabled(exportTextMenuItem, opened && canExtract && !pdfCollection);
         setEnabled(propertiesMenuItem, opened);
 
@@ -3187,6 +3195,7 @@ public class SwingController extends ComponentAdapter
         openURLMenuItem = null;
         closeMenuItem = null;
         saveAsFileMenuItem = null;
+        sendMailMenuItem = null;
         exportTextMenuItem = null;
         permissionsMenuItem = null;
         propertiesMenuItem = null;
@@ -3524,6 +3533,104 @@ public class SwingController extends ComponentAdapter
             return result;
         }
         return null;
+    }
+
+    /**
+     * Backup for sendMail(), using a mailto uri
+     */
+    private void sendMailMailto(String os, String attachment) {
+        String mailto = "mailto:?attachment=" + attachment;
+        try {
+            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.MAIL)) {
+                URI mailtoURI = new URI(mailto.replace(" ", "%20"));
+                Desktop.getDesktop().mail(mailtoURI);
+            } else {
+                List<String> args = new ArrayList<>();
+                if (os.contains("win")) {
+                    args.add("cmd.exe");
+                    args.add("/c");
+                    args.add("start");
+                    args.add(mailto.replace(" ", "%20"));
+                } else if (os.contains("osx")) {
+                    args.add("open");
+                    args.add(mailto.replace(" ", "%20"));
+                } else if (os.contains("nix") || os.contains("aix") || os.contains("nux")) {
+                    args.add("bash");
+                    args.add("-c");
+                    args.add("xdg-open " + mailto.replace(" ", "%20"));
+                } else {
+                    logger.warning("Unsupported os : " + os);
+                    JOptionPane.showMessageDialog(viewer, messageBundle.getString("viewer.dialog.sendmail.unsupported.msg"), messageBundle.getString("viewer.dialog.sendmail.unsupported.title"), JOptionPane.ERROR_MESSAGE);
+                }
+                if (!args.isEmpty()) {
+                    final String[] argsA = args.toArray(new String[]{});
+                    System.out.println(Arrays.toString(argsA));
+                    Process process = new ProcessBuilder(argsA).start();
+                    if (process.exitValue() != 0) {
+                        JOptionPane.showMessageDialog(viewer, messageBundle.getString("viewer.dialog.sendmail.error.msg"), messageBundle.getString("viewer.dialog.sendmail.error.title"), JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+        } catch (URISyntaxException | IOException e) {
+            logger.warning(e.getMessage());
+            JOptionPane.showMessageDialog(viewer, messageBundle.getString("viewer.dialog.sendmail.error.msg"), messageBundle.getString("viewer.dialog.sendmail.error.title"), JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Sends the current document by mail, opening the default mail client
+     */
+    public void sendMail() {
+        String os = System.getProperty("os.name").toLowerCase();
+        String attachment = document.getDocumentLocation();
+        List<String> args = new ArrayList<>();
+        if (os.contains("win")) {
+            try {
+                String[] value = WindowsRegistry.readRegistry("HKEY_LOCAL_MACHINE\\SOFTWARE\\Clients\\Mail", "");
+                if (value[10].toLowerCase().contains("thunderbird")) {
+                    String[] pfad = WindowsRegistry.readRegistry("HKEY_LOCAL_MACHINE\\SOFTWARE\\Clients\\Mail\\Mozilla Thunderbird\\shell\\open\\command", "");
+                    args.add(pfad[10]);
+                    args.add(pfad[11]);
+                    args.add("/compose");
+                    args.add("attachment='" + attachment + "'");
+                } else if (value[10].toLowerCase().contains("outlook")) {
+                    String[] pfad = WindowsRegistry.readRegistry(
+                            "HKEY_LOCAL_MACHINE\\SOFTWARE\\Clients\\Mail\\Microsoft Outlook\\shell\\open\\command", "");
+                    args.add(pfad[10]);
+                    args.add("/a");
+                    args.add(attachment);
+                }
+            } catch (Exception ignored) {
+            }
+        } else if (os.contains("nix") || os.contains("aix") || os.contains("nux")) {
+            try {
+                String[] mimeArgs = {"xdg-mime", "query", "default", "x-scheme-handler/mailto"};
+                Process mimeProc = new ProcessBuilder(mimeArgs).start();
+                Scanner scanner = new Scanner(mimeProc.getInputStream());
+                String app = scanner.nextLine();
+                if (app.toLowerCase().contains("thunderbird")) {
+                    args.add("thunderbird");
+                    args.add("-compose");
+                    args.add("attachment='" + attachment + "'");
+                }
+                scanner.close();
+            } catch (IOException ignored) {
+            }
+        }
+        if (args.isEmpty()) {
+            sendMailMailto(os, attachment);
+        } else {
+            Process process;
+            try {
+                process = new ProcessBuilder(args.toArray(new String[]{})).start();
+                process.waitFor(1, TimeUnit.SECONDS);
+                if (!process.isAlive() && process.exitValue() != 0) {
+                    sendMailMailto(os, attachment);
+                }
+            } catch (IOException | InterruptedException e) {
+                sendMailMailto(os, attachment);
+            }
+        }
     }
 
     /**
@@ -4705,6 +4812,8 @@ public class SwingController extends ComponentAdapter
                 }
             } else if (source == saveAsFileMenuItem || source == saveAsFileButton) {
                 saveFile();
+            } else if (source == sendMailMenuItem) {
+                sendMail();
             } else if (source == exportTextMenuItem) {
                 exportText();
             } else if (source == exitMenuItem) {

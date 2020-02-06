@@ -591,6 +591,7 @@ public class SwingViewBuilder {
         addToMenu(fileMenu, buildCloseMenuItem());
         addToMenu(fileMenu, buildSaveAsFileMenuItem());
         addToMenu(fileMenu, buildExportTextMenuItem());
+        addToMenu(fileMenu, buildSendByMailMenuItem());
         fileMenu.addSeparator();
         addToMenu(fileMenu, buildPropertiesMenuItem());
 //        addToMenu(fileMenu, buildPermissionsMenuItem());
@@ -624,6 +625,16 @@ public class SwingViewBuilder {
                 buildKeyStroke(KeyEventConstants.KEY_CODE_OPEN_FILE, KeyEventConstants.MODIFIER_OPEN_FILE));
         if (viewerController != null && mi != null)
             viewerController.setOpenFileMenuItem(mi);
+        return mi;
+    }
+
+
+    public JMenuItem buildSendByMailMenuItem() {
+        final JMenuItem mi = makeMenuItem(messageBundle.getString("viewer.menu.sendMail.label"), "sendmail", iconSize,
+                buildKeyStroke(KeyEventConstants.KEY_CODE_SEND_MAIL, KeyEventConstants.MODIFIER_SEND_MAIL));
+        if (viewerController!=null && mi!=null){
+            viewerController.setSendMailMenuItem(mi);
+        }
         return mi;
     }
 
