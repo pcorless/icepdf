@@ -29,6 +29,7 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Arrays;
 import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
 
@@ -113,8 +114,32 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
                 "viewer.dialog.viewerPreferences.section.annotations.recent.colors.label")),
                 0, 0, 1, 1);
         addGB(recentColorsPanel, resetResentColorsButton, 1, 0, 1, 1);
+        constraints.fill = GridBagConstraints.BOTH;
+        constraints.weightx = 1.0;
+        constraints.weighty = 1.0;
+        constraints.anchor = GridBagConstraints.NORTH;
+        constraints.insets = new Insets(5, 5, 5, 5);
+        JPanel miscSettingsPanel = new JPanel(new GridBagLayout());
+        miscSettingsPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED), messageBundle.getString("viewer.dialog.viewerPreferences.section.annotations.misc.border.label"), TitledBorder.LEFT, TitledBorder.DEFAULT_POSITION));
+        JCheckBox autoselectBox = new JCheckBox(messageBundle.getString("viewer.dialog.viewerPreferences.section.annotations.misc.autoselect.checkbox"));
+        autoselectBox.setSelected(ViewerPropertiesManager.getInstance().getPreferences().getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_SELECTION_ENABLED, false));
+        autoselectBox.addActionListener(actionEvent -> {
+            JCheckBox box = (JCheckBox) actionEvent.getSource();
+            boolean selected = box.isSelected();
+            String[] allProperties = {
+                    ViewerPropertiesManager.PROPERTY_ANNOTATION_CIRCLE_SELECTION_ENABLED,
+                    ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_SELECTION_ENABLED,
+                    ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_SELECTION_ENABLED,
+                    ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_SELECTION_ENABLED,
+                    ViewerPropertiesManager.PROPERTY_ANNOTATION_LINK_SELECTION_ENABLED,
+                    ViewerPropertiesManager.PROPERTY_ANNOTATION_SQUARE_SELECTION_ENABLED,
+                    ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_SELECTION_ENABLED,
+                    ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SELECTION_ENABLED};
+            Arrays.stream(allProperties).forEach(p -> ViewerPropertiesManager.getInstance().getPreferences().putBoolean(p, selected));
+        });
+        addGB(miscSettingsPanel, autoselectBox, 0, 0, 1, 1);
 
-        // add the two panels.
+        // add the panels.
         constraints.fill = GridBagConstraints.BOTH;
         constraints.weightx = 1.0;
         constraints.weighty = 1.0;
@@ -123,10 +148,11 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
 
         addGB(this, namedColorsPanel, 0, 0, 1, 1);
         addGB(this, recentColorsPanel, 0, 1, 1, 1);
+        addGB(this, miscSettingsPanel, 0, 2, 1, 1);
 
         // little spacer
         constraints.weighty = 1.0;
-        addGB(this, new Label(" "), 0, 2, 1, 1);
+        addGB(this, new Label(" "), 0, 3, 1, 1);
     }
 
     private void buildNamedColors(JPanel panel, ResourceBundle messageBundle) {
