@@ -48,11 +48,24 @@ public class PageComponentSelector {
      *
      * @param controller       swing controller.
      * @param widgetAnnotation annotation to do search for wrapping component.
-     * @param select select the annotation component applying focus to the component.
+     * @param select           select the annotation component applying focus to the component.
+     * @return true if component could be found, false otherwise.
+     */
+    public static AnnotationComponent SelectAnnotationComponent(Controller controller, Annotation widgetAnnotation, boolean select) {
+        return SelectAnnotationComponent(controller, widgetAnnotation, select, true);
+    }
+
+    /**
+     * Utility to find a Annotation's JComponent within a AbstractPageComponent implementation.
+     *
+     * @param controller       swing controller.
+     * @param widgetAnnotation annotation to do search for wrapping component.
+     * @param select           select the annotation component applying focus to the component.
+     * @param scrollTo         scroll the view to the component.
      * @return true if component could be found, false otherwise.
      */
     public static AnnotationComponent SelectAnnotationComponent(Controller controller, Annotation widgetAnnotation,
-                                                                boolean select) {
+                                                                boolean select, boolean scrollTo) {
         // turn out the parent is seldom used correctly and generally just points to page zero.
         // so we need to do a deep search for the annotation.
         Document document = controller.getDocument();
@@ -70,7 +83,7 @@ public class PageComponentSelector {
                     if (reference.equals(widgetAnnotation.getPObjectReference())) {
                         widgetAnnotation.setPage(page);
                         // found, so navigate to page which will start the full page load off awt thread.
-                        if (controller.getCurrentPageNumber() != pageIndex) {
+                        if (controller.getCurrentPageNumber() != pageIndex && scrollTo) {
                             controller.getDocumentViewController().setCurrentPageIndex(pageIndex);
                         }
                         found = true;
@@ -89,7 +102,9 @@ public class PageComponentSelector {
                     if (widgetAnnotation.getPObjectReference().equals(
                             annotationComponent.getAnnotation().getPObjectReference())) {
                         if (select) annotationComponent.requestFocus();
-                        controller.getDocumentViewController().setComponentTarget(pageViewComponent, annotationComponent);
+                        if (scrollTo) {
+                            controller.getDocumentViewController().setComponentTarget(pageViewComponent, annotationComponent);
+                        }
                         return annotationComponent;
                     }
                 }
