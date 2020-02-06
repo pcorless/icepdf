@@ -2229,24 +2229,38 @@ public class SwingController extends ComponentAdapter
      * select which file to open.
      */
     public void openFile() {
+        openFile("");
+    }
+
+    /**
+     * Utility method for opening a file. Shows a dialog for the user to
+     * select which file to open.
+     *
+     * @param initialDirPath The directory to show to the user when opening the FileDialog
+     */
+    public void openFile(String initialDirPath) {
         if (!useJFXDialog) {
             // Create and display a file open dialog
-            final JFileChooser fileChooser = new JFileChooser();
-            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            fileChooser.addChoosableFileFilter(FileExtensionUtils.getPDFFileFilter());
-            if (ViewModel.getDefaultFile() != null) {
-                fileChooser.setCurrentDirectory(ViewModel.getDefaultFile());
-                fileChooser.setSelectedFile(ViewModel.getDefaultFile());
-                fileChooser.ensureFileIsVisible(ViewModel.getDefaultFile());
+            final FileDialog fileDialog = new FileDialog(getViewerFrame());
+            fileDialog.setMultipleMode(false);
+            fileDialog.setMode(FileDialog.LOAD);
+            fileDialog.setFilenameFilter((file, s) -> s.endsWith(FileExtensionUtils.pdf));
+            if (initialDirPath != null && !initialDirPath.isEmpty()) {
+                fileDialog.setDirectory(initialDirPath);
+            } else if (ViewModel.getDefaultFile() != null) {
+                fileDialog.setDirectory(ViewModel.getDefaultFile().getParentFile().getAbsolutePath());
+                fileDialog.setFile(ViewModel.getDefaultFile().getAbsolutePath());
             }
             // show the dialog
-            fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.openFile.title"));
-            int returnVal = fileChooser.showOpenDialog(viewer);
+            fileDialog.setTitle(messageBundle.getString("viewer.dialog.openFile.title"));
+            fileDialog.setVisible(true);
+            final String filePath = fileDialog.getFile();
+            final String dirPath = fileDialog.getDirectory();
 
-            if (returnVal == JFileChooser.APPROVE_OPTION) {
-                final File file = fileChooser.getSelectedFile();
+            if (filePath != null && dirPath != null) {
+                final File file = new File(dirPath + filePath);
                 // trying to get rid of shadow left by file chooser
-                fileChooser.setVisible(false);
+                fileDialog.setVisible(false);
                 // make sure file being opened is valid
                 String extension = FileExtensionUtils.getExtension(file);
                 if (extension != null) {
@@ -2263,14 +2277,14 @@ public class SwingController extends ComponentAdapter
                                 "viewer.dialog.openFile.error.title",
                                 "viewer.dialog.openFile.error.msg",
                                 file.getPath());
-                        openFile();
+                        openFile(fileDialog.getDirectory());
                     }
 
                     // save the default directory
                     ViewModel.setDefaultFile(file);
                 }
             }
-            fileChooser.setVisible(false);
+            fileDialog.setVisible(false);
         } else {
             // loads JFX subsystem.
             new JFXPanel();
@@ -2282,9 +2296,13 @@ public class SwingController extends ComponentAdapter
                 File file = ViewModel.getDefaultFile();
                 fileChooser.getExtensionFilters().addAll(
                         new FileChooser.ExtensionFilter("PDF", "*.pdf"));
-                fileChooser.setInitialDirectory(file.getParentFile());
-                if (file.isFile()) {
-                    fileChooser.setInitialFileName(file.getName());
+                if (initialDirPath != null && !initialDirPath.isEmpty()) {
+                    fileChooser.setInitialDirectory(new File(initialDirPath));
+                } else {
+                    fileChooser.setInitialDirectory(file.getParentFile());
+                    if (file.isFile()) {
+                        fileChooser.setInitialFileName(file.getName());
+                    }
                 }
                 File selectedFile = fileChooser.showOpenDialog(null);
                 if (selectedFile != null) {
@@ -2306,7 +2324,7 @@ public class SwingController extends ComponentAdapter
                                         "viewer.dialog.openFile.error.title",
                                         "viewer.dialog.openFile.error.msg",
                                         selectedFile.getPath());
-                                openFile();
+                                openFile(fileChooser.getInitialDirectory().getAbsolutePath());
                             });
                         }
                         // save the default directory
@@ -3386,19 +3404,23 @@ public class SwingController extends ComponentAdapter
 
         // Create and display a file saving dialog
         if (!useJFXDialog) {
-            final JFileChooser fileChooser = new JFileChooser();
-            fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
-            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            fileChooser.addChoosableFileFilter(FileExtensionUtils.getPDFFileFilter());
+            final FileDialog fileDialog = new FileDialog(getViewerFrame());
+            fileDialog.setTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
+            fileDialog.setMultipleMode(false);
+            fileDialog.setMode(FileDialog.SAVE);
+            fileDialog.setFilenameFilter((file, s) -> s.endsWith(FileExtensionUtils.pdf));
             if (ViewModel.getDefaultFile() != null) {
-                fileChooser.setCurrentDirectory(ViewModel.getDefaultFile());
+                fileDialog.setDirectory(ViewModel.getDefaultFile().getParentFile().getAbsolutePath());
             }
             if (newFileName != null) {
-                fileChooser.setSelectedFile(new File(newFileName));
+                fileDialog.setFile(newFileName);
             }
             // show the dialog
-            if (fileChooser.showSaveDialog(viewer) == JFileChooser.APPROVE_OPTION) {
-                saveFileChecks(originalFileName, fileChooser.getSelectedFile());
+            fileDialog.setVisible(true);
+            final String filePath = fileDialog.getFile();
+            final String dirPath = fileDialog.getDirectory();
+            if (filePath != null && dirPath != null) {
+                saveFileChecks(originalFileName, new File(dirPath + filePath));
             }
         } else {
             // loads JFX subsystem.
@@ -3535,18 +3557,21 @@ public class SwingController extends ComponentAdapter
      */
     public void exportText() {
         // Create and display a file saving dialog
-        final JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.exportText.title"));
-        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        fileChooser.addChoosableFileFilter(FileExtensionUtils.getTextFileFilter());
+        final FileDialog fileDialog = new FileDialog(getViewerFrame());
+        fileDialog.setTitle(messageBundle.getString("viewer.dialog.exportText.title"));
+        fileDialog.setMultipleMode(false);
+        fileDialog.setMode(FileDialog.SAVE);
+        fileDialog.setFilenameFilter((File f, String s) -> s.endsWith(FileExtensionUtils.txt));
         if (ViewModel.getDefaultFile() != null) {
-            fileChooser.setCurrentDirectory(ViewModel.getDefaultFile());
+            fileDialog.setDirectory(ViewModel.getDefaultFile().getParentFile().getAbsolutePath());
         }
         // show the dialog
-        int returnVal = fileChooser.showSaveDialog(viewer);
+        fileDialog.setVisible(true);
+        final String filePath = fileDialog.getFile();
+        final String dirPath = fileDialog.getDirectory();
 
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-            File file = fileChooser.getSelectedFile();
+        if (filePath != null && dirPath != null) {
+            File file = new File(dirPath + filePath);
             // make sure file being opened is valid
             String extension = FileExtensionUtils.getExtension(file);
             if (extension != null) {
