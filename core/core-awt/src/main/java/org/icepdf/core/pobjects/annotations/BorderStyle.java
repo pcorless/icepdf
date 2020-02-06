@@ -155,7 +155,7 @@ public class BorderStyle extends Dictionary {
             borderStyle = (Name) style;
         }
         // parse dash array.
-        List dashVector = (List) getObject(BORDER_STYLE_DASHED);
+        List dashVector = (List) getObject(BORDER_DASH_KEY);
         if (dashVector != null) {
             int sz = dashVector.size();
             float[] dashArray = new float[sz];

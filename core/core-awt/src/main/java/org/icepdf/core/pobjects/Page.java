@@ -305,9 +305,9 @@ public class Page extends Dictionary {
             List v = (List) annots;
             annotations = new ArrayList<>(v.size() + 1);
             // add annotations
-            Object annotObj;
-            org.icepdf.core.pobjects.annotations.Annotation a = null;
             for (Object aV : v) {
+                Object annotObj;
+                org.icepdf.core.pobjects.annotations.Annotation a = null;
 
                 if (Thread.currentThread().isInterrupted()) {
                     throw new InterruptedException(
