@@ -5183,6 +5183,10 @@ public class SwingController extends ComponentAdapter
             float rotation = documentViewController.getDocumentViewModel().getViewRotation();
             viewerPreferences.putFloat(PROPERTY_DEFAULT_ROTATION, rotation);
         }
+        if (viewControl.getZoom() > 0) {
+            viewerPreferences.putFloat(PROPERTY_DEFAULT_ZOOM_LEVEL, viewControl.getZoom());
+        }
+
 
         // save changes and close window
         boolean cancelled = saveChangesDialog();

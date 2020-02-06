@@ -16,14 +16,16 @@
 package org.icepdf.ri.util;
 
 import javax.swing.*;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.InvalidPreferencesFormatException;
 import java.util.prefs.Preferences;
 
 
@@ -281,7 +283,7 @@ public class PropertiesManager {
     private static PropertiesManager propertiesManager;
 
     // static store of properties which are persisted to backing store.
-    private static Preferences preferences = Preferences.userNodeForPackage(PropertiesManager.class);
+    private static final Preferences preferences = Preferences.userNodeForPackage(PropertiesManager.class);
     // local properties, that aren't persisted and can override properties in the store if root accessor are used.
     private static Properties localProperties;
     // default properties file included int the viewer jar
@@ -298,10 +300,42 @@ public class PropertiesManager {
     public static PropertiesManager getInstance() {
         if (propertiesManager == null) {
             propertiesManager = new PropertiesManager();
-            // load default properties from viewer jar and assigned to defaultProps.
-            setupDefaultProperties();
+            try {
+                if (preferences.keys().length == 0) {
+                    // load default properties from viewer jar and assigned to defaultProps.
+                    setupDefaultProperties();
+                    saveLocalProperties();
+                } else {
+                    updatePropertiesWithPreferences();
+                }
+            } catch (BackingStoreException e) {
+                logger.severe("Couldn't access backing store");
+                setupDefaultProperties();
+            }
         }
         return propertiesManager;
+    }
+
+    /**
+     * Prints all the preferences and properties. Can be used to see discrepancies.
+     */
+    public static void printAllProperties() {
+        try {
+            Arrays.stream(preferences.keys()).forEach(key -> {
+                System.out.println(key + " -> " + preferences.get(key, ""));
+                System.out.println(key + " -> " + propertiesManager.checkAndStoreStringProperty(key, ""));
+            });
+        } catch (BackingStoreException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void updatePropertiesWithPreferences() throws BackingStoreException {
+        defaultProps = new SortedProperties();
+        Arrays.stream(preferences.keys()).forEach(key -> {
+            defaultProps.setProperty(key, preferences.get(key, null));
+        });
+        localProperties = new SortedProperties(defaultProps);
     }
 
     /**
@@ -320,7 +354,8 @@ public class PropertiesManager {
      * @param value        property value.
      */
     public void set(String propertyName, String value) {
-        localProperties.put(propertyName, value);
+        localProperties.setProperty(propertyName, value);
+        preferences.put(propertyName, value);
     }
 
     /**
@@ -338,7 +373,7 @@ public class PropertiesManager {
      * when configuring the viewer components functionality.   Once these properties have been persisted they are
      * now sticky and will persist for all viewer instances.
      */
-    public void saveLocalProperties() {
+    public static void saveLocalProperties() {
         Enumeration keys = localProperties.keys();
         while (keys.hasMoreElements()) {
             String key = (String) keys.nextElement();
@@ -353,7 +388,8 @@ public class PropertiesManager {
      * @param value        property value.
      */
     public void setDouble(String propertyName, double value) {
-        set(propertyName, Double.toString(value));
+        localProperties.setProperty(propertyName, Double.toString(value));
+        preferences.putDouble(propertyName, value);
     }
 
     /**
@@ -363,7 +399,8 @@ public class PropertiesManager {
      * @param value        property value.
      */
     public void setFloat(String propertyName, float value) {
-        set(propertyName, Float.toString(value));
+        localProperties.setProperty(propertyName, Float.toString(value));
+        preferences.putFloat(propertyName, value);
     }
 
     /**
@@ -373,7 +410,8 @@ public class PropertiesManager {
      * @param value        property value.
      */
     public void setInt(String propertyName, int value) {
-        set(propertyName, Integer.toString(value));
+        localProperties.setProperty(propertyName, Integer.toString(value));
+        preferences.putInt(propertyName, value);
     }
 
     /**
@@ -383,7 +421,8 @@ public class PropertiesManager {
      * @param value        property value.
      */
     public void setBoolean(String propertyName, boolean value) {
-        set(propertyName, value ? "true" : "false");
+        localProperties.setProperty(propertyName, Boolean.toString(value));
+        preferences.putBoolean(propertyName, value);
     }
 
     /**
@@ -401,7 +440,7 @@ public class PropertiesManager {
         String returnValue = localProperties.getProperty(propertyName, defaultVal);
         // Set the property back into the manager
         // This is necessary in the cases where a property didn't exist, but needs to be added to the file
-        localProperties.put(propertyName, returnValue);
+        localProperties.setProperty(propertyName, returnValue);
         return returnValue;
     }
 
@@ -425,7 +464,7 @@ public class PropertiesManager {
                 localProperties.getProperty(propertyName, Boolean.toString(defaultVal)));
         // Set the property back into the manager
         // This is necessary in the cases where a property didn't exist, but needs to be added to the file
-        localProperties.put(propertyName, String.valueOf(returnValue));
+        localProperties.setProperty(propertyName, String.valueOf(returnValue));
         return returnValue;
     }
 
@@ -448,7 +487,7 @@ public class PropertiesManager {
         double returnValue = Double.parseDouble(localProperties.getProperty(propertyName, Double.toString(defaultVal)));
         // Set the property back into the manager
         // This is necessary in the cases where a property didn't exist, but needs to be added to the file
-        localProperties.put(propertyName, String.valueOf(returnValue));
+        localProperties.setProperty(propertyName, String.valueOf(returnValue));
         return returnValue;
     }
 
@@ -471,7 +510,7 @@ public class PropertiesManager {
         int returnValue = Integer.parseInt(localProperties.getProperty(propertyName, Integer.toString(defaultVal)));
         // Set the property back into the manager
         // This is necessary in the cases where a property didn't exist, but needs to be added to the file
-        localProperties.put(propertyName, String.valueOf(returnValue));
+        localProperties.setProperty(propertyName, String.valueOf(returnValue));
         return returnValue;
     }
 
@@ -494,7 +533,7 @@ public class PropertiesManager {
         float returnValue = Float.parseFloat(localProperties.getProperty(propertyName, Float.toString(defaultVal)));
         // Set the property back into the manager
         // This is necessary in the cases where a property didn't exist, but needs to be added to the file
-        localProperties.put(propertyName, String.valueOf(returnValue));
+        localProperties.setProperty(propertyName, String.valueOf(returnValue));
         return returnValue;
     }
 
@@ -544,7 +583,7 @@ public class PropertiesManager {
 
                 // Set the property back into the manager
                 // This is necessary in the cases where a property didn't exist, but needs to be added to the file
-                localProperties.put(propertyName, commaBuffer.toString());
+                localProperties.setProperty(propertyName, commaBuffer.toString());
             }
         } catch (Exception failedProperty) {
             /* ignore on failure as we'll just return defaultVal */
@@ -570,7 +609,7 @@ public class PropertiesManager {
             preferences.remove(propertyName);
         }
         if (defaultProps != null) {
-            value = (String) defaultProps.get(propertyName);
+            value = defaultProps.getProperty(propertyName);
             if (value != null) {
                 String result = Parse.parseLookAndFeel(value, null);
                 if (result != null) {
@@ -612,7 +651,7 @@ public class PropertiesManager {
     private static void setupDefaultProperties() {
         // load the default values every time into our local store.
         try (InputStream in = getResourceAsStream(DEFAULT_PROP_FILE_PATH, DEFAULT_PROP_FILE)) {
-            defaultProps = new Properties();
+            defaultProps = new SortedProperties();
             if (in != null) {
                 defaultProps.load(in);
                 // we only set the default preferences on first load.
@@ -633,7 +672,7 @@ public class PropertiesManager {
             }
         }
         // copy over the default properties.
-        localProperties = new Properties(defaultProps);
+        localProperties = new SortedProperties(defaultProps);
     }
 
     private static InputStream getResourceAsStream(String prefix, String resourcePath) {
