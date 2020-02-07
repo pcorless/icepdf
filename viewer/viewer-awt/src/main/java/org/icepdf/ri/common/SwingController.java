@@ -82,15 +82,19 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
+import java.util.stream.Collectors;
 
 import static org.icepdf.core.util.PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE;
 import static org.icepdf.ri.util.PropertiesManager.*;
@@ -137,6 +141,7 @@ public class SwingController extends ComponentAdapter
     private JMenu recentFilesSubMenu;
     private JMenuItem openURLMenuItem;
     private JMenuItem closeMenuItem;
+    private JMenuItem saveFileMenuItem;
     private JMenuItem saveAsFileMenuItem;
     private JMenuItem exportTextMenuItem;
     private JMenuItem propertiesMenuItem;
@@ -178,7 +183,7 @@ public class SwingController extends ComponentAdapter
     private List windowListMenuItems;
     private JMenuItem aboutMenuItem;
     private JButton openFileButton;
-    private JButton saveAsFileButton;
+    private JButton saveFileButton;
     private JButton printButton;
     private JButton searchButton;
     private JToggleButton showHideUtilityPaneButton;
@@ -275,6 +280,7 @@ public class SwingController extends ComponentAdapter
 
     protected PropertiesManager propertiesManager;
     private Map<Reference, PObject> savedChanges = new HashMap<>();
+    private String saveFilePath = null;
 
     /**
      * Create a Controller object, and its associated ViewerModel
@@ -421,6 +427,16 @@ public class SwingController extends ComponentAdapter
      */
     public void setCloseMenuItem(JMenuItem mi) {
         closeMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
+     */
+    public void setSaveFileMenuItem(JMenuItem mi) {
+        saveFileMenuItem = mi;
         mi.addActionListener(this);
     }
 
@@ -831,8 +847,8 @@ public class SwingController extends ComponentAdapter
      *
      * @param btn button to assign
      */
-    public void setSaveAsFileButton(JButton btn) {
-        saveAsFileButton = btn;
+    public void setSaveFileButton(JButton btn) {
+        saveFileButton = btn;
         btn.addActionListener(this);
     }
 
@@ -1604,7 +1620,7 @@ public class SwingController extends ComponentAdapter
         setEnabled(searchPreviousMenuItem, opened && searchPanel != null && !pdfCollection);
         setEnabled(goToPageMenuItem, opened && nPages > 1 && !pdfCollection);
 
-        setEnabled(saveAsFileButton, opened);
+        setEnabled(saveFileButton, opened);
         setEnabled(printButton, opened && canPrint && !pdfCollection);
         setEnabled(searchButton, opened && searchPanel != null && !pdfCollection);
         setEnabled(showHideUtilityPaneButton, opened && utilityTabbedPane != null);
@@ -2449,7 +2465,33 @@ public class SwingController extends ComponentAdapter
 
                 addRecentFileEntry(Paths.get(pathname));
 
-                // load the document
+                saveFilePath = getTempSaveFileName(pathname);
+                if (saveFilePath != null) {
+                    File tmpFile = new File(saveFilePath);
+                    if (tmpFile.exists() && new File(pathname).exists()) {
+                        String[] options = {messageBundle.getString("viewer.button.yes.label"), messageBundle.getString("viewer.button.no.label")};
+                        int ret = JOptionPane.showOptionDialog(viewer, MessageFormat.format(messageBundle.getString("viewer.dialog.restore.label"), new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(tmpFile.lastModified())), messageBundle.getString("viewer.dialog.restore.title"), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+                        if (ret == JOptionPane.YES_OPTION) {
+                            try {
+                                Files.copy(tmpFile.toPath(), new File(pathname).toPath(), StandardCopyOption.REPLACE_EXISTING);
+                            } catch (IOException e) {
+                                org.icepdf.ri.util.Resources.showMessageDialog(
+                                        viewer,
+                                        JOptionPane.INFORMATION_MESSAGE,
+                                        messageBundle,
+                                        "viewer.dialog.restore.exception.title",
+                                        "viewer.dialog.restore.exception.label",
+                                        e.getMessage() != null && !e.getMessage().isEmpty() ? e.getMessage() : e.toString());
+                            }
+                        } else {
+                            try {
+                                Files.delete(tmpFile.toPath());
+                            } catch (IOException e) {
+                                logger.log(Level.FINE, "Couldn't delete file " + tmpFile.getAbsolutePath(), e);
+                            }
+                        }
+                    }
+                }
                 document = new Document();
                 // create default security callback is user has not created one
                 setupSecurityHandler(document, documentViewController.getSecurityCallback());
@@ -2488,6 +2530,17 @@ public class SwingController extends ComponentAdapter
             } finally {
                 setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
             }
+        }
+    }
+
+    private String getTempSaveFileName(String originalFilePath) {
+        String[] pathSplit = originalFilePath.split("/");
+        String name = pathSplit[pathSplit.length - 1];
+        String[] nameAndExt = name.split("\\.");
+        if (nameAndExt.length != 2) {
+            return null;
+        } else {
+            return Arrays.stream(pathSplit).limit(pathSplit.length - 1).collect(Collectors.joining("/")) + "/." + nameAndExt[0] + "-tmp.pdf";
         }
     }
 
@@ -3224,7 +3277,7 @@ public class SwingController extends ComponentAdapter
         aboutMenuItem = null;
 
         openFileButton = null;
-        saveAsFileButton = null;
+        saveFileButton = null;
         printButton = null;
         searchButton = null;
         showHideUtilityPaneButton = null;
@@ -3353,35 +3406,54 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
+     * Utility method for saving the current document to the same filename.
+     * As it's not possible to write to the file while the document is open,
+     * a temp file is created and this file will be renamed to the current open file
+     * when the window is closed.
+     */
+    public void saveFile() {
+        if (document.getStateManager().hasChangedSince(savedChanges)) {
+            if (!Document.foundIncrementalUpdater) {
+                org.icepdf.ri.util.Resources.showMessageDialog(
+                        viewer,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        messageBundle,
+                        "viewer.dialog.saveAs.noUpdates.title",
+                        "viewer.dialog.saveAs.noUpdates.msg");
+            } else {
+                if (saveFilePath != null && !saveFilePath.isEmpty()) {
+                    File out = new File(saveFilePath);
+                    if (out.getParentFile() != null) {
+                        if (Files.isWritable(out.getParentFile().toPath())) {
+                            try (OutputStream stream = new BufferedOutputStream(new FileOutputStream(out))) {
+                                document.saveToOutputStream(stream);
+                                stream.flush();
+                                savedChanges = document.getStateManager().getChanges();
+                            } catch (IOException e) {
+                                logger.log(Level.FINE, "IO Exception ", e);
+                            }
+                        }
+                    } else {
+                        //Probably got loaded from an InputStream, can't simply save
+                        saveFileAs();
+                    }
+                } else {
+                    saveFileAs();
+                }
+            }
+        }
+    }
+
+    /**
      * Utility method for saving a copy of the currently opened
      * PDF to a file. This will check all valid permissions and
      * show a file save dialog for the user to select where to
      * save the file to, and what name to give it.
      */
-    public void saveFile() {
+    public void saveFileAs() {
 
-        // See if we can come up with a default file name
-        // We want the bytes from whence, but the file name of origin
-        String origin = document.getDocumentOrigin();
-        String originalFileName = null;
-        String newFileName = null;
-        if (origin != null) {
-            int lastSeparator = Math.max(
-                    Math.max(
-                            origin.lastIndexOf("/"),
-                            origin.lastIndexOf("\\")),
-                    origin.lastIndexOf(File.separator) // Might not be / or \
-            );
-            if (lastSeparator >= 0) {
-                originalFileName = origin.substring(lastSeparator + 1);
-                if (originalFileName.length() > 0) {
-                    // Set the selected file to a slightly modified name of the original
-                    newFileName = generateNewSaveName(originalFileName);
-                } else {
-                    newFileName = null;
-                }
-            }
-        }
+        String originalFileName = getOriginalFileName();
+        String newFileName = originalFileName == null || originalFileName.isEmpty() ? null : generateNewSaveName(originalFileName);
 
         // Create and display a file saving dialog
         if (!useJFXDialog) {
@@ -3422,6 +3494,24 @@ public class SwingController extends ComponentAdapter
         }
     }
 
+    private String getOriginalFileName() {
+        String origin = document.getDocumentOrigin();
+        String originalFileName = null;
+        String newFileName = null;
+        if (origin != null) {
+            int lastSeparator = Math.max(
+                    Math.max(
+                            origin.lastIndexOf('/'),
+                            origin.lastIndexOf('\\')),
+                    origin.lastIndexOf(File.separator) // Might not be / or \
+            );
+            if (lastSeparator >= 0) {
+                return origin.substring(lastSeparator + 1);
+            }
+        }
+        return null;
+    }
+
     protected void saveFileChecks(String originalFileName, File file) {
         if (file != null) {
             // make sure file path being saved to is valid
@@ -3433,7 +3523,7 @@ public class SwingController extends ComponentAdapter
                         messageBundle,
                         "viewer.dialog.saveAs.noExtensionError.title",
                         "viewer.dialog.saveAs.noExtensionError.msg");
-                saveFile();
+                saveFileAs();
             } else if (!extension.equals(FileExtensionUtils.pdf)) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
                         viewer,
@@ -3442,7 +3532,7 @@ public class SwingController extends ComponentAdapter
                         "viewer.dialog.saveAs.extensionError.title",
                         "viewer.dialog.saveAs.extensionError.msg",
                         file.getName());
-                saveFile();
+                saveFileAs();
             } else if (originalFileName != null &&
                     originalFileName.equalsIgnoreCase(file.getName())) {
                 // Ensure a unique filename
@@ -3453,7 +3543,7 @@ public class SwingController extends ComponentAdapter
                         "viewer.dialog.saveAs.noneUniqueName.title",
                         "viewer.dialog.saveAs.noneUniqueName.msg",
                         file.getName());
-                saveFile();
+                saveFileAs();
             } else {
                 // save file stream
                 try {
@@ -3592,7 +3682,7 @@ public class SwingController extends ComponentAdapter
                         JOptionPane.YES_NO_CANCEL_OPTION);
                 if (res == JOptionPane.OK_OPTION) {
                     // start save as process.
-                    saveFile();
+                    saveFileAs();
                     // fall though and close window.
                 } else if (res == JOptionPane.NO_OPTION) {
                     // nothing to do, just fall through.
@@ -4705,8 +4795,10 @@ public class SwingController extends ComponentAdapter
                 if (!isCanceled) {
                     closeDocument();
                 }
-            } else if (source == saveAsFileMenuItem || source == saveAsFileButton) {
+            } else if (source == saveFileMenuItem || source == saveFileButton) {
                 saveFile();
+            } else if (source == saveAsFileMenuItem) {
+                saveFileAs();
             } else if (source == exportTextMenuItem) {
                 exportText();
             } else if (source == exitMenuItem) {
@@ -5188,10 +5280,20 @@ public class SwingController extends ComponentAdapter
 
         // save changes and close window
         boolean cancelled = saveChangesDialog();
+        String origFilePath = document.getDocumentOrigin();
         if (!cancelled) {
             // dispose the document and other resources.
             dispose();
-
+            if (saveFilePath != null && !saveFilePath.isEmpty() && origFilePath != null) {
+                try {
+                    File tmpFile = new File(saveFilePath);
+                    if (tmpFile.exists()) {
+                        Files.move(tmpFile.toPath(), new File(origFilePath).toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    }
+                } catch (IOException ex) {
+                    logger.log(Level.FINE, "IO Exception ", e);
+                }
+            }
             if (wc != null) {
                 wc.disposeWindow(this, v, viewerPreferences);
             }
@@ -5372,9 +5474,12 @@ public class SwingController extends ComponentAdapter
                 // set cursor for document view
                 setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_WAIT);
 
-                if (c == KeyEventConstants.KEY_CODE_SAVE_AS &&
-                        m == KeyEventConstants.MODIFIER_SAVE_AS) {
+                if (c == KeyEventConstants.KEY_CODE_SAVE &&
+                        m == KeyEventConstants.MODIFIER_SAVE) {
                     saveFile();
+                } else if (c == KeyEventConstants.KEY_CODE_SAVE_AS &&
+                        m == KeyEventConstants.MODIFIER_SAVE_AS) {
+                    saveFileAs();
                 } else if (c == KeyEventConstants.KEY_CODE_PRINT_SETUP &&
                         m == KeyEventConstants.MODIFIER_PRINT_SETUP) {
                     showPrintSetupDialog();
