@@ -3130,6 +3130,10 @@ public class SwingController extends ComponentAdapter
         // set the go to page combo box in the mainToolbar
         reflectStateInComponents();
         updateDocumentView();
+        //TODO not very clean and 100% reliable
+        Timer initialChangesTimer = new Timer(500, event -> savedChanges = document.getStateManager().getChanges());
+        initialChangesTimer.setRepeats(false);
+        initialChangesTimer.start();
     }
 
     /**
