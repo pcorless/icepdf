@@ -305,9 +305,9 @@ public class Page extends Dictionary {
             List v = (List) annots;
             annotations = new ArrayList<>(v.size() + 1);
             // add annotations
+            Object annotObj;
+            org.icepdf.core.pobjects.annotations.Annotation a;
             for (Object aV : v) {
-                Object annotObj;
-                org.icepdf.core.pobjects.annotations.Annotation a = null;
 
                 if (Thread.currentThread().isInterrupted()) {
                     throw new InterruptedException(
@@ -329,6 +329,8 @@ public class Page extends Dictionary {
                 // or build annotations from dictionary.
                 else if (annotObj instanceof HashMap) { // HashMap lacks "Type"->"Annot" entry
                     a = Annotation.buildAnnotation(library, (HashMap) annotObj);
+                } else {
+                    a = null;
                 }
 
                 // set the object reference, so we can save the state correct
