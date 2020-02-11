@@ -230,7 +230,7 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
 
         // associate popup to location
         PopupAnnotationComponent popupAnnotationComponent = comp.getPopupAnnotationComponent();
-        popupAnnotationComponent.setBoudsRelativeToParent(
+        popupAnnotationComponent.setBoundsRelativeToParent(
                 bbox.x + (bbox.width / 2), bbox.y + (bbox.height / 2), pageTransform);
         popupAnnotationComponent.setVisible(false);
         popupAnnotationComponent.getAnnotation().setOpen(false);
