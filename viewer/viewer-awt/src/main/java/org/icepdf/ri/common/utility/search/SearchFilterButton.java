@@ -198,7 +198,7 @@ public class SearchFilterButton extends DropDownButton {
 
     public SearchTextTask getSearchTask(BaseSearchModel panel, Controller controller, String pattern) {
         SearchTextTask.Builder builder = new SearchTextTask.Builder(controller, pattern);
-        return builder.setSearchPanel(panel)
+        return builder.setSearchModel(panel)
                 .setCaseSensitive(isCaseSensitive())
                 .setWholeWord(isWholeWord())
                 .setCumulative(isCumulative())

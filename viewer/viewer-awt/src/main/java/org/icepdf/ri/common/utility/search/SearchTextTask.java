@@ -68,7 +68,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
     // parent swing controller
     private Controller controller;
     // append nodes for found text.
-    private BaseSearchModel baseSearchModel;
+    private BaseSearchModel searchModel;
     private Container viewContainer;
 
     /**
@@ -98,11 +98,11 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         lengthOfTask = controller.getDocument().getNumberOfPages();
 
         // setup searching format format.
-        this.baseSearchModel = builder.searchPanel;
-        if (baseSearchModel != null) {
-            searchingMessageForm = baseSearchModel.setupSearchingMessageForm();
-            searchResultMessageForm = baseSearchModel.setupSearchResultMessageForm();
-            searchCompletionMessageForm = baseSearchModel.setupSearchCompletionMessageForm();
+        this.searchModel = builder.searchModel;
+        if (searchModel != null) {
+            searchingMessageForm = searchModel.setupSearchingMessageForm();
+            searchResultMessageForm = searchModel.setupSearchResultMessageForm();
+            searchCompletionMessageForm = searchModel.setupSearchCompletionMessageForm();
         }
     }
 
@@ -166,7 +166,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
                         String nodeText =
                                 searchResultMessageForm != null ? searchResultMessageForm.format(messageArguments) : "";
                         // add the node to the search panel tree
-                        if (baseSearchModel != null) {
+                        if (searchModel != null) {
                             publish(new TextResult(matchLineItems, nodeText, i));
                         }
                     } else {
@@ -213,34 +213,34 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
     @Override
     protected void process(List<SearchResult> chunks) {
 
-        if (baseSearchModel != null) {
+        if (searchModel != null) {
             for (SearchResult searchResult : chunks) {
                 if (isCancelled()) {
                     break;
                 }
                 if (searchResult instanceof CommentsResult) {
                     CommentsResult comment = (CommentsResult) searchResult;
-                    baseSearchModel.addFoundCommentEntry(comment, this);
+                    searchModel.addFoundCommentEntry(comment, this);
                 } else if (searchResult instanceof TextResult) {
                     TextResult textResult = (TextResult) searchResult;
-                    baseSearchModel.addFoundTextEntry(textResult, this);
+                    searchModel.addFoundTextEntry(textResult, this);
                 } else if (searchResult instanceof OutlineResult) {
                     OutlineResult outlineResult = (OutlineResult) searchResult;
-                    baseSearchModel.addFoundOutlineEntry(outlineResult, this);
+                    searchModel.addFoundOutlineEntry(outlineResult, this);
                 } else if (searchResult instanceof DestinationsResult) {
                     DestinationsResult destinationsResult = (DestinationsResult) searchResult;
-                    baseSearchModel.addFoundDestinationEntry(destinationsResult, this);
+                    searchModel.addFoundDestinationEntry(destinationsResult, this);
                 }
             }
             // update the dialog messages.
-            baseSearchModel.updateProgressControls(dialogMessage);
+            searchModel.updateProgressControls(dialogMessage);
         }
         viewContainer.repaint();
     }
 
     @Override
     protected void done() {
-        if (baseSearchModel != null) baseSearchModel.updateProgressControls(dialogMessage);
+        if (searchModel != null) searchModel.updateProgressControls(dialogMessage);
         viewContainer.validate();
     }
 
@@ -348,7 +348,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         private final String pattern;
 
         // parent search panel
-        private BaseSearchModel searchPanel;
+        private BaseSearchModel searchModel;
 
         // optional search controls.
         private boolean wholeWord;
@@ -367,8 +367,8 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
             this.pattern = pattern;
         }
 
-        public Builder setSearchPanel(BaseSearchModel searchPanel) {
-            this.searchPanel = searchPanel;
+        public Builder setSearchModel(BaseSearchModel searchModel) {
+            this.searchModel = searchModel;
             return this;
         }
 
