@@ -82,6 +82,7 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
@@ -3423,82 +3424,93 @@ public class SwingController extends ComponentAdapter
 
     protected void saveFileChecks(String originalFileName, File file) {
         if (file != null) {
-            // make sure file path being saved to is valid
-            String extension = FileExtensionUtils.getExtension(file);
-            if (extension == null) {
-                org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
-                        JOptionPane.INFORMATION_MESSAGE,
-                        messageBundle,
-                        "viewer.dialog.saveAs.noExtensionError.title",
-                        "viewer.dialog.saveAs.noExtensionError.msg");
-                saveFile();
-            } else if (!extension.equals(FileExtensionUtils.pdf)) {
-                org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
-                        JOptionPane.INFORMATION_MESSAGE,
-                        messageBundle,
-                        "viewer.dialog.saveAs.extensionError.title",
-                        "viewer.dialog.saveAs.extensionError.msg",
-                        file.getName());
-                saveFile();
-            } else if (originalFileName != null &&
-                    originalFileName.equalsIgnoreCase(file.getName())) {
-                // Ensure a unique filename
-                org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
-                        JOptionPane.INFORMATION_MESSAGE,
-                        messageBundle,
-                        "viewer.dialog.saveAs.noneUniqueName.title",
-                        "viewer.dialog.saveAs.noneUniqueName.msg",
-                        file.getName());
-                saveFile();
-            } else {
-                // save file stream
-                try {
-                    // If we don't know where the file came from, it's because we
-                    //  used Document.contentStream() or Document.setByteArray(),
-                    //  or we used setUrl() with disk caching disabled.
-                    //  with no path or URL as the origin.
-                    // Note that we used to detect scenarios where we could access
-                    //  the file directly, or re-download it, to avoid locking our
-                    //  internal data structures for long periods for large PDFs,
-                    //  but that could cause problems with slow network links too,
-                    //  and would complicate the incremental update code, so we're
-                    //  harmonising on this approach.
-                    FileOutputStream fileOutputStream = new FileOutputStream(file);
-                    BufferedOutputStream buf = new BufferedOutputStream(
-                            fileOutputStream, 4096 * 2);
+            if (Files.isWritable(file.getParentFile().toPath())) {
+                // make sure file path being saved to is valid
+                String extension = FileExtensionUtils.getExtension(file);
+                if (extension == null) {
+                    org.icepdf.ri.util.Resources.showMessageDialog(
+                            viewer,
+                            JOptionPane.INFORMATION_MESSAGE,
+                            messageBundle,
+                            "viewer.dialog.saveAs.noExtensionError.title",
+                            "viewer.dialog.saveAs.noExtensionError.msg");
+                    saveFile();
+                } else if (!extension.equals(FileExtensionUtils.pdf)) {
+                    org.icepdf.ri.util.Resources.showMessageDialog(
+                            viewer,
+                            JOptionPane.INFORMATION_MESSAGE,
+                            messageBundle,
+                            "viewer.dialog.saveAs.extensionError.title",
+                            "viewer.dialog.saveAs.extensionError.msg",
+                            file.getName());
+                    saveFile();
+                } else if (originalFileName != null &&
+                        originalFileName.equalsIgnoreCase(file.getName())) {
+                    // Ensure a unique filename
+                    org.icepdf.ri.util.Resources.showMessageDialog(
+                            viewer,
+                            JOptionPane.INFORMATION_MESSAGE,
+                            messageBundle,
+                            "viewer.dialog.saveAs.noneUniqueName.title",
+                            "viewer.dialog.saveAs.noneUniqueName.msg",
+                            file.getName());
+                    saveFile();
+                } else {
+                    // save file stream
+                    try {
+                        // If we don't know where the file came from, it's because we
+                        //  used Document.contentStream() or Document.setByteArray(),
+                        //  or we used setUrl() with disk caching disabled.
+                        //  with no path or URL as the origin.
+                        // Note that we used to detect scenarios where we could access
+                        //  the file directly, or re-download it, to avoid locking our
+                        //  internal data structures for long periods for large PDFs,
+                        //  but that could cause problems with slow network links too,
+                        //  and would complicate the incremental update code, so we're
+                        //  harmonising on this approach.
+                        FileOutputStream fileOutputStream = new FileOutputStream(file);
+                        BufferedOutputStream buf = new BufferedOutputStream(
+                                fileOutputStream, 4096 * 2);
 
-                    // We want 'save as' or 'save a copy to always occur
-                    if (document.getStateManager().isChanged() &&
-                            !Document.foundIncrementalUpdater) {
-                        org.icepdf.ri.util.Resources.showMessageDialog(
-                                viewer,
-                                JOptionPane.INFORMATION_MESSAGE,
-                                messageBundle,
-                                "viewer.dialog.saveAs.noUpdates.title",
-                                "viewer.dialog.saveAs.noUpdates.msg");
-                    } else {
-                        if (!document.getStateManager().isChanged()) {
-                            // save as copy
-                            document.writeToOutputStream(buf);
+                        // We want 'save as' or 'save a copy to always occur
+                        if (document.getStateManager().isChanged() &&
+                                !Document.foundIncrementalUpdater) {
+                            org.icepdf.ri.util.Resources.showMessageDialog(
+                                    viewer,
+                                    JOptionPane.INFORMATION_MESSAGE,
+                                    messageBundle,
+                                    "viewer.dialog.saveAs.noUpdates.title",
+                                    "viewer.dialog.saveAs.noUpdates.msg");
                         } else {
-                            // save as will append changes.
-                            document.saveToOutputStream(buf);
+                            if (!document.getStateManager().isChanged()) {
+                                // save as copy
+                                document.writeToOutputStream(buf);
+                            } else {
+                                // save as will append changes.
+                                document.saveToOutputStream(buf);
+                            }
                         }
+                        buf.flush();
+                        fileOutputStream.flush();
+                        buf.close();
+                        fileOutputStream.close();
+                    } catch (MalformedURLException e) {
+                        logger.log(Level.FINE, "Malformed URL Exception ", e);
+                    } catch (IOException e) {
+                        logger.log(Level.FINE, "IO Exception ", e);
                     }
-                    buf.flush();
-                    fileOutputStream.flush();
-                    buf.close();
-                    fileOutputStream.close();
-                } catch (MalformedURLException e) {
-                    logger.log(Level.FINE, "Malformed URL Exception ", e);
-                } catch (IOException e) {
-                    logger.log(Level.FINE, "IO Exception ", e);
+                    // save the default directory
+                    ViewModel.setDefaultFile(file);
                 }
-                // save the default directory
-                ViewModel.setDefaultFile(file);
+            } else {
+                org.icepdf.ri.util.Resources.showMessageDialog(
+                        viewer,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        messageBundle,
+                        "viewer.dialog.saveAs.cantwrite.title",
+                        "viewer.dialog.saveAs.cantwrite.msg",
+                        file.getParentFile().getName());
+                saveFile();
             }
         }
     }
