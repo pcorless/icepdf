@@ -2264,6 +2264,7 @@ public class SwingController extends ComponentAdapter
                                 "viewer.dialog.openFile.error.title",
                                 "viewer.dialog.openFile.error.msg",
                                 file.getPath());
+                        openFile();
                     }
 
                     // save the default directory
@@ -2306,6 +2307,7 @@ public class SwingController extends ComponentAdapter
                                         "viewer.dialog.openFile.error.title",
                                         "viewer.dialog.openFile.error.msg",
                                         selectedFile.getPath());
+                                openFile();
                             });
                         }
                         // save the default directory
