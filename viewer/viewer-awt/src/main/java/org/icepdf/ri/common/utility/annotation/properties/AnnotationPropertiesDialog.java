@@ -20,7 +20,7 @@ import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -94,9 +94,9 @@ public class AnnotationPropertiesDialog extends EscapeJDialog implements Annotat
         BorderPanel borderPanel = new BorderPanel(controller);
         FlagsPanel flagsPanel = null;
 
-        PropertiesManager propertiesManager = PropertiesManager.getInstance();
+        ViewerPropertiesManager propertiesManager = ViewerPropertiesManager.getInstance();
         if (propertiesManager == null || propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_FLAGS)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_FLAGS)) {
             flagsPanel = new FlagsPanel(controller);
         }
 

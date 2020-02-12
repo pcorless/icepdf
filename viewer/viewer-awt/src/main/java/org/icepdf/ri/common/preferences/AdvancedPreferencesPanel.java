@@ -19,7 +19,7 @@ import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.PageNumberTextFieldInputVerifier;
 import org.icepdf.ri.common.views.Controller;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -45,15 +45,15 @@ public class AdvancedPreferencesPanel extends JPanel {
 
     private JTextField commonThreadCountField;
 
-    public AdvancedPreferencesPanel(Controller controller, PropertiesManager propertiesManager,
+    public AdvancedPreferencesPanel(Controller controller, ViewerPropertiesManager propertiesManager,
                                     ResourceBundle messageBundle) {
         super(new GridBagLayout());
         setAlignmentY(JPanel.TOP_ALIGNMENT);
         this.preferences = propertiesManager.getPreferences();
 
-        boolean imageProxyEnabled = preferences.getBoolean(PropertiesManager.PROPERTY_IMAGE_PROXY_ENABLED, ImageReference.useProxy);
-        int imageThreadCount = preferences.getInt(PropertiesManager.PROPERTY_IMAGE_PROXY_THREAD_COUNT, Library.imagePoolThreads);
-        int commonThreadCount = preferences.getInt(PropertiesManager.PROPERTY_COMMON_THREAD_COUNT, Library.commonPoolThreads);
+        boolean imageProxyEnabled = preferences.getBoolean(ViewerPropertiesManager.PROPERTY_IMAGE_PROXY_ENABLED, ImageReference.useProxy);
+        int imageThreadCount = preferences.getInt(ViewerPropertiesManager.PROPERTY_IMAGE_PROXY_THREAD_COUNT, Library.imagePoolThreads);
+        int commonThreadCount = preferences.getInt(ViewerPropertiesManager.PROPERTY_COMMON_THREAD_COUNT, Library.commonPoolThreads);
 
         // enable/disable the image proxy.
         BooleanItem[] fontHintingOptions = new BooleanItem[]{
@@ -69,7 +69,7 @@ public class AdvancedPreferencesPanel extends JPanel {
             JComboBox cb = (JComboBox) e.getSource();
             BooleanItem selectedItem = (BooleanItem) cb.getSelectedItem();
             if (selectedItem != null) {
-                preferences.putBoolean(PropertiesManager.PROPERTY_IMAGE_PROXY_ENABLED, selectedItem.getValue());
+                preferences.putBoolean(ViewerPropertiesManager.PROPERTY_IMAGE_PROXY_ENABLED, selectedItem.getValue());
                 imageProxyThreadCountField.setEnabled(selectedItem.getValue());
             }
         });
@@ -79,13 +79,13 @@ public class AdvancedPreferencesPanel extends JPanel {
         imageProxyThreadCountField.setText(String.valueOf(imageThreadCount));
         imageProxyThreadCountField.setInputVerifier(new PageNumberTextFieldInputVerifier());
         imageProxyThreadCountField.addActionListener(e -> preferences.putInt(
-                PropertiesManager.PROPERTY_IMAGE_PROXY_THREAD_COUNT, Integer.parseInt(imageProxyThreadCountField.getText())));
+                ViewerPropertiesManager.PROPERTY_IMAGE_PROXY_THREAD_COUNT, Integer.parseInt(imageProxyThreadCountField.getText())));
 
         commonThreadCountField = new JTextField(2);
         commonThreadCountField.setText(String.valueOf(commonThreadCount));
         commonThreadCountField.setInputVerifier(new PageNumberTextFieldInputVerifier());
         commonThreadCountField.addActionListener(e -> preferences.putInt(
-                PropertiesManager.PROPERTY_COMMON_THREAD_COUNT, Integer.parseInt(commonThreadCountField.getText())));
+                ViewerPropertiesManager.PROPERTY_COMMON_THREAD_COUNT, Integer.parseInt(commonThreadCountField.getText())));
 
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.NONE;

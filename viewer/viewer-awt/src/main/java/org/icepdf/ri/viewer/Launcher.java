@@ -18,7 +18,7 @@ package org.icepdf.ri.viewer;
 import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.util.FontPropertiesManager;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 import org.icepdf.ri.util.URLAccess;
 
 import javax.swing.*;
@@ -58,7 +58,7 @@ public class Launcher {
     public static final String APPLICATION_LOOK_AND_FEEL = "application.lookandfeel";
 
     // stores properties used by ICEpdf
-    private static PropertiesManager propertiesManager;
+    private static ViewerPropertiesManager propertiesManager;
 
     public static void main(String[] argv) {
 
@@ -88,7 +88,7 @@ public class Launcher {
 
         // load message bundle
         ResourceBundle messageBundle = ResourceBundle.getBundle(
-                PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
+                ViewerPropertiesManager.DEFAULT_MESSAGE_BUNDLE);
 
         // Quit if there where any problems parsing the command line arguments
         if (brokenUsage) {
@@ -113,7 +113,7 @@ public class Launcher {
                             ResourceBundle messageBundle) {
 
         // initiate the properties manager.
-        propertiesManager = PropertiesManager.getInstance();
+        propertiesManager = ViewerPropertiesManager.getInstance();
 
         // initiate font Cache manager, reads system if necessary,  load the cache otherwise.
         FontPropertiesManager.getInstance().loadOrReadSystemFonts();
@@ -122,9 +122,9 @@ public class Launcher {
         setupLookAndFeel(messageBundle);
 
         ViewModel.setDefaultFilePath(propertiesManager.getPreferences().get(
-                PropertiesManager.PROPERTY_DEFAULT_FILE_PATH, null));
+                ViewerPropertiesManager.PROPERTY_DEFAULT_FILE_PATH, null));
         ViewModel.setDefaultURL(propertiesManager.getPreferences().get(
-                PropertiesManager.PROPERTY_DEFAULT_URL, null));
+                ViewerPropertiesManager.PROPERTY_DEFAULT_URL, null));
 
         // application instance
         WindowManager windowManager = WindowManager.createInstance(propertiesManager, messageBundle);

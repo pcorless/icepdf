@@ -21,7 +21,7 @@ import org.icepdf.ri.common.*;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
 
-import static org.icepdf.ri.util.PropertiesManager.*;
+import static org.icepdf.ri.util.ViewerPropertiesManager.*;
 
 /**
  * An implementation of WindowManagementCallback to manage the viewer applications
@@ -50,7 +50,7 @@ public class WindowManager implements WindowManagementCallback {
 
     private static WindowManager windowManager;
 
-    private PropertiesManager properties;
+    private ViewerPropertiesManager properties;
 
     private ArrayList<Controller> controllers;
 
@@ -66,7 +66,7 @@ public class WindowManager implements WindowManagementCallback {
     }
 
     //window management functions
-    public static WindowManager createInstance(PropertiesManager properties, ResourceBundle messageBundle) {
+    public static WindowManager createInstance(ViewerPropertiesManager properties, ResourceBundle messageBundle) {
 
         windowManager = new WindowManager();
         windowManager.properties = properties;
@@ -76,7 +76,7 @@ public class WindowManager implements WindowManagementCallback {
             windowManager.messageBundle = messageBundle;
         } else {
             windowManager.messageBundle = ResourceBundle.getBundle(
-                    PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
+                    ViewerPropertiesManager.DEFAULT_MESSAGE_BUNDLE);
         }
 
         // Announce ourselves...
@@ -87,7 +87,7 @@ public class WindowManager implements WindowManagementCallback {
         return windowManager;
     }
 
-    public PropertiesManager getProperties() {
+    public ViewerPropertiesManager getProperties() {
         return properties;
     }
 
@@ -128,9 +128,9 @@ public class WindowManager implements WindowManagementCallback {
         try {
             viewType = viewerPreferences.getInt(PROPERTY_DEFAULT_VIEW_TYPE,
                     DocumentViewControllerImpl.ONE_PAGE_VIEW);
-            pageFit = viewerPreferences.getInt(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
+            pageFit = viewerPreferences.getInt(ViewerPropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
                     DocumentViewController.PAGE_FIT_WINDOW_WIDTH);
-            pageRotation = viewerPreferences.getFloat(PropertiesManager.PROPERTY_DEFAULT_ROTATION, pageRotation);
+            pageRotation = viewerPreferences.getFloat(ViewerPropertiesManager.PROPERTY_DEFAULT_ROTATION, pageRotation);
         } catch (NumberFormatException e) {
             // eating error, as we can continue with out alarm
         }
@@ -154,7 +154,7 @@ public class WindowManager implements WindowManagementCallback {
      * @param frame parent window containers.
      */
     public static void newWindowLocation(Container frame) {
-        newWindowLocation(frame, PropertiesManager.getInstance().getPreferences());
+        newWindowLocation(frame, ViewerPropertiesManager.getInstance().getPreferences());
     }
 
     /**
@@ -167,7 +167,7 @@ public class WindowManager implements WindowManagementCallback {
     public static void newWindowLocation(Container frame, Preferences prefs) {
         GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
         Rectangle bounds = env.getMaximumWindowBounds();
-        prefs = PropertiesManager.getInstance().getPreferences();
+        prefs = ViewerPropertiesManager.getInstance().getPreferences();
 
         // get the last used window size.
         int width = prefs.getInt(APPLICATION_WIDTH, 800);
@@ -206,13 +206,13 @@ public class WindowManager implements WindowManagementCallback {
         if (viewer != null) {
             //save width & height
             Rectangle sz = viewer.getBounds();
-            Preferences viewerPreferences = PropertiesManager.getInstance().getPreferences();
+            Preferences viewerPreferences = ViewerPropertiesManager.getInstance().getPreferences();
             viewerPreferences.putInt(APPLICATION_X_OFFSET, sz.x);
             viewerPreferences.putInt(APPLICATION_Y_OFFSET, sz.y);
             viewerPreferences.putInt(APPLICATION_WIDTH, sz.width);
             viewerPreferences.putInt(APPLICATION_HEIGHT, sz.height);
-            viewerPreferences.putInt(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
-                    viewerPreferences.getInt(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT, 0));
+            viewerPreferences.putInt(ViewerPropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
+                    viewerPreferences.getInt(ViewerPropertiesManager.PROPERTY_DEFAULT_PAGEFIT, 0));
             int viewType = viewerPreferences.getInt(PROPERTY_DEFAULT_VIEW_TYPE, 1);
             // don't save the attachments view as it only applies to specific
             // document types.

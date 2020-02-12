@@ -21,7 +21,7 @@ import org.icepdf.ri.common.RgbColorChooser;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.annotations.FreeTextAnnotationComponent;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -175,10 +175,10 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         if (e.getStateChange() == ItemEvent.SELECTED) {
             if (e.getSource() == fontNameBox) {
                 freeTextAnnotation.setFontName((String) item.getValue());
-                preferences.put(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_FONT, freeTextAnnotation.getFontName());
+                preferences.put(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_FONT, freeTextAnnotation.getFontName());
             } else if (e.getSource() == fontSizeBox) {
                 freeTextAnnotation.setFontSize((Integer) item.getValue());
-                preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SIZE, freeTextAnnotation.getFontSize());
+                preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SIZE, freeTextAnnotation.getFontSize());
             } else if (e.getSource() == strokeTypeBox) {
                 Boolean visible = (Boolean) item.getValue();
                 freeTextAnnotation.setStrokeType(visible);
@@ -225,7 +225,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
                 // change the colour of the button background
                 setButtonBackgroundColor(strokeColorButton, chosenColor);
                 freeTextAnnotation.setColor(chosenColor);
-                preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_BORDER_COLOR, chosenColor.getRGB());
+                preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_BORDER_COLOR, chosenColor.getRGB());
             }
         } else if (e.getSource() == fillColorButton) {
             Color chosenColor =
@@ -237,7 +237,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
                 // change the colour of the button background
                 setButtonBackgroundColor(fillColorButton, chosenColor);
                 freeTextAnnotation.setFillColor(chosenColor);
-                preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_FILL_COLOR, chosenColor.getRGB());
+                preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_FILL_COLOR, chosenColor.getRGB());
             }
         } else if (e.getSource() == fontColorButton) {
             Color chosenColor =
@@ -249,7 +249,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
                 // change the colour of the button background
                 setButtonBackgroundColor(fontColorButton, chosenColor);
                 freeTextAnnotation.setFontColor(chosenColor);
-                preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_COLOR, chosenColor.getRGB());
+                preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_COLOR, chosenColor.getRGB());
             }
         }
         // save the action state back to the document structure.
@@ -259,7 +259,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
     }
 
     public void stateChanged(ChangeEvent e) {
-        alphaSliderChange(e, freeTextAnnotation, PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_OPACITY);
+        alphaSliderChange(e, freeTextAnnotation, ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_OPACITY);
     }
 
     public static ValueLabelItem[] generateFontNameList(ResourceBundle messageBundle) {
