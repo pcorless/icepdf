@@ -16,7 +16,7 @@
 package org.icepdf.ri.common.preferences;
 
 import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 import org.icepdf.ri.util.font.ClearFontCacheWorker;
 
 import javax.swing.*;
@@ -40,7 +40,7 @@ public class FontsPreferencesPanel extends JPanel implements ActionListener {
     // clear and rescan system for fonts and rewrite file.
     private JButton resetFontCacheButton;
 
-    public FontsPreferencesPanel(SwingController controller, PropertiesManager propertiesManager,
+    public FontsPreferencesPanel(SwingController controller, ViewerPropertiesManager propertiesManager,
                                  ResourceBundle messageBundle) {
         super(new GridBagLayout());
         setAlignmentY(JPanel.TOP_ALIGNMENT);

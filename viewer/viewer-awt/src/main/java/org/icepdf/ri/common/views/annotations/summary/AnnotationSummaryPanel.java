@@ -27,7 +27,7 @@ import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -139,8 +139,8 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
     @Override
     public void itemStateChanged(ItemEvent e) {
         if (e.getSource() == fontSizeBox) {
-            PropertiesManager propertiesManager = controller.getPropertiesManager();
-            propertiesManager.getPreferences().putInt(PropertiesManager.PROPERTY_ANNOTATION_SUMMARY_FONT_SIZE,
+            ViewerPropertiesManager propertiesManager = controller.getPropertiesManager();
+            propertiesManager.getPreferences().putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_SUMMARY_FONT_SIZE,
                     (int) fontSizeBox.getModel().getElementAt(fontSizeBox.getSelectedIndex()).getValue());
             ValueLabelItem tmp = (ValueLabelItem) fontSizeBox.getSelectedItem();
             // fire the font size property change event.
@@ -198,11 +198,11 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
 
     protected void buildStatusToolBarPanel() {
 
-        PropertiesManager propertiesManager = controller.getPropertiesManager();
+        ViewerPropertiesManager propertiesManager = controller.getPropertiesManager();
 
         fontSizeBox = new JComboBox<>(FreeTextAnnotationPanel.generateFontSizeNameList(messageBundle));
         applySelectedValue(fontSizeBox, propertiesManager.checkAndStoreIntProperty(
-                PropertiesManager.PROPERTY_ANNOTATION_SUMMARY_FONT_SIZE, new JLabel().getFont().getSize()));
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_SUMMARY_FONT_SIZE, new JLabel().getFont().getSize()));
         fontSizeBox.addItemListener(this);
 
         statusToolbarPanel = new JPanel(new GridBagLayout());

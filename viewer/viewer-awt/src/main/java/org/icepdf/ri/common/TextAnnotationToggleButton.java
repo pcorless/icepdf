@@ -17,7 +17,7 @@ package org.icepdf.ri.common;
 
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.images.Images;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -71,9 +71,9 @@ public class TextAnnotationToggleButton extends AnnotationColorToggleButton {
 
         // apply the settings colour
         Color color = null;
-        Preferences preferences = PropertiesManager.getInstance().getPreferences();
-        if (preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_TEXT_BUTTON_COLOR, -1) != -1) {
-            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_TEXT_BUTTON_COLOR, 0);
+        Preferences preferences = ViewerPropertiesManager.getInstance().getPreferences();
+        if (preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_BUTTON_COLOR, -1) != -1) {
+            int rgb = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_BUTTON_COLOR, 0);
             color = new Color(rgb);
         }
         // apply the settings or system property base colour for the given subtype.
@@ -87,7 +87,7 @@ public class TextAnnotationToggleButton extends AnnotationColorToggleButton {
     public void setColor(Color newColor, boolean fireChangeEvent) {
         super.setColor(newColor, fireChangeEvent);
         // set the colour back to the respective preference
-        Preferences preferences = PropertiesManager.getInstance().getPreferences();
-        preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_TEXT_BUTTON_COLOR, newColor.getRGB());
+        Preferences preferences = ViewerPropertiesManager.getInstance().getPreferences();
+        preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_BUTTON_COLOR, newColor.getRGB());
     }
 }

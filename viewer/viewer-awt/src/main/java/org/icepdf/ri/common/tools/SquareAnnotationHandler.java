@@ -29,7 +29,7 @@ import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -230,13 +230,13 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
 
         // associate popup to location
         PopupAnnotationComponent popupAnnotationComponent = comp.getPopupAnnotationComponent();
-        popupAnnotationComponent.setBoudsRelativeToParent(
+        popupAnnotationComponent.setBoundsRelativeToParent(
                 bbox.x + (bbox.width / 2), bbox.y + (bbox.height / 2), pageTransform);
         popupAnnotationComponent.setVisible(false);
         popupAnnotationComponent.getAnnotation().setOpen(false);
 
         // set the annotation tool to he select tool
-        if (preferences.getBoolean(PropertiesManager.PROPERTY_ANNOTATION_SQUARE_SELECTION_ENABLED, false)) {
+        if (preferences.getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_SQUARE_SELECTION_ENABLED, false)) {
             documentViewController.getParentController().setDocumentToolMode(
                     DocumentViewModel.DISPLAY_TOOL_SELECTION);
         }
@@ -249,11 +249,11 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
     @Override
     protected void checkAndApplyPreferences() {
         defaultOpacity = preferences.getInt(
-                PropertiesManager.PROPERTY_ANNOTATION_SQUARE_OPACITY, defaultOpacity);
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_SQUARE_OPACITY, defaultOpacity);
         lineColor = new Color(preferences.getInt(
-                PropertiesManager.PROPERTY_ANNOTATION_SQUARE_COLOR, lineColor.getRGB()));
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_SQUARE_COLOR, lineColor.getRGB()));
         internalColor = new Color(preferences.getInt(
-                PropertiesManager.PROPERTY_ANNOTATION_SQUARE_FILL_COLOR, internalColor.getRGB()));
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_SQUARE_FILL_COLOR, internalColor.getRGB()));
     }
 
     public void mouseEntered(MouseEvent e) {

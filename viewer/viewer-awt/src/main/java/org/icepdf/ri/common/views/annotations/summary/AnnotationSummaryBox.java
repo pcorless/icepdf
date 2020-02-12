@@ -26,7 +26,7 @@ import org.icepdf.ri.common.views.PageViewComponentImpl;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -65,9 +65,9 @@ public class AnnotationSummaryBox extends PopupAnnotationComponent implements Fo
 
         commentPanel.getInsets().set(10, 10, 10, 10);
         setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-        PropertiesManager propertiesManager = documentViewController.getParentController().getPropertiesManager();
+        ViewerPropertiesManager propertiesManager = documentViewController.getParentController().getPropertiesManager();
         setFontSize(propertiesManager.getPreferences().getInt(
-                PropertiesManager.PROPERTY_ANNOTATION_SUMMARY_FONT_SIZE, new JLabel().getFont().getSize()));
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_SUMMARY_FONT_SIZE, new JLabel().getFont().getSize()));
         // remove super mouse listener as it interferes with the drag and drop.
         removeMouseWheelListener(this);
     }
