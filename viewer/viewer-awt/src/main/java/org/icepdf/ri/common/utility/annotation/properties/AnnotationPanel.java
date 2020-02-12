@@ -19,7 +19,7 @@ import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -35,7 +35,7 @@ import java.awt.*;
 @SuppressWarnings("serial")
 public class AnnotationPanel extends AnnotationPanelAdapter {
 
-    private PropertiesManager propertiesManager;
+    private ViewerPropertiesManager propertiesManager;
 
     private JPanel annotationPanel;
     private AnnotationPanelAdapter annotationPropertyPanel;
@@ -47,7 +47,7 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
         this(controller, null);
     }
 
-    public AnnotationPanel(Controller controller, PropertiesManager propertiesManager) {
+    public AnnotationPanel(Controller controller, ViewerPropertiesManager propertiesManager) {
         super(controller);
         setLayout(new BorderLayout());
         this.propertiesManager = propertiesManager;
@@ -165,7 +165,7 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
         borderPanel = new BorderPanel(controller);
 
         if (propertiesManager == null || propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_FLAGS)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_FLAGS)) {
             flagsPanel = new FlagsPanel(controller);
         }
 

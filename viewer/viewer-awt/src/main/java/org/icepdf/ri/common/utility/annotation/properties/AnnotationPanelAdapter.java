@@ -20,7 +20,7 @@ import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -65,7 +65,7 @@ public abstract class AnnotationPanelAdapter extends JPanel
         this.documentViewController = controller.getDocumentViewController();
         this.messageBundle = controller.getMessageBundle();
 
-        PropertiesManager propertiesManager = PropertiesManager.getInstance();
+        ViewerPropertiesManager propertiesManager = ViewerPropertiesManager.getInstance();
         this.preferences = propertiesManager.getPreferences();
 
         // common selection lists.

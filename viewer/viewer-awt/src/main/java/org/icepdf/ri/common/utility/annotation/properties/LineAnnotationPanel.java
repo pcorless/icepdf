@@ -20,7 +20,7 @@ import org.icepdf.core.pobjects.annotations.LineAnnotation;
 import org.icepdf.ri.common.RgbColorChooser;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.Controller;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -159,7 +159,7 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
                 currentAnnotationComponent.resetAppearanceShapes();
                 currentAnnotationComponent.repaint();
 
-                preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_LINE_COLOR, chosenColor.getRGB());
+                preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_COLOR, chosenColor.getRGB());
             }
         } else if (e.getSource() == internalColorButton) {
             Color chosenColor =
@@ -177,14 +177,14 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
                 currentAnnotationComponent.resetAppearanceShapes();
                 currentAnnotationComponent.repaint();
 
-                preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_LINE_FILL_COLOR, chosenColor.getRGB());
+                preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_FILL_COLOR, chosenColor.getRGB());
             }
         }
 
     }
 
     public void stateChanged(ChangeEvent e) {
-        alphaSliderChange(e, annotation, PropertiesManager.PROPERTY_ANNOTATION_LINE_OPACITY);
+        alphaSliderChange(e, annotation, ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_OPACITY);
     }
 
     /**

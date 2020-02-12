@@ -45,6 +45,7 @@ import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlineItemTreeNode;
 import org.icepdf.ri.common.utility.search.SearchPanel;
+import org.icepdf.ri.common.utility.search.SearchToolBar;
 import org.icepdf.ri.common.utility.signatures.SignaturesHandlerPanel;
 import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
 import org.icepdf.ri.common.views.*;
@@ -52,7 +53,7 @@ import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryFrame;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 import org.icepdf.ri.util.TextExtractionTask;
 import org.icepdf.ri.util.URLAccess;
 import org.icepdf.ri.viewer.WindowManager;
@@ -82,6 +83,7 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
@@ -93,7 +95,7 @@ import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
 import static org.icepdf.core.util.PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE;
-import static org.icepdf.ri.util.PropertiesManager.*;
+import static org.icepdf.ri.util.ViewerPropertiesManager.*;
 
 /**
  * Controller is the meat of a PDF viewing application. It is the Controller
@@ -169,6 +171,7 @@ public class SwingController extends ComponentAdapter
     private JMenuItem nextPageMenuItem;
     private JMenuItem lastPageMenuItem;
     private JMenuItem searchMenuItem;
+    private JMenuItem advancedSearchMenuItem;
     private JMenuItem searchNextMenuItem;
     private JMenuItem searchPreviousMenuItem;
     private JMenuItem goToPageMenuItem;
@@ -273,7 +276,7 @@ public class SwingController extends ComponentAdapter
     // internationalization messages, loads message for default JVM locale.
     protected static ResourceBundle messageBundle = null;
 
-    protected PropertiesManager propertiesManager;
+    protected ViewerPropertiesManager propertiesManager;
 
     /**
      * Create a Controller object, and its associated ViewerModel
@@ -299,7 +302,7 @@ public class SwingController extends ComponentAdapter
             SwingController.messageBundle = currentMessageBundle;
         } else {
             SwingController.messageBundle = ResourceBundle.getBundle(
-                    PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
+                    ViewerPropertiesManager.DEFAULT_MESSAGE_BUNDLE);
         }
     }
 
@@ -373,14 +376,14 @@ public class SwingController extends ComponentAdapter
      *
      * @param propertiesManager current properties manager instance.
      */
-    public void setPropertiesManager(PropertiesManager propertiesManager) {
+    public void setPropertiesManager(ViewerPropertiesManager propertiesManager) {
         this.propertiesManager = propertiesManager;
     }
 
     /**
      * Gets an instance of the PropertiesManager so that other builders can use the properties manager.
      */
-    public PropertiesManager getPropertiesManager() {
+    public ViewerPropertiesManager getPropertiesManager() {
         return propertiesManager;
     }
 
@@ -733,6 +736,16 @@ public class SwingController extends ComponentAdapter
      */
     public void setSearchMenuItem(JMenuItem mi) {
         searchMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerbuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
+     */
+    public void setAdvancedSearchMenuItem(JMenuItem mi) {
+        advancedSearchMenuItem = mi;
         mi.addActionListener(this);
     }
 
@@ -1599,6 +1612,7 @@ public class SwingController extends ComponentAdapter
         }
         setEnabled(showHideUtilityPaneMenuItem, opened && utilityTabbedPane != null);
         setEnabled(searchMenuItem, opened && searchPanel != null && !pdfCollection);
+        setEnabled(advancedSearchMenuItem, opened && searchPanel != null && !pdfCollection);
         setEnabled(searchNextMenuItem, opened && searchPanel != null && !pdfCollection);
         setEnabled(searchPreviousMenuItem, opened && searchPanel != null && !pdfCollection);
         setEnabled(goToPageMenuItem, opened && nPages > 1 && !pdfCollection);
@@ -1667,7 +1681,6 @@ public class SwingController extends ComponentAdapter
         setEnabled(singlePageViewContinuousButton, opened && !pdfCollection);
         setEnabled(facingPageViewNonContinuousButton, opened && !pdfCollection);
         setEnabled(singlePageViewNonContinuousButton, opened && !pdfCollection);
-
         if (opened) {
             reflectZoomInZoomComboBox();
             reflectFitInFitButtons();
@@ -1859,15 +1872,15 @@ public class SwingController extends ComponentAdapter
         viewModel.setAnnotationPrivacy(isPublic);
 
         // and save the value to backing store.
-        Preferences preferences = PropertiesManager.getInstance().getPreferences();
-        preferences.putBoolean(PropertiesManager.PROPERTY_ANNOTATION_LAST_USED_PUBLIC_FLAG, isPublic);
+        Preferences preferences = ViewerPropertiesManager.getInstance().getPreferences();
+        preferences.putBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_LAST_USED_PUBLIC_FLAG, isPublic);
     }
 
     private void reflectAnnotationDefaultPrivacy() {
         // check properties to get last state.
-        Preferences preferences = PropertiesManager.getInstance().getPreferences();
+        Preferences preferences = ViewerPropertiesManager.getInstance().getPreferences();
         boolean annotationPrivacy = preferences.getBoolean(
-                PropertiesManager.PROPERTY_ANNOTATION_LAST_USED_PUBLIC_FLAG, true);
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_LAST_USED_PUBLIC_FLAG, true);
 
         // store the current state in the model and annotation tool handlers will pull from the current state.
         viewModel.setAnnotationPrivacy(annotationPrivacy);
@@ -2263,6 +2276,7 @@ public class SwingController extends ComponentAdapter
                                 "viewer.dialog.openFile.error.title",
                                 "viewer.dialog.openFile.error.msg",
                                 file.getPath());
+                        openFile();
                     }
 
                     // save the default directory
@@ -2305,6 +2319,7 @@ public class SwingController extends ComponentAdapter
                                         "viewer.dialog.openFile.error.title",
                                         "viewer.dialog.openFile.error.msg",
                                         selectedFile.getPath());
+                                openFile();
                             });
                         }
                         // save the default directory
@@ -2347,7 +2362,7 @@ public class SwingController extends ComponentAdapter
      */
     protected void addRecentFileEntry(Path path) {
         // get reference to the backing store.
-        Preferences preferences = PropertiesManager.getInstance().getPreferences();
+        Preferences preferences = ViewerPropertiesManager.getInstance().getPreferences();
         int maxListSize = preferences.getInt(PROPERTY_RECENT_FILES_SIZE, 8);
         String recentFilesString = preferences.get(PROPERTY_RECENTLY_OPENED_FILES, "");
         StringTokenizer toker = new StringTokenizer(recentFilesString, PROPERTY_TOKEN_SEPARATOR);
@@ -2940,22 +2955,22 @@ public class SwingController extends ComponentAdapter
         // Refresh the properties manager object if we don't already have one
         // This would be not null if the UI was constructed manually
         if (propertiesManager == null) {
-            propertiesManager = PropertiesManager.getInstance();
+            propertiesManager = ViewerPropertiesManager.getInstance();
         }
 
         // Set the default zoom level from the backing store
         float defaultZoom = propertiesManager.checkAndStoreFloatProperty(
-                PropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL);
+                ViewerPropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL);
         documentViewController.setZoom(defaultZoom);
 
         // set the default rotation level form the backing store.
         float defaultRotation = propertiesManager.checkAndStoreFloatProperty(
-                PropertiesManager.PROPERTY_DEFAULT_ROTATION, 0);
+                ViewerPropertiesManager.PROPERTY_DEFAULT_ROTATION, 0);
         documentViewController.setRotation(defaultRotation);
 
         // Set the default page fit mode
         setPageFitMode(propertiesManager.checkAndStoreIntProperty(
-                PropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
+                ViewerPropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
                 DocumentViewController.PAGE_FIT_NONE), false);
 
         // Apply any ViewerPreferences from the doc
@@ -2990,7 +3005,7 @@ public class SwingController extends ComponentAdapter
         // showUtilityPane will be true the document has an outline, but the
         // visibility can be over-ridden with the property application.utilitypane.show
         boolean hideUtilityPane = propertiesManager.getPreferences().getBoolean(
-                PropertiesManager.PROPERTY_HIDE_UTILITYPANE, false);
+                ViewerPropertiesManager.PROPERTY_HIDE_UTILITYPANE, false);
         // hide utility pane
         if (hideUtilityPane) {
             setUtilityPaneVisible(false);
@@ -3000,10 +3015,10 @@ public class SwingController extends ComponentAdapter
 
         // apply state value for whether form highlight is being used or not.
         boolean showFormHighlight = propertiesManager.getPreferences().getBoolean(
-                PropertiesManager.PROPERTY_VIEWPREF_FORM_HIGHLIGHT, true);
+                ViewerPropertiesManager.PROPERTY_VIEWPREF_FORM_HIGHLIGHT, true);
         setFormHighlightVisible(showFormHighlight);
         boolean showAnnotationEditingMode = propertiesManager.getPreferences().getBoolean(
-                PropertiesManager.PROPERTY_VIEWPREF_ANNOTATION_EDIT_MODE, false);
+                ViewerPropertiesManager.PROPERTY_VIEWPREF_ANNOTATION_EDIT_MODE, false);
         setAnnotationEditModeVisible(showAnnotationEditingMode);
 
         // check if there are layers and enable/disable the tab as needed
@@ -3214,6 +3229,7 @@ public class SwingController extends ComponentAdapter
         nextPageMenuItem = null;
         lastPageMenuItem = null;
         searchMenuItem = null;
+        advancedSearchMenuItem = null;
         searchNextMenuItem = null;
         searchPreviousMenuItem = null;
         goToPageMenuItem = null;
@@ -3425,82 +3441,93 @@ public class SwingController extends ComponentAdapter
 
     protected void saveFileChecks(String originalFileName, File file) {
         if (file != null) {
-            // make sure file path being saved to is valid
-            String extension = FileExtensionUtils.getExtension(file);
-            if (extension == null) {
-                org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
-                        JOptionPane.INFORMATION_MESSAGE,
-                        messageBundle,
-                        "viewer.dialog.saveAs.noExtensionError.title",
-                        "viewer.dialog.saveAs.noExtensionError.msg");
-                saveFile();
-            } else if (!extension.equals(FileExtensionUtils.pdf)) {
-                org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
-                        JOptionPane.INFORMATION_MESSAGE,
-                        messageBundle,
-                        "viewer.dialog.saveAs.extensionError.title",
-                        "viewer.dialog.saveAs.extensionError.msg",
-                        file.getName());
-                saveFile();
-            } else if (originalFileName != null &&
-                    originalFileName.equalsIgnoreCase(file.getName())) {
-                // Ensure a unique filename
-                org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
-                        JOptionPane.INFORMATION_MESSAGE,
-                        messageBundle,
-                        "viewer.dialog.saveAs.noneUniqueName.title",
-                        "viewer.dialog.saveAs.noneUniqueName.msg",
-                        file.getName());
-                saveFile();
-            } else {
-                // save file stream
-                try {
-                    // If we don't know where the file came from, it's because we
-                    //  used Document.contentStream() or Document.setByteArray(),
-                    //  or we used setUrl() with disk caching disabled.
-                    //  with no path or URL as the origin.
-                    // Note that we used to detect scenarios where we could access
-                    //  the file directly, or re-download it, to avoid locking our
-                    //  internal data structures for long periods for large PDFs,
-                    //  but that could cause problems with slow network links too,
-                    //  and would complicate the incremental update code, so we're
-                    //  harmonising on this approach.
-                    FileOutputStream fileOutputStream = new FileOutputStream(file);
-                    BufferedOutputStream buf = new BufferedOutputStream(
-                            fileOutputStream, 4096 * 2);
+            if (Files.isWritable(file.getParentFile().toPath())) {
+                // make sure file path being saved to is valid
+                String extension = FileExtensionUtils.getExtension(file);
+                if (extension == null) {
+                    org.icepdf.ri.util.Resources.showMessageDialog(
+                            viewer,
+                            JOptionPane.INFORMATION_MESSAGE,
+                            messageBundle,
+                            "viewer.dialog.saveAs.noExtensionError.title",
+                            "viewer.dialog.saveAs.noExtensionError.msg");
+                    saveFile();
+                } else if (!extension.equals(FileExtensionUtils.pdf)) {
+                    org.icepdf.ri.util.Resources.showMessageDialog(
+                            viewer,
+                            JOptionPane.INFORMATION_MESSAGE,
+                            messageBundle,
+                            "viewer.dialog.saveAs.extensionError.title",
+                            "viewer.dialog.saveAs.extensionError.msg",
+                            file.getName());
+                    saveFile();
+                } else if (originalFileName != null &&
+                        originalFileName.equalsIgnoreCase(file.getName())) {
+                    // Ensure a unique filename
+                    org.icepdf.ri.util.Resources.showMessageDialog(
+                            viewer,
+                            JOptionPane.INFORMATION_MESSAGE,
+                            messageBundle,
+                            "viewer.dialog.saveAs.noneUniqueName.title",
+                            "viewer.dialog.saveAs.noneUniqueName.msg",
+                            file.getName());
+                    saveFile();
+                } else {
+                    // save file stream
+                    try {
+                        // If we don't know where the file came from, it's because we
+                        //  used Document.contentStream() or Document.setByteArray(),
+                        //  or we used setUrl() with disk caching disabled.
+                        //  with no path or URL as the origin.
+                        // Note that we used to detect scenarios where we could access
+                        //  the file directly, or re-download it, to avoid locking our
+                        //  internal data structures for long periods for large PDFs,
+                        //  but that could cause problems with slow network links too,
+                        //  and would complicate the incremental update code, so we're
+                        //  harmonising on this approach.
+                        FileOutputStream fileOutputStream = new FileOutputStream(file);
+                        BufferedOutputStream buf = new BufferedOutputStream(
+                                fileOutputStream, 4096 * 2);
 
-                    // We want 'save as' or 'save a copy to always occur
-                    if (document.getStateManager().isChanged() &&
-                            !Document.foundIncrementalUpdater) {
-                        org.icepdf.ri.util.Resources.showMessageDialog(
-                                viewer,
-                                JOptionPane.INFORMATION_MESSAGE,
-                                messageBundle,
-                                "viewer.dialog.saveAs.noUpdates.title",
-                                "viewer.dialog.saveAs.noUpdates.msg");
-                    } else {
-                        if (!document.getStateManager().isChanged()) {
-                            // save as copy
-                            document.writeToOutputStream(buf);
+                        // We want 'save as' or 'save a copy to always occur
+                        if (document.getStateManager().isChanged() &&
+                                !Document.foundIncrementalUpdater) {
+                            org.icepdf.ri.util.Resources.showMessageDialog(
+                                    viewer,
+                                    JOptionPane.INFORMATION_MESSAGE,
+                                    messageBundle,
+                                    "viewer.dialog.saveAs.noUpdates.title",
+                                    "viewer.dialog.saveAs.noUpdates.msg");
                         } else {
-                            // save as will append changes.
-                            document.saveToOutputStream(buf);
+                            if (!document.getStateManager().isChanged()) {
+                                // save as copy
+                                document.writeToOutputStream(buf);
+                            } else {
+                                // save as will append changes.
+                                document.saveToOutputStream(buf);
+                            }
                         }
+                        buf.flush();
+                        fileOutputStream.flush();
+                        buf.close();
+                        fileOutputStream.close();
+                    } catch (MalformedURLException e) {
+                        logger.log(Level.FINE, "Malformed URL Exception ", e);
+                    } catch (IOException e) {
+                        logger.log(Level.FINE, "IO Exception ", e);
                     }
-                    buf.flush();
-                    fileOutputStream.flush();
-                    buf.close();
-                    fileOutputStream.close();
-                } catch (MalformedURLException e) {
-                    logger.log(Level.FINE, "Malformed URL Exception ", e);
-                } catch (IOException e) {
-                    logger.log(Level.FINE, "IO Exception ", e);
+                    // save the default directory
+                    ViewModel.setDefaultFile(file);
                 }
-                // save the default directory
-                ViewModel.setDefaultFile(file);
+            } else {
+                org.icepdf.ri.util.Resources.showMessageDialog(
+                        viewer,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        messageBundle,
+                        "viewer.dialog.saveAs.cantwrite.title",
+                        "viewer.dialog.saveAs.cantwrite.msg",
+                        file.getParentFile().getName());
+                saveFile();
             }
         }
     }
@@ -3846,11 +3873,11 @@ public class SwingController extends ComponentAdapter
     private MediaSizeName loadDefaultPrinterProperties() {
         Preferences viewerPreferences = propertiesManager.getPreferences();
         int printMediaUnit = viewerPreferences.getInt(
-                PropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_UNIT, 1000);
+                ViewerPropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_UNIT, 1000);
         double printMediaWidth = viewerPreferences.getDouble(
-                PropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_WIDTH, 215.9);
+                ViewerPropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_WIDTH, 215.9);
         double printMediaHeight = viewerPreferences.getDouble(
-                PropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_HEIGHT, 279.4);
+                ViewerPropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_HEIGHT, 279.4);
         // get the closed matching media name.
         return MediaSize.findMedia((float) printMediaWidth,
                 (float) printMediaHeight,
@@ -3878,15 +3905,15 @@ public class SwingController extends ComponentAdapter
             // write out the new page size property values.
             int printMediaUnit = MediaSize.MM;
             viewerPreferences.put(
-                    PropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_UNIT,
+                    ViewerPropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_UNIT,
                     String.valueOf(printMediaUnit));
             double printMediaWidth = mediaSize.getX(printMediaUnit);
             viewerPreferences.put(
-                    PropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_WIDTH,
+                    ViewerPropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_WIDTH,
                     String.valueOf(printMediaWidth));
             double printMediaHeight = mediaSize.getY(printMediaUnit);
             viewerPreferences.put(
-                    PropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_HEIGHT,
+                    ViewerPropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_HEIGHT,
                     String.valueOf(printMediaHeight));
         }
     }
@@ -4388,7 +4415,7 @@ public class SwingController extends ComponentAdapter
     public void toggleFormHighlight() {
         viewModel.setIsWidgetAnnotationHighlight(!viewModel.isWidgetAnnotationHighlight());
         // write the property for next viewing.
-        propertiesManager.getPreferences().putBoolean(PropertiesManager.PROPERTY_VIEWPREF_FORM_HIGHLIGHT,
+        propertiesManager.getPreferences().putBoolean(ViewerPropertiesManager.PROPERTY_VIEWPREF_FORM_HIGHLIGHT,
                 viewModel.isWidgetAnnotationHighlight());
         reflectFormHighlightButtons();
 
@@ -4405,7 +4432,7 @@ public class SwingController extends ComponentAdapter
     public void setAnnotationEditMode(boolean enabled) {
         viewModel.setIsAnnotationEditingMode(enabled);
         // write the property for next viewing.
-        propertiesManager.getPreferences().putBoolean(PropertiesManager.PROPERTY_VIEWPREF_ANNOTATION_EDIT_MODE,
+        propertiesManager.getPreferences().putBoolean(ViewerPropertiesManager.PROPERTY_VIEWPREF_ANNOTATION_EDIT_MODE,
                 viewModel.isAnnotationEditingMode());
         reflectAnnotationEditModeButtons();
         setAnnotationEditModeVisible(viewModel.isAnnotationEditingMode());
@@ -4429,6 +4456,15 @@ public class SwingController extends ComponentAdapter
         }
 
         return false;
+    }
+
+    public void showSearch() {
+        SearchToolBar searchBar = (SearchToolBar) quickSearchToolBar;
+        if (searchBar != null) {
+            searchBar.focusTextField();
+        } else {
+            showSearchPanel();
+        }
     }
 
     /**
@@ -4490,7 +4526,7 @@ public class SwingController extends ComponentAdapter
             if (annotationPanel != null) {
                 boolean show = safelySelectUtilityPanel(annotationPanel);
                 if (show) {
-                    annotationPanel.setSelectedTab(PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_MARKUP);
+                    annotationPanel.setSelectedTab(ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_MARKUP);
                 }
             }
         }
@@ -4512,7 +4548,7 @@ public class SwingController extends ComponentAdapter
             if (annotationPanel != null) {
                 boolean show = safelySelectUtilityPanel(annotationPanel);
                 if (show) {
-                    annotationPanel.setSelectedTab(PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_DESTINATIONS);
+                    annotationPanel.setSelectedTab(ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_DESTINATIONS);
                 }
             }
         }
@@ -4530,7 +4566,7 @@ public class SwingController extends ComponentAdapter
                 boolean show = safelySelectUtilityPanel(annotationPanel);
                 if (show) {
                     annotationPanel.getDestinationsPanel().selectDestinationPath(path);
-                    annotationPanel.setSelectedTab(PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_DESTINATIONS);
+                    annotationPanel.setSelectedTab(ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_DESTINATIONS);
                 }
             }
         }
@@ -4586,7 +4622,7 @@ public class SwingController extends ComponentAdapter
      * @param catalog           to lookup view preferences from
      * @param propertiesManager to check properties in
      */
-    protected void applyViewerPreferences(Catalog catalog, PropertiesManager propertiesManager) {
+    protected void applyViewerPreferences(Catalog catalog, ViewerPropertiesManager propertiesManager) {
         if (catalog == null) {
             return;
         }
@@ -4604,7 +4640,7 @@ public class SwingController extends ComponentAdapter
             if (completeToolBar != null) {
                 completeToolBar.setVisible(
                         !propertiesManager.getPreferences().getBoolean(
-                                PropertiesManager.PROPERTY_VIEWPREF_HIDETOOLBAR,
+                                ViewerPropertiesManager.PROPERTY_VIEWPREF_HIDETOOLBAR,
                                 false));
             }
         }
@@ -4620,7 +4656,7 @@ public class SwingController extends ComponentAdapter
             if (viewer != null && viewer.getJMenuBar() != null) {
                 viewer.getJMenuBar().setVisible(
                         !propertiesManager.getPreferences().getBoolean(
-                                PropertiesManager.PROPERTY_VIEWPREF_HIDEMENUBAR,
+                                ViewerPropertiesManager.PROPERTY_VIEWPREF_HIDEMENUBAR,
                                 false));
             }
         }
@@ -4634,7 +4670,7 @@ public class SwingController extends ComponentAdapter
             }
         } else {
             if (propertiesManager.getPreferences().getBoolean(
-                    PropertiesManager.PROPERTY_VIEWPREF_FITWINDOW, false) && viewer != null) {
+                    ViewerPropertiesManager.PROPERTY_VIEWPREF_FITWINDOW, false) && viewer != null) {
                 viewer.setSize(documentViewController.getDocumentView().getDocumentSize());
             }
         }
@@ -4833,6 +4869,9 @@ public class SwingController extends ComponentAdapter
                     } else if (source == lastPageMenuItem || source == lastPageButton) {
                         showPage(getPageTree().getNumberOfPages() - 1);
                     } else if (source == searchMenuItem || source == searchButton) {
+                        cancelSetFocus = true;
+                        showSearch();
+                    } else if (source == advancedSearchMenuItem) {
                         cancelSetFocus = true;
                         showSearchPanel();
                     } else if (source == searchNextMenuItem) {
@@ -5177,14 +5216,18 @@ public class SwingController extends ComponentAdapter
 
         // assign view properties so that they can be saved on close
         DocumentViewController viewControl = getDocumentViewController();
-        Preferences viewerPreferences = PropertiesManager.getInstance().getPreferences();
-        viewerPreferences.putInt(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT, viewControl.getFitMode());
+        Preferences viewerPreferences = ViewerPropertiesManager.getInstance().getPreferences();
+        viewerPreferences.putInt(ViewerPropertiesManager.PROPERTY_DEFAULT_PAGEFIT, viewControl.getFitMode());
         viewerPreferences.putInt("document.viewtype", viewControl.getViewMode());
         // last rotation.
         if (documentViewController.getDocumentViewModel() != null) {
             float rotation = documentViewController.getDocumentViewModel().getViewRotation();
             viewerPreferences.putFloat(PROPERTY_DEFAULT_ROTATION, rotation);
         }
+        if (viewControl.getZoom() > 0) {
+            viewerPreferences.putFloat(PROPERTY_DEFAULT_ZOOM_LEVEL, viewControl.getZoom());
+        }
+
 
         // save changes and close window
         boolean cancelled = saveChangesDialog();
@@ -5418,7 +5461,11 @@ public class SwingController extends ComponentAdapter
                     showPage(getPageTree().getNumberOfPages() - 1);
                 } else if (c == KeyEventConstants.KEY_CODE_SEARCH &&
                         m == KeyEventConstants.MODIFIER_SEARCH) {
-                    showSearchPanel();
+                    if (e.isShiftDown()) {
+                        showSearchPanel();
+                    } else {
+                        showSearch();
+                    }
                 } else if (c == KeyEventConstants.KEY_CODE_GOTO &&
                         m == KeyEventConstants.MODIFIER_GOTO) {
                     showPageSelectionDialog();
@@ -5575,7 +5622,7 @@ public class SwingController extends ComponentAdapter
                     if (propertiesManager != null && dividerLocation > 5) {
                         utilityAndDocumentSplitPaneLastDividerLocation = dividerLocation;
                         propertiesManager.getPreferences().putInt(
-                                PropertiesManager.PROPERTY_DIVIDER_LOCATION,
+                                ViewerPropertiesManager.PROPERTY_DIVIDER_LOCATION,
                                 utilityAndDocumentSplitPaneLastDividerLocation);
                     }
                 }

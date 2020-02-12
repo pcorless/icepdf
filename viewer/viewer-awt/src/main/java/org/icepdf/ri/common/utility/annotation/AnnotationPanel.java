@@ -19,7 +19,7 @@ import org.icepdf.ri.common.MutableDocument;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.utility.annotation.destinations.DestinationsPanel;
 import org.icepdf.ri.common.utility.annotation.markup.MarkupAnnotationPanel;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -86,10 +86,10 @@ public class AnnotationPanel extends JPanel implements MutableDocument {
      * @param selectedAnnotationPanel selects the give annotation panel tab.
      */
     public void setSelectedTab(final String selectedAnnotationPanel) {
-        PropertiesManager propertiesManager = PropertiesManager.getInstance();
-        if (PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_MARKUP.equals(selectedAnnotationPanel)) {
+        ViewerPropertiesManager propertiesManager = ViewerPropertiesManager.getInstance();
+        if (ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_MARKUP.equals(selectedAnnotationPanel)) {
             annotationTabbedPane.setSelectedIndex(0);
-        } else if (PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_DESTINATIONS.equals(selectedAnnotationPanel)) {
+        } else if (ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_DESTINATIONS.equals(selectedAnnotationPanel)) {
             annotationTabbedPane.setSelectedIndex(1);
         } else {
             annotationTabbedPane.setSelectedIndex(0);

@@ -36,7 +36,7 @@ import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.common.views.PageViewDecorator;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.MacOSAdapter;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -301,7 +301,7 @@ public class SwingViewBuilder {
     protected int documentPageFitMode;
     protected String iconSize;
     protected ResourceBundle messageBundle;
-    protected static PropertiesManager propertiesManager;
+    protected static ViewerPropertiesManager propertiesManager;
 
     protected static boolean isMacOs;
 
@@ -332,7 +332,7 @@ public class SwingViewBuilder {
      * @param c          Controller that will interact with the GUI
      * @param properties PropertiesManager that can customize the UI
      */
-    public SwingViewBuilder(SwingController c, PropertiesManager properties) {
+    public SwingViewBuilder(SwingController c, ViewerPropertiesManager properties) {
         this(c, properties, null, false, SwingViewBuilder.TOOL_BAR_STYLE_FIXED, null,
                 DocumentViewControllerImpl.ONE_PAGE_VIEW,
                 DocumentViewController.PAGE_FIT_WINDOW_HEIGHT, 0);
@@ -370,12 +370,12 @@ public class SwingViewBuilder {
     /**
      * Construct a SwingVewBuilder with whichever settings you desire
      *
-     * @param c Controller that will interact with the GUI
-     * @param bf button font.
-     * @param bt show button text.
-     * @param ts text size
-     * @param zl zoom levels
-     * @param documentViewType default document view.
+     * @param c                   Controller that will interact with the GUI
+     * @param bf                  button font.
+     * @param bt                  show button text.
+     * @param ts                  text size
+     * @param zl                  zoom levels
+     * @param documentViewType    default document view.
      * @param documentPageFitMode page fit mode
      */
     public SwingViewBuilder(SwingController c, Font bf, boolean bt, int ts,
@@ -387,17 +387,17 @@ public class SwingViewBuilder {
     /**
      * Construct a SwingVewBuilder with whichever settings you desire
      *
-     * @param c Controller that will interact with the GUI
-     * @param properties properties manager
-     * @param bf button font.
-     * @param bt show button text.
-     * @param ts text size
-     * @param zl zoom levels
-     * @param documentViewType default document view.
+     * @param c                   Controller that will interact with the GUI
+     * @param properties          properties manager
+     * @param bf                  button font.
+     * @param bt                  show button text.
+     * @param ts                  text size
+     * @param zl                  zoom levels
+     * @param documentViewType    default document view.
      * @param documentPageFitMode page fit mode
-     * @param rotation rotation factor
+     * @param rotation            rotation factor
      */
-    public SwingViewBuilder(SwingController c, PropertiesManager properties,
+    public SwingViewBuilder(SwingController c, ViewerPropertiesManager properties,
                             Font bf, boolean bt, int ts,
                             float[] zl, final int documentViewType,
                             final int documentPageFitMode, final float rotation) {
@@ -407,7 +407,7 @@ public class SwingViewBuilder {
         propertiesManager = properties;
 
         if (propertiesManager == null) {
-            propertiesManager = PropertiesManager.getInstance();
+            propertiesManager = ViewerPropertiesManager.getInstance();
         }
         viewerController.setPropertiesManager(propertiesManager);
 
@@ -433,7 +433,7 @@ public class SwingViewBuilder {
         // set default view mode type, fit page, fit width, no-fit.
         this.documentPageFitMode = documentPageFitMode;
         // apply default button size
-        iconSize = propertiesManager.getPreferences().get(PropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE);
+        iconSize = propertiesManager.getPreferences().get(ViewerPropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE);
     }
 
     /**
@@ -477,8 +477,9 @@ public class SwingViewBuilder {
     /**
      * The Container will contain the PDF document's current page visualization
      * and document outline if available.
+     *
      * @param embeddableComponent true if the component is to be used as an embedded component.
-     * @param cp Container in which to put components for viewing PDF documents
+     * @param cp                  Container in which to put components for viewing PDF documents
      */
     public void buildContents(Container cp, boolean embeddableComponent) {
         cp.setLayout(new BorderLayout());
@@ -541,7 +542,7 @@ public class SwingViewBuilder {
         doubleCheckPropertiesManager();
 
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_KEYBOARD_SHORTCUTS,
+                ViewerPropertiesManager.PROPERTY_SHOW_KEYBOARD_SHORTCUTS,
                 true)) {
             return KeyStroke.getKeyStroke(keyCode, modifiers, onRelease);
         }
@@ -561,7 +562,7 @@ public class SwingViewBuilder {
         doubleCheckPropertiesManager();
 
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_KEYBOARD_SHORTCUTS,
+                ViewerPropertiesManager.PROPERTY_SHOW_KEYBOARD_SHORTCUTS,
                 true)) {
             return mnemonic;
         }
@@ -608,7 +609,7 @@ public class SwingViewBuilder {
     }
 
     public JMenu buildRecentFileMenuItem() {
-        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_MENU_RECENT_FILES)) {
+        if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_MENU_RECENT_FILES)) {
             JMenu recentFilesSubMenu = new JMenu(messageBundle.getString("viewer.menu.open.recentFiles.label"));
             viewerController.setRecentFilesSubMenu(recentFilesSubMenu);
             viewerController.refreshRecentFileMenuItem();
@@ -934,6 +935,7 @@ public class SwingViewBuilder {
         addToMenu(documentMenu, buildLastPageMenuItem());
         documentMenu.addSeparator();
         addToMenu(documentMenu, buildSearchMenuItem());
+        addToMenu(documentMenu, buildAdvancedSearchMenuItem());
         addToMenu(documentMenu, buildSearchNextMenuItem());
         addToMenu(documentMenu, buildSearchPreviousMenuItem());
         documentMenu.addSeparator();
@@ -987,6 +989,14 @@ public class SwingViewBuilder {
                 buildKeyStroke(KeyEventConstants.KEY_CODE_SEARCH, KeyEventConstants.MODIFIER_SEARCH));
         if (viewerController != null && mi != null)
             viewerController.setSearchMenuItem(mi);
+        return mi;
+    }
+
+    public JMenuItem buildAdvancedSearchMenuItem() {
+        final JMenuItem mi = makeMenuItem(messageBundle.getString("viewer.toolbar.search.advanced.label"), buildKeyStroke(KeyEventConstants.KEY_CODE_SEARCH, KeyEventConstants.MODIFIER_ADVANCED_SEARCH));
+        if (viewerController != null && mi != null) {
+            viewerController.setAdvancedSearchMenuItem(mi);
+        }
         return mi;
     }
 
@@ -1167,25 +1177,25 @@ public class SwingViewBuilder {
         doubleCheckPropertiesManager();
 
         // Build the main set of toolbars based on the property file configuration
-        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_UTILITY))
+        if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_UTILITY))
             addToToolBar(toolbar, buildUtilityToolBar(embeddableComponent, propertiesManager));
-        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_PAGENAV))
+        if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_PAGENAV))
             addToToolBar(toolbar, buildPageNavigationToolBar());
-        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_ZOOM))
+        if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ZOOM))
             addToToolBar(toolbar, buildZoomToolBar());
-        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_FULL_SCREEN))
+        if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_FULL_SCREEN))
             addToToolBar(toolbar, buildFullScreenToolBar());
-        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_FIT))
+        if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_FIT))
             addToToolBar(toolbar, buildFitToolBar());
-        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_ROTATE))
+        if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ROTATE))
             addToToolBar(toolbar, buildRotateToolBar());
-        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_TOOL))
+        if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_TOOL))
             addToToolBar(toolbar, buildToolToolBar());
-        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION))
+        if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION))
             addToToolBar(toolbar, buildAnnotationlToolBar());
-        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_FORMS))
+        if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_FORMS))
             addToToolBar(toolbar, buildFormsToolBar());
-        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_SEARCH))
+        if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_SEARCH))
             addToToolBar(toolbar, buildQuickSearchToolBar());
 
         // we only add the configurable font engin in the demo version
@@ -1209,21 +1219,21 @@ public class SwingViewBuilder {
         return buildUtilityToolBar(embeddableComponent, null);
     }
 
-    public JToolBar buildUtilityToolBar(boolean embeddableComponent, PropertiesManager propertiesManager) {
+    public JToolBar buildUtilityToolBar(boolean embeddableComponent, ViewerPropertiesManager propertiesManager) {
         JToolBar toolbar = new JToolBar();
         commonToolBarSetup(toolbar, false);
         // if embeddable component, we don't want to create the open dialog, as we
         // have no window manager for this case.
         if ((!embeddableComponent) &&
-                (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_UTILITY_OPEN)))
+                (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_UTILITY_OPEN)))
             addToToolBar(toolbar, buildOpenFileButton());
-        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_UTILITY_SAVE))
+        if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_UTILITY_SAVE))
             addToToolBar(toolbar, buildSaveAsFileButton());
-        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_UTILITY_PRINT))
+        if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_UTILITY_PRINT))
             addToToolBar(toolbar, buildPrintButton());
-        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_UTILITY_SEARCH))
+        if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_UTILITY_SEARCH))
             addToToolBar(toolbar, buildSearchButton());
-        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_UTILITY_UPANE))
+        if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_UTILITY_UPANE))
             addToToolBar(toolbar, buildShowHideUtilityPaneButton());
 
         // Don't bother with this toolbar if we don't have any visible buttons
@@ -1406,8 +1416,8 @@ public class SwingViewBuilder {
         doubleCheckPropertiesManager();
 
         // Assign any different zoom ranges from the properties file if possible
-        zoomLevels = PropertiesManager.getInstance().checkAndStoreFloatArrayProperty(
-                PropertiesManager.PROPERTY_ZOOM_RANGES,
+        zoomLevels = ViewerPropertiesManager.getInstance().checkAndStoreFloatArrayProperty(
+                ViewerPropertiesManager.PROPERTY_ZOOM_RANGES,
                 zoomLevels);
 
         JComboBox<String> tmp = new JComboBox<>();
@@ -1552,63 +1562,63 @@ public class SwingViewBuilder {
         JToolBar toolbar = new JToolBar();
         commonToolBarSetup(toolbar, false);
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_SELECTION)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_SELECTION)) {
             addToToolBar(toolbar, buildSelectToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_HIGHLIGHT)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_HIGHLIGHT)) {
             addToToolBar(toolbar, buildHighlightAnnotationToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_UNDERLINE)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_UNDERLINE)) {
             addToToolBar(toolbar, buildUnderlineAnnotationToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_STRIKE_OUT)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_STRIKE_OUT)) {
             addToToolBar(toolbar, buildStrikeOutAnnotationToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_LINE)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_LINE)) {
             addToToolBar(toolbar, buildLineAnnotationToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_LINK)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_LINK)) {
             addToToolBar(toolbar, buildLinkAnnotationToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_ARROW)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_ARROW)) {
             addToToolBar(toolbar, buildLineArrowAnnotationToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_RECTANGLE)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_RECTANGLE)) {
             addToToolBar(toolbar, buildSquareAnnotationToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_CIRCLE)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_CIRCLE)) {
             addToToolBar(toolbar, buildCircleAnnotationToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_INK)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_INK)) {
             addToToolBar(toolbar, buildInkAnnotationToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_FREE_TEXT)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_FREE_TEXT)) {
             addToToolBar(toolbar, buildFreeTextAnnotationToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_TEXT)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_TEXT)) {
             addToToolBar(toolbar, buildTextAnnotationToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_PERMISSION)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_PERMISSION)) {
             addToToolBar(toolbar, buildAnnotationPermissionCombBox());
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_UTILITY)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_UTILITY)) {
             addToToolBar(toolbar, buildShowAnnotationUtilityButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_PREVIEW)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_PREVIEW)) {
             addToToolBar(toolbar, buildAnnotationPreviewButton(iconSize));
         }
 
@@ -1626,9 +1636,6 @@ public class SwingViewBuilder {
         JToolBar toolbar = new SearchToolBar(
                 viewerController,
                 messageBundle.getString("viewer.toolbar.tool.search.label"),
-                new DropDownButton(viewerController, "",
-                        messageBundle.getString("viewer.toolbar.tool.search.filter.tooltip"),
-                        "filter", iconSize, SwingViewBuilder.buildButtonFont()),
                 makeToolbarButton(
                         messageBundle.getString("viewer.toolbar.tool.search.previous.label"),
                         messageBundle.getString("viewer.toolbar.tool.search.previous.tooltip"),
@@ -1647,51 +1654,51 @@ public class SwingViewBuilder {
         JToolBar toolbar = new JToolBar();
         commonToolBarSetup(toolbar, true);
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_HIGHLIGHT_ENABLED)) {
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_HIGHLIGHT_ENABLED)) {
             addToToolBar(toolbar, buildHighlightAnnotationPropertiesToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_STRIKE_OUT_ENABLED)) {
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_STRIKE_OUT_ENABLED)) {
             addToToolBar(toolbar, buildStrikeOutAnnotationPropertiesToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_UNDERLINE_ENABLED)) {
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_UNDERLINE_ENABLED)) {
             addToToolBar(toolbar, buildUnderlineAnnotationPropertiesToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_LINE_ENABLED)) {
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_LINE_ENABLED)) {
             addToToolBar(toolbar, buildLineAnnotationPropertiesToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_ARROW_ENABLED)) {
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_ARROW_ENABLED)) {
             addToToolBar(toolbar, buildLineArrowAnnotationPropertiesToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_RECTANGLE_ENABLED)) {
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_RECTANGLE_ENABLED)) {
             addToToolBar(toolbar, buildSquareAnnotationPropertiesToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_CIRCLE_ENABLED)) {
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_CIRCLE_ENABLED)) {
             addToToolBar(toolbar, buildCircleAnnotationPropertiesToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_INK_ENABLED)) {
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_INK_ENABLED)) {
             addToToolBar(toolbar, buildInkAnnotationPropertiesToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_FREE_TEXT_ENABLED)) {
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_FREE_TEXT_ENABLED)) {
             addToToolBar(toolbar, buildFreeTextAnnotationPropertiesToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_TEXT_ENABLED)) {
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_TEXT_ENABLED)) {
             addToToolBar(toolbar, buildTextAnnotationPropertiesToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_LINK_ENABLED)) {
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_LINK_ENABLED)) {
             addToToolBar(toolbar, buildLinkAnnotationPropertiesToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_ANNOTATION_EDITING_MODE_ENABLED)) {
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_EDITING_MODE_ENABLED)) {
             toolbar.addSeparator();
             addToToolBar(toolbar, buildAnnotationEditingModeToolButton(iconSize));
         }
@@ -2027,7 +2034,7 @@ public class SwingViewBuilder {
 
         // apply previously set divider location, default is -1
         int dividerLocation = propertiesManager.getPreferences().getInt(
-                PropertiesManager.PROPERTY_DIVIDER_LOCATION, 260);
+                ViewerPropertiesManager.PROPERTY_DIVIDER_LOCATION, 260);
         splitpane.setDividerLocation(dividerLocation);
 
         // Add the split pan component to the view controller so that it can
@@ -2047,43 +2054,43 @@ public class SwingViewBuilder {
 
         // Build the main set of tabs based on the property file configuration
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_BOOKMARKS)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_BOOKMARKS)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.bookmarks.tab.title"),
                     buildOutlineComponents());
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ATTACHMENTS)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_ATTACHMENTS)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.attachments.tab.title"),
                     buildAttachmentPanel());
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_SEARCH)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_SEARCH)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.search.tab.title"),
                     buildSearchPanel());
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_THUMBNAILS)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_THUMBNAILS)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.thumbs.tab.title"),
                     buildThumbsPanel());
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_LAYERS)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_LAYERS)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.layers.tab.title"),
                     buildLayersComponents());
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_SIGNATURES)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_SIGNATURES)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.signatures.tab.title"),
                     buildSignatureComponents());
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.annotation.tab.title"),
                     buildAnnotationPanel());
@@ -2152,14 +2159,14 @@ public class SwingViewBuilder {
         AnnotationPanel annotationPanel = new AnnotationPanel(viewerController);
         // build the comments panel
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_MARKUP)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_MARKUP)) {
             MarkupAnnotationPanel markupAnnotationPanel = buildMarkupAnnotationPanel();
             annotationPanel.addMarkupAnnotationPanel(markupAnnotationPanel,
                     messageBundle.getString("viewer.utilityPane.markupAnnotation.title"));
         }
         // build the destinations panel
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_DESTINATIONS)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_DESTINATIONS)) {
             DestinationsPanel destinationPanel = buildDestinationsPanel();
             annotationPanel.addDestinationPanel(destinationPanel,
                     messageBundle.getString("viewer.utilityPane.destinations.title"));
@@ -2196,10 +2203,10 @@ public class SwingViewBuilder {
     public JPanel buildStatusPanel() {
         // check to see if the status bars should be built.
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_STATUSBAR)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_STATUSBAR)) {
             JPanel statusPanel = new JPanel(new BorderLayout());
             if (propertiesManager.checkAndStoreBooleanProperty(
-                    PropertiesManager.PROPERTY_SHOW_STATUSBAR_STATUSLABEL)) {
+                    ViewerPropertiesManager.PROPERTY_SHOW_STATUSBAR_STATUSLABEL)) {
                 JPanel pgPanel = new JPanel();
                 JLabel lbl = new JLabel(" ");
                 lbl.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0)); // So text isn't at the very edge
@@ -2214,18 +2221,18 @@ public class SwingViewBuilder {
             // Only add actual buttons to the view panel if requested by the properties file
             // Regardless we'll add the parent JPanel, to preserve the same layout behaviour
             if (propertiesManager.checkAndStoreBooleanProperty(
-                    PropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE)) {
+                    ViewerPropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE)) {
                 if (propertiesManager.checkAndStoreBooleanProperty(
-                        PropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE_SINGLE))
+                        ViewerPropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE_SINGLE))
                     viewPanel.add(buildPageViewSinglePageNonConToggleButton());
                 if (propertiesManager.checkAndStoreBooleanProperty(
-                        PropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE_SINGLE_CONTINUOUS))
+                        ViewerPropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE_SINGLE_CONTINUOUS))
                     viewPanel.add(buildPageViewSinglePageConToggleButton());
                 if (propertiesManager.checkAndStoreBooleanProperty(
-                        PropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE_DOUBLE))
+                        ViewerPropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE_DOUBLE))
                     viewPanel.add(buildPageViewFacingPageNonConToggleButton());
                 if (propertiesManager.checkAndStoreBooleanProperty(
-                        PropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE_DOUBLE_CONTINUOUS))
+                        ViewerPropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE_DOUBLE_CONTINUOUS))
                     viewPanel.add(buildPageViewFacingPageConToggleButton());
             }
             statusPanel.add(viewPanel, BorderLayout.CENTER);
@@ -2432,7 +2439,7 @@ public class SwingViewBuilder {
     /**
      * Utility method for creating a menu item.
      *
-     * @param text display text for the menu item
+     * @param text  display text for the menu item
      * @param accel accelerator key
      * @return menu item complete with text and action listener
      */
@@ -2449,7 +2456,7 @@ public class SwingViewBuilder {
      * @param text      display text for the menu item
      * @param imageName display image for the menu item
      * @param imageSize size of the image.
-     * @param accel accelerator key
+     * @param accel     accelerator key
      * @return menu item complete with text, image and action listener
      */
     protected JMenuItem makeMenuItem(String text, String imageName,
@@ -2498,42 +2505,43 @@ public class SwingViewBuilder {
      */
     protected static void doubleCheckPropertiesManager() {
         if (propertiesManager == null) {
-            propertiesManager = PropertiesManager.getInstance();
+            propertiesManager = ViewerPropertiesManager.getInstance();
         }
     }
 
     /**
      * Method to attempt to override the system properties with various values form the preferences class.
+     *
      * @param propertiesManager current properties manager.
      */
-    protected void overrideHighlightColor(PropertiesManager propertiesManager) {
+    protected void overrideHighlightColor(ViewerPropertiesManager propertiesManager) {
 
         Preferences preferences = propertiesManager.getPreferences();
 
         // apply text selection and highlight colors from preferences.
         Page.highlightColor = new Color(preferences.getInt(
-                PropertiesManager.PROPERTY_TEXT_HIGHLIGHT_COLOR, Page.highlightColor.getRGB()));
+                ViewerPropertiesManager.PROPERTY_TEXT_HIGHLIGHT_COLOR, Page.highlightColor.getRGB()));
         Page.selectionColor = new Color(preferences.getInt(
-                PropertiesManager.PROPERTY_TEXT_SELECTION_COLOR, Page.selectionColor.getRGB()));
+                ViewerPropertiesManager.PROPERTY_TEXT_SELECTION_COLOR, Page.selectionColor.getRGB()));
 
         // page view settings.
         PageViewDecorator.pageShadowColor = new Color(preferences.getInt(
-                PropertiesManager.PROPERTY_PAGE_VIEW_SHADOW_COLOR, PageViewDecorator.pageShadowColor.getRGB()));
+                ViewerPropertiesManager.PROPERTY_PAGE_VIEW_SHADOW_COLOR, PageViewDecorator.pageShadowColor.getRGB()));
         PageViewDecorator.pageColor = new Color(preferences.getInt(
-                PropertiesManager.PROPERTY_PAGE_VIEW_PAPER_COLOR, PageViewDecorator.pageColor.getRGB()));
+                ViewerPropertiesManager.PROPERTY_PAGE_VIEW_PAPER_COLOR, PageViewDecorator.pageColor.getRGB()));
         PageViewDecorator.pageBorderColor = new Color(preferences.getInt(
-                PropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, PageViewDecorator.pageBorderColor.getRGB()));
+                ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, PageViewDecorator.pageBorderColor.getRGB()));
         AbstractDocumentView.backgroundColour = new Color(preferences.getInt(
-                PropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, AbstractDocumentView.backgroundColour.getRGB()));
+                ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, AbstractDocumentView.backgroundColour.getRGB()));
 
         // image reference type.
         ImageReferenceFactory.imageReferenceType = ImageReferenceFactory.getImageReferenceType(
-                preferences.get(PropertiesManager.PROPERTY_IMAGING_REFERENCE_TYPE, "default"));
+                preferences.get(ViewerPropertiesManager.PROPERTY_IMAGING_REFERENCE_TYPE, "default"));
 
         // advanced reference types.
-        Library.commonPoolThreads = preferences.getInt(PropertiesManager.PROPERTY_COMMON_THREAD_COUNT, Library.commonPoolThreads);
-        Library.imagePoolThreads = preferences.getInt(PropertiesManager.PROPERTY_IMAGE_PROXY_THREAD_COUNT, Library.imagePoolThreads);
-        ImageReference.useProxy = preferences.getBoolean(PropertiesManager.PROPERTY_IMAGE_PROXY_ENABLED, ImageReference.useProxy);
+        Library.commonPoolThreads = preferences.getInt(ViewerPropertiesManager.PROPERTY_COMMON_THREAD_COUNT, Library.commonPoolThreads);
+        Library.imagePoolThreads = preferences.getInt(ViewerPropertiesManager.PROPERTY_IMAGE_PROXY_THREAD_COUNT, Library.imagePoolThreads);
+        ImageReference.useProxy = preferences.getBoolean(ViewerPropertiesManager.PROPERTY_IMAGE_PROXY_ENABLED, ImageReference.useProxy);
 
     }
 
