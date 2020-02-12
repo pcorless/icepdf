@@ -256,6 +256,9 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             setBounds(x, y, bounds.width, bounds.height);
         }
         if (getParent() != null) getParent().repaint();
+        if (aFlag) {
+            textArea.requestFocusInWindow();
+        }
     }
 
     @Override
@@ -450,7 +453,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         buildContextMenu();
     }
 
-    public void setBoudsRelativeToParent(int x, int y, AffineTransform pageInverseTransform) {
+    public void setBoundsRelativeToParent(int x, int y, AffineTransform pageInverseTransform) {
         Rectangle pageBounds = pageViewComponent.getBounds();
         // position the new popup on the icon center.
         Rectangle bBox2 = new Rectangle(x, y,
@@ -585,7 +588,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (hasFocus()) {
-                    setFontSize(getFontSize() + 1);
+                    changeFontSize(1);
                 }
             }
         });
@@ -609,7 +612,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (hasFocus()) {
-                    setFontSize(getFontSize() - 1);
+                    changeFontSize(-1);
                 }
             }
         });
@@ -618,8 +621,13 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
     @Override
     public void mouseWheelMoved(MouseWheelEvent e) {
-        if (hasFocus()) {
-            setFontSize(getFontSize() - e.getWheelRotation());
+        if (hasFocus() || textArea.hasFocus()) {
+            if (findComponentAt(e.getPoint()) == textArea) {
+                float newFontSize = textArea.getFont().getSize() - e.getWheelRotation();
+                textArea.setFont(textArea.getFont().deriveFont(newFontSize));
+            } else {
+                changeFontSize(-e.getWheelRotation());
+            }
         }
     }
 
@@ -1117,6 +1125,17 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         }
 
     }
+
+    public void changeFontSize(float changeValue) {
+        final Font areaFont = textArea.getFont();
+        final Font titleFont = titleLabel.getFont();
+        final Font creationFont = creationLabel.getFont();
+        textArea.setFont(areaFont.deriveFont(areaFont.getSize() + changeValue));
+        titleLabel.setFont(titleFont.deriveFont(titleFont.getSize() + changeValue));
+        creationLabel.setFont(creationFont.deriveFont(creationFont.getSize() + changeValue));
+
+    }
+
 
     public void setFontSize(float size) {
         Font font = textArea.getFont().deriveFont(size);
