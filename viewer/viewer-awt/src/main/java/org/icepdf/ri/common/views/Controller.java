@@ -21,7 +21,7 @@ import org.icepdf.ri.common.NameTreeNode;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.WindowManagementCallback;
 import org.icepdf.ri.common.utility.outline.OutlineItemTreeNode;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import java.awt.*;
 import java.beans.PropertyChangeListener;
@@ -99,7 +99,7 @@ public interface Controller extends PropertyChangeListener {
      *
      * @return currently properties manager instance.
      */
-    PropertiesManager getPropertiesManager();
+    ViewerPropertiesManager getPropertiesManager();
 
     /**
      * Show tabbed pane interface for annotation properties.

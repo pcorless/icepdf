@@ -19,7 +19,7 @@ import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.ColorChooserButton;
 import org.icepdf.ri.common.DragDropColorList;
 import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -58,7 +58,7 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
     private SwingController swingController;
     private Preferences preferences;
 
-    public AnnotationPreferencesPanel(SwingController controller, PropertiesManager propertiesManager,
+    public AnnotationPreferencesPanel(SwingController controller, ViewerPropertiesManager propertiesManager,
                                       ResourceBundle messageBundle) {
 
         this.swingController = controller;
@@ -101,7 +101,7 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
                 "viewer.dialog.viewerPreferences.section.annotations.recent.colors.button"));
         resetResentColorsButton.addActionListener(e -> {
             // clear the preferences for recent colours.
-            preferences.put(PropertiesManager.PROPERTY_ANNOTATION_RECENT_COLORS, "");
+            preferences.put(ViewerPropertiesManager.PROPERTY_ANNOTATION_RECENT_COLORS, "");
             // rebuild the annotation drop down panels.
             firePropertyChange(PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE, null, true);
         });

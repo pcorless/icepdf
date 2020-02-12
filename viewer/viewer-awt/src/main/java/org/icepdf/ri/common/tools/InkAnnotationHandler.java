@@ -29,7 +29,7 @@ import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -136,8 +136,8 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
     }
 
     protected void checkAndApplyPreferences() {
-        inkColor = new Color(preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_INK_COLOR, inkColor.getRGB()));
-        opacity = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_INK_OPACITY, opacity);
+        inkColor = new Color(preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_COLOR, inkColor.getRGB()));
+        opacity = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_OPACITY, opacity);
     }
 
     public void mouseReleased(MouseEvent e) {
@@ -191,13 +191,13 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
 
         // associate popup to location
         PopupAnnotationComponent popupAnnotationComponent = comp.getPopupAnnotationComponent();
-        popupAnnotationComponent.setBoudsRelativeToParent(
+        popupAnnotationComponent.setBoundsRelativeToParent(
                 bBox.x + (bBox.width / 2), bBox.y + (bBox.height / 2), pageTransform);
         popupAnnotationComponent.setVisible(false);
         popupAnnotationComponent.getAnnotation().setOpen(false);
 
         // set the annotation tool to he select tool
-        if (preferences.getBoolean(PropertiesManager.PROPERTY_ANNOTATION_INK_SELECTION_ENABLED, false)) {
+        if (preferences.getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_SELECTION_ENABLED, false)) {
             documentViewController.getParentController().setDocumentToolMode(
                     DocumentViewModel.DISPLAY_TOOL_SELECTION);
         }

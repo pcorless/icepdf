@@ -177,7 +177,8 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
                 progressLabel.setVisible(true);
                 progressBar.setVisible(true);
                 // start a new verification task
-                new VerifyAllSignaturesTask(controller, this, messageBundle).execute();
+                workerTask = new VerifyAllSignaturesTask(controller, this, messageBundle);
+                workerTask.execute();
             }
         }
     }
@@ -199,7 +200,7 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
                 // update the dialog and end the task
             } catch (Exception e) {
                 logger.log(Level.FINER, "Error verifying signature.", e);
-                }
+            }
             // repaint the view container
             validate();
         }

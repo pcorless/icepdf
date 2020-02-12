@@ -18,7 +18,7 @@ package org.icepdf.ri.common.tools;
 import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import java.awt.*;
 
@@ -45,8 +45,8 @@ public class UnderLineAnnotationHandler extends HighLightAnnotationHandler {
 
     protected void checkAndApplyPreferences() {
         Color color = null;
-        if (preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_COLOR, -1) != -1) {
-            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_COLOR, 0);
+        if (preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_COLOR, -1) != -1) {
+            int rgb = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_COLOR, 0);
             color = new Color(rgb);
         }
         // apply the settings or system property base colour for the given subtype.
@@ -56,6 +56,6 @@ public class UnderLineAnnotationHandler extends HighLightAnnotationHandler {
             annotation.setColor(color);
             annotation.setTextMarkupColor(color);
         }
-        annotation.setOpacity(preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_OPACITY, 255));
+        annotation.setOpacity(preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_OPACITY, 255));
     }
 }
