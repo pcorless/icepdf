@@ -17,7 +17,7 @@ package org.icepdf.ri.common.preferences;
 
 import org.icepdf.ri.common.EscapeJDialog;
 import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -64,39 +64,39 @@ public class PreferencesDialog extends EscapeJDialog {
         propertiesTabbedPane = new JTabbedPane();
         propertiesTabbedPane.setAlignmentY(JPanel.TOP_ALIGNMENT);
 
-        PropertiesManager propertiesManager = PropertiesManager.getInstance();
+        ViewerPropertiesManager propertiesManager = ViewerPropertiesManager.getInstance();
 
         // build the general preferences tab
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_PREFERENCES_GENERAL)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_GENERAL)) {
             propertiesTabbedPane.addTab(
                     messageBundle.getString("viewer.dialog.viewerPreferences.section.general.title"),
                     new GeneralPreferencesPanel(controller, propertiesManager, messageBundle));
         }
         // build the annotation preferences tab
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_PREFERENCES_ANNOTATIONS)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_ANNOTATIONS)) {
             propertiesTabbedPane.addTab(
                     messageBundle.getString("viewer.dialog.viewerPreferences.section.annotations.title"),
                     new AnnotationPreferencesPanel(controller, propertiesManager, messageBundle));
         }
         // build the imaging preferences tab
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_PREFERENCES_IMAGING)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_IMAGING)) {
             propertiesTabbedPane.addTab(
                     messageBundle.getString("viewer.dialog.viewerPreferences.section.imaging.title"),
                     new ImagingPreferencesPanel(controller, propertiesManager, messageBundle));
         }
         // build the fonts preferences tab
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_PREFERENCES_FONTS)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_FONTS)) {
             propertiesTabbedPane.addTab(
                     messageBundle.getString("viewer.dialog.viewerPreferences.section.fonts.title"),
                     new FontsPreferencesPanel(controller, propertiesManager, messageBundle));
         }
         // build the advanced preferences tab
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_PREFERENCES_ADVANCED)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_ADVANCED)) {
             propertiesTabbedPane.addTab(
                     messageBundle.getString("viewer.dialog.viewerPreferences.section.advanced.title"),
                     new AdvancedPreferencesPanel(controller, propertiesManager, messageBundle));
@@ -129,15 +129,15 @@ public class PreferencesDialog extends EscapeJDialog {
      * @param selectedPreference preference tab to show by default.
      */
     public void setSelectedPreference(final String selectedPreference) {
-        if (PropertiesManager.PROPERTY_SHOW_PREFERENCES_GENERAL.equals(selectedPreference)) {
+        if (ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_GENERAL.equals(selectedPreference)) {
             propertiesTabbedPane.setSelectedIndex(0);
-        } else if (PropertiesManager.PROPERTY_SHOW_PREFERENCES_ANNOTATIONS.equals(selectedPreference)) {
+        } else if (ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_ANNOTATIONS.equals(selectedPreference)) {
             propertiesTabbedPane.setSelectedIndex(1);
-        } else if (PropertiesManager.PROPERTY_SHOW_PREFERENCES_IMAGING.equals(selectedPreference)) {
+        } else if (ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_IMAGING.equals(selectedPreference)) {
             propertiesTabbedPane.setSelectedIndex(2);
-        } else if (PropertiesManager.PROPERTY_SHOW_PREFERENCES_FONTS.equals(selectedPreference)) {
+        } else if (ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_FONTS.equals(selectedPreference)) {
             propertiesTabbedPane.setSelectedIndex(3);
-        } else if (PropertiesManager.PROPERTY_SHOW_PREFERENCES_ADVANCED.equals(selectedPreference)) {
+        } else if (ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_ADVANCED.equals(selectedPreference)) {
             propertiesTabbedPane.setSelectedIndex(4);
         } else {
             propertiesTabbedPane.setSelectedIndex(0);

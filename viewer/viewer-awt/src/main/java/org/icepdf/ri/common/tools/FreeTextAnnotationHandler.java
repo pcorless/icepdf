@@ -26,7 +26,7 @@ import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 import org.icepdf.ri.common.views.annotations.FreeTextAnnotationComponent;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -146,7 +146,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
         documentViewController.addNewAnnotation(comp);
 
         // set the annotation tool to he select tool
-        if (setSelectionTool && preferences.getBoolean(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SELECTION_ENABLED, false)) {
+        if (setSelectionTool && preferences.getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SELECTION_ENABLED, false)) {
             documentViewController.getParentController().setDocumentToolMode(DocumentViewModel.DISPLAY_TOOL_SELECTION);
         }
 
@@ -162,28 +162,28 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
 
     protected void checkAndApplyPreferences() {
         // apply free text colour
-        if (preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_COLOR, -1) != -1) {
-            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_COLOR, 0);
+        if (preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_COLOR, -1) != -1) {
+            int rgb = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_COLOR, 0);
             annotation.setFontColor(new Color(rgb));
         }
         // apply fill colour
-        if (preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_FILL_COLOR, -1) != -1) {
-            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_FILL_COLOR, 0);
+        if (preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_FILL_COLOR, -1) != -1) {
+            int rgb = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_FILL_COLOR, 0);
             annotation.setFillColor(new Color(rgb));
         }
         // apply border colour
-        if (preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_BORDER_COLOR, -1) != -1) {
-            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_BORDER_COLOR, 0);
+        if (preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_BORDER_COLOR, -1) != -1) {
+            int rgb = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_BORDER_COLOR, 0);
             annotation.setColor(new Color(rgb));
         }
         // font
-        String fontName = preferences.get(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_FONT, "Helvetica");
+        String fontName = preferences.get(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_FONT, "Helvetica");
         annotation.setFontName(fontName);
         // apply font size
-        int fontSize = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SIZE, FreeTextAnnotation.defaultFontSize);
+        int fontSize = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SIZE, FreeTextAnnotation.defaultFontSize);
         annotation.setFontSize(fontSize);
         // opacity
-        int opacity = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_OPACITY, 255);
+        int opacity = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_OPACITY, 255);
         annotation.setOpacity(opacity);
 
     }
