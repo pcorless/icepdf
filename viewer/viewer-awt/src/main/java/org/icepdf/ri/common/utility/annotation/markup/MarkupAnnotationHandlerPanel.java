@@ -275,15 +275,15 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
                 progressLabel.setVisible(true);
                 progressBar.setVisible(true);
                 progressBar.setMaximum(numberOfPages);
-
-                new FindMarkupAnnotationTask.Builder(this, controller, messageBundle)
+                workerTask = new FindMarkupAnnotationTask.Builder(this, controller, messageBundle)
                         .setSearchPattern(searchPattern)
                         .setSortType(sortType)
                         .setFilterType(filterType)
                         .setFilterAuthor(filterAuthor)
                         .setFilterColor(filterColor)
                         .setRegex(isRegex)
-                        .setCaseSensitive(isCaseSensitive).build().execute();
+                        .setCaseSensitive(isCaseSensitive).build();
+                workerTask.execute();
             }
         }
     }
