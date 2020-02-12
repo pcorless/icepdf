@@ -275,15 +275,15 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
                 progressLabel.setVisible(true);
                 progressBar.setVisible(true);
                 progressBar.setMaximum(numberOfPages);
-
-                new FindMarkupAnnotationTask.Builder(this, controller, messageBundle)
+                workerTask = new FindMarkupAnnotationTask.Builder(this, controller, messageBundle)
                         .setSearchPattern(searchPattern)
                         .setSortType(sortType)
                         .setFilterType(filterType)
                         .setFilterAuthor(filterAuthor)
                         .setFilterColor(filterColor)
                         .setRegex(isRegex)
-                        .setCaseSensitive(isCaseSensitive).build().execute();
+                        .setCaseSensitive(isCaseSensitive).build();
+                workerTask.execute();
             }
         }
     }
@@ -324,7 +324,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
         if (node instanceof AnnotationTreeNode) {
             AnnotationTreeNode formNode = (AnnotationTreeNode) node;
             Annotation annotation = formNode.getAnnotation();
-            PageComponentSelector.SelectAnnotationComponent(controller, annotation, false);
+            PageComponentSelector.SelectAnnotationComponent(controller, annotation, false, false);
         }
         // return focus so that dropDownArrowButton keys will work on list
         tree.requestFocus();

@@ -31,7 +31,7 @@ import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -224,13 +224,13 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
 
         // associate popup to location
         PopupAnnotationComponent popupAnnotationComponent = comp.getPopupAnnotationComponent();
-        popupAnnotationComponent.setBoudsRelativeToParent(
+        popupAnnotationComponent.setBoundsRelativeToParent(
                 bbox.x + (bbox.width / 2), bbox.y + (bbox.height / 2), pageTransform);
         popupAnnotationComponent.setVisible(false);
         popupAnnotationComponent.getAnnotation().setOpen(false);
 
         // set the annotation tool to he select tool
-        if (preferences.getBoolean(PropertiesManager.PROPERTY_ANNOTATION_LINE_SELECTION_ENABLED, false)) {
+        if (preferences.getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_SELECTION_ENABLED, false)) {
             documentViewController.getParentController().setDocumentToolMode(
                     DocumentViewModel.DISPLAY_TOOL_SELECTION);
         }
@@ -241,10 +241,10 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
     }
 
     protected void checkAndApplyPreferences() {
-        lineColor = new Color(preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_LINE_COLOR, lineColor.getRGB()));
-        internalColor = new Color(preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_LINE_FILL_COLOR,
+        lineColor = new Color(preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_COLOR, lineColor.getRGB()));
+        internalColor = new Color(preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_FILL_COLOR,
                 internalColor.getRGB()));
-        opacity = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_LINE_OPACITY, opacity);
+        opacity = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_OPACITY, opacity);
     }
 
     public void mouseDragged(MouseEvent e) {

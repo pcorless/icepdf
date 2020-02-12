@@ -22,7 +22,7 @@ import org.icepdf.ri.common.MutableDocument;
 import org.icepdf.ri.common.PageThumbnailComponent;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.*;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -37,7 +37,7 @@ import java.awt.*;
 @SuppressWarnings("serial")
 public class ThumbnailsPanel extends JPanel implements MutableDocument {
 
-    protected PropertiesManager propertiesManager;
+    protected ViewerPropertiesManager propertiesManager;
     protected float thumbNailZoom = 0.1f; // default zoom is 10%
 
     protected static final int MAX_PAGE_SIZE_READ_AHEAD = 10;
@@ -45,13 +45,13 @@ public class ThumbnailsPanel extends JPanel implements MutableDocument {
     private Controller controller;
 
     public ThumbnailsPanel(Controller controller,
-                           PropertiesManager propertiesManager) {
+                           ViewerPropertiesManager propertiesManager) {
         this.controller = controller;
         this.propertiesManager = propertiesManager;
         // assign thumbnail zoom from propertiesManager if available
         if (propertiesManager != null) {
             thumbNailZoom = propertiesManager.getPreferences().getFloat(
-                    PropertiesManager.PROPERTY_UTILITYPANE_THUMBNAILS_ZOOM, 1.0f);
+                    ViewerPropertiesManager.PROPERTY_UTILITYPANE_THUMBNAILS_ZOOM, 1.0f);
         }
     }
 
