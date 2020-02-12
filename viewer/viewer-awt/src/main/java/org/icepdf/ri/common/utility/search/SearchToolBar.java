@@ -15,46 +15,47 @@
  */
 package org.icepdf.ri.common.utility.search;
 
-import org.icepdf.ri.common.DropDownButton;
 import org.icepdf.ri.common.SwingController;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.text.MessageFormat;
 import java.util.ResourceBundle;
-import java.util.prefs.Preferences;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import static org.icepdf.ri.util.ViewerPropertiesManager.*;
 
-public class SearchToolBar extends JToolBar implements ActionListener {
+public class SearchToolBar extends JToolBar implements ActionListener, BaseSearchModel {
 
     private JLabel searchLabel;
     private JTextField searchTextField;
-    private DropDownButton searchFilterDropDownButton;
     private JButton nextSearchResult;
     private JButton previousSearchButton;
 
+    private SearchFilterButton searchFilterButton;
     private JMenuItem advancedSearchMenuItem;
-    private JCheckBoxMenuItem caseSensitiveCheckbox;
-    private JCheckBoxMenuItem wholeWordCheckbox;
-    private JCheckBoxMenuItem commentsCheckbox;
 
     private SimpleSearchHelper simpleSearchHelper;
+    private SearchTextTask searchTextTask;
     private SwingController controller;
-    private Preferences preferences;
     private ResourceBundle messageBundle;
 
     private String lastSearchPhrase;
 
     public SearchToolBar(SwingController controller,
                          String name,
-                         DropDownButton searchFilterDropDownButton,
                          JButton previousSearchButton,
                          JButton nextSearchResult) {
         super(name);
         this.controller = controller;
 
-        this.searchFilterDropDownButton = searchFilterDropDownButton;
         this.nextSearchResult = nextSearchResult;
         this.previousSearchButton = previousSearchButton;
 
@@ -71,21 +72,14 @@ public class SearchToolBar extends JToolBar implements ActionListener {
         String searchText = searchTextField.getText();
         if (!searchText.equals(lastSearchPhrase)) {
             lastSearchPhrase = searchText;
-            createNewSearch();
         }
 
         if (source == advancedSearchMenuItem) {
             controller.showSearchPanel(lastSearchPhrase);
-        } else if (source == nextSearchResult) {
+        } else if (source == nextSearchResult && simpleSearchHelper != null) {
             simpleSearchHelper.nextResult();
-        } else if (source == previousSearchButton) {
+        } else if (source == previousSearchButton && simpleSearchHelper != null) {
             simpleSearchHelper.previousResult();
-        } else if (source == wholeWordCheckbox) {
-            preferences.putBoolean(PROPERTY_QUICK_SEARCH_WHOLE_WORDS_ENABLED, wholeWordCheckbox.isSelected());
-        } else if (source == caseSensitiveCheckbox) {
-            preferences.putBoolean(PROPERTY_QUICK_SEARCH_CASE_SENSITIVE_ENABLED, caseSensitiveCheckbox.isSelected());
-        } else if (source == commentsCheckbox) {
-            preferences.putBoolean(PROPERTY_QUICK_SEARCH_SEARCH_COMMENTS_ENABLED, commentsCheckbox.isSelected());
         }
     }
 
@@ -93,7 +87,7 @@ public class SearchToolBar extends JToolBar implements ActionListener {
         super.setEnabled(enabled);
         searchLabel.setEnabled(enabled);
         searchTextField.setEnabled(enabled);
-        searchFilterDropDownButton.setEnabled(enabled);
+        searchFilterButton.setEnabled(enabled);
         nextSearchResult.setEnabled(enabled);
         previousSearchButton.setEnabled(enabled);
     }
@@ -104,11 +98,42 @@ public class SearchToolBar extends JToolBar implements ActionListener {
             simpleSearchHelper.dispose();
         }
 
-        SimpleSearchHelper.Builder builder =
-                new SimpleSearchHelper.Builder(controller, searchTextField.getText());
-        simpleSearchHelper = builder.setCaseSensitive(caseSensitiveCheckbox.isSelected())
-                .setWholeWord(wholeWordCheckbox.isSelected())
-                .setComments(commentsCheckbox.isSelected()).build();
+        simpleSearchHelper = searchFilterButton.getSimpleSearchHelper(controller, searchTextField.getText());
+
+    }
+
+    private void createNewFullSearch() {
+        if (searchTextTask != null && !searchTextTask.isCancelled() && !searchTextTask.isDone()) {
+            searchTextTask.cancel(true);
+        }
+        // reset high light states.
+        createNewSearch();
+        controller.getDocumentSearchController().clearAllSearchHighlight();
+        controller.getDocumentViewController().getViewContainer().repaint();
+
+        searchTextField.setForeground(Color.BLACK);
+        if (!searchTextField.getText().isEmpty()) {
+            // do a quick check to make sure we have a valid expression.
+            if (searchFilterButton.isRegex()) {
+                try {
+                    Pattern.compile(searchTextField.getText());
+                } catch (PatternSyntaxException e) {
+                    searchTextField.setForeground(Color.RED);
+                    return;
+                }
+
+            }
+            searchTextTask = searchFilterButton.getSearchTask(this, controller, searchTextField.getText());
+            searchFilterButton.setEnabled(false);
+
+            // start the task and the timer
+            searchTextTask.execute();
+        }
+    }
+
+    @Override
+    public void notifySearchFiltersChanged() {
+        createNewFullSearch();
     }
 
     private void buildGui() {
@@ -117,13 +142,35 @@ public class SearchToolBar extends JToolBar implements ActionListener {
         searchTextField = new JTextField("", 10);
         searchTextField.setToolTipText(messageBundle.getString("viewer.toolbar.tool.search.input.tooltip"));
         searchTextField.addActionListener(this);
+        searchTextField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent documentEvent) {
+                doUpdate();
+            }
 
-        // build out the base structure
-        this.add(searchLabel);
-        this.add(searchTextField);
-        this.add(searchFilterDropDownButton);
-        this.add(previousSearchButton);
-        this.add(nextSearchResult);
+            @Override
+            public void removeUpdate(DocumentEvent documentEvent) {
+                doUpdate();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent documentEvent) {
+                doUpdate();
+            }
+
+            private void doUpdate() {
+                createNewFullSearch();
+            }
+        });
+        searchTextField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    nextSearchResult.doClick();
+                }
+            }
+        });
+
 
         // attach base listeners.
         nextSearchResult.addActionListener(this);
@@ -131,31 +178,66 @@ public class SearchToolBar extends JToolBar implements ActionListener {
 
         // build out the filter menuItems and hook up preference api.
 
-        // apply default preferences
-        preferences = controller.getPropertiesManager().getPreferences();
-        boolean isWholeWord = preferences.getBoolean(PROPERTY_QUICK_SEARCH_WHOLE_WORDS_ENABLED, false);
-        boolean isCaseSensitive = preferences.getBoolean(PROPERTY_QUICK_SEARCH_CASE_SENSITIVE_ENABLED, false);
-        boolean isComments = preferences.getBoolean(PROPERTY_QUICK_SEARCH_SEARCH_COMMENTS_ENABLED, false);
 
         advancedSearchMenuItem = new JMenuItem(messageBundle.getString(
                 "viewer.toolbar.search.advancedSearch.label"));
         advancedSearchMenuItem.addActionListener(this);
-        wholeWordCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
-                "viewer.toolbar.search.wholeWordCheckbox.label"), isWholeWord);
-        wholeWordCheckbox.addActionListener(this);
-        caseSensitiveCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
-                "viewer.toolbar.search.caseSensitiveCheckbox.label"), isCaseSensitive);
-        caseSensitiveCheckbox.addActionListener(this);
-        commentsCheckbox = new JCheckBoxMenuItem(messageBundle.getString(
-                "viewer.toolbar.search.comments.label"), isComments);
-        commentsCheckbox.addActionListener(this);
 
-        searchFilterDropDownButton.add(advancedSearchMenuItem);
-        commentsCheckbox.addActionListener(this);
-        searchFilterDropDownButton.addSeparator();
-        searchFilterDropDownButton.add(wholeWordCheckbox);
-        searchFilterDropDownButton.add(caseSensitiveCheckbox);
-        searchFilterDropDownButton.add(commentsCheckbox);
+        this.searchFilterButton = new SearchFilterButton(this, controller, "viewer.toolbar.tool.search.filter.tooltip");
+        searchFilterButton.add(advancedSearchMenuItem, 0);
+
+        // build out the base structure
+        this.add(searchLabel);
+        this.add(searchTextField);
+        this.add(searchFilterButton);
+        this.add(previousSearchButton);
+        this.add(nextSearchResult);
     }
 
+    public void focusTextField() {
+        if (searchTextField != null) {
+            searchTextField.requestFocusInWindow();
+        }
+    }
+
+    @Override
+    public void updateProgressControls(String message) {
+        if (searchTextTask.isCancelled() || searchTextTask.isDone()) {
+            searchFilterButton.setEnabled(true);
+        }
+    }
+
+    @Override
+    public void addFoundCommentEntry(SearchTextTask.CommentsResult outlineResult, SearchTextTask searchTextTask) {
+    }
+
+    @Override
+    public void addFoundOutlineEntry(SearchTextTask.OutlineResult outlineResult, SearchTextTask searchTextTask) {
+
+    }
+
+    @Override
+    public void addFoundTextEntry(SearchTextTask.TextResult outlineResult, SearchTextTask searchTextTask) {
+
+    }
+
+    @Override
+    public void addFoundDestinationEntry(SearchTextTask.DestinationsResult outlineResult, SearchTextTask searchTextTask) {
+
+    }
+
+    @Override
+    public MessageFormat setupSearchingMessageForm() {
+        return null;
+    }
+
+    @Override
+    public MessageFormat setupSearchResultMessageForm() {
+        return null;
+    }
+
+    @Override
+    public MessageFormat setupSearchCompletionMessageForm() {
+        return null;
+    }
 }

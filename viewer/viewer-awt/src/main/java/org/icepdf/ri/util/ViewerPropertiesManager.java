@@ -322,8 +322,8 @@ public final class ViewerPropertiesManager {
     public static void printAllProperties() {
         try {
             Arrays.stream(preferences.keys()).forEach(key -> {
-                System.out.println(key + " -> " + preferences.get(key, ""));
-                System.out.println(key + " -> " + propertiesManager.checkAndStoreStringProperty(key, ""));
+                logger.fine(key + " -> " + preferences.get(key, ""));
+                logger.fine(key + " -> " + propertiesManager.checkAndStoreStringProperty(key, ""));
             });
         } catch (BackingStoreException e) {
             e.printStackTrace();

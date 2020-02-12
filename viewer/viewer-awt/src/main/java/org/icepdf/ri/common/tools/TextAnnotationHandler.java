@@ -208,7 +208,7 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
 
         // setup the popup so that it will show near the annotation.
         PopupAnnotationComponent popupAnnotationComponent = comp.getPopupAnnotationComponent();
-        popupAnnotationComponent.setBoudsRelativeToParent(
+        popupAnnotationComponent.setBoundsRelativeToParent(
                 e.getX() + scaledSize.width / 2,
                 e.getY() + scaledSize.height / 2,
                 pageInverseTransform);

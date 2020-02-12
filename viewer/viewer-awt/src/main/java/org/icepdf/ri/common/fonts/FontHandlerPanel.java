@@ -54,6 +54,7 @@ public class FontHandlerPanel extends AbstractWorkerPanel {
 
     @Override
     public void refreshDocumentInstance() {
+        stopWorkerTask();
         super.refreshDocumentInstance();
         // update root node's title with document's title.
         rootNodeLabel = getDocumentTitle();
@@ -69,7 +70,6 @@ public class FontHandlerPanel extends AbstractWorkerPanel {
 
         // start the task and the timer
         workerTask = new FindFontsTask(this, controller, messageBundle);
-        ;
         workerTask.execute();
 
     }
