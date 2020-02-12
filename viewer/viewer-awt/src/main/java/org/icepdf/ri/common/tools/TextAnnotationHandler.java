@@ -30,7 +30,7 @@ import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -208,7 +208,7 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
 
         // setup the popup so that it will show near the annotation.
         PopupAnnotationComponent popupAnnotationComponent = comp.getPopupAnnotationComponent();
-        popupAnnotationComponent.setBoudsRelativeToParent(
+        popupAnnotationComponent.setBoundsRelativeToParent(
                 e.getX() + scaledSize.width / 2,
                 e.getY() + scaledSize.height / 2,
                 pageInverseTransform);
@@ -216,26 +216,26 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
         popupAnnotationComponent.getAnnotation().setOpen(true);
 
         // set the annotation tool to he select tool
-        if (preferences.getBoolean(PropertiesManager.PROPERTY_ANNOTATION_TEXT_SELECTION_ENABLED, false)) {
+        if (preferences.getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_SELECTION_ENABLED, false)) {
             documentViewController.getParentController().setDocumentToolMode(
                     DocumentViewModel.DISPLAY_TOOL_SELECTION);
         }
     }
 
     protected void checkAndApplyPreferences() {
-        if (preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_TEXT_BUTTON_COLOR, -1) != -1) {
-            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_TEXT_BUTTON_COLOR, 0);
+        if (preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_BUTTON_COLOR, -1) != -1) {
+            int rgb = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_BUTTON_COLOR, 0);
             defaultFillColor = new Color(rgb);
         }
 
         if (defaultFillColor == null) {
-            if (preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_TEXT_COLOR, -1) != -1) {
-                defaultFillColor = new Color(preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_TEXT_COLOR, -1));
+            if (preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_COLOR, -1) != -1) {
+                defaultFillColor = new Color(preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_COLOR, -1));
             }
         }
         defaultIcon = preferences.get(
-                PropertiesManager.PROPERTY_ANNOTATION_TEXT_ICON, TextAnnotation.COMMENT_ICON.toString());
-        defaultOpacity = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_TEXT_OPACITY, 255);
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_ICON, TextAnnotation.COMMENT_ICON.toString());
+        defaultOpacity = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_OPACITY, 255);
     }
 
     public void mouseEntered(MouseEvent e) {

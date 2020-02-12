@@ -30,6 +30,8 @@ import java.util.ResourceBundle;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import static org.icepdf.ri.util.ViewerPropertiesManager.*;
+
 public class SearchToolBar extends JToolBar implements ActionListener, BaseSearchModel {
 
     private JLabel searchLabel;

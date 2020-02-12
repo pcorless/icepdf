@@ -17,7 +17,7 @@ package org.icepdf.ri.common;
 
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.images.Images;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import javax.swing.event.AncestorEvent;
@@ -65,8 +65,8 @@ public abstract class AbstractColorButton extends AbstractButton
         Insets insets = dropDownArrowButton.getMargin();
         dropDownArrowButton.setMargin(new Insets(insets.top, 0, insets.bottom, 0));
 
-        String imageSize = PropertiesManager.getInstance().getPreferences().get(
-                PropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE);
+        String imageSize = ViewerPropertiesManager.getInstance().getPreferences().get(
+                ViewerPropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE);
         if (imageSize.equals(Images.SIZE_LARGE)) {
             setPreferredSize(new Dimension(48, 32));
         } else if (imageSize.equals(Images.SIZE_SMALL)) {
