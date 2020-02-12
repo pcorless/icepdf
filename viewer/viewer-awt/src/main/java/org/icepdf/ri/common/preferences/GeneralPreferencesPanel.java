@@ -22,7 +22,7 @@ import org.icepdf.ri.common.utility.annotation.properties.ValueLabelItem;
 import org.icepdf.ri.common.views.AbstractDocumentView;
 import org.icepdf.ri.common.views.PageViewDecorator;
 import org.icepdf.ri.images.Images;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -57,7 +57,7 @@ public class GeneralPreferencesPanel extends JPanel implements PropertyChangeLis
 
     private JComboBox<ValueLabelItem> iconSizeComboBox;
 
-    public GeneralPreferencesPanel(SwingController controller, PropertiesManager propertiesManager,
+    public GeneralPreferencesPanel(SwingController controller, ViewerPropertiesManager propertiesManager,
                                    ResourceBundle messageBundle) {
         super(new GridBagLayout());
         setAlignmentY(JPanel.TOP_ALIGNMENT);
@@ -65,9 +65,9 @@ public class GeneralPreferencesPanel extends JPanel implements PropertyChangeLis
         preferences = propertiesManager.getPreferences();
 
         Color highlightColor = new Color(preferences.getInt(
-                PropertiesManager.PROPERTY_TEXT_HIGHLIGHT_COLOR, Page.highlightColor.getRGB()));
+                ViewerPropertiesManager.PROPERTY_TEXT_HIGHLIGHT_COLOR, Page.highlightColor.getRGB()));
         Color selectionColor = new Color(preferences.getInt(
-                PropertiesManager.PROPERTY_TEXT_SELECTION_COLOR, Page.selectionColor.getRGB()));
+                ViewerPropertiesManager.PROPERTY_TEXT_SELECTION_COLOR, Page.selectionColor.getRGB()));
 
         highlightColorChooserButton = new ColorChooserButton(highlightColor);
         highlightColorChooserButton.addPropertyChangeListener("background", this);
@@ -110,13 +110,13 @@ public class GeneralPreferencesPanel extends JPanel implements PropertyChangeLis
         // build out the page view colours
 
         Color paperShadowColor = new Color(preferences.getInt(
-                PropertiesManager.PROPERTY_PAGE_VIEW_SHADOW_COLOR, PageViewDecorator.pageShadowColor.getRGB()));
+                ViewerPropertiesManager.PROPERTY_PAGE_VIEW_SHADOW_COLOR, PageViewDecorator.pageShadowColor.getRGB()));
         Color paperColor = new Color(preferences.getInt(
-                PropertiesManager.PROPERTY_PAGE_VIEW_PAPER_COLOR, PageViewDecorator.pageColor.getRGB()));
+                ViewerPropertiesManager.PROPERTY_PAGE_VIEW_PAPER_COLOR, PageViewDecorator.pageColor.getRGB()));
         Color paperBorderColor = new Color(preferences.getInt(
-                PropertiesManager.PROPERTY_PAGE_VIEW_BORDER_COLOR, PageViewDecorator.pageBorderColor.getRGB()));
+                ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BORDER_COLOR, PageViewDecorator.pageBorderColor.getRGB()));
         Color viewBackgroundColor = new Color(preferences.getInt(
-                PropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, AbstractDocumentView.backgroundColour.getRGB()));
+                ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, AbstractDocumentView.backgroundColour.getRGB()));
 
         paperShadowColorChooserButton = new ColorChooserButton(paperShadowColor);
         paperShadowColorChooserButton.addPropertyChangeListener("background", this);
@@ -189,7 +189,7 @@ public class GeneralPreferencesPanel extends JPanel implements PropertyChangeLis
                         messageBundle.getString("viewer.dialog.viewerPreferences.section.general.iconSize.large.label"))};
         iconSizeComboBox = new JComboBox<>(sizeList);
         iconSizeComboBox.setSelectedIndex(
-                preferences.get(PropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_SMALL).equals(Images.SIZE_SMALL)
+                preferences.get(ViewerPropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_SMALL).equals(Images.SIZE_SMALL)
                         ? 0 : 1);
         iconSizeComboBox.addItemListener(this);
         constraints.anchor = GridBagConstraints.WEST;
@@ -212,7 +212,7 @@ public class GeneralPreferencesPanel extends JPanel implements PropertyChangeLis
     public void itemStateChanged(ItemEvent e) {
         Object source = e.getItemSelectable();
         if (source == iconSizeComboBox) {
-            preferences.put(PropertiesManager.PROPERTY_ICON_DEFAULT_SIZE,
+            preferences.put(ViewerPropertiesManager.PROPERTY_ICON_DEFAULT_SIZE,
                     iconSizeComboBox.getSelectedIndex() == 0 ? Images.SIZE_SMALL : Images.SIZE_LARGE);
         }
     }
@@ -222,25 +222,25 @@ public class GeneralPreferencesPanel extends JPanel implements PropertyChangeLis
         Object source = evt.getSource();
         if (source == highlightColorChooserButton) {
             Page.highlightColor = highlightColorChooserButton.getBackground();
-            preferences.putInt(PropertiesManager.PROPERTY_TEXT_HIGHLIGHT_COLOR, Page.highlightColor.getRGB());
+            preferences.putInt(ViewerPropertiesManager.PROPERTY_TEXT_HIGHLIGHT_COLOR, Page.highlightColor.getRGB());
         } else if (source == selectionColorChooserButton) {
             Page.selectionColor = selectionColorChooserButton.getBackground();
-            preferences.putInt(PropertiesManager.PROPERTY_TEXT_SELECTION_COLOR, Page.selectionColor.getRGB());
+            preferences.putInt(ViewerPropertiesManager.PROPERTY_TEXT_SELECTION_COLOR, Page.selectionColor.getRGB());
         } else if (source == paperShadowColorChooserButton) {
             PageViewDecorator.pageShadowColor = paperShadowColorChooserButton.getBackground();
-            preferences.putInt(PropertiesManager.PROPERTY_PAGE_VIEW_SHADOW_COLOR, PageViewDecorator.pageShadowColor.getRGB());
+            preferences.putInt(ViewerPropertiesManager.PROPERTY_PAGE_VIEW_SHADOW_COLOR, PageViewDecorator.pageShadowColor.getRGB());
         } else if (source == paperColorChooserButton) {
             PageViewDecorator.pageColor = paperColorChooserButton.getBackground();
-            preferences.putInt(PropertiesManager.PROPERTY_PAGE_VIEW_PAPER_COLOR, PageViewDecorator.pageColor.getRGB());
+            preferences.putInt(ViewerPropertiesManager.PROPERTY_PAGE_VIEW_PAPER_COLOR, PageViewDecorator.pageColor.getRGB());
         } else if (source == paperBorderColorChooserButton) {
             PageViewDecorator.pageBorderColor = paperBorderColorChooserButton.getBackground();
-            preferences.putInt(PropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, PageViewDecorator.pageBorderColor.getRGB());
+            preferences.putInt(ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, PageViewDecorator.pageBorderColor.getRGB());
         } else if (source == viewBackgroundColorChooserButton) {
             AbstractDocumentView.backgroundColour = viewBackgroundColorChooserButton.getBackground();
-            preferences.putInt(PropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, AbstractDocumentView.backgroundColour.getRGB());
+            preferences.putInt(ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, AbstractDocumentView.backgroundColour.getRGB());
         } else if (source == viewBackgroundColorChooserButton) {
             AbstractDocumentView.backgroundColour = viewBackgroundColorChooserButton.getBackground();
-            preferences.putInt(PropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, AbstractDocumentView.backgroundColour.getRGB());
+            preferences.putInt(ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, AbstractDocumentView.backgroundColour.getRGB());
         }
     }
 

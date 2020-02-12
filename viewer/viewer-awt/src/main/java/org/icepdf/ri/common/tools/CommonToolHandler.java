@@ -20,7 +20,7 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -56,7 +56,7 @@ public abstract class CommonToolHandler {
         this.pageViewComponent = pageViewComponent;
         this.documentViewController = documentViewController;
 
-        PropertiesManager propertiesManager = PropertiesManager.getInstance();
+        ViewerPropertiesManager propertiesManager = ViewerPropertiesManager.getInstance();
         preferences = propertiesManager.getPreferences();
     }
 

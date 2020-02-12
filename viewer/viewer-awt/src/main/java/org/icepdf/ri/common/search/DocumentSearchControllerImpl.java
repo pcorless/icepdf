@@ -188,7 +188,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             ArrayList<LineText> pageLines = pageText.getPageLines();
             if (pageLines != null) {
                 for (LineText pageLine : pageLines) {
-                    java.util.List<WordText> lineWords = pageLine.getWords();
+                    List<WordText> lineWords = pageLine.getWords();
                     // compare words against search terms.
                     String wordString;
                     WordText word;
@@ -209,12 +209,18 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
 
                         // word matches, we have to match full word hits
                         if (term.isWholeWord()) {
-                            if (wordString.equals(term.getTerms().get(searchPhraseHitCount))) {
-                                // add word to potentials
-                                searchPhraseHitCount++;
-                            }
-                            // reset the counters.
-                            else {
+                            final List<String> termList = term.getTerms();
+                            if (termList != null && termList.size() > searchPhraseHitCount) {
+                                final String hit = termList.get(searchPhraseHitCount);
+                                if (wordString.equals(hit)) {
+                                    // add word to potentials
+                                    searchPhraseHitCount++;
+                                }
+                                // reset the counters.
+                                else {
+                                    searchPhraseHitCount = 0;
+                                }
+                            } else {
                                 searchPhraseHitCount = 0;
                             }
                         } else if (term.isRegex()) {
@@ -231,12 +237,18 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                         else {
                             // found a potential hit, depends on the length
                             // of searchPhrase.
-                            if (wordString.contains(term.getTerms().get(searchPhraseHitCount))) {
-                                // add word to potentials
-                                searchPhraseHitCount++;
-                            }
-                            // reset the counters.
-                            else {
+                            final List<String> termList = term.getTerms();
+                            if (termList != null && termList.size() > searchPhraseHitCount) {
+                                final String hit = term.getTerms().get(searchPhraseHitCount);
+                                if (hit != null && wordString.contains(hit)) {
+                                    // add word to potentials
+                                    searchPhraseHitCount++;
+                                }
+                                // reset the counters.
+                                else {
+                                    searchPhraseHitCount = 0;
+                                }
+                            } else {
                                 searchPhraseHitCount = 0;
                             }
                         }
@@ -244,7 +256,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                         if (searchPhraseHitCount > 0 && searchPhraseHitCount == searchPhraseFoundCount) {
                             LineText lineText = new LineText();
                             int lineWordsSize = lineWords.size();
-                            java.util.List<WordText> hitWords = lineText.getWords();
+                            List<WordText> hitWords = lineText.getWords();
                             // add pre padding
                             int spaces = searchPhraseHitCount - 1;
                             spaces = spaces < 0 ? 0 : spaces;
@@ -314,7 +326,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                 ArrayList<LineText> pageLines = searchText.getPageLines();
                 if (pageLines != null) {
                     for (LineText pageLine : pageLines) {
-                        java.util.List<WordText> lineWords = pageLine.getWords();
+                        List<WordText> lineWords = pageLine.getWords();
                         if (lineWords != null) {
                             for (WordText word : lineWords) {
                                 if (word.isHighlighted()) {
