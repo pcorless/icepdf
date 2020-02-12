@@ -32,7 +32,7 @@ import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.PageComponentSelector;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.images.Images;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -57,7 +57,7 @@ import java.util.prefs.Preferences;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import static org.icepdf.ri.util.PropertiesManager.*;
+import static org.icepdf.ri.util.ViewerPropertiesManager.*;
 
 /**
  * This class is the GUI component for the SearchTextTask.  This panel can be
@@ -254,7 +254,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
 
         // apply default preferences
         preferences = controller.getPropertiesManager().getPreferences();
-        String iconSize = preferences.get(PropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE);
+        String iconSize = preferences.get(ViewerPropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE);
         boolean isRegex = preferences.getBoolean(PROPERTY_SEARCH_PANEL_REGEX_ENABLED, true);
         boolean isWholeWord = preferences.getBoolean(PROPERTY_SEARCH_PANEL_WHOLE_WORDS_ENABLED, false);
         boolean isCaseSensitive = preferences.getBoolean(PROPERTY_SEARCH_PANEL_CASE_SENSITIVE_ENABLED, false);

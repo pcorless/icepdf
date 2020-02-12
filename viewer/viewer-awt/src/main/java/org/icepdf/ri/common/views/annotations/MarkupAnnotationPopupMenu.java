@@ -23,7 +23,7 @@ import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.PageViewComponentImpl;
 import org.icepdf.ri.images.Images;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -72,7 +72,7 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
     }
 
     public void buildGui() {
-        PropertiesManager propertiesManager = PropertiesManager.getInstance();
+        ViewerPropertiesManager propertiesManager = ViewerPropertiesManager.getInstance();
         boolean modifyDocument = controller.havePermissionToModifyDocument();
 
         // status change commands.
@@ -99,7 +99,7 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
 
         // annotation and destination creation shortcuts.
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_ANNOTATION_MARKUP_ADD_ANNOTATIONS)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_ANNOTATION_MARKUP_ADD_ANNOTATIONS)) {
             // annotation creation menus.
             addDestinationMenuItem = new JMenuItem(
                     messageBundle.getString("viewer.utilityPane.view.selectionTool.contextMenu.addDestination.label"));
@@ -129,7 +129,7 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
         }
 
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_ANNOTATION_MARKUP_REPLY_TO)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_ANNOTATION_MARKUP_REPLY_TO)) {
             replyMenuItem = new JMenuItem(
                     messageBundle.getString("viewer.annotation.popup.reply.label"));
             // build out reply and delete
@@ -139,7 +139,7 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
         }
 
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_ANNOTATION_MARKUP_SET_STATUS)) {
+                ViewerPropertiesManager.PROPERTY_SHOW_ANNOTATION_MARKUP_SET_STATUS)) {
             // addition of set status menu
             JMenu submenu = new JMenu(
                     messageBundle.getString("viewer.annotation.popup.status.label"));
@@ -238,8 +238,8 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
         } else if (source == addFreeTextMenuItem1 ||
                 source == addFreeTextMenuItem2) {
             Point point = annotationComponent.getLocation();
-            Preferences preferences = PropertiesManager.getInstance().getPreferences();
-            int fontSize = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SIZE, 12) +
+            Preferences preferences = ViewerPropertiesManager.getInstance().getPreferences();
+            int fontSize = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SIZE, 12) +
                     (FreeTextAnnotation.INSETS / 2);
             fontSize *= controller.getDocumentViewController().getZoom();
 //            controller.setDocumentToolMode(DocumentViewModel.DISPLAY_TOOL_SELECTION);

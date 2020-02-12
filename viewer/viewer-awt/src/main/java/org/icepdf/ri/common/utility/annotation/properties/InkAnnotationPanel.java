@@ -20,7 +20,7 @@ import org.icepdf.core.pobjects.annotations.InkAnnotation;
 import org.icepdf.ri.common.RgbColorChooser;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.Controller;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -135,7 +135,7 @@ public class InkAnnotationPanel extends AnnotationPanelAdapter implements ItemLi
                 annotation.setColor(chosenColor);
 
                 // store the chosen colour
-                preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_INK_COLOR, chosenColor.getRGB());
+                preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_COLOR, chosenColor.getRGB());
 
                 // save the action state back to the document structure.
                 updateCurrentAnnotation();
@@ -146,7 +146,7 @@ public class InkAnnotationPanel extends AnnotationPanelAdapter implements ItemLi
     }
 
     public void stateChanged(ChangeEvent e) {
-        alphaSliderChange(e, annotation, PropertiesManager.PROPERTY_ANNOTATION_INK_OPACITY);
+        alphaSliderChange(e, annotation, ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_OPACITY);
     }
 
     /**

@@ -17,7 +17,7 @@ package org.icepdf.ri.common.preferences;
 
 import org.icepdf.core.pobjects.graphics.images.references.ImageReferenceFactory;
 import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -39,7 +39,7 @@ public class ImagingPreferencesPanel extends JPanel {
     private Preferences preferences;
     private JComboBox<ImageReferenceItem> imageReferenceComboBox;
 
-    public ImagingPreferencesPanel(SwingController controller, PropertiesManager propertiesManager,
+    public ImagingPreferencesPanel(SwingController controller, ViewerPropertiesManager propertiesManager,
                                    ResourceBundle messageBundle) {
 
         super(new GridBagLayout());
@@ -71,7 +71,7 @@ public class ImagingPreferencesPanel extends JPanel {
             JComboBox cb = (JComboBox) e.getSource();
             ImageReferenceItem selectedItem = (ImageReferenceItem) cb.getSelectedItem();
             ImageReferenceFactory.imageReferenceType = selectedItem.getValue();
-            preferences.put(PropertiesManager.PROPERTY_IMAGING_REFERENCE_TYPE, selectedItem.getValue().toString());
+            preferences.put(ViewerPropertiesManager.PROPERTY_IMAGING_REFERENCE_TYPE, selectedItem.getValue().toString());
         });
 
         JPanel imagingPreferencesPanel = new JPanel(new GridBagLayout());

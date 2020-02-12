@@ -18,7 +18,7 @@ package org.icepdf.os.examples.component;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingViewBuilder;
 import org.icepdf.ri.util.FontPropertiesManager;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 
@@ -44,8 +44,8 @@ public class ViewerComponentExample {
                 // read stored system font properties.
                 FontPropertiesManager.getInstance().loadOrReadSystemFonts();
 
-                PropertiesManager properties = PropertiesManager.getInstance();
-                properties.getPreferences().putFloat(PropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL, 1.25f);
+                ViewerPropertiesManager properties = ViewerPropertiesManager.getInstance();
+                properties.getPreferences().putFloat(ViewerPropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL, 1.25f);
 
                 SwingViewBuilder factory = new SwingViewBuilder(controller, properties);
 

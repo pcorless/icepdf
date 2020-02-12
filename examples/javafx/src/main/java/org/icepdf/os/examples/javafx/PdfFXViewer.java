@@ -24,7 +24,7 @@ import javafx.stage.Stage;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingViewBuilder;
 import org.icepdf.ri.util.FontPropertiesManager;
-import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -98,18 +98,18 @@ public class PdfFXViewer extends Application {
                 // read/store the font cache.
                 FontPropertiesManager.getInstance().loadOrReadSystemFonts();
 
-                PropertiesManager properties = PropertiesManager.getInstance();
-                properties.getPreferences().putFloat(PropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL, 1.25f);
-                properties.getPreferences().putBoolean(PropertiesManager.PROPERTY_SHOW_UTILITY_OPEN, false);
-                properties.getPreferences().putBoolean(PropertiesManager.PROPERTY_SHOW_UTILITY_SAVE, false);
-                properties.getPreferences().putBoolean(PropertiesManager.PROPERTY_SHOW_UTILITY_PRINT, false);
+                ViewerPropertiesManager properties = ViewerPropertiesManager.getInstance();
+                properties.getPreferences().putFloat(ViewerPropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL, 1.25f);
+                properties.getPreferences().putBoolean(ViewerPropertiesManager.PROPERTY_SHOW_UTILITY_OPEN, false);
+                properties.getPreferences().putBoolean(ViewerPropertiesManager.PROPERTY_SHOW_UTILITY_SAVE, false);
+                properties.getPreferences().putBoolean(ViewerPropertiesManager.PROPERTY_SHOW_UTILITY_PRINT, false);
                 // hide the status bar
-                properties.getPreferences().putBoolean(PropertiesManager.PROPERTY_SHOW_STATUSBAR, false);
+                properties.getPreferences().putBoolean(ViewerPropertiesManager.PROPERTY_SHOW_STATUSBAR, false);
                 // hide a few toolbars, just to show how the prefered size of the viewer changes.
-                properties.getPreferences().putBoolean(PropertiesManager.PROPERTY_SHOW_TOOLBAR_FIT, false);
-                properties.getPreferences().putBoolean(PropertiesManager.PROPERTY_SHOW_TOOLBAR_ROTATE, false);
-                properties.getPreferences().putBoolean(PropertiesManager.PROPERTY_SHOW_TOOLBAR_TOOL, false);
-                properties.getPreferences().putBoolean(PropertiesManager.PROPERTY_SHOW_TOOLBAR_FORMS, false);
+                properties.getPreferences().putBoolean(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_FIT, false);
+                properties.getPreferences().putBoolean(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ROTATE, false);
+                properties.getPreferences().putBoolean(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_TOOL, false);
+                properties.getPreferences().putBoolean(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_FORMS, false);
 
                 swingController.getDocumentViewController().setAnnotationCallback(
                         new org.icepdf.ri.common.MyAnnotationCallback(swingController.getDocumentViewController()));
