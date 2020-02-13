@@ -21,6 +21,7 @@ import org.icepdf.ri.common.*;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
+import org.icepdf.ri.util.DavFileClient;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
@@ -109,6 +110,10 @@ public class WindowManager implements WindowManagementCallback {
     public void newWindow(URL location) {
         Controller controller = commonWindowCreation();
         controller.openDocument(location);
+    }
+
+    public void newWindow(DavFileClient davFileClient) {
+        commonWindowCreation().openDocument(davFileClient);
     }
 
     protected Controller commonWindowCreation() {

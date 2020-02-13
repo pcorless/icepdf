@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common;
 
+import com.github.sardine.impl.SardineException;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.stage.FileChooser;
@@ -52,10 +53,7 @@ import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryFrame;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
-import org.icepdf.ri.util.BareBonesBrowserLaunch;
-import org.icepdf.ri.util.ViewerPropertiesManager;
-import org.icepdf.ri.util.TextExtractionTask;
-import org.icepdf.ri.util.URLAccess;
+import org.icepdf.ri.util.*;
 import org.icepdf.ri.viewer.WindowManager;
 
 import javax.print.attribute.PrintRequestAttributeSet;
@@ -273,7 +271,7 @@ public class SwingController extends ComponentAdapter
     // sub controller for document text searching.
     protected DocumentSearchController documentSearchController;
 
-
+    private DavFileClient pdfClient;
     protected Document document;
     protected boolean disposed;
 
@@ -2733,6 +2731,62 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
+     * Opens a document specified by the DavFileClient. Asks the user their password if needed
+     * @param davClient The client
+     */
+    public void openDocument(final DavFileClient davClient) {
+        pdfClient = davClient;
+        JPanel panel = new JPanel();
+        if (pdfClient.getPassword() == null) {
+            panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+            JLabel label = new JLabel(MessageFormat.format(messageBundle.getString("viewer.dialog.dav.password.label"), pdfClient.getName()));
+            JPasswordField field = new JPasswordField();
+            panel.add(label);
+            panel.add(field);
+            String[] options = {messageBundle.getString("viewer.dialog.dav.password.button.ok"), messageBundle.getString("viewer.dialog.dav.password.button.cancel")};
+            int option = JOptionPane.showOptionDialog(getViewerFrame(), panel, messageBundle.getString("viewer.dialog.dav.password.title"),
+                    JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE,
+                    null, options, options[0]);
+            if (option == JOptionPane.OK_OPTION) {
+                pdfClient.setPassword(new String(field.getPassword()));
+            } else if (option == JOptionPane.CANCEL_OPTION) {
+                return;
+            }
+        }
+        try {
+            InputStream stream = pdfClient.getStream();
+            document = new Document();
+            document.setInputStream(new BufferedInputStream(stream), pdfClient.getUrl());
+            commonNewDocumentHandling(pdfClient.getUrl());
+        } catch (SardineException e) {
+            SwingUtilities.invokeLater(() -> {
+                org.icepdf.ri.util.Resources.showMessageDialog(
+                        viewer,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        messageBundle,
+                        "viewer.dialog.sardine.exception.title",
+                        "viewer.dialog.sardine.exception.msg",
+                        e.getMessage() != null ? e.getMessage() : e.toString());
+                //401 is probably wrong password
+                if (e.getStatusCode() == 401) {
+                    openDocument(davClient);
+                }
+            });
+        } catch (IOException | PDFException | PDFSecurityException e) {
+            SwingUtilities.invokeLater(() -> org.icepdf.ri.util.Resources.showMessageDialog(
+                    viewer,
+                    JOptionPane.INFORMATION_MESSAGE,
+                    messageBundle,
+                    "viewer.dialog.dav.exception.title",
+                    "viewer.dialog.dav.exception.msg",
+                    e.getMessage() != null ? e.getMessage() : e.toString()));
+        } finally {
+            setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
+        }
+    }
+
+
+    /**
      * Opens a Document via the specified InputStream. This method is a convenience method provided for
      * backwards compatibility.
      * <br>
@@ -3129,7 +3183,9 @@ public class SwingController extends ComponentAdapter
 
         // add to the main pdfContentPanel the document peer
         if (viewer != null) {
-            Object[] messageArguments = new Object[]{fileDescription};
+            final File f = new File(fileDescription);
+            final String argument = pdfClient == null ? (f.exists() ? f.getName() : fileDescription) : pdfClient.getName();
+            Object[] messageArguments = {argument};
             MessageFormat formatter = new MessageFormat(
                     messageBundle.getString("viewer.window.title.open.default"));
             viewer.setTitle(formatter.format(messageArguments));
@@ -3439,6 +3495,22 @@ public class SwingController extends ComponentAdapter
                         messageBundle,
                         "viewer.dialog.saveAs.noUpdates.title",
                         "viewer.dialog.saveAs.noUpdates.msg");
+            } else if (pdfClient != null) {
+                try {
+                    //TODO no choice but to dump file to append changes as long as IncrementalUpdater is obfuscated
+                    File tmp = Files.createTempFile(pdfClient.getName(), "." + FileExtensionUtils.pdf).toFile();
+                    try (final OutputStream out = new BufferedOutputStream(new FileOutputStream(tmp))) {
+                        document.saveToOutputStream(out);
+                    }
+                    try (final InputStream pdfIn = new BufferedInputStream(new FileInputStream(tmp))) {
+                        pdfClient.save(pdfIn);
+                    }
+                    tmp.delete();
+                    savedChanges = document.getStateManager().getChanges();
+                } catch (IOException e) {
+                    logger.log(Level.FINE, "IOException while saving dav", e);
+                    saveFileAs();
+                }
             } else {
                 if (saveFilePath != null && !saveFilePath.isEmpty()) {
                     File out = new File(saveFilePath);

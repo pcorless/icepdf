@@ -82,4 +82,17 @@
         </plugins>
     </build>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.github.lookfirst</groupId>
+            <artifactId>sardine</artifactId>
+            <version>5.9</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-core</artifactId>
+            <version>1.23</version>
+        </dependency>
+    </dependencies>
+
 </project>

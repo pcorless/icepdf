@@ -16,6 +16,7 @@
 package org.icepdf.ri.common;
 
 import org.icepdf.ri.common.views.Controller;
+import org.icepdf.ri.util.DavFileClient;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
@@ -36,6 +37,8 @@ public interface WindowManagementCallback {
     void newWindow(String path);
 
     void newWindow(URL url);
+
+    void newWindow(DavFileClient fileClient);
 
     void disposeWindow(Controller controller, JFrame viewer, Preferences preferences);
 
