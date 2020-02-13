@@ -67,7 +67,7 @@ public class Launcher {
 
         String contentURL = "";
         String contentFile = "";
-        String password = "";
+        String password = null;
         String contentDav = "";
         String user = "";
         // parse command line arguments
