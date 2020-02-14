@@ -53,9 +53,9 @@ import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryFrame;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
-import org.icepdf.ri.util.ViewerPropertiesManager;
 import org.icepdf.ri.util.TextExtractionTask;
 import org.icepdf.ri.util.URLAccess;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 import org.icepdf.ri.viewer.WindowManager;
 
 import javax.print.attribute.PrintRequestAttributeSet;
@@ -5326,7 +5326,7 @@ public class SwingController extends ComponentAdapter
 
         // save changes and close window
         boolean cancelled = saveChangesDialog();
-        String origFilePath = document.getDocumentOrigin();
+        String origFilePath = document != null ? document.getDocumentOrigin() : null;
         if (!cancelled) {
             // dispose the document and other resources.
             dispose();
