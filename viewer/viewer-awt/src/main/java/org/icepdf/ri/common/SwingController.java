@@ -3088,7 +3088,9 @@ public class SwingController extends ComponentAdapter
 
         // add to the main pdfContentPanel the document peer
         if (viewer != null) {
-            Object[] messageArguments = new Object[]{fileDescription};
+            File f = new File(fileDescription);
+            String argument = f.exists() ? f.getName() : fileDescription;
+            Object[] messageArguments = {argument};
             MessageFormat formatter = new MessageFormat(
                     messageBundle.getString("viewer.window.title.open.default"));
             viewer.setTitle(formatter.format(messageArguments));
