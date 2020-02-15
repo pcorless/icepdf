@@ -55,6 +55,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
+import java.util.prefs.Preferences;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -244,7 +245,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         clearSearchButton.addActionListener(this);
 
         // apply default preferences
-        preferences = controller.getPropertiesManager().getPreferences();
+        Preferences preferences = controller.getPropertiesManager().getPreferences();
         String iconSize = preferences.get(ViewerPropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE);
         boolean isRegex = preferences.getBoolean(PROPERTY_SEARCH_PANEL_REGEX_ENABLED, true);
         boolean isWholeWord = preferences.getBoolean(PROPERTY_SEARCH_PANEL_WHOLE_WORDS_ENABLED, false);
