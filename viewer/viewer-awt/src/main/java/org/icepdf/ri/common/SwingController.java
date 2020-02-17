@@ -254,9 +254,9 @@ public class SwingController extends ComponentAdapter
     private ThumbnailsPanel thumbnailsPanel;
     private LayersPanel layersPanel;
     private SignaturesHandlerPanel signaturesPanel;
-    private AnnotationPanel annotationPanel;
-    private JTabbedPane utilityTabbedPane;
-    private JSplitPane utilityAndDocumentSplitPane;
+    protected AnnotationPanel annotationPanel;
+    protected JTabbedPane utilityTabbedPane;
+    protected JSplitPane utilityAndDocumentSplitPane;
     private int utilityAndDocumentSplitPaneLastDividerLocation;
     private JLabel statusLabel;
     private JFrame viewer;
@@ -1532,7 +1532,7 @@ public class SwingController extends ComponentAdapter
      * Utility method to set the state of all the different GUI elements. Mainly
      * to enable/disable the GUI elements when a file is opened/closed respectively.
      */
-    private void reflectStateInComponents() {
+    protected void reflectStateInComponents() {
         boolean opened = document != null;
         boolean pdfCollection = opened && isPdfCollection();
 
@@ -1757,7 +1757,7 @@ public class SwingController extends ComponentAdapter
                 permissions.getPermissions(Permissions.MODIFY_DOCUMENT);
     }
 
-    private void setEnabled(JComponent comp, boolean ena) {
+    protected void setEnabled(JComponent comp, boolean ena) {
         if (comp != null)
             comp.setEnabled(ena);
     }
