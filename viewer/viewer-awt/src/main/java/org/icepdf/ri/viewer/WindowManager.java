@@ -58,6 +58,9 @@ public class WindowManager implements WindowManagementCallback {
 
     private ResourceBundle messageBundle = null;
 
+    public static final ControllerFactory controllerFactory = new SwingControllerFactory();
+    public static final ViewBuilderFactory viewBuilderFactory = new SwingViewBuilderFactory();
+
     private WindowManager() {
     }
 
@@ -112,7 +115,7 @@ public class WindowManager implements WindowManagementCallback {
     }
 
     protected Controller commonWindowCreation() {
-        Controller controller = new SwingController(messageBundle);
+        Controller controller = controllerFactory.create(messageBundle);
         controller.setWindowManagementCallback(this);
 
         // add interactive mouse link annotation support
@@ -135,8 +138,7 @@ public class WindowManager implements WindowManagementCallback {
             // eating error, as we can continue with out alarm
         }
 
-        SwingViewBuilder factory =
-                new SwingViewBuilder((SwingController) controller, viewType, pageFit, pageRotation);
+        SwingViewBuilder factory = (SwingViewBuilder) viewBuilderFactory.create(controller, viewType, pageFit, pageRotation);
 
         JFrame frame = factory.buildViewerFrame();
         if (frame != null) {
