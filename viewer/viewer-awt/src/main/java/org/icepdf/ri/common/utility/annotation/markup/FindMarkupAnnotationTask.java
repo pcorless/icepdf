@@ -327,7 +327,7 @@ public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
             if (MarkupAnnotationPanel.SortColumn.PAGE.equals(sortColumn)) {
                 if (o1.getPageIndex() > o2.getPageIndex()) {
                     return 1;
-                } else if (o1.getPageIndex() > o2.getPageIndex()) {
+                } else if (o1.getPageIndex() < o2.getPageIndex()) {
                     return -1;
                 } else {
                     return 0;
