@@ -41,7 +41,7 @@ public class AnnotationSummaryFrame extends JFrame implements MutableDocument {
     public void refreshDocumentInstance() {
         if (controller.getDocument() != null) {
 
-            Object[] messageArguments = new Object[]{controller.getDocument().getDocumentOrigin()};
+            Object[] messageArguments = new Object[]{controller.getViewerFrame().getTitle()};
             MessageFormat formatter = new MessageFormat(
                     messageBundle.getString("viewer.window.annotationSummary.title.open.default"));
             setTitle(formatter.format(messageArguments));

@@ -119,10 +119,10 @@ public class SwingController extends ComponentAdapter
     protected static final Logger logger =
             Logger.getLogger(SwingController.class.toString());
 
-    private static boolean useJFXDialog;
+    private static boolean useJFileChooser;
 
     static {
-        useJFXDialog = Defs.booleanProperty("org.icepdf.ri.viewer.jfx.dialog", false);
+        useJFileChooser = Defs.booleanProperty("org.icepdf.ri.viewer.jfilechooser", false);
     }
 
     public static final int CURSOR_OPEN_HAND = 1;
@@ -2242,7 +2242,63 @@ public class SwingController extends ComponentAdapter
      * select which file to open.
      */
     public void openFile() {
-        if (!useJFXDialog) {
+        openFile("");
+    }
+
+    /**
+     * Utility method for opening a file. Shows a dialog for the user to
+     * select which file to open.
+     *
+     * @param initialDirPath The directory to show to the user when opening the FileDialog
+     */
+    public void openFile(String initialDirPath) {
+        if (!useJFileChooser) {
+            // Create and display a file open dialog
+            final FileDialog fileDialog = new FileDialog(getViewerFrame());
+            fileDialog.setMultipleMode(false);
+            fileDialog.setMode(FileDialog.LOAD);
+            fileDialog.setFilenameFilter((file, s) -> s.endsWith(FileExtensionUtils.pdf));
+            if (initialDirPath != null && !initialDirPath.isEmpty()) {
+                fileDialog.setDirectory(initialDirPath);
+            } else if (ViewModel.getDefaultFile() != null) {
+                fileDialog.setDirectory(ViewModel.getDefaultFile().getParentFile().getAbsolutePath());
+                fileDialog.setFile(ViewModel.getDefaultFile().getAbsolutePath());
+            }
+            // show the dialog
+            fileDialog.setTitle(messageBundle.getString("viewer.dialog.openFile.title"));
+            fileDialog.setVisible(true);
+            final String filePath = fileDialog.getFile();
+            final String dirPath = fileDialog.getDirectory();
+
+            if (filePath != null && dirPath != null) {
+                final File file = new File(dirPath + filePath);
+                // trying to get rid of shadow left by file chooser
+                fileDialog.setVisible(false);
+                // make sure file being opened is valid
+                String extension = FileExtensionUtils.getExtension(file);
+                if (extension != null) {
+                    if (extension.equals(FileExtensionUtils.pdf)) {
+                        if (viewer != null) {
+                            viewer.toFront();
+                            viewer.requestFocus();
+                        }
+                        openFileInSomeViewer(file);
+                    } else {
+                        org.icepdf.ri.util.Resources.showMessageDialog(viewer,
+                                JOptionPane.INFORMATION_MESSAGE,
+                                messageBundle,
+                                "viewer.dialog.openFile.error.title",
+                                "viewer.dialog.openFile.error.msg",
+                                file.getPath());
+                        openFile(fileDialog.getDirectory());
+                    }
+
+                    // save the default directory
+                    ViewModel.setDefaultFile(file);
+                }
+            }
+            fileDialog.setVisible(false);
+        } else {
             // Create and display a file open dialog
             final JFileChooser fileChooser = new JFileChooser();
             fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -2276,7 +2332,6 @@ public class SwingController extends ComponentAdapter
                                 "viewer.dialog.openFile.error.title",
                                 "viewer.dialog.openFile.error.msg",
                                 file.getPath());
-                        openFile();
                     }
 
                     // save the default directory
@@ -2284,49 +2339,6 @@ public class SwingController extends ComponentAdapter
                 }
             }
             fileChooser.setVisible(false);
-        } else {
-            // loads JFX subsystem.
-            new JFXPanel();
-
-            // load the JFX file chooser on the
-            Platform.runLater(() -> {
-                FileChooser fileChooser = new FileChooser();
-                fileChooser.setTitle(messageBundle.getString("viewer.dialog.openFile.title"));
-                File file = ViewModel.getDefaultFile();
-                fileChooser.getExtensionFilters().addAll(
-                        new FileChooser.ExtensionFilter("PDF", "*.pdf"));
-                fileChooser.setInitialDirectory(file.getParentFile());
-                if (file.isFile()) {
-                    fileChooser.setInitialFileName(file.getName());
-                }
-                File selectedFile = fileChooser.showOpenDialog(null);
-                if (selectedFile != null) {
-                    String extension = FileExtensionUtils.getExtension(selectedFile);
-                    if (extension != null) {
-                        if (extension.equals(FileExtensionUtils.pdf)) {
-                            SwingUtilities.invokeLater(() -> {
-                                if (viewer != null) {
-                                    viewer.toFront();
-                                    viewer.requestFocus();
-                                }
-                                openFileInSomeViewer(selectedFile.getAbsolutePath());
-                            });
-                        } else {
-                            SwingUtilities.invokeLater(() -> {
-                                org.icepdf.ri.util.Resources.showMessageDialog(viewer,
-                                        JOptionPane.INFORMATION_MESSAGE,
-                                        messageBundle,
-                                        "viewer.dialog.openFile.error.title",
-                                        "viewer.dialog.openFile.error.msg",
-                                        selectedFile.getPath());
-                                openFile();
-                            });
-                        }
-                        // save the default directory
-                        ViewModel.setDefaultFile(selectedFile);
-                    }
-                }
-            });
         }
     }
 
@@ -3076,7 +3088,9 @@ public class SwingController extends ComponentAdapter
 
         // add to the main pdfContentPanel the document peer
         if (viewer != null) {
-            Object[] messageArguments = new Object[]{fileDescription};
+            File f = new File(fileDescription);
+            String argument = f.exists() ? f.getName() : fileDescription;
+            Object[] messageArguments = {argument};
             MessageFormat formatter = new MessageFormat(
                     messageBundle.getString("viewer.window.title.open.default"));
             viewer.setTitle(formatter.format(messageArguments));
@@ -3399,7 +3413,26 @@ public class SwingController extends ComponentAdapter
         }
 
         // Create and display a file saving dialog
-        if (!useJFXDialog) {
+        if (!useJFileChooser) {
+            final FileDialog fileDialog = new FileDialog(getViewerFrame());
+            fileDialog.setTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
+            fileDialog.setMultipleMode(false);
+            fileDialog.setMode(FileDialog.SAVE);
+            fileDialog.setFilenameFilter((file, s) -> s.endsWith(FileExtensionUtils.pdf));
+            if (ViewModel.getDefaultFile() != null) {
+                fileDialog.setDirectory(ViewModel.getDefaultFile().getParentFile().getAbsolutePath());
+            }
+            if (newFileName != null) {
+                fileDialog.setFile(newFileName);
+            }
+            // show the dialog
+            fileDialog.setVisible(true);
+            final String filePath = fileDialog.getFile();
+            final String dirPath = fileDialog.getDirectory();
+            if (filePath != null && dirPath != null) {
+                saveFileChecks(originalFileName, new File(dirPath + filePath));
+            }
+        } else {
             final JFileChooser fileChooser = new JFileChooser();
             fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
             fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -3414,26 +3447,6 @@ public class SwingController extends ComponentAdapter
             if (fileChooser.showSaveDialog(viewer) == JFileChooser.APPROVE_OPTION) {
                 saveFileChecks(originalFileName, fileChooser.getSelectedFile());
             }
-        } else {
-            // loads JFX subsystem.
-            new JFXPanel();
-
-            // load the JFX file chooser on the
-            String finalOriginalFileName = originalFileName;
-            String finalNewFileName = newFileName;
-            Platform.runLater(() -> {
-                FileChooser fileChooser = new FileChooser();
-                fileChooser.setTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
-                fileChooser.getExtensionFilters().addAll(
-                        new FileChooser.ExtensionFilter("PDF", "*.pdf"));
-                fileChooser.setInitialDirectory(ViewModel.getDefaultFile().getParentFile());
-                if (finalNewFileName != null) {
-                    fileChooser.setInitialFileName(finalNewFileName);
-                }
-
-                File file = fileChooser.showSaveDialog(null);
-                SwingUtilities.invokeLater(() -> saveFileChecks(finalOriginalFileName, file));
-            });
         }
     }
 
@@ -3560,18 +3573,21 @@ public class SwingController extends ComponentAdapter
      */
     public void exportText() {
         // Create and display a file saving dialog
-        final JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.exportText.title"));
-        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        fileChooser.addChoosableFileFilter(FileExtensionUtils.getTextFileFilter());
+        final FileDialog fileDialog = new FileDialog(getViewerFrame());
+        fileDialog.setTitle(messageBundle.getString("viewer.dialog.exportText.title"));
+        fileDialog.setMultipleMode(false);
+        fileDialog.setMode(FileDialog.SAVE);
+        fileDialog.setFilenameFilter((File f, String s) -> s.endsWith(FileExtensionUtils.txt));
         if (ViewModel.getDefaultFile() != null) {
-            fileChooser.setCurrentDirectory(ViewModel.getDefaultFile());
+            fileDialog.setDirectory(ViewModel.getDefaultFile().getParentFile().getAbsolutePath());
         }
         // show the dialog
-        int returnVal = fileChooser.showSaveDialog(viewer);
+        fileDialog.setVisible(true);
+        final String filePath = fileDialog.getFile();
+        final String dirPath = fileDialog.getDirectory();
 
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-            File file = fileChooser.getSelectedFile();
+        if (filePath != null && dirPath != null) {
+            File file = new File(dirPath + filePath);
             // make sure file being opened is valid
             String extension = FileExtensionUtils.getExtension(file);
             if (extension != null) {
