@@ -58,8 +58,8 @@ public class WindowManager implements WindowManagementCallback {
 
     private ResourceBundle messageBundle = null;
 
-    public static final ControllerFactory controllerFactory = new SwingControllerFactory();
-    public static final ViewBuilderFactory viewBuilderFactory = new SwingViewBuilderFactory();
+    public static ControllerFactory controllerFactory = new SwingControllerFactory();
+    public static ViewBuilderFactory viewBuilderFactory = new SwingViewBuilderFactory();
 
     private WindowManager() {
     }
@@ -138,7 +138,7 @@ public class WindowManager implements WindowManagementCallback {
             // eating error, as we can continue with out alarm
         }
 
-        SwingViewBuilder factory = (SwingViewBuilder) viewBuilderFactory.create(controller, viewType, pageFit, pageRotation);
+        ViewBuilder factory = viewBuilderFactory.create(controller, viewType, pageFit, pageRotation);
 
         JFrame frame = factory.buildViewerFrame();
         if (frame != null) {
