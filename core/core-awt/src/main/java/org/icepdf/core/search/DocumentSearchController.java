@@ -21,6 +21,7 @@ import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -195,6 +196,23 @@ public interface DocumentSearchController {
      */
     SearchTerm addSearchTerm(String term, boolean caseSensitive,
                              boolean wholeWord, boolean regex);
+
+    /**
+     * Add the search term to the list of search terms.  The term is split
+     * into words based on white space and punctuation. No checks are done
+     * for duplication.
+     * <br>
+     * A new search needs to be executed for this change to take place.
+     *
+     * @param term           single word or phrase to search for.
+     * @param caseSensitive  is search case sensitive.
+     * @param wholeWord      is search whole word sensitive.
+     * @param regex          enable regex processing on a word by word level.
+     * @param highlightColor The color to highlight the found terms with
+     * @return searchTerm newly create search term.
+     */
+    SearchTerm addSearchTerm(String term, boolean caseSensitive,
+                             boolean wholeWord, boolean regex, Color highlightColor);
 
     /**
      * Removes the specified search term from the search. A new search needs
