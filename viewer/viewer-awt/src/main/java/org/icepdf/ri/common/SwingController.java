@@ -15,9 +15,6 @@
  */
 package org.icepdf.ri.common;
 
-import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
-import javafx.stage.FileChooser;
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
@@ -53,9 +50,9 @@ import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryFrame;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
-import org.icepdf.ri.util.ViewerPropertiesManager;
 import org.icepdf.ri.util.TextExtractionTask;
 import org.icepdf.ri.util.URLAccess;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 import org.icepdf.ri.viewer.WindowManager;
 
 import javax.print.attribute.PrintRequestAttributeSet;
@@ -3089,12 +3086,11 @@ public class SwingController extends ComponentAdapter
         // add to the main pdfContentPanel the document peer
         if (viewer != null) {
             File f = new File(fileDescription);
-            String argument = f.exists() ? f.getName() : fileDescription;
-            Object[] messageArguments = {argument};
-            MessageFormat formatter = new MessageFormat(
-                    messageBundle.getString("viewer.window.title.open.default"));
+            String title = document.getInfo().getTitle();
+            String filename = f.exists() ? f.getName() : fileDescription;
+            Object[] messageArguments = title == null ? new String[]{filename} : new String[]{title, filename};
+            MessageFormat formatter = new MessageFormat(messageBundle.getString("viewer.window.title.open." + (title == null ? "notitle" : "default")));
             viewer.setTitle(formatter.format(messageArguments));
-
         }
 
         // disable the annotation properties panel by default
