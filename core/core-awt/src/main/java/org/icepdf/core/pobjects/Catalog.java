@@ -190,7 +190,7 @@ public class Catalog extends Dictionary {
         if (names == null) {
             names = new Names(library, new HashMap());
             // add the object to the catalog
-            names.setPObjectReference(stateManager.getNewReferencNumber());
+            names.setPObjectReference(stateManager.getNewReferenceNumber());
             entries.put(NAMES_KEY, names.getPObjectReference());
             // add the catalog and the new destination object.
             stateManager.addChange(new PObject(this, getPObjectReference()));
@@ -200,7 +200,7 @@ public class Catalog extends Dictionary {
             // create a the name tree.
             NameTree destsNameTree = new NameTree(library, new HashMap());
             destsNameTree.init();
-            destsNameTree.setPObjectReference(stateManager.getNewReferencNumber());
+            destsNameTree.setPObjectReference(stateManager.getNewReferenceNumber());
             names.setDestsNameTree(destsNameTree);
             stateManager.addChange(new PObject(names, names.getPObjectReference()));
             stateManager.addChange(new PObject(destsNameTree, destsNameTree.getPObjectReference()));

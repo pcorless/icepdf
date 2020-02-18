@@ -741,6 +741,9 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                         document.getText(0, document.getLength()));
                 // add them to the container, using absolute positioning.
                 documentViewController.updateAnnotation(this);
+                // update markup's content
+                AnnotationComponent annotationComponent = findAnnotationComponent(selectedMarkupAnnotation);
+                documentViewController.updateAnnotation(annotationComponent);
             }
         } catch (BadLocationException ex) {
             logger.log(Level.FINE, "Error updating markup annotation content", ex);

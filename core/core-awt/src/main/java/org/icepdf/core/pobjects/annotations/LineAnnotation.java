@@ -209,7 +209,7 @@ public class LineAnnotation extends MarkupAnnotation {
         try {
             lineAnnotation = new LineAnnotation(library, entries);
             lineAnnotation.init();
-            lineAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
+            lineAnnotation.setPObjectReference(stateManager.getNewReferenceNumber());
             lineAnnotation.setNew(true);
         } catch (InterruptedException e) {
             logger.fine("Line annotation instance creation was interrupted");

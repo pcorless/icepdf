@@ -59,27 +59,27 @@ public class ActionFactory {
             // add a null destination entry
             entries.put(GoToAction.DESTINATION_KEY, new Destination(library, null));
             GoToAction action = new GoToAction(library, entries);
-            action.setPObjectReference(stateManager.getNewReferencNumber());
+            action.setPObjectReference(stateManager.getNewReferenceNumber());
             return action;
         } else if (URI_ACTION == type) {
             // set default link annotation values.
             entries.put(Dictionary.TYPE_KEY, Action.ACTION_TYPE);
             entries.put(Action.ACTION_TYPE_KEY, Action.ACTION_TYPE_URI);
             // add a null uri string entry
-            Reference pObjectReference = stateManager.getNewReferencNumber();
+            Reference pObjectReference = stateManager.getNewReferenceNumber();
             entries.put(URIAction.URI_KEY, new LiteralStringObject("", pObjectReference, library.getSecurityManager()));
             URIAction action = new URIAction(library, entries);
-            action.setPObjectReference(stateManager.getNewReferencNumber());
+            action.setPObjectReference(stateManager.getNewReferenceNumber());
             return action;
         } else if (LAUNCH_ACTION == type) {
             // set default link annotation values.
             entries.put(Dictionary.TYPE_KEY, Action.ACTION_TYPE);
             entries.put(Action.ACTION_TYPE_KEY, Action.ACTION_TYPE_LAUNCH);
             // add a null file string entry
-            Reference pObjectReference = stateManager.getNewReferencNumber();
+            Reference pObjectReference = stateManager.getNewReferenceNumber();
             entries.put(LaunchAction.FILE_KEY, new LiteralStringObject("", pObjectReference, library.getSecurityManager()));
             LaunchAction action = new LaunchAction(library, entries);
-            action.setPObjectReference(stateManager.getNewReferencNumber());
+            action.setPObjectReference(stateManager.getNewReferenceNumber());
             return action;
         }
         return null;
