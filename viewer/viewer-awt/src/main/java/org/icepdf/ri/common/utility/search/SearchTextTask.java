@@ -299,11 +299,11 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         return destinations;
     }
 
-    class SearchResult {
+    public static class SearchResult {
         public String nodeText;
     }
 
-    class TextResult extends SearchResult {
+    public static class TextResult extends SearchResult {
         List<LineText> lineItems;
         int currentPage;
 
@@ -314,29 +314,29 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         }
     }
 
-    class CommentsResult extends SearchResult {
-        ArrayList<MarkupAnnotation> markupAnnotations;
+    public static class CommentsResult extends SearchResult {
+        List<MarkupAnnotation> markupAnnotations;
         int currentPage;
 
-        CommentsResult(ArrayList<MarkupAnnotation> markupAnnotations, String nodeText, int currentPage) {
+        CommentsResult(List<MarkupAnnotation> markupAnnotations, String nodeText, int currentPage) {
             this.markupAnnotations = markupAnnotations;
             this.nodeText = nodeText;
             this.currentPage = currentPage;
         }
     }
 
-    class OutlineResult extends SearchResult {
-        ArrayList<OutlineItem> outlinesMatches;
+    public static class OutlineResult extends SearchResult {
+        List<OutlineItem> outlinesMatches;
 
-        OutlineResult(ArrayList<OutlineItem> outlinesMatches) {
+        OutlineResult(List<OutlineItem> outlinesMatches) {
             this.outlinesMatches = outlinesMatches;
         }
     }
 
-    class DestinationsResult extends SearchResult {
-        ArrayList<DestinationResult> destinationsResult;
+    public static class DestinationsResult extends SearchResult {
+        List<DestinationResult> destinationsResult;
 
-        DestinationsResult(ArrayList<DestinationResult> destinationsResult) {
+        DestinationsResult(List<DestinationResult> destinationsResult) {
             this.destinationsResult = destinationsResult;
         }
     }
