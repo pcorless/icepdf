@@ -391,9 +391,9 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
      * @param searchTextTask search task conducting the gui build.
      */
     public void addFoundTextEntry(SearchTextTask.TextResult textResult, SearchTextTask searchTextTask) {
-        String title = textResult.nodeText;
-        int pageNumber = textResult.currentPage;
-        List<LineText> textResults = textResult.lineItems;
+        String title = textResult.getNodeText();
+        int pageNumber = textResult.getCurrentPage();
+        List<LineText> textResults = textResult.getLineItems();
         // add the new results entry.
         if ((textResults != null) && (textResults.size() > 0)) {
             DefaultMutableTreeNode parentNode;
@@ -426,17 +426,17 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
 
     public void addFoundCommentEntry(SearchTextTask.CommentsResult comment, SearchTextTask searchTextTask) {
         if (comment != null) {
-            int pageNumber = comment.currentPage;
+            int pageNumber = comment.getCurrentPage();
             DefaultMutableTreeNode parentNode;
             if (searchTextTask.isShowPages() && lastCommentNodePageIndex != pageNumber) {
                 parentNode = new DefaultMutableTreeNode(
-                        new FindEntry(comment.nodeText, pageNumber, null), true);
+                        new FindEntry(comment.getNodeText(), pageNumber, null), true);
                 treeModel.insertNodeInto(parentNode, commentsTreeNode, commentsTreeNode.getChildCount());
             } else {
                 parentNode = commentsTreeNode;
             }
             // add the hits to the tree node.
-            List<MarkupAnnotation> annotations = comment.markupAnnotations;
+            List<MarkupAnnotation> annotations = comment.getMarkupAnnotations();
             for (MarkupAnnotation annotation : annotations) {
                 AnnotationTreeNode annotationTreeNode =
                         new AnnotationTreeNode(annotation, messageBundle, searchTextTask.getSearchPattern(),
@@ -454,7 +454,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     }
 
     public void addFoundOutlineEntry(SearchTextTask.OutlineResult outlineResult, SearchTextTask searchTextTask) {
-        List<OutlineItem> outlineItems = outlineResult.outlinesMatches;
+        List<OutlineItem> outlineItems = outlineResult.getOutlinesMatches();
         for (OutlineItem outlineItem : outlineItems) {
             OutlineItemTreeNode outlineItemTreeNode =
                     new OutlineItemTreeNode(outlineItem, searchTextTask.getSearchPattern(),
@@ -466,7 +466,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
 
     public void addFoundDestinationEntry(SearchTextTask.DestinationsResult destinationResult,
                                          SearchTextTask searchTextTask) {
-        List<DestinationResult> destinationResults = destinationResult.destinationsResult;
+        List<DestinationResult> destinationResults = destinationResult.getDestinationsResult();
         for (DestinationResult nameNode : destinationResults) {
             NameTreeNode nameTreeNode =
                     new NameTreeNode(new LiteralStringObject(nameNode.getName()), nameNode.getValue(),

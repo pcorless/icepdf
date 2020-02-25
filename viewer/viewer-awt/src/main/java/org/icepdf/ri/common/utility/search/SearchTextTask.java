@@ -300,46 +300,85 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
     }
 
     public static class SearchResult {
-        public String nodeText;
+        private final String nodeText;
+
+        public SearchResult() {
+            this.nodeText = null;
+        }
+
+        public SearchResult(String nodeText) {
+            this.nodeText = nodeText;
+        }
+
+        public String getNodeText() {
+            return nodeText;
+        }
     }
 
     public static class TextResult extends SearchResult {
-        List<LineText> lineItems;
-        int currentPage;
+        private final List<LineText> lineItems;
+        private final int currentPage;
 
-        TextResult(List<LineText> lineItems, String nodeText, int currentPage) {
+        public TextResult(List<LineText> lineItems, String nodeText, int currentPage) {
+            super(nodeText);
             this.lineItems = lineItems;
-            this.nodeText = nodeText;
             this.currentPage = currentPage;
+        }
+
+        public List<LineText> getLineItems() {
+            return lineItems;
+        }
+
+        public int getCurrentPage() {
+            return currentPage;
         }
     }
 
     public static class CommentsResult extends SearchResult {
-        List<MarkupAnnotation> markupAnnotations;
-        int currentPage;
+        private final List<MarkupAnnotation> markupAnnotations;
+        private final int currentPage;
 
-        CommentsResult(List<MarkupAnnotation> markupAnnotations, String nodeText, int currentPage) {
+        public CommentsResult(List<MarkupAnnotation> markupAnnotations, String nodeText, int currentPage) {
+            super(nodeText);
             this.markupAnnotations = markupAnnotations;
-            this.nodeText = nodeText;
             this.currentPage = currentPage;
+        }
+
+        public List<MarkupAnnotation> getMarkupAnnotations() {
+            return markupAnnotations;
+        }
+
+        public int getCurrentPage() {
+            return currentPage;
         }
     }
 
     public static class OutlineResult extends SearchResult {
-        List<OutlineItem> outlinesMatches;
+        private final List<OutlineItem> outlinesMatches;
 
-        OutlineResult(List<OutlineItem> outlinesMatches) {
+        public OutlineResult(List<OutlineItem> outlinesMatches) {
+            super(null);
             this.outlinesMatches = outlinesMatches;
+        }
+
+        public List<OutlineItem> getOutlinesMatches() {
+            return outlinesMatches;
         }
     }
 
     public static class DestinationsResult extends SearchResult {
-        List<DestinationResult> destinationsResult;
+        private final List<DestinationResult> destinationsResult;
 
-        DestinationsResult(List<DestinationResult> destinationsResult) {
+        public DestinationsResult(List<DestinationResult> destinationsResult) {
+            super(null);
             this.destinationsResult = destinationsResult;
         }
+
+        public List<DestinationResult> getDestinationsResult() {
+            return destinationsResult;
+        }
     }
+
 
     public static class Builder {
 
