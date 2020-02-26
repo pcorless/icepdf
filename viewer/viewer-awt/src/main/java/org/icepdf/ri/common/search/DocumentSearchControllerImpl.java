@@ -27,6 +27,7 @@ import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.utility.search.SearchHitComponent;
 import org.icepdf.ri.common.utility.search.SearchHitComponentFactory;
+import org.icepdf.ri.common.utility.search.SearchHitComponentFactoryImpl;
 
 import java.awt.geom.Rectangle2D;
 import java.util.*;
@@ -64,8 +65,10 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     private SwingController viewerController;
     // assigned document for headless searching.
     protected Document document;
+    public static SearchHitComponentFactory componentFactory = new SearchHitComponentFactoryImpl();
 
-    private Map<Integer, Set<SearchHitComponent>> pageToComponents = new HashMap<>();
+    //Page index to SearchHitComponents
+    private final Map<Integer, Set<SearchHitComponent>> pageToComponents = new HashMap<>();
 
     /**
      * Create a news instance of search controller. A search model is created
@@ -284,7 +287,10 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                                 wordHit.setHasHighlight(true);
                                 hitWords.add(wordHit);
                                 Set<SearchHitComponent> components = pageToComponents.getOrDefault(pageIndex, new HashSet<>());
-                                components.add(SearchHitComponentFactory.createComponent(wordHit, document.getPageTree().getPage(pageIndex), viewerController.getDocumentViewController().getDocumentViewModel()));
+                                SearchHitComponent component = componentFactory.createComponent(wordHit, document.getPageTree().getPage(pageIndex), viewerController.getDocumentViewController().getDocumentViewModel());
+                                if (component != null) {
+                                    components.add(component);
+                                }
                                 pageToComponents.put(pageIndex, components);
                             }
 
@@ -797,10 +803,11 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
 
     /**
      * Returns the components created by the search for a given page
+     *
      * @param pageIndex The index of the page
      * @return The set of components
      */
-    public Set<SearchHitComponent> getComponentsFor(int pageIndex){
+    public Set<SearchHitComponent> getComponentsFor(int pageIndex) {
         return pageToComponents.getOrDefault(pageIndex, new HashSet<>());
     }
 }

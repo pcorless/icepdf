@@ -5,9 +5,6 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
-/**
- * Class representing a JComponent linked to a highlight in text
- */
 public abstract class SearchHitComponent extends JComponent {
     protected String text;
 
@@ -26,13 +23,7 @@ public abstract class SearchHitComponent extends JComponent {
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
     }
 
-    /**
-     * Do an action on double-click
-     */
-    abstract void doAction();
+    protected abstract void doAction();
 
-    /**
-     * Show a menu on right-click
-     */
-    abstract void showMenu();
+    protected abstract void showMenu();
 }
