@@ -22,15 +22,18 @@ import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.search.DestinationResult;
 import org.icepdf.core.search.DocumentSearchController;
+import org.icepdf.core.search.SearchMode;
 import org.icepdf.core.search.SearchTerm;
 import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.utility.search.SearchHitComponent;
 import org.icepdf.ri.common.utility.search.SearchHitComponentFactory;
 import org.icepdf.ri.common.utility.search.SearchHitComponentFactoryImpl;
+import org.icepdf.ri.util.Pair;
 
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
+import java.util.List;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -61,13 +64,15 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             Logger.getLogger(DocumentSearchControllerImpl.class.toString());
 
     // search model contains caching and memory optimizations.
-    private DocumentSearchModelImpl searchModel;
+    private final DocumentSearchModelImpl searchModel;
     // parent controller used to get at RI controllers and models.
     private SwingController viewerController;
     // assigned document for headless searching.
     protected Document document;
     public static SearchHitComponentFactory componentFactory = new SearchHitComponentFactoryImpl();
 
+    //Search mode is per-word or whole page
+    private SearchMode searchMode = SearchMode.WORD;
     //Page index to SearchHitComponents
     private final Map<Integer, Set<SearchHitComponent>> pageToComponents = new HashMap<>();
 
@@ -128,8 +133,8 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * with {@link #addSearchTerm(String, boolean, boolean)}.  If search
      * hits where detected then the Page's PageText is added to the cache.
      * <br>
-     * This method represent the core search algorithm for this
-     * DocumentSearchController implementation.  This method can be over riden
+     * This method represent the org.icepdf.core search algorithm for this
+     * DocumentSearchController implementation. This method can be overriden
      * if a different search algorithm or functionality is needed.
      *
      * @param pageIndex page index to search
@@ -137,7 +142,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      */
     public int searchHighlightPage(int pageIndex) {
 
-        ArrayList<LineText> hits = searchHighlightPage(pageIndex, 0);
+        List<LineText> hits = searchHighlightPage(pageIndex, 0);
         if (hits != null) {
             return hits.size();
         } else {
@@ -155,21 +160,30 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * is padded by pre and post words that surround the hit in the page
      * context.
      * <br>
-     * This method represent the core search algorithm for this
-     * DocumentSearchController implementation.  This method can be over riden
+     * This method represent the org.icepdf.core search algorithm for this
+     * DocumentSearchController implementation. This method can be overriden
      * if a different search algorithm or functionality is needed.
      *
      * @param pageIndex   page index to search
      * @param wordPadding word padding on either side of hit to give context
      *                    to found words in the returned LineText
-     * @return list of contextual hits for the give page.  If no hits an empty
+     * @return list of contextual hits for the give page. If no hits an empty
      * list is returned.
      */
-    public ArrayList<LineText> searchHighlightPage(int pageIndex, int wordPadding) {
+    public List<LineText> searchHighlightPage(int pageIndex, int wordPadding) {
+        switch (searchMode) {
+            case WORD:
+                return searchHighlightWordPage(pageIndex, wordPadding);
+            case PAGE:
+                return searchHighlightWholePage(pageIndex);
+            default:
+                return Collections.emptyList();
+        }
+    }
 
-
+    private List<LineText> searchHighlightWordPage(int pageIndex, int wordPadding) {
         // search hit list
-        ArrayList<LineText> searchHits = new ArrayList<>();
+        List<LineText> searchHits = new ArrayList<>();
 
         // get our our page text reference
         PageText pageText = getPageText(pageIndex);
@@ -180,18 +194,18 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         }
 
         // get search terms from model and search for each occurrence.
-        Collection<SearchTerm> terms = searchModel.getSearchTerms();
+        List<SearchTerm> terms = searchModel.getSearchTerms();
         // we need to do the search for  each term.
         SearchTerm term;
         for (int j = 0; j < terms.size(); j++) {
-            term = ((ArrayList<SearchTerm>) terms).get(j);
+            term = terms.get(j);
 
             // found word index to keep track of when we have found a hit
             int searchPhraseHitCount = 0;
             int searchPhraseFoundCount = term.getTerms().size();
 
             // start iteration over words.
-            ArrayList<LineText> pageLines = pageText.getPageLines();
+            List<LineText> pageLines = pageText.getPageLines();
             if (pageLines != null) {
                 for (LineText pageLine : pageLines) {
                     List<WordText> lineWords = pageLine.getWords();
@@ -262,7 +276,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                         if (searchPhraseHitCount > 0 && searchPhraseHitCount == searchPhraseFoundCount) {
                             LineText lineText = new LineText();
                             int lineWordsSize = lineWords.size();
-                            List<WordText> hitWords = lineText.getWords();
+                            java.util.List<WordText> hitWords = lineText.getWords();
                             // add pre padding
                             int spaces = searchPhraseHitCount - 1;
                             spaces = spaces < 0 ? 0 : spaces;
@@ -289,7 +303,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                                 wordHit.setHighlightColor(term.getHighlightColor());
                                 hitWords.add(wordHit);
                                 Set<SearchHitComponent> components = pageToComponents.getOrDefault(pageIndex, new HashSet<>());
-                                SearchHitComponent component = componentFactory.createComponent(wordHit, document.getPageTree().getPage(pageIndex), viewerController.getDocumentViewController().getDocumentViewModel());
+                                final SearchHitComponent component = componentFactory.createComponent(wordHit, document.getPageTree().getPage(pageIndex), viewerController.getDocumentViewController().getDocumentViewModel());
                                 if (component != null) {
                                     components.add(component);
                                 }
@@ -317,12 +331,151 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                 logger.fine("Found search hits on page " + pageIndex + " hit count " + searchHits.size());
             }
         }
+        return searchHits;
+    }
 
+    @Override
+    public void setSearchMode(SearchMode searchMode) {
+        this.searchMode = searchMode;
+    }
+
+    @Override
+    public SearchMode getSearchMode() {
+        return searchMode;
+    }
+
+    private List<LineText> searchHighlightWholePage(final int pageIndex) {
+        // search hit list
+        final List<LineText> searchHits = new ArrayList<>();
+
+        // get our our page text reference
+        final PageText pageText = getPageText(pageIndex);
+
+        // some pages just don't have any text.
+        if (pageText == null) {
+            return searchHits;
+        }
+
+        //Prepare whole text
+        final List<SearchTerm> terms = searchModel.getSearchTerms();
+        final Map<Integer, WordText> idxToWordText = new HashMap<>();
+        final List<Integer> wordOffsets = new ArrayList<>();
+        final Map<WordText, LineText> wordTextToLineText = new HashMap<>();
+        SearchTerm term;
+        final StringBuilder textBuilder = new StringBuilder();
+        for (final LineText line : pageText.getPageLines()) {
+            String lastWordText = null;
+            for (final WordText word : line.getWords()) {
+                final String wordText = word.getText();
+                //Remove multi-spaces
+                if (!wordText.equals(" ") || (lastWordText != null && !lastWordText.equals(" "))) {
+                    wordOffsets.add(textBuilder.length());
+                    idxToWordText.put(wordOffsets.size() - 1, word);
+                    textBuilder.append(wordText);
+                    wordOffsets.add(textBuilder.length());
+                    idxToWordText.put(wordOffsets.size() - 1, word);
+                    lastWordText = wordText;
+                    wordTextToLineText.put(word, line);
+                }
+            }
+            textBuilder.append("\n");
+        }
+        final String text = textBuilder.toString();
+        final Map<Color, List<Pair<Integer, Integer>>> colorToOffsets = new HashMap<>();
+        for (final SearchTerm searchTerm : terms) {
+            term = searchTerm;
+
+            // apply case sensitivity rule.
+            String searchString = term.isCaseSensitive() ? text : text.toLowerCase();
+            //If not regex, replace line feed by spaces
+            if (!term.isRegex()) {
+                searchString = searchString.replace("\n", " ");
+            }
+            //Always use regex to search
+            final Pattern pattern = term.isRegex() ? term.getRegexPattern() : Pattern.compile(Pattern.quote(term.getTerm()));
+            final Matcher matcher = pattern.matcher(searchString);
+            final List<Pair<Integer, Integer>> offsets = new ArrayList<>();
+            while (matcher.find()) {
+                // add word to potentials
+                offsets.add(Pair.of(matcher.start(), matcher.end()));
+            }
+            colorToOffsets.put(term.getHighlightColor(), offsets);
+        }
+        // check if we have found what we're looking for
+        for (final Color color : colorToOffsets.keySet()) {
+            for (final Pair<Integer, Integer> offsets : colorToOffsets.get(color)) {
+                final int start = offsets.getLeft();
+                final int end = offsets.getRight();
+                //Get relevant WordTexts
+                int startIdx = Collections.binarySearch(wordOffsets, start);
+                if (startIdx < 0) {
+                    startIdx = -(startIdx + 1);
+                } else {
+                    //Take word start
+                    if (startIdx + 1 < wordOffsets.size() && wordOffsets.get(startIdx + 1) == start) {
+                        startIdx += 1;
+                    }
+                }
+                int endIdx = Collections.binarySearch(wordOffsets, end);
+                if (endIdx < 0) {
+                    endIdx = -(endIdx + 1);
+                }
+                final LineText lineText = new LineText();
+                //Add start line context
+                final WordText firstWord = idxToWordText.get(startIdx);
+                final LineText firstLineText = wordTextToLineText.get(firstWord);
+                for (final WordText wt : firstLineText.getWords()) {
+                    if (wt != firstWord) {
+                        lineText.getWords().add(wt);
+                    } else {
+                        break;
+                    }
+                }
+                WordText previous = null;
+                for (int i = startIdx; i < endIdx; ++i) {
+                    final WordText wt = idxToWordText.get(i);
+                    if (wt != previous) {
+                        wt.setHighlighted(true);
+                        wt.setHasHighlight(true);
+                        wt.setHighlightColor(color);
+                        lineText.getWords().add(wt);
+                        final Set<SearchHitComponent> components = pageToComponents.getOrDefault(pageIndex, new HashSet<>());
+                        final SearchHitComponent component = componentFactory.createComponent(text.substring(start, end).replace("\n", " "), wt.getBounds(), document.getPageTree().getPage(pageIndex), viewerController.getDocumentViewController().getDocumentViewModel());
+                        if (component != null) {
+                            components.add(component);
+                        }
+                        pageToComponents.put(pageIndex, components);
+                    }
+                    previous = wt;
+                }
+                //Add end line context
+                final WordText lastWord = idxToWordText.get(endIdx);
+                final LineText lastLineText = wordTextToLineText.get(lastWord);
+                boolean take = false;
+                for (final WordText wt : lastLineText.getWords()) {
+                    if (take) {
+                        lineText.getWords().add(wt);
+                    } else if (wt == lastWord) {
+                        take = true;
+                    }
+                }
+                searchHits.add(lineText);
+            }
+        }
+
+
+        // if we have a hit we'll add it to the model cache
+        if (!searchHits.isEmpty()) {
+            searchModel.addPageSearchHit(pageIndex, pageText, searchHits.size());
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine("Found search hits on page " + pageIndex + " hit count " + searchHits.size());
+            }
+        }
         return searchHits;
     }
 
     /**
-     * Search page but only return words that are hits.  Highlighting is till
+     * Search page but only return words that are hits. Highlighting is still
      * applied but this method can be used if other data needs to be extracted
      * from the found words.
      *
@@ -339,7 +492,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                 ArrayList<LineText> pageLines = searchText.getPageLines();
                 if (pageLines != null) {
                     for (LineText pageLine : pageLines) {
-                        List<WordText> lineWords = pageLine.getWords();
+                        java.util.List<WordText> lineWords = pageLine.getWords();
                         if (lineWords != null) {
                             for (WordText word : lineWords) {
                                 if (word.isHighlighted()) {
@@ -654,7 +807,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
 
     /**
      * Add the search term to the list of search terms.  The term is split
-     * into words based on white space and punctuation. No checks are done
+     * into words based on white space and punctuation if the search mode is WORD. No checks are done
      * for duplication.
      * <br>
      * A new search needs to be executed for this change to take place.
@@ -685,7 +838,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         }
         // parse search term out into words, so we can match
         // them against WordText
-        ArrayList<String> searchPhrase = searchPhraseParser(term);
+        ArrayList<String> searchPhrase = searchMode == SearchMode.PAGE ? new ArrayList<>(Collections.singletonList(term)) : searchPhraseParser(term);
         // finally add the search term to the list and return it for management
         SearchTerm searchTerm =
                 new SearchTerm(originalTerm, searchPhrase, caseSensitive, wholeWord, regex, highlightColor);

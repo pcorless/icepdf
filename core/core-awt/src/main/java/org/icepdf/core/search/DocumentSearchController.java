@@ -59,7 +59,7 @@ public interface DocumentSearchController {
      * with {@link #addSearchTerm(String, boolean, boolean)}.  If search
      * hits where detected then the Page's PageText is added to the cache.
      * <br>
-     * This method represent the core search algorithm for this
+     * This method represent the org.icepdf.core search algorithm for this
      * DocumentSearchController implementation.  This method can be overridden
      * if a different search algorithm or functionality is needed.
      *
@@ -78,7 +78,7 @@ public interface DocumentSearchController {
      * is padded by pre and post words that surround the hit in the page
      * context.
      * <br>
-     * This method represent the core search algorithm for this
+     * This method represent the org.icepdf.core search algorithm for this
      * DocumentSearchController implementation.  This method can be overridden
      * if a different search algorithm or functionality is needed.
      *
@@ -89,6 +89,17 @@ public interface DocumentSearchController {
      * @return number of hits found for this page.
      */
     List<LineText> searchHighlightPage(int pageIndex, int wordPadding);
+
+    /**
+     * Sets the search mode
+     * @param searchMode The searchMode
+     */
+    void setSearchMode(SearchMode searchMode);
+
+    /**
+     * @return The current SearchMode
+     */
+    SearchMode getSearchMode();
 
     /**
      * Search page but only return words that are hits.  Highlighting is till
@@ -123,7 +134,7 @@ public interface DocumentSearchController {
     ArrayList<OutlineItem> searchOutlines();
 
     /**
-     * Sets the search hit cursor to  a particular page to aid in large page jumps when other
+     * Sets the search hit cursor to a particular page to aid in large page jumps when other
      * navigation controls are used to navigate around the document.
      *
      * @param page page number.
@@ -168,7 +179,7 @@ public interface DocumentSearchController {
 
     /**
      * Add the search term to the list of search terms.  The term is split
-     * into words based on white space and punctuation. No checks are done
+     * into words based on white space and punctuation if the search mode is WORD. No checks are done
      * for duplication.
      * <br>
      * A new search needs to be executed for this change to take place.
@@ -183,7 +194,7 @@ public interface DocumentSearchController {
 
     /**
      * Add the search term to the list of search terms.  The term is split
-     * into words based on white space and punctuation. No checks are done
+     * into words based on white space and punctuation if the search mode is WORD. No checks are done
      * for duplication.
      * <br>
      * A new search needs to be executed for this change to take place.
@@ -197,20 +208,6 @@ public interface DocumentSearchController {
     SearchTerm addSearchTerm(String term, boolean caseSensitive,
                              boolean wholeWord, boolean regex);
 
-    /**
-     * Add the search term to the list of search terms.  The term is split
-     * into words based on white space and punctuation. No checks are done
-     * for duplication.
-     * <br>
-     * A new search needs to be executed for this change to take place.
-     *
-     * @param term           single word or phrase to search for.
-     * @param caseSensitive  is search case sensitive.
-     * @param wholeWord      is search whole word sensitive.
-     * @param regex          enable regex processing on a word by word level.
-     * @param highlightColor The color to highlight the found terms with
-     * @return searchTerm newly create search term.
-     */
     SearchTerm addSearchTerm(String term, boolean caseSensitive,
                              boolean wholeWord, boolean regex, Color highlightColor);
 

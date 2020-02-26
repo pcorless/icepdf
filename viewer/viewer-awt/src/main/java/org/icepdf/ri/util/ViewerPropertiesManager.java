@@ -253,6 +253,7 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_ANNOTATION_QUICK_COLOR = "application.viewer.utility.annotation.filter.quick.color";
 
     // text search panel settings
+    public static final String PROPERTY_SEARCH_PANEL_WHOLE_PAGE_ENABLED = "application.viewer.utility.search.whole.page.enabled";
     public static final String PROPERTY_SEARCH_PANEL_REGEX_ENABLED = "application.viewer.utility.search.regex.enabled";
     public static final String PROPERTY_SEARCH_PANEL_WHOLE_WORDS_ENABLED = "application.viewer.utility.search.whole.words.enabled";
     public static final String PROPERTY_SEARCH_PANEL_CASE_SENSITIVE_ENABLED = "application.viewer.utility.search.case.sensitive.enabled";
