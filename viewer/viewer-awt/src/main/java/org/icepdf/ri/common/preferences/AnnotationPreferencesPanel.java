@@ -120,9 +120,15 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
         constraints.anchor = GridBagConstraints.NORTH;
         constraints.insets = new Insets(5, 5, 5, 5);
         JPanel miscSettingsPanel = new JPanel(new GridBagLayout());
-        miscSettingsPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED), messageBundle.getString("viewer.dialog.viewerPreferences.section.annotations.misc.border.label"), TitledBorder.LEFT, TitledBorder.DEFAULT_POSITION));
-        JCheckBox autoselectBox = new JCheckBox(messageBundle.getString("viewer.dialog.viewerPreferences.section.annotations.misc.autoselect.checkbox"));
-        autoselectBox.setSelected(ViewerPropertiesManager.getInstance().getPreferences().getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_SELECTION_ENABLED, false));
+        miscSettingsPanel.setBorder(new TitledBorder(
+                new EtchedBorder(EtchedBorder.LOWERED),
+                messageBundle.getString("viewer.dialog.viewerPreferences.section.annotations.misc.border.label"),
+                TitledBorder.LEFT,
+                TitledBorder.DEFAULT_POSITION));
+        JCheckBox autoselectBox = new JCheckBox(messageBundle.getString(
+                "viewer.dialog.viewerPreferences.section.annotations.misc.autoselect.checkbox"));
+        autoselectBox.setSelected(ViewerPropertiesManager.getInstance().getPreferences().
+                getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_SELECTION_ENABLED, false));
         autoselectBox.addActionListener(actionEvent -> {
             JCheckBox box = (JCheckBox) actionEvent.getSource();
             boolean selected = box.isSelected();
