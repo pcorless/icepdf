@@ -14,11 +14,14 @@ public class ExImportPreferencesPanel extends JPanel {
 
     private final GridBagConstraints constraints;
 
-    public ExImportPreferencesPanel(Controller controller, ViewerPropertiesManager propertiesManager, ResourceBundle messageBundle, Dialog parent) {
+    public ExImportPreferencesPanel(Controller controller, ViewerPropertiesManager propertiesManager,
+                                    ResourceBundle messageBundle, Dialog parent) {
         super(new GridBagLayout());
         setAlignmentY(JPanel.TOP_ALIGNMENT);
-        final JButton exportButton = new JButton(messageBundle.getString("viewer.dialog.viewerPreferences.section.eximport.export.button.label"));
-        final JButton importButton = new JButton(messageBundle.getString("viewer.dialog.viewerPreferences.section.eximport.import.button.label"));
+        final JButton exportButton = new JButton(messageBundle.getString(
+                "viewer.dialog.viewerPreferences.section.eximport.export.button.label"));
+        final JButton importButton = new JButton(messageBundle.getString(
+                "viewer.dialog.viewerPreferences.section.eximport.import.button.label"));
 
         final JPanel panel = new JPanel(new GridBagLayout());
         panel.setAlignmentY(JPanel.TOP_ALIGNMENT);
@@ -43,9 +46,9 @@ public class ExImportPreferencesPanel extends JPanel {
             final String file = chooser.getFile();
             if (dir != null && file != null) {
                 if (ViewerPropertiesManager.exportProperties(new File(dir + file))) {
-                    JOptionPane.showMessageDialog(this, messageBundle.getString("viewer.dialog.viewerPreferences.section.eximport.export.success.label"), messageBundle.getString("viewer.dialog.viewerPreferences.section.eximport.export.success.title"), JOptionPane.INFORMATION_MESSAGE);
+                    showSuccess(messageBundle, "export");
                 } else {
-                    JOptionPane.showMessageDialog(this, messageBundle.getString("viewer.dialog.viewerPreferences.section.eximport.export.fail.label"), messageBundle.getString("viewer.dialog.viewerPreferences.section.eximport.export.fail.title"), JOptionPane.ERROR_MESSAGE);
+                    showFailure(messageBundle, "export");
                 }
             }
         });
@@ -58,9 +61,9 @@ public class ExImportPreferencesPanel extends JPanel {
             final String file = chooser.getFile();
             if (dir != null && file != null) {
                 if (ViewerPropertiesManager.importProperties(new File(dir + file))) {
-                    JOptionPane.showMessageDialog(this, messageBundle.getString("viewer.dialog.viewerPreferences.section.eximport.import.success.label"), messageBundle.getString("viewer.dialog.viewerPreferences.section.eximport.import.success.title"), JOptionPane.INFORMATION_MESSAGE);
+                    showSuccess(messageBundle, "import");
                 } else {
-                    JOptionPane.showMessageDialog(this, messageBundle.getString("viewer.dialog.viewerPreferences.section.eximport.import.fail.label"), messageBundle.getString("viewer.dialog.viewerPreferences.section.eximport.import.fail.title"), JOptionPane.ERROR_MESSAGE);
+                    showFailure(messageBundle, "import");
                 }
             }
         });
@@ -71,8 +74,20 @@ public class ExImportPreferencesPanel extends JPanel {
         addGB(this, panel, 0, 0, 1, 1);
         constraints.weighty = 1.0;
         addGB(this, new JLabel(" "), 0, 1, 1, 1);
+    }
 
+    private void showSuccess(ResourceBundle messageBundle, String action) {
+        JOptionPane.showMessageDialog(this,
+                messageBundle.getString("viewer.dialog.viewerPreferences.section.eximport." + action + ".success.label"),
+                messageBundle.getString("viewer.dialog.viewerPreferences.section.eximport." + action + ".success.title"),
+                JOptionPane.INFORMATION_MESSAGE);
+    }
 
+    private void showFailure(ResourceBundle messageBundle, String action) {
+        JOptionPane.showMessageDialog(this,
+                messageBundle.getString("viewer.dialog.viewerPreferences.section.eximport." + action + ".fail.label"),
+                messageBundle.getString("viewer.dialog.viewerPreferences.section.eximport." + action + ".fail.title"),
+                JOptionPane.ERROR_MESSAGE);
     }
 
     private void addGB(JPanel layout, Component component,
