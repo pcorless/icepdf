@@ -77,7 +77,9 @@ import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
-import java.net.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -85,7 +87,6 @@ import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -3564,103 +3565,6 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Backup for sendMail(), using a mailto uri
-     */
-    private void sendMailMailto(String os, String attachment) {
-        String mailto = "mailto:?attachment=" + attachment;
-        try {
-            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.MAIL)) {
-                URI mailtoURI = new URI(mailto.replace(" ", "%20"));
-                Desktop.getDesktop().mail(mailtoURI);
-            } else {
-                List<String> args = new ArrayList<>();
-                if (os.contains("win")) {
-                    args.add("cmd.exe");
-                    args.add("/c");
-                    args.add("start");
-                    args.add(mailto.replace(" ", "%20"));
-                } else if (os.contains("osx")) {
-                    args.add("open");
-                    args.add(mailto.replace(" ", "%20"));
-                } else if (os.contains("nix") || os.contains("aix") || os.contains("nux")) {
-                    args.add("bash");
-                    args.add("-c");
-                    args.add("xdg-open " + mailto.replace(" ", "%20"));
-                } else {
-                    logger.warning("Unsupported os : " + os);
-                    JOptionPane.showMessageDialog(viewer, messageBundle.getString("viewer.dialog.sendmail.unsupported.msg"), messageBundle.getString("viewer.dialog.sendmail.unsupported.title"), JOptionPane.ERROR_MESSAGE);
-                }
-                if (!args.isEmpty()) {
-                    final String[] argsA = args.toArray(new String[]{});
-                    Process process = new ProcessBuilder(argsA).start();
-                    if (process.exitValue() != 0) {
-                        JOptionPane.showMessageDialog(viewer, messageBundle.getString("viewer.dialog.sendmail.error.msg"), messageBundle.getString("viewer.dialog.sendmail.error.title"), JOptionPane.ERROR_MESSAGE);
-                    }
-                }
-            }
-        } catch (URISyntaxException | IOException e) {
-            logger.log(Level.WARNING, "Error using " + mailto, e);
-            JOptionPane.showMessageDialog(viewer, messageBundle.getString("viewer.dialog.sendmail.error.msg"), messageBundle.getString("viewer.dialog.sendmail.error.title"), JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    /**
-     * Sends the current document by mail, opening the default mail client
-     */
-    public void sendMail() {
-        String os = System.getProperty("os.name").toLowerCase();
-        String attachment = document.getDocumentLocation();
-        List<String> args = new ArrayList<>();
-        if (os.contains("win")) {
-            try {
-                String[] value = WindowsRegistry.readRegistry("HKEY_LOCAL_MACHINE\\SOFTWARE\\Clients\\Mail", "");
-                if (value[10].toLowerCase().contains("thunderbird")) {
-                    String[] pfad = WindowsRegistry.readRegistry("HKEY_LOCAL_MACHINE\\SOFTWARE\\Clients\\Mail\\Mozilla Thunderbird\\shell\\open\\command", "");
-                    args.add(pfad[10]);
-                    args.add(pfad[11]);
-                    args.add("/compose");
-                    args.add("attachment='" + attachment + "'");
-                } else if (value[10].toLowerCase().contains("outlook")) {
-                    String[] pfad = WindowsRegistry.readRegistry(
-                            "HKEY_LOCAL_MACHINE\\SOFTWARE\\Clients\\Mail\\Microsoft Outlook\\shell\\open\\command", "");
-                    args.add(pfad[10]);
-                    args.add("/a");
-                    args.add(attachment);
-                }
-            } catch (Exception ignored) {
-            }
-        } else if (os.contains("nix") || os.contains("aix") || os.contains("nux")) {
-            try {
-                String[] mimeArgs = {"xdg-mime", "query", "default", "x-scheme-handler/mailto"};
-                Process mimeProc = new ProcessBuilder(mimeArgs).start();
-                Scanner scanner = new Scanner(mimeProc.getInputStream());
-                String app = scanner.nextLine();
-                if (app.toLowerCase().contains("thunderbird")) {
-                    args.add("thunderbird");
-                    args.add("-compose");
-                    args.add("attachment='" + attachment + "'");
-                }
-                scanner.close();
-            } catch (IOException ignored) {
-            }
-        }
-        if (args.isEmpty()) {
-            sendMailMailto(os, attachment);
-        } else {
-            Process process;
-            try {
-                process = new ProcessBuilder(args.toArray(new String[]{})).start();
-                process.waitFor(1, TimeUnit.SECONDS);
-                if (!process.isAlive() && process.exitValue() != 0) {
-                    sendMailMailto(os, attachment);
-                }
-            } catch (IOException | InterruptedException e) {
-                sendMailMailto(os, attachment);
-            }
-        }
-    }
-
-    /**
      * Utility method for exporting all of a Document's text to a text file.
      * Shows a file save dialog for the user to select where to save the
      * exported text file to, and what name to give that file.
@@ -4849,7 +4753,7 @@ public class SwingController extends ComponentAdapter
             } else if (source == saveAsFileMenuItem || source == saveAsFileButton) {
                 saveFile();
             } else if (source == sendMailMenuItem) {
-                sendMail();
+                MailSender.sendMail(this);
             } else if (source == exportTextMenuItem) {
                 exportText();
             } else if (source == exitMenuItem) {
