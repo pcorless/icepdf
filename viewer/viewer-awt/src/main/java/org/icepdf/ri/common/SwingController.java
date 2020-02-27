@@ -3086,10 +3086,14 @@ public class SwingController extends ComponentAdapter
         // add to the main pdfContentPanel the document peer
         if (viewer != null) {
             File f = new File(fileDescription);
-            String title = document.getInfo().getTitle();
+            String title = null;
+            if (document.getInfo() != null) {
+                title = document.getInfo().getTitle();
+            }
             String filename = f.exists() ? f.getName() : fileDescription;
             Object[] messageArguments = title == null ? new String[]{filename} : new String[]{title, filename};
-            MessageFormat formatter = new MessageFormat(messageBundle.getString("viewer.window.title.open." + (title == null ? "notitle" : "default")));
+            String titleResource = title == null ? "notitle" : "default";
+            MessageFormat formatter = new MessageFormat(messageBundle.getString("viewer.window.title.open." + titleResource));
             viewer.setTitle(formatter.format(messageArguments));
         }
 
