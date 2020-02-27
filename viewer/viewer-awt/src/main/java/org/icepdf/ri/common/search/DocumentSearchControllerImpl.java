@@ -303,7 +303,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                                 wordHit.setHighlightColor(term.getHighlightColor());
                                 hitWords.add(wordHit);
                                 Set<SearchHitComponent> components = pageToComponents.getOrDefault(pageIndex, new HashSet<>());
-                                final SearchHitComponent component = componentFactory.createComponent(wordHit, document.getPageTree().getPage(pageIndex), viewerController.getDocumentViewController().getDocumentViewModel());
+                                SearchHitComponent component = componentFactory.createComponent(wordHit, document.getPageTree().getPage(pageIndex), viewerController);
                                 if (component != null) {
                                     components.add(component);
                                 }
@@ -440,7 +440,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                         wt.setHighlightColor(color);
                         lineText.getWords().add(wt);
                         final Set<SearchHitComponent> components = pageToComponents.getOrDefault(pageIndex, new HashSet<>());
-                        final SearchHitComponent component = componentFactory.createComponent(text.substring(start, end).replace("\n", " "), wt.getBounds(), document.getPageTree().getPage(pageIndex), viewerController.getDocumentViewController().getDocumentViewModel());
+                        final SearchHitComponent component = componentFactory.createComponent(text.substring(start, end).replace("\n", " "), wt.getBounds(), document.getPageTree().getPage(pageIndex), viewerController);
                         if (component != null) {
                             components.add(component);
                         }
