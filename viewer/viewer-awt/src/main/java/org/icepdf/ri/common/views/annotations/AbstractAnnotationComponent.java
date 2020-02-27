@@ -403,9 +403,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
             annotation.setCurrentAppearance(Annotation.APPEARANCE_STREAM_DOWN_KEY);
         }
 
-        if (documentViewController.getDocumentViewModel().getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_SELECTION &&
-                isInteractiveAnnotationsEnabled &&
+        if (isInteractiveAnnotationsEnabled &&
                 !annotation.getFlagReadOnly()) {
             initiateMouseMoved(e);
         }
