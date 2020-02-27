@@ -287,7 +287,8 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                                 wordHit.setHasHighlight(true);
                                 hitWords.add(wordHit);
                                 Set<SearchHitComponent> components = pageToComponents.getOrDefault(pageIndex, new HashSet<>());
-                                SearchHitComponent component = componentFactory.createComponent(wordHit, document.getPageTree().getPage(pageIndex), viewerController);
+                                SearchHitComponent component = componentFactory.createComponent(wordHit,
+                                        document.getPageTree().getPage(pageIndex), viewerController);
                                 if (component != null) {
                                     components.add(component);
                                 }

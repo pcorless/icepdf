@@ -269,7 +269,8 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                         if (!newSearchHitComponents.equals(searchHitComponents)) {
                             searchHitComponents.forEach(this::remove);
                             searchHitComponents = newSearchHitComponents;
-                            searchHitComponents.forEach(comp -> this.add(comp, JLayeredPane.MODAL_LAYER)); //In front of annotations, behind popups
+                            //In front of annotations, behind popups
+                            searchHitComponents.forEach(comp -> this.add(comp, JLayeredPane.MODAL_LAYER));
                             validate();
                         }
                     }
