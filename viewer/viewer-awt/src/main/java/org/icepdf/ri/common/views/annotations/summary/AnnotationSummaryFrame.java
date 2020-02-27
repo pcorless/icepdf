@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.views.annotations.summary;
 
+import org.icepdf.core.pobjects.Document;
 import org.icepdf.ri.common.MutableDocument;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.images.Images;
@@ -39,8 +40,12 @@ public class AnnotationSummaryFrame extends JFrame implements MutableDocument {
 
     @Override
     public void refreshDocumentInstance() {
-        if (controller.getDocument() != null) {
-            String title = controller.getDocument().getInfo().getTitle();
+        Document document = controller.getDocument();
+        if (document != null) {
+            String title = null;
+            if (document.getInfo() != null) {
+                title = document.getInfo().getTitle();
+            }
             Object[] messageArguments = {title != null ? title : controller.getViewerFrame().getTitle()};
             MessageFormat formatter = new MessageFormat(
                     messageBundle.getString("viewer.window.annotationSummary.title.open.default"));
