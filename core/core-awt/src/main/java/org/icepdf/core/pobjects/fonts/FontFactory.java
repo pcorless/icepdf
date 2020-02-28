@@ -42,6 +42,7 @@ public class FontFactory {
 
     // dynamic property to switch between font engine and awt font substitution. 
     private static boolean awtFontSubstitution;
+    private static boolean useNFontIfAvailable;
 
     static {
         // turn on font file loading using awt, can cause the jvm to crash
@@ -49,6 +50,7 @@ public class FontFactory {
         awtFontLoading =
                 Defs.sysPropertyBoolean("org.icepdf.core.awtFontLoading",
                         false);
+        useNFontIfAvailable = Defs.sysPropertyBoolean("org.icepdf.core.useNFont", true);
 
     }
 
@@ -76,6 +78,7 @@ public class FontFactory {
             "org.icepdf.core.pobjects.fonts.nfont.NFontType1";
     private static final String NFONT_TRUE_TYPE_3 =
             "org.icepdf.core.pobjects.fonts.nfont.NFontType3";
+
     static {
         // check class bath for NFont library, and declare results.
         try {
@@ -312,7 +315,7 @@ public class FontFactory {
             // keep quiet
         }
 
-        return foundNFont && !awtFontSubstitution;
+        return foundNFont && !awtFontSubstitution && useNFontIfAvailable;
     }
 
 }

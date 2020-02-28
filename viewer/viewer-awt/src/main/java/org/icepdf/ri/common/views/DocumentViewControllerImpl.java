@@ -28,10 +28,7 @@ import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
-import java.awt.event.KeyListener;
+import java.awt.event.*;
 import java.awt.geom.Point2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -137,7 +134,7 @@ public class DocumentViewControllerImpl
             }
         };
         InputMap inputMap = documentViewScrollPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-        inputMap.put(KeyStroke.getKeyStroke("DELETE"), "removeSelectedAnnotation");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "removeSelectedAnnotation");
         documentViewScrollPane.getActionMap().put("removeSelectedAnnotation", deleteAnnotation);
     }
 
@@ -1304,7 +1301,7 @@ public class DocumentViewControllerImpl
     public void deleteCurrentAnnotation() {
         AbstractAnnotationComponent annotationComponent = (AbstractAnnotationComponent)
                 documentViewModel.getCurrentAnnotation();
-        if (!(annotationComponent instanceof PopupAnnotationComponent)) {
+        if (annotationComponent != null && !(annotationComponent instanceof PopupAnnotationComponent)) {
             deleteAnnotation(annotationComponent);
         }
     }
