@@ -365,17 +365,19 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         final StringBuilder textBuilder = new StringBuilder();
         for (final LineText line : pageText.getPageLines()) {
             String lastWordText = null;
-            for (final WordText word : line.getWords()) {
-                final String wordText = word.getText();
-                //Remove multi-spaces
-                if (!wordText.equals(" ") || (lastWordText != null && !lastWordText.equals(" "))) {
-                    wordOffsets.add(textBuilder.length());
-                    idxToWordText.put(wordOffsets.size() - 1, word);
-                    textBuilder.append(wordText);
-                    wordOffsets.add(textBuilder.length());
-                    idxToWordText.put(wordOffsets.size() - 1, word);
-                    lastWordText = wordText;
-                    wordTextToLineText.put(word, line);
+            if (line != null && line.getWords() != null) {
+                for (final WordText word : line.getWords()) {
+                    final String wordText = word.getText();
+                    //Remove multi-spaces
+                    if (!wordText.equals(" ") || (lastWordText != null && !lastWordText.equals(" "))) {
+                        wordOffsets.add(textBuilder.length());
+                        idxToWordText.put(wordOffsets.size() - 1, word);
+                        textBuilder.append(wordText);
+                        wordOffsets.add(textBuilder.length());
+                        idxToWordText.put(wordOffsets.size() - 1, word);
+                        lastWordText = wordText;
+                        wordTextToLineText.put(word, line);
+                    }
                 }
             }
             textBuilder.append("\n");
@@ -424,11 +426,13 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                 //Add start line context
                 final WordText firstWord = idxToWordText.get(startIdx);
                 final LineText firstLineText = wordTextToLineText.get(firstWord);
-                for (final WordText wt : firstLineText.getWords()) {
-                    if (wt != firstWord) {
-                        lineText.getWords().add(wt);
-                    } else {
-                        break;
+                if (firstLineText != null && firstLineText.getWords() != null) {
+                    for (final WordText wt : firstLineText.getWords()) {
+                        if (wt != firstWord) {
+                            lineText.getWords().add(wt);
+                        } else {
+                            break;
+                        }
                     }
                 }
                 WordText previous = null;
@@ -451,12 +455,14 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                 //Add end line context
                 final WordText lastWord = idxToWordText.get(endIdx);
                 final LineText lastLineText = wordTextToLineText.get(lastWord);
-                boolean take = false;
-                for (final WordText wt : lastLineText.getWords()) {
-                    if (take) {
-                        lineText.getWords().add(wt);
-                    } else if (wt == lastWord) {
-                        take = true;
+                if (lastLineText != null && lastLineText.getWords() != null) {
+                    boolean take = false;
+                    for (final WordText wt : lastLineText.getWords()) {
+                        if (take) {
+                            lineText.getWords().add(wt);
+                        } else if (wt == lastWord) {
+                            take = true;
+                        }
                     }
                 }
                 searchHits.add(lineText);
