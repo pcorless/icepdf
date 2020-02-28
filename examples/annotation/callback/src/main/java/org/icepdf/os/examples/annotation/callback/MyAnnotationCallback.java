@@ -166,7 +166,7 @@ public class MyAnnotationCallback implements AnnotationCallback {
                     } // show save as dialog.
                     else if (NamedAction.SAVE_AS_KEY.equals(actionName)) {
                         SwingController controller = (SwingController) documentViewController.getParentController();
-                        controller.saveFile();
+                        controller.saveFileAs();
                     }
                 }
             }

@@ -87,6 +87,28 @@ public class StateManager {
     }
 
     /**
+     * @return an unmodifiable copy of the current changes
+     */
+    public Map<Reference, PObject> getChanges() {
+        return Collections.unmodifiableMap(new HashMap<>(changes));
+    }
+
+
+    /**
+     * Checks that the given and the current list of changes are the same or not
+     *
+     * @param knownChanges The changes to compare to
+     * @return true if the changes are different, false otherwise
+     */
+    public boolean hasChangedSince(Map<Reference, PObject> knownChanges) {
+        if (knownChanges.size() == changes.size()) {
+            return knownChanges.entrySet().stream().anyMatch(entry -> !Objects.equals(changes.get(entry.getKey()), entry.getValue()));
+        } else {
+            return true;
+        }
+    }
+
+    /**
      * Checks the state manager to see if an instance of the specified reference
      * already exists in the cache.
      *
