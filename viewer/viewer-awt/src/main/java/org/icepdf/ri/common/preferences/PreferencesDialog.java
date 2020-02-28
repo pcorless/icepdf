@@ -27,8 +27,8 @@ import java.util.ResourceBundle;
  * The PreferencesDialog exposes numbers settings that would normally only be configurable with system properties.
  * Default values can still be added to the ICEpdfDefault.properties.  As a general rule system properties should
  * be used when using the rendering core only and the PreferenceDialog should be used when configuring the Viewer RI.
- *
- * Panel visibility can be controlled with the followign preference values.
+ * <p>
+ * Panel visibility can be controlled with the following preference values.
  * <ul>
  *     <li>PropertiesManager.PROPERTY_SHOW_PREFERENCES_GENERAL</li>
  *     <li>PropertiesManager.PROPERTY_SHOW_PREFERENCES_ANNOTATIONS</li>
@@ -101,6 +101,12 @@ public class PreferencesDialog extends EscapeJDialog {
                     messageBundle.getString("viewer.dialog.viewerPreferences.section.advanced.title"),
                     new AdvancedPreferencesPanel(controller, propertiesManager, messageBundle));
         }
+        if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_EXIMPORT, true)) {
+            propertiesTabbedPane.addTab(
+                    messageBundle.getString("viewer.dialog.viewerPreferences.section.eximport.title"),
+                    new ExImportPreferencesPanel(controller, propertiesManager, messageBundle, this));
+        }
+
 
         JPanel layoutPanel = new JPanel(new GridBagLayout());
 
@@ -117,9 +123,7 @@ public class PreferencesDialog extends EscapeJDialog {
 
         this.setLayout(new BorderLayout(5, 5));
         this.add(layoutPanel, BorderLayout.NORTH);
-//        this.pack();
-        setSize(575, 475);
-        validate();
+        this.pack();
         setLocationRelativeTo(frame);
     }
 
