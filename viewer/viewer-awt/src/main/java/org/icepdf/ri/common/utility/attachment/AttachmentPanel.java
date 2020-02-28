@@ -231,19 +231,22 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
     private void saveFile(String fileName, EmbeddedFileStream embeddedFileStream) {
 
         // Create and display a file saving dialog
-        final JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
-        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        final FileDialog fileDialog = new FileDialog(controller.getViewerFrame());
+        fileDialog.setTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
+        fileDialog.setMultipleMode(false);
+        fileDialog.setMode(FileDialog.SAVE);
         // set the directory to our currently set default.
         if (ViewModel.getDefaultFile() != null) {
-            fileChooser.setCurrentDirectory(ViewModel.getDefaultFile());
+            fileDialog.setDirectory(ViewModel.getDefaultFile().getAbsolutePath());
         }
         // set the file name.
-        fileChooser.setSelectedFile(new File(fileName));
+        fileDialog.setFile(fileName);
         // show the dialog
-        int returnVal = fileChooser.showSaveDialog(controller.getViewerFrame());
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-            File file = fileChooser.getSelectedFile();
+        fileDialog.setVisible(true);
+        final String filePath = fileDialog.getFile();
+        final String dirPath = fileDialog.getDirectory();
+        if (filePath != null && dirPath != null) {
+            File file = new File(dirPath + filePath);
             if (file.exists()) {
                 boolean overWrite = org.icepdf.ri.util.Resources.showConfirmDialog(
                         controller.getViewerFrame(),
