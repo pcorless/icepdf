@@ -1,6 +1,7 @@
 package org.icepdf.ri.common;
 
 import javax.swing.*;
+import javax.swing.plaf.basic.BasicCheckBoxMenuItemUI;
 import javax.swing.plaf.synth.SynthCheckBoxMenuItemUI;
 
 /**
@@ -19,11 +20,20 @@ public class PersistentJCheckBoxMenuItem extends JCheckBoxMenuItem {
     @Override
     public void updateUI() {
         super.updateUI();
-        setUI(new SynthCheckBoxMenuItemUI() {
-            @Override
-            protected void doClick(MenuSelectionManager msm) {
-                menuItem.doClick(0);
-            }
-        });
+        if (getUI() instanceof SynthCheckBoxMenuItemUI) {
+            setUI(new SynthCheckBoxMenuItemUI() {
+                @Override
+                protected void doClick(MenuSelectionManager msm) {
+                    menuItem.doClick(0);
+                }
+            });
+        } else {
+            setUI(new BasicCheckBoxMenuItemUI() {
+                @Override
+                protected void doClick(MenuSelectionManager msm) {
+                    menuItem.doClick(0);
+                }
+            });
+        }
     }
 }
