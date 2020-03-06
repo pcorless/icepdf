@@ -24,6 +24,7 @@ import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.AbstractWorkerPanel;
+import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.utility.annotation.AnnotationCellRender;
 import org.icepdf.ri.common.utility.annotation.AnnotationTreeNode;
 import org.icepdf.ri.common.views.*;
@@ -38,6 +39,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -52,7 +55,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
     private DefaultMutableTreeNode pageTreeNode;
 
     private MarkupAnnotationPanel parentMarkupAnnotationPanel;
-
+    private final Set<Annotation> annotationSet = new HashSet<>();
     private Pattern searchPattern;
     private MarkupAnnotationPanel.SortColumn sortType;
     private MarkupAnnotationPanel.FilterSubTypeColumn filterType;
@@ -216,6 +219,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
     }
 
     public void refreshMarkupTree() {
+        annotationSet.clear();
         resetTree();
         buildWorkerTaskUI();
     }
@@ -227,6 +231,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
     }
 
     public void addAnnotation(Annotation annotation, Pattern searchPattern) {
+        annotationSet.add(annotation);
         if (annotation instanceof MarkupAnnotation) {
             descendFormTree(pageTreeNode, annotation, searchPattern);
             expandAllNodes();
@@ -262,6 +267,24 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
     public void endProgressControls() {
         progressBar.setVisible(false);
         progressLabel.setVisible(false);
+
+
+        //Don't show/hide annotations if the user is not currently playing with the annotations panel
+        final Component focusOwner = FocusManager.getCurrentManager().getFocusOwner();
+        Container parent = focusOwner.getParent();
+        boolean execute = false;
+        while (parent != null) {
+            if (parent == parentMarkupAnnotationPanel) {
+                execute = true;
+                break;
+            }
+            parent = parent.getParent();
+        }
+        if (execute) {
+            ((SwingController) controller).changeAnnotationsVisibility(a -> annotationSet.contains(a) ||
+                            (a instanceof PopupAnnotation && annotationSet.contains(((PopupAnnotation) a).getParent())),
+                    true, true);
+        }
     }
 
     @Override

@@ -607,6 +607,12 @@ public class DocumentViewControllerImpl
         }
 
         ((JComponent) documentView).addPropertyChangeListener(this);
+        ((Component) documentView).addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                viewerController.changeAnnotationsVisibility(a -> true, true, false);
+            }
+        });
     }
 
     public void propertyChange(PropertyChangeEvent evt) {

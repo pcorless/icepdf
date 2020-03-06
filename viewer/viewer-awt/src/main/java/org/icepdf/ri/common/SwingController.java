@@ -23,6 +23,9 @@ import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.URIAction;
+import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
+import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.search.DocumentSearchController;
@@ -36,6 +39,7 @@ import org.icepdf.ri.common.properties.InformationDialog;
 import org.icepdf.ri.common.properties.PermissionsDialog;
 import org.icepdf.ri.common.properties.PropertiesDialog;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
+import org.icepdf.ri.common.utility.annotation.AnnotationFilter;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.annotation.properties.AnnotationPropertiesDialog;
 import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
@@ -5687,10 +5691,32 @@ public class SwingController extends ComponentAdapter
                 if (annotationPanel != null && annotationPanel.getDestinationsPanel() != null) {
                     annotationPanel.getDestinationsPanel().removeNameTreeNode(destination);
                 }
-                // remove the destination component from the the page component
+                // remove the destination component from the page component
                 documentViewController.deleteDestination(destination);
                 getDocumentViewController().getDocumentView().repaint();
                 break;
+        }
+    }
+
+
+    public void changeAnnotationsVisibility(AnnotationFilter filter, boolean visible, boolean execInvert) {
+        if (document != null && viewer != null) {
+            final PageTree pt = document.getPageTree();
+            for (int i = 0; i < pt.getNumberOfPages(); ++i) {
+                final Page p = pt.getPage(i);
+                if (p.getAnnotations() != null) {
+                    p.getAnnotations().stream().filter(a -> (a instanceof MarkupAnnotation || a instanceof PopupAnnotation)
+                            && filter.filter(a)).forEach(a -> {
+                        a.setFlag(Annotation.FLAG_HIDDEN, !visible);
+                        a.setFlag(Annotation.FLAG_INVISIBLE, !visible);
+                    });
+                    if (execInvert) {
+                        changeAnnotationsVisibility(filter.invertFilter(), !visible, false);
+                    }
+                }
+            }
+            viewer.validate();
+            viewer.repaint();
         }
     }
 }
