@@ -30,6 +30,7 @@ import org.icepdf.ri.common.utility.annotation.AnnotationTreeNode;
 import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.common.views.annotations.*;
 
+import javax.swing.FocusManager;
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
@@ -271,19 +272,21 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
 
         //Don't show/hide annotations if the user is not currently playing with the annotations panel
         final Component focusOwner = FocusManager.getCurrentManager().getFocusOwner();
-        Container parent = focusOwner.getParent();
-        boolean execute = false;
-        while (parent != null) {
-            if (parent == parentMarkupAnnotationPanel) {
-                execute = true;
-                break;
+        if (focusOwner != null) {
+            Container parent = focusOwner.getParent();
+            boolean execute = false;
+            while (parent != null) {
+                if (parent == parentMarkupAnnotationPanel) {
+                    execute = true;
+                    break;
+                }
+                parent = parent.getParent();
             }
-            parent = parent.getParent();
-        }
-        if (execute) {
-            ((SwingController) controller).changeAnnotationsVisibility(a -> annotationSet.contains(a) ||
-                            (a instanceof PopupAnnotation && annotationSet.contains(((PopupAnnotation) a).getParent())),
-                    true, true);
+            if (execute) {
+                ((SwingController) controller).changeAnnotationsVisibility(a -> annotationSet.contains(a) ||
+                                (a instanceof PopupAnnotation && annotationSet.contains(((PopupAnnotation) a).getParent())),
+                        true, true);
+            }
         }
     }
 
