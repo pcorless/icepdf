@@ -60,6 +60,7 @@ public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
     private MarkupAnnotationPanel.SortColumn sortType;
     private MarkupAnnotationPanel.FilterSubTypeColumn filterType;
     private MarkupAnnotationPanel.FilterAuthorColumn filterAuthor;
+    private MarkupAnnotationPanel.FilterVisibilityColumn filterVisibility;
     private Color filterColor;
     private boolean isRegex;
     private boolean isCaseSensitive;
@@ -102,6 +103,7 @@ public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
         this.filterType = builder.filterType;
         this.filterAuthor = builder.filterAuthor;
         this.filterColor = builder.filterColor;
+        this.filterVisibility = builder.filterVisibility;
         this.isRegex = builder.isRegex;
         this.isCaseSensitive = builder.isCaseSensitive;
 
@@ -173,6 +175,15 @@ public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
                                                 filter = true;
                                             }
                                         } else {
+                                            filter = true;
+                                        }
+                                    }
+                                    if (MarkupAnnotationPanel.PRIVATE_PROPERTY_ENABLED &&
+                                            filterVisibility != MarkupAnnotationPanel.FilterVisibilityColumn.ALL) {
+                                        if ((markupAnnotation.getFlagPrivateContents()
+                                                && filterVisibility == MarkupAnnotationPanel.FilterVisibilityColumn.PUBLIC)
+                                                || (!markupAnnotation.getFlagPrivateContents()
+                                                && filterVisibility == MarkupAnnotationPanel.FilterVisibilityColumn.PRIVATE)) {
                                             filter = true;
                                         }
                                     }
@@ -381,6 +392,7 @@ public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
         private MarkupAnnotationPanel.SortColumn sortType;
         private MarkupAnnotationPanel.FilterSubTypeColumn filterType;
         private MarkupAnnotationPanel.FilterAuthorColumn filterAuthor;
+        private MarkupAnnotationPanel.FilterVisibilityColumn filterVisibility;
         private Color filterColor;
         private boolean isRegex;
         private boolean isCaseSensitive;
@@ -410,6 +422,11 @@ public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
 
         Builder setFilterAuthor(MarkupAnnotationPanel.FilterAuthorColumn filterAuthor) {
             this.filterAuthor = filterAuthor;
+            return this;
+        }
+
+        Builder setFilterVisibility(MarkupAnnotationPanel.FilterVisibilityColumn filterVisibility) {
+            this.filterVisibility = filterVisibility;
             return this;
         }
 

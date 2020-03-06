@@ -57,6 +57,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
     private MarkupAnnotationPanel.SortColumn sortType;
     private MarkupAnnotationPanel.FilterSubTypeColumn filterType;
     private MarkupAnnotationPanel.FilterAuthorColumn filterAuthor;
+    private MarkupAnnotationPanel.FilterVisibilityColumn filterVisibility;
     private Color filterColor;
     private boolean isRegex;
     private boolean isCaseSensitive;
@@ -198,6 +199,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
     public void sortAndFilterAnnotationData(Pattern searchPattern, MarkupAnnotationPanel.SortColumn sortType,
                                             MarkupAnnotationPanel.FilterSubTypeColumn filterType,
                                             MarkupAnnotationPanel.FilterAuthorColumn filterAuthor,
+                                            MarkupAnnotationPanel.FilterVisibilityColumn filterVisibility,
                                             Color filterColor,
                                             boolean isRegex,
                                             boolean isCaseSensitive) {
@@ -205,6 +207,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
         this.sortType = sortType;
         this.filterType = filterType;
         this.filterAuthor = filterAuthor;
+        this.filterVisibility = filterVisibility;
         this.filterColor = filterColor;
         this.isRegex = isRegex;
         this.isCaseSensitive = isCaseSensitive;
@@ -280,6 +283,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
                         .setSortType(sortType)
                         .setFilterType(filterType)
                         .setFilterAuthor(filterAuthor)
+                        .setFilterVisibility(filterVisibility)
                         .setFilterColor(filterColor)
                         .setRegex(isRegex)
                         .setCaseSensitive(isCaseSensitive).build();
