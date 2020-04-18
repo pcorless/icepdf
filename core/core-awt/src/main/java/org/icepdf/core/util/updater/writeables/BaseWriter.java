@@ -80,6 +80,7 @@ public class BaseWriter {
     }
 
     public void writePObject(PObject pobject) throws IOException {
+        entries.add(new Entry(pobject.getReference(), startingPosition + output.getCount()));
         if (pobject.getObject() instanceof Stream) {
             Stream stream = (Stream) pobject.getObject();
             Reference reference = stream.getPObjectReference();
@@ -92,8 +93,6 @@ public class BaseWriter {
         } else {
             pObjectWriter.write(pobject, output);
         }
-
-        entries.add(new Entry(pobject.getReference(), startingPosition + output.getCount()));
     }
 
     public void writeXRefTable() throws IOException {
