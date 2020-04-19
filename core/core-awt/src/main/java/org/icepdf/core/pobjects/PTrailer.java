@@ -59,6 +59,7 @@ public class PTrailer extends Dictionary {
     public static final Name INFO_KEY = new Name("Info");
     public static final Name ID_KEY = new Name("ID");
     public static final Name XREFSTM_KEY = new Name("XRefStm");
+    public static final Name TYPE_KEY = new Name("Type");
 
     // Position in the file. The LazyObjectLoader typically keeps this info
     // for all PDF objects, but the bootstrapping PTrialer is an exception,
@@ -313,6 +314,14 @@ public class PTrailer extends Dictionary {
                     crossReferenceStream = trailer.getCrossReferenceStream();
             }
         }
+    }
+
+    /**
+     *
+     * @return true if the trailer is a compressed trailer, false if it's compressed
+     */
+    public boolean isCompressedXref(){
+        return entries.containsKey(TYPE_KEY);
     }
 
     /**
