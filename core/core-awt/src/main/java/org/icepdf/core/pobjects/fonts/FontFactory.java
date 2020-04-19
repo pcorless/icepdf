@@ -48,8 +48,7 @@ public class FontFactory {
         // turn on font file loading using awt, can cause the jvm to crash
         // if the font file is corrupt.
         awtFontLoading =
-                Defs.sysPropertyBoolean("org.icepdf.core.awtFontLoading",
-                        false);
+                Defs.sysPropertyBoolean("org.icepdf.core.awtFontLoading", true);
         useNFontIfAvailable = Defs.sysPropertyBoolean("org.icepdf.core.useNFont", true);
     }
 
