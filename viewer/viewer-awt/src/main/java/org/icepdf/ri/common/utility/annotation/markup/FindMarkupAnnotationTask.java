@@ -325,13 +325,7 @@ public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
         @Override
         public int compare(MarkupAnnotation o1, MarkupAnnotation o2) {
             if (MarkupAnnotationPanel.SortColumn.PAGE.equals(sortColumn)) {
-                if (o1.getPageIndex() > o2.getPageIndex()) {
-                    return 1;
-                } else if (o1.getPageIndex() > o2.getPageIndex()) {
-                    return -1;
-                } else {
-                    return 0;
-                }
+                return Integer.compare(o1.getPageIndex(), o2.getPageIndex());
             } else if (MarkupAnnotationPanel.SortColumn.AUTHOR.equals(sortColumn)) {
                 String author1 = o1.getTitleText();
                 String author2 = o2.getTitleText();

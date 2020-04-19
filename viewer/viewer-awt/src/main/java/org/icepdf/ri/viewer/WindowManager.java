@@ -27,6 +27,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
@@ -95,6 +96,9 @@ public class WindowManager implements WindowManagementCallback {
         return newWindowInvocationCounter;
     }
 
+    public Collection<Controller> getControllers() {
+        return controllers;
+    }
 
     public void newWindow(final String location) {
         Controller controller = commonWindowCreation();
