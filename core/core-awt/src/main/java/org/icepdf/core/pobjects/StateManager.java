@@ -54,7 +54,8 @@ public class StateManager {
         // number of objects is always one more then the current size and
         // thus the next available number.
         if (trailer != null) {
-            nextReferenceNumber = trailer.getNumberOfObjects();
+            CrossReference crossReference = trailer.getPrimaryCrossReference();
+            nextReferenceNumber = crossReference.getNextAvailableReferenceNumber();
         }
     }
 
@@ -63,7 +64,7 @@ public class StateManager {
      *
      * @return valid reference number.
      */
-    public Reference getNewReferencNumber() {
+    public Reference getNewReferenceNumber() {
         // zero revision number for now but technically we can reuse
         // deleted references and increment the rev number.  For no we
         // keep it simple

@@ -129,7 +129,7 @@ public class PTrailer extends Dictionary {
      *
      * @return the cross reference object with the highest precedence, for this trailer
      */
-    protected CrossReference getPrimaryCrossReference() {
+    public CrossReference getPrimaryCrossReference() {
         if (crossReferenceTable != null)
             return crossReferenceTable;
         loadXRefStmIfApplicable();
