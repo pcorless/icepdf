@@ -1,6 +1,6 @@
 package org.icepdf.os.examples.annotation.creation;
 /*
- * Copyright 2006-2017 ICEsoft Technologies Canada Corp.
+
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -47,7 +47,7 @@ import java.util.List;
  * of search terms can be specefied after the file name.
  * <p/>
  * Example:
- * SearchHighlight "c:\DevelopersGuide.pdf" "PDF" "ICEsoft" "ICEfaces" "ICEsoft technologies"
+ * SearchHighlight "c:\DevelopersGuide.pdf" "PDF" "Awesome"
  * <p/>
  * The file that is opened in the Viewer RI will have the new annotations created
  * around the found search terms.  The example creates a URIActions for each

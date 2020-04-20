@@ -1,6 +1,6 @@
 package org.icepdf.os.examples.search;
 /*
- * Copyright 2006-2017 ICEsoft Technologies Canada Corp.
+
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -33,7 +33,7 @@ import java.util.ArrayList;
  * of search terms can be specefied after the file name.
  * <p/>
  * Example:
- * SearchHighlight "c:\DevelopersGuide.pdf" "PDF" "ICEsoft" "ICEfaces" "ICEsoft technologies"
+ * SearchHighlight "c:\DevelopersGuide.pdf" "PDF" "awesome"
  *
  * @since 4.0
  */

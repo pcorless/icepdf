@@ -1,6 +1,6 @@
 package org.icepdf.os.examples.print;
 /*
- * Copyright 2006-2017 ICEsoft Technologies Canada Corp.
+
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -51,8 +51,6 @@ import java.util.logging.Logger;
  * <p/>
  * <p>>java examples.printServices.PrintServices "F:\PDF Test
  * Cases\support\test_doc.pdf</p>
- *
- * @author ICEsoft Technologies, Inc.
  */
 public class PrintServices {
 

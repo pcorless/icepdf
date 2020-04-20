@@ -21,16 +21,9 @@
         </license>
     </licenses>
 
-    <developers>
-        <developer>
-            <name>ICEsoft Technologies Canada Corp.</name>
-            <email>product.sales@icesoft.com</email>
-        </developer>
-    </developers>
-
     <issueManagement>
-        <system>JIRA</system>
-        <url>http://jira.icesoft.org/browse/PDF/</url>
+        <system>github</system>
+        <url>https://github.com/pcorless/icepdf/issues</url>
     </issueManagement>
 
     <build>

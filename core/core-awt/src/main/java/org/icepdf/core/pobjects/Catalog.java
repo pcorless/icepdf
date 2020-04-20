@@ -84,7 +84,7 @@ public class Catalog extends Dictionary {
     // Announce ICEpdf Core
     static {
         if (logger.isLoggable(Level.INFO)) {
-            logger.info("ICEsoft ICEpdf Core " + Document.getLibraryVersion());
+            logger.info("ICEpdf Core " + Document.getLibraryVersion());
         }
     }
 
