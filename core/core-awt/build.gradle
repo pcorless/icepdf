@@ -4,6 +4,22 @@ def sectionName = 'org/icepdf/core/'
 def baseJarName = 'icepdf'
 def baseAppendixName = 'core'
 
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // signature validation.
+    implementation 'org.bouncycastle:bcprov-jdk15on:' + "${BOUNCY_VERSION}"
+    implementation 'org.bouncycastle:bcprov-ext-jdk15on:' + "${BOUNCY_VERSION}"
+    implementation 'org.bouncycastle:bcpkix-jdk15on:' + "${BOUNCY_VERSION}"
+    // tiff, jpeg2000 and jbig decoding
+    implementation 'com.twelvemonkeys.imageio:imageio-tiff:'  + "${MONKEY_VERSION}"
+//    implementation 'com.github.jai-imageio:jai-imageio-jpeg2000:' + "${JAI_VERSION}"
+    implementation 'org.apache.pdfbox:jbig2-imageio:' + "${JBIG2_VERSION}"
+
+}
+
 // generatePomFileForCoreJarPublication
 publishing {
     publications {
@@ -17,7 +33,7 @@ publishing {
                     asNode().appendNode('description', 'ICEpdf core rendering library.')
                     asNode().appendNode('url', 'http://www.icepdf.org')
                     asNode().appendNode('scm')
-                            .appendNode('connection', 'scm:svn:http://anonsvn.icesoft.org/repo/icepdf/').parent()
+                            .appendNode('connection', 'scm:git:https://github.com/pcorless/icepdf').parent()
                             .appendNode('url', 'http://www.apache.org/licenses/LICENSE-2.0.txt').parent()
                             .appendNode('tag', 'icepdf-' + version + '-maven')
                     asNode().appendNode('licenses').appendNode('license').with {
@@ -25,13 +41,9 @@ publishing {
                         appendNode('url', 'http://www.apache.org/licenses/LICENSE-2.0.html')
                         appendNode('distribution', 'repo')
                     }
-                    asNode().appendNode('developers').appendNode('developer').with {
-                        appendNode('name', 'ICEsoft Technologies Canada Corp.')
-                        appendNode('email', 'product.sales@icesoft.com')
-                    }
                     asNode().appendNode('issueManagement').with {
-                        appendNode('url', 'http://jira.icesoft.org/browse/PDF/')
-                        appendNode('system', 'JIRA')
+                        appendNode('url', 'https://github.com/pcorless/icepdf/issues')
+                        appendNode('system', 'Github')
                     }
                 }
                 artifact sourcesJar
@@ -41,14 +53,14 @@ publishing {
     }
 }
 
-jar() {
-    baseName "${baseJarName}"
-    appendix "${baseAppendixName}"
-    version "${VERSION}"
-    classifier "${RELEASE_TYPE}"
+tasks.jar() {
+    archiveBaseName.set("${baseJarName}")
+    archiveAppendix.set("${baseAppendixName}")
+    archiveVersion.set("${VERSION}")
+    archiveClassifier.set("${RELEASE_TYPE}")
     manifest {
         attributes('Created-By': System.getProperty('java.version') + ' (' + System.getProperty('java.vendor') + ')')
-        attributes("Implementation-Title": "${baseName + '-' + appendix}", "${sectionName}")
+        attributes("Implementation-Title": "${archiveBaseName.get() + '-' + archiveAppendix.get()}", "${sectionName}")
         attributes("Implementation-Version": "${VERSION + (RELEASE_TYPE?.trim()? '-' + RELEASE_TYPE:'')}", "${sectionName}")
         attributes("Implementation-Vendor": "${COMPANY}", "${sectionName}")
     }
@@ -57,13 +69,14 @@ jar() {
 task sourcesJar(type: Jar, dependsOn: classes) {
     description = 'Assembles a jar archive containing the main classes source code.'
     group = 'Documentation'
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 
-    baseName "${baseJarName}"
-    appendix "${baseAppendixName}"
-    version "${VERSION}"
-    classifier = 'sources'
+    archiveBaseName.set("${baseJarName}")
+    archiveAppendix.set("${baseAppendixName}")
+    archiveVersion.set("${VERSION}")
+    archiveClassifier.set('sources')
     manifest {
-        attributes("Implementation-Title": "${baseName + '-' + appendix}", "${sectionName}")
+        attributes("Implementation-Title": "${archiveBaseName.get() + '-' + archiveAppendix.get()}", "${sectionName}")
         attributes("Implementation-Version": "${VERSION + (RELEASE_TYPE?.trim()? '-' + RELEASE_TYPE:'')}", "${sectionName}")
         attributes("Implementation-Vendor": "${COMPANY}", "${sectionName}")
     }
@@ -72,7 +85,7 @@ task sourcesJar(type: Jar, dependsOn: classes) {
 
 task javadocJar(type: Jar, dependsOn: 'javadoc') {
     from javadoc
-    classifier = 'javadoc'
+    archiveClassifier.set('javadoc')
 }
 
 artifacts {
@@ -100,16 +113,4 @@ clean {
     doLast{
         file("src/main/java/org/icepdf/core/application/ProductInfo.java").delete()
     }
-}
-
-dependencies {
-    // signature validation.
-    compile 'org.bouncycastle:bcprov-jdk15on:' + "${BOUNCY_VERSION}"
-    compile 'org.bouncycastle:bcprov-ext-jdk15on:' + "${BOUNCY_VERSION}"
-    compile 'org.bouncycastle:bcpkix-jdk15on:' + "${BOUNCY_VERSION}"
-    // tiff, jpeg2000 and jbig decoding
-    compile 'com.twelvemonkeys.imageio:imageio-tiff:'  + "${MONKEY_VERSION}"
-//    compile 'com.github.jai-imageio:jai-imageio-jpeg2000:' + "${JAI_VERSION}"
-    compile 'org.apache.pdfbox:jbig2-imageio:' + "${JBIG2_VERSION}"
-
 }

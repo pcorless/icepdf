@@ -26,7 +26,6 @@ import java.util.HashMap;
  * purpose when called to to navigate the a destination in the document
  * specified by this action.
  *
- * @author ICEsoft Technologies, Inc.
  * @since 2.6
  */
 public class GoToAction extends Action {
