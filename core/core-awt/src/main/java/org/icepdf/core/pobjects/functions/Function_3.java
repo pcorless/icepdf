@@ -24,7 +24,6 @@ import java.util.List;
  * <p>Type 3 Function (PDF 1.3) defines a stitching of the sub-domains of
  * several 1-input functions to produce a single new 1-input function.</p>
  *
- * @author ICEsoft Technologies Inc.
  * @since 3.0
  */
 public class Function_3 extends Function {
