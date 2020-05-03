@@ -90,7 +90,7 @@ public class InkAnnotation extends MarkupAnnotation {
             if (rectangle != null) {
                 setBBox(rectangle.getBounds());
             }
-            resetAppearanceStream(new AffineTransform());
+            resetAppearanceStream(new AffineTransform(), false);
         }
 
         // try and generate an appearance stream.
@@ -178,7 +178,7 @@ public class InkAnnotation extends MarkupAnnotation {
     /**
      * Resets the annotations appearance stream.
      */
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew) {
 
         // setup clean shapes
         Appearance appearance = appearances.get(currentAppearance);
@@ -234,7 +234,7 @@ public class InkAnnotation extends MarkupAnnotation {
 
         // mark the change.
         StateManager stateManager = library.getStateManager();
-        stateManager.addChange(new PObject(this, this.getPObjectReference()));
+        stateManager.addChange(new PObject(this, this.getPObjectReference()), isNew);
 
     }
 

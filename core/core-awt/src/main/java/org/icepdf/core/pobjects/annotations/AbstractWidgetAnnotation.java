@@ -110,7 +110,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
         // check to make sure the field value matches the content stream.
         InteractiveForm interactiveForm = library.getCatalog().getInteractiveForm();
         if (interactiveForm != null && interactiveForm.needAppearances()) {
-            resetAppearanceStream(new AffineTransform());
+            resetAppearanceStream(new AffineTransform(), false);
         }
         // todo check if we have content value but no appearance stream.
     }
@@ -118,7 +118,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
     public abstract void reset();
 
     @Override
-    public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace);
+    public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew);
 
     @Override
     protected void renderAppearanceStream(Graphics2D g) {

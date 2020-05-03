@@ -56,7 +56,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
         }
     }
 
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
 
         // we won't touch password fields, we'll used the original display
         TextFieldDictionary.TextFieldType textFieldType = fieldDictionary.getTextFieldType();

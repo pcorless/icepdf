@@ -3491,7 +3491,7 @@ public class SwingController extends ComponentAdapter
                                 fileOutputStream, 4096 * 2);
 
                         // We want 'save as' or 'save a copy to always occur
-                        if (!document.getStateManager().isChanged()) {
+                        if (document.getStateManager().isNoChange()) {
                             // save as copy
                             document.writeToOutputStream(buf);
                         } else {
@@ -3619,7 +3619,7 @@ public class SwingController extends ComponentAdapter
         // check if document changes have been made, if so ask the user if they
         // want to save the changes.
         if (document != null) {
-            boolean documentChanges = document.getStateManager().isChanged();
+            boolean documentChanges = document.getStateManager().isChange();
             if (documentChanges) {
 
                 MessageFormat formatter = new MessageFormat(

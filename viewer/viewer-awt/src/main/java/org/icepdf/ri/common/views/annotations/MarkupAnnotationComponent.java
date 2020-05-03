@@ -160,9 +160,10 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
         }
         PopupAnnotation popupAnnotation = null;
         if (annotation != null && annotation.getPopupAnnotation() == null) {
+
             popupAnnotation = TextAnnotationHandler.createPopupAnnotation(
                     documentViewController.getDocument().getPageTree().getLibrary(),
-                    tBbox, annotation, getToPageSpaceTransform());
+                    tBbox, annotation, getToPageSpaceTransform(), isNew);
             annotation.setPopupAnnotation(popupAnnotation);
         } else if (annotation != null) {
             popupAnnotation = annotation.getPopupAnnotation();
@@ -177,6 +178,7 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
             comp.setBounds(bBox);
             // resets user space rectangle to match bbox converted to page space
             comp.refreshAnnotationRect();
+            comp.setSynthetic(!isNew);
 
             // add them to the container, using absolute positioning.
             documentViewController.addNewAnnotation(comp);
