@@ -1465,6 +1465,8 @@ public class SwingController extends ComponentAdapter
             } else if (documentViewController.getViewContainer() != null) {
                 prepareKeyMap((JComponent) documentViewController.getViewContainer());
             }
+        } else {
+            prepareKeyMap((JComponent) documentViewController.getViewContainer());
         }
     }
 
