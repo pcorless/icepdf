@@ -3107,7 +3107,7 @@ public class SwingController extends ComponentAdapter
         reflectStateInComponents();
         updateDocumentView();
         //TODO not very clean and 100% reliable
-        Timer initialChangesTimer = new Timer(500, event -> savedChanges = document.getStateManager().getChanges());
+        Timer initialChangesTimer = new Timer(500, event -> savedChanges = document.getStateManager().getAndSaveChanges());
         initialChangesTimer.setRepeats(false);
         initialChangesTimer.start();
     }
@@ -3527,7 +3527,7 @@ public class SwingController extends ComponentAdapter
                         fileOutputStream.flush();
                         buf.close();
                         fileOutputStream.close();
-                        savedChanges = document.getStateManager().getChanges();
+                        savedChanges = document.getStateManager().getAndSaveChanges();
                     } catch (MalformedURLException e) {
                         logger.log(Level.FINE, "Malformed URL Exception ", e);
                     } catch (IOException e) {

@@ -35,6 +35,7 @@ public class StateManager {
 
     // a list is all we might need. 
     private HashMap<Reference, PObject> changes;
+    private final Set<Reference> updatedReferences = new HashSet<>();
 
     // access to xref size and next revision number.
     private PTrailer trailer;
@@ -78,6 +79,9 @@ public class StateManager {
      * @param pObject object to add to cache.
      */
     public void addChange(PObject pObject) {
+        if (Objects.equals(changes.get(pObject.getReference()), pObject)) {
+            updatedReferences.add(pObject.getReference());
+        }
         changes.put(pObject.getReference(), pObject);
         int objectNumber = pObject.getReference().getObjectNumber();
         // check the reference numbers
@@ -91,6 +95,11 @@ public class StateManager {
      */
     public Map<Reference, PObject> getChanges() {
         return Collections.unmodifiableMap(new HashMap<>(changes));
+    }
+
+    public Map<Reference, PObject> getAndSaveChanges() {
+        updatedReferences.clear();
+        return getChanges();
     }
 
 
@@ -135,6 +144,7 @@ public class StateManager {
      * @param pObject pObject to removed from the cache.
      */
     public void removeChange(PObject pObject) {
+        updatedReferences.remove(pObject.getReference());
         changes.remove(pObject.getReference());
     }
 
