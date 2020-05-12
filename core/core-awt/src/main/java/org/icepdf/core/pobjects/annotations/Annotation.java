@@ -1816,7 +1816,7 @@ public abstract class Annotation extends Dictionary {
             formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
             formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
             form = new Form(library, formEntries, null);
-            form.setPObjectReference(stateManager.getNewReferencNumber());
+            form.setPObjectReference(stateManager.getNewReferenceNumber());
             library.addObject(form, form.getPObjectReference());
         }
         return form;
@@ -1845,7 +1845,7 @@ public abstract class Annotation extends Dictionary {
             formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
             formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
             form = new Form(library, formEntries, null);
-            form.setPObjectReference(stateManager.getNewReferencNumber());
+            form.setPObjectReference(stateManager.getNewReferenceNumber());
             library.addObject(form, form.getPObjectReference());
         }
 

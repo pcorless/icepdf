@@ -21,7 +21,6 @@ package org.icepdf.core.pobjects.functions.postscript;
  * lookup method #getType() which returns an integer representation of the
  * operand so that it can be quickly compared/processed at a later time.
  *
- * @author ICEsoft Technologies Inc.
  * @since 4.2
  */
 public class OperatorNames {

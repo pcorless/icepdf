@@ -26,7 +26,6 @@ import java.util.HashMap;
  * platforms, or for file system other than the standard ones (DOS/Windows, Mac
  * OS, and Unix).</p>
  *
- * @author ICEsoft Technologies, Inc.
  * @since 2.6
  */
 public class FileSpecification extends Dictionary {

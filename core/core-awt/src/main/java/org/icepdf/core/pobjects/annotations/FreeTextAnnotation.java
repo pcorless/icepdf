@@ -374,7 +374,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         try {
             freeTextAnnotation = new FreeTextAnnotation(library, entries);
             freeTextAnnotation.init();
-            freeTextAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
+            freeTextAnnotation.setPObjectReference(stateManager.getNewReferenceNumber());
             freeTextAnnotation.setNew(true);
 
             // set default flags.
@@ -572,7 +572,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                     form.getResources().getFont(EMBEDDED_FONT_NAME) == null) {
                 newFont = new org.icepdf.core.pobjects.fonts.ofont.Font(
                         library, fontDictionary);
-                newFont.setPObjectReference(stateManager.getNewReferencNumber());
+                newFont.setPObjectReference(stateManager.getNewReferenceNumber());
                 // create font entry
                 HashMap<Object, Object> fontResources = new HashMap<>();
                 fontResources.put(EMBEDDED_FONT_NAME, newFont.getPObjectReference());

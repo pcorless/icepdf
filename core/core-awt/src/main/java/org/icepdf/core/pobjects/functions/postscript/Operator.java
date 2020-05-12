@@ -21,7 +21,6 @@ import java.util.Stack;
  * Representing a generic operand which follows the Command pattern for delayed
  * or differed execution.
  *
- * @author ICEsoft Technologies Inc.
  * @since 4.2
  */
 public abstract class Operator {

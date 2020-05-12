@@ -132,7 +132,7 @@ public class NameTree extends Dictionary {
         if (root.entries.size() == 0) {
             // add the destination as it's own object.
             destination.entries = destination.getRawDestination();
-            destination.setPObjectReference(stateManager.getNewReferencNumber());
+            destination.setPObjectReference(stateManager.getNewReferenceNumber());
             stateManager.addChange(new PObject(destination, destination.getPObjectReference()));
 
             // create a name node to attach to the kids.
@@ -146,7 +146,7 @@ public class NameTree extends Dictionary {
             nameNodeEntries.put(NameNode.LIMITS_KEY, limits);
             nameNodeEntries.put(NameNode.NAMES_KEY, names);
             NameNode nameNode = new NameNode(library, nameNodeEntries);
-            nameNode.setPObjectReference(stateManager.getNewReferencNumber());
+            nameNode.setPObjectReference(stateManager.getNewReferenceNumber());
             stateManager.addChange(new PObject(nameNode, nameNode.getPObjectReference()));
 
             // first insertion so we don't need to look for any other nodes. just setup kids reference and child
@@ -163,7 +163,7 @@ public class NameTree extends Dictionary {
             if (tmp != null && tmp instanceof NameNode) {
                 // add the new node and update limits.
                 destination.entries = destination.getRawDestination();
-                destination.setPObjectReference(stateManager.getNewReferencNumber());
+                destination.setPObjectReference(stateManager.getNewReferenceNumber());
                 stateManager.addChange(new PObject(destination, destination.getPObjectReference()));
                 // assign the names destination.
                 NameNode nameNode = (NameNode) tmp;
@@ -176,7 +176,7 @@ public class NameTree extends Dictionary {
                 if (tmp.equals(NameNode.NOT_FOUND_IS_GREATER)) {
                     // add the new node and update limits.
                     destination.entries = destination.getRawDestination();
-                    destination.setPObjectReference(stateManager.getNewReferencNumber());
+                    destination.setPObjectReference(stateManager.getNewReferenceNumber());
                     stateManager.addChange(new PObject(destination, destination.getPObjectReference()));
                     // going to cheat a bit here,  we are going to add the word to the last element of the last
                     // kid and update the upper limit.

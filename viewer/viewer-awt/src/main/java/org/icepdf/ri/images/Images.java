@@ -18,8 +18,7 @@ package org.icepdf.ri.images;
 import java.net.URL;
 
 /**
- * <p>Utility class to allow easy access to image resources in the
- * package com.icesoft.pdf.ri.images.
+ * <p>Utility class to allow easy access to image resources
  * Used as an accessor to the images. Just call:</p>
  * <ul>
  * <li>Images.get("&lt;filename&gt;.gif")</li>
