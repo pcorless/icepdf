@@ -3144,6 +3144,7 @@ public class SwingController extends ComponentAdapter
 
         if (annotationSummaryFrame != null) {
             annotationSummaryFrame.disposeDocument();
+            annotationSummaryFrame.dispose();
         }
 
         // set the default cursor.  
