@@ -454,6 +454,11 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         buildContextMenu();
     }
 
+    public void focusTextArea() {
+        textArea.requestFocusInWindow();
+        textArea.setCaretPosition(textArea.getDocument().getLength());
+    }
+
     public void setBoundsRelativeToParent(int x, int y, AffineTransform pageInverseTransform) {
         Rectangle pageBounds = pageViewComponent.getBounds();
         // position the new popup on the icon center.

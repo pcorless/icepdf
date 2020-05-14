@@ -204,6 +204,9 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
                 popup.setOpen(!popup.isOpen());
                 PopupAnnotationComponent popupComponent = getPopupAnnotationComponent();
                 popupComponent.setVisible(popup.isOpen());
+                if (popupComponent.isVisible()) {
+                    popupComponent.focusTextArea();
+                }
                 // make sure the popup is drawn on the page and
                 // not outside the page clip.
                 Rectangle popupBounds = popupComponent.getBounds();
