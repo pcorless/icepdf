@@ -2742,10 +2742,13 @@ public class SwingController extends ComponentAdapter
     /**
      * Opens a document specified by the DavFileClient. Asks the user their password if needed
      *
-     * @param davClient The client
+     * @param pdfDavClient The client
      */
-    public void openDocument(final DavFileClient davClient) {
-        pdfClient = davClient;
+    public void openDocument(final DavFileClient pdfDavClient) {
+        pdfClient = pdfDavClient;
+        if (pdfClient.getUsername() == null || pdfClient.getUsername().isEmpty()) {
+            pdfClient.setUsername(System.getProperty("user.name"));
+        }
         JPanel panel = new JPanel();
         if (pdfClient.getPassword() == null) {
             panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -2755,19 +2758,16 @@ public class SwingController extends ComponentAdapter
             panel.add(field);
             String[] options = {messageBundle.getString("viewer.dialog.dav.password.button.ok"), messageBundle.getString("viewer.dialog.dav.password.button.cancel")};
             int option = JOptionPane.showOptionDialog(getViewerFrame(), panel, messageBundle.getString("viewer.dialog.dav.password.title"),
-                    JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE,
+                    JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE,
                     null, options, options[0]);
             if (option == JOptionPane.OK_OPTION) {
                 pdfClient.setPassword(new String(field.getPassword()));
-            } else if (option == JOptionPane.CANCEL_OPTION) {
+            } else if (option == JOptionPane.NO_OPTION) {
                 return;
             }
         }
         try {
-            InputStream stream = pdfClient.getStream();
-            document = new Document();
-            document.setInputStream(new BufferedInputStream(stream), pdfClient.getUrl());
-            commonNewDocumentHandling(pdfClient.getUrl());
+            openDavDocument();
         } catch (SardineException e) {
             SwingUtilities.invokeLater(() -> {
                 org.icepdf.ri.util.Resources.showMessageDialog(
@@ -2779,7 +2779,8 @@ public class SwingController extends ComponentAdapter
                         e.getMessage() != null ? e.getMessage() : e.toString());
                 //401 is probably wrong password
                 if (e.getStatusCode() == 401) {
-                    openDocument(davClient);
+                    pdfClient.setPassword(null);
+                    openDocument(pdfClient);
                 }
             });
         } catch (IOException | PDFException | PDFSecurityException e) {
@@ -2793,6 +2794,13 @@ public class SwingController extends ComponentAdapter
         } finally {
             setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
         }
+    }
+
+    protected void openDavDocument() throws IOException, PDFException, PDFSecurityException {
+        InputStream stream = pdfClient.getStream();
+        document = new Document();
+        document.setInputStream(new BufferedInputStream(stream), pdfClient.getUrl());
+        commonNewDocumentHandling(pdfClient.getUrl());
     }
 
 

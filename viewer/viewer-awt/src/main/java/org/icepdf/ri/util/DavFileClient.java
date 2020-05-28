@@ -18,11 +18,11 @@ public class DavFileClient {
 
     private final Sardine sardine;
     private final String url;
-    private final String username;
     private final String folderUrl;
     private final String name;
     private final String ext;
     private final boolean readOnly;
+    private String username;
     private String password;
     private int revision = 0;
     private File file;
@@ -122,6 +122,10 @@ public class DavFileClient {
 
     public String getUsername() {
         return username;
+    }
+
+    public void setUsername(final String username) {
+        this.username = username;
     }
 
     public String getPassword() {
