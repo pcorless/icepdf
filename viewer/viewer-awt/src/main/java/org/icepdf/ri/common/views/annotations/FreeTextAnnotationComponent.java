@@ -127,7 +127,9 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
                 KeyboardFocusManager.getCurrentKeyboardFocusManager();
         focusManager.addPropertyChangeListener(this);
 
-        resetAppearanceShapes();
+        if (!annotation.hasAppearanceStream()) {
+            resetAppearanceShapes();
+        }
         revalidate();
 
         // add a listener for popup changes.

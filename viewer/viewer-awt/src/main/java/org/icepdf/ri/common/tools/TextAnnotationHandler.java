@@ -214,7 +214,7 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
                 pageInverseTransform);
         popupAnnotationComponent.setVisible(true);
         popupAnnotationComponent.getAnnotation().setOpen(true);
-
+        popupAnnotationComponent.focusTextArea();
         // set the annotation tool to he select tool
         if (preferences.getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_SELECTION_ENABLED, false)) {
             documentViewController.getParentController().setDocumentToolMode(

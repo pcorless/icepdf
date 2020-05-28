@@ -22,7 +22,6 @@ import java.io.InputStream;
 /**
  * Simple type 4 function tests.
  *
- * @author ICEsoft Technologies Inc.
  * @since 4.2
  */
 public class LexerText {

@@ -1,6 +1,5 @@
 package org.icepdf.os.examples.annotation.callback;
 /*
- * Copyright 2006-2017 ICEsoft Technologies Canada Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -42,7 +41,6 @@ import java.util.logging.Logger;
  * the colour of the annotation to an alternate colour to indicate that the link
  * has already been clicked.
  *
- * @author ICEsoft Technologies, Inc.
  * @since 2.7.1
  */
 public class MyAnnotationCallback implements AnnotationCallback {

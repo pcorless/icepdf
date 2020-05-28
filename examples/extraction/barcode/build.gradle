@@ -1,13 +1,18 @@
-apply plugin: 'application'
+plugins {
+    id 'java'
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':core:core-awt'), project(':viewer:viewer-awt')
+    implementation group: 'com.google.zxing', name: 'core', version: '3.3.0'
+}
 
 description 'pdf barcode data extraction example'
 
 mainClassName = "org.icepdf.os.examples.barcode.BarcodeStamper"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
-
-
-dependencies {
-    compile project(':viewer:viewer-awt')
-    // svg export
-    compile group: 'com.google.zxing', name: 'core', version: '3.3.0'
-}

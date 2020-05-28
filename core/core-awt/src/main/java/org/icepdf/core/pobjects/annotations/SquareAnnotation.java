@@ -118,7 +118,7 @@ public class SquareAnnotation extends MarkupAnnotation {
         try {
             squareAnnotation = new SquareAnnotation(library, entries);
             squareAnnotation.init();
-            squareAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
+            squareAnnotation.setPObjectReference(stateManager.getNewReferenceNumber());
             squareAnnotation.setNew(true);
 
             // set default flags.
