@@ -1,7 +1,9 @@
-apply plugin: 'java'
-
-description 'annotation callback example'
+plugins {
+    id 'java'
+    id 'application'
+}
 
 dependencies {
-    compile project(':viewer:viewer-awt')
+    implementation project(':core:core-awt'), project(':viewer:viewer-awt')
 }
+description 'annotation callback example'

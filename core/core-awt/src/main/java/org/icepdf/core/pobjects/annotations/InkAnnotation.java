@@ -157,7 +157,7 @@ public class InkAnnotation extends MarkupAnnotation {
         InkAnnotation inkAnnotation = null;
         try {
             inkAnnotation = new InkAnnotation(library, entries);
-            inkAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
+            inkAnnotation.setPObjectReference(stateManager.getNewReferenceNumber());
             inkAnnotation.init();
             inkAnnotation.setNew(true);
 

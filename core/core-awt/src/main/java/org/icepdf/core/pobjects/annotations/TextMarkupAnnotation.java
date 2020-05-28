@@ -226,7 +226,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
             textMarkupAnnotation.init();
             entries.put(NM_KEY,
                     new LiteralStringObject(String.valueOf(textMarkupAnnotation.hashCode())));
-            textMarkupAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
+            textMarkupAnnotation.setPObjectReference(stateManager.getNewReferenceNumber());
             textMarkupAnnotation.setNew(true);
             textMarkupAnnotation.setModifiedDate(PDate.formatDateTime(new Date()));
         } catch (InterruptedException e) {

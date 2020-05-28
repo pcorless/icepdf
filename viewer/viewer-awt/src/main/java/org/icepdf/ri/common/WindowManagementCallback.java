@@ -21,6 +21,7 @@ import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import java.net.URL;
+import java.util.Collection;
 import java.util.List;
 import java.util.prefs.Preferences;
 
@@ -54,4 +55,6 @@ public interface WindowManagementCallback {
               Preferences preferences);
 
     ViewerPropertiesManager getProperties();
+
+    Collection<Controller> getControllers();
 }

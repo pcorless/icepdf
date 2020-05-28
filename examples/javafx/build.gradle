@@ -1,10 +1,23 @@
-apply plugin: 'application'
+plugins {
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.0.8'
+}
 
 description 'javafx SwingNode example'
 
 mainClassName = "org.icepdf.os.examples.javafx.PdfFXViewer"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
 
-dependencies {
-    compile project(':viewer:viewer-awt')
+javafx {
+    version = "11.0.2"
+    modules = [ 'javafx.controls', 'javafx.swing' ]
 }
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':core:core-awt'), project(':viewer:viewer-awt')
+}
+

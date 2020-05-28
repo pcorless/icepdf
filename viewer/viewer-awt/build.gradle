@@ -1,4 +1,7 @@
-apply plugin: 'application'
+plugins {
+    id 'java'
+    id 'application'
+}
 
 description 'ICEpdf viewer reference implementation project'
 
@@ -7,7 +10,21 @@ applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
 
 def sectionName = 'org/icepdf/ri/'
 def baseJarName = 'icepdf'
-def baseAppendixName = 'viewer'
+def baseAppendixName  = 'viewer'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':core:core-awt')
+    // signature validation.
+    implementation 'org.bouncycastle:bcprov-jdk15on:' + "${BOUNCY_VERSION}"
+    implementation 'org.bouncycastle:bcprov-ext-jdk15on:' + "${BOUNCY_VERSION}"
+    implementation 'org.bouncycastle:bcpkix-jdk15on:' + "${BOUNCY_VERSION}"
+    compile 'com.github.lookfirst:sardine:5.9'
+    compile 'org.apache.tika:tika-core:1.23'
+}
 
 // generatePomFileForViewerJarPublication
 publishing {
@@ -22,16 +39,13 @@ publishing {
                     asNode().appendNode('description', 'ICEpdf core rendering library.')
                     asNode().appendNode('url', 'http://www.icepdf.org')
                     asNode().appendNode('scm')
-                            .appendNode('connection', 'scm:svn:http://anonsvn.icesoft.org/repo/icepdf/').parent()
+                            .appendNode('connection', 'scm:git:https://github.com/pcorless/icepdf').parent()
                             .appendNode('url', 'http://www.apache.org/licenses/LICENSE-2.0.txt').parent()
                             .appendNode('tag', 'icepdf-' + version + '-maven')
                     asNode().appendNode('licenses').appendNode('license')
                             .appendNode('name', 'Apache License, Version 2.0').parent()
                             .appendNode('url', 'http://www.apache.org/licenses/LICENSE-2.0.html').parent()
                             .appendNode('distribution', 'repo')
-                    asNode().appendNode('developers').appendNode('developer')
-                            .appendNode('name', 'ICEsoft Technologies Canada Corp.').parent()
-                            .appendNode('email', 'product.sales@icesoft.com')
                 }
                 artifact sourcesJar
                 artifact javadocJar
@@ -41,27 +55,27 @@ publishing {
 }
 
 jar {
-    baseName 'icepdf'
-    appendix 'viewer'
-    version "${VERSION}"
-    classifier "${RELEASE_TYPE}"
+    archiveBaseName.set('icepdf')
+    archiveAppendix.set("viewer")
+    archiveVersion.set("${VERSION}")
+    archiveClassifier.set("${RELEASE_TYPE}")
 
     doFirst {
         manifest {
-            attributes('Created-By': System.getProperty('java.version') + ' (' + System.getProperty('java.vendor') + ')')
+            attributes ('Created-By': System.getProperty('java.version') + ' (' + System.getProperty('java.vendor') + ')')
             // executable jar
             attributes("Main-Class": 'org.icepdf.ri.viewer.Main')
-            if (!configurations.runtime.isEmpty()) {
+            if (!configurations.runtimeClasspath.isEmpty()) {
                 attributes('Class-Path':
-                        configurations.runtime.collect { it.name }.join(' '))
+                        configurations.runtimeClasspath.files.collect{it.name}.join(' '))
             }
         }
     }
 
     manifest {
         // section names attributes
-        attributes("Implementation-Title": "${baseName + '-' + appendix}", "${sectionName}")
-        attributes("Implementation-Version": "${VERSION + (RELEASE_TYPE?.trim() ? '-' + RELEASE_TYPE : '')}", "${sectionName}")
+        attributes("Implementation-Title": "${archiveBaseName.get() + '-' + archiveAppendix.get()}", "${sectionName}")
+        attributes("Implementation-Version": "${VERSION + (RELEASE_TYPE?.trim()? '-' + RELEASE_TYPE:'')}", "${sectionName}")
         attributes("Implementation-Vendor": "${COMPANY}", "${sectionName}")
     }
 }
@@ -69,13 +83,13 @@ jar {
 task sourcesJar(type: Jar, dependsOn: classes) {
     description = 'Assembles a jar archive containing the main classes source code.'
     group = 'Documentation'
-    baseName "${baseJarName}"
-    appendix "${baseAppendixName}"
-    version "${VERSION}"
-    classifier = 'sources'
+    archiveBaseName.set("${baseJarName}")
+    archiveAppendix.set("${baseAppendixName}")
+    archiveVersion.set("${VERSION}")
+    archiveClassifier.set("sources")
     manifest {
-        attributes("Implementation-Title": "${baseName + '-' + appendix}", "${sectionName}")
-        attributes("Implementation-Version": "${VERSION + (RELEASE_TYPE?.trim() ? '-' + RELEASE_TYPE : '')}", "${sectionName}")
+        attributes("Implementation-Title": "${archiveBaseName.get() + '-' + archiveAppendix.get()}", "${sectionName}")
+        attributes("Implementation-Version": "${VERSION + (RELEASE_TYPE?.trim()? '-' + RELEASE_TYPE:'')}", "${sectionName}")
         attributes("Implementation-Vendor": "${COMPANY}", "${sectionName}")
     }
     from sourceSets.main.allSource
@@ -83,21 +97,10 @@ task sourcesJar(type: Jar, dependsOn: classes) {
 
 task javadocJar(type: Jar, dependsOn: 'javadoc') {
     from javadoc
-    classifier = 'javadoc'
+    archiveClassifier.set("javadoc")
 }
 
 artifacts {
     archives sourcesJar
     archives javadocJar
-}
-
-//javafx {
-//    version = "11"
-//    modules = [ 'javafx.controls', 'javafx.swing' ]
-//}
-
-dependencies {
-    compile project(':core:core-awt')
-    compile 'com.github.lookfirst:sardine:5.9'
-    compile 'org.apache.tika:tika-core:1.23'
 }

@@ -64,9 +64,9 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
                 "org.icepdf.core.page.annotation.privateProperty.enabled", false);
     }
 
-    public String COLUMN_PROPERTY = "Column";
+    public static final String COLUMN_PROPERTY = "Column";
 
-    public enum SortColumn {PAGE, AUTHOR, DATE, TYPE, COLOR}
+    public enum SortColumn {PAGE, AUTHOR, DATE, TYPE, COLOR, VISIBILITY}
 
     public enum FilterAuthorColumn {
         ALL, AUTHOR_CURRENT, AUTHOR_OTHER,
@@ -75,6 +75,10 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
     public enum FilterSubTypeColumn {
         ALL, TEXT, HIGHLIGHT, STRIKEOUT, UNDERLINE, LINE, SQUARE, CIRCLE, INK, FREETEXT
     }
+    public enum FilterVisibilityColumn {
+        ALL, PRIVATE, PUBLIC
+    }
+
 
     // layouts constraint
     protected GridBagConstraints constraints;
@@ -97,6 +101,8 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
     private Action sortAction;
     private ArrayList<Action> filterAuthorActions;
     private Action filterAuthorAction;
+    private ArrayList<Action> filterVisibilityActions;
+    private Action filterVisibilityAction;
     private ArrayList<Action> filterTypeActions;
     private Action filterTypeAction;
     private Action filterColorAction;
@@ -139,6 +145,14 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
                 "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byAuthor.current.label"), FilterAuthorColumn.AUTHOR_CURRENT));
         filterAuthorActions.add(new FilterAuthorAction(messageBundle.getString(
                 "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byAuthor.others.label"), FilterAuthorColumn.AUTHOR_OTHER));
+        // assemble filter by visibility
+        filterVisibilityActions = new ArrayList<>(3);
+        filterVisibilityActions.add(new FilterVisibilityAction(messageBundle.getString(
+                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byVisibility.all.label"), FilterVisibilityColumn.ALL));
+        filterVisibilityActions.add(new FilterVisibilityAction(messageBundle.getString(
+                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byVisibility.public.label"), FilterVisibilityColumn.PUBLIC));
+        filterVisibilityActions.add(new FilterVisibilityAction(messageBundle.getString(
+                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byVisibility.private.label"), FilterVisibilityColumn.PRIVATE));
         // assemble filter by type
         filterTypeActions = new ArrayList<>(10);
         filterTypeActions.add(new FilterTypeAction(messageBundle.getString(
@@ -397,6 +411,14 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         defaultColumn = preferences.get(ViewerPropertiesManager.PROPERTY_ANNOTATION_FILTER_AUTHOR_COLUMN, FilterAuthorColumn.ALL.toString());
         filterAuthorAction = buildMenuItemGroup(authorFilterMenuItem, filterAuthorActions, defaultColumn, filterAuthorAction);
 
+        // build out visibility submenu, all, public, private
+        JMenu visibilityMenuItem = new JMenu(
+                messageBundle.getString("viewer.utilityPane.markupAnnotation.toolbar.filter.option.byVisibility.label"));
+        defaultColumn = preferences.get(
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_FILTER_VISIBILITY_COLUMN, FilterVisibilityColumn.ALL.toString());
+        filterVisibilityAction = buildMenuItemGroup(
+                visibilityMenuItem, filterVisibilityActions, defaultColumn, filterVisibilityAction);
+
         // build out markup annotation types.
         defaultColumn = preferences.get(ViewerPropertiesManager.PROPERTY_ANNOTATION_FILTER_TYPE_COLUMN, FilterSubTypeColumn.ALL.toString());
         filterTypeAction = buildMenuItemGroup(typeFilterMenuItem, filterTypeActions, defaultColumn, filterTypeAction);
@@ -423,6 +445,9 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         filterDropDownButton.add(authorFilterMenuItem);
         filterDropDownButton.add(colorFilterMenuItem);
         filterDropDownButton.add(typeFilterMenuItem);
+        if (PRIVATE_PROPERTY_ENABLED) {
+            filterDropDownButton.add(visibilityMenuItem);
+        }
         filterDropDownButton.addSeparator();
         filterDropDownButton.add(regexMenuItem);
         filterDropDownButton.add(caseSensitiveMenutItem);
@@ -546,7 +571,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         FilterSubTypeColumn filterType = (FilterSubTypeColumn) filterTypeAction.getValue(COLUMN_PROPERTY);
         FilterAuthorColumn filterAuthor = (FilterAuthorColumn) filterAuthorAction.getValue(COLUMN_PROPERTY);
         Color filterColor = (Color) filterColorAction.getValue(COLUMN_PROPERTY);
-
+        FilterVisibilityColumn filterVisibility = (FilterVisibilityColumn) filterVisibilityAction.getValue(COLUMN_PROPERTY);
         if (!filterAuthor.equals(FilterAuthorColumn.ALL) ||
                 !filterType.equals(FilterSubTypeColumn.ALL) ||
                 filterColor != null) {
@@ -565,7 +590,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         }
 
         markupAnnotationHandlerPanel.sortAndFilterAnnotationData(
-                searchPattern, sortType, filterType, filterAuthor, filterColor,
+                searchPattern, sortType, filterType, filterAuthor, filterVisibility, filterColor,
                 regexMenuItem.isSelected(), caseSensitive);
     }
 
@@ -667,6 +692,20 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         public void actionPerformed(ActionEvent ae) {
             filterAuthorAction = this;
             preferences.put(ViewerPropertiesManager.PROPERTY_ANNOTATION_FILTER_AUTHOR_COLUMN, getValue(COLUMN_PROPERTY).toString());
+            sortAndFilterAnnotationData();
+        }
+    }
+
+    class FilterVisibilityAction extends AbstractAction {
+
+        public FilterVisibilityAction(String label, FilterVisibilityColumn column) {
+            this.putValue(Action.NAME, label);
+            this.putValue(COLUMN_PROPERTY, column);
+        }
+
+        public void actionPerformed(ActionEvent ae) {
+            filterVisibilityAction = this;
+            preferences.put(ViewerPropertiesManager.PROPERTY_ANNOTATION_FILTER_VISIBILITY_COLUMN, getValue(COLUMN_PROPERTY).toString());
             sortAndFilterAnnotationData();
         }
     }
