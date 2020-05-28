@@ -21,16 +21,9 @@
         </license>
     </licenses>
 
-    <developers>
-        <developer>
-            <name>ICEsoft Technologies Canada Corp.</name>
-            <email>product.sales@icesoft.com</email>
-        </developer>
-    </developers>
-
     <issueManagement>
-        <system>JIRA</system>
-        <url>http://jira.icesoft.org/browse/PDF/</url>
+        <system>github</system>
+        <url>https://github.com/pcorless/icepdf/issues</url>
     </issueManagement>
 
     <build>
@@ -52,14 +45,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <version>3.1.0</version>
+                <configuration>
+                    <source>8</source>
+                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>

@@ -33,7 +33,6 @@ import java.util.ResourceBundle;
  * font information.   The dialog will start a worker thread that will read all the document's font objects and
  * build a tree view of the all the fonts.  This font view is primarily for debug purposes to make it easier to track
  * font substitution results.  The dialog also provides an easy way to refresh the
- * "\.icesoft\icepdf-viewer\pdfviewerfontcache.properties' with out manually deleting the file and restarted the viewer.
  * <p>
  * {@link FindFontsTask}
  *

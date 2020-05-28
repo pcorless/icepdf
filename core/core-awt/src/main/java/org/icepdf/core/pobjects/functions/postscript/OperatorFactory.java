@@ -23,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * object which contains the respective operator evaluation logic.   The calling
  * method can defer the execution of operator as needed.
  *
- * @author ICEsoft Technologies Inc.
  * @since 4.2
  */
 public class OperatorFactory {
