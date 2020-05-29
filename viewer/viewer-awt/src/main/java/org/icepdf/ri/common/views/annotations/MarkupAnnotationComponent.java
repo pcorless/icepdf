@@ -224,6 +224,8 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
                     popupBounds.setLocation(x, y);
                     popupComponent.setBounds(popupBounds);
                 }
+                popup.setModifiedDate(PDate.formatDateTime(new Date()));
+                documentViewController.updateAnnotation(popupComponent);
             }
             // no markupAnnotation so we need to create one and display for
             // the addition comments.

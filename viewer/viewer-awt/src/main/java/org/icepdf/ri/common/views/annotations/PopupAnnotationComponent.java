@@ -645,6 +645,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         if (source == minimizeButton) {
             this.setVisible(false);
             annotation.setOpen(false);
+            annotation.setModifiedDate(PDate.formatDateTime(new Date()));
+            documentViewController.updateAnnotation(this);
         } else if (source == privateToggleButton) {
             boolean selected = privateToggleButton.isSelected();
             MarkupAnnotation markupAnnotation = annotation.getParent();
