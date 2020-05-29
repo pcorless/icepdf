@@ -31,6 +31,7 @@ import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.LazyObjectLoader;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Parser;
+import org.icepdf.core.util.updater.IncrementalUpdater;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -80,20 +81,6 @@ public class Document {
         return ProductInfo.VERSION +
                 (ProductInfo.RELEASE_TYPE != null && !ProductInfo.RELEASE_TYPE.isEmpty() ?
                         "-" + ProductInfo.RELEASE_TYPE : "");
-    }
-
-    private static final String INCREMENTAL_UPDATER =
-            "org.icepdf.core.util.IncrementalUpdater";
-    public static boolean foundIncrementalUpdater;
-
-    static {
-        // check class bath for NFont library, and declare results.
-        try {
-            Class.forName(INCREMENTAL_UPDATER);
-            foundIncrementalUpdater = true;
-        } catch (ClassNotFoundException e) {
-            logger.log(Level.WARNING, "PDF write support was not found on the class path");
-        }
     }
 
     // optional watermark callback
@@ -1112,20 +1099,8 @@ public class Document {
      */
     public long saveToOutputStream(OutputStream out) throws IOException {
         long documentLength = writeToOutputStream(out);
-        if (foundIncrementalUpdater) {
-            try {
-                Class<?> incrementalUpdaterClass = Class.forName(INCREMENTAL_UPDATER);
-                Object[] argValues = {this, out, documentLength};
-                Method method = incrementalUpdaterClass.getDeclaredMethod(
-                        "appendIncrementalUpdate",
-                        Document.class, OutputStream.class, Long.TYPE);
-                long appendedLength = (Long) method.invoke(null, argValues);
-                return documentLength + appendedLength;
-            } catch (Throwable e) {
-                logger.log(Level.FINE, "Could not call incremental updater.", e);
-            }
-        }
-        return documentLength;
+        long appendedLength = new IncrementalUpdater().appendIncrementalUpdate(this, out, documentLength);
+        return documentLength + appendedLength;
     }
 
     /**

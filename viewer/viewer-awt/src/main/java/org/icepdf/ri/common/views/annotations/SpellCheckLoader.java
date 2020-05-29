@@ -38,13 +38,18 @@ public class SpellCheckLoader {
     protected static final String JORTHO_ADD_SPELL_CHECKER_METHOD = "register";
     protected static final String JORTHO_SET_USER_DICTIONARY_PROVIDER_METHOD = "setUserDictionaryProvider";
 
+    private static boolean checkedClassPath = false;
+
     public static void addSpellChecker(JTextComponent textComponent) {
         try {
             Class<?> spellCheckerClass = Class.forName(JORTHO_SPELL_CHECKER_CLASS);
             Method addSpellCheckMethod = spellCheckerClass.getMethod(JORTHO_ADD_SPELL_CHECKER_METHOD, JTextComponent.class);
             addSpellCheckMethod.invoke(null, textComponent);
         } catch (Exception e) {
-            logger.info(JORTHO_SPELL_CHECKER_CLASS + " could not be found on the class path");
+            if (!checkedClassPath) {
+                logger.info(JORTHO_SPELL_CHECKER_CLASS + " could not be found on the class path");
+                checkedClassPath = true;
+            }
         }
     }
 

@@ -26,8 +26,6 @@ import java.util.HashMap;
 /**
  * <p>A remote go-to action is similar to an ordinary go-to action but jumps to
  * a destination in another PDF file instead of the current file. </p>
- *
- * @author ICEsoft Technologies, Inc.
  * @since 2.6
  */
 public class GoToRAction extends Action {

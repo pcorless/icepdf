@@ -1,5 +1,4 @@
 /*
- * Copyright 2006-2017 ICEsoft Technologies Canada Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -34,8 +33,8 @@ import java.awt.geom.GeneralPath;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 
 /**
  * The <code>BarcodeStamper</code> is very similar to BarcodeReader but instead of simply reading page code, it will

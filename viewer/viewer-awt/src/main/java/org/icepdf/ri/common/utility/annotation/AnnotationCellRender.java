@@ -16,7 +16,9 @@
 package org.icepdf.ri.common.utility.annotation;
 
 import org.icepdf.core.pobjects.annotations.*;
+import org.icepdf.ri.common.CompoundIcon;
 import org.icepdf.ri.common.ImageColorIcon;
+import org.icepdf.ri.common.utility.annotation.markup.MarkupAnnotationPanel;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
@@ -245,6 +247,15 @@ public class AnnotationCellRender extends DefaultTreeCellRenderer {
             setClosedIcon(new ImageIcon(Images.get("page.gif")));
             setLeafIcon(new ImageIcon(Images.get("page.gif")));
         }
+        if (MarkupAnnotationPanel.PRIVATE_PROPERTY_ENABLED && annotation != null) {
+            final ImageIcon privateIcon;
+            privateIcon = annotation.getFlagPrivateContents() ?
+                    new ImageIcon(Images.get("lock_16.png")) :
+                    new ImageIcon(Images.get("unlock_16.png"));
+            final CompoundIcon icon = new CompoundIcon(getIcon(), privateIcon);
+            setIcon(icon);
+        }
+
         return this;
     }
 

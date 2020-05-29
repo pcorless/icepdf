@@ -348,6 +348,6 @@ public abstract class MarkupAnnotation extends Annotation {
     }
 
     public String toString() {
-        return getTitleText();
+        return getPObjectReference() + " - " + getTitleText() + " - " + getContents();
     }
 }

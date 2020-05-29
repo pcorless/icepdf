@@ -24,8 +24,6 @@ import org.icepdf.core.pobjects.annotations.Annotation;
  * their actions are executed.  Developers also have have the option to
  * change annotation visibility attributes such as border style, border color
  * and border stroke width before the annotation is painted.</p>
- *
- * @author ICEsoft Technologies, Inc.
  * @see org.icepdf.ri.common.views.DocumentViewController#setAnnotationCallback(AnnotationCallback)
  * @since 2.6
  */
