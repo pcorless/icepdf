@@ -26,7 +26,6 @@ import java.util.Stack;
  * stream.  As the tokens are parsed found operands are executed to mananipulate
  * the stack.
  *
- * @author ICEsoft Technologies Inc.
  * @since 4.2
  */
 public class Lexer {

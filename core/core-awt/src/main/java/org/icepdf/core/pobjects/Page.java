@@ -854,7 +854,7 @@ public class Page extends Dictionary {
 
             // create a new Dictionary of annotations using an external reference
             PObject annotsPObject = new PObject(annotsVector,
-                    stateManager.getNewReferencNumber());
+                    stateManager.getNewReferenceNumber());
 
             // add the new dictionary to the page
             entries.put(ANNOTS_KEY, annotsPObject.getReference());

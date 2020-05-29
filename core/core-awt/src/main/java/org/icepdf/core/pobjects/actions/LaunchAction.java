@@ -30,7 +30,6 @@ import java.util.HashMap;
  * <p>There are optional Win which allow for platform specific parameters for
  * launching the designated application. </p>
  *
- * @author ICEsoft Technologies, Inc.
  * @since 2.6
  */
 public class LaunchAction extends Action {

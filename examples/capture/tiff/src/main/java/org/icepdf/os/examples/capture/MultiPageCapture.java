@@ -1,6 +1,5 @@
 package org.icepdf.os.examples.capture;
 /*
- * Copyright 2006-2017 ICEsoft Technologies Canada Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -43,8 +42,6 @@ import java.util.Iterator;
  * every page in the document is captured as an image and saved into one
  * multi-page group 4 fax TIFF graphics file.
  * <p/>
- * More information on different compression types can be found at this forum
- * thread, http://www.icesoft.org/JForum/posts/list/17504.page
  *
  * @since 4.0
  */

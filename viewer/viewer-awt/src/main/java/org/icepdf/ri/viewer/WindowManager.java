@@ -27,6 +27,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
@@ -84,8 +85,7 @@ public class WindowManager implements WindowManagementCallback {
 
         // Announce ourselves...
         if (Defs.booleanProperty("org.icepdf.core.verbose", true)) {
-            System.out.println("\nICEsoft ICEpdf Viewer " + Document.getLibraryVersion());
-            System.out.println("Copyright ICEsoft Technologies, Inc.\n");
+            System.out.println("\nICEpdf Viewer " + Document.getLibraryVersion());
         }
         return windowManager;
     }
@@ -98,6 +98,9 @@ public class WindowManager implements WindowManagementCallback {
         return newWindowInvocationCounter;
     }
 
+    public Collection<Controller> getControllers() {
+        return controllers;
+    }
 
     public void newWindow(final String location) {
         Controller controller = commonWindowCreation();
