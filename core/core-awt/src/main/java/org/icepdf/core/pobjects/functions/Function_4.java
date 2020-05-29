@@ -38,7 +38,6 @@ import java.util.logging.Logger;
  * the list a predefined spot function (10.5.3 spot functions).  All of the
  * predefined spot functions can be written as type 4 functions. </p>
  *
- * @author ICEsoft Technologies Inc.
  * @since 4.2
  */
 public class Function_4 extends Function {

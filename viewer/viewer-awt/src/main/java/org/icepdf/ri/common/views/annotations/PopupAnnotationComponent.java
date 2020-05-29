@@ -28,6 +28,7 @@ import org.icepdf.ri.common.tools.TextAnnotationHandler;
 import org.icepdf.ri.common.utility.annotation.properties.FreeTextAnnotationPanel;
 import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryBox;
+import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -451,6 +452,11 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
         // command test
         buildContextMenu();
+    }
+
+    public void focusTextArea() {
+        textArea.requestFocusInWindow();
+        textArea.setCaretPosition(textArea.getDocument().getLength());
     }
 
     public void setBoundsRelativeToParent(int x, int y, AffineTransform pageInverseTransform) {
@@ -985,10 +991,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         return null;
     }
 
-    protected Icon createLockIcon(Color color, boolean isLock) {
-        return new LockIcon(color, BUTTON_SIZE, isLock);
-    }
-
     protected void resetComponentColors() {
         Color contrastColor = calculateContrastHighLowColor(popupBackgroundColor.getRGB());
         minimizeButton.setForeground(contrastColor);
@@ -996,11 +998,14 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         minimizeButton.setBackground(popupBackgroundColor);
         privateToggleButton.setBackground(popupBackgroundColor);
         // lock icons.
-        Icon lockedIcon = createLockIcon(contrastColor, true);
-        Icon unlockedIcon = createLockIcon(contrastColor, false);
+        Icon lockedIcon = new ImageIcon(Images.get("lock_16.png"));
+        Icon unlockedIcon = new ImageIcon(Images.get("unlock_16.png"));
         privateToggleButton.setIcon(unlockedIcon);
-        privateToggleButton.setPressedIcon(lockedIcon);
+        privateToggleButton.setPressedIcon(null);
         privateToggleButton.setSelectedIcon(lockedIcon);
+        privateToggleButton.setRolloverIcon(unlockedIcon);
+        privateToggleButton.setRolloverSelectedIcon(lockedIcon);
+
         // text colors.
         titleLabel.setForeground(contrastColor);
         creationLabel.setForeground(contrastColor);
