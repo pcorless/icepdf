@@ -3516,22 +3516,12 @@ public class SwingController extends ComponentAdapter
                                 fileOutputStream, 4096 * 2);
 
                         // We want 'save as' or 'save a copy to always occur
-                        if (document.getStateManager().isChanged() &&
-                                !Document.foundIncrementalUpdater) {
-                            org.icepdf.ri.util.Resources.showMessageDialog(
-                                    viewer,
-                                    JOptionPane.INFORMATION_MESSAGE,
-                                    messageBundle,
-                                    "viewer.dialog.saveAs.noUpdates.title",
-                                    "viewer.dialog.saveAs.noUpdates.msg");
+                        if (!document.getStateManager().isChanged()) {
+                            // save as copy
+                            document.writeToOutputStream(buf);
                         } else {
-                            if (!document.getStateManager().isChanged()) {
-                                // save as copy
-                                document.writeToOutputStream(buf);
-                            } else {
-                                // save as will append changes.
-                                document.saveToOutputStream(buf);
-                            }
+                            // save as will append changes.
+                            document.saveToOutputStream(buf);
                         }
                         buf.flush();
                         fileOutputStream.flush();
@@ -3636,7 +3626,7 @@ public class SwingController extends ComponentAdapter
         // want to save the changes.
         if (document != null) {
             boolean documentChanges = document.getStateManager().isChanged();
-            if (documentChanges && Document.foundIncrementalUpdater) {
+            if (documentChanges) {
 
                 MessageFormat formatter = new MessageFormat(
                         messageBundle.getString("viewer.dialog.saveOnClose.noUpdates.msg"));

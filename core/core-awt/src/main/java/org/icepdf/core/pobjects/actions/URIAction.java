@@ -29,8 +29,6 @@ import java.util.HashMap;
  * <p>The URI can be extracted from this object so that the content can
  * be loaded in a web browser.  ICEpdf does not currently support image map
  * URI's.</p>
- *
- * @author ICEsoft Technologies, Inc.
  * @since 2.6
  */
 public class URIAction extends Action {
