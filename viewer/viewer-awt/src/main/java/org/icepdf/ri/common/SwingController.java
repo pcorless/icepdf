@@ -16,6 +16,7 @@
 package org.icepdf.ri.common;
 
 import org.icepdf.core.SecurityCallback;
+import org.icepdf.core.SystemProperties;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.io.SizeInputStream;
@@ -1876,11 +1877,12 @@ public class SwingController extends ComponentAdapter
     private void reflectAnnotationDefaultPrivacy() {
         // check properties to get last state.
         Preferences preferences = ViewerPropertiesManager.getInstance().getPreferences();
-        boolean annotationPrivacy = preferences.getBoolean(
-                ViewerPropertiesManager.PROPERTY_ANNOTATION_LAST_USED_PUBLIC_FLAG, true);
+        boolean annotationPrivacy = !SystemProperties.PRIVATE_PROPERTY_ENABLED ||
+                preferences.getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_LAST_USED_PUBLIC_FLAG, true);
+
 
         // store the current state in the model and annotation tool handlers will pull from the current state.
-        viewModel.setAnnotationPrivacy(annotationPrivacy);
+        setAnnotationPrivacy(annotationPrivacy);
 
         // set the default value of the combo box.
         if (annotationPrivacyComboBox != null) {
