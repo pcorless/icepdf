@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects;
 
+import org.icepdf.core.SystemProperties;
 import org.icepdf.core.events.*;
 import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.annotations.Annotation;
@@ -75,9 +76,6 @@ public class Page extends Dictionary {
      * Transparency value used to simulate text highlighting.
      */
     public static final float SELECTION_ALPHA = 0.3f;
-
-    public static boolean PRIVATE_PROPERTY_ENABLED = Defs.booleanProperty(
-            "org.icepdf.core.page.annotation.privateProperty.enabled", false);
 
     // text selection colour
     public static Color selectionColor;
@@ -205,8 +203,6 @@ public class Page extends Dictionary {
 
     // page has default rotation value
     private float pageRotation = 0;
-
-    private String userName = System.getProperty("user.name");
 
     private int pageIndex;
     private int imageCount;
@@ -342,12 +338,12 @@ public class Page extends Dictionary {
                         a.setPObjectReference(ref);
                         a.init();
                     }
-                    if (PRIVATE_PROPERTY_ENABLED && a.getFlagPrivateContents()) {
+                    if (SystemProperties.PRIVATE_PROPERTY_ENABLED && a.getFlagPrivateContents()) {
                         // check to make sure we don't show an annotation if the username doesn't match the creator
                         if (a instanceof MarkupAnnotation) {
                             MarkupAnnotation markupAnnotation = (MarkupAnnotation) a;
                             String creator = markupAnnotation.getTitleText();
-                            if (creator.equals(userName)) {
+                            if (creator.equals(SystemProperties.USER_NAME)) {
                                 annotations.add(a);
                             } else {
                                 // other wise we skip it all together but make sure the popup is hidden.

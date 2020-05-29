@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
+import org.icepdf.core.SystemProperties;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
@@ -151,7 +152,7 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
                 annotation.setCreationDate(PDate.formatDateTime(new Date()));
             }
             if (annotation.getTitleText() == null) {
-                annotation.setTitleText(System.getProperty("user.name"));
+                annotation.setTitleText(SystemProperties.USER_NAME);
             }
             if (annotation.getContents() == null) {
                 annotation.setContents("");

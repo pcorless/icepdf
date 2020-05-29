@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
+import org.icepdf.core.SystemProperties;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.Annotation;
@@ -90,13 +91,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     public static Color borderColor = new Color(153, 153, 153);
     public static Dimension BUTTON_SIZE = new Dimension(22, 22);
 
-    public static boolean PRIVATE_PROPERTY_ENABLED;
-
-    static {
-        PRIVATE_PROPERTY_ENABLED = Defs.booleanProperty(
-                "org.icepdf.core.page.annotation.privateProperty.enabled", false);
-    }
-
     // layouts constraint
     private GridBagConstraints constraints;
 
@@ -117,7 +111,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     protected boolean disableSpellCheck;
     protected boolean adjustBounds = true;
 
-    private String userName = System.getProperty("user.name");
+    private String userName = SystemProperties.USER_NAME;
 
     public PopupAnnotationComponent(PopupAnnotation annotation, DocumentViewController documentViewController,
                                     AbstractPageViewComponent pageViewComponent) {
@@ -412,7 +406,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         constraints.weightx = 0;
         constraints.insets = new Insets(1, 1, 1, 1);
         // user that created the comment is the only one that can actually make it private.
-        if (PRIVATE_PROPERTY_ENABLED) {
+        if (SystemProperties.PRIVATE_PROPERTY_ENABLED) {
             MarkupAnnotation markupAnnotation = annotation.getParent();
             if (markupAnnotation != null && userName.equals(markupAnnotation.getTitleText())) {
                 addGB(commentPanel, privateToggleButton, 2, 0, 1, 1);

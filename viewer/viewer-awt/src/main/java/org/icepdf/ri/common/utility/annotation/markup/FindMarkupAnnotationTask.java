@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.utility.annotation.markup;
 
+import org.icepdf.core.SystemProperties;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.Page;
@@ -37,6 +38,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.icepdf.core.SystemProperties.PRIVATE_PROPERTY_ENABLED;
 
 public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
 
@@ -131,7 +134,7 @@ public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
                     }
                     taskStatusMessage = loadingMessage.format(new Object[]{i + 1, pageCount});
                     taskProgress = i;
-                    String userName = System.getProperty("user.name");
+                    String userName = SystemProperties.USER_NAME;
                     Page page = currentDocument.getPageTree().getPage(i);
                     if (page != null) {
                         ArrayList<Reference> annotationReferences = page.getAnnotationReferences();
@@ -178,7 +181,7 @@ public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
                                             filter = true;
                                         }
                                     }
-                                    if (MarkupAnnotationPanel.PRIVATE_PROPERTY_ENABLED &&
+                                    if (PRIVATE_PROPERTY_ENABLED &&
                                             filterVisibility != MarkupAnnotationPanel.FilterVisibilityColumn.ALL) {
                                         if ((markupAnnotation.getFlagPrivateContents()
                                                 && filterVisibility == MarkupAnnotationPanel.FilterVisibilityColumn.PUBLIC)

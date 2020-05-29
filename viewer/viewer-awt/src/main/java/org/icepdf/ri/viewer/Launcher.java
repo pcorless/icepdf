@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.viewer;
 
+import org.icepdf.core.SystemProperties;
 import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.util.FontPropertiesManager;
@@ -176,7 +177,7 @@ public class Launcher {
     private static void setupLookAndFeel(ResourceBundle messageBundle) {
 
         // Do Mac related-setup (if running on a Mac)
-        if (Defs.sysProperty("os.name").contains("OS X")) {
+        if (SystemProperties.OS_NAME.contains("OS X")) {
             // Running on a mac
             // take the menu bar off the jframe
             Defs.setSystemProperty("apple.laf.useScreenMenuBar", "true");
