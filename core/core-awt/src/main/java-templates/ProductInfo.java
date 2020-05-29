@@ -20,7 +20,7 @@ public class ProductInfo {
     /**
      * The company that owns this product.
      */
-    public static String COMPANY = "ICEsoft Technologies, Inc.";
+    public static String COMPANY = "";
 
     /**
      * The name of the product.

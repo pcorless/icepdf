@@ -35,6 +35,7 @@ public class StateManager {
 
     // a list is all we might need. 
     private HashMap<Reference, PObject> changes;
+    private final Set<Reference> updatedReferences = new HashSet<>();
 
     // access to xref size and next revision number.
     private PTrailer trailer;
@@ -54,7 +55,8 @@ public class StateManager {
         // number of objects is always one more then the current size and
         // thus the next available number.
         if (trailer != null) {
-            nextReferenceNumber = trailer.getNumberOfObjects();
+            CrossReference crossReference = trailer.getPrimaryCrossReference();
+            nextReferenceNumber = crossReference.getNextAvailableReferenceNumber();
         }
     }
 
@@ -63,7 +65,7 @@ public class StateManager {
      *
      * @return valid reference number.
      */
-    public Reference getNewReferencNumber() {
+    public Reference getNewReferenceNumber() {
         // zero revision number for now but technically we can reuse
         // deleted references and increment the rev number.  For no we
         // keep it simple
@@ -83,28 +85,6 @@ public class StateManager {
         // check the reference numbers
         if (nextReferenceNumber <= objectNumber) {
             nextReferenceNumber = objectNumber + 1;
-        }
-    }
-
-    /**
-     * @return an unmodifiable copy of the current changes
-     */
-    public Map<Reference, PObject> getChanges() {
-        return Collections.unmodifiableMap(new HashMap<>(changes));
-    }
-
-
-    /**
-     * Checks that the given and the current list of changes are the same or not
-     *
-     * @param knownChanges The changes to compare to
-     * @return true if the changes are different, false otherwise
-     */
-    public boolean hasChangedSince(Map<Reference, PObject> knownChanges) {
-        if (knownChanges.size() == changes.size()) {
-            return knownChanges.entrySet().stream().anyMatch(entry -> !Objects.equals(changes.get(entry.getKey()), entry.getValue()));
-        } else {
-            return true;
         }
     }
 
@@ -143,6 +123,39 @@ public class StateManager {
      */
     public boolean isChanged() {
         return !changes.isEmpty();
+    }
+
+
+    /**
+     * @return an unmodifiable copy of the current changes
+     */
+    public Map<Reference, PObject> getChanges() {
+        return Collections.unmodifiableMap(new HashMap<>(changes));
+    }
+
+
+    /**
+     * @return same as getChanges(), but also clears the updatedReferences set
+     */
+    public Map<Reference, PObject> getAndSaveChanges() {
+        //TODO find better name for function
+        updatedReferences.clear();
+        return getChanges();
+    }
+
+
+    /**
+     * Checks that the given and the current list of changes are the same or not
+     *
+     * @param knownChanges The changes to compare to
+     * @return true if the changes are different, false otherwise
+     */
+    public boolean hasChangedSince(Map<Reference, PObject> knownChanges) {
+        if (knownChanges.size() == changes.size()) {
+            return knownChanges.entrySet().stream().anyMatch(entry -> !Objects.equals(changes.get(entry.getKey()), entry.getValue()));
+        } else {
+            return true;
+        }
     }
 
     /**
@@ -208,4 +221,3 @@ coll = hs;
         }
     }
 }
-

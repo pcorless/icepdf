@@ -3174,7 +3174,7 @@ public class SwingController extends ComponentAdapter
         reflectStateInComponents();
         updateDocumentView();
         //TODO not very clean and 100% reliable
-        Timer initialChangesTimer = new Timer(500, event -> savedChanges = document.getStateManager().getChanges());
+        Timer initialChangesTimer = new Timer(500, event -> savedChanges = document.getStateManager().getAndSaveChanges());
         initialChangesTimer.setRepeats(false);
         initialChangesTimer.start();
     }
@@ -3462,33 +3462,24 @@ public class SwingController extends ComponentAdapter
      */
     public void saveFile() {
         if (document.getStateManager().hasChangedSince(savedChanges)) {
-            if (!Document.foundIncrementalUpdater) {
-                org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
-                        JOptionPane.INFORMATION_MESSAGE,
-                        messageBundle,
-                        "viewer.dialog.saveAs.noUpdates.title",
-                        "viewer.dialog.saveAs.noUpdates.msg");
-            } else {
-                if (saveFilePath != null && !saveFilePath.isEmpty()) {
-                    File out = new File(saveFilePath);
-                    if (out.getParentFile() != null) {
-                        if (Files.isWritable(out.getParentFile().toPath())) {
-                            try (OutputStream stream = new BufferedOutputStream(new FileOutputStream(out))) {
-                                document.saveToOutputStream(stream);
-                                stream.flush();
-                                savedChanges = document.getStateManager().getChanges();
-                            } catch (IOException e) {
-                                logger.log(Level.FINE, "IO Exception ", e);
-                            }
+            if (saveFilePath != null && !saveFilePath.isEmpty()) {
+                File out = new File(saveFilePath);
+                if (out.getParentFile() != null) {
+                    if (Files.isWritable(out.getParentFile().toPath())) {
+                        try (OutputStream stream = new BufferedOutputStream(new FileOutputStream(out))) {
+                            document.saveToOutputStream(stream);
+                            stream.flush();
+                            savedChanges = document.getStateManager().getAndSaveChanges();
+                        } catch (IOException e) {
+                            logger.log(Level.FINE, "IO Exception ", e);
                         }
-                    } else {
-                        //Probably got loaded from an InputStream, can't simply save
-                        saveFileAs();
                     }
                 } else {
+                    //Probably got loaded from an InputStream, can't simply save
                     saveFileAs();
                 }
+            } else {
+                saveFileAs();
             }
         }
     }
@@ -3611,28 +3602,18 @@ public class SwingController extends ComponentAdapter
                                 fileOutputStream, 4096 * 2);
 
                         // We want 'save as' or 'save a copy to always occur
-                        if (document.getStateManager().isChanged() &&
-                                !Document.foundIncrementalUpdater) {
-                            org.icepdf.ri.util.Resources.showMessageDialog(
-                                    viewer,
-                                    JOptionPane.INFORMATION_MESSAGE,
-                                    messageBundle,
-                                    "viewer.dialog.saveAs.noUpdates.title",
-                                    "viewer.dialog.saveAs.noUpdates.msg");
+                        if (!document.getStateManager().hasChangedSince(savedChanges)) {
+                            // save as copy
+                            document.writeToOutputStream(buf);
                         } else {
-                            if (!document.getStateManager().isChanged()) {
-                                // save as copy
-                                document.writeToOutputStream(buf);
-                            } else {
-                                // save as will append changes.
-                                document.saveToOutputStream(buf);
-                            }
+                            // save as will append changes.
+                            document.saveToOutputStream(buf);
                         }
                         buf.flush();
                         fileOutputStream.flush();
                         buf.close();
                         fileOutputStream.close();
-                        savedChanges = document.getStateManager().getChanges();
+                        savedChanges = document.getStateManager().getAndSaveChanges();
                     } catch (MalformedURLException e) {
                         logger.log(Level.FINE, "Malformed URL Exception ", e);
                     } catch (IOException e) {
@@ -3731,9 +3712,8 @@ public class SwingController extends ComponentAdapter
         // check if document changes have been made, if so ask the user if they
         // want to save the changes.
         if (document != null) {
-            boolean documentChanges = document.getStateManager().isChanged();
-
-            if (document.getStateManager().hasChangedSince(savedChanges) && Document.foundIncrementalUpdater) {
+            boolean documentChanges = document.getStateManager().hasChangedSince(savedChanges);
+            if (documentChanges) {
                 MessageFormat formatter = new MessageFormat(
                         messageBundle.getString("viewer.dialog.saveOnClose.noUpdates.msg"));
                 String dialogMessage = formatter.format(new Object[]{document.getDocumentOrigin()});

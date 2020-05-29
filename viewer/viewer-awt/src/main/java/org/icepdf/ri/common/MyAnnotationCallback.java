@@ -32,8 +32,6 @@ import java.util.logging.Logger;
 
 /**
  * This class represents a basic implementation of the AnnotationCallback
- *
- * @author ICEsoft Technologies, Inc.
  * @since 2.6
  */
 public class MyAnnotationCallback implements AnnotationCallback {
