@@ -69,7 +69,7 @@ public class Launcher {
         String contentFile = "";
         String password = null;
         String contentDav = "";
-        String user = "";
+        String user = System.getProperty("user.name");
         // parse command line arguments
         for (int i = 0; i < argv.length; i++) {
             if (i == argv.length - 1) { //each argument requires another

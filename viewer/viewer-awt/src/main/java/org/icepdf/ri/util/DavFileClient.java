@@ -126,6 +126,7 @@ public class DavFileClient {
 
     public void setUsername(final String username) {
         this.username = username;
+        sardine.setCredentials(username, password);
     }
 
     public String getPassword() {
