@@ -120,7 +120,7 @@ public class CircleAnnotation extends MarkupAnnotation {
         try {
             circleAnnotation = new CircleAnnotation(library, entries);
             circleAnnotation.init();
-            circleAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
+            circleAnnotation.setPObjectReference(stateManager.getNewReferenceNumber());
             circleAnnotation.setNew(true);
 
             // set default flags.

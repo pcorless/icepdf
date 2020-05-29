@@ -103,7 +103,7 @@ public class PopupAnnotation extends Annotation {
         try {
             popupAnnotation = new PopupAnnotation(library, entries);
             popupAnnotation.init();
-            popupAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
+            popupAnnotation.setPObjectReference(stateManager.getNewReferenceNumber());
             popupAnnotation.setNew(true);
 
             // set default flags.

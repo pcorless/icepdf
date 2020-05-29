@@ -49,6 +49,13 @@ public class Stream extends Dictionary {
     public static final Name FILTER_KEY = new Name("Filter");
     public static final Name DECODEPARAM_KEY = new Name("DecodeParms");
 
+    public static final Name FILTER_FLATE_DECODE = new Name("FlateDecode");
+    public static final Name FILTER_ASCII85_DECODE = new Name("ASCII85Decode");
+    public static final Name FILTER_ASCIIHexDECODE = new Name("ASCIIHexDecode");
+    public static final Name FILTER_RUN_LENGTH_DECODE = new Name("RunLengthDecode");
+    public static final Name FILTER_CCITT_FAX_DECODE = new Name("CCITTFaxDecode");
+    public static final Name FILTER_JBIG2_DECODE = new Name("JBIG2Decode");
+    public static final Name FILTER_JPX_DECODE = new Name("JPXDecode");
 
     // original byte stream that has not been decoded
     protected byte[] rawBytes;

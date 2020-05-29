@@ -140,7 +140,7 @@ public class LinkAnnotation extends Annotation {
         try {
             linkAnnotation = new LinkAnnotation(library, entries);
             linkAnnotation.init();
-            linkAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
+            linkAnnotation.setPObjectReference(stateManager.getNewReferenceNumber());
             linkAnnotation.setNew(true);
 
             // set default flags.
