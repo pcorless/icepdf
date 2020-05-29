@@ -22,7 +22,6 @@ import java.util.Stack;
  * or differed execution.  Expression is just another type of Operator but we
  * can use an instanceof check to find occurrences of the object.
  *
- * @author ICEsoft Technologies Inc.
  * @since 4.2
  */
 public class Expression extends Operator {

@@ -6,5 +6,5 @@ mainClassName = "org.icepdf.os.examples.loadingEvents.PageLoadingEvents"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
 
 dependencies {
-    compile project(':viewer:viewer-awt')
+    implementation project(':core:core-awt'), project(':viewer:viewer-awt')
 }

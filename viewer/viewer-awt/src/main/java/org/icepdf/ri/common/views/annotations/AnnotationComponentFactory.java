@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
 import org.icepdf.core.pobjects.annotations.*;
+import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 
@@ -105,7 +106,7 @@ public class AnnotationComponentFactory {
                 AbstractWidgetAnnotation widgetAnnotation = (AbstractWidgetAnnotation) annotation;
                 Name fieldType = widgetAnnotation.getFieldDictionary().getFieldType();
                 // load pro interactive annotation support.
-                if (Document.foundIncrementalUpdater) {
+                if (FontFactory.foundFontEngine()) {
                     if (FieldDictionaryFactory.TYPE_BUTTON.equals(fieldType)) {
                         return generatedWidgetField(BUTTON_FIELD_CLASS, annotation,
                                 documentViewController, pageViewComponent);

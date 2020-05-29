@@ -21,9 +21,7 @@ import org.icepdf.core.util.Utils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,7 +44,7 @@ public class CrossReference {
      * Map of all the objects in reference by the CrossReference table.  Ojbects
      * are retrieved by object number.
      */
-    private ConcurrentHashMap<Number, Entry> hObjectNumber2Entry;
+    private ConcurrentHashMap<Integer, Entry> hObjectNumber2Entry;
     /**
      * In a Linearized PDF, we don't want to load all Trailers and their XRefs
      * upfront, but would rather load the first upfront, and then lazily load
@@ -69,11 +67,17 @@ public class CrossReference {
     protected int offset;
 
     public CrossReference() {
-        hObjectNumber2Entry = new ConcurrentHashMap<Number, Entry>(4096);
+        hObjectNumber2Entry = new ConcurrentHashMap<Integer, Entry>(4096);
     }
 
     public void setTrailer(PTrailer trailer) {
         pTrailer = trailer;
+    }
+
+    public int getNextAvailableReferenceNumber() {
+        List<Integer> objectNumbers = Collections.list(hObjectNumber2Entry.keys());
+        Collections.sort(objectNumbers);
+        return objectNumbers.get(objectNumbers.size() - 1) + 1;
     }
 
     /**

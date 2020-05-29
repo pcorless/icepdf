@@ -185,7 +185,7 @@ public class TextAnnotation extends MarkupAnnotation {
         try {
             textAnnotation = new TextAnnotation(library, entries);
             textAnnotation.init();
-            textAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
+            textAnnotation.setPObjectReference(stateManager.getNewReferenceNumber());
             textAnnotation.setNew(true);
 
             // set default flags.
