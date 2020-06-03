@@ -136,6 +136,7 @@ public class SwingController extends ComponentAdapter
     private JMenuItem openFileMenuItem;
     private JMenu recentFilesSubMenu;
     private JMenuItem openURLMenuItem;
+    private JMenuItem openDavMenuItem;
     private JMenuItem closeMenuItem;
     private JMenuItem saveFileMenuItem;
     private JMenuItem saveAsFileMenuItem;
@@ -414,6 +415,16 @@ public class SwingController extends ComponentAdapter
      */
     public void setOpenURLMenuItem(JMenuItem mi) {
         openURLMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
+     */
+    public void setOpenDavMenuItem(JMenuItem mi) {
+        openDavMenuItem = mi;
         mi.addActionListener(this);
     }
 
@@ -2740,6 +2751,47 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
+     * Utility method for opening a WebDav URL. Shows a dialog for the user to type
+     * what URL to open
+     */
+    public void openDav() {
+        String davLocation = ((ViewModel.getDefaultDav() != null) ? ViewModel.getDefaultDav() : "");
+        // display webdav url input dialog
+        String url = (String) JOptionPane.showInputDialog(
+                viewer,
+                "WebDav URL:",
+                "Open WebDav URL",
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                null,
+                davLocation);
+        if (url != null) {
+            if (viewer != null) {
+                viewer.toFront();
+                viewer.requestFocus();
+            }
+            openDavInSomeViewer(url);
+            ViewModel.setDefaultDav(url);
+        }
+    }
+
+    private void openDavInSomeViewer(final String url) {
+        final DavFileClient client = new DavFileClient(url);
+        if (document == null) {
+            openDocument(client);
+        } else if (windowManagementCallback != null) {
+            int oldTool = SwingController.this.getDocumentViewToolMode();
+            setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_WAIT);
+            try {
+                windowManagementCallback.newWindow(client);
+            } finally {
+                setDisplayTool(oldTool);
+            }
+        }
+    }
+
+
+    /**
      * Opens a document specified by the DavFileClient. Asks the user their password if needed
      *
      * @param pdfDavClient The client
@@ -3352,6 +3404,7 @@ public class SwingController extends ComponentAdapter
 
         openFileMenuItem = null;
         openURLMenuItem = null;
+        openDavMenuItem = null;
         closeMenuItem = null;
         saveAsFileMenuItem = null;
         exportTextMenuItem = null;
@@ -4922,6 +4975,9 @@ public class SwingController extends ComponentAdapter
             } else if (source == openURLMenuItem) {
                 cancelSetFocus = true;
                 openURL();
+            } else if (source == openDavMenuItem) {
+                cancelSetFocus = true;
+                openDav();
             } else if (source == closeMenuItem) {
                 boolean isCanceled = saveChangesDialog();
                 if (!isCanceled) {

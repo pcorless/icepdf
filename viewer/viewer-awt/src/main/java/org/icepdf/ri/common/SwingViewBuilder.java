@@ -576,13 +576,15 @@ public class SwingViewBuilder {
         fileMenu.setMnemonic(buildMnemonic(messageBundle.getString("viewer.menu.file.mnemonic").charAt(0)));
         JMenuItem openFileMenuItem = buildOpenFileMenuItem();
         JMenuItem openURLMenuItem = buildOpenURLMenuItem();
-        if (openFileMenuItem != null && openURLMenuItem != null) {
+        JMenuItem openDavMenuItem = buildOpenDavMenuItem();
+        if (openFileMenuItem != null && openURLMenuItem != null && openDavMenuItem != null) {
             JMenu openSubMenu = new JMenu(messageBundle.getString("viewer.menu.open.label"));
             openSubMenu.setIcon(new ImageIcon(Images.get("open_a_24.png")));
             openSubMenu.setDisabledIcon(new ImageIcon(Images.get("open_i_24.png")));
             openSubMenu.setRolloverIcon(new ImageIcon(Images.get("open_r_24.png")));
             addToMenu(openSubMenu, openFileMenuItem);
             addToMenu(openSubMenu, openURLMenuItem);
+            addToMenu(openSubMenu, openDavMenuItem);
             addToMenu(fileMenu, openSubMenu);
         } else if (openFileMenuItem != null || openURLMenuItem != null) {
             addToMenu(fileMenu, openFileMenuItem);
@@ -636,6 +638,15 @@ public class SwingViewBuilder {
                 buildKeyStroke(KeyEventConstants.KEY_CODE_OPEN_URL, KeyEventConstants.MODIFIER_OPEN_URL));
         if (viewerController != null && mi != null)
             viewerController.setOpenURLMenuItem(mi);
+        return mi;
+    }
+
+    public JMenuItem buildOpenDavMenuItem() {
+        JMenuItem mi = makeMenuItem(messageBundle.getString("viewer.menu.open.dav.label"),
+                buildKeyStroke(KeyEventConstants.KEY_CODE_OPEN_DAV, KeyEventConstants.MODIFIER_OPEN_DAV));
+        if (viewerController != null && mi != null) {
+            viewerController.setOpenDavMenuItem(mi);
+        }
         return mi;
     }
 
