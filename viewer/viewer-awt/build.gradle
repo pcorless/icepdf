@@ -22,6 +22,8 @@ dependencies {
     implementation 'org.bouncycastle:bcprov-jdk15on:' + "${BOUNCY_VERSION}"
     implementation 'org.bouncycastle:bcprov-ext-jdk15on:' + "${BOUNCY_VERSION}"
     implementation 'org.bouncycastle:bcpkix-jdk15on:' + "${BOUNCY_VERSION}"
+    compile 'com.github.lookfirst:sardine:5.9'
+    compile 'org.apache.tika:tika-core:1.23'
 }
 
 // generatePomFileForViewerJarPublication
