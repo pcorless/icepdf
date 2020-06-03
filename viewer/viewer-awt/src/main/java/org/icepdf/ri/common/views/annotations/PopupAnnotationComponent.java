@@ -37,10 +37,7 @@ import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeCellRenderer;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeSelectionModel;
+import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -499,10 +496,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
     public void replyToSelectedMarkupExecute() {
         // setup title message
-        Object[] argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
-        MessageFormat formatter = new MessageFormat(
-                messageBundle.getString("viewer.annotation.popup.replyTo.label"));
-        String annotationTitle = formatter.format(argument);
+        String annotationTitle = System.getProperty("user.name");
 
         // show the currently selected markup comment.
         setVisible(true);
@@ -708,7 +702,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 commentTree.getLastSelectedPathComponent();
 
         DefaultMutableTreeNode replyToNode =
-                new DefaultMutableTreeNode(markupAnnotation);
+                new MarkupAnnotationTreeNode(markupAnnotation);
         if (node == null) {
             node = ((DefaultMutableTreeNode) commentTree.getModel().getRoot()).getFirstLeaf();
         }
@@ -719,6 +713,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
         // reload the tree model
         refreshTree(commentTree);
+        commentTree.setSelectionPath(new TreePath(replyToNode.getPath()));
 
         // finally check the view and make sure the treePanel is visible.
         commentTreeScrollPane.setVisible(true);
@@ -786,6 +781,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 textArea.getDocument().removeDocumentListener(this);
                 textArea.setText(selectedMarkupAnnotation.getContents());
                 textArea.getDocument().addDocumentListener(this);
+                textArea.requestFocusInWindow();
+                textArea.setCaretPosition(textArea.getDocument().getLength());
             }
             if (creationLabel != null && selectedMarkupAnnotation.getCreationDate() != null) {
                 creationLabel.setText(selectedMarkupAnnotation.getCreationDate().toString());
@@ -875,7 +872,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                                      List<Annotation> annotations,
                                      DefaultMutableTreeNode root) {
         boolean foundIRT = checkForIRT(parentAnnotation, annotations);
-        DefaultMutableTreeNode node = new DefaultMutableTreeNode(parentAnnotation);
+        DefaultMutableTreeNode node = new MarkupAnnotationTreeNode(parentAnnotation);
         root.add(node);
         if (!foundIRT) {
             // simple test add a new node for the parent annotation.
@@ -900,7 +897,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 if (inReplyToAnnotation != null &&
                         inReplyToAnnotation.getPObjectReference().equals(reference)) {
                     // found one no were to attach it to.
-                    root.add(new DefaultMutableTreeNode(markupAnnotation));
+                    root.add(new MarkupAnnotationTreeNode(markupAnnotation));
                     selectedMarkupAnnotation = markupAnnotation;
                 }
             }
@@ -1161,6 +1158,24 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 commentTree.setSelectionRow(row);
                 contextMenu.show(e.getComponent(), e.getX(), e.getY());
             }
+        }
+    }
+
+    static class MarkupAnnotationTreeNode extends DefaultMutableTreeNode {
+
+        MarkupAnnotationTreeNode(MarkupAnnotation annot) {
+            super(annot);
+        }
+
+        @Override
+        public String toString() {
+            final MarkupAnnotation annot = (MarkupAnnotation) userObject;
+            return annot.getTitleText() + " - " + annot.getContents();
+        }
+
+        @Override
+        public MarkupAnnotationTreeNode clone() {
+            return (MarkupAnnotationTreeNode) super.clone();
         }
     }
 
