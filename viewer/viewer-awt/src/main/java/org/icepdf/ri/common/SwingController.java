@@ -2749,19 +2749,35 @@ public class SwingController extends ComponentAdapter
         if (pdfClient.getUsername() == null || pdfClient.getUsername().isEmpty()) {
             pdfClient.setUsername(System.getProperty("user.name"));
         }
-        JPanel panel = new JPanel();
         if (pdfClient.getPassword() == null) {
-            panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-            JLabel label = new JLabel(MessageFormat.format(messageBundle.getString("viewer.dialog.dav.password.label"), pdfClient.getName()));
-            JPasswordField field = new JPasswordField();
-            panel.add(label);
-            panel.add(field);
-            String[] options = {messageBundle.getString("viewer.dialog.dav.password.button.ok"), messageBundle.getString("viewer.dialog.dav.password.button.cancel")};
-            int option = JOptionPane.showOptionDialog(getViewerFrame(), panel, messageBundle.getString("viewer.dialog.dav.password.title"),
+            JPanel panel = new JPanel();
+            panel.setLayout(new GridBagLayout());
+            GridBagConstraints constraints = new GridBagConstraints(0, 0, 2, 1, 1, 1,
+                    GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0);
+            JLabel mainLabel = new JLabel(MessageFormat.format(messageBundle.getString("viewer.dialog.dav.credentials.label"), pdfClient.getName()));
+            JLabel userLabel = new JLabel(messageBundle.getString("viewer.dialog.dav.user.label"));
+            JTextField userField = new JTextField(pdfClient.getUsername());
+            JLabel passwordLabel = new JLabel(messageBundle.getString("viewer.dialog.dav.password.label"));
+            JPasswordField passwordField = new JPasswordField();
+            panel.add(mainLabel, constraints);
+            constraints.gridy = 1;
+            constraints.gridwidth = 1;
+            panel.add(userLabel, constraints);
+            constraints.gridx = 1;
+            panel.add(userField, constraints);
+            constraints.gridx = 0;
+            constraints.gridy = 2;
+            panel.add(passwordLabel, constraints);
+            constraints.gridx = 1;
+            panel.add(passwordField, constraints);
+            String[] options = {messageBundle.getString("viewer.dialog.dav.credentials.button.ok"),
+                    messageBundle.getString("viewer.dialog.dav.credentials.button.cancel")};
+            int option = JOptionPane.showOptionDialog(getViewerFrame(), panel, messageBundle.getString("viewer.dialog.dav.credentials.title"),
                     JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE,
                     null, options, options[0]);
             if (option == JOptionPane.OK_OPTION) {
-                pdfClient.setPassword(new String(field.getPassword()));
+                pdfClient.setUsername(userField.getText());
+                pdfClient.setPassword(new String(passwordField.getPassword()));
             } else if (option == JOptionPane.NO_OPTION) {
                 return;
             }
