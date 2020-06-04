@@ -357,14 +357,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
         // creation date
         creationLabel = new JLabel();
-        if (selectedMarkupAnnotation != null &&
-                selectedMarkupAnnotation.getCreationDate() != null) {
-            LocalDateTime creationDate = selectedMarkupAnnotation.getCreationDate().asLocalDateTime();
-            DateTimeFormatter formatter = DateTimeFormatter
-                    .ofLocalizedDateTime(FormatStyle.MEDIUM)
-                    .withLocale(Locale.getDefault());
-            creationLabel.setText(creationDate.format(formatter));
-        }
+        refreshCreationLabel();
         // title, user name.
         String title = selectedMarkupAnnotation != null ?
                 selectedMarkupAnnotation.getTitleText() != null ?
@@ -531,9 +524,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             annotationComponent = findAnnotationComponent(selectedMarkupAnnotation);
         }
         documentViewController.deleteAnnotation(annotationComponent);
-        // remove the annotations popup
-        annotationComponent = getAnnotationParentComponent();
-        documentViewController.deleteAnnotation(annotationComponent);
 
         // check if any annotations have an IRT reference and delete
         // the markup component chain
@@ -556,9 +546,11 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         // reload the tree model
         refreshTree(commentTree);
         if (!isIRT) {
+            selectedMarkupAnnotation=parentAnnotation;
             commentTreeScrollPane.setVisible(false);
         }
         commentPanel.revalidate();
+        refreshPopupState();
     }
 
     public void setStatusSelectedMarkupExecute(String messageTitle, String messageBody, String status) {
@@ -777,16 +769,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         Object userObject = node.getUserObject();
         if (userObject instanceof MarkupAnnotation) {
             selectedMarkupAnnotation = (MarkupAnnotation) userObject;
-            if (textArea != null) {
-                textArea.getDocument().removeDocumentListener(this);
-                textArea.setText(selectedMarkupAnnotation.getContents());
-                textArea.getDocument().addDocumentListener(this);
-                textArea.requestFocusInWindow();
-                textArea.setCaretPosition(textArea.getDocument().getLength());
-            }
-            if (creationLabel != null && selectedMarkupAnnotation.getCreationDate() != null) {
-                creationLabel.setText(selectedMarkupAnnotation.getCreationDate().toString());
-            }
+            refreshPopupState();
         }
     }
 
@@ -800,6 +783,18 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             textArea.getDocument().removeDocumentListener(this);
             textArea.setText(selectedMarkupAnnotation.getContents());
             textArea.getDocument().addDocumentListener(this);
+        }
+        refreshCreationLabel();
+    }
+
+    private void refreshCreationLabel() {
+        if (selectedMarkupAnnotation != null &&
+                selectedMarkupAnnotation.getCreationDate() != null && creationLabel != null) {
+            LocalDateTime creationDate = selectedMarkupAnnotation.getCreationDate().asLocalDateTime();
+            DateTimeFormatter formatter = DateTimeFormatter
+                    .ofLocalizedDateTime(FormatStyle.MEDIUM)
+                    .withLocale(Locale.getDefault());
+            creationLabel.setText(creationDate.format(formatter));
         }
     }
 
