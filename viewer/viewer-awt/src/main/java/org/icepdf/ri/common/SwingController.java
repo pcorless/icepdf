@@ -3045,7 +3045,7 @@ public class SwingController extends ComponentAdapter
     }
 
     public void commonNewDocumentHandling(String fileDescription) {
-
+        SystemProperties.setUseNFont(propertiesManager.checkAndStoreStringProperty(PROPERTY_FONT, "NFont").equals("NFont"));
         // utility pane visibility
         boolean showUtilityPane = false;
 
@@ -3386,7 +3386,18 @@ public class SwingController extends ComponentAdapter
 
         reflectStateInComponents();
     }
-    
+
+    public void reloadDocument() {
+        if (document != null) {
+            String documentLocation = document.getDocumentLocation();
+            closeDocument();
+            if (pdfClient != null) {
+                openDocument(pdfClient);
+            } else if (documentLocation != null && !documentLocation.isEmpty()) {
+                openDocument(documentLocation);
+            }
+        }
+    }
 
     /**
      * Way to dispose of all memory references, and clean up the Document resources<br>

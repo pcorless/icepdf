@@ -194,6 +194,11 @@ public interface Controller extends PropertyChangeListener {
     void dispose();
 
     /**
+     * Reloads the document
+     */
+    void reloadDocument();
+
+    /**
      * Opens a Document via the specified byte array.
      *
      * @param data        Byte array containing a valid PDF document.

@@ -73,6 +73,7 @@ public final class ViewerPropertiesManager {
 
     public static final String PROPERTY_ICON_DEFAULT_SIZE = "application.icon.default.size";
 
+    public static final String PROPERTY_FONT = "org.icepdf.core.font"; //OFont or NFont
     // window properties
     public static final String PROPERTY_DIVIDER_LOCATION = "application.divider.location";
     // default page fit mode

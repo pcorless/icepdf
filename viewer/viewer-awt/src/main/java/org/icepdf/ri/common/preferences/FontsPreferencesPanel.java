@@ -15,7 +15,9 @@
  */
 package org.icepdf.ri.common.preferences;
 
+import org.icepdf.core.SystemProperties;
 import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.WindowManagementCallback;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 import org.icepdf.ri.util.font.ClearFontCacheWorker;
 
@@ -34,15 +36,19 @@ import java.util.ResourceBundle;
  */
 public class FontsPreferencesPanel extends JPanel implements ActionListener {
 
+    private final SwingController controller;
     // layouts constraint
     private GridBagConstraints constraints;
 
     // clear and rescan system for fonts and rewrite file.
     private JButton resetFontCacheButton;
 
+    private JComboBox<String> fontCbb;
+
     public FontsPreferencesPanel(SwingController controller, ViewerPropertiesManager propertiesManager,
                                  ResourceBundle messageBundle) {
         super(new GridBagLayout());
+        this.controller = controller;
         setAlignmentY(JPanel.TOP_ALIGNMENT);
 
         constraints = new GridBagConstraints();
@@ -73,9 +79,37 @@ public class FontsPreferencesPanel extends JPanel implements ActionListener {
         constraints.anchor = GridBagConstraints.NORTHWEST;
         constraints.fill = GridBagConstraints.BOTH;
         addGB(this, fontCachePreferencesPanel, 0, 0, 1, 1);
+        JPanel fontTypePreferencesPanel = new JPanel(new GridBagLayout());
+        fontTypePreferencesPanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
+        fontTypePreferencesPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
+                messageBundle.getString("viewer.dialog.viewerPreferences.section.fonts.fontType.border.label"),
+                TitledBorder.LEFT,
+                TitledBorder.DEFAULT_POSITION));
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.WEST;
+        addGB(fontTypePreferencesPanel, new JLabel(messageBundle.getString(
+                "viewer.dialog.viewerPreferences.section.fonts.fontType.label")), 0, 0, 1, 1);
+        constraints.anchor = GridBagConstraints.EAST;
+        fontCbb = new JComboBox<>(new String[]{"OFont", "NFont"});
+        fontCbb.setSelectedIndex(SystemProperties.USE_NFONT ? 1 : 0);
+        fontCbb.addActionListener(this);
+        addGB(fontTypePreferencesPanel, fontCbb, 1, 0, 1, 1);
+        constraints.fill = GridBagConstraints.BOTH;
+        constraints.anchor = GridBagConstraints.NORTHWEST;
+
+        boolean nfontAvailable;
+        try {
+            Class.forName("org.icepdf.core.util.content.NContentParser");
+            nfontAvailable = true;
+        } catch (ClassNotFoundException ignored) {
+            nfontAvailable = false;
+        }
+        if (nfontAvailable) {
+            addGB(this, fontTypePreferencesPanel, 0, 1, 1, 1);
+        }
         // little spacer
         constraints.weighty = 1.0;
-        addGB(this, new Label(" "), 0, 1, 1, 1);
+        addGB(this, new Label(" "), 0, nfontAvailable ? 2 : 1, 1, 1);
 
     }
 
@@ -85,6 +119,16 @@ public class FontsPreferencesPanel extends JPanel implements ActionListener {
             // reset the font properties cache.
             resetFontCacheButton.setEnabled(false);
             new ClearFontCacheWorker(resetFontCacheButton).execute();
+        } else if (event.getSource() == fontCbb) {
+            final String item = fontCbb.getItemAt(fontCbb.getSelectedIndex());
+            controller.getPropertiesManager().set(ViewerPropertiesManager.PROPERTY_FONT, item);
+            SystemProperties.setUseNFont(item.equals("NFont"));
+            WindowManagementCallback windowManager = controller.getWindowManagementCallback();
+            if (windowManager != null) {
+                windowManager.reloadAllDocuments();
+            } else {
+                controller.reloadDocument();
+            }
         }
     }
 

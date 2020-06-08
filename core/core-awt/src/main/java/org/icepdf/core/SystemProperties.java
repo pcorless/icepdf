@@ -11,8 +11,12 @@ public final class SystemProperties {
     //ICEpdf-specifics
     public static final boolean PRIVATE_PROPERTY_ENABLED = Defs.booleanProperty(
             "org.icepdf.core.page.annotation.privateProperty.enabled", false);
-    public static final boolean USE_NFONT = Defs.sysPropertyBoolean("org.icepdf.core.useNFont", true);
+    public static boolean USE_NFONT = Defs.sysPropertyBoolean("org.icepdf.core.useNFont", true);
 
     private SystemProperties() {
+    }
+
+    public static void setUseNFont(boolean useNFont) {
+        USE_NFONT = useNFont;
     }
 }

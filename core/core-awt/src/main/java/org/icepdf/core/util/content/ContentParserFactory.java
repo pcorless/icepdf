@@ -46,7 +46,7 @@ public class ContentParserFactory {
         // check class bath for NFont library, and declare results.
         try {
             Class.forName(N_CONTENT_PARSER);
-            foundPro = SystemProperties.USE_NFONT;
+            foundPro = true;
         } catch (ClassNotFoundException e) {
             logger.log(Level.FINE, "ICEpdf PRO was not found on the class path");
         }
@@ -77,7 +77,7 @@ public class ContentParserFactory {
      * @return implementation of the ContentParser interface.
      */
     public ContentParser getContentParser(Library library, Resources resources) {
-        if (foundPro) {
+        if (foundPro && SystemProperties.USE_NFONT) {
             // load each know file type reflectively.
             try {
                 Class<?> contentParserClass = Class.forName(N_CONTENT_PARSER);

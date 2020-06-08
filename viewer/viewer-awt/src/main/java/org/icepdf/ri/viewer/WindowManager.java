@@ -100,6 +100,11 @@ public class WindowManager implements WindowManagementCallback {
         return controllers;
     }
 
+    @Override
+    public void reloadAllDocuments() {
+        controllers.forEach(c -> c.reloadDocument());
+    }
+
     public void newWindow(final String location) {
         Controller controller = commonWindowCreation();
         controller.openDocument(location);

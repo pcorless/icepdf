@@ -57,4 +57,9 @@ public interface WindowManagementCallback {
     ViewerPropertiesManager getProperties();
 
     Collection<Controller> getControllers();
+
+    /**
+     * Reloads all the currently opened documents
+     */
+    void reloadAllDocuments();
 }
