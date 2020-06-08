@@ -3196,6 +3196,7 @@ public class SwingController extends ComponentAdapter
 
         reflectStateInComponents();
     }
+    
 
     /**
      * Way to dispose of all memory references, and clean up the Document resources<br>
