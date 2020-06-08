@@ -18,9 +18,10 @@ package org.icepdf.ri.viewer;
 import org.icepdf.core.SystemProperties;
 import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.ViewModel;
+import org.icepdf.ri.util.DavFileClient;
 import org.icepdf.ri.util.FontPropertiesManager;
-import org.icepdf.ri.util.ViewerPropertiesManager;
 import org.icepdf.ri.util.URLAccess;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import java.text.MessageFormat;
@@ -67,6 +68,9 @@ public class Launcher {
 
         String contentURL = "";
         String contentFile = "";
+        String password = null;
+        String contentDav = "";
+        String user = System.getProperty("user.name");
         // parse command line arguments
         for (int i = 0; i < argv.length; i++) {
             if (i == argv.length - 1) { //each argument requires another
@@ -80,6 +84,15 @@ public class Launcher {
                     break;
                 case "-loadurl":
                     contentURL = argv[++i].trim();
+                    break;
+                case "-loaddav":
+                    contentDav = argv[++i].trim();
+                    break;
+                case "-user":
+                    user = argv[++i].trim();
+                    break;
+                case "-password":
+                    password = argv[++i].trim();
                     break;
                 default:
                     brokenUsage = true;
@@ -97,7 +110,7 @@ public class Launcher {
             System.exit(1);
         }
         // start the viewer
-        run(contentFile, contentURL, messageBundle);
+        run(contentFile, contentURL, contentDav, user, password, messageBundle);
     }
 
     /**
@@ -111,6 +124,9 @@ public class Launcher {
      */
     private static void run(String contentFile,
                             String contentURL,
+                            String contentDav,
+                            String user,
+                            String password,
                             ResourceBundle messageBundle) {
 
         // initiate the properties manager.
@@ -129,13 +145,13 @@ public class Launcher {
 
         // application instance
         WindowManager windowManager = WindowManager.createInstance(propertiesManager, messageBundle);
-        if (contentFile != null && contentFile.length() > 0) {
+        if (contentFile != null && !contentFile.isEmpty()) {
             windowManager.newWindow(contentFile);
             ViewModel.setDefaultFilePath(contentFile);
         }
 
         // load a url if specified
-        if (contentURL != null && contentURL.length() > 0) {
+        if (contentURL != null && !contentURL.isEmpty()) {
             URLAccess urlAccess = URLAccess.doURLAccess(contentURL);
             urlAccess.closeConnection();
             if (urlAccess.errorMessage != null) {
@@ -158,12 +174,17 @@ public class Launcher {
             ViewModel.setDefaultURL(urlAccess.urlLocation);
             urlAccess.dispose();
         }
+        if (contentDav != null && !contentDav.isEmpty()) {
+            windowManager.newWindow(new DavFileClient(contentDav, user, password));
+        }
+
 
         // Start an empy viewer if there was no command line parameters
-        if (((contentFile == null || contentFile.length() == 0) &&
-                (contentURL == null || contentURL.length() == 0))
+        if (((contentFile == null || contentFile.isEmpty()) &&
+                (contentURL == null || contentURL.isEmpty()) &&
+                (contentDav == null || contentDav.isEmpty()))
                 || (windowManager.getNumberOfWindows() == 0)
-                ) {
+        ) {
             windowManager.newWindow("");
         }
     }

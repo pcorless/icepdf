@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common;
 
+import com.github.sardine.impl.SardineException;
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.SystemProperties;
 import org.icepdf.core.exceptions.PDFException;
@@ -50,10 +51,7 @@ import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryFrame;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
-import org.icepdf.ri.util.BareBonesBrowserLaunch;
-import org.icepdf.ri.util.TextExtractionTask;
-import org.icepdf.ri.util.URLAccess;
-import org.icepdf.ri.util.ViewerPropertiesManager;
+import org.icepdf.ri.util.*;
 import org.icepdf.ri.viewer.WindowManager;
 
 import javax.print.attribute.PrintRequestAttributeSet;
@@ -84,13 +82,16 @@ import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
+import java.util.stream.Collectors;
 
 import static org.icepdf.core.util.PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE;
 import static org.icepdf.ri.util.ViewerPropertiesManager.*;
@@ -136,7 +137,9 @@ public class SwingController extends ComponentAdapter
     private JMenuItem openFileMenuItem;
     private JMenu recentFilesSubMenu;
     private JMenuItem openURLMenuItem;
+    private JMenuItem openDavMenuItem;
     private JMenuItem closeMenuItem;
+    private JMenuItem saveFileMenuItem;
     private JMenuItem saveAsFileMenuItem;
     private JMenuItem exportTextMenuItem;
     private JMenuItem propertiesMenuItem;
@@ -179,7 +182,7 @@ public class SwingController extends ComponentAdapter
     private List windowListMenuItems;
     private JMenuItem aboutMenuItem;
     private JButton openFileButton;
-    private JButton saveAsFileButton;
+    private JButton saveFileButton;
     private JButton printButton;
     private JButton searchButton;
     private JToggleButton showHideUtilityPaneButton;
@@ -267,7 +270,7 @@ public class SwingController extends ComponentAdapter
     // sub controller for document text searching.
     protected DocumentSearchController documentSearchController;
 
-
+    private DavFileClient pdfClient;
     protected Document document;
     protected boolean disposed;
 
@@ -275,6 +278,8 @@ public class SwingController extends ComponentAdapter
     protected static ResourceBundle messageBundle = null;
 
     protected ViewerPropertiesManager propertiesManager;
+    private Map<Reference, PObject> savedChanges = new HashMap<>();
+    private String saveFilePath = null;
 
     /**
      * Create a Controller object, and its associated ViewerModel
@@ -419,8 +424,28 @@ public class SwingController extends ComponentAdapter
      *
      * @param mi menu item to assign
      */
+    public void setOpenDavMenuItem(JMenuItem mi) {
+        openDavMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
+     */
     public void setCloseMenuItem(JMenuItem mi) {
         closeMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
+     */
+    public void setSaveFileMenuItem(JMenuItem mi) {
+        saveFileMenuItem = mi;
         mi.addActionListener(this);
     }
 
@@ -841,8 +866,8 @@ public class SwingController extends ComponentAdapter
      *
      * @param btn button to assign
      */
-    public void setSaveAsFileButton(JButton btn) {
-        saveAsFileButton = btn;
+    public void setSaveFileButton(JButton btn) {
+        saveFileButton = btn;
         btn.addActionListener(this);
     }
 
@@ -1615,7 +1640,7 @@ public class SwingController extends ComponentAdapter
         setEnabled(searchPreviousMenuItem, opened && searchPanel != null && !pdfCollection);
         setEnabled(goToPageMenuItem, opened && nPages > 1 && !pdfCollection);
 
-        setEnabled(saveAsFileButton, opened);
+        setEnabled(saveFileButton, opened);
         setEnabled(printButton, opened && canPrint && !pdfCollection);
         setEnabled(searchButton, opened && searchPanel != null && !pdfCollection);
         setEnabled(showHideUtilityPaneButton, opened && utilityTabbedPane != null);
@@ -2474,7 +2499,33 @@ public class SwingController extends ComponentAdapter
 
                 addRecentFileEntry(Paths.get(pathname));
 
-                // load the document
+                saveFilePath = getTempSaveFileName(pathname);
+                if (saveFilePath != null) {
+                    File tmpFile = new File(saveFilePath);
+                    if (tmpFile.exists() && new File(pathname).exists()) {
+                        String[] options = {messageBundle.getString("viewer.button.yes.label"), messageBundle.getString("viewer.button.no.label")};
+                        int ret = JOptionPane.showOptionDialog(viewer, MessageFormat.format(messageBundle.getString("viewer.dialog.restore.label"), new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(tmpFile.lastModified())), messageBundle.getString("viewer.dialog.restore.title"), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+                        if (ret == JOptionPane.YES_OPTION) {
+                            try {
+                                Files.copy(tmpFile.toPath(), new File(pathname).toPath(), StandardCopyOption.REPLACE_EXISTING);
+                            } catch (IOException e) {
+                                org.icepdf.ri.util.Resources.showMessageDialog(
+                                        viewer,
+                                        JOptionPane.INFORMATION_MESSAGE,
+                                        messageBundle,
+                                        "viewer.dialog.restore.exception.title",
+                                        "viewer.dialog.restore.exception.label",
+                                        e.getMessage() != null && !e.getMessage().isEmpty() ? e.getMessage() : e.toString());
+                            }
+                        } else {
+                            try {
+                                Files.delete(tmpFile.toPath());
+                            } catch (IOException e) {
+                                logger.log(Level.FINE, "Couldn't delete file " + tmpFile.getAbsolutePath(), e);
+                            }
+                        }
+                    }
+                }
                 document = new Document();
                 // create default security callback is user has not created one
                 setupSecurityHandler(document, documentViewController.getSecurityCallback());
@@ -2513,6 +2564,17 @@ public class SwingController extends ComponentAdapter
             } finally {
                 setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
             }
+        }
+    }
+
+    private String getTempSaveFileName(String originalFilePath) {
+        String[] pathSplit = originalFilePath.split("/");
+        String name = pathSplit[pathSplit.length - 1];
+        String[] nameAndExt = name.split("\\.");
+        if (nameAndExt.length != 2) {
+            return null;
+        } else {
+            return Arrays.stream(pathSplit).limit(pathSplit.length - 1).collect(Collectors.joining("/")) + "/." + nameAndExt[0] + "-tmp.pdf";
         }
     }
 
@@ -2689,6 +2751,128 @@ public class SwingController extends ComponentAdapter
             }
         }
     }
+
+    /**
+     * Utility method for opening a WebDav URL. Shows a dialog for the user to type
+     * what URL to open
+     */
+    public void openDav() {
+        String davLocation = ((ViewModel.getDefaultDav() != null) ? ViewModel.getDefaultDav() : "");
+        // display webdav url input dialog
+        String url = (String) JOptionPane.showInputDialog(
+                viewer,
+                "WebDav URL:",
+                "Open WebDav URL",
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                null,
+                davLocation);
+        if (url != null) {
+            if (viewer != null) {
+                viewer.toFront();
+                viewer.requestFocus();
+            }
+            openDavInSomeViewer(url);
+            ViewModel.setDefaultDav(url);
+        }
+    }
+
+    private void openDavInSomeViewer(final String url) {
+        final DavFileClient client = new DavFileClient(url);
+        if (document == null) {
+            openDocument(client);
+        } else if (windowManagementCallback != null) {
+            int oldTool = SwingController.this.getDocumentViewToolMode();
+            setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_WAIT);
+            try {
+                windowManagementCallback.newWindow(client);
+            } finally {
+                setDisplayTool(oldTool);
+            }
+        }
+    }
+
+
+    /**
+     * Opens a document specified by the DavFileClient. Asks the user their password if needed
+     *
+     * @param pdfDavClient The client
+     */
+    public void openDocument(final DavFileClient pdfDavClient) {
+        pdfClient = pdfDavClient;
+        if (pdfClient.getUsername() == null || pdfClient.getUsername().isEmpty()) {
+            pdfClient.setUsername(System.getProperty("user.name"));
+        }
+        if (pdfClient.getPassword() == null) {
+            JPanel panel = new JPanel();
+            panel.setLayout(new GridBagLayout());
+            GridBagConstraints constraints = new GridBagConstraints(0, 0, 2, 1, 1, 1,
+                    GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0);
+            JLabel mainLabel = new JLabel(MessageFormat.format(messageBundle.getString("viewer.dialog.dav.credentials.label"), pdfClient.getName()));
+            JLabel userLabel = new JLabel(messageBundle.getString("viewer.dialog.dav.user.label"));
+            JTextField userField = new JTextField(pdfClient.getUsername());
+            JLabel passwordLabel = new JLabel(messageBundle.getString("viewer.dialog.dav.password.label"));
+            JPasswordField passwordField = new JPasswordField();
+            panel.add(mainLabel, constraints);
+            constraints.gridy = 1;
+            constraints.gridwidth = 1;
+            panel.add(userLabel, constraints);
+            constraints.gridx = 1;
+            panel.add(userField, constraints);
+            constraints.gridx = 0;
+            constraints.gridy = 2;
+            panel.add(passwordLabel, constraints);
+            constraints.gridx = 1;
+            panel.add(passwordField, constraints);
+            String[] options = {messageBundle.getString("viewer.dialog.dav.credentials.button.ok"),
+                    messageBundle.getString("viewer.dialog.dav.credentials.button.cancel")};
+            int option = JOptionPane.showOptionDialog(getViewerFrame(), panel, messageBundle.getString("viewer.dialog.dav.credentials.title"),
+                    JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE,
+                    null, options, options[0]);
+            if (option == JOptionPane.OK_OPTION) {
+                pdfClient.setUsername(userField.getText());
+                pdfClient.setPassword(new String(passwordField.getPassword()));
+            } else if (option == JOptionPane.NO_OPTION) {
+                return;
+            }
+        }
+        try {
+            openDavDocument();
+        } catch (SardineException e) {
+            SwingUtilities.invokeLater(() -> {
+                org.icepdf.ri.util.Resources.showMessageDialog(
+                        viewer,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        messageBundle,
+                        "viewer.dialog.sardine.exception.title",
+                        "viewer.dialog.sardine.exception.msg",
+                        e.getMessage() != null ? e.getMessage() : e.toString());
+                //401 is probably wrong password
+                if (e.getStatusCode() == 401) {
+                    pdfClient.setPassword(null);
+                    openDocument(pdfClient);
+                }
+            });
+        } catch (IOException | PDFException | PDFSecurityException e) {
+            SwingUtilities.invokeLater(() -> org.icepdf.ri.util.Resources.showMessageDialog(
+                    viewer,
+                    JOptionPane.INFORMATION_MESSAGE,
+                    messageBundle,
+                    "viewer.dialog.dav.exception.title",
+                    "viewer.dialog.dav.exception.msg",
+                    e.getMessage() != null ? e.getMessage() : e.toString()));
+        } finally {
+            setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
+        }
+    }
+
+    protected void openDavDocument() throws IOException, PDFException, PDFSecurityException {
+        InputStream stream = pdfClient.getStream();
+        document = new Document();
+        document.setInputStream(new BufferedInputStream(stream), pdfClient.getUrl());
+        commonNewDocumentHandling(pdfClient.getUrl());
+    }
+
 
     /**
      * Opens a Document via the specified InputStream. This method is a convenience method provided for
@@ -3093,7 +3277,9 @@ public class SwingController extends ComponentAdapter
                 title = document.getInfo().getTitle();
             }
             String filename = f.exists() ? f.getName() : fileDescription;
-            Object[] messageArguments = title == null ? new String[]{filename} : new String[]{title, filename};
+            final String fileTitle = pdfClient == null ? filename : pdfClient.getName();
+
+            Object[] messageArguments = title == null ? new String[]{fileTitle} : new String[]{title, fileTitle};
             String titleResource = title == null ? "notitle" : "default";
             MessageFormat formatter = new MessageFormat(messageBundle.getString("viewer.window.title.open." + titleResource));
             viewer.setTitle(formatter.format(messageArguments));
@@ -3107,6 +3293,10 @@ public class SwingController extends ComponentAdapter
         // set the go to page combo box in the mainToolbar
         reflectStateInComponents();
         updateDocumentView();
+        //TODO not very clean and 100% reliable
+        Timer initialChangesTimer = new Timer(500, event -> savedChanges = document.getStateManager().getAndSaveChanges());
+        initialChangesTimer.setRepeats(false);
+        initialChangesTimer.start();
     }
 
     /**
@@ -3217,6 +3407,7 @@ public class SwingController extends ComponentAdapter
 
         openFileMenuItem = null;
         openURLMenuItem = null;
+        openDavMenuItem = null;
         closeMenuItem = null;
         saveAsFileMenuItem = null;
         exportTextMenuItem = null;
@@ -3256,7 +3447,7 @@ public class SwingController extends ComponentAdapter
         aboutMenuItem = null;
 
         openFileButton = null;
-        saveAsFileButton = null;
+        saveFileButton = null;
         printButton = null;
         searchButton = null;
         showHideUtilityPaneButton = null;
@@ -3385,35 +3576,61 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
+     * Utility method for saving the current document to the same filename.
+     * As it's not possible to write to the file while the document is open,
+     * a temp file is created and this file will be renamed to the current open file
+     * when the window is closed.
+     */
+    public void saveFile() {
+        if (document.getStateManager().hasChangedSince(savedChanges)) {
+            if (pdfClient != null) {
+                try {
+                    //TODO no choice but to dump file to append changes as long as IncrementalUpdater is obfuscated
+                    File tmp = Files.createTempFile(pdfClient.getName(), "." + FileExtensionUtils.pdf).toFile();
+                    try (final OutputStream out = new BufferedOutputStream(new FileOutputStream(tmp))) {
+                        document.saveToOutputStream(out);
+                    }
+                    try (final InputStream pdfIn = new BufferedInputStream(new FileInputStream(tmp))) {
+                        pdfClient.save(pdfIn);
+                    }
+                    tmp.delete();
+                    savedChanges = document.getStateManager().getChanges();
+                } catch (IOException e) {
+                    logger.log(Level.FINE, "IOException while saving dav", e);
+                    saveFileAs();
+                }
+            } else {
+                if (saveFilePath != null && !saveFilePath.isEmpty()) {
+                    File out = new File(saveFilePath);
+                    if (out.getParentFile() != null) {
+                        if (Files.isWritable(out.getParentFile().toPath())) {
+                            try (OutputStream stream = new BufferedOutputStream(new FileOutputStream(out))) {
+                                document.saveToOutputStream(stream);
+                                stream.flush();
+                                savedChanges = document.getStateManager().getAndSaveChanges();
+                            } catch (IOException e) {
+                                logger.log(Level.FINE, "IO Exception ", e);
+                            }
+                        }
+                    }
+                } else {
+                    //Probably got loaded from an InputStream, can't simply save
+                    saveFileAs();
+                }
+            }
+        }
+    }
+
+    /**
      * Utility method for saving a copy of the currently opened
      * PDF to a file. This will check all valid permissions and
      * show a file save dialog for the user to select where to
      * save the file to, and what name to give it.
      */
-    public void saveFile() {
+    public void saveFileAs() {
 
-        // See if we can come up with a default file name
-        // We want the bytes from whence, but the file name of origin
-        String origin = document.getDocumentOrigin();
-        String originalFileName = null;
-        String newFileName = null;
-        if (origin != null) {
-            int lastSeparator = Math.max(
-                    Math.max(
-                            origin.lastIndexOf("/"),
-                            origin.lastIndexOf("\\")),
-                    origin.lastIndexOf(File.separator) // Might not be / or \
-            );
-            if (lastSeparator >= 0) {
-                originalFileName = origin.substring(lastSeparator + 1);
-                if (originalFileName.length() > 0) {
-                    // Set the selected file to a slightly modified name of the original
-                    newFileName = generateNewSaveName(originalFileName);
-                } else {
-                    newFileName = null;
-                }
-            }
-        }
+        String originalFileName = getOriginalFileName();
+        String newFileName = originalFileName == null || originalFileName.isEmpty() ? null : generateNewSaveName(originalFileName);
 
         // Create and display a file saving dialog
         if (!useJFileChooser) {
@@ -3453,6 +3670,24 @@ public class SwingController extends ComponentAdapter
         }
     }
 
+    private String getOriginalFileName() {
+        String origin = document.getDocumentOrigin();
+        String originalFileName = null;
+        String newFileName = null;
+        if (origin != null) {
+            int lastSeparator = Math.max(
+                    Math.max(
+                            origin.lastIndexOf('/'),
+                            origin.lastIndexOf('\\')),
+                    origin.lastIndexOf(File.separator) // Might not be / or \
+            );
+            if (lastSeparator >= 0) {
+                return origin.substring(lastSeparator + 1);
+            }
+        }
+        return null;
+    }
+
     protected void saveFileChecks(String originalFileName, File file) {
         if (file != null) {
             if (Files.isWritable(file.getParentFile().toPath())) {
@@ -3465,7 +3700,7 @@ public class SwingController extends ComponentAdapter
                             messageBundle,
                             "viewer.dialog.saveAs.noExtensionError.title",
                             "viewer.dialog.saveAs.noExtensionError.msg");
-                    saveFile();
+                    saveFileAs();
                 } else if (!extension.equals(FileExtensionUtils.pdf)) {
                     org.icepdf.ri.util.Resources.showMessageDialog(
                             viewer,
@@ -3474,7 +3709,7 @@ public class SwingController extends ComponentAdapter
                             "viewer.dialog.saveAs.extensionError.title",
                             "viewer.dialog.saveAs.extensionError.msg",
                             file.getName());
-                    saveFile();
+                    saveFileAs();
                 } else if (originalFileName != null &&
                         originalFileName.equalsIgnoreCase(file.getName())) {
                     // Ensure a unique filename
@@ -3485,7 +3720,7 @@ public class SwingController extends ComponentAdapter
                             "viewer.dialog.saveAs.noneUniqueName.title",
                             "viewer.dialog.saveAs.noneUniqueName.msg",
                             file.getName());
-                    saveFile();
+                    saveFileAs();
                 } else {
                     // save file stream
                     try {
@@ -3504,7 +3739,7 @@ public class SwingController extends ComponentAdapter
                                 fileOutputStream, 4096 * 2);
 
                         // We want 'save as' or 'save a copy to always occur
-                        if (!document.getStateManager().isChanged()) {
+                        if (!document.getStateManager().hasChangedSince(savedChanges)) {
                             // save as copy
                             document.writeToOutputStream(buf);
                         } else {
@@ -3515,6 +3750,7 @@ public class SwingController extends ComponentAdapter
                         fileOutputStream.flush();
                         buf.close();
                         fileOutputStream.close();
+                        savedChanges = document.getStateManager().getAndSaveChanges();
                     } catch (MalformedURLException e) {
                         logger.log(Level.FINE, "Malformed URL Exception ", e);
                     } catch (IOException e) {
@@ -3531,7 +3767,7 @@ public class SwingController extends ComponentAdapter
                         "viewer.dialog.saveAs.cantwrite.title",
                         "viewer.dialog.saveAs.cantwrite.msg",
                         file.getParentFile().getName());
-                saveFile();
+                saveFileAs();
             }
         }
     }
@@ -3613,9 +3849,8 @@ public class SwingController extends ComponentAdapter
         // check if document changes have been made, if so ask the user if they
         // want to save the changes.
         if (document != null) {
-            boolean documentChanges = document.getStateManager().isChanged();
+            boolean documentChanges = document.getStateManager().hasChangedSince(savedChanges);
             if (documentChanges) {
-
                 MessageFormat formatter = new MessageFormat(
                         messageBundle.getString("viewer.dialog.saveOnClose.noUpdates.msg"));
                 String dialogMessage = formatter.format(new Object[]{document.getDocumentOrigin()});
@@ -3626,7 +3861,7 @@ public class SwingController extends ComponentAdapter
                         JOptionPane.YES_NO_CANCEL_OPTION);
                 if (res == JOptionPane.OK_OPTION) {
                     // start save as process.
-                    saveFile();
+                    saveFileAs();
                     // fall though and close window.
                 } else if (res == JOptionPane.NO_OPTION) {
                     // nothing to do, just fall through.
@@ -4743,13 +4978,18 @@ public class SwingController extends ComponentAdapter
             } else if (source == openURLMenuItem) {
                 cancelSetFocus = true;
                 openURL();
+            } else if (source == openDavMenuItem) {
+                cancelSetFocus = true;
+                openDav();
             } else if (source == closeMenuItem) {
                 boolean isCanceled = saveChangesDialog();
                 if (!isCanceled) {
                     closeDocument();
                 }
-            } else if (source == saveAsFileMenuItem || source == saveAsFileButton) {
+            } else if (source == saveFileMenuItem || source == saveFileButton) {
                 saveFile();
+            } else if (source == saveAsFileMenuItem) {
+                saveFileAs();
             } else if (source == exportTextMenuItem) {
                 exportText();
             } else if (source == exitMenuItem) {
@@ -5238,10 +5478,20 @@ public class SwingController extends ComponentAdapter
 
         // save changes and close window
         boolean cancelled = saveChangesDialog();
+        String origFilePath = document != null ? document.getDocumentOrigin() : null;
         if (!cancelled) {
             // dispose the document and other resources.
             dispose();
-
+            if (saveFilePath != null && !saveFilePath.isEmpty() && origFilePath != null) {
+                try {
+                    File tmpFile = new File(saveFilePath);
+                    if (tmpFile.exists()) {
+                        Files.move(tmpFile.toPath(), new File(origFilePath).toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    }
+                } catch (IOException ex) {
+                    logger.log(Level.FINE, "IO Exception ", e);
+                }
+            }
             if (wc != null) {
                 wc.disposeWindow(this, v, viewerPreferences);
             }
@@ -5422,9 +5672,12 @@ public class SwingController extends ComponentAdapter
                 // set cursor for document view
                 setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_WAIT);
 
-                if (c == KeyEventConstants.KEY_CODE_SAVE_AS &&
-                        m == KeyEventConstants.MODIFIER_SAVE_AS) {
+                if (c == KeyEventConstants.KEY_CODE_SAVE &&
+                        m == KeyEventConstants.MODIFIER_SAVE) {
                     saveFile();
+                } else if (c == KeyEventConstants.KEY_CODE_SAVE_AS &&
+                        m == KeyEventConstants.MODIFIER_SAVE_AS) {
+                    saveFileAs();
                 } else if (c == KeyEventConstants.KEY_CODE_PRINT_SETUP &&
                         m == KeyEventConstants.MODIFIER_PRINT_SETUP) {
                     showPrintSetupDialog();

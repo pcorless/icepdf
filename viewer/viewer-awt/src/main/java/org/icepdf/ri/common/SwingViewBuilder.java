@@ -81,6 +81,7 @@ import java.util.prefs.Preferences;
  * <li>public JMenuItem buildOpenFileMenuItem()</li>
  * <li>public JMenuItem buildOpenURLMenuItem()</li>
  * <li>public JMenuItem buildCloseMenuItem()</li>
+ * <li>public JMenuItem buildSaveFileMenuItem()</li>
  * <li>public JMenuItem buildSaveAsFileMenuItem()</li>
  * <li>public JMenuItem buildExportTextMenuItem()</li>
  * <li>public JMenuItem buildExportSVGMenuItem()</li>
@@ -135,7 +136,7 @@ import java.util.prefs.Preferences;
  * <li>public JToolBar buildUtilityToolBar(boolean embeddableComponent)
  * <ul>
  * <li>public JButton buildOpenFileButton()</li>
- * <li>public JButton buildSaveAsFileButton()</li>
+ * <li>public JButton buildSaveFileButton()</li>
  * <li>public JButton buildPrintButton()</li>
  * <li>public JButton buildSearchButton()</li>
  * <li>public JButton buildShowHideUtilityPaneButton()</li>
@@ -217,7 +218,7 @@ import java.util.prefs.Preferences;
  * <ul>
  * <li>public JToolBar buildUtilityToolBar(boolean embeddableComponent)
  * <ul>
- * <li>public JButton buildSaveAsFileButton()</li>
+ * <li>public JButton buildSaveFileButton()</li>
  * <li>public JButton buildPrintButton()</li>
  * <li>public JButton buildSearchButton()</li>
  * <li>public JButton buildShowHideUtilityPaneButton()</li>
@@ -576,13 +577,15 @@ public class SwingViewBuilder {
         fileMenu.setMnemonic(buildMnemonic(messageBundle.getString("viewer.menu.file.mnemonic").charAt(0)));
         JMenuItem openFileMenuItem = buildOpenFileMenuItem();
         JMenuItem openURLMenuItem = buildOpenURLMenuItem();
-        if (openFileMenuItem != null && openURLMenuItem != null) {
+        JMenuItem openDavMenuItem = buildOpenDavMenuItem();
+        if (openFileMenuItem != null && openURLMenuItem != null && openDavMenuItem != null) {
             JMenu openSubMenu = new JMenu(messageBundle.getString("viewer.menu.open.label"));
             openSubMenu.setIcon(new ImageIcon(Images.get("open_a_24.png")));
             openSubMenu.setDisabledIcon(new ImageIcon(Images.get("open_i_24.png")));
             openSubMenu.setRolloverIcon(new ImageIcon(Images.get("open_r_24.png")));
             addToMenu(openSubMenu, openFileMenuItem);
             addToMenu(openSubMenu, openURLMenuItem);
+            addToMenu(openSubMenu, openDavMenuItem);
             addToMenu(fileMenu, openSubMenu);
         } else if (openFileMenuItem != null || openURLMenuItem != null) {
             addToMenu(fileMenu, openFileMenuItem);
@@ -591,6 +594,7 @@ public class SwingViewBuilder {
         addToMenu(fileMenu, buildRecentFileMenuItem());
         fileMenu.addSeparator();
         addToMenu(fileMenu, buildCloseMenuItem());
+        addToMenu(fileMenu, buildSaveFileMenuItem());
         addToMenu(fileMenu, buildSaveAsFileMenuItem());
         addToMenu(fileMenu, buildExportTextMenuItem());
         fileMenu.addSeparator();
@@ -638,6 +642,15 @@ public class SwingViewBuilder {
         return mi;
     }
 
+    public JMenuItem buildOpenDavMenuItem() {
+        JMenuItem mi = makeMenuItem(messageBundle.getString("viewer.menu.open.dav.label"),
+                buildKeyStroke(KeyEventConstants.KEY_CODE_OPEN_DAV, KeyEventConstants.MODIFIER_OPEN_DAV));
+        if (viewerController != null && mi != null) {
+            viewerController.setOpenDavMenuItem(mi);
+        }
+        return mi;
+    }
+
     public JMenuItem buildCloseMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.close.label"), null, null,
@@ -647,6 +660,15 @@ public class SwingViewBuilder {
         return mi;
     }
 
+    public JMenuItem buildSaveFileMenuItem() {
+        JMenuItem mi = makeMenuItem(
+                messageBundle.getString("viewer.menu.save.label"), "save",
+                Images.SIZE_SMALL,
+                buildKeyStroke(KeyEventConstants.KEY_CODE_SAVE, KeyEventConstants.MODIFIER_SAVE, false));
+        if (viewerController != null && mi != null)
+            viewerController.setSaveFileMenuItem(mi);
+        return mi;
+    }
     public JMenuItem buildSaveAsFileMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.saveAs.label"), "save",
@@ -1228,8 +1250,9 @@ public class SwingViewBuilder {
         if ((!embeddableComponent) &&
                 (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_UTILITY_OPEN)))
             addToToolBar(toolbar, buildOpenFileButton());
+
         if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_UTILITY_SAVE))
-            addToToolBar(toolbar, buildSaveAsFileButton());
+            addToToolBar(toolbar, buildSaveFileButton());
         if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_UTILITY_PRINT))
             addToToolBar(toolbar, buildPrintButton());
         if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_UTILITY_SEARCH))
@@ -1255,14 +1278,14 @@ public class SwingViewBuilder {
         return btn;
     }
 
-    public JButton buildSaveAsFileButton() {
+    public JButton buildSaveFileButton() {
         JButton btn = makeToolbarButton(
-                messageBundle.getString("viewer.toolbar.saveAs.label"),
-                messageBundle.getString("viewer.toolbar.saveAs.tooltip"),
+                messageBundle.getString("viewer.toolbar.save.label"),
+                messageBundle.getString("viewer.toolbar.save.tooltip"),
                 "save", iconSize,
                 buttonFont);
         if (viewerController != null && btn != null)
-            viewerController.setSaveAsFileButton(btn);
+            viewerController.setSaveFileButton(btn);
         return btn;
     }
 
