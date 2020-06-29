@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.AccessControlException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -603,6 +604,8 @@ public class PrintHelper implements Printable {
                     list.add(printService);
                 }
             }
+        } else {
+            list = Arrays.asList(services);
         }
         return list.toArray(new PrintService[0]);
     }
