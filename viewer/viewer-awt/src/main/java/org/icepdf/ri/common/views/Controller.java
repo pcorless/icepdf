@@ -178,6 +178,11 @@ public interface Controller extends PropertyChangeListener {
     void print(boolean showDialog);
 
     /**
+     * Prints the document with the given printer, assuming we're exiting after that
+     */
+    void printAndExit(String printer);
+
+    /**
      * Save the file
      */
     void saveFile();

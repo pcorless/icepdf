@@ -260,6 +260,16 @@ public class PrintHelper implements Printable {
     }
 
     /**
+     * Sets the printer defined by the given name as current one
+     *
+     * @param name The name of the printer
+     */
+    public void setPrinter(String name) {
+        preparePrintServices();
+        Arrays.stream(services).filter(ps -> ps.getName().equals(name)).findAny().ifPresent(service -> printService = service);
+    }
+
+    /**
      * Utility for showing print dialog for the current printService.  If no
      * print service is assigned the first print service is used to create
      * the print dialog.
@@ -559,7 +569,7 @@ public class PrintHelper implements Printable {
         return ServiceUI.printDialog(graphicsConfiguration,
                 container.getX() + offset,
                 container.getY() + offset,
-                services, services[0],
+                services, printService == null ? services[0] : printService,
                 DocFlavor.SERVICE_FORMATTED.PRINTABLE,
                 printRequestAttributeSet);
     }
@@ -587,6 +597,9 @@ public class PrintHelper implements Printable {
         }
     }
 
+    /**
+     * Loads the print services
+     */
     public static void preparePrintServices() {
         services = lookForPrintServices();
     }

@@ -3802,10 +3802,15 @@ public class SwingController extends ComponentAdapter
             printButton.setEnabled(false);
         }
 
-        Runnable runner = () -> initialisePrinting(withDialog);
+        Runnable runner = () -> initialisePrinting(withDialog, null);
         Thread t = new Thread(runner);
         t.setPriority(Thread.NORM_PRIORITY);
         t.start();
+    }
+
+    public void printAndExit(String printer) {
+        //Do synchronously, because we're exiting after that
+        initialisePrinting(false, printer);
     }
 
     /**
@@ -3818,7 +3823,7 @@ public class SwingController extends ComponentAdapter
      *
      * @param withDialog If should show a print dialog before starting to print
      */
-    private void initialisePrinting(final boolean withDialog) {
+    private void initialisePrinting(final boolean withDialog, final String printer) {
         boolean canPrint = havePermissionToPrint();
         if (!canPrint) {
             renablePrintUI();
@@ -3845,7 +3850,9 @@ public class SwingController extends ComponentAdapter
                         printHelper.getPrintRequestAttributeSet());
             }
             viewModel.setPrintHelper(printHelper);
-
+            if (printer != null) {
+                printHelper.setPrinter(printer);
+            }
             // set the printer to show a print dialog
             canPrint = printHelper.setupPrintService(
                     0,
@@ -3854,6 +3861,7 @@ public class SwingController extends ComponentAdapter
                     viewModel.isShrinkToPrintableArea(),        // shrink to printable area
                     withDialog  // show print dialog
             );
+
             // save new printer attributes to properties
             savePrinterProperties(printHelper);
             // if user cancelled the print job from the dialog, don't start printing
