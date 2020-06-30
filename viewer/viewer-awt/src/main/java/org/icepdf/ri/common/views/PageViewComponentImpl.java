@@ -63,6 +63,11 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         textSelectionPageHandler.setDocumentViewController(documentViewController);
     }
 
+    public void clearSearchHighlights() {
+        searchHitComponents.forEach(this::remove);
+        searchHitComponents.clear();
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
