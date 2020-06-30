@@ -260,6 +260,16 @@ public class PrintHelper implements Printable {
     }
 
     /**
+     * Checks that the given printer exists
+     * @param printer The printer name
+     * @return True if it exists or printer equals 'default'
+     */
+    public static boolean hasPrinter(String printer) {
+        preparePrintServices();
+        return printer.equals("default") || Arrays.stream(services).map(PrintService::getName).anyMatch(n -> n.equals(printer));
+    }
+
+    /**
      * Sets the printer defined by the given name as current one
      *
      * @param name The name of the printer
