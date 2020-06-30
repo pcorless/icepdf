@@ -67,7 +67,7 @@ public class CrossReference {
     protected int offset;
 
     public CrossReference() {
-        hObjectNumber2Entry = new ConcurrentHashMap<Integer, Entry>(4096);
+        hObjectNumber2Entry = new ConcurrentHashMap<>(4096);
     }
 
     public void setTrailer(PTrailer trailer) {
@@ -77,7 +77,7 @@ public class CrossReference {
     public int getNextAvailableReferenceNumber() {
         List<Integer> objectNumbers = Collections.list(hObjectNumber2Entry.keys());
         Collections.sort(objectNumbers);
-        return objectNumbers.get(objectNumbers.size() - 1) + 1;
+        return objectNumbers.isEmpty() ? 0 : objectNumbers.get(objectNumbers.size() - 1) + 1;
     }
 
     /**
