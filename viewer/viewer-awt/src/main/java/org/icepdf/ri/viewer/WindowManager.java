@@ -115,30 +115,33 @@ public class WindowManager implements WindowManagementCallback {
     }
 
     public void newWindow(final String location, final String printer) {
-        Controller controller = commonWindowCreation();
+        Controller controller = commonWindowCreation(false);
         controller.openDocument(location);
         print(controller, printer);
     }
 
     public void newWindow(final Document document, final String fileName, final String printer) {
-        Controller controller = commonWindowCreation();
+        Controller controller = commonWindowCreation(false);
         controller.openDocument(document, fileName);
         print(controller, printer);
     }
 
     public void newWindow(URL location, final String printer) {
-        Controller controller = commonWindowCreation();
+        Controller controller = commonWindowCreation(false);
         controller.openDocument(location);
         print(controller, printer);
     }
 
     private void print(Controller controller, String printer) {
-        controller.getViewerFrame().setVisible(false);
         controller.printAndExit(!PrintHelper.hasPrinter(printer), printer);
         quit(controller, (JFrame) controller.getViewerFrame(), controller.getPropertiesManager().getPreferences());
     }
 
-    protected Controller commonWindowCreation() {
+    protected Controller commonWindowCreation(){
+        return commonWindowCreation(true);
+    }
+
+    protected Controller commonWindowCreation(boolean isVisible) {
         Controller controller = new SwingController(messageBundle);
         controller.setWindowManagementCallback(this);
 
@@ -168,7 +171,7 @@ public class WindowManager implements WindowManagementCallback {
         JFrame frame = factory.buildViewerFrame();
         if (frame != null) {
             newWindowLocation(frame);
-            frame.setVisible(true);
+            frame.setVisible(isVisible);
         }
 
         return controller;
