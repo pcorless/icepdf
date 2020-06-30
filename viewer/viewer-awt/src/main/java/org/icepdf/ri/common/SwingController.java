@@ -3808,9 +3808,9 @@ public class SwingController extends ComponentAdapter
         t.start();
     }
 
-    public void printAndExit(String printer) {
+    public void printAndExit(boolean showDialog, String printer) {
         //Do synchronously, because we're exiting after that
-        initialisePrinting(false, printer);
+        initialisePrinting(showDialog, printer);
     }
 
     /**

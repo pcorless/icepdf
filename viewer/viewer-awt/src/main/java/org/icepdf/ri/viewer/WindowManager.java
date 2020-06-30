@@ -133,15 +133,9 @@ public class WindowManager implements WindowManagementCallback {
     }
 
     private void print(Controller controller, String printer) {
-        if (PrintHelper.hasPrinter(printer)) {
-            controller.getViewerFrame().setVisible(false);
-            //Printer is known, print and exit
-            controller.printAndExit(printer);
-            quit(controller, (JFrame) controller.getViewerFrame(), controller.getPropertiesManager().getPreferences());
-        } else {
-            //Printer is unknown, show dialog
-            controller.print(true);
-        }
+        controller.getViewerFrame().setVisible(false);
+        controller.printAndExit(!PrintHelper.hasPrinter(printer), printer);
+        quit(controller, (JFrame) controller.getViewerFrame(), controller.getPropertiesManager().getPreferences());
     }
 
     protected Controller commonWindowCreation() {
