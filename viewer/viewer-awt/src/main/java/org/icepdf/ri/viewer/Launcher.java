@@ -81,7 +81,7 @@ public class Launcher {
                 case "-loadurl":
                     contentURL = argv[++i].trim();
                     break;
-                case "-printer":
+                case "-print":
                     printer = argv[++i].trim();
                     break;
                 default:
