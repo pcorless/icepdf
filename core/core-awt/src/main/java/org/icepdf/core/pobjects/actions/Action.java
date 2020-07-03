@@ -71,7 +71,7 @@ public class Action extends Dictionary {
      * @param l document library.
      * @param h Action dictionary entries.
      */
-    public Action(Library l, HashMap<Object, Object> h) {
+    public Action(Library l, HashMap h) {
         super(l, h);
         type = getObject(ACTION_TYPE_KEY).toString();
     }
