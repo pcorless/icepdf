@@ -61,6 +61,16 @@ public class PInfo extends Dictionary {
     }
 
     /**
+     * Sets a property to a value given its name
+     *
+     * @param name  The name of the property
+     * @param value The value
+     */
+    public void setProperty(final Name name, final Object value) {
+        entries.put(name, value);
+    }
+
+    /**
      * Gets the value of the custom extension specified by <code>name</code>.
      *
      * @param name som plug-in extensions name.
@@ -73,6 +83,16 @@ public class PInfo extends Dictionary {
             return Utils.convertStringObject(library, text);
         }
         return value;
+    }
+
+    /**
+     * Sets a custom property to the PDF
+     *
+     * @param key   The name of the property
+     * @param value The value
+     */
+    public void setCustomExtension(final String key, final Object value) {
+        setProperty(new Name(key), value);
     }
 
     /**
@@ -92,6 +112,15 @@ public class PInfo extends Dictionary {
     }
 
     /**
+     * Sets the title of the PDF
+     *
+     * @param title The title
+     */
+    public void setTitle(final String title) {
+        setProperty(TITLE_KEY, new LiteralStringObject(title));
+    }
+
+    /**
      * Gets the name of the person who created the document.
      *
      * @return author name.
@@ -105,6 +134,15 @@ public class PInfo extends Dictionary {
             return (String) value;
         }
         return null;
+    }
+
+    /**
+     * Sets the author of the PDF
+     *
+     * @param author The author
+     */
+    public void setAuthor(final String author) {
+        setProperty(AUTHOR_KEY, new LiteralStringObject(author));
     }
 
     /**
@@ -124,6 +162,15 @@ public class PInfo extends Dictionary {
     }
 
     /**
+     * Sets the subject of the PDF
+     *
+     * @param subject The subject
+     */
+    public void setSubject(final String subject) {
+        setProperty(SUBJECT_KEY, new LiteralStringObject(subject));
+    }
+
+    /**
      * Gets the keywords associated with the document.
      *
      * @return documents keywords.
@@ -137,6 +184,15 @@ public class PInfo extends Dictionary {
             return (String) value;
         }
         return null;
+    }
+
+    /**
+     * Sets the keywords of the pdf
+     *
+     * @param keywords A varargs of keywords. They will be separated by a comma
+     */
+    public void setKeywords(final String... keywords) {
+        setProperty(KEYWORDS_KEY, new LiteralStringObject(String.join(", ", keywords)));
     }
 
     /**
@@ -157,6 +213,15 @@ public class PInfo extends Dictionary {
     }
 
     /**
+     * Sets the creator of the PDF
+     *
+     * @param creator the creator
+     */
+    public void setCreator(final String creator) {
+        setProperty(CREATOR_KEY, new LiteralStringObject(creator));
+    }
+
+    /**
      * Gets the name of the application. If the PDF document was converted from
      * another format that <b>converted</b> the original document.
      *
@@ -174,6 +239,15 @@ public class PInfo extends Dictionary {
     }
 
     /**
+     * Sets the producer of the PDF
+     *
+     * @param producer the producer
+     */
+    public void setProducer(final String producer) {
+        setProperty(PRODUCER_KEY, new LiteralStringObject(producer));
+    }
+
+    /**
      * Gets the date and time the document was created.
      *
      * @return creation date.
@@ -188,6 +262,15 @@ public class PInfo extends Dictionary {
     }
 
     /**
+     * Sets the creation date of the PDF
+     *
+     * @param date The creation date
+     */
+    public void setCreationDate(final PDate date) {
+        setProperty(CREATIONDATE_KEY, new LiteralStringObject(date.toString()));
+    }
+
+    /**
      * Gets the date and time the document was most recently modified.
      *
      * @return modification date.
@@ -199,6 +282,15 @@ public class PInfo extends Dictionary {
             return new PDate(securityManager, text.getDecryptedLiteralString(securityManager));
         }
         return null;
+    }
+
+    /**
+     * Sets the modification date of the PDF
+     *
+     * @param date The modification date
+     */
+    public void setModDate(final PDate date) {
+        setProperty(MODDATE_KEY, new LiteralStringObject(date.toString()));
     }
 
     /**
@@ -223,5 +315,14 @@ public class PInfo extends Dictionary {
             return (String) value;
         }
         return null;
+    }
+
+    /**
+     * Sets the trapping value of the PDF
+     *
+     * @param value The trapping value
+     */
+    public void setTrappingInformation(final String value) {
+        setProperty(TRAPPED_KEY, new LiteralStringObject(value));
     }
 }
