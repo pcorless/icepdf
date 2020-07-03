@@ -92,6 +92,7 @@ import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
 
 import static org.icepdf.core.util.PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE;
+import static org.icepdf.ri.common.KeyEventConstants.*;
 import static org.icepdf.ri.util.ViewerPropertiesManager.*;
 
 
@@ -5499,117 +5500,41 @@ public class SwingController extends ComponentAdapter
     }
 
     private void prepareKeyMap(JComponent component) {
+        addKeyAction(component, KEY_CODE_SAVE, MODIFIER_SAVE, new BaseAction(this::saveFile));
+        addKeyAction(component, KEY_CODE_SAVE_AS, MODIFIER_SAVE_AS, new BaseAction(this::saveFileAs));
+        addKeyAction(component, KEY_CODE_EXPORT_TEXT, MODIFIER_EXPORT_TEXT, new BaseAction(this::exportText));
+        addKeyAction(component, KEY_CODE_PRINT_SETUP, MODIFIER_PRINT_SETUP, new BaseAction(this::showPrintSetupDialog));
+        addKeyAction(component, KEY_CODE_PRINT, MODIFIER_PRINT, new BaseAction(() -> print(true)));
+        addKeyAction(component, KEY_CODE_FIT_ACTUAL, MODIFIER_FIT_ACTUAL,
+                new BaseAction(() -> setPageFitMode(DocumentViewController.PAGE_FIT_ACTUAL_SIZE, false)));
+        addKeyAction(component, KEY_CODE_FIT_PAGE, MODIFIER_FIT_PAGE,
+                new BaseAction(() -> setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_HEIGHT, false)));
+        addKeyAction(component, KEY_CODE_FIT_WIDTH, MODIFIER_FIT_WIDTH,
+                new BaseAction(() -> setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_WIDTH, false)));
+        addKeyAction(component, KEY_CODE_ZOOM_IN, MODIFIER_ZOOM_IN, new BaseAction(this::zoomIn));
+        addKeyAction(component, KEY_CODE_ZOOM_OUT, MODIFIER_ZOOM_OUT, new BaseAction(this::zoomOut));
+        addKeyAction(component, KEY_CODE_ROTATE_LEFT, MODIFIER_ROTATE_LEFT, new BaseAction(this::rotateLeft));
+        addKeyAction(component, KEY_CODE_ROTATE_RIGHT, MODIFIER_ROTATE_RIGHT, new BaseAction(this::rotateRight));
+        addKeyAction(component, KEY_CODE_FIRST_PAGE, MODIFIER_FIRST_PAGE, new BaseAction(() -> showPage(0)));
+        addKeyAction(component, KEY_CODE_PREVIOUS_PAGE, MODIFIER_PREVIOUS_PAGE,
+                new BaseAction(() -> goToDeltaPage(-(documentViewController.getDocumentView().getPreviousPageIncrement()))));
+        addKeyAction(component, KEY_CODE_NEXT_PAGE, MODIFIER_NEXT_PAGE,
+                new BaseAction(() -> goToDeltaPage(documentViewController.getDocumentView().getNextPageIncrement())));
+        addKeyAction(component, KEY_CODE_LAST_PAGE, MODIFIER_LAST_PAGE,
+                new BaseAction(() -> showPage(getPageTree().getNumberOfPages() - 1)));
+        addKeyAction(component, KEY_CODE_SEARCH, MODIFIER_SEARCH, new BaseAction(this::showSearch));
+        addKeyAction(component, KEY_CODE_SEARCH, MODIFIER_ADVANCED_SEARCH, new BaseAction(this::showSearchPanel));
+        addKeyAction(component, KEY_CODE_SEARCH_PREVIOUS, MODIFIER_SEARCH_PREVIOUS, new BaseAction(this::previousSearchResult));
+        addKeyAction(component, KEY_CODE_SEARCH_NEXT, MODIFIER_SEARCH_NEXT, new BaseAction(this::nextSearchResult));
+        addKeyAction(component, KEY_CODE_GOTO, MODIFIER_GOTO, new BaseAction(this::showPageSelectionDialog));
+    }
+
+    private void addKeyAction(final JComponent component, final int keyCode, final int modifier, final BaseAction action) {
         final InputMap inputMap = component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         final ActionMap actionMap = component.getActionMap();
-
-        String key = KeyEventConstants.KEY_CODE_SAVE + "-" + KeyEventConstants.MODIFIER_SAVE;
-        inputMap.put(KeyStroke.getKeyStroke(
-                KeyEventConstants.KEY_CODE_SAVE, KeyEventConstants.MODIFIER_SAVE), key);
-        actionMap.put(key, new BaseAction(this::saveFile));
-
-        key = KeyEventConstants.KEY_CODE_SAVE_AS + "-" + KeyEventConstants.MODIFIER_SAVE_AS;
-        inputMap.put(KeyStroke.getKeyStroke(
-                KeyEventConstants.KEY_CODE_SAVE_AS, KeyEventConstants.MODIFIER_SAVE_AS), key);
-        actionMap.put(key, new BaseAction(this::saveFileAs));
-
-        key = KeyEventConstants.KEY_CODE_PRINT_SETUP + "-" + KeyEventConstants.MODIFIER_PRINT_SETUP;
-        inputMap.put(KeyStroke.getKeyStroke(
-                KeyEventConstants.KEY_CODE_PRINT_SETUP, KeyEventConstants.MODIFIER_PRINT_SETUP), key);
-        actionMap.put(key, new BaseAction(this::showPrintSetupDialog));
-
-        key = KeyEventConstants.KEY_CODE_PRINT + "-" + KeyEventConstants.MODIFIER_PRINT;
-        inputMap.put(KeyStroke.getKeyStroke(
-                KeyEventConstants.KEY_CODE_PRINT, KeyEventConstants.MODIFIER_PRINT), key);
-        actionMap.put(key, new BaseAction(() -> print(true)));
-
-        key = KeyEventConstants.KEY_CODE_FIT_ACTUAL + "-" + KeyEventConstants.MODIFIER_FIT_ACTUAL;
-        inputMap.put(KeyStroke.getKeyStroke(
-                KeyEventConstants.KEY_CODE_FIT_ACTUAL, KeyEventConstants.MODIFIER_FIT_ACTUAL), key);
-        actionMap.put(key,
-                new BaseAction(() -> setPageFitMode(DocumentViewController.PAGE_FIT_ACTUAL_SIZE, false)));
-
-        key = KeyEventConstants.KEY_CODE_FIT_PAGE + "-" + KeyEventConstants.MODIFIER_FIT_PAGE;
-        inputMap.put(KeyStroke.getKeyStroke(
-                KeyEventConstants.KEY_CODE_FIT_PAGE, KeyEventConstants.MODIFIER_FIT_PAGE), key);
-        actionMap.put(key,
-                new BaseAction(() -> setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_HEIGHT, false)));
-
-        key = KeyEventConstants.KEY_CODE_FIT_WIDTH + "-" + KeyEventConstants.MODIFIER_FIT_WIDTH;
-        inputMap.put(KeyStroke.getKeyStroke(
-                KeyEventConstants.KEY_CODE_FIT_WIDTH, KeyEventConstants.MODIFIER_FIT_WIDTH), key);
-        actionMap.put(key,
-                new BaseAction(() -> setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_WIDTH, false)));
-
-        key = KeyEventConstants.KEY_CODE_ZOOM_IN + "-" + KeyEventConstants.MODIFIER_ZOOM_IN;
-        inputMap.put(KeyStroke.getKeyStroke(
-                KeyEventConstants.KEY_CODE_ZOOM_IN, KeyEventConstants.MODIFIER_ZOOM_IN), key);
-        actionMap.put(key, new BaseAction(this::zoomIn));
-
-        key = KeyEventConstants.KEY_CODE_ZOOM_OUT + "-" + KeyEventConstants.MODIFIER_ZOOM_OUT;
-        inputMap.put(KeyStroke.getKeyStroke(
-                KeyEventConstants.KEY_CODE_ZOOM_OUT, KeyEventConstants.MODIFIER_ZOOM_OUT), key);
-        actionMap.put(key, new BaseAction(this::zoomOut));
-
-        key = KeyEventConstants.KEY_CODE_ROTATE_LEFT + "-" + KeyEventConstants.MODIFIER_ROTATE_LEFT;
-        inputMap.put(KeyStroke.getKeyStroke(
-                KeyEventConstants.KEY_CODE_ROTATE_LEFT, KeyEventConstants.MODIFIER_ROTATE_LEFT), key);
-        actionMap.put(key, new BaseAction(this::rotateLeft));
-
-        key = KeyEventConstants.KEY_CODE_ROTATE_RIGHT + "-" + KeyEventConstants.MODIFIER_ROTATE_RIGHT;
-        inputMap.put(KeyStroke.getKeyStroke(
-                KeyEventConstants.KEY_CODE_ROTATE_RIGHT, KeyEventConstants.MODIFIER_ROTATE_RIGHT), key);
-        actionMap.put(key, new BaseAction(this::rotateRight));
-
-        key = KeyEventConstants.KEY_CODE_FIRST_PAGE + "-" + KeyEventConstants.MODIFIER_FIRST_PAGE;
-        inputMap.put(KeyStroke.getKeyStroke(
-                KeyEventConstants.KEY_CODE_FIRST_PAGE, KeyEventConstants.MODIFIER_FIRST_PAGE), key);
-        actionMap.put(key, new BaseAction(() -> showPage(0)));
-
-        key = KeyEventConstants.KEY_CODE_PREVIOUS_PAGE + "-" + KeyEventConstants.MODIFIER_PREVIOUS_PAGE;
-        inputMap.put(KeyStroke.getKeyStroke(
-                KeyEventConstants.KEY_CODE_PREVIOUS_PAGE, KeyEventConstants.MODIFIER_PREVIOUS_PAGE), key);
-        actionMap.put(key,
-                new BaseAction(() -> goToDeltaPage(-(documentViewController.getDocumentView().getPreviousPageIncrement()))));
-
-        key = KeyEventConstants.KEY_CODE_NEXT_PAGE + "-" + KeyEventConstants.MODIFIER_NEXT_PAGE;
-        inputMap.put(KeyStroke.getKeyStroke(
-                KeyEventConstants.KEY_CODE_NEXT_PAGE, KeyEventConstants.MODIFIER_NEXT_PAGE), key);
-        actionMap.put(key,
-                new BaseAction(() -> goToDeltaPage(documentViewController.getDocumentView().getNextPageIncrement())));
-
-        key = KeyEventConstants.KEY_CODE_LAST_PAGE + "-" + KeyEventConstants.MODIFIER_LAST_PAGE;
-        inputMap.put(KeyStroke.getKeyStroke(
-                KeyEventConstants.KEY_CODE_LAST_PAGE, KeyEventConstants.MODIFIER_LAST_PAGE), key);
-        actionMap.put(key, new BaseAction(() -> showPage(getPageTree().getNumberOfPages() - 1)));
-
-        key = KeyEventConstants.KEY_CODE_SEARCH + "-" + KeyEventConstants.MODIFIER_SEARCH;
-        inputMap.put(KeyStroke.getKeyStroke(
-                KeyEventConstants.KEY_CODE_SEARCH, KeyEventConstants.MODIFIER_SEARCH), key);
-        actionMap.put(key, new BaseAction(this::showSearch));
-
-        key = KeyEventConstants.KEY_CODE_SEARCH + "-" + KeyEventConstants.MODIFIER_ADVANCED_SEARCH;
-        inputMap.put(KeyStroke.getKeyStroke(
-                KeyEventConstants.KEY_CODE_SEARCH, KeyEventConstants.MODIFIER_ADVANCED_SEARCH), key);
-        actionMap.put(key, new BaseAction(this::showSearchPanel));
-
-        key = KeyEventConstants.KEY_CODE_SEARCH_PREVIOUS + "-" + KeyEventConstants.MODIFIER_SEARCH_PREVIOUS;
-        inputMap.put(KeyStroke.getKeyStroke(
-                KeyEventConstants.KEY_CODE_SEARCH_PREVIOUS, KeyEventConstants.MODIFIER_SEARCH_PREVIOUS), key);
-        actionMap.put(key, new BaseAction(this::previousSearchResult));
-
-        key = KeyEventConstants.KEY_CODE_SEARCH_NEXT + "-" + KeyEventConstants.MODIFIER_SEARCH_NEXT;
-        inputMap.put(KeyStroke.getKeyStroke(
-                KeyEventConstants.KEY_CODE_SEARCH_NEXT, KeyEventConstants.MODIFIER_SEARCH_NEXT), key);
-        actionMap.put(key, new BaseAction(this::nextSearchResult));
-
-        key = KeyEventConstants.KEY_CODE_SEND_MAIL + "-" + KeyEventConstants.MODIFIER_SEND_MAIL;
-        inputMap.put(KeyStroke.getKeyStroke(
-                KeyEventConstants.KEY_CODE_SEND_MAIL, KeyEventConstants.MODIFIER_SEND_MAIL), key);
-        actionMap.put(key, new BaseAction(() -> MailSender.sendMail(this)));
-
-        key = KeyEventConstants.KEY_CODE_GOTO + "-" + KeyEventConstants.MODIFIER_GOTO;
-        inputMap.put(KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_GOTO, KeyEventConstants.MODIFIER_GOTO), key);
-        actionMap.put(key, new BaseAction(this::showPageSelectionDialog));
+        final String key = keyCode + "-" + modifier;
+        inputMap.put(KeyStroke.getKeyStroke(keyCode, modifier), key);
+        actionMap.put(key, action);
     }
 
     @FunctionalInterface

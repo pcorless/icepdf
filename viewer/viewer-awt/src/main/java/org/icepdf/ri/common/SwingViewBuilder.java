@@ -680,7 +680,8 @@ public class SwingViewBuilder {
 
     public JMenuItem buildExportTextMenuItem() {
         JMenuItem mi = makeMenuItem(
-                messageBundle.getString("viewer.menu.exportText.label"), null, null, null);
+                messageBundle.getString("viewer.menu.exportText.label"), null, null,
+                buildKeyStroke(KeyEventConstants.KEY_CODE_EXPORT_TEXT, KeyEventConstants.MODIFIER_EXPORT_TEXT, false));
         if (viewerController != null && mi != null)
             viewerController.setExportTextMenuItem(mi);
         return mi;
