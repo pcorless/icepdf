@@ -17,6 +17,7 @@ package org.icepdf.ri.common.properties;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PInfo;
+import org.icepdf.core.pobjects.security.Permissions;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -86,23 +87,17 @@ public class InformationPanel extends JPanel {
                 TitledBorder.DEFAULT_POSITION));
 
         // add labels
-        addGB(layoutPanel, new JLabel(
-                        messageBundle.getString("viewer.dialog.documentInformation.title.label")),
+        addGB(layoutPanel, new JLabel(messageBundle.getString("viewer.dialog.documentInformation.title.label")),
                 0, 0, 1, 1);
-        addGB(layoutPanel, new JLabel(
-                        messageBundle.getString("viewer.dialog.documentInformation.subject.label")),
+        addGB(layoutPanel, new JLabel(messageBundle.getString("viewer.dialog.documentInformation.subject.label")),
                 0, 1, 1, 1);
-        addGB(layoutPanel, new JLabel(
-                        messageBundle.getString("viewer.dialog.documentInformation.author.label")),
+        addGB(layoutPanel, new JLabel(messageBundle.getString("viewer.dialog.documentInformation.author.label")),
                 0, 2, 1, 1);
-        addGB(layoutPanel, new JLabel(
-                        messageBundle.getString("viewer.dialog.documentInformation.keywords.label")),
+        addGB(layoutPanel, new JLabel(messageBundle.getString("viewer.dialog.documentInformation.keywords.label")),
                 0, 3, 1, 1);
-        addGB(layoutPanel, new JLabel(
-                        messageBundle.getString("viewer.dialog.documentInformation.creator.label")),
+        addGB(layoutPanel, new JLabel(messageBundle.getString("viewer.dialog.documentInformation.creator.label")),
                 0, 4, 1, 1);
-        addGB(layoutPanel, new JLabel(
-                        messageBundle.getString("viewer.dialog.documentInformation.producer.label")),
+        addGB(layoutPanel, new JLabel(messageBundle.getString("viewer.dialog.documentInformation.producer.label")),
                 0, 5, 1, 1);
         addGB(layoutPanel, new JLabel(
                         messageBundle.getString("viewer.dialog.documentInformation.created.label")),
@@ -111,20 +106,32 @@ public class InformationPanel extends JPanel {
                         messageBundle.getString("viewer.dialog.documentInformation.modified.label")),
                 0, 7, 1, 1);
 
+        final boolean canModify = document.getSecurityManager() == null ||
+                document.getSecurityManager().getPermissions().getPermissions(Permissions.MODIFY_DOCUMENT);
         // add values
         constraints.anchor = GridBagConstraints.NORTHWEST;
-        addGB(layoutPanel, new JLabel(title), 1, 0, 1, 1);
-        addGB(layoutPanel, new JLabel(subject), 1, 1, 1, 1);
-        addGB(layoutPanel, new JLabel(author), 1, 2, 1, 1);
-        addGB(layoutPanel, new JLabel(keyWords), 1, 3, 1, 1);
-        addGB(layoutPanel, new JLabel(creator), 1, 4, 1, 1);
-        addGB(layoutPanel, new JLabel(producer), 1, 5, 1, 1);
+        constraints.fill = GridBagConstraints.BOTH;
+        constraints.insets = new Insets(0, 5, 5 ,5);
+        addGB(layoutPanel, createTextField(title, canModify), 1, 0, 1, 1);
+        addGB(layoutPanel, createTextField(subject, canModify), 1, 1, 1, 1);
+        addGB(layoutPanel, createTextField(author, canModify), 1, 2, 1, 1);
+        addGB(layoutPanel, createTextField(keyWords, canModify), 1, 3, 1, 1);
+        addGB(layoutPanel, createTextField(creator, canModify), 1, 4, 1, 1);
+        addGB(layoutPanel, createTextField(producer, canModify), 1, 5, 1, 1);
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.insets = new Insets(5, 5, 5 ,5);
         addGB(layoutPanel, new JLabel(creationDate), 1, 6, 1, 1);
         addGB(layoutPanel, new JLabel(modDate), 1, 7, 1, 1);
         constraints.anchor = GridBagConstraints.NORTH;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.insets = new Insets(5, 5, 5, 5);
         addGB(this, layoutPanel, 0, 0, 1, 1);
+    }
+
+    private static JTextField createTextField(final String content, final boolean canModify) {
+        final JTextField textField = new JTextField(content);
+        textField.setEnabled(canModify);
+        return textField;
     }
 
     private void addGB(JPanel layout, Component component,

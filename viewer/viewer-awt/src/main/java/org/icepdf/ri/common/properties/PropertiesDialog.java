@@ -46,6 +46,12 @@ public class PropertiesDialog extends EscapeJDialog {
         setTitle(messageBundle.getString("viewer.dialog.documentProperties.tab.title"));
 
         // Create GUI elements
+        final JButton cancelButton = new JButton(messageBundle.getString("viewer.button.cancel.label"));
+        cancelButton.setMnemonic(messageBundle.getString("viewer.button.cancel.mnemonic").charAt(0));
+        cancelButton.addActionListener(e -> {
+            setVisible(false);
+            dispose();
+        });
         final JButton okButton = new JButton(messageBundle.getString("viewer.button.ok.label"));
         okButton.setMnemonic(messageBundle.getString("viewer.button.ok.mnemonic").charAt(0));
         okButton.addActionListener(e -> {
@@ -74,6 +80,7 @@ public class PropertiesDialog extends EscapeJDialog {
         propertiesTabbedPane.addTab(
                 messageBundle.getString("viewer.dialog.documentProperties.tab.fonts"),
                 fontPanel);
+        propertiesTabbedPane.addTab("Custom", new CustomPropertiesPanel(document, messageBundle));
         JPanel layoutPanel = new JPanel(new GridBagLayout());
 
         constraints = new GridBagConstraints();
@@ -82,15 +89,18 @@ public class PropertiesDialog extends EscapeJDialog {
         constraints.weighty = 0;
         constraints.insets = new Insets(5, 5, 5, 5);
         constraints.anchor = GridBagConstraints.NORTH;
-        addGB(layoutPanel, propertiesTabbedPane, 0, 0, 1, 1);
-
-        constraints.fill = GridBagConstraints.NONE;
-        addGB(layoutPanel, okButton, 0, 1, 1, 1);
+        addGB(layoutPanel, propertiesTabbedPane, 0, 0, 10, 1);
+        //dummies
+        for (int i = 0; i < 8; ++i) {
+            addGB(layoutPanel, new JLabel(), i, 1, 1, 1);
+        }
+        addGB(layoutPanel, okButton, 8, 1, 1, 1);
+        addGB(layoutPanel, cancelButton, 9, 1, 1, 1);
 
         this.setLayout(new BorderLayout(15, 15));
-        this.add(layoutPanel, BorderLayout.NORTH);
+        add(layoutPanel, BorderLayout.NORTH);
 
-        setSize(540, 440);
+        pack();
         setLocationRelativeTo(frame);
     }
 
