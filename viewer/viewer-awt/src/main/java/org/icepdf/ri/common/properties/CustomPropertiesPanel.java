@@ -18,6 +18,9 @@ import java.util.List;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Panel for the PDF's custom properties
+ */
 public class CustomPropertiesPanel extends JPanel {
 
     // layouts constraint
@@ -86,6 +89,9 @@ public class CustomPropertiesPanel extends JPanel {
         }
     }
 
+    /**
+     * @return The map of key->value shown in the panel
+     */
     Map<String, String> getProperties() {
         return rows.entrySet().stream().filter(e -> e.getKey().getText() != null && !e.getKey().getText().isEmpty())
                 .collect(Collectors.toMap(e -> e.getKey().getText().trim(), e -> e.getValue().getText()));
@@ -154,13 +160,15 @@ public class CustomPropertiesPanel extends JPanel {
         final JButton deleteButton = new JButton("Delete");
         deleteButton.addActionListener(e -> {
             final Component[] components = layoutPanel.getComponents();
-            for (int j = index * 3; j < index * 3 + 3; ++j) {
+            final int startIdx = index * 3;
+            final int endIndex = startIdx + 3;
+            for (int j = startIdx; j < endIndex; ++j) {
                 layoutPanel.remove(components[j]);
             }
-            final JTextField keyField = (JTextField) components[index * 3];
+            final JTextField keyField = (JTextField) components[startIdx];
             rows.remove(keyField);
             invalids.remove(keyField);
-            final List<Component> toShift = Arrays.asList(Arrays.copyOfRange(components, index * 3 + 3,
+            final List<Component> toShift = Arrays.asList(Arrays.copyOfRange(components, endIndex,
                     components.length));
             toShift.forEach(layoutPanel::remove);
             for (int j = 0; j < toShift.size() - 1; j += 3) {

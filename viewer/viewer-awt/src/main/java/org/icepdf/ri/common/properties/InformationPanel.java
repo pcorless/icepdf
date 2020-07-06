@@ -39,25 +39,25 @@ public class InformationPanel extends JPanel {
     private final GridBagConstraints constraints;
     private final Map<String, JTextField> rows;
 
-    public InformationPanel(Document document,
-                            ResourceBundle messageBundle) {
+    public InformationPanel(final Document document,
+                            final ResourceBundle messageBundle) {
         // Do some work on information to get display values
         rows = new HashMap<>(8);
-        String title = "";
-        String author = "";
-        String subject = "";
-        String keyWords = "";
-        String creator = "";
-        String producer = "";
-        String creationDate = "";
-        String modDate = "";
+        final String title;
+        final String author;
+        final String subject;
+        final String keyWords;
+        final String creator;
+        final String producer;
+        final String creationDate;
+        final String modDate;
 
         // get duplicate names from message bundle
-        String notAvailable =
+        final String notAvailable =
                 messageBundle.getString("viewer.dialog.documentInformation.notAvailable");
 
         // get information values if available
-        PInfo documentInfo = document.getInfo();
+        final PInfo documentInfo = document.getInfo();
         if (documentInfo != null) {
             title = documentInfo.getTitle();
             author = documentInfo.getAuthor();
@@ -71,6 +71,15 @@ public class InformationPanel extends JPanel {
                     documentInfo.getCreationDate().toString() : notAvailable;
             modDate = documentInfo.getModDate() != null ?
                     documentInfo.getModDate().toString() : notAvailable;
+        } else {
+            title = "";
+            author = "";
+            subject = "";
+            keyWords = "";
+            creator = "";
+            producer = "";
+            creationDate = "";
+            modDate = "";
         }
 
         setLayout(new GridBagLayout());
@@ -84,7 +93,7 @@ public class InformationPanel extends JPanel {
         constraints.anchor = GridBagConstraints.NORTHEAST;
         constraints.insets = new Insets(5, 5, 5, 5);
 
-        JPanel layoutPanel = new JPanel(new GridBagLayout());
+        final JPanel layoutPanel = new JPanel(new GridBagLayout());
 
         layoutPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
                 messageBundle.getString("viewer.dialog.documentInformation.description.label"),
@@ -133,8 +142,11 @@ public class InformationPanel extends JPanel {
         addGB(this, layoutPanel, 0, 0, 1, 1);
     }
 
+    /**
+     * @return The map of key->value shown in the panel
+     */
     Map<String, String> getProperties() {
-        return rows.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getText()));
+        return rows.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getText()));
     }
 
     private static JTextField createTextField(final String content, final boolean canModify) {
@@ -143,16 +155,16 @@ public class InformationPanel extends JPanel {
         return textField;
     }
 
-    private void addEditableRow(JPanel layout, String key, JTextField textField,
-                                int x, int y,
-                                int rowSpan, int colSpan) {
+    private void addEditableRow(final JPanel layout, final String key, final JTextField textField,
+                                final int x, final int y,
+                                final int rowSpan, final int colSpan) {
         addGB(layout, textField, x, y, rowSpan, colSpan);
         rows.put(key, textField);
     }
 
-    private void addGB(JPanel layout, Component component,
-                       int x, int y,
-                       int rowSpan, int colSpan) {
+    private void addGB(final JPanel layout, final Component component,
+                       final int x, final int y,
+                       final int rowSpan, final int colSpan) {
         constraints.gridx = x;
         constraints.gridy = y;
         constraints.gridwidth = rowSpan;

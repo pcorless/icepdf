@@ -383,9 +383,12 @@ public class PInfo extends Dictionary {
                 final Object secondValue = second.get(key);
                 if (!value.equals(secondValue)) {
                     if (value instanceof LiteralStringObject && secondValue instanceof LiteralStringObject) {
-                        if (!((LiteralStringObject) value).getLiteralString().equals(((LiteralStringObject) secondValue).getLiteralString())) {
+                        if (!((LiteralStringObject) value).getLiteralString()
+                                .equals(((LiteralStringObject) secondValue).getLiteralString())) {
                             return false;
                         }
+                    } else {
+                        return false;
                     }
                 }
             }
