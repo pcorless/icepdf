@@ -11,28 +11,28 @@ import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class CustomPropertiesPanel extends JPanel {
 
     // layouts constraint
-    private GridBagConstraints constraints;
+    private final GridBagConstraints constraints;
+    private final Map<JTextField, JTextField> rows;
 
     public CustomPropertiesPanel(final Document document,
                                  final ResourceBundle messageBundle) {
         // get information values if available
         final PInfo documentInfo = document.getInfo();
+        constraints = new GridBagConstraints();
+        rows = new HashMap<>();
         if (documentInfo != null) {
 
             setLayout(new GridBagLayout());
             setAlignmentY(JPanel.TOP_ALIGNMENT);
 
 
-            constraints = new GridBagConstraints();
             constraints.fill = GridBagConstraints.NONE;
             constraints.weightx = 1.0;
             constraints.weighty = 1.0;
@@ -79,6 +79,10 @@ public class CustomPropertiesPanel extends JPanel {
         }
     }
 
+    Map<String, String> getProperties() {
+        return rows.entrySet().stream().collect(Collectors.toMap(e -> e.getKey().getText(), e -> e.getValue().getText()));
+    }
+
     private void addRow(final JPanel layoutPanel, final JTextField keyField, final JTextField valueField,
                         final JButton deleteButton, final int index) {
         constraints.fill = GridBagConstraints.HORIZONTAL;
@@ -95,6 +99,7 @@ public class CustomPropertiesPanel extends JPanel {
             constraints.anchor = GridBagConstraints.NORTHEAST;
             addGB(layoutPanel, deleteButton, 2, index, 1, 1);
         }
+        rows.put(keyField, valueField);
     }
 
     private void addRow(final JPanel layoutPanel, final String key, final String value, final boolean canModify,
@@ -110,6 +115,7 @@ public class CustomPropertiesPanel extends JPanel {
             for (int j = index * 3; j < index * 3 + 3; ++j) {
                 layoutPanel.remove(components[j]);
             }
+            rows.remove(components[index * 3]);
             final List<Component> toShift = Arrays.asList(Arrays.copyOfRange(components, index * 3 + 3,
                     components.length));
             toShift.forEach(layoutPanel::remove);

@@ -16,11 +16,13 @@
 package org.icepdf.ri.common.properties;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.PObject;
 import org.icepdf.ri.common.EscapeJDialog;
 import org.icepdf.ri.common.SwingController;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
@@ -46,28 +48,15 @@ public class PropertiesDialog extends EscapeJDialog {
         setTitle(messageBundle.getString("viewer.dialog.documentProperties.tab.title"));
 
         // Create GUI elements
-        final JButton cancelButton = new JButton(messageBundle.getString("viewer.button.cancel.label"));
-        cancelButton.setMnemonic(messageBundle.getString("viewer.button.cancel.mnemonic").charAt(0));
-        cancelButton.addActionListener(e -> {
-            setVisible(false);
-            dispose();
-        });
-        final JButton okButton = new JButton(messageBundle.getString("viewer.button.ok.label"));
-        okButton.setMnemonic(messageBundle.getString("viewer.button.ok.mnemonic").charAt(0));
-        okButton.addActionListener(e -> {
-            if (e.getSource() == okButton) {
-                setVisible(false);
-                dispose();
-            }
-        });
 
         JTabbedPane propertiesTabbedPane = new JTabbedPane();
         propertiesTabbedPane.setAlignmentY(JPanel.TOP_ALIGNMENT);
 
         // build the description
+        final InformationPanel infoPanel = new InformationPanel(document, messageBundle);
         propertiesTabbedPane.addTab(
                 messageBundle.getString("viewer.dialog.documentProperties.tab.description"),
-                new InformationPanel(document, messageBundle));
+                infoPanel);
 
         // build out the security tab
         propertiesTabbedPane.addTab(
@@ -80,7 +69,10 @@ public class PropertiesDialog extends EscapeJDialog {
         propertiesTabbedPane.addTab(
                 messageBundle.getString("viewer.dialog.documentProperties.tab.fonts"),
                 fontPanel);
-        propertiesTabbedPane.addTab("Custom", new CustomPropertiesPanel(document, messageBundle));
+
+        // build out custom properties panel
+        final CustomPropertiesPanel customPanel = new CustomPropertiesPanel(document, messageBundle);
+        propertiesTabbedPane.addTab("Custom", customPanel);
         JPanel layoutPanel = new JPanel(new GridBagLayout());
 
         constraints = new GridBagConstraints();
@@ -94,6 +86,26 @@ public class PropertiesDialog extends EscapeJDialog {
         for (int i = 0; i < 8; ++i) {
             addGB(layoutPanel, new JLabel(), i, 1, 1, 1);
         }
+
+        final JButton cancelButton = new JButton(messageBundle.getString("viewer.button.cancel.label"));
+        cancelButton.setMnemonic(messageBundle.getString("viewer.button.cancel.mnemonic").charAt(0));
+        cancelButton.addActionListener(e -> {
+            setVisible(false);
+            dispose();
+        });
+        final JButton okButton = new JButton(messageBundle.getString("viewer.button.ok.label"));
+        okButton.setMnemonic(messageBundle.getString("viewer.button.ok.mnemonic").charAt(0));
+        okButton.addActionListener(e -> {
+            if (e.getSource() == okButton) {
+                final Map<String, String> allProperties = infoPanel.getProperties();
+                allProperties.putAll(customPanel.getProperties());
+                if (document.getInfo().update(allProperties)) {
+                    document.getStateManager().addChange(new PObject(document.getInfo(), document.getInfo().getPObjectReference()));
+                }
+                setVisible(false);
+                dispose();
+            }
+        });
         addGB(layoutPanel, okButton, 8, 1, 1, 1);
         addGB(layoutPanel, cancelButton, 9, 1, 1, 1);
 

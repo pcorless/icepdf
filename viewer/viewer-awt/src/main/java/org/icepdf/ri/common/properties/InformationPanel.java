@@ -23,7 +23,10 @@ import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 
 /**
  * Panel display of document information properties.   The panel can be used as a fragment in any user interface.
@@ -33,11 +36,13 @@ import java.util.ResourceBundle;
 public class InformationPanel extends JPanel {
 
     // layouts constraint
-    private GridBagConstraints constraints;
+    private final GridBagConstraints constraints;
+    private final Map<String, JTextField> rows;
 
     public InformationPanel(Document document,
                             ResourceBundle messageBundle) {
         // Do some work on information to get display values
+        rows = new HashMap<>(8);
         String title = "";
         String author = "";
         String subject = "";
@@ -111,15 +116,15 @@ public class InformationPanel extends JPanel {
         // add values
         constraints.anchor = GridBagConstraints.NORTHWEST;
         constraints.fill = GridBagConstraints.BOTH;
-        constraints.insets = new Insets(0, 5, 5 ,5);
-        addGB(layoutPanel, createTextField(title, canModify), 1, 0, 1, 1);
-        addGB(layoutPanel, createTextField(subject, canModify), 1, 1, 1, 1);
-        addGB(layoutPanel, createTextField(author, canModify), 1, 2, 1, 1);
-        addGB(layoutPanel, createTextField(keyWords, canModify), 1, 3, 1, 1);
-        addGB(layoutPanel, createTextField(creator, canModify), 1, 4, 1, 1);
-        addGB(layoutPanel, createTextField(producer, canModify), 1, 5, 1, 1);
+        constraints.insets = new Insets(0, 5, 5, 5);
+        addEditableRow(layoutPanel, title, createTextField(title, canModify), 1, 0, 1, 1);
+        addEditableRow(layoutPanel, subject, createTextField(subject, canModify), 1, 1, 1, 1);
+        addEditableRow(layoutPanel, author, createTextField(author, canModify), 1, 2, 1, 1);
+        addEditableRow(layoutPanel, keyWords, createTextField(keyWords, canModify), 1, 3, 1, 1);
+        addEditableRow(layoutPanel, creator, createTextField(creator, canModify), 1, 4, 1, 1);
+        addEditableRow(layoutPanel, producer, createTextField(producer, canModify), 1, 5, 1, 1);
         constraints.fill = GridBagConstraints.NONE;
-        constraints.insets = new Insets(5, 5, 5 ,5);
+        constraints.insets = new Insets(5, 5, 5, 5);
         addGB(layoutPanel, new JLabel(creationDate), 1, 6, 1, 1);
         addGB(layoutPanel, new JLabel(modDate), 1, 7, 1, 1);
         constraints.anchor = GridBagConstraints.NORTH;
@@ -128,10 +133,21 @@ public class InformationPanel extends JPanel {
         addGB(this, layoutPanel, 0, 0, 1, 1);
     }
 
+    Map<String, String> getProperties() {
+        return rows.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getText()));
+    }
+
     private static JTextField createTextField(final String content, final boolean canModify) {
         final JTextField textField = new JTextField(content);
         textField.setEnabled(canModify);
         return textField;
+    }
+
+    private void addEditableRow(JPanel layout, String key, JTextField textField,
+                                int x, int y,
+                                int rowSpan, int colSpan) {
+        addGB(layout, textField, x, y, rowSpan, colSpan);
+        rows.put(key, textField);
     }
 
     private void addGB(JPanel layout, Component component,

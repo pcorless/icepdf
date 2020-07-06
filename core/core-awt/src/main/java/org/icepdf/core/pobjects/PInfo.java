@@ -19,7 +19,9 @@ import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
-import java.util.HashMap;
+import java.util.*;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * <p>This class represents the data stored in a File trailers optional "info"
@@ -45,6 +47,12 @@ public class PInfo extends Dictionary {
     public static final Name CREATIONDATE_KEY = new Name("CreationDate");
     public static final Name MODDATE_KEY = new Name("ModDate");
     public static final Name TRAPPED_KEY = new Name("Trapped");
+
+    private static final Set<Name> ALL_KEYS = new HashSet<>(Arrays.asList(
+            RESOURCES_KEY, TITLE_KEY, AUTHOR_KEY, SUBJECT_KEY, KEYWORDS_KEY, CREATOR_KEY, PRODUCER_KEY,
+            CREATIONDATE_KEY, MODDATE_KEY, TRAPPED_KEY
+    ));
+    private static final Pattern KEYWORD_SPLIT = Pattern.compile("[,;:]\\s?");
 
     // security manager need for decrypting strings.
     private final SecurityManager securityManager;
@@ -83,6 +91,14 @@ public class PInfo extends Dictionary {
             return Utils.convertStringObject(library, text);
         }
         return value;
+    }
+
+    /**
+     * @return All the custom extensions of the document
+     */
+    public Map<Object, Object> getAllCustomExtensions() {
+        return entries.entrySet().stream().filter(e -> !ALL_KEYS.contains(e.getKey())).collect(Collectors.toMap(Map.Entry::getKey,
+                Map.Entry::getValue));
     }
 
     /**
@@ -286,5 +302,74 @@ public class PInfo extends Dictionary {
      */
     public void setTrappingInformation(final String value) {
         setProperty(TRAPPED_KEY, new LiteralStringObject(value));
+    }
+
+    /**
+     * Updates the info with the given Map
+     *
+     * @param values The new values
+     * @return If a value has changed
+     */
+    public boolean update(final Map<String, String> values) {
+        boolean hasChanged = false;
+        final Map<Object, Object> customProps = getAllCustomExtensions();
+        for (final Map.Entry<String, String> entry : values.entrySet()) {
+            final String key = entry.getKey();
+            final String value = entry.getValue();
+            final Name name = new Name(key);
+            if (name.equals(RESOURCES_KEY)) {
+                //TODO
+            } else if (name.equals(TITLE_KEY)) {
+                if (!getTitle().equals(value)) {
+                    setTitle(value);
+                    hasChanged = true;
+                }
+            } else if (name.equals(AUTHOR_KEY)) {
+                if (!getAuthor().equals(value)) {
+                    setAuthor(value);
+                    hasChanged = true;
+                }
+            } else if (name.equals(SUBJECT_KEY)) {
+                if (!getSubject().equals(value)) {
+                    setSubject(value);
+                    hasChanged = true;
+                }
+            } else if (name.equals(KEYWORDS_KEY)) {
+                final String[] keywords = KEYWORD_SPLIT.split(value);
+                if (!getKeywords().equals(String.join(", ", keywords))) {
+                    setKeywords(keywords);
+                    hasChanged = true;
+                }
+            } else if (name.equals(CREATOR_KEY)) {
+                if (!getCreator().equals(value)) {
+                    setCreator(value);
+                    hasChanged = true;
+                }
+            } else if (name.equals(PRODUCER_KEY)) {
+                if (!getProducer().equals(value)) {
+                    setProducer(value);
+                    hasChanged = true;
+                }
+            } else if (name.equals(CREATIONDATE_KEY)) {
+                //TODO
+            } else if (name.equals(MODDATE_KEY)) {
+                //TODO
+            } else if (name.equals(TRAPPED_KEY)) {
+                if (!getTrappingInformation().equals(value)) {
+                    setTrappingInformation(value);
+                    hasChanged = true;
+                }
+            } else {
+                setCustomExtension(key, value);
+            }
+        }
+        if (!getAllCustomExtensions().equals(customProps)) {
+            hasChanged = true;
+        }
+        return hasChanged;
+    }
+
+    private void clearCustomProps() {
+        getAllCustomExtensions().keySet().forEach(k -> entries.remove(k));
     }
 }
