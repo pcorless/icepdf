@@ -19,8 +19,7 @@ import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.HashMap;
 
 /**
  * <p>This class represents the data stored in a File trailers optional "info"
@@ -47,11 +46,8 @@ public class PInfo extends Dictionary {
     public static final Name MODDATE_KEY = new Name("ModDate");
     public static final Name TRAPPED_KEY = new Name("Trapped");
 
-    private static final Set<Name> ALL_KEYS = new HashSet<>(Arrays.asList(RESOURCES_KEY, TITLE_KEY, AUTHOR_KEY,
-            SUBJECT_KEY, KEYWORDS_KEY, CREATOR_KEY, PRODUCER_KEY, CREATIONDATE_KEY, MODDATE_KEY, TRAPPED_KEY));
-
     // security manager need for decrypting strings.
-    private SecurityManager securityManager;
+    private final SecurityManager securityManager;
 
     /**
      * Create a new instance of a <code>PInfo</code> object.
@@ -59,7 +55,7 @@ public class PInfo extends Dictionary {
      * @param library document library
      * @param entries entries for this object dictionary.
      */
-    public PInfo(Library library, HashMap entries) {
+    public PInfo(final Library library, final HashMap entries) {
         super(library, entries);
         securityManager = library.getSecurityManager();
     }
@@ -80,21 +76,13 @@ public class PInfo extends Dictionary {
      * @param name som plug-in extensions name.
      * @return value of the plug-in extension.
      */
-    public Object getCustomExtension(Name name) {
-        Object value = library.getObject(entries, name);
-        if (value != null && value instanceof StringObject) {
-            StringObject text = (StringObject) value;
+    public Object getCustomExtension(final Name name) {
+        final Object value = library.getObject(entries, name);
+        if (value instanceof StringObject) {
+            final StringObject text = (StringObject) value;
             return Utils.convertStringObject(library, text);
         }
         return value;
-    }
-
-    /**
-     * @return All the custom extensions of the document
-     */
-    public Map<Object, Object> getAllCustomExtensions() {
-        return entries.entrySet().stream().filter(e -> !ALL_KEYS.contains(e.getKey())).collect(Collectors.toMap(Map.Entry::getKey,
-                Map.Entry::getValue));
     }
 
     /**
@@ -113,14 +101,7 @@ public class PInfo extends Dictionary {
      * @return the documents title.
      */
     public String getTitle() {
-        Object value = library.getObject(entries, TITLE_KEY);
-        if (value != null && value instanceof StringObject) {
-            StringObject text = (StringObject) value;
-            return Utils.convertStringObject(library, text);
-        } else if (value instanceof String) {
-            return (String) value;
-        }
-        return null;
+        return getString(TITLE_KEY);
     }
 
     /**
@@ -138,14 +119,7 @@ public class PInfo extends Dictionary {
      * @return author name.
      */
     public String getAuthor() {
-        Object value = library.getObject(entries, AUTHOR_KEY);
-        if (value != null && value instanceof StringObject) {
-            StringObject text = (StringObject) value;
-            return Utils.convertStringObject(library, text);
-        } else if (value instanceof String) {
-            return (String) value;
-        }
-        return null;
+        return getString(AUTHOR_KEY);
     }
 
     /**
@@ -163,14 +137,7 @@ public class PInfo extends Dictionary {
      * @return documents subject.
      */
     public String getSubject() {
-        Object value = library.getObject(entries, SUBJECT_KEY);
-        if (value != null && value instanceof StringObject) {
-            StringObject text = (StringObject) value;
-            return Utils.convertStringObject(library, text);
-        } else if (value instanceof String) {
-            return (String) value;
-        }
-        return null;
+        return getString(SUBJECT_KEY);
     }
 
     /**
@@ -188,14 +155,7 @@ public class PInfo extends Dictionary {
      * @return documents keywords.
      */
     public String getKeywords() {
-        Object value = library.getObject(entries, KEYWORDS_KEY);
-        if (value != null && value instanceof StringObject) {
-            StringObject text = (StringObject) value;
-            return Utils.convertStringObject(library, text);
-        } else if (value instanceof String) {
-            return (String) value;
-        }
-        return null;
+        return getString(KEYWORDS_KEY);
     }
 
     /**
@@ -214,14 +174,7 @@ public class PInfo extends Dictionary {
      * @return creator name.
      */
     public String getCreator() {
-        Object value = library.getObject(entries, CREATOR_KEY);
-        if (value != null && value instanceof StringObject) {
-            StringObject text = (StringObject) value;
-            return Utils.convertStringObject(library, text);
-        } else if (value instanceof String) {
-            return (String) value;
-        }
-        return null;
+        return getString(CREATOR_KEY);
     }
 
     /**
@@ -240,14 +193,7 @@ public class PInfo extends Dictionary {
      * @return producer name.
      */
     public String getProducer() {
-        Object value = library.getObject(entries, PRODUCER_KEY);
-        if (value != null && value instanceof StringObject) {
-            StringObject text = (StringObject) value;
-            return Utils.convertStringObject(library, text);
-        } else if (value instanceof String) {
-            return (String) value;
-        }
-        return null;
+        return getString(PRODUCER_KEY);
     }
 
     /**
@@ -265,9 +211,9 @@ public class PInfo extends Dictionary {
      * @return creation date.
      */
     public PDate getCreationDate() {
-        Object value = library.getObject(entries, CREATIONDATE_KEY);
-        if (value != null && value instanceof StringObject) {
-            StringObject text = (StringObject) value;
+        final Object value = library.getObject(entries, CREATIONDATE_KEY);
+        if (value instanceof StringObject) {
+            final StringObject text = (StringObject) value;
             return new PDate(securityManager, text.getDecryptedLiteralString(securityManager));
         }
         return null;
@@ -288,9 +234,9 @@ public class PInfo extends Dictionary {
      * @return modification date.
      */
     public PDate getModDate() {
-        Object value = library.getObject(entries, MODDATE_KEY);
-        if (value != null && value instanceof StringObject) {
-            StringObject text = (StringObject) value;
+        final Object value = library.getObject(entries, MODDATE_KEY);
+        if (value instanceof StringObject) {
+            final StringObject text = (StringObject) value;
             return new PDate(securityManager, text.getDecryptedLiteralString(securityManager));
         }
         return null;
@@ -319,9 +265,13 @@ public class PInfo extends Dictionary {
      * @return trapped name.
      */
     public String getTrappingInformation() {
-        Object value = library.getObject(entries, TRAPPED_KEY);
-        if (value != null && value instanceof StringObject) {
-            StringObject text = (StringObject) value;
+        return getString(TRAPPED_KEY);
+    }
+
+    private String getString(final Name key) {
+        final Object value = library.getObject(entries, key);
+        if (value instanceof StringObject) {
+            final StringObject text = (StringObject) value;
             return Utils.convertStringObject(library, text);
         } else if (value instanceof String) {
             return (String) value;
