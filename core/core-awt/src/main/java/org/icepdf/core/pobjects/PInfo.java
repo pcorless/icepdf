@@ -313,6 +313,7 @@ public class PInfo extends Dictionary {
     public boolean update(final Map<String, String> values) {
         boolean hasChanged = false;
         final Map<Object, Object> customProps = getAllCustomExtensions();
+        clearCustomProps();
         for (final Map.Entry<String, String> entry : values.entrySet()) {
             final String key = entry.getKey();
             final String value = entry.getValue();
