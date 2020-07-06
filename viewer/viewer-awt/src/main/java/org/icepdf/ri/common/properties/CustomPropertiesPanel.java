@@ -10,6 +10,9 @@ import org.icepdf.core.util.Utils;
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.util.List;
 import java.util.*;
@@ -20,18 +23,22 @@ public class CustomPropertiesPanel extends JPanel {
     // layouts constraint
     private final GridBagConstraints constraints;
     private final Map<JTextField, JTextField> rows;
+    private final PropertiesDialog dialog;
+    private final Set<JTextField> invalids;
 
     public CustomPropertiesPanel(final Document document,
-                                 final ResourceBundle messageBundle) {
+                                 final ResourceBundle messageBundle,
+                                 final PropertiesDialog dialog) {
+        this.dialog = dialog;
         // get information values if available
         final PInfo documentInfo = document.getInfo();
         constraints = new GridBagConstraints();
         rows = new HashMap<>();
+        invalids = new HashSet<>();
         if (documentInfo != null) {
 
             setLayout(new GridBagLayout());
             setAlignmentY(JPanel.TOP_ALIGNMENT);
-
 
             constraints.fill = GridBagConstraints.NONE;
             constraints.weightx = 1.0;
@@ -80,7 +87,8 @@ public class CustomPropertiesPanel extends JPanel {
     }
 
     Map<String, String> getProperties() {
-        return rows.entrySet().stream().collect(Collectors.toMap(e -> e.getKey().getText(), e -> e.getValue().getText()));
+        return rows.entrySet().stream().filter(e -> e.getKey().getText() != null && !e.getKey().getText().isEmpty())
+                .collect(Collectors.toMap(e -> e.getKey().getText().trim(), e -> e.getValue().getText()));
     }
 
     private void addRow(final JPanel layoutPanel, final JTextField keyField, final JTextField valueField,
@@ -104,7 +112,41 @@ public class CustomPropertiesPanel extends JPanel {
 
     private void addRow(final JPanel layoutPanel, final String key, final String value, final boolean canModify,
                         final int index) {
-        addRow(layoutPanel, createTextField(key, canModify), createTextField(value, canModify), canModify ?
+        final JTextField keyField = createTextField(key, canModify);
+        keyField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(final DocumentEvent documentEvent) {
+                verifyInput();
+            }
+
+            @Override
+            public void removeUpdate(final DocumentEvent documentEvent) {
+                verifyInput();
+            }
+
+            @Override
+            public void changedUpdate(final DocumentEvent documentEvent) {
+                verifyInput();
+            }
+
+            private void verifyInput() {
+                final String input = keyField.getText().trim();
+                final Set<String> allKeys = PInfo.ALL_COMMON_KEYS.stream().map(Name::getName)
+                        .collect(Collectors.toSet());
+                allKeys.addAll(rows.keySet().stream().filter(t -> t != keyField).map(JTextComponent::getText)
+                        .collect(Collectors.toList()));
+                final boolean isValid = input.isEmpty() || !allKeys.contains(input);
+                keyField.setForeground(isValid ? Color.BLACK : Color.RED);
+                if (isValid) {
+                    invalids.remove(keyField);
+                } else {
+                    invalids.add(keyField);
+                }
+                dialog.setOkEnabled(invalids.isEmpty());
+            }
+
+        });
+        addRow(layoutPanel, keyField, createTextField(value, canModify), canModify ?
                 createDeleteButton(layoutPanel, index) : null, index);
     }
 
@@ -115,7 +157,9 @@ public class CustomPropertiesPanel extends JPanel {
             for (int j = index * 3; j < index * 3 + 3; ++j) {
                 layoutPanel.remove(components[j]);
             }
-            rows.remove(components[index * 3]);
+            final JTextField keyField = (JTextField) components[index * 3];
+            rows.remove(keyField);
+            invalids.remove(keyField);
             final List<Component> toShift = Arrays.asList(Arrays.copyOfRange(components, index * 3 + 3,
                     components.length));
             toShift.forEach(layoutPanel::remove);
@@ -129,13 +173,6 @@ public class CustomPropertiesPanel extends JPanel {
             layoutPanel.revalidate();
         });
         return deleteButton;
-    }
-
-    private void addDeleteButton(final JPanel layoutPanel, final int index) {
-        constraints.weightx = 0.25;
-        constraints.anchor = GridBagConstraints.NORTHEAST;
-        final JButton deleteButton = createDeleteButton(layoutPanel, index);
-        addGB(layoutPanel, deleteButton, 2, index, 1, 1);
     }
 
     private static String objToString(final Object object, final Document document) {

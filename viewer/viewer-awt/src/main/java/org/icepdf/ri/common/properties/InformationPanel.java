@@ -117,12 +117,12 @@ public class InformationPanel extends JPanel {
         constraints.anchor = GridBagConstraints.NORTHWEST;
         constraints.fill = GridBagConstraints.BOTH;
         constraints.insets = new Insets(0, 5, 5, 5);
-        addEditableRow(layoutPanel, title, createTextField(title, canModify), 1, 0, 1, 1);
-        addEditableRow(layoutPanel, subject, createTextField(subject, canModify), 1, 1, 1, 1);
-        addEditableRow(layoutPanel, author, createTextField(author, canModify), 1, 2, 1, 1);
-        addEditableRow(layoutPanel, keyWords, createTextField(keyWords, canModify), 1, 3, 1, 1);
-        addEditableRow(layoutPanel, creator, createTextField(creator, canModify), 1, 4, 1, 1);
-        addEditableRow(layoutPanel, producer, createTextField(producer, canModify), 1, 5, 1, 1);
+        addEditableRow(layoutPanel, PInfo.TITLE_KEY.getName(), createTextField(title, canModify), 1, 0, 1, 1);
+        addEditableRow(layoutPanel, PInfo.SUBJECT_KEY.getName(), createTextField(subject, canModify), 1, 1, 1, 1);
+        addEditableRow(layoutPanel, PInfo.AUTHOR_KEY.getName(), createTextField(author, canModify), 1, 2, 1, 1);
+        addEditableRow(layoutPanel, PInfo.KEYWORDS_KEY.getName(), createTextField(keyWords, canModify), 1, 3, 1, 1);
+        addEditableRow(layoutPanel, PInfo.CREATOR_KEY.getName(), createTextField(creator, canModify), 1, 4, 1, 1);
+        addEditableRow(layoutPanel, PInfo.PRODUCER_KEY.getName(), createTextField(producer, canModify), 1, 5, 1, 1);
         constraints.fill = GridBagConstraints.NONE;
         constraints.insets = new Insets(5, 5, 5, 5);
         addGB(layoutPanel, new JLabel(creationDate), 1, 6, 1, 1);

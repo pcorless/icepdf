@@ -35,21 +35,21 @@ import java.util.ResourceBundle;
 public class PropertiesDialog extends EscapeJDialog {
 
     // layouts constraint
-    private GridBagConstraints constraints;
+    private final GridBagConstraints constraints;
 
-    private FontPanel fontPanel;
+    private final JButton okButton;
 
-    public PropertiesDialog(JFrame frame, SwingController controller,
-                            ResourceBundle messageBundle) {
+    public PropertiesDialog(final JFrame frame, final SwingController controller,
+                            final ResourceBundle messageBundle) {
         super(frame, true);
 
-        Document document = controller.getDocument();
+        final Document document = controller.getDocument();
 
         setTitle(messageBundle.getString("viewer.dialog.documentProperties.tab.title"));
 
         // Create GUI elements
 
-        JTabbedPane propertiesTabbedPane = new JTabbedPane();
+        final JTabbedPane propertiesTabbedPane = new JTabbedPane();
         propertiesTabbedPane.setAlignmentY(JPanel.TOP_ALIGNMENT);
 
         // build the description
@@ -64,16 +64,16 @@ public class PropertiesDialog extends EscapeJDialog {
                 new PermissionsPanel(document, messageBundle));
 
         // build out the fonts tab.
-        fontPanel = new FontPanel(controller);
+        final FontPanel fontPanel = new FontPanel(controller);
         addWindowListener(fontPanel);
         propertiesTabbedPane.addTab(
                 messageBundle.getString("viewer.dialog.documentProperties.tab.fonts"),
                 fontPanel);
 
         // build out custom properties panel
-        final CustomPropertiesPanel customPanel = new CustomPropertiesPanel(document, messageBundle);
+        final CustomPropertiesPanel customPanel = new CustomPropertiesPanel(document, messageBundle, this);
         propertiesTabbedPane.addTab("Custom", customPanel);
-        JPanel layoutPanel = new JPanel(new GridBagLayout());
+        final JPanel layoutPanel = new JPanel(new GridBagLayout());
 
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.BOTH;
@@ -93,14 +93,15 @@ public class PropertiesDialog extends EscapeJDialog {
             setVisible(false);
             dispose();
         });
-        final JButton okButton = new JButton(messageBundle.getString("viewer.button.ok.label"));
+        okButton = new JButton(messageBundle.getString("viewer.button.ok.label"));
         okButton.setMnemonic(messageBundle.getString("viewer.button.ok.mnemonic").charAt(0));
         okButton.addActionListener(e -> {
             if (e.getSource() == okButton) {
                 final Map<String, String> allProperties = infoPanel.getProperties();
                 allProperties.putAll(customPanel.getProperties());
                 if (document.getInfo().update(allProperties)) {
-                    document.getStateManager().addChange(new PObject(document.getInfo(), document.getInfo().getPObjectReference()));
+                    document.getStateManager().addChange(new PObject(document.getInfo().getEntries(),
+                            document.getInfo().getPObjectReference()));
                 }
                 setVisible(false);
                 dispose();
@@ -116,9 +117,13 @@ public class PropertiesDialog extends EscapeJDialog {
         setLocationRelativeTo(frame);
     }
 
-    private void addGB(JPanel layout, Component component,
-                       int x, int y,
-                       int rowSpan, int colSpan) {
+    void setOkEnabled(final boolean enabled) {
+        okButton.setEnabled(enabled);
+    }
+
+    private void addGB(final JPanel layout, final Component component,
+                       final int x, final int y,
+                       final int rowSpan, final int colSpan) {
         constraints.gridx = x;
         constraints.gridy = y;
         constraints.gridwidth = rowSpan;

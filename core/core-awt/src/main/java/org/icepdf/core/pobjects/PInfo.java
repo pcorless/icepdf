@@ -48,7 +48,7 @@ public class PInfo extends Dictionary {
     public static final Name MODDATE_KEY = new Name("ModDate");
     public static final Name TRAPPED_KEY = new Name("Trapped");
 
-    private static final Set<Name> ALL_KEYS = new HashSet<>(Arrays.asList(
+    public static final Set<Name> ALL_COMMON_KEYS = new HashSet<>(Arrays.asList(
             RESOURCES_KEY, TITLE_KEY, AUTHOR_KEY, SUBJECT_KEY, KEYWORDS_KEY, CREATOR_KEY, PRODUCER_KEY,
             CREATIONDATE_KEY, MODDATE_KEY, TRAPPED_KEY
     ));
@@ -97,7 +97,7 @@ public class PInfo extends Dictionary {
      * @return All the custom extensions of the document
      */
     public Map<Object, Object> getAllCustomExtensions() {
-        return entries.entrySet().stream().filter(e -> !ALL_KEYS.contains(e.getKey())).collect(Collectors.toMap(Map.Entry::getKey,
+        return entries.entrySet().stream().filter(e -> !ALL_COMMON_KEYS.contains(e.getKey())).collect(Collectors.toMap(Map.Entry::getKey,
                 Map.Entry::getValue));
     }
 
@@ -107,8 +107,8 @@ public class PInfo extends Dictionary {
      * @param key   The name of the property
      * @param value The value
      */
-    public void setCustomExtension(final String key, final Object value) {
-        setProperty(new Name(key), value);
+    public void setCustomExtension(final String key, final String value) {
+        setProperty(new Name(key), new LiteralStringObject(value));
     }
 
     /**
@@ -321,33 +321,33 @@ public class PInfo extends Dictionary {
             if (name.equals(RESOURCES_KEY)) {
                 //TODO
             } else if (name.equals(TITLE_KEY)) {
-                if (!getTitle().equals(value)) {
+                if (!isEmptyOrNullEqual(value, getTitle())) {
                     setTitle(value);
                     hasChanged = true;
                 }
             } else if (name.equals(AUTHOR_KEY)) {
-                if (!getAuthor().equals(value)) {
+                if (!isEmptyOrNullEqual(value, getAuthor())) {
                     setAuthor(value);
                     hasChanged = true;
                 }
             } else if (name.equals(SUBJECT_KEY)) {
-                if (!getSubject().equals(value)) {
+                if (!isEmptyOrNullEqual(value, getSubject())) {
                     setSubject(value);
                     hasChanged = true;
                 }
             } else if (name.equals(KEYWORDS_KEY)) {
                 final String[] keywords = KEYWORD_SPLIT.split(value);
-                if (!getKeywords().equals(String.join(", ", keywords))) {
+                if (!isEmptyOrNullEqual(String.join(", ", keywords), getKeywords())) {
                     setKeywords(keywords);
                     hasChanged = true;
                 }
             } else if (name.equals(CREATOR_KEY)) {
-                if (!getCreator().equals(value)) {
+                if (!isEmptyOrNullEqual(value, getCreator())) {
                     setCreator(value);
                     hasChanged = true;
                 }
             } else if (name.equals(PRODUCER_KEY)) {
-                if (!getProducer().equals(value)) {
+                if (!isEmptyOrNullEqual(value, getProducer())) {
                     setProducer(value);
                     hasChanged = true;
                 }
@@ -356,7 +356,7 @@ public class PInfo extends Dictionary {
             } else if (name.equals(MODDATE_KEY)) {
                 //TODO
             } else if (name.equals(TRAPPED_KEY)) {
-                if (!getTrappingInformation().equals(value)) {
+                if (!isEmptyOrNullEqual(value, getTrappingInformation())) {
                     setTrappingInformation(value);
                     hasChanged = true;
                 }
@@ -364,10 +364,40 @@ public class PInfo extends Dictionary {
                 setCustomExtension(key, value);
             }
         }
-        if (!getAllCustomExtensions().equals(customProps)) {
+        if (!mapEquals(customProps, getAllCustomExtensions())) {
             hasChanged = true;
         }
         return hasChanged;
+    }
+
+    private static boolean mapEquals(final Map<Object, Object> first, final Map<Object, Object> second) {
+        if (first.size() != second.size()) {
+            return false;
+        }
+        for (final Map.Entry<Object, Object> entry : first.entrySet()) {
+            final Object key = entry.getKey();
+            final Object value = entry.getValue();
+            if (!second.containsKey(key)) {
+                return false;
+            } else {
+                final Object secondValue = second.get(key);
+                if (!value.equals(secondValue)) {
+                    if (value instanceof LiteralStringObject && secondValue instanceof LiteralStringObject) {
+                        if (!((LiteralStringObject) value).getLiteralString().equals(((LiteralStringObject) secondValue).getLiteralString())) {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    private static boolean isEmptyOrNullEqual(final String first, final String second) {
+        return (first == null && second == null) ||
+                (first == null && second.isEmpty()) ||
+                (first != null && first.isEmpty() && second == null) ||
+                (Objects.equals(first, second));
     }
 
     private void clearCustomProps() {
