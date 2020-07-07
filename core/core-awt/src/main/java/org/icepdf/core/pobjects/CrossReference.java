@@ -77,7 +77,7 @@ public class CrossReference {
     public int getNextAvailableReferenceNumber() {
         List<Integer> objectNumbers = Collections.list(hObjectNumber2Entry.keys());
         Collections.sort(objectNumbers);
-        return objectNumbers.isEmpty() ? 0 : objectNumbers.get(objectNumbers.size() - 1) + 1;
+        return objectNumbers.isEmpty() ? 1 : objectNumbers.get(objectNumbers.size() - 1) + 1;
     }
 
     /**
