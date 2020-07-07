@@ -17,8 +17,8 @@ package org.icepdf.core.util;
 
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.io.*;
-import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Font;
@@ -1113,11 +1113,11 @@ public class Parser {
         boolean isDecimal = false;
         byte[] streamBytes = value.toString().getBytes();
         int startTokenPos = 0;
-        boolean singed = streamBytes[startTokenPos] == '-';
+        boolean signed = streamBytes[startTokenPos] == '-';
         boolean positive = streamBytes[startTokenPos] == '+';
-        startTokenPos = singed || positive ? startTokenPos + 1 : startTokenPos;
+        startTokenPos = signed || positive ? startTokenPos + 1 : startTokenPos;
         // check for  double sign, thanks oracle forms!
-        if (singed && streamBytes[startTokenPos] == '-') {
+        if (signed && startTokenPos < streamBytes.length && streamBytes[startTokenPos] == '-') {
             startTokenPos++;
         }
         int current;
@@ -1136,7 +1136,7 @@ public class Parser {
                 break;
             }
         }
-        if (singed) {
+        if (signed) {
             if (isDecimal) {
                 return -(digit + decimal);
             } else {
