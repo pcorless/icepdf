@@ -301,6 +301,7 @@ public class SwingController extends ComponentAdapter
             SwingController.messageBundle = ResourceBundle.getBundle(
                     ViewerPropertiesManager.DEFAULT_MESSAGE_BUNDLE);
         }
+        new Thread(PrintHelper::preparePrintServices).start();
     }
 
     /**

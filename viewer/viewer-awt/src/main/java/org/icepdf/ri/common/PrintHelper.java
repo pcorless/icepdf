@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.AccessControlException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -389,7 +390,7 @@ public class PrintHelper implements Printable {
                 // auto rotation for landscape.
 //            (pageHeight > pageFormat.getImageableWidth() &&
 //                pageFormat.getOrientation() == PageFormat.LANDSCAPE )
-                    ) {
+            ) {
                 // rotate clockwise 90 degrees
                 isDefaultRotation = false;
                 rotation -= 90;
@@ -586,25 +587,35 @@ public class PrintHelper implements Printable {
         }
     }
 
-    private PrintService[] lookForPrintServices() {
-        PrintService[] services = PrintServiceLookup.lookupPrintServices(
-                DocFlavor.SERVICE_FORMATTED.PRINTABLE, null);
-        // List of printer found services.
-        java.util.List<PrintService> list = new ArrayList<>();
-        // check for a default service and make sure it is at index 0. the lookupPrintServices does not
-        // aways put the default printer first in the array.
-        PrintService defaultService = lookupDefaultPrintService();
-        if (defaultService != null && services.length > 0) {
-            for (PrintService printService : services) {
-                if (printService.equals(defaultService)) {
-                    // found the default printer, now swap it with the first index.
-                    list.add(0, printService);
-                } else {
-                    list.add(printService);
+    public static void preparePrintServices() {
+        services = lookForPrintServices();
+    }
+
+    private static synchronized PrintService[] lookForPrintServices() {
+        if (services != null) {
+            return services;
+        } else {
+            PrintService[] services = PrintServiceLookup.lookupPrintServices(
+                    DocFlavor.SERVICE_FORMATTED.PRINTABLE, null);
+            // List of printer found services.
+            java.util.List<PrintService> list = new ArrayList<>();
+            // check for a default service and make sure it is at index 0. the lookupPrintServices does not
+            // aways put the default printer first in the array.
+            PrintService defaultService = lookupDefaultPrintService();
+            if (defaultService != null && services.length > 0) {
+                for (PrintService printService : services) {
+                    if (printService.equals(defaultService)) {
+                        // found the default printer, now swap it with the first index.
+                        list.add(0, printService);
+                    } else {
+                        list.add(printService);
+                    }
                 }
+            } else {
+                list = Arrays.asList(services);
             }
+            return list.toArray(new PrintService[0]);
         }
-        return list.toArray(new PrintService[0]);
     }
 
     /**
