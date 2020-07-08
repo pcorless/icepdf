@@ -546,7 +546,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         // reload the tree model
         refreshTree(commentTree);
         if (!isIRT) {
-            selectedMarkupAnnotation=parentAnnotation;
+            selectedMarkupAnnotation = parentAnnotation;
             commentTreeScrollPane.setVisible(false);
         }
         commentPanel.revalidate();
@@ -1156,9 +1156,9 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         }
     }
 
-    static class MarkupAnnotationTreeNode extends DefaultMutableTreeNode {
+    private static class MarkupAnnotationTreeNode extends DefaultMutableTreeNode {
 
-        MarkupAnnotationTreeNode(MarkupAnnotation annot) {
+        private MarkupAnnotationTreeNode(MarkupAnnotation annot) {
             super(annot);
         }
 
