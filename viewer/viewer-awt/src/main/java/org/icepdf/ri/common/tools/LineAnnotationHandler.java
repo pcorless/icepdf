@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.tools;
 
+import org.icepdf.core.SystemProperties;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.annotations.Annotation;
@@ -200,7 +201,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         // setup the markup properties.
         annotation.setContents(annotation.getSubType().toString());
         annotation.setCreationDate(PDate.formatDateTime(new Date()));
-        annotation.setTitleText(System.getProperty("user.name"));
+        annotation.setTitleText(SystemProperties.USER_NAME);
 
         // pass outline shapes and bounds to create the highlight shapes
         annotation.setBBox(tBbox);

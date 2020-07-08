@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common;
 
+import org.icepdf.core.SystemProperties;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReferenceFactory;
@@ -308,7 +309,7 @@ public class SwingViewBuilder {
     private static boolean isDemo;
 
     static {
-        isMacOs = Defs.sysProperty("os.name").contains("OS X");
+        isMacOs = SystemProperties.OS_NAME.contains("OS X");
         // check for demo system property
         isDemo = Defs.sysPropertyBoolean("org.icepdf.ri.viewer.demo", false);
     }
@@ -1609,7 +1610,7 @@ public class SwingViewBuilder {
                 ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_TEXT)) {
             addToToolBar(toolbar, buildTextAnnotationToolButton(iconSize));
         }
-        if (propertiesManager.checkAndStoreBooleanProperty(
+        if (SystemProperties.PRIVATE_PROPERTY_ENABLED && propertiesManager.checkAndStoreBooleanProperty(
                 ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_PERMISSION)) {
             addToToolBar(toolbar, buildAnnotationPermissionCombBox());
         }

@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.tools;
 
+import org.icepdf.core.SystemProperties;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
@@ -167,7 +168,7 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
 
         checkAndApplyPreferences();
         annotation.setCreationDate(PDate.formatDateTime(new Date()));
-        annotation.setTitleText(System.getProperty("user.name"));
+        annotation.setTitleText(SystemProperties.USER_NAME);
         annotation.setColor(inkColor);
         annotation.setBorderStyle(borderStyle);
         annotation.setInkPath(tInkPath);

@@ -28,6 +28,8 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 
+import static org.icepdf.core.SystemProperties.PRIVATE_PROPERTY_ENABLED;
+
 /**
  * AnnotationCellRender takes care of building a tree node's appearance for annotation nodes.  If an annotation type
  * is not supported by the editing tools an icon for the note is set to null.
@@ -247,7 +249,7 @@ public class AnnotationCellRender extends DefaultTreeCellRenderer {
             setClosedIcon(new ImageIcon(Images.get("page.gif")));
             setLeafIcon(new ImageIcon(Images.get("page.gif")));
         }
-        if (MarkupAnnotationPanel.PRIVATE_PROPERTY_ENABLED && annotation != null) {
+        if (PRIVATE_PROPERTY_ENABLED && annotation != null) {
             final ImageIcon privateIcon;
             privateIcon = annotation.getFlagPrivateContents() ?
                     new ImageIcon(Images.get("lock_16.png")) :

@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.tools;
 
+import org.icepdf.core.SystemProperties;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.PObject;
@@ -117,7 +118,7 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
                         Annotation.SUBTYPE_TEXT,
                         bbox);
         textAnnotation.setCreationDate(PDate.formatDateTime(new Date()));
-        textAnnotation.setTitleText(System.getProperty("user.name"));
+        textAnnotation.setTitleText(SystemProperties.USER_NAME);
         textAnnotation.setContents("");
 
 

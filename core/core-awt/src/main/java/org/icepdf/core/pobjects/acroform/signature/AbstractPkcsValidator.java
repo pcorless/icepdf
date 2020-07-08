@@ -21,6 +21,7 @@ import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.tsp.TimeStampToken;
+import org.icepdf.core.SystemProperties;
 import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
@@ -55,8 +56,8 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
     private static String caCertLocation = "/lib/security/cacerts";
 
     static {
-        String javaHome = Defs.sysProperty("java.home");
-        caCertLocation = Defs.sysProperty("org.icepdf.core.signatures.caCertPath", javaHome + caCertLocation);
+        caCertLocation = Defs.sysProperty("org.icepdf.core.signatures.caCertPath",
+                SystemProperties.JAVA_HOME + caCertLocation);
     }
 
     // data object descriptor codes.
