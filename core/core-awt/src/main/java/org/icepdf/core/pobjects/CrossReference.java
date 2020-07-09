@@ -75,9 +75,11 @@ public class CrossReference {
     }
 
     public int getNextAvailableReferenceNumber() {
-        List<Integer> objectNumbers = Collections.list(hObjectNumber2Entry.keys());
+        final List<Integer> objectNumbers = new ArrayList<>(hObjectNumber2Entry.keySet());
         Collections.sort(objectNumbers);
-        return objectNumbers.get(objectNumbers.size() - 1) + 1;
+        final int nextNumber = objectNumbers.isEmpty() ? 1 : objectNumbers.get(objectNumbers.size() - 1) + 1;
+        final int peerMax = xrefPeer != null ? Math.max(nextNumber, xrefPeer.getNextAvailableReferenceNumber()) : nextNumber;
+        return xrefPrevious != null ? Math.max(peerMax, xrefPrevious.getNextAvailableReferenceNumber()) : peerMax;
     }
 
     /**
