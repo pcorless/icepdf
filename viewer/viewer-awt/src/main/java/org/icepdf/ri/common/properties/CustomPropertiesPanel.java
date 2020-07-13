@@ -28,11 +28,13 @@ public class CustomPropertiesPanel extends JPanel {
     private final Map<JTextField, JTextField> rows;
     private final PropertiesDialog dialog;
     private final Set<JTextField> invalids;
+    private final ResourceBundle messageBundle;
 
     public CustomPropertiesPanel(final Document document,
                                  final ResourceBundle messageBundle,
                                  final PropertiesDialog dialog) {
         this.dialog = dialog;
+        this.messageBundle = messageBundle;
         // get information values if available
         final PInfo documentInfo = document.getInfo();
         constraints = new GridBagConstraints();
@@ -68,7 +70,8 @@ public class CustomPropertiesPanel extends JPanel {
             if (canModify) {
                 constraints.fill = GridBagConstraints.NONE;
                 constraints.anchor = GridBagConstraints.CENTER;
-                final JButton addButton = new JButton("Add");
+                final JButton addButton = new JButton(messageBundle.getString("viewer.dialog.documentProperties.tab" +
+                        ".custom.button.add"));
                 addButton.addActionListener(e -> {
                     layoutPanel.remove(addButton);
                     final int i = layoutPanel.getComponentCount() / 3;
@@ -157,7 +160,8 @@ public class CustomPropertiesPanel extends JPanel {
     }
 
     private JButton createDeleteButton(final JPanel layoutPanel, final int index) {
-        final JButton deleteButton = new JButton("Delete");
+        final JButton deleteButton = new JButton(messageBundle.getString("viewer.dialog.documentProperties.tab" +
+                ".custom.button.delete"));
         deleteButton.addActionListener(e -> {
             final Component[] components = layoutPanel.getComponents();
             final int startIdx = index * 3;

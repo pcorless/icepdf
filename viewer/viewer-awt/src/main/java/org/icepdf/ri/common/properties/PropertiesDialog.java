@@ -72,7 +72,7 @@ public class PropertiesDialog extends EscapeJDialog {
 
         // build out custom properties panel
         final CustomPropertiesPanel customPanel = new CustomPropertiesPanel(document, messageBundle, this);
-        propertiesTabbedPane.addTab("Custom", customPanel);
+        propertiesTabbedPane.addTab(messageBundle.getString("viewer.dialog.documentProperties.tab.custom"), customPanel);
         final JPanel layoutPanel = new JPanel(new GridBagLayout());
 
         constraints = new GridBagConstraints();
