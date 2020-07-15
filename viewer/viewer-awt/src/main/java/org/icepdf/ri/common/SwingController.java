@@ -1572,6 +1572,7 @@ public class SwingController extends ComponentAdapter
 
         // menu items.
         setEnabled(closeMenuItem, opened);
+        setEnabled(saveFileMenuItem, opened);
         setEnabled(saveAsFileMenuItem, opened);
         setEnabled(exportTextMenuItem, opened && canExtract && !pdfCollection);
         setEnabled(propertiesMenuItem, opened);
