@@ -30,8 +30,8 @@ import java.awt.*;
 import java.awt.geom.*;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -1575,7 +1575,11 @@ public abstract class Annotation extends Dictionary {
                 width, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
                 10.0f, dashArray, 0.0f);
         g.setStroke(stroke);
-        g.draw(jrect);
+        try {
+            g.draw(jrect);
+        } catch (final InternalError e) {
+            logger.log(Level.FINE, e, () -> "Couldn't draw " + this);
+        }
     }
 
     /**
