@@ -15,11 +15,11 @@
  */
 package org.icepdf.core.pobjects.fonts;
 
-import org.icepdf.core.SystemProperties;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.ofont.OFont;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.SystemProperties;
 
 import java.io.File;
 import java.io.IOException;

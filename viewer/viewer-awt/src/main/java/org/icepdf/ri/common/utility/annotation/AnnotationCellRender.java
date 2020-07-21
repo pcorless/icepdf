@@ -18,7 +18,6 @@ package org.icepdf.ri.common.utility.annotation;
 import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.ri.common.CompoundIcon;
 import org.icepdf.ri.common.ImageColorIcon;
-import org.icepdf.ri.common.utility.annotation.markup.MarkupAnnotationPanel;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
@@ -28,7 +27,7 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 
-import static org.icepdf.core.SystemProperties.PRIVATE_PROPERTY_ENABLED;
+import static org.icepdf.core.util.SystemProperties.PRIVATE_PROPERTY_ENABLED;
 
 /**
  * AnnotationCellRender takes care of building a tree node's appearance for annotation nodes.  If an annotation type

@@ -15,10 +15,9 @@
  */
 package org.icepdf.core.util.content;
 
-import org.icepdf.core.SystemProperties;
 import org.icepdf.core.pobjects.Resources;
-import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.SystemProperties;
 
 import java.lang.reflect.Constructor;
 import java.util.logging.Level;

@@ -15,12 +15,12 @@
  */
 package org.icepdf.ri.viewer;
 
-import org.icepdf.core.SystemProperties;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.util.FontPropertiesManager;
-import org.icepdf.ri.util.ViewerPropertiesManager;
 import org.icepdf.ri.util.URLAccess;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import java.text.MessageFormat;

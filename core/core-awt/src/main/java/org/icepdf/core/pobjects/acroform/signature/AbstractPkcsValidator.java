@@ -21,7 +21,6 @@ import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.tsp.TimeStampToken;
-import org.icepdf.core.SystemProperties;
 import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
@@ -32,6 +31,7 @@ import org.icepdf.core.pobjects.acroform.signature.exceptions.RevocationVerifica
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SelfSignedVerificationException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.SystemProperties;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;

@@ -15,13 +15,13 @@
  */
 package org.icepdf.ri.common.utility.annotation.markup;
 
-import org.icepdf.core.SystemProperties;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.AbstractTask;
 import org.icepdf.ri.common.DragDropColorList;
 import org.icepdf.ri.common.views.Controller;
@@ -32,14 +32,14 @@ import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.icepdf.core.SystemProperties.PRIVATE_PROPERTY_ENABLED;
+import static org.icepdf.core.util.SystemProperties.PRIVATE_PROPERTY_ENABLED;
 
 public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
 

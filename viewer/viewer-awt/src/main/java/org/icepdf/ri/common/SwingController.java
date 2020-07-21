@@ -16,7 +16,6 @@
 package org.icepdf.ri.common;
 
 import org.icepdf.core.SecurityCallback;
-import org.icepdf.core.SystemProperties;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.io.SizeInputStream;
@@ -27,10 +26,7 @@ import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.search.DocumentSearchController;
-import org.icepdf.core.util.Defs;
-import org.icepdf.core.util.Library;
-import org.icepdf.core.util.PropertyConstants;
-import org.icepdf.core.util.Utils;
+import org.icepdf.core.util.*;
 import org.icepdf.ri.common.preferences.PreferencesDialog;
 import org.icepdf.ri.common.properties.FontDialog;
 import org.icepdf.ri.common.properties.InformationDialog;

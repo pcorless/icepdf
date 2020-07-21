@@ -15,9 +15,7 @@
  */
 package org.icepdf.ri.common.utility.annotation.markup;
 
-import org.icepdf.core.SystemProperties;
 import org.icepdf.core.pobjects.annotations.*;
-import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.*;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
@@ -42,7 +40,7 @@ import java.util.prefs.Preferences;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import static org.icepdf.core.SystemProperties.PRIVATE_PROPERTY_ENABLED;
+import static org.icepdf.core.util.SystemProperties.PRIVATE_PROPERTY_ENABLED;
 import static org.icepdf.ri.util.ViewerPropertiesManager.PROPERTY_SEARCH_MARKUP_PANEL_CASE_SENSITIVE_ENABLED;
 import static org.icepdf.ri.util.ViewerPropertiesManager.PROPERTY_SEARCH_MARKUP_PANEL_REGEX_ENABLED;
 

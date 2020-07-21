@@ -98,7 +98,6 @@ public final class BlendComposite implements Composite {
     private static boolean disableBlendComposite;
 
     static {
-        // sets the shadow colour of the decorator.
         disableBlendComposite = Defs.booleanProperty(
                 "org.icepdf.core.paint.disableBlendComposite", false);
     }

@@ -15,7 +15,6 @@
  */
 package org.icepdf.ri.common.tools;
 
-import org.icepdf.core.SystemProperties;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
@@ -23,6 +22,7 @@ import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.InkAnnotation;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -74,9 +74,7 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
             String color = Defs.sysProperty(
                     "org.icepdf.core.views.page.annotation.ink.line.color", "#00ff00");
             int colorValue = ColorUtil.convertColor(color);
-            inkColor =
-                    new Color(colorValue >= 0 ? colorValue :
-                            Integer.parseInt("00ff00", 16));
+            inkColor = new Color(colorValue >= 0 ? colorValue : Integer.parseInt("00ff00", 16));
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
                 logger.warning("Error reading Ink Annotation line colour");
@@ -97,7 +95,7 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
      * New Text selection handler.  Make sure to correctly and and remove
      * this mouse and text listeners.
      *
-     * @param pageViewComponent page component that this handler is bound to.
+     * @param pageViewComponent      page component that this handler is bound to.
      * @param documentViewController parent document view controller.
      */
     public InkAnnotationHandler(DocumentViewController documentViewController,

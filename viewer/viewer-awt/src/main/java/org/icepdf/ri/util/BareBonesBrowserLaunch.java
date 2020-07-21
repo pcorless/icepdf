@@ -15,7 +15,7 @@
  */
 package org.icepdf.ri.util;
 
-import org.icepdf.core.SystemProperties;
+import org.icepdf.core.util.SystemProperties;
 
 import javax.swing.*;
 import java.lang.reflect.Method;

@@ -15,15 +15,14 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
-import org.icepdf.core.SystemProperties;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
-import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
+import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.tools.TextAnnotationHandler;
 import org.icepdf.ri.common.utility.annotation.properties.FreeTextAnnotationPanel;
@@ -62,6 +61,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
+
+import static org.icepdf.core.util.SystemProperties.INTERACTIVE_ANNOTATIONS;
 
 /**
  * The PopupAnnotationComponent encapsulates a PopupAnnotation objects.  It
@@ -172,7 +173,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         // inside the active area of the annotation.
         isMousePressed = true;
 
-        if (isInteractiveAnnotationsEnabled &&
+        if (INTERACTIVE_ANNOTATIONS &&
                 !annotation.getFlagReadOnly()) {
             initiateMouseMoved(e);
         }

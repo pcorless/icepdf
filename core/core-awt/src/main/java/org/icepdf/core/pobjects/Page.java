@@ -15,7 +15,6 @@
  */
 package org.icepdf.core.pobjects;
 
-import org.icepdf.core.SystemProperties;
 import org.icepdf.core.events.*;
 import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.annotations.Annotation;

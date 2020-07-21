@@ -15,12 +15,12 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
-import org.icepdf.core.SystemProperties;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.tools.TextAnnotationHandler;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.AnnotationComponent;

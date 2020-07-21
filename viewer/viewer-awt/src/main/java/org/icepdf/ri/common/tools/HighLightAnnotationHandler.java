@@ -15,7 +15,6 @@
  */
 package org.icepdf.ri.common.tools;
 
-import org.icepdf.core.SystemProperties;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.Page;
@@ -27,6 +26,7 @@ import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;

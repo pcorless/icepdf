@@ -15,17 +15,17 @@
  */
 package org.icepdf.core.pobjects.fonts;
 
-import org.icepdf.core.SystemProperties;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.FontUtil;
+import org.icepdf.core.util.SystemProperties;
 
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.security.AccessControlException;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
