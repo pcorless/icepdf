@@ -21,7 +21,6 @@ import org.icepdf.core.pobjects.graphics.PaintTimer;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
-import java.util.logging.Level;
 
 /**
  * FillDrawCmd will execute the Graphics2D fill command on the currentShape.
@@ -39,11 +38,7 @@ public class FillDrawCmd extends AbstractDrawCmd {
                               boolean paintAlpha, PaintTimer paintTimer) {
         if (optionalContentState.isVisible() && currentShape != null &&
                 currentShape.intersects(g.getClip().getBounds())) {
-            try {
-                g.fill(currentShape);
-            } catch (final InternalError e) {
-                logger.log(Level.FINE, e, () -> "Couldn't draw " + currentShape);
-            }
+            g.fill(currentShape);
             // Send a PaintPage Event to listeners
 //            if (parentPage != null && paintTimer.shouldTriggerRepaint()) {
 //                parentPage.notifyPaintPageListeners();
