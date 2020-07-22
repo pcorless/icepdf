@@ -5527,6 +5527,8 @@ public class SwingController extends ComponentAdapter
         addKeyAction(component, KEY_CODE_SEARCH_PREVIOUS, MODIFIER_SEARCH_PREVIOUS, new BaseAction(this::previousSearchResult));
         addKeyAction(component, KEY_CODE_SEARCH_NEXT, MODIFIER_SEARCH_NEXT, new BaseAction(this::nextSearchResult));
         addKeyAction(component, KEY_CODE_GOTO, MODIFIER_GOTO, new BaseAction(this::showPageSelectionDialog));
+        addKeyAction(component, KEY_CODE_PREFERENCES, MODIFIER_PREFERENCES,
+                new BaseAction(this::showViewerPreferences));
     }
 
     private void addKeyAction(final JComponent component, final int keyCode, final int modifier, final BaseAction action) {
