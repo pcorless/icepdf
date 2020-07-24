@@ -19,6 +19,7 @@ import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.ColorChooserButton;
 import org.icepdf.ri.common.DragDropColorList;
 import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
@@ -31,6 +32,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Arrays;
 import java.util.ResourceBundle;
+import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
 /**
@@ -47,7 +49,7 @@ import java.util.prefs.Preferences;
 public class AnnotationPreferencesPanel extends JPanel implements ListSelectionListener, ActionListener {
 
     // layouts constraint
-    private GridBagConstraints constraints;
+    private final GridBagConstraints constraints;
 
     private DragDropColorList dragDropColorList;
     private JButton addNamedColorButton;
@@ -56,11 +58,11 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
     private ColorChooserButton colorButton;
     private JTextField colorLabelTextField;
 
-    private SwingController swingController;
-    private Preferences preferences;
+    private final SwingController swingController;
+    private final Preferences preferences;
 
-    public AnnotationPreferencesPanel(SwingController controller, ViewerPropertiesManager propertiesManager,
-                                      ResourceBundle messageBundle) {
+    public AnnotationPreferencesPanel(final SwingController controller, final ViewerPropertiesManager propertiesManager,
+                                      final ResourceBundle messageBundle) {
 
         this.swingController = controller;
         preferences = propertiesManager.getPreferences();
@@ -75,7 +77,7 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
         constraints.anchor = GridBagConstraints.NORTH;
         constraints.insets = new Insets(5, 5, 5, 5);
 
-        JPanel namedColorsPanel = new JPanel(new GridBagLayout());
+        final JPanel namedColorsPanel = new JPanel(new GridBagLayout());
         namedColorsPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
                 messageBundle.getString("viewer.dialog.viewerPreferences.section.annotations.named.border.label"),
                 TitledBorder.LEFT,
@@ -90,7 +92,7 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
         constraints.anchor = GridBagConstraints.NORTH;
         constraints.insets = new Insets(5, 5, 5, 5);
 
-        JPanel recentColorsPanel = new JPanel(new GridBagLayout());
+        final JPanel recentColorsPanel = new JPanel(new GridBagLayout());
         recentColorsPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
                 messageBundle.getString("viewer.dialog.viewerPreferences.section.annotations.recent.border.label"),
                 TitledBorder.LEFT,
@@ -98,7 +100,7 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
         addGB(recentColorsPanel, new JLabel(messageBundle.getString(
                 "viewer.dialog.viewerPreferences.section.annotations.recent.colors.label")),
                 0, 0, 1, 1);
-        JButton resetResentColorsButton = new JButton(messageBundle.getString(
+        final JButton resetResentColorsButton = new JButton(messageBundle.getString(
                 "viewer.dialog.viewerPreferences.section.annotations.recent.colors.button"));
         resetResentColorsButton.addActionListener(e -> {
             // clear the preferences for recent colours.
@@ -106,6 +108,7 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
             // rebuild the annotation drop down panels.
             firePropertyChange(PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE, null, true);
         });
+
         constraints.anchor = GridBagConstraints.WEST;
         constraints.fill = GridBagConstraints.NONE;
         constraints.weightx = 0;
@@ -114,36 +117,41 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
                 "viewer.dialog.viewerPreferences.section.annotations.recent.colors.label")),
                 0, 0, 1, 1);
         addGB(recentColorsPanel, resetResentColorsButton, 1, 0, 1, 1);
+
         constraints.fill = GridBagConstraints.BOTH;
         constraints.weightx = 1.0;
         constraints.weighty = 1.0;
         constraints.anchor = GridBagConstraints.NORTH;
         constraints.insets = new Insets(5, 5, 5, 5);
-        JPanel miscSettingsPanel = new JPanel(new GridBagLayout());
-        miscSettingsPanel.setBorder(new TitledBorder(
-                new EtchedBorder(EtchedBorder.LOWERED),
+
+        final JPanel miscSettingsPanel = new JPanel(new GridBagLayout());
+        miscSettingsPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
                 messageBundle.getString("viewer.dialog.viewerPreferences.section.annotations.misc.border.label"),
-                TitledBorder.LEFT,
-                TitledBorder.DEFAULT_POSITION));
-        JCheckBox autoselectBox = new JCheckBox(messageBundle.getString(
-                "viewer.dialog.viewerPreferences.section.annotations.misc.autoselect.checkbox"));
-        autoselectBox.setSelected(ViewerPropertiesManager.getInstance().getPreferences().
-                getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_SELECTION_ENABLED, false));
-        autoselectBox.addActionListener(actionEvent -> {
-            JCheckBox box = (JCheckBox) actionEvent.getSource();
-            boolean selected = box.isSelected();
-            String[] allProperties = {
-                    ViewerPropertiesManager.PROPERTY_ANNOTATION_CIRCLE_SELECTION_ENABLED,
-                    ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_SELECTION_ENABLED,
-                    ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_SELECTION_ENABLED,
-                    ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_SELECTION_ENABLED,
-                    ViewerPropertiesManager.PROPERTY_ANNOTATION_LINK_SELECTION_ENABLED,
-                    ViewerPropertiesManager.PROPERTY_ANNOTATION_SQUARE_SELECTION_ENABLED,
-                    ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_SELECTION_ENABLED,
-                    ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SELECTION_ENABLED};
-            Arrays.stream(allProperties).forEach(p -> ViewerPropertiesManager.getInstance().getPreferences().putBoolean(p, selected));
+                TitledBorder.LEFT, TitledBorder.DEFAULT_POSITION));
+        final ToolItem[] tools = {
+                new ToolItem(0,
+                        messageBundle.getString("viewer.dialog.viewerPreferences.section.annotations.misc.autoselect.none")),
+                new ToolItem(DocumentViewModel.DISPLAY_TOOL_SELECTION,
+                        messageBundle.getString("viewer.toolbar.tool.select.tooltip")),
+                new ToolItem(DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION,
+                        messageBundle.getString("viewer.toolbar.tool.text.tooltip")),
+                new ToolItem(DocumentViewModel.DISPLAY_TOOL_PAN,
+                        messageBundle.getString("viewer.toolbar.tool.pan.tooltip"))
+        };
+        final JComboBox<ToolItem> autoselectCbb = new JComboBox<>(tools);
+        final JLabel autoselectLabel = new JLabel(
+                messageBundle.getString("viewer.dialog.viewerPreferences.section.annotations.misc.autoselect.label"));
+        final int toolIdx = ViewerPropertiesManager.getInstance().getPreferences()
+                .getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_SELECTION_ENABLED, 0);
+        autoselectCbb.setSelectedItem(Arrays.stream(tools).filter(t -> t.toolIdx == toolIdx).findAny().orElse(tools[0]));
+        autoselectCbb.addActionListener(actionEvent -> {
+            final JComboBox<ToolItem> box = (JComboBox<ToolItem>) actionEvent.getSource();
+            final ToolItem selected = box.getItemAt(box.getSelectedIndex());
+            ViewerPropertiesManager.ALL_SELECTION_PROPERTIES.forEach(p ->
+                    ViewerPropertiesManager.getInstance().getPreferences().putInt(p, selected.toolIdx));
         });
-        addGB(miscSettingsPanel, autoselectBox, 0, 0, 1, 1);
+        addGB(miscSettingsPanel, autoselectLabel, 0, 0, 1, 1);
+        addGB(miscSettingsPanel, autoselectCbb, 1, 0, 1, 1);
 
         // add the panels.
         constraints.fill = GridBagConstraints.BOTH;
@@ -161,12 +169,12 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
         addGB(this, new Label(" "), 0, 3, 1, 1);
     }
 
-    private void buildNamedColors(JPanel panel, ResourceBundle messageBundle) {
+    private void buildNamedColors(final JPanel panel, final ResourceBundle messageBundle) {
         // build out named color model
         dragDropColorList = new DragDropColorList(swingController, preferences);
 
         // create current list of colours
-        JScrollPane scrollPane = new JScrollPane(dragDropColorList);
+        final JScrollPane scrollPane = new JScrollPane(dragDropColorList);
         addGB(panel, scrollPane, 0, 0, 5, 1);
 
         dragDropColorList.addListSelectionListener(this);
@@ -215,8 +223,8 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
     }
 
     @Override
-    public void valueChanged(ListSelectionEvent e) {
-        DragDropColorList colorList = (DragDropColorList) e.getSource();
+    public void valueChanged(final ListSelectionEvent e) {
+        final DragDropColorList colorList = (DragDropColorList) e.getSource();
         if (colorList.isSelectionEmpty()) {
             // disable all but the add controls.
             updateNamedColorButton.setEnabled(false);
@@ -235,8 +243,8 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
             colorLabelTextField.setEnabled(true);
             colorButton.setEnabled(true);
 
-            int selectedIndex = colorList.getSelectedIndex();
-            DragDropColorList.ColorLabel colorLabel = colorList.getModel().getElementAt(selectedIndex);
+            final int selectedIndex = colorList.getSelectedIndex();
+            final DragDropColorList.ColorLabel colorLabel = colorList.getModel().getElementAt(selectedIndex);
 
             colorLabelTextField.setText(colorLabel.getLabel());
             ColorChooserButton.setButtonBackgroundColor(colorLabel.getColor(), colorButton);
@@ -245,8 +253,8 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
-        Object source = e.getSource();
+    public void actionPerformed(final ActionEvent e) {
+        final Object source = e.getSource();
         if (source == addNamedColorButton) {
             dragDropColorList.addNamedColor(colorButton.getBackground(), colorLabelTextField.getText());
             // clear the label
@@ -262,13 +270,28 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
         firePropertyChange(PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE, null, true);
     }
 
-    private void addGB(JPanel layout, Component component,
-                       int x, int y,
-                       int rowSpan, int colSpan) {
+    private void addGB(final JPanel layout, final Component component,
+                       final int x, final int y,
+                       final int rowSpan, final int colSpan) {
         constraints.gridx = x;
         constraints.gridy = y;
         constraints.gridwidth = rowSpan;
         constraints.gridheight = colSpan;
         layout.add(component, constraints);
+    }
+
+    private static class ToolItem {
+        private final int toolIdx;
+        private final String toolName;
+
+        private ToolItem(final int toolIdx, final String toolName) {
+            this.toolIdx = toolIdx;
+            this.toolName = toolName;
+        }
+
+        @Override
+        public String toString() {
+            return toolName;
+        }
     }
 }

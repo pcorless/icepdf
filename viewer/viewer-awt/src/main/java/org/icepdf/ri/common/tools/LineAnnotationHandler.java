@@ -229,11 +229,9 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         popupAnnotationComponent.setVisible(false);
         popupAnnotationComponent.getAnnotation().setOpen(false);
 
-        // set the annotation tool to he select tool
-        if (preferences.getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_SELECTION_ENABLED, false)) {
-            documentViewController.getParentController().setDocumentToolMode(
-                    DocumentViewModel.DISPLAY_TOOL_SELECTION);
-        }
+        // set the annotation tool to the given tool
+        documentViewController.getParentController().setDocumentToolMode(
+                preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_SELECTION_ENABLED, 0));
 
         // clear the rectangle
         clearRectangle(pageViewComponent);

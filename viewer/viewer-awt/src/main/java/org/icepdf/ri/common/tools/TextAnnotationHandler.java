@@ -215,11 +215,9 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
         popupAnnotationComponent.setVisible(true);
         popupAnnotationComponent.getAnnotation().setOpen(true);
         popupAnnotationComponent.focusTextArea();
-        // set the annotation tool to he select tool
-        if (preferences.getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_SELECTION_ENABLED, false)) {
-            documentViewController.getParentController().setDocumentToolMode(
-                    DocumentViewModel.DISPLAY_TOOL_SELECTION);
-        }
+        // set the annotation tool to the given tool
+        documentViewController.getParentController().setDocumentToolMode(
+                preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_SELECTION_ENABLED, 0));
     }
 
     protected void checkAndApplyPreferences() {
