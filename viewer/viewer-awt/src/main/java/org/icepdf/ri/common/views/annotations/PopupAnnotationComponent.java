@@ -53,10 +53,8 @@ import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.logging.Level;
 
 /**
@@ -818,37 +816,54 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             }
         } else if (PropertyConstants.ANNOTATION_DELETED.equals(evt.getPropertyName())) {
             final AnnotationComponent ac = ((AnnotationComponent) evt.getOldValue());
-            if (ac != null) {
+            if (ac instanceof MarkupAnnotationComponent) {
                 if (ac.getAnnotation() != null) {
-                    if (containsRef(ac.getAnnotation().getPObjectReference())) {
+                    if (containsRefs(Collections.singleton(ac.getAnnotation().getPObjectReference()))) {
                         rebuildTree();
                         commentPanel.revalidate();
                     }
                 }
             }
+        } else if (PropertyConstants.ANNOTATION_ADDED.equals(evt.getPropertyName())) {
+            final AnnotationComponent ac = (AnnotationComponent) evt.getNewValue();
+            if (ac instanceof MarkupAnnotationComponent) {
+                if (ac.getAnnotation() != null) {
+                    MarkupAnnotation annot = (MarkupAnnotation) ac.getAnnotation();
+                    final Set<Reference> refs = new HashSet<>();
+                    while (annot.isInReplyTo()) {
+                        refs.add(annot.getInReplyToAnnotation().getPObjectReference());
+                        annot = annot.getInReplyToAnnotation();
+                    }
+                    if (containsRefs(refs)) {
+                        rebuildTree();
+                        commentPanel.revalidate();
+                    }
+                }
+            }
+
         }
     }
 
-    private boolean containsRef(final Reference ref) {
+    private boolean containsRefs(final Set<Reference> refs) {
         if (commentTree != null) {
-            return containsRef(ref, commentTree.getModel().getRoot());
+            return containsRefs(refs, commentTree.getModel().getRoot());
         } else {
             return false;
         }
     }
 
-    private static boolean containsRef(final Reference ref, final Object node) {
+    private static boolean containsRefs(final Set<Reference> refs, final Object node) {
         if (node != null) {
             if (node instanceof TreeNode) {
                 final TreeNode tn = (TreeNode) node;
                 if (node instanceof MarkupAnnotationTreeNode) {
                     final Annotation annot = (MarkupAnnotation) ((MarkupAnnotationTreeNode) node).getUserObject();
-                    if (annot.getPObjectReference().equals(ref)) {
+                    if (refs.contains(annot.getPObjectReference())) {
                         return true;
                     }
                 }
                 for (int i = 0; i < tn.getChildCount(); ++i) {
-                    if (containsRef(ref, tn.getChildAt(i))) {
+                    if (containsRefs(refs, tn.getChildAt(i))) {
                         return true;
                     }
                 }
