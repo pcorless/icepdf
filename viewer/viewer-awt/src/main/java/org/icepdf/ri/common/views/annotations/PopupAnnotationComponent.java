@@ -531,24 +531,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
 
         // rebuild the tree, which is easier then pruning at this point
-        List<Annotation> annotations = pageViewComponent.getPage().getAnnotations();
-        MarkupAnnotation parentAnnotation = annotation.getParent();
-
-        // check first if there are anny annotation that point to this one as
-        // an IRT.  If there aren't any then the selectedAnnotation is the parent
-        // other wise we need to build out
-        DefaultMutableTreeNode root =
-                new DefaultMutableTreeNode("Root");
-        boolean isIRT = buildCommentTree(parentAnnotation, annotations, root);
-        commentTree.removeTreeSelectionListener(this);
-        ((DefaultTreeModel) (commentTree.getModel())).setRoot(root);
-        commentTree.addTreeSelectionListener(this);
-        // reload the tree model
-        refreshTree(commentTree);
-        if (!isIRT) {
-            selectedMarkupAnnotation = parentAnnotation;
-            commentTreeScrollPane.setVisible(false);
-        }
+        rebuildTree();
         commentPanel.revalidate();
         refreshPopupState();
     }
@@ -678,6 +661,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         markupAnnotation.setState(state);
         markupAnnotation.setStateModel(stateModel);
         markupAnnotation.setInReplyToAnnotation(selectedMarkupAnnotation);
+        markupAnnotation.setColor(selectedMarkupAnnotation.getColor());
         addAnnotationComponent(markupAnnotation);
 
         // create the new text and popup annotations
@@ -798,6 +782,26 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         }
     }
 
+    private void rebuildTree() {
+        List<Annotation> annotations = pageViewComponent.getPage().getAnnotations();
+        MarkupAnnotation parentAnnotation = annotation.getParent();
+
+        // check first if there are anny annotation that point to this one as
+        // an IRT.  If there aren't any then the selectedAnnotation is the parent
+        // other wise we need to build out
+        DefaultMutableTreeNode root = new DefaultMutableTreeNode("Root");
+        boolean isIRT = buildCommentTree(parentAnnotation, annotations, root);
+        commentTree.removeTreeSelectionListener(this);
+        ((DefaultTreeModel) (commentTree.getModel())).setRoot(root);
+        commentTree.addTreeSelectionListener(this);
+        // reload the tree model
+        refreshTree(commentTree);
+        if (!isIRT) {
+            selectedMarkupAnnotation = parentAnnotation;
+            commentTreeScrollPane.setVisible(false);
+        }
+    }
+
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         if (PropertyConstants.ANNOTATION_SUMMARY_UPDATED.equals(evt.getPropertyName())) {
@@ -812,8 +816,45 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                     privateToggleButton.setSelected(annotationSummaryBox.privateToggleButton.isSelected());
                 }
             }
-
+        } else if (PropertyConstants.ANNOTATION_DELETED.equals(evt.getPropertyName())) {
+            final AnnotationComponent ac = ((AnnotationComponent) evt.getOldValue());
+            if (ac != null) {
+                if (ac.getAnnotation() != null) {
+                    if (containsRef(ac.getAnnotation().getPObjectReference())) {
+                        rebuildTree();
+                        commentPanel.revalidate();
+                    }
+                }
+            }
         }
+    }
+
+    private boolean containsRef(final Reference ref) {
+        if (commentTree != null) {
+            return containsRef(ref, commentTree.getModel().getRoot());
+        } else {
+            return false;
+        }
+    }
+
+    private static boolean containsRef(final Reference ref, final Object node) {
+        if (node != null) {
+            if (node instanceof TreeNode) {
+                final TreeNode tn = (TreeNode) node;
+                if (node instanceof MarkupAnnotationTreeNode) {
+                    final Annotation annot = (MarkupAnnotation) ((MarkupAnnotationTreeNode) node).getUserObject();
+                    if (annot.getPObjectReference().equals(ref)) {
+                        return true;
+                    }
+                }
+                for (int i = 0; i < tn.getChildCount(); ++i) {
+                    if (containsRef(ref, tn.getChildAt(i))) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     public boolean isActive() {
