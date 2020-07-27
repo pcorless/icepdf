@@ -660,7 +660,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         markupAnnotation.setStateModel(stateModel);
         markupAnnotation.setInReplyToAnnotation(selectedMarkupAnnotation);
         markupAnnotation.setColor(selectedMarkupAnnotation.getColor());
-        addAnnotationComponent(markupAnnotation);
 
         // create the new text and popup annotations
 //        PopupAnnotation popupAnnotation =
@@ -692,6 +691,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         // finally check the view and make sure the treePanel is visible.
         commentTreeScrollPane.setVisible(true);
         commentPanel.revalidate();
+        addAnnotationComponent(markupAnnotation);
     }
 
     public void insertUpdate(DocumentEvent e) {
