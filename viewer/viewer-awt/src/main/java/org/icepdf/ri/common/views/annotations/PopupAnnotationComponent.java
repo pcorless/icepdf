@@ -56,6 +56,8 @@ import java.time.format.FormatStyle;
 import java.util.List;
 import java.util.*;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * The PopupAnnotationComponent encapsulates a PopupAnnotation objects.  It
@@ -829,18 +831,47 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             if (ac instanceof MarkupAnnotationComponent) {
                 if (ac.getAnnotation() != null) {
                     MarkupAnnotation annot = (MarkupAnnotation) ac.getAnnotation();
-                    final Set<Reference> refs = new HashSet<>();
-                    while (annot.isInReplyTo()) {
-                        refs.add(annot.getInReplyToAnnotation().getPObjectReference());
-                        annot = annot.getInReplyToAnnotation();
-                    }
-                    if (containsRefs(refs)) {
-                        rebuildTree();
-                        commentPanel.revalidate();
+                    if (!containsRefs(Collections.singleton(annot.getPObjectReference()))) {
+                        final Set<Reference> refs = new HashSet<>();
+                        while (annot.isInReplyTo()) {
+                            refs.add(annot.getInReplyToAnnotation().getPObjectReference());
+                            annot = annot.getInReplyToAnnotation();
+                        }
+                        if (containsRefs(refs)) {
+                            rebuildTree();
+                            commentPanel.revalidate();
+                        }
                     }
                 }
             }
+        } else if (PropertyConstants.ANNOTATION_UPDATED.equals(evt.getPropertyName())) {
+            final AnnotationComponent ac = (AnnotationComponent) evt.getNewValue();
+            if (ac instanceof MarkupAnnotationComponent) {
+                if (ac.getAnnotation() != null) {
+                    updateTreeColor(ac.getAnnotation());
+                }
+            }
+        }
+    }
 
+    private void updateTreeColor(final Annotation annotation) {
+        final Set<Annotation> treeAnnotations = getAllAnnotations();
+        if (treeAnnotations.contains(annotation)) {
+            final List<Annotation> toChange = treeAnnotations.stream()
+                    .filter(a -> !a.getColor().equals(annotation.getColor())).collect(Collectors.toList());
+            toChange.forEach(a -> {
+                a.setColor(annotation.getColor());
+                final AnnotationComponent ac = pageViewComponent.getComponentFor(a);
+                if (ac != null) {
+                    documentViewController.updateAnnotation(ac);
+                } else {
+                    logger.warning("Component not found for " + a);
+                }
+            });
+            if (!toChange.isEmpty()) {
+                refreshPopupState();
+                commentPanel.revalidate();
+            }
         }
     }
 
@@ -870,6 +901,33 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             }
         }
         return false;
+    }
+
+    private Set<Annotation> getAllAnnotations() {
+        if (commentTree != null) {
+            return getAllAnnotations(commentTree.getModel().getRoot()).collect(Collectors.toSet());
+        } else {
+            return Collections.emptySet();
+        }
+    }
+
+    private static Stream<Annotation> getAllAnnotations(final Object node) {
+        if (node != null) {
+            if (node instanceof TreeNode) {
+                final TreeNode tn = (TreeNode) node;
+                final boolean hasChildren = tn.getChildCount() > 0;
+                if (node instanceof MarkupAnnotationTreeNode) {
+                    final Annotation annot = (MarkupAnnotation) ((MarkupAnnotationTreeNode) node).getUserObject();
+                    return hasChildren ? Stream.concat(Stream.of(annot), Collections.list((Enumeration<Object>) tn.children()).stream().flatMap(PopupAnnotationComponent::getAllAnnotations)) : Stream.of(annot);
+                } else {
+                    return hasChildren ? Collections.list((Enumeration<Object>) tn.children()).stream().flatMap(PopupAnnotationComponent::getAllAnnotations) : Stream.empty();
+                }
+            } else {
+                return Stream.empty();
+            }
+        } else {
+            return Stream.empty();
+        }
     }
 
     public boolean isActive() {
@@ -1023,20 +1081,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     }
 
     protected AnnotationComponent findAnnotationComponent(Annotation annotation) {
-        ArrayList<AbstractAnnotationComponent> annotationComponents =
-                pageViewComponent.getAnnotationComponents();
-        if (annotationComponents != null && annotation != null) {
-            Reference compReference;
-            Reference annotationReference = annotation.getPObjectReference();
-            for (AnnotationComponent annotationComponent : annotationComponents) {
-                compReference = annotationComponent.getAnnotation().getPObjectReference();
-                // find the component and toggle it's visibility.
-                if (compReference != null && compReference.equals(annotationReference)) {
-                    return annotationComponent;
-                }
-            }
-        }
-        return null;
+        return pageViewComponent.getComponentFor(annotation);
     }
 
     protected void resetComponentColors() {
