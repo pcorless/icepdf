@@ -216,6 +216,9 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
      * @return The annotation component, or null if there is no match
      */
     public AnnotationComponent getComponentFor(Annotation annot) {
+        if (annotationToComponent == null){
+            initializeAnnotationsComponent(getPage());
+        }
         return annotationToComponent.get(annot);
     }
 
