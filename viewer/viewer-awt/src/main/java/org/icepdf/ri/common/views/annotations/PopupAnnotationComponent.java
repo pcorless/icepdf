@@ -795,10 +795,10 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         ((DefaultTreeModel) (commentTree.getModel())).setRoot(root);
         commentTree.addTreeSelectionListener(this);
         // reload the tree model
+        commentTreeScrollPane.setVisible(isIRT);
         refreshTree(commentTree);
         if (!isIRT) {
             selectedMarkupAnnotation = parentAnnotation;
-            commentTreeScrollPane.setVisible(false);
         }
     }
 
