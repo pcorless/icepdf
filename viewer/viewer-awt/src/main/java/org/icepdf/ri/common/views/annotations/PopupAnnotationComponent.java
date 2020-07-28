@@ -855,7 +855,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     }
 
     private void updateTreeColor(final Annotation annotation) {
-        final Set<Annotation> treeAnnotations = getAllAnnotations();
+        final Set<Annotation> treeAnnotations = new HashSet<>(getAllAnnotations());
         if (treeAnnotations.contains(annotation)) {
             final List<Annotation> toChange = treeAnnotations.stream()
                     .filter(a -> !a.getColor().equals(annotation.getColor())).collect(Collectors.toList());
@@ -903,11 +903,11 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         return false;
     }
 
-    private Set<Annotation> getAllAnnotations() {
+    public List<Annotation> getAllAnnotations() {
         if (commentTree != null) {
-            return getAllAnnotations(commentTree.getModel().getRoot()).collect(Collectors.toSet());
+            return getAllAnnotations(commentTree.getModel().getRoot()).collect(Collectors.toList());
         } else {
-            return Collections.emptySet();
+            return Collections.emptyList();
         }
     }
 
