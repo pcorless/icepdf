@@ -18,8 +18,8 @@ package org.icepdf.ri.common;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReferenceFactory;
-import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.annotation.destinations.DestinationsPanel;
 import org.icepdf.ri.common.utility.annotation.markup.MarkupAnnotationPanel;
@@ -305,12 +305,8 @@ public class SwingViewBuilder {
 
     protected static boolean isMacOs;
 
-    private static boolean isDemo;
-
     static {
-        isMacOs = Defs.sysProperty("os.name").contains("OS X");
-        // check for demo system property
-        isDemo = Defs.sysPropertyBoolean("org.icepdf.ri.viewer.demo", false);
+        isMacOs = SystemProperties.OS_NAME.contains("OS X");
     }
 
     /**
@@ -1198,11 +1194,6 @@ public class SwingViewBuilder {
         if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_SEARCH))
             addToToolBar(toolbar, buildQuickSearchToolBar());
 
-        // we only add the configurable font engin in the demo version
-        if (isDemo) {
-            addToToolBar(toolbar, buildDemoToolBar());
-        }
-
         // Set the toolbar back to null if no components were added
         // The result of this will properly disable the necessary menu items for controlling the toolbar
         if (toolbar.getComponentCount() == 0) {
@@ -1609,7 +1600,7 @@ public class SwingViewBuilder {
                 ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_TEXT)) {
             addToToolBar(toolbar, buildTextAnnotationToolButton(iconSize));
         }
-        if (propertiesManager.checkAndStoreBooleanProperty(
+        if (SystemProperties.PRIVATE_PROPERTY_ENABLED && propertiesManager.checkAndStoreBooleanProperty(
                 ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_PERMISSION)) {
             addToToolBar(toolbar, buildAnnotationPermissionCombBox());
         }

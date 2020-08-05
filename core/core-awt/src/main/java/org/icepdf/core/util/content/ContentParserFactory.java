@@ -16,8 +16,8 @@
 package org.icepdf.core.util.content;
 
 import org.icepdf.core.pobjects.Resources;
-import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.SystemProperties;
 
 import java.lang.reflect.Constructor;
 import java.util.logging.Level;
@@ -45,7 +45,7 @@ public class ContentParserFactory {
         // check class bath for NFont library, and declare results.
         try {
             Class.forName(N_CONTENT_PARSER);
-            foundPro = Defs.sysPropertyBoolean("org.icepdf.core.useNFont", true);
+            foundPro = SystemProperties.USE_NFONT;
         } catch (ClassNotFoundException e) {
             logger.log(Level.FINE, "ICEpdf PRO was not found on the class path");
         }

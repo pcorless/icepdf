@@ -26,10 +26,7 @@ import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.search.DocumentSearchController;
-import org.icepdf.core.util.Defs;
-import org.icepdf.core.util.Library;
-import org.icepdf.core.util.PropertyConstants;
-import org.icepdf.core.util.Utils;
+import org.icepdf.core.util.*;
 import org.icepdf.ri.common.preferences.PreferencesDialog;
 import org.icepdf.ri.common.properties.FontDialog;
 import org.icepdf.ri.common.properties.InformationDialog;
@@ -1877,11 +1874,12 @@ public class SwingController extends ComponentAdapter
     private void reflectAnnotationDefaultPrivacy() {
         // check properties to get last state.
         Preferences preferences = ViewerPropertiesManager.getInstance().getPreferences();
-        boolean annotationPrivacy = preferences.getBoolean(
-                ViewerPropertiesManager.PROPERTY_ANNOTATION_LAST_USED_PUBLIC_FLAG, true);
+        boolean annotationPrivacy = !SystemProperties.PRIVATE_PROPERTY_ENABLED ||
+                preferences.getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_LAST_USED_PUBLIC_FLAG, true);
+
 
         // store the current state in the model and annotation tool handlers will pull from the current state.
-        viewModel.setAnnotationPrivacy(annotationPrivacy);
+        setAnnotationPrivacy(annotationPrivacy);
 
         // set the default value of the combo box.
         if (annotationPrivacyComboBox != null) {
