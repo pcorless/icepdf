@@ -109,7 +109,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     protected boolean disableSpellCheck;
     protected boolean adjustBounds = true;
 
-    private String userName = SystemProperties.USER_NAME;
+    private final String userName = SystemProperties.USER_NAME;
 
     public PopupAnnotationComponent(PopupAnnotation annotation, DocumentViewController documentViewController,
                                     AbstractPageViewComponent pageViewComponent) {
@@ -913,9 +913,9 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 final boolean hasChildren = tn.getChildCount() > 0;
                 if (node instanceof MarkupAnnotationTreeNode) {
                     final Annotation annot = (MarkupAnnotation) ((MarkupAnnotationTreeNode) node).getUserObject();
-                    return hasChildren ? Stream.concat(Stream.of(annot), Collections.list((Enumeration<Object>) tn.children()).stream().flatMap(PopupAnnotationComponent::getAllAnnotations)) : Stream.of(annot);
+                    return hasChildren ? Stream.concat(Stream.of(annot), Collections.list(tn.children()).stream().flatMap(PopupAnnotationComponent::getAllAnnotations)) : Stream.of(annot);
                 } else {
-                    return hasChildren ? Collections.list((Enumeration<Object>) tn.children()).stream().flatMap(PopupAnnotationComponent::getAllAnnotations) : Stream.empty();
+                    return hasChildren ? Collections.list(tn.children()).stream().flatMap(PopupAnnotationComponent::getAllAnnotations) : Stream.empty();
                 }
             } else {
                 return Stream.empty();
