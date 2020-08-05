@@ -2,12 +2,10 @@ package org.icepdf.core.util;
 
 /**
  * All SystemProperties used in the core library.  This class provides better visibility when for configuration options
- * as well as way to set properties that maybe be shared between class.
+ * as well as way to easily set properties manually that maybe shared between class.
  */
 public final class SystemProperties {
 
-    //////
-    // System properties
     public static final String OS_NAME = Defs.sysProperty("os.name");
     public static final String JAVA_HOME = Defs.sysProperty("java.home");
     public static final String USER_NAME = Defs.sysProperty("user.name");
