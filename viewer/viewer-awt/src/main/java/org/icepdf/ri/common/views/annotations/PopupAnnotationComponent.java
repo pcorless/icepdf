@@ -21,8 +21,8 @@ import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
-import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
+import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.tools.TextAnnotationHandler;
 import org.icepdf.ri.common.utility.annotation.properties.FreeTextAnnotationPanel;
@@ -37,10 +37,7 @@ import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeCellRenderer;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeSelectionModel;
+import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -56,11 +53,13 @@ import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.icepdf.core.util.SystemProperties.INTERACTIVE_ANNOTATIONS;
 
 /**
  * The PopupAnnotationComponent encapsulates a PopupAnnotation objects.  It
@@ -90,13 +89,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     public static Color borderColor = new Color(153, 153, 153);
     public static Dimension BUTTON_SIZE = new Dimension(22, 22);
 
-    public static boolean PRIVATE_PROPERTY_ENABLED;
-
-    static {
-        PRIVATE_PROPERTY_ENABLED = Defs.booleanProperty(
-                "org.icepdf.core.page.annotation.privateProperty.enabled", false);
-    }
-
     // layouts constraint
     private GridBagConstraints constraints;
 
@@ -117,7 +109,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     protected boolean disableSpellCheck;
     protected boolean adjustBounds = true;
 
-    private String userName = System.getProperty("user.name");
+    private String userName = SystemProperties.USER_NAME;
 
     public PopupAnnotationComponent(PopupAnnotation annotation, DocumentViewController documentViewController,
                                     AbstractPageViewComponent pageViewComponent) {
@@ -178,7 +170,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         // inside the active area of the annotation.
         isMousePressed = true;
 
-        if (isInteractiveAnnotationsEnabled &&
+        if (INTERACTIVE_ANNOTATIONS &&
                 !annotation.getFlagReadOnly()) {
             initiateMouseMoved(e);
         }
@@ -360,14 +352,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
         // creation date
         creationLabel = new JLabel();
-        if (selectedMarkupAnnotation != null &&
-                selectedMarkupAnnotation.getCreationDate() != null) {
-            LocalDateTime creationDate = selectedMarkupAnnotation.getCreationDate().asLocalDateTime();
-            DateTimeFormatter formatter = DateTimeFormatter
-                    .ofLocalizedDateTime(FormatStyle.MEDIUM)
-                    .withLocale(Locale.getDefault());
-            creationLabel.setText(creationDate.format(formatter));
-        }
+        refreshCreationLabel();
         // title, user name.
         String title = selectedMarkupAnnotation != null ?
                 selectedMarkupAnnotation.getTitleText() != null ?
@@ -412,7 +397,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         constraints.weightx = 0;
         constraints.insets = new Insets(1, 1, 1, 1);
         // user that created the comment is the only one that can actually make it private.
-        if (PRIVATE_PROPERTY_ENABLED) {
+        if (SystemProperties.PRIVATE_PROPERTY_ENABLED) {
             MarkupAnnotation markupAnnotation = annotation.getParent();
             if (markupAnnotation != null && userName.equals(markupAnnotation.getTitleText())) {
                 addGB(commentPanel, privateToggleButton, 2, 0, 1, 1);
@@ -452,6 +437,11 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
         // command test
         buildContextMenu();
+    }
+
+    public void focusTextArea() {
+        textArea.requestFocusInWindow();
+        textArea.setCaretPosition(textArea.getDocument().getLength());
     }
 
     public void setBoundsRelativeToParent(int x, int y, AffineTransform pageInverseTransform) {
@@ -494,10 +484,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
     public void replyToSelectedMarkupExecute() {
         // setup title message
-        Object[] argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
-        MessageFormat formatter = new MessageFormat(
-                messageBundle.getString("viewer.annotation.popup.replyTo.label"));
-        String annotationTitle = formatter.format(argument);
+        String annotationTitle = System.getProperty("user.name");
 
         // show the currently selected markup comment.
         setVisible(true);
@@ -532,9 +519,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             annotationComponent = findAnnotationComponent(selectedMarkupAnnotation);
         }
         documentViewController.deleteAnnotation(annotationComponent);
-        // remove the annotations popup
-        annotationComponent = getAnnotationParentComponent();
-        documentViewController.deleteAnnotation(annotationComponent);
 
         // check if any annotations have an IRT reference and delete
         // the markup component chain
@@ -542,24 +526,9 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
 
         // rebuild the tree, which is easier then pruning at this point
-        List<Annotation> annotations = pageViewComponent.getPage().getAnnotations();
-        MarkupAnnotation parentAnnotation = annotation.getParent();
-
-        // check first if there are anny annotation that point to this one as
-        // an IRT.  If there aren't any then the selectedAnnotation is the parent
-        // other wise we need to build out
-        DefaultMutableTreeNode root =
-                new DefaultMutableTreeNode("Root");
-        boolean isIRT = buildCommentTree(parentAnnotation, annotations, root);
-        commentTree.removeTreeSelectionListener(this);
-        ((DefaultTreeModel) (commentTree.getModel())).setRoot(root);
-        commentTree.addTreeSelectionListener(this);
-        // reload the tree model
-        refreshTree(commentTree);
-        if (!isIRT) {
-            commentTreeScrollPane.setVisible(false);
-        }
+        rebuildTree();
         commentPanel.revalidate();
+        refreshPopupState();
     }
 
     public void setStatusSelectedMarkupExecute(String messageTitle, String messageBody, String status) {
@@ -687,7 +656,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         markupAnnotation.setState(state);
         markupAnnotation.setStateModel(stateModel);
         markupAnnotation.setInReplyToAnnotation(selectedMarkupAnnotation);
-        addAnnotationComponent(markupAnnotation);
+        markupAnnotation.setColor(selectedMarkupAnnotation.getColor());
 
         // create the new text and popup annotations
 //        PopupAnnotation popupAnnotation =
@@ -703,7 +672,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 commentTree.getLastSelectedPathComponent();
 
         DefaultMutableTreeNode replyToNode =
-                new DefaultMutableTreeNode(markupAnnotation);
+                new MarkupAnnotationTreeNode(markupAnnotation);
         if (node == null) {
             node = ((DefaultMutableTreeNode) commentTree.getModel().getRoot()).getFirstLeaf();
         }
@@ -714,10 +683,12 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
         // reload the tree model
         refreshTree(commentTree);
+        commentTree.setSelectionPath(new TreePath(replyToNode.getPath()));
 
         // finally check the view and make sure the treePanel is visible.
         commentTreeScrollPane.setVisible(true);
         commentPanel.revalidate();
+        addAnnotationComponent(markupAnnotation);
     }
 
     public void insertUpdate(DocumentEvent e) {
@@ -777,14 +748,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         Object userObject = node.getUserObject();
         if (userObject instanceof MarkupAnnotation) {
             selectedMarkupAnnotation = (MarkupAnnotation) userObject;
-            if (textArea != null) {
-                textArea.getDocument().removeDocumentListener(this);
-                textArea.setText(selectedMarkupAnnotation.getContents());
-                textArea.getDocument().addDocumentListener(this);
-            }
-            if (creationLabel != null && selectedMarkupAnnotation.getCreationDate() != null) {
-                creationLabel.setText(selectedMarkupAnnotation.getCreationDate().toString());
-            }
+            refreshPopupState();
         }
     }
 
@@ -798,6 +762,38 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             textArea.getDocument().removeDocumentListener(this);
             textArea.setText(selectedMarkupAnnotation.getContents());
             textArea.getDocument().addDocumentListener(this);
+        }
+        refreshCreationLabel();
+    }
+
+    private void refreshCreationLabel() {
+        if (selectedMarkupAnnotation != null &&
+                selectedMarkupAnnotation.getCreationDate() != null && creationLabel != null) {
+            LocalDateTime creationDate = selectedMarkupAnnotation.getCreationDate().asLocalDateTime();
+            DateTimeFormatter formatter = DateTimeFormatter
+                    .ofLocalizedDateTime(FormatStyle.MEDIUM)
+                    .withLocale(Locale.getDefault());
+            creationLabel.setText(creationDate.format(formatter));
+        }
+    }
+
+    private void rebuildTree() {
+        List<Annotation> annotations = pageViewComponent.getPage().getAnnotations();
+        MarkupAnnotation parentAnnotation = annotation.getParent();
+
+        // check first if there are anny annotation that point to this one as
+        // an IRT.  If there aren't any then the selectedAnnotation is the parent
+        // other wise we need to build out
+        DefaultMutableTreeNode root = new DefaultMutableTreeNode("Root");
+        boolean isIRT = buildCommentTree(parentAnnotation, annotations, root);
+        commentTree.removeTreeSelectionListener(this);
+        ((DefaultTreeModel) (commentTree.getModel())).setRoot(root);
+        commentTree.addTreeSelectionListener(this);
+        // reload the tree model
+        commentTreeScrollPane.setVisible(isIRT);
+        refreshTree(commentTree);
+        if (!isIRT) {
+            selectedMarkupAnnotation = parentAnnotation;
         }
     }
 
@@ -815,7 +811,117 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                     privateToggleButton.setSelected(annotationSummaryBox.privateToggleButton.isSelected());
                 }
             }
+        } else if (PropertyConstants.ANNOTATION_DELETED.equals(evt.getPropertyName())) {
+            final AnnotationComponent ac = ((AnnotationComponent) evt.getOldValue());
+            if (ac instanceof MarkupAnnotationComponent) {
+                if (ac.getAnnotation() != null) {
+                    if (containsRefs(Collections.singleton(ac.getAnnotation().getPObjectReference()))) {
+                        rebuildTree();
+                        commentPanel.revalidate();
+                    }
+                }
+            }
+        } else if (PropertyConstants.ANNOTATION_ADDED.equals(evt.getPropertyName())) {
+            final AnnotationComponent ac = (AnnotationComponent) evt.getNewValue();
+            if (ac instanceof MarkupAnnotationComponent) {
+                if (ac.getAnnotation() != null) {
+                    MarkupAnnotation annot = (MarkupAnnotation) ac.getAnnotation();
+                    if (!containsRefs(Collections.singleton(annot.getPObjectReference()))) {
+                        final Set<Reference> refs = new HashSet<>();
+                        while (annot.isInReplyTo()) {
+                            refs.add(annot.getInReplyToAnnotation().getPObjectReference());
+                            annot = annot.getInReplyToAnnotation();
+                        }
+                        if (containsRefs(refs)) {
+                            rebuildTree();
+                            commentPanel.revalidate();
+                        }
+                    }
+                }
+            }
+        } else if (PropertyConstants.ANNOTATION_UPDATED.equals(evt.getPropertyName())) {
+            final AnnotationComponent ac = (AnnotationComponent) evt.getNewValue();
+            if (ac instanceof MarkupAnnotationComponent) {
+                if (ac.getAnnotation() != null) {
+                    updateTreeColor(ac.getAnnotation());
+                }
+            }
+        }
+    }
 
+    private void updateTreeColor(final Annotation annotation) {
+        final Set<Annotation> treeAnnotations = new HashSet<>(getAllAnnotations());
+        if (treeAnnotations.contains(annotation)) {
+            final List<Annotation> toChange = treeAnnotations.stream()
+                    .filter(a -> !a.getColor().equals(annotation.getColor())).collect(Collectors.toList());
+            toChange.forEach(a -> {
+                a.setColor(annotation.getColor());
+                final AnnotationComponent ac = pageViewComponent.getComponentFor(a);
+                if (ac != null) {
+                    documentViewController.updateAnnotation(ac);
+                } else {
+                    logger.warning("Component not found for " + a);
+                }
+            });
+            if (!toChange.isEmpty()) {
+                refreshPopupState();
+                commentPanel.revalidate();
+            }
+        }
+    }
+
+    private boolean containsRefs(final Set<Reference> refs) {
+        if (commentTree != null) {
+            return containsRefs(refs, commentTree.getModel().getRoot());
+        } else {
+            return false;
+        }
+    }
+
+    private static boolean containsRefs(final Set<Reference> refs, final Object node) {
+        if (node != null) {
+            if (node instanceof TreeNode) {
+                final TreeNode tn = (TreeNode) node;
+                if (node instanceof MarkupAnnotationTreeNode) {
+                    final Annotation annot = (MarkupAnnotation) ((MarkupAnnotationTreeNode) node).getUserObject();
+                    if (refs.contains(annot.getPObjectReference())) {
+                        return true;
+                    }
+                }
+                for (int i = 0; i < tn.getChildCount(); ++i) {
+                    if (containsRefs(refs, tn.getChildAt(i))) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public List<Annotation> getAllAnnotations() {
+        if (commentTree != null) {
+            return getAllAnnotations(commentTree.getModel().getRoot()).collect(Collectors.toList());
+        } else {
+            return Collections.emptyList();
+        }
+    }
+
+    private static Stream<Annotation> getAllAnnotations(final Object node) {
+        if (node != null) {
+            if (node instanceof TreeNode) {
+                final TreeNode tn = (TreeNode) node;
+                final boolean hasChildren = tn.getChildCount() > 0;
+                if (node instanceof MarkupAnnotationTreeNode) {
+                    final Annotation annot = (MarkupAnnotation) ((MarkupAnnotationTreeNode) node).getUserObject();
+                    return hasChildren ? Stream.concat(Stream.of(annot), Collections.list((Enumeration<Object>) tn.children()).stream().flatMap(PopupAnnotationComponent::getAllAnnotations)) : Stream.of(annot);
+                } else {
+                    return hasChildren ? Collections.list((Enumeration<Object>) tn.children()).stream().flatMap(PopupAnnotationComponent::getAllAnnotations) : Stream.empty();
+                }
+            } else {
+                return Stream.empty();
+            }
+        } else {
+            return Stream.empty();
         }
     }
 
@@ -870,7 +976,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                                      List<Annotation> annotations,
                                      DefaultMutableTreeNode root) {
         boolean foundIRT = checkForIRT(parentAnnotation, annotations);
-        DefaultMutableTreeNode node = new DefaultMutableTreeNode(parentAnnotation);
+        DefaultMutableTreeNode node = new MarkupAnnotationTreeNode(parentAnnotation);
         root.add(node);
         if (!foundIRT) {
             // simple test add a new node for the parent annotation.
@@ -895,7 +1001,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 if (inReplyToAnnotation != null &&
                         inReplyToAnnotation.getPObjectReference().equals(reference)) {
                     // found one no were to attach it to.
-                    root.add(new DefaultMutableTreeNode(markupAnnotation));
+                    root.add(new MarkupAnnotationTreeNode(markupAnnotation));
                     selectedMarkupAnnotation = markupAnnotation;
                 }
             }
@@ -970,20 +1076,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     }
 
     protected AnnotationComponent findAnnotationComponent(Annotation annotation) {
-        ArrayList<AbstractAnnotationComponent> annotationComponents =
-                pageViewComponent.getAnnotationComponents();
-        if (annotationComponents != null && annotation != null) {
-            Reference compReference;
-            Reference annotationReference = annotation.getPObjectReference();
-            for (AnnotationComponent annotationComponent : annotationComponents) {
-                compReference = annotationComponent.getAnnotation().getPObjectReference();
-                // find the component and toggle it's visibility.
-                if (compReference != null && compReference.equals(annotationReference)) {
-                    return annotationComponent;
-                }
-            }
-        }
-        return null;
+        return pageViewComponent.getComponentFor(annotation);
     }
 
     protected void resetComponentColors() {
@@ -1156,6 +1249,24 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 commentTree.setSelectionRow(row);
                 contextMenu.show(e.getComponent(), e.getX(), e.getY());
             }
+        }
+    }
+
+    private static class MarkupAnnotationTreeNode extends DefaultMutableTreeNode {
+
+        private MarkupAnnotationTreeNode(MarkupAnnotation annot) {
+            super(annot);
+        }
+
+        @Override
+        public String toString() {
+            final MarkupAnnotation annot = (MarkupAnnotation) userObject;
+            return annot.getTitleText() + " - " + annot.getContents();
+        }
+
+        @Override
+        public MarkupAnnotationTreeNode clone() {
+            return (MarkupAnnotationTreeNode) super.clone();
         }
     }
 

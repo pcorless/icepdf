@@ -16,10 +16,11 @@
 package org.icepdf.ri.viewer;
 
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.util.FontPropertiesManager;
-import org.icepdf.ri.util.ViewerPropertiesManager;
 import org.icepdf.ri.util.URLAccess;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import java.text.MessageFormat;
@@ -66,6 +67,7 @@ public class Launcher {
 
         String contentURL = "";
         String contentFile = "";
+        String printer = null;
         // parse command line arguments
         for (int i = 0; i < argv.length; i++) {
             if (i == argv.length - 1) { //each argument requires another
@@ -79,6 +81,9 @@ public class Launcher {
                     break;
                 case "-loadurl":
                     contentURL = argv[++i].trim();
+                    break;
+                case "-print":
+                    printer = argv[++i].trim();
                     break;
                 default:
                     brokenUsage = true;
@@ -96,20 +101,22 @@ public class Launcher {
             System.exit(1);
         }
         // start the viewer
-        run(contentFile, contentURL, messageBundle);
+        run(contentFile, contentURL, printer, messageBundle);
     }
 
     /**
-     * Starts the viewe application.
+     * Starts the viewer application.
      *
      * @param contentFile   URI of a file which will be loaded at runtime, can be
      *                      null.
      * @param contentURL    URL of a file which will be loaded at runtime, can be
      *                      null.
+     * @param printer       The name of the printer to use, can be null
      * @param messageBundle messageBundle to pull strings from
      */
     private static void run(String contentFile,
                             String contentURL,
+                            String printer,
                             ResourceBundle messageBundle) {
 
         // initiate the properties manager.
@@ -128,13 +135,17 @@ public class Launcher {
 
         // application instance
         WindowManager windowManager = WindowManager.createInstance(propertiesManager, messageBundle);
-        if (contentFile != null && contentFile.length() > 0) {
-            windowManager.newWindow(contentFile);
+        if (contentFile != null && !contentFile.isEmpty()) {
+            if (printer != null) {
+                windowManager.newWindow(contentFile, printer);
+            } else {
+                windowManager.newWindow(contentFile);
+            }
             ViewModel.setDefaultFilePath(contentFile);
         }
 
         // load a url if specified
-        if (contentURL != null && contentURL.length() > 0) {
+        if (contentURL != null && !contentURL.isEmpty()) {
             URLAccess urlAccess = URLAccess.doURLAccess(contentURL);
             urlAccess.closeConnection();
             if (urlAccess.errorMessage != null) {
@@ -152,17 +163,21 @@ public class Launcher {
                         messageBundle.getString("viewer.launcher.URLError.dialog.title"),
                         JOptionPane.INFORMATION_MESSAGE);
             } else {
-                windowManager.newWindow(urlAccess.url);
+                if (printer != null) {
+                    windowManager.newWindow(urlAccess.url, printer);
+                } else {
+                    windowManager.newWindow(urlAccess.url);
+                }
             }
             ViewModel.setDefaultURL(urlAccess.urlLocation);
             urlAccess.dispose();
         }
 
         // Start an empy viewer if there was no command line parameters
-        if (((contentFile == null || contentFile.length() == 0) &&
-                (contentURL == null || contentURL.length() == 0))
+        if (((contentFile == null || contentFile.isEmpty()) &&
+                (contentURL == null || contentURL.isEmpty()))
                 || (windowManager.getNumberOfWindows() == 0)
-                ) {
+        ) {
             windowManager.newWindow("");
         }
     }
@@ -176,7 +191,7 @@ public class Launcher {
     private static void setupLookAndFeel(ResourceBundle messageBundle) {
 
         // Do Mac related-setup (if running on a Mac)
-        if (Defs.sysProperty("os.name").contains("OS X")) {
+        if (SystemProperties.OS_NAME.contains("OS X")) {
             // Running on a mac
             // take the menu bar off the jframe
             Defs.setSystemProperty("apple.laf.useScreenMenuBar", "true");
