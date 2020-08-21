@@ -3746,7 +3746,7 @@ public class SwingController extends ComponentAdapter
         PrintHelper printHelper = viewModel.getPrintHelper();
         // create a new print helper for this document instance
         if (printHelper == null) {
-            MediaSizeName mediaSizeName = loadDefaultPrinterProperties();
+            MediaSizeName mediaSizeName = PrintHelper.guessMediaSizeName(document);
             // create the new print help
             printHelper = new PrintHelper(documentViewController.getViewContainer(),
                     getPageTree(), documentViewController.getRotation(), mediaSizeName,
@@ -3834,7 +3834,7 @@ public class SwingController extends ComponentAdapter
             // below are for NA_letter in millimeters.
             PrintHelper printHelper = viewModel.getPrintHelper();
             if (printHelper == null) {
-                MediaSizeName mediaSizeName = loadDefaultPrinterProperties();
+                MediaSizeName mediaSizeName = PrintHelper.guessMediaSizeName(document);
                 // create the new print help
                 printHelper = new PrintHelper(documentViewController.getViewContainer(),
                         getPageTree(), documentViewController.getRotation(),
@@ -3871,26 +3871,6 @@ public class SwingController extends ComponentAdapter
             SwingUtilities.invokeLater(() -> setDisplayTool(documentIcon));
         }
 
-    }
-
-    /**
-     * Loads/set the media size name derived from the properties manager.
-     * Otherwise a default paper size of NA Letter is returned
-     *
-     * @return a MediaSizeName given the conditions above.
-     */
-    private MediaSizeName loadDefaultPrinterProperties() {
-        Preferences viewerPreferences = propertiesManager.getPreferences();
-        int printMediaUnit = viewerPreferences.getInt(
-                ViewerPropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_UNIT, 1000);
-        double printMediaWidth = viewerPreferences.getDouble(
-                ViewerPropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_WIDTH, 215.9);
-        double printMediaHeight = viewerPreferences.getDouble(
-                ViewerPropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_HEIGHT, 279.4);
-        // get the closed matching media name.
-        return MediaSize.findMedia((float) printMediaWidth,
-                (float) printMediaHeight,
-                printMediaUnit);
     }
 
     /**
