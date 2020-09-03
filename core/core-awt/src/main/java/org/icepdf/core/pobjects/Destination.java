@@ -77,7 +77,7 @@ public class Destination extends Dictionary {
     // Reference object for destination
     private Reference ref;
 
-    // type, /XYZ, /Fit, /FitH... 
+    // type, /XYZ, /Fit, /FitH...
     private Name type;
 
     // Specified by /XYZ in the core, /(left)(top)(zoom)
@@ -93,6 +93,8 @@ public class Destination extends Dictionary {
     // initiated flag
     private boolean inited;
 
+    private final PageTree pt;
+
     /**
      * Creates a new instance of a Destination.
      *
@@ -102,6 +104,7 @@ public class Destination extends Dictionary {
     public Destination(Library l, Object h) {
         super(l, null);
         object = h;
+        pt = l.getCatalog().getPageTree();
         init();
     }
 
@@ -114,6 +117,7 @@ public class Destination extends Dictionary {
         destination.add(y);
         destination.add(null);
         object = destination;
+        pt = page.getLibrary().getCatalog().getPageTree();
         init();
     }
 
@@ -236,6 +240,12 @@ public class Destination extends Dictionary {
         Object ob = getDestValue(0, v);
         if (ob instanceof Reference) {
             ref = (Reference) ob;
+        } else if (ob instanceof Integer) {
+            //Dest could be a page number instead of a reference
+            final int idx = (int) ob;
+            if (idx >= 0 && idx < pt.getNumberOfPages()) {
+                ref = pt.getPageReference(idx);
+            }
         }
         // store type.
         ob = getDestValue(1, v);
