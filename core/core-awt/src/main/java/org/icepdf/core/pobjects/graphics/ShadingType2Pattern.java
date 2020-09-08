@@ -32,7 +32,6 @@ import java.util.logging.Logger;
  * axis between two endpoints and extends indefinitely perpendicular to the
  * that axis.</p>
  *
- * @author ICEsoft Technologies Inc.
  * @since 2.7
  */
 public class ShadingType2Pattern extends ShadingPattern {

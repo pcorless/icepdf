@@ -1481,16 +1481,6 @@ public class SwingViewBuilder {
         return btn;
     }
 
-    public JToggleButton buildFontEngineButton() {
-        JToggleButton btn = makeToolbarToggleButton(
-                messageBundle.getString("viewer.toolbar.pageFit.fontEngine.label"),
-                messageBundle.getString("viewer.toolbar.pageFit.fontEngine.tooltip"),
-                "font-engine", 118, 25, buttonFont);
-        if (viewerController != null && btn != null)
-            viewerController.setFontEngineButton(btn);
-        return btn;
-    }
-
     public JToggleButton buildFitWidthButton() {
         JToggleButton btn = makeToolbarToggleButton(
                 messageBundle.getString("viewer.toolbar.pageFit.fitWidth.label"),
@@ -1693,13 +1683,6 @@ public class SwingViewBuilder {
             toolbar.addSeparator();
             addToToolBar(toolbar, buildAnnotationEditingModeToolButton(iconSize));
         }
-        return toolbar;
-    }
-
-    public JToolBar buildDemoToolBar() {
-        JToolBar toolbar = new JToolBar();
-        commonToolBarSetup(toolbar, false);
-        addToToolBar(toolbar, buildFontEngineButton());
         return toolbar;
     }
 
