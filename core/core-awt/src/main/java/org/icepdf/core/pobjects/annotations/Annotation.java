@@ -30,8 +30,8 @@ import java.awt.*;
 import java.awt.geom.*;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -582,9 +582,7 @@ public abstract class Annotation extends Dictionary {
                 annot = new LinkAnnotation(library, hashMap);
             }
             // highlight version of a TextMarkup annotation.
-            else if (subType.equals(TextMarkupAnnotation.SUBTYPE_HIGHLIGHT) ||
-                    subType.equals(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT) ||
-                    subType.equals(TextMarkupAnnotation.SUBTYPE_UNDERLINE)) {
+            else if (TextMarkupAnnotation.ALL_SUBTYPES.contains(subType)) {
                 annot = new TextMarkupAnnotation(library, hashMap);
             } else if (subType.equals(Annotation.SUBTYPE_LINE)) {
                 annot = new LineAnnotation(library, hashMap);
