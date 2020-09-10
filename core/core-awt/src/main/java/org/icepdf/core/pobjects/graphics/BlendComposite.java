@@ -104,6 +104,13 @@ public final class BlendComposite implements Composite {
         // sets the shadow colour of the decorator.
         disableBlendComposite = Defs.booleanProperty(
                 "org.icepdf.core.paint.disableBlendComposite", false);
+
+        /*
+        Check for XRSurfaceData.XRInternalSurfaceData.getRaster implementation
+        On Linux, the implementation simply returns InternalError
+        We have to preventatively disable it, otherwise it will cause an InternalError when annotations using
+        BlendComposite are rendered
+        */
         try {
             final Class xrSurfaceDataClass = Class.forName("sun.java2d.xr.XRSurfaceData$XRInternalSurfaceData");
             final Constructor constructor = xrSurfaceDataClass.getDeclaredConstructor(Class.forName("sun.java2d.xr.XRBackend"), int.class);
@@ -114,9 +121,17 @@ public final class BlendComposite implements Composite {
             if (e.getCause() instanceof InternalError) {
                 disableBlendComposite = true;
             }
+            /*
+            If there is another cause, this means that getRaster implementation is not simply "throw
+            new InternalError()", in which case this implementation may perfectly work with real values.
+            */
         } catch (final InternalError e) {
             disableBlendComposite = true;
         } catch (final Exception ignored) {
+            /*
+            If there are other exceptions (NoSuchClass, NoSuchMethod, etc), this probably means that the api changed
+            or that java2d.xr is not available, in which case the blend composite rendering could work perfectly.
+            */
         }
     }
 
