@@ -363,7 +363,7 @@ public class Page extends Dictionary {
             for (final Annotation annot : annotSet) {
                 if (annot instanceof MarkupAnnotation) {
                     final PopupAnnotation popup = ((MarkupAnnotation) annot).getPopupAnnotation();
-                    if (!annotSet.contains(popup)) {
+                    if (popup != null && !annotSet.contains(popup)) {
                         popup.init();
                         v.add(popup);
                         annotations.add(popup);
