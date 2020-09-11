@@ -15,7 +15,6 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
-import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
 import org.icepdf.core.pobjects.annotations.*;
@@ -82,11 +81,13 @@ public class AnnotationComponentFactory {
                 return new CircleAnnotationComponent((CircleAnnotation) annotation, documentViewController,
                         pageViewComponent);
             } else if (Annotation.SUBTYPE_POLYGON.equals(subtype)) {
-                return new PolygonAnnotationComponent((MarkupAnnotation) annotation, documentViewController,
-                        pageViewComponent);
+                //Disabled while support is not available
+//                return new PolygonAnnotationComponent((MarkupAnnotation) annotation, documentViewController,
+//                        pageViewComponent);
             } else if (Annotation.SUBTYPE_POLYLINE.equals(subtype)) {
-                return new PolyLineAnnotationComponent((MarkupAnnotation) annotation, documentViewController,
-                        pageViewComponent);
+                //Disabled while support is not available
+//                return new PolyLineAnnotationComponent((MarkupAnnotation) annotation, documentViewController,
+//                        pageViewComponent);
             } else if (Annotation.SUBTYPE_SQUARE.equals(subtype)) {
                 return new SquareAnnotationComponent((SquareAnnotation) annotation, documentViewController,
                         pageViewComponent);
