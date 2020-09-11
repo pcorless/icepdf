@@ -56,7 +56,7 @@ public class AnnotationFactory {
             return LinkAnnotation.getInstance(library, rect);
         }
         // highlight version of a TextMarkup annotation.
-        else if (TextMarkupAnnotation.ALL_SUBTYPES.contains(subType)) {
+        else if (TextMarkupAnnotation.isTextMarkupAnnotation(subType)) {
             return TextMarkupAnnotation.getInstance(library, rect,
                     subType);
         } else if (subType.equals(Annotation.SUBTYPE_LINE)) {

@@ -51,8 +51,8 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
     public static final Name SUBTYPE_SQUIGGLY = new Name("Squiggly");
     public static final Name SUBTYPE_STRIKE_OUT = new Name("StrikeOut");
 
-    public static final Set<Name> ALL_SUBTYPES = new HashSet<>(Arrays.asList(SUBTYPE_HIGHLIGHT, SUBTYPE_UNDERLINE,
-            SUBTYPE_SQUIGGLY, SUBTYPE_STRIKE_OUT));
+    public static final Set<Name> ALL_SUBTYPES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(SUBTYPE_HIGHLIGHT,
+            SUBTYPE_UNDERLINE, SUBTYPE_SQUIGGLY, SUBTYPE_STRIKE_OUT)));
 
     private static Color highlightColor;
     private static Color strikeOutColor;
@@ -240,10 +240,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
 
 
     public static boolean isTextMarkupAnnotation(Name subType) {
-        return SUBTYPE_HIGHLIGHT.equals(subType) ||
-                SUBTYPE_UNDERLINE.equals(subType) ||
-                SUBTYPE_SQUIGGLY.equals(subType) ||
-                SUBTYPE_STRIKE_OUT.equals(subType);
+        return ALL_SUBTYPES.contains(subType);
     }
 
     /**
