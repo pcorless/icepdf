@@ -582,9 +582,7 @@ public abstract class Annotation extends Dictionary {
                 annot = new LinkAnnotation(library, hashMap);
             }
             // highlight version of a TextMarkup annotation.
-            else if (subType.equals(TextMarkupAnnotation.SUBTYPE_HIGHLIGHT) ||
-                    subType.equals(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT) ||
-                    subType.equals(TextMarkupAnnotation.SUBTYPE_UNDERLINE)) {
+            else if (TextMarkupAnnotation.isTextMarkupAnnotation(subType)) {
                 annot = new TextMarkupAnnotation(library, hashMap);
             } else if (subType.equals(Annotation.SUBTYPE_LINE)) {
                 annot = new LineAnnotation(library, hashMap);
