@@ -37,7 +37,6 @@ import java.util.logging.Logger;
  * factory only support Shading Type2 and Type3 patterns, as thses are the only
  * types we have concrete examples of. </p>
  *
- * @author ICEsoft Technologies Inc.
  * @since 3.0
  */
 public abstract class ShadingPattern extends Dictionary implements Pattern {

@@ -26,10 +26,7 @@ import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.search.DocumentSearchController;
-import org.icepdf.core.util.Defs;
-import org.icepdf.core.util.Library;
-import org.icepdf.core.util.PropertyConstants;
-import org.icepdf.core.util.Utils;
+import org.icepdf.core.util.*;
 import org.icepdf.ri.common.preferences.PreferencesDialog;
 import org.icepdf.ri.common.properties.FontDialog;
 import org.icepdf.ri.common.properties.InformationDialog;
@@ -1877,11 +1874,12 @@ public class SwingController extends ComponentAdapter
     private void reflectAnnotationDefaultPrivacy() {
         // check properties to get last state.
         Preferences preferences = ViewerPropertiesManager.getInstance().getPreferences();
-        boolean annotationPrivacy = preferences.getBoolean(
-                ViewerPropertiesManager.PROPERTY_ANNOTATION_LAST_USED_PUBLIC_FLAG, true);
+        boolean annotationPrivacy = !SystemProperties.PRIVATE_PROPERTY_ENABLED ||
+                preferences.getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_LAST_USED_PUBLIC_FLAG, true);
+
 
         // store the current state in the model and annotation tool handlers will pull from the current state.
-        viewModel.setAnnotationPrivacy(annotationPrivacy);
+        setAnnotationPrivacy(annotationPrivacy);
 
         // set the default value of the combo box.
         if (annotationPrivacyComboBox != null) {
@@ -3126,6 +3124,7 @@ public class SwingController extends ComponentAdapter
 
         if (annotationSummaryFrame != null) {
             annotationSummaryFrame.disposeDocument();
+            annotationSummaryFrame.dispose();
         }
 
         // set the default cursor.  
@@ -3799,10 +3798,15 @@ public class SwingController extends ComponentAdapter
             printButton.setEnabled(false);
         }
 
-        Runnable runner = () -> initialisePrinting(withDialog);
+        Runnable runner = () -> initialisePrinting(withDialog, null);
         Thread t = new Thread(runner);
         t.setPriority(Thread.NORM_PRIORITY);
         t.start();
+    }
+
+    public void printAndExit(boolean showDialog, String printer) {
+        //Do synchronously, because we're exiting after that
+        initialisePrinting(showDialog, printer);
     }
 
     /**
@@ -3815,7 +3819,7 @@ public class SwingController extends ComponentAdapter
      *
      * @param withDialog If should show a print dialog before starting to print
      */
-    private void initialisePrinting(final boolean withDialog) {
+    private void initialisePrinting(final boolean withDialog, final String printer) {
         boolean canPrint = havePermissionToPrint();
         if (!canPrint) {
             renablePrintUI();
@@ -3842,7 +3846,9 @@ public class SwingController extends ComponentAdapter
                         printHelper.getPrintRequestAttributeSet());
             }
             viewModel.setPrintHelper(printHelper);
-
+            if (printer != null) {
+                printHelper.setPrinter(printer);
+            }
             // set the printer to show a print dialog
             canPrint = printHelper.setupPrintService(
                     0,
@@ -3851,6 +3857,7 @@ public class SwingController extends ComponentAdapter
                     viewModel.isShrinkToPrintableArea(),        // shrink to printable area
                     withDialog  // show print dialog
             );
+
             // save new printer attributes to properties
             savePrinterProperties(printHelper);
             // if user cancelled the print job from the dialog, don't start printing

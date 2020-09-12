@@ -76,9 +76,6 @@ public class Page extends Dictionary {
      */
     public static final float SELECTION_ALPHA = 0.3f;
 
-    public static boolean PRIVATE_PROPERTY_ENABLED = Defs.booleanProperty(
-            "org.icepdf.core.page.annotation.privateProperty.enabled", false);
-
     // text selection colour
     public static Color selectionColor;
 
@@ -205,8 +202,6 @@ public class Page extends Dictionary {
 
     // page has default rotation value
     private float pageRotation = 0;
-
-    private String userName = System.getProperty("user.name");
 
     private int pageIndex;
     private int imageCount;
@@ -341,13 +336,11 @@ public class Page extends Dictionary {
                     if (ref != null && a != null) {
                         a.setPObjectReference(ref);
                         a.init();
-                    }
-                    if (PRIVATE_PROPERTY_ENABLED && a.getFlagPrivateContents()) {
-                        // check to make sure we don't show an annotation if the username doesn't match the creator
-                        if (a instanceof MarkupAnnotation) {
+                        if (SystemProperties.PRIVATE_PROPERTY_ENABLED && a instanceof MarkupAnnotation && a.getFlagPrivateContents()) {
+                            // check to make sure we don't show an annotation if the username doesn't match the creator
                             MarkupAnnotation markupAnnotation = (MarkupAnnotation) a;
                             String creator = markupAnnotation.getTitleText();
-                            if (creator.equals(userName)) {
+                            if (creator.equals(SystemProperties.USER_NAME)) {
                                 annotations.add(a);
                             } else {
                                 // other wise we skip it all together but make sure the popup is hidden.
@@ -355,10 +348,11 @@ public class Page extends Dictionary {
                                     markupAnnotation.getPopupAnnotation().setOpen(false);
                                 }
                             }
+
+                        } else {
+                            // add any found annotations to the vector.
+                            annotations.add(a);
                         }
-                    } else {
-                        // add any found annotations to the vector.
-                        annotations.add(a);
                     }
                 } catch (IllegalStateException e) {
                     logger.warning("Malformed annotation could not be initialized. " +
