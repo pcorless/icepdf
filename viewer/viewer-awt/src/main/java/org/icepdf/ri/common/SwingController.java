@@ -3761,8 +3761,6 @@ public class SwingController extends ComponentAdapter
         }
         viewModel.setPrintHelper(printHelper);
         viewModel.getPrintHelper().showPrintSetupDialog();
-        // save new printer attributes to properties
-        savePrinterProperties(printHelper);
     }
 
     /**
@@ -3783,8 +3781,6 @@ public class SwingController extends ComponentAdapter
                 mediaSize,
                 PrintQuality.NORMAL);
         viewModel.setPrintHelper(printHelper);
-        // save new printer attributes to properties
-        savePrinterProperties(printHelper);
     }
 
     /**
@@ -3858,8 +3854,6 @@ public class SwingController extends ComponentAdapter
                     withDialog  // show print dialog
             );
 
-            // save new printer attributes to properties
-            savePrinterProperties(printHelper);
             // if user cancelled the print job from the dialog, don't start printing
             // in the background.
             if (!canPrint) {
@@ -3871,40 +3865,6 @@ public class SwingController extends ComponentAdapter
             SwingUtilities.invokeLater(() -> setDisplayTool(documentIcon));
         }
 
-    }
-
-    /**
-     * Utility that tries to save the state of the currently set MediaSize.
-     * The width height and unit values are written to the the propertiesManager.
-     * When the Viewer RI is exited the properties file is written to disk.
-     *
-     * @param printHelper instance of the open documents print helper.
-     */
-    private void savePrinterProperties(PrintHelper printHelper) {
-        PrintRequestAttributeSet printRequestAttributeSet =
-                printHelper.getPrintRequestAttributeSet();
-
-        Object printAttributeSet = printRequestAttributeSet.get(Media.class);
-
-        if (propertiesManager != null &&
-                printAttributeSet instanceof MediaSizeName) {
-            Preferences viewerPreferences = propertiesManager.getPreferences();
-            MediaSizeName paper = (MediaSizeName) printAttributeSet;
-            MediaSize mediaSize = MediaSize.getMediaSizeForName(paper);
-            // write out the new page size property values.
-            int printMediaUnit = MediaSize.MM;
-            viewerPreferences.put(
-                    ViewerPropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_UNIT,
-                    String.valueOf(printMediaUnit));
-            double printMediaWidth = mediaSize.getX(printMediaUnit);
-            viewerPreferences.put(
-                    ViewerPropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_WIDTH,
-                    String.valueOf(printMediaWidth));
-            double printMediaHeight = mediaSize.getY(printMediaUnit);
-            viewerPreferences.put(
-                    ViewerPropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_HEIGHT,
-                    String.valueOf(printMediaHeight));
-        }
     }
 
     private void renablePrintUI() {
