@@ -75,6 +75,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
     public enum FilterSubTypeColumn {
         ALL, TEXT, HIGHLIGHT, STRIKEOUT, UNDERLINE, LINE, SQUARE, CIRCLE, INK, FREETEXT
     }
+
     public enum FilterVisibilityColumn {
         ALL, PRIVATE, PUBLIC
     }
@@ -333,7 +334,6 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         buildSearchBar();
         buildMarkupAnnotationCommentView();
         buildSortFilterToolBar();
-
     }
 
     protected void buildSearchBar() {

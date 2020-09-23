@@ -272,22 +272,37 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
 
         //Don't show/hide annotations if the user is not currently playing with the annotations panel
         final Component focusOwner = FocusManager.getCurrentManager().getFocusOwner();
-        if (focusOwner != null) {
-            Container parent = focusOwner.getParent();
-            boolean execute = false;
+        if (isMarkupAnnotationPanelFocused(focusOwner)) {
+            ((SwingController) controller).changeAnnotationsVisibility(a -> annotationSet.contains(a) ||
+                            (a instanceof PopupAnnotation && annotationSet.contains(((PopupAnnotation) a).getParent())),
+                    true, true);
+            final PropertyChangeListener listener = propertyChangeEvent -> {
+                final Object newValue = propertyChangeEvent.getNewValue();
+                if (newValue instanceof Component) {
+                    final Component comp = (Component) newValue;
+                    //Sometimes the root comp temporarily gets the focus
+                    final Component rootComp = controller.getViewerFrame().getComponent(0);
+                    if (rootComp != comp && !isMarkupAnnotationPanelFocused(comp)) {
+                        ((SwingController) controller).changeAnnotationsVisibility(a -> true, true, false);
+                        FocusManager.getCurrentManager().removePropertyChangeListener(this);
+                    }
+                }
+            };
+            FocusManager.getCurrentManager().addPropertyChangeListener(listener);
+        }
+    }
+
+    private boolean isMarkupAnnotationPanelFocused(final Component component) {
+        if (component != null) {
+            Container parent = component.getParent();
             while (parent != null) {
                 if (parent == parentMarkupAnnotationPanel) {
-                    execute = true;
-                    break;
+                    return true;
                 }
                 parent = parent.getParent();
             }
-            if (execute) {
-                ((SwingController) controller).changeAnnotationsVisibility(a -> annotationSet.contains(a) ||
-                                (a instanceof PopupAnnotation && annotationSet.contains(((PopupAnnotation) a).getParent())),
-                        true, true);
-            }
         }
+        return false;
     }
 
     @Override

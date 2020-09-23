@@ -50,6 +50,7 @@ import org.icepdf.ri.common.utility.search.SearchToolBar;
 import org.icepdf.ri.common.utility.signatures.SignaturesHandlerPanel;
 import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
 import org.icepdf.ri.common.views.*;
+import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryFrame;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
@@ -5695,10 +5696,22 @@ public class SwingController extends ComponentAdapter
             for (int i = 0; i < pt.getNumberOfPages(); ++i) {
                 final Page p = pt.getPage(i);
                 if (p.getAnnotations() != null) {
-                    p.getAnnotations().stream().filter(a -> (a instanceof MarkupAnnotation || a instanceof PopupAnnotation)
-                            && filter.filter(a)).forEach(a -> {
+                    p.getAnnotations().stream().filter(a ->
+                            (a instanceof MarkupAnnotation || a instanceof PopupAnnotation) && filter.filter(a)).forEach(a -> {
                         a.setFlag(Annotation.FLAG_HIDDEN, !visible);
                         a.setFlag(Annotation.FLAG_INVISIBLE, !visible);
+                        if (a instanceof PopupAnnotation) {
+                            final PopupAnnotation pa = (PopupAnnotation) a;
+                            if (pa.isOpen() && !visible) {
+                                pa.setOpen(false);
+                                final int idx = pa.getPageIndex();
+                                final AbstractAnnotationComponent comp = (AbstractAnnotationComponent) ((PageViewComponentImpl)
+                                        documentViewController.getDocumentViewModel().getPageComponents().get(idx)).getComponentFor(pa);
+                                if (comp != null) {
+                                    comp.setVisible(false);
+                                }
+                            }
+                        }
                     });
                     if (execInvert) {
                         changeAnnotationsVisibility(filter.invertFilter(), !visible, false);
