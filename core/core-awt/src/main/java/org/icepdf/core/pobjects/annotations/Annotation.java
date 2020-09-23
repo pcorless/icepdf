@@ -598,6 +598,8 @@ public abstract class Annotation extends Dictionary {
                 annot = new TextAnnotation(library, hashMap);
             } else if (subType.equals(Annotation.SUBTYPE_POPUP)) {
                 annot = new PopupAnnotation(library, hashMap);
+            } else if (PolyAnnotation.isPolyAnnotation(subType)) {
+                annot = new PolyAnnotation(library, hashMap);
             } else if (subType.equals(Annotation.SUBTYPE_WIDGET)) {
                 Name fieldType = library.getName(hashMap, FieldDictionary.FT_KEY);
                 if (fieldType == null) {
