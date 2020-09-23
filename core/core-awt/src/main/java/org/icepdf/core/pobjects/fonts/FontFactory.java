@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.ofont.OFont;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.SystemProperties;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,14 +43,12 @@ public class FontFactory {
 
     // dynamic property to switch between font engine and awt font substitution. 
     private static boolean awtFontSubstitution;
-    private static boolean useNFontIfAvailable;
 
     static {
         // turn on font file loading using awt, can cause the jvm to crash
         // if the font file is corrupt.
         awtFontLoading =
                 Defs.sysPropertyBoolean("org.icepdf.core.awtFontLoading", true);
-        useNFontIfAvailable = Defs.sysPropertyBoolean("org.icepdf.core.useNFont", true);
     }
 
     public static final int FONT_OPEN_TYPE = 5;
@@ -313,7 +312,7 @@ public class FontFactory {
             // keep quiet
         }
 
-        return foundNFont && !awtFontSubstitution && useNFontIfAvailable;
+        return foundNFont && !awtFontSubstitution && SystemProperties.USE_NFONT;
     }
 
 }

@@ -17,14 +17,15 @@ package org.icepdf.core.pobjects.fonts;
 
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.FontUtil;
+import org.icepdf.core.util.SystemProperties;
 
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.security.AccessControlException;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -136,7 +137,7 @@ public class FontManager {
      * Java base font class, generally ${java.home}\lib\fonts.  This is the base font directory that is used
      * for searching for system fonts.  If all else fails this should be the fall back directory.
      */
-    public static String JAVA_FONT_PATH = Defs.sysProperty("java.home") + "/lib/fonts";
+    public static String JAVA_FONT_PATH = SystemProperties.JAVA_HOME + "/lib/fonts";
 
     /**
      * Default search path for fonts on windows systems.
@@ -364,7 +365,7 @@ public class FontManager {
         ArrayList<String> fontDirectories = new ArrayList<>();
         // load the appropriate font set for the OS.
         if (!skipSystemFonts) {
-            String operationSystem = System.getProperty("os.name");
+            String operationSystem = SystemProperties.OS_NAME;
             if (operationSystem != null) {
                 operationSystem = operationSystem.toLowerCase();
                 if (operationSystem.contains("win")) {

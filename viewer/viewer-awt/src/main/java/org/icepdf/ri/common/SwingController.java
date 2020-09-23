@@ -29,10 +29,7 @@ import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.search.DocumentSearchController;
-import org.icepdf.core.util.Defs;
-import org.icepdf.core.util.Library;
-import org.icepdf.core.util.PropertyConstants;
-import org.icepdf.core.util.Utils;
+import org.icepdf.core.util.*;
 import org.icepdf.ri.common.preferences.PreferencesDialog;
 import org.icepdf.ri.common.properties.FontDialog;
 import org.icepdf.ri.common.properties.InformationDialog;
@@ -121,10 +118,10 @@ public class SwingController extends ComponentAdapter
     protected static final Logger logger =
             Logger.getLogger(SwingController.class.toString());
 
-    private static boolean useJFileChooser;
+    private static final boolean USE_JFILECHOOSER;
 
     static {
-        useJFileChooser = Defs.booleanProperty("org.icepdf.ri.viewer.jfilechooser", false);
+        USE_JFILECHOOSER = Defs.booleanProperty("org.icepdf.ri.viewer.jfilechooser", false);
     }
 
     public static final int CURSOR_OPEN_HAND = 1;
@@ -306,6 +303,7 @@ public class SwingController extends ComponentAdapter
             SwingController.messageBundle = ResourceBundle.getBundle(
                     ViewerPropertiesManager.DEFAULT_MESSAGE_BUNDLE);
         }
+        new Thread(PrintHelper::preparePrintServices).start();
     }
 
     /**
@@ -1881,11 +1879,12 @@ public class SwingController extends ComponentAdapter
     private void reflectAnnotationDefaultPrivacy() {
         // check properties to get last state.
         Preferences preferences = ViewerPropertiesManager.getInstance().getPreferences();
-        boolean annotationPrivacy = preferences.getBoolean(
-                ViewerPropertiesManager.PROPERTY_ANNOTATION_LAST_USED_PUBLIC_FLAG, true);
+        boolean annotationPrivacy = !SystemProperties.PRIVATE_PROPERTY_ENABLED ||
+                preferences.getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_LAST_USED_PUBLIC_FLAG, true);
+
 
         // store the current state in the model and annotation tool handlers will pull from the current state.
-        viewModel.setAnnotationPrivacy(annotationPrivacy);
+        setAnnotationPrivacy(annotationPrivacy);
 
         // set the default value of the combo box.
         if (annotationPrivacyComboBox != null) {
@@ -2254,12 +2253,13 @@ public class SwingController extends ComponentAdapter
      * @param initialDirPath The directory to show to the user when opening the FileDialog
      */
     public void openFile(String initialDirPath) {
-        if (!useJFileChooser) {
+        final File file;
+        if (!USE_JFILECHOOSER) {
             // Create and display a file open dialog
             final FileDialog fileDialog = new FileDialog(getViewerFrame());
             fileDialog.setMultipleMode(false);
             fileDialog.setMode(FileDialog.LOAD);
-            fileDialog.setFilenameFilter((file, s) -> s.endsWith(FileExtensionUtils.pdf));
+            fileDialog.setFilenameFilter((f, s) -> s.endsWith(FileExtensionUtils.pdf));
             if (initialDirPath != null && !initialDirPath.isEmpty()) {
                 fileDialog.setDirectory(initialDirPath);
             } else if (ViewModel.getDefaultFile() != null) {
@@ -2273,31 +2273,9 @@ public class SwingController extends ComponentAdapter
             final String dirPath = fileDialog.getDirectory();
 
             if (filePath != null && dirPath != null) {
-                final File file = new File(dirPath + filePath);
-                // trying to get rid of shadow left by file chooser
-                fileDialog.setVisible(false);
-                // make sure file being opened is valid
-                String extension = FileExtensionUtils.getExtension(file);
-                if (extension != null) {
-                    if (extension.equals(FileExtensionUtils.pdf)) {
-                        if (viewer != null) {
-                            viewer.toFront();
-                            viewer.requestFocus();
-                        }
-                        openFileInSomeViewer(file);
-                    } else {
-                        org.icepdf.ri.util.Resources.showMessageDialog(viewer,
-                                JOptionPane.INFORMATION_MESSAGE,
-                                messageBundle,
-                                "viewer.dialog.openFile.error.title",
-                                "viewer.dialog.openFile.error.msg",
-                                file.getPath());
-                        openFile(fileDialog.getDirectory());
-                    }
-
-                    // save the default directory
-                    ViewModel.setDefaultFile(file);
-                }
+                file = new File(dirPath + filePath);
+            } else {
+                file = null;
             }
             fileDialog.setVisible(false);
         } else {
@@ -2312,35 +2290,37 @@ public class SwingController extends ComponentAdapter
             }
             // show the dialog
             fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.openFile.title"));
-            int returnVal = fileChooser.showOpenDialog(viewer);
+            final int returnVal = fileChooser.showOpenDialog(viewer);
 
             if (returnVal == JFileChooser.APPROVE_OPTION) {
-                final File file = fileChooser.getSelectedFile();
-                // trying to get rid of shadow left by file chooser
-                fileChooser.setVisible(false);
-                // make sure file being opened is valid
-                String extension = FileExtensionUtils.getExtension(file);
-                if (extension != null) {
-                    if (extension.equals(FileExtensionUtils.pdf)) {
-                        if (viewer != null) {
-                            viewer.toFront();
-                            viewer.requestFocus();
-                        }
-                        openFileInSomeViewer(file);
-                    } else {
-                        org.icepdf.ri.util.Resources.showMessageDialog(viewer,
-                                JOptionPane.INFORMATION_MESSAGE,
-                                messageBundle,
-                                "viewer.dialog.openFile.error.title",
-                                "viewer.dialog.openFile.error.msg",
-                                file.getPath());
-                    }
-
-                    // save the default directory
-                    ViewModel.setDefaultFile(file);
-                }
+                file = fileChooser.getSelectedFile();
+            } else {
+                file = null;
             }
             fileChooser.setVisible(false);
+        }
+        if (file != null) {
+            // make sure file being opened is valid
+            final String extension = FileExtensionUtils.getExtension(file);
+            if (extension != null) {
+                if (extension.equals(FileExtensionUtils.pdf)) {
+                    if (viewer != null) {
+                        viewer.toFront();
+                        viewer.requestFocus();
+                    }
+                    openFileInSomeViewer(file);
+                } else {
+                    org.icepdf.ri.util.Resources.showMessageDialog(viewer,
+                            JOptionPane.INFORMATION_MESSAGE,
+                            messageBundle,
+                            "viewer.dialog.openFile.error.title",
+                            "viewer.dialog.openFile.error.msg",
+                            file.getPath());
+                }
+
+                // save the default directory
+                ViewModel.setDefaultFile(file);
+            }
         }
     }
 
@@ -3149,6 +3129,7 @@ public class SwingController extends ComponentAdapter
 
         if (annotationSummaryFrame != null) {
             annotationSummaryFrame.disposeDocument();
+            annotationSummaryFrame.dispose();
         }
 
         // set the default cursor.  
@@ -3393,32 +3374,29 @@ public class SwingController extends ComponentAdapter
      * save the file to, and what name to give it.
      */
     public void saveFile() {
-
         // See if we can come up with a default file name
         // We want the bytes from whence, but the file name of origin
-        String origin = document.getDocumentOrigin();
+        final String origin = document.getDocumentOrigin();
         String originalFileName = null;
         String newFileName = null;
         if (origin != null) {
-            int lastSeparator = Math.max(
+            final int lastSeparator = Math.max(
                     Math.max(
-                            origin.lastIndexOf("/"),
-                            origin.lastIndexOf("\\")),
+                            origin.lastIndexOf('/'),
+                            origin.lastIndexOf('\\')),
                     origin.lastIndexOf(File.separator) // Might not be / or \
             );
             if (lastSeparator >= 0) {
                 originalFileName = origin.substring(lastSeparator + 1);
-                if (originalFileName.length() > 0) {
+                if (!originalFileName.isEmpty()) {
                     // Set the selected file to a slightly modified name of the original
                     newFileName = generateNewSaveName(originalFileName);
-                } else {
-                    newFileName = null;
                 }
             }
         }
 
         // Create and display a file saving dialog
-        if (!useJFileChooser) {
+        if (!USE_JFILECHOOSER) {
             final FileDialog fileDialog = new FileDialog(getViewerFrame());
             fileDialog.setTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
             fileDialog.setMultipleMode(false);
@@ -3567,22 +3545,41 @@ public class SwingController extends ComponentAdapter
      * exported text file to, and what name to give that file.
      */
     public void exportText() {
-        // Create and display a file saving dialog
-        final FileDialog fileDialog = new FileDialog(getViewerFrame());
-        fileDialog.setTitle(messageBundle.getString("viewer.dialog.exportText.title"));
-        fileDialog.setMultipleMode(false);
-        fileDialog.setMode(FileDialog.SAVE);
-        fileDialog.setFilenameFilter((File f, String s) -> s.endsWith(FileExtensionUtils.txt));
-        if (ViewModel.getDefaultFile() != null) {
-            fileDialog.setDirectory(ViewModel.getDefaultFile().getParentFile().getAbsolutePath());
-        }
-        // show the dialog
-        fileDialog.setVisible(true);
-        final String filePath = fileDialog.getFile();
-        final String dirPath = fileDialog.getDirectory();
+        final File file;
+        if (USE_JFILECHOOSER) {
+            final JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            if (ViewModel.getDefaultFile() != null) {
+                fileChooser.setCurrentDirectory(ViewModel.getDefaultFile());
+            }
+            if (fileChooser.showSaveDialog(getViewerFrame()) == JFileChooser.APPROVE_OPTION) {
+                file = fileChooser.getSelectedFile();
+            } else {
+                file = null;
+            }
+            fileChooser.setVisible(false);
+        } else {
+            // Create and display a file saving dialog
+            final FileDialog fileChooser = new FileDialog(getViewerFrame());
+            fileChooser.setTitle(messageBundle.getString("viewer.dialog.exportText.title"));
+            fileChooser.setMultipleMode(false);
+            fileChooser.setMode(FileDialog.SAVE);
+            fileChooser.setFilenameFilter((File f, String s) -> s.endsWith(FileExtensionUtils.txt));
+            if (ViewModel.getDefaultFile() != null) {
+                fileChooser.setDirectory(ViewModel.getDefaultFile().getParentFile().getAbsolutePath());
+            }
+            // show the dialog
+            fileChooser.setVisible(true);
+            final String filePath = fileChooser.getFile();
+            final String dirPath = fileChooser.getDirectory();
 
-        if (filePath != null && dirPath != null) {
-            File file = new File(dirPath + filePath);
+            if (filePath != null && dirPath != null) {
+                file = new File(dirPath + filePath);
+            } else {
+                file = null;
+            }
+        }
+        if (file != null) {
             // make sure file being opened is valid
             String extension = FileExtensionUtils.getExtension(file);
             if (extension != null) {
@@ -3806,10 +3803,15 @@ public class SwingController extends ComponentAdapter
             printButton.setEnabled(false);
         }
 
-        Runnable runner = () -> initialisePrinting(withDialog);
+        Runnable runner = () -> initialisePrinting(withDialog, null);
         Thread t = new Thread(runner);
         t.setPriority(Thread.NORM_PRIORITY);
         t.start();
+    }
+
+    public void printAndExit(boolean showDialog, String printer) {
+        //Do synchronously, because we're exiting after that
+        initialisePrinting(showDialog, printer);
     }
 
     /**
@@ -3822,7 +3824,7 @@ public class SwingController extends ComponentAdapter
      *
      * @param withDialog If should show a print dialog before starting to print
      */
-    private void initialisePrinting(final boolean withDialog) {
+    private void initialisePrinting(final boolean withDialog, final String printer) {
         boolean canPrint = havePermissionToPrint();
         if (!canPrint) {
             renablePrintUI();
@@ -3849,7 +3851,9 @@ public class SwingController extends ComponentAdapter
                         printHelper.getPrintRequestAttributeSet());
             }
             viewModel.setPrintHelper(printHelper);
-
+            if (printer != null) {
+                printHelper.setPrinter(printer);
+            }
             // set the printer to show a print dialog
             canPrint = printHelper.setupPrintService(
                     0,
@@ -3858,6 +3862,7 @@ public class SwingController extends ComponentAdapter
                     viewModel.isShrinkToPrintableArea(),        // shrink to printable area
                     withDialog  // show print dialog
             );
+
             // save new printer attributes to properties
             savePrinterProperties(printHelper);
             // if user cancelled the print job from the dialog, don't start printing
