@@ -20,6 +20,7 @@ import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
+import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.WatermarkCallback;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
@@ -34,10 +35,8 @@ import java.awt.*;
 import java.awt.geom.*;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -357,6 +356,18 @@ public class Page extends Dictionary {
                 } catch (IllegalStateException e) {
                     logger.warning("Malformed annotation could not be initialized. " +
                             a != null ? " " + a.getPObjectReference() + a.getEntries() : "");
+                }
+            }
+            //The popup annotations may not be referenced in the page annotations entry, we have to add them manually.
+            final Set<Annotation> annotSet = new HashSet<>(annotations);
+            for (final Annotation annot : annotSet) {
+                if (annot instanceof MarkupAnnotation) {
+                    final PopupAnnotation popup = ((MarkupAnnotation) annot).getPopupAnnotation();
+                    if (popup != null && !annotSet.contains(popup)) {
+                        popup.init();
+                        v.add(popup);
+                        annotations.add(popup);
+                    }
                 }
             }
         }
