@@ -17,13 +17,13 @@ import java.util.logging.Logger;
 public class PolyAnnotation extends MarkupAnnotation {
 
     private static final Logger logger =
-            Logger.getLogger(TextMarkupAnnotation.class.toString());
+            Logger.getLogger(PolyAnnotation.class.toString());
 
     public static final Name SUBTYPE_POLYLINE = new Name("PolyLine");
     public static final Name SUBTYPE_POLYGON = new Name("Polygon");
 
     public static final Set<Name> ALL_SUBTYPES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(SUBTYPE_HIGHLIGHT, SUBTYPE_POLYLINE, SUBTYPE_POLYGON)));
+            new HashSet<>(Arrays.asList(SUBTYPE_POLYLINE, SUBTYPE_POLYGON)));
 
     /**
      * (Required) An array of numbers (see Table 174) specifying the width and
