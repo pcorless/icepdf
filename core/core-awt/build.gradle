@@ -18,6 +18,7 @@ dependencies {
     implementation 'com.github.jai-imageio:jai-imageio-jpeg2000:' + "${JAI_VERSION}"
     implementation 'org.apache.pdfbox:jbig2-imageio:' + "${JBIG2_VERSION}"
     implementation 'org.apache.pdfbox:fontbox:' + "${FONT_BOX_VERSION}"
+    implementation 'commons-logging:commons-logging:1.2'
 }
 
 // generatePomFileForCoreJarPublication
