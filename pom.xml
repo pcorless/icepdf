@@ -27,7 +27,6 @@
         <twelve-monkey.version>3.6.4</twelve-monkey.version>
         <jai-imageio.version>1.4.0</jai-imageio.version>
         <jbig2.version>3.0.3</jbig2.version>
-        <font-box.version>2.0.21</font-box.version>
     </properties>
 
     <issueManagement>
