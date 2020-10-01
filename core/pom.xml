@@ -49,6 +49,11 @@
             <artifactId>jbig2-imageio</artifactId>
             <version>${jbig2.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>fontbox</artifactId>
+            <version>${font-box.version>}</version>
+        </dependency>
 
         <!--<dependency>
             <groupId>com.github.jai-imageio</groupId>
