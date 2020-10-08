@@ -379,31 +379,36 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             textBuilder.append("\n");
         }
         final String text = textBuilder.toString();
-        final Map<Color, List<Pair<Integer, Integer>>> colorToOffsets = new HashMap<>();
+        final Map<Color, List<SearchHit>> colorToHits = new HashMap<>();
         for (final SearchTerm searchTerm : terms) {
             term = searchTerm;
 
-            // apply case sensitivity rule.
-            String searchString = term.isCaseSensitive() ? text : text.toLowerCase();
+            String searchString = text;
             //If not regex, replace line feed by spaces
             if (!term.isRegex()) {
                 searchString = searchString.replace("\n", " ");
             }
             //Always use regex to search
-            final Pattern pattern = term.isRegex() ? term.getRegexPattern() : Pattern.compile(Pattern.quote(term.getTerm()));
+            final Pattern pattern = term.isRegex() ? term.getRegexPattern() :
+                    Pattern.compile(Pattern.quote(term.getTerm()), term.isCaseSensitive() ? Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE : 0);
             final Matcher matcher = pattern.matcher(searchString);
-            final List<Pair<Integer, Integer>> offsets = new ArrayList<>();
+            final List<SearchHit> hits = new ArrayList<>();
             while (matcher.find()) {
                 // add word to potentials
-                offsets.add(Pair.of(matcher.start(), matcher.end()));
+                final int start = matcher.start();
+                final int end = matcher.end();
+                final String hitText = text.substring(start, end);
+                hits.add(new SearchHit(start, end, hitText));
             }
-            colorToOffsets.put(term.getHighlightColor(), offsets);
+            final List<SearchHit> existingHits = colorToHits.getOrDefault(term.getHighlightColor(), new ArrayList<>());
+            existingHits.addAll(hits);
+            colorToHits.put(term.getHighlightColor(), existingHits);
         }
         // check if we have found what we're looking for
-        for (final Color color : colorToOffsets.keySet()) {
-            for (final Pair<Integer, Integer> offsets : colorToOffsets.get(color)) {
-                final int start = offsets.getLeft();
-                final int end = offsets.getRight();
+        for (final Color color : colorToHits.keySet()) {
+            for (final SearchHit searchHit : colorToHits.get(color)) {
+                final int start = searchHit.getStartOffset();
+                final int end = searchHit.getEndOffset();
                 //Get relevant WordTexts
                 int startIdx = Collections.binarySearch(wordOffsets, start);
                 if (startIdx < 0) {
@@ -416,7 +421,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                 }
                 int endIdx = Collections.binarySearch(wordOffsets, end);
                 if (endIdx < 0) {
-                    endIdx = -(endIdx + 1);
+                    endIdx = Math.min(-(endIdx + 1), idxToWordText.size() - 1);
                 }
                 final LineText lineText = new LineText();
                 //Add start line context
@@ -432,14 +437,14 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                     }
                 }
                 WordText previous = null;
-                for (int i = startIdx; i < endIdx; ++i) {
+                for (int i = startIdx; i <= endIdx; ++i) {
                     final WordText wt = idxToWordText.get(i);
                     if (wt != previous) {
                         wt.setHighlighted(true);
                         wt.setHasHighlight(true);
                         wt.setHighlightColor(color);
                         lineText.getWords().add(wt);
-                        addComponent(pageIndex, text.substring(start, end).replace("\n", " "), wt.getBounds());
+                        addComponent(pageIndex, searchHit.getText(), wt.getBounds());
                     }
                     previous = wt;
                 }
