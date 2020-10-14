@@ -18,6 +18,7 @@ package org.icepdf.ri.viewer;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.*;
+import org.icepdf.ri.common.print.PrintHelper;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
@@ -117,8 +118,35 @@ public class WindowManager implements WindowManagementCallback {
         controller.openDocument(location);
     }
 
+    public void newWindow(final String location, final String printer) {
+        Controller controller = commonWindowCreation(false);
+        controller.openDocument(location);
+        print(controller, printer);
+    }
+
+    public void newWindow(final Document document, final String fileName, final String printer) {
+        Controller controller = commonWindowCreation(false);
+        controller.openDocument(document, fileName);
+        print(controller, printer);
+    }
+
+    public void newWindow(URL location, final String printer) {
+        Controller controller = commonWindowCreation(false);
+        controller.openDocument(location);
+        print(controller, printer);
+    }
+
+    private void print(Controller controller, String printer) {
+        controller.printAndExit(!PrintHelper.hasPrinter(printer), printer);
+        quit(controller, (JFrame) controller.getViewerFrame(), controller.getPropertiesManager().getPreferences());
+    }
+
     protected Controller commonWindowCreation() {
-        Controller controller = controllerFactory.create(messageBundle);
+        return commonWindowCreation(true);
+    }
+
+    protected Controller commonWindowCreation(boolean isVisible) {
+        Controller controller = new SwingController(messageBundle);
         controller.setWindowManagementCallback(this);
 
         // add interactive mouse link annotation support
@@ -146,7 +174,7 @@ public class WindowManager implements WindowManagementCallback {
         JFrame frame = factory.buildViewerFrame();
         if (frame != null) {
             newWindowLocation(frame);
-            frame.setVisible(true);
+            frame.setVisible(isVisible);
         }
 
         return controller;
@@ -159,20 +187,9 @@ public class WindowManager implements WindowManagementCallback {
      * @param frame parent window containers.
      */
     public static void newWindowLocation(Container frame) {
-        newWindowLocation(frame, ViewerPropertiesManager.getInstance().getPreferences());
-    }
-
-    /**
-     * Loads the last used windows location as well as other frame related settings and insures the frame is
-     * visible.
-     *
-     * @param frame parent window containers.
-     * @param prefs preferences
-     */
-    public static void newWindowLocation(Container frame, Preferences prefs) {
         GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
         Rectangle bounds = env.getMaximumWindowBounds();
-        prefs = ViewerPropertiesManager.getInstance().getPreferences();
+        Preferences prefs = ViewerPropertiesManager.getInstance().getPreferences();
 
         // get the last used window size.
         int width = prefs.getInt(APPLICATION_WIDTH, 800);

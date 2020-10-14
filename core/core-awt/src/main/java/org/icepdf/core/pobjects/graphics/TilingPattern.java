@@ -43,7 +43,6 @@ import java.util.logging.Logger;
  * intervals to fill the area to be painted. The graphics objects to
  * use for tiling are described by a content stream. (PDF 1.2)
  *
- * @author ICEsoft Technologies Inc.
  * @since 3.0
  */
 public class TilingPattern extends Stream implements Pattern {

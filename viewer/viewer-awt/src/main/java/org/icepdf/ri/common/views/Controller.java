@@ -185,6 +185,14 @@ public interface Controller extends PropertyChangeListener {
     void print(boolean showDialog);
 
     /**
+     * Prints the document with the given printer, assuming we're exiting after that
+     *
+     * @param showDialog If true show a print dialog before starting to print
+     * @param printer The name of the printer
+     */
+    void printAndExit(boolean showDialog, String printer);
+
+    /**
      * Save the file
      */
     void saveFile();

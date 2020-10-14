@@ -18,7 +18,6 @@ package org.icepdf.ri.common.views.destinations;
 import org.icepdf.core.pobjects.Catalog;
 import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.utility.annotation.destinations.NameTreeEditDialog;
 import org.icepdf.ri.common.views.*;
@@ -34,6 +33,8 @@ import java.awt.geom.Point2D;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
+import static org.icepdf.core.util.SystemProperties.INTERACTIVE_ANNOTATIONS;
+
 /**
  * Component representing a a destination on a given page.
  *
@@ -43,14 +44,6 @@ public class DestinationComponent extends JComponent implements FocusListener, M
         ActionListener {
     protected static final Logger logger =
             Logger.getLogger(DestinationComponent.class.toString());
-    protected static boolean isInteractiveAnnotationsEnabled;
-
-    static {
-        // enables interactive annotation support.
-        isInteractiveAnnotationsEnabled =
-                Defs.sysPropertyBoolean(
-                        "org.icepdf.core.annotations.interactive.enabled", true);
-    }
 
     private static int WIDTH = 18;
     private static int HEIGHT = 24;
@@ -177,6 +170,9 @@ public class DestinationComponent extends JComponent implements FocusListener, M
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        if (!INTERACTIVE_ANNOTATIONS) {
+            return;
+        }
         Object source = e.getSource();
         Controller controller = documentViewController.getParentController();
         if (source == editNameTreeNode) {
@@ -209,6 +205,9 @@ public class DestinationComponent extends JComponent implements FocusListener, M
 
     @Override
     public void mouseClicked(MouseEvent e) {
+        if (!INTERACTIVE_ANNOTATIONS) {
+            return;
+        }
         requestFocus();
         if (documentViewController.getDocumentViewModel().getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_SELECTION &&
@@ -220,6 +219,9 @@ public class DestinationComponent extends JComponent implements FocusListener, M
 
     @Override
     public void mousePressed(MouseEvent e) {
+        if (!INTERACTIVE_ANNOTATIONS) {
+            return;
+        }
         requestFocus();
         // setup visual effect when the mouse button is pressed or held down
         // inside the active area of the annotation.

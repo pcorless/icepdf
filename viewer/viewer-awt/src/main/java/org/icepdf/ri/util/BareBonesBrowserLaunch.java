@@ -15,6 +15,8 @@
  */
 package org.icepdf.ri.util;
 
+import org.icepdf.core.util.SystemProperties;
+
 import javax.swing.*;
 import java.lang.reflect.Method;
 import java.util.logging.Level;
@@ -42,7 +44,7 @@ public class BareBonesBrowserLaunch {
     private static String os;
 
     static {
-        os = System.getProperty("os.name").toLowerCase();
+        os = SystemProperties.OS_NAME.toLowerCase();
     }
 
     /**

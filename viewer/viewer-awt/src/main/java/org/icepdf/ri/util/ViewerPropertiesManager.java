@@ -80,10 +80,6 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_DEFAULT_ROTATION = "document.rotation";
     // page rotation
     public static final String PROPERTY_DEFAULT_VIEW_TYPE = "document.viewtype";
-    // default print media size.
-    public static final String PROPERTY_PRINT_MEDIA_SIZE_WIDTH = "document.print.mediasize.width";
-    public static final String PROPERTY_PRINT_MEDIA_SIZE_HEIGHT = "document.print.mediasize.height";
-    public static final String PROPERTY_PRINT_MEDIA_SIZE_UNIT = "document.print.mediasize.unit";
     // highlight and selection text colours.
     public static final String PROPERTY_TEXT_SELECTION_COLOR = "org.icepdf.core.views.page.text.selection.color";
     public static final String PROPERTY_TEXT_HIGHLIGHT_COLOR = "org.icepdf.core.views.page.text.highlight.color";
