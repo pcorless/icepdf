@@ -7,7 +7,16 @@ import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import java.awt.*;
 
-public class SwingViewBuilderFactory implements ViewBuilderFactory {
+/**
+ * Factory for creating SwingViewBuilders
+ */
+public final class SwingViewBuilderFactory implements ViewBuilderFactory {
+
+    public static final SwingViewBuilderFactory INSTANCE = new SwingViewBuilderFactory();
+
+    private SwingViewBuilderFactory() {
+
+    }
 
     @Override
     public ViewBuilder create(Controller c) {

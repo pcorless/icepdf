@@ -13,7 +13,7 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.ri.common;
+package org.icepdf.ri.common.print;
 
 import javax.print.DocPrintJob;
 import javax.print.event.PrintJobAdapter;

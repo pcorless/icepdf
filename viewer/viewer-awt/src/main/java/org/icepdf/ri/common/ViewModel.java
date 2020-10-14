@@ -15,6 +15,8 @@
  */
 package org.icepdf.ri.common;
 
+import org.icepdf.ri.common.print.PrintHelper;
+
 import java.io.File;
 
 /**

@@ -59,8 +59,8 @@ public class WindowManager implements WindowManagementCallback {
 
     private ResourceBundle messageBundle = null;
 
-    public static ControllerFactory controllerFactory = new SwingControllerFactory();
-    public static ViewBuilderFactory viewBuilderFactory = new SwingViewBuilderFactory();
+    public static ControllerFactory controllerFactory = SwingControllerFactory.INSTANCE;
+    public static ViewBuilderFactory viewBuilderFactory = SwingViewBuilderFactory.INSTANCE;
 
     private WindowManager() {
     }

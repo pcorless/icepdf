@@ -31,6 +31,10 @@ import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.util.Utils;
 import org.icepdf.ri.common.preferences.PreferencesDialog;
+import org.icepdf.ri.common.print.PrintHelper;
+import org.icepdf.ri.common.print.PrintHelperFactory;
+import org.icepdf.ri.common.print.PrintHelperFactoryImpl;
+import org.icepdf.ri.common.print.PrinterTask;
 import org.icepdf.ri.common.properties.FontDialog;
 import org.icepdf.ri.common.properties.InformationDialog;
 import org.icepdf.ri.common.properties.PermissionsDialog;
@@ -275,6 +279,9 @@ public class SwingController extends ComponentAdapter
 
     protected ViewerPropertiesManager propertiesManager;
 
+    static {
+        PrintHelper.preloadServices();
+    }
     /**
      * Create a Controller object, and its associated ViewerModel
      *
@@ -1895,7 +1902,7 @@ public class SwingController extends ComponentAdapter
      * display panel.
      * @see #setDisplayTool
      */
-    protected int getDocumentViewToolMode() {
+    public int getDocumentViewToolMode() {
         return documentViewController.getToolMode();
     }
 
@@ -3749,15 +3756,15 @@ public class SwingController extends ComponentAdapter
         PrintHelper printHelper = viewModel.getPrintHelper();
         // create a new print helper for this document instance
         if (printHelper == null) {
-            MediaSizeName mediaSizeName = loadDefaultPrinterProperties();
+            MediaSizeName mediaSizeName = PrintHelper.guessMediaSizeName(document);
             // create the new print help
-            printHelper = new PrintHelper(documentViewController.getViewContainer(),
+            printHelper = getPrintHelperFactory().createPrintHelper(documentViewController.getViewContainer(),
                     getPageTree(), documentViewController.getRotation(), mediaSizeName,
                     PrintQuality.NORMAL);
         }
-        // reuse previous print attributes if they exist. 
+        // reuse previous print attributes if they exist.
         else {
-            printHelper = new PrintHelper(documentViewController.getViewContainer(),
+            printHelper = getPrintHelperFactory().createPrintHelper(documentViewController.getViewContainer(),
                     getPageTree(), documentViewController.getRotation(),
                     printHelper.getDocAttributeSet(),
                     printHelper.getPrintRequestAttributeSet());
@@ -3780,7 +3787,7 @@ public class SwingController extends ComponentAdapter
      * @param mediaSize MediaSizeName constant of paper size to print to.
      */
     public void setPrintDefaultMediaSizeName(MediaSizeName mediaSize) {
-        PrintHelper printHelper = new PrintHelper(
+        PrintHelper printHelper = getPrintHelperFactory().createPrintHelper(
                 documentViewController.getViewContainer(), getPageTree(),
                 documentViewController.getRotation(),
                 mediaSize,
@@ -3801,7 +3808,7 @@ public class SwingController extends ComponentAdapter
             printButton.setEnabled(false);
         }
 
-        Runnable runner = () -> initialisePrinting(withDialog);
+        Runnable runner = () -> initialisePrinting(withDialog, null);
         Thread t = new Thread(runner);
         t.setPriority(Thread.NORM_PRIORITY);
         t.start();
@@ -3817,7 +3824,7 @@ public class SwingController extends ComponentAdapter
      *
      * @param withDialog If should show a print dialog before starting to print
      */
-    private void initialisePrinting(final boolean withDialog) {
+    private void initialisePrinting(final boolean withDialog, final String printer) {
         boolean canPrint = havePermissionToPrint();
         if (!canPrint) {
             renablePrintUI();
@@ -3832,18 +3839,22 @@ public class SwingController extends ComponentAdapter
             // below are for NA_letter in millimeters.
             PrintHelper printHelper = viewModel.getPrintHelper();
             if (printHelper == null) {
-                MediaSizeName mediaSizeName = loadDefaultPrinterProperties();
+                MediaSizeName mediaSizeName = PrintHelper.guessMediaSizeName(document);
                 // create the new print help
-                printHelper = new PrintHelper(documentViewController.getViewContainer(),
+                printHelper = getPrintHelperFactory().createPrintHelper(documentViewController.getViewContainer(),
                         getPageTree(), documentViewController.getRotation(),
                         mediaSizeName, PrintQuality.NORMAL);
             } else {
-                printHelper = new PrintHelper(documentViewController.getViewContainer(),
+                printHelper = getPrintHelperFactory().createPrintHelper(documentViewController.getViewContainer(),
                         getPageTree(), documentViewController.getRotation(),
                         printHelper.getDocAttributeSet(),
                         printHelper.getPrintRequestAttributeSet());
             }
             viewModel.setPrintHelper(printHelper);
+
+            if (printer != null) {
+                printHelper.setPrinter(printer);
+            }
 
             // set the printer to show a print dialog
             canPrint = printHelper.setupPrintService(
@@ -3853,6 +3864,7 @@ public class SwingController extends ComponentAdapter
                     viewModel.isShrinkToPrintableArea(),        // shrink to printable area
                     withDialog  // show print dialog
             );
+
             // save new printer attributes to properties
             savePrinterProperties(printHelper);
             // if user cancelled the print job from the dialog, don't start printing
@@ -3865,7 +3877,6 @@ public class SwingController extends ComponentAdapter
         } finally {
             SwingUtilities.invokeLater(() -> setDisplayTool(documentIcon));
         }
-
     }
 
     /**
@@ -4694,6 +4705,11 @@ public class SwingController extends ComponentAdapter
     //
     // Controller interface
     //
+
+    @Override
+    public PrintHelperFactory getPrintHelperFactory() {
+        return PrintHelperFactoryImpl.INSTANCE;
+    }
 
     /**
      * A Document is the root of the object hierarchy, giving access

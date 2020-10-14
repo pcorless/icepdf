@@ -18,7 +18,6 @@ import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.util.Defs;
-import org.icepdf.ri.common.PrintHelper;
 
 import javax.print.DocFlavor;
 import javax.print.PrintException;
