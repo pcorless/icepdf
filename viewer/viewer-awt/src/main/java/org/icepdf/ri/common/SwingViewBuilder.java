@@ -1301,7 +1301,7 @@ public class SwingViewBuilder {
         JButton btn = makeToolbarButton(
                 messageBundle.getString("viewer.toolbar.tool.bookmarkUtility.label"),
                 messageBundle.getString("viewer.toolbar.tool.bookmarkUtility.tooltip"),
-                "bookmarks", imageSize, buttonFont);
+                "utility_bookmarks", imageSize, buttonFont);
         if (viewerController != null && btn != null) {
             viewerController.setShowBookmarkUtilityPaneButton(btn);
         }
