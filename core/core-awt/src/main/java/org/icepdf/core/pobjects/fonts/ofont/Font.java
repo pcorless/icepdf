@@ -483,7 +483,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         // font family based on what the font name best matches up with none
         // font family font names.  if all else fails use serif as it is the most'
         // common font.
-        if (!isFontSubstitution && font != null &&
+        if (!isFontSubstitution && font == null &&
                 !font.getName().toLowerCase().contains(font.getFamily().toLowerCase())) {
             // see if we working with a sans serif font
             if ((font.getName().toLowerCase().contains("times new roman") ||
@@ -550,7 +550,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
 
         if (logger.isLoggable(Level.FINE)) {
             logger.fine(name + " - " + encodingName + " " + basefont + " " + font.getName() + " " +
-                    awtFont.toString() + " " + isFontSubstitution);
+                    font.toString() + " " + isFontSubstitution);
         }
 
         inited = true;

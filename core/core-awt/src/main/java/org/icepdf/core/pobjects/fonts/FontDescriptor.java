@@ -270,17 +270,13 @@ public class FontDescriptor extends Dictionary {
                     font = fontFactory.createFontFile(
                             fontStream, FontFactory.FONT_TYPE_1, null);
                 }
-            }
-
-            if (entries.containsKey(FONT_FILE_2)) {
+            } else if (entries.containsKey(FONT_FILE_2)) {
                 Stream fontStream = (Stream) library.getObject(entries, FONT_FILE_2);
                 if (fontStream != null) {
                     font = fontFactory.createFontFile(
                             fontStream, FontFactory.FONT_TRUE_TYPE, null);
                 }
-            }
-
-            if (entries.containsKey(FONT_FILE_3)) {
+            } else if (entries.containsKey(FONT_FILE_3)) {
 
                 Stream fontStream = (Stream) library.getObject(entries, FONT_FILE_3);
                 Name subType = (Name) fontStream.getObject(SUBTYPE_KEY);
@@ -288,14 +284,15 @@ public class FontDescriptor extends Dictionary {
                         (subType.equals(FONT_FILE_3_TYPE_1C) ||
                                 subType.equals(FONT_FILE_3_CID_FONT_TYPE_0) ||
                                 subType.equals(FONT_FILE_3_CID_FONT_TYPE_0C))
-                        ) {
+                ) {
+                    // todo likely going to need to split out CID_FONT_TYPE_0, but not sure yet.
                     font = fontFactory.createFontFile(
-                            fontStream, FontFactory.FONT_TYPE_1, subType.getName());
+                            fontStream, FontFactory.FONT_TYPE_1C, subType);
                 }
                 if (subType != null && subType.equals(FONT_FILE_3_OPEN_TYPE)) {
 //                        font = new NFontOpenType(fontStreamBytes);
                     font = fontFactory.createFontFile(
-                            fontStream, FontFactory.FONT_OPEN_TYPE, subType.getName());
+                            fontStream, FontFactory.FONT_OPEN_TYPE, subType);
                 }
             }
         }

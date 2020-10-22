@@ -181,9 +181,9 @@ public class Resources extends Dictionary {
                 font.init();
             } catch (Exception e) {
                 if (logger.isLoggable(Level.WARNING)) {
-                    logger.log(Level.WARNING, "Error initializing font, falling back to font substitution.");
+                    logger.log(Level.WARNING, "Error initializing font, falling back to font substitution.", e);
                 } else {
-                    logger.log(Level.FINER, "Error initializing font, falling back to font substitution. " + font);
+                    logger.log(Level.FINER, "Error initializing font, falling back to font substitution. " + font, e);
                 }
             }
         }

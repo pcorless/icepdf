@@ -15,20 +15,23 @@
  */
 package org.icepdf.core.pobjects.fonts;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.ofont.OFont;
+import org.icepdf.core.pobjects.fonts.zfont.FontType1;
+import org.icepdf.core.pobjects.fonts.zfont.FontType1C;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.SystemProperties;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.icepdf.core.pobjects.Dictionary.SUBTYPE_KEY;
 
 /**
  * Simple Factory for loading of font library if present.
@@ -55,6 +58,7 @@ public class FontFactory {
     public static final int FONT_TRUE_TYPE = java.awt.Font.TRUETYPE_FONT;
     public static final int FONT_TYPE_0 = 6;
     public static final int FONT_TYPE_1 = java.awt.Font.TYPE1_FONT;
+    public static final int FONT_TYPE_1C = 8;
     public static final int FONT_TYPE_3 = 7;
 
     // Singleton instance of class
@@ -63,8 +67,6 @@ public class FontFactory {
     // NFont class path
     private static final String FONT_CLASS =
             "org.icepdf.core.pobjects.fonts.nfont.Font";
-    private static final String NFONT_CLASS =
-            "org.icepdf.core.pobjects.fonts.nfont.NFont";
     private static final String NFONT_OPEN_TYPE =
             "org.icepdf.core.pobjects.fonts.nfont.NFontOpenType";
     private static final String NFONT_TRUE_TYPE =
@@ -76,17 +78,13 @@ public class FontFactory {
     private static final String NFONT_TRUE_TYPE_3 =
             "org.icepdf.core.pobjects.fonts.nfont.NFontType3";
 
-    static {
-        // check class bath for NFont library, and declare results.
-        try {
-            Class.forName(NFONT_CLASS);
-        } catch (ClassNotFoundException e) {
-            logger.log(Level.FINE, "NFont font library was not found on the class path");
-        }
-    }
-
-    private static boolean foundNFont;
-
+    public static final Name FONT_SUBTYPE_TYPE_0 = new Name("Type0");
+    public static final Name FONT_SUBTYPE_TYPE_1 = new Name("Type1");
+    public static final Name FONT_SUBTYPE_MM_TYPE_1 = new Name("MMType1");
+    public static final Name FONT_SUBTYPE_TYPE_3 = new Name("Type3");
+    public static final Name FONT_SUBTYPE_TRUE_TYPE = new Name("TrueType");
+    public static final Name FONT_SUBTYPE_CID_FONT_TYPE_0 = new Name("CIDFontType0");
+    public static final Name FONT_SUBTYPE_CID_FONT_TYPE_2 = new Name("CIDFontType2");
 
     /**
      * <p>Returns a static instance of the FontManager class.</p>
@@ -107,73 +105,51 @@ public class FontFactory {
 
     public Font getFont(Library library, HashMap entries) {
 
-        Font fontDictionary = null;
+        Font font = null;
 
-        if (foundFontEngine()) {
-            // load each know file type reflectively.
-            try {
-                Class<?> fontClass = Class.forName(FONT_CLASS);
-                Class[] fontArgs = {Library.class, HashMap.class};
-                Constructor fontClassConstructor =
-                        fontClass.getDeclaredConstructor(fontArgs);
-                Object[] fontUrl = {library, entries};
-                fontDictionary = (Font) fontClassConstructor.newInstance(fontUrl);
-            } catch (Throwable e) {
-                logger.log(Level.FINE, "Could not load font dictionary class", e);
-            }
-        } else {
-            // create OFont implementation. 
-            fontDictionary =
-                    new org.icepdf.core.pobjects.fonts.ofont.Font(library, entries);
+        Name subtype = library.getName(entries, SUBTYPE_KEY);
+
+        // each type will have a specific instance but it's the dictionary that makes the factory
+        // call to build any embedded fonts.   Old engine did everything in the Font,  going ot break the init logic out
+        // into the separate instance to try and avoid all the nasty old logic.
+
+        // simple fonts
+        if (FONT_SUBTYPE_TYPE_1.equals(subtype)) {
+//            Object of = library.getObject(entries, FONT_DESCRIPTOR_KEY);
+//            if (of instanceof FontDescriptor && ((FontDescriptor) of).getObject(FONT_FILE_3) != null) {
+//                return new FontType1C(library, entries);
+//            }
+//            return new FontType1(library, entries);
         }
-        return fontDictionary;
+        // composite fonts
+        else if (FONT_SUBTYPE_CID_FONT_TYPE_0.equals(subtype) || FONT_SUBTYPE_CID_FONT_TYPE_2.equals(subtype)) {
+            logger.warning("unimplemented, found CIDFontType " + subtype);
+        } else if (FONT_SUBTYPE_TYPE_0.equals(subtype)) {
+            logger.warning("unimplemented, found type 0");
+        }
+        if (font == null) {
+            // create OFont implementation. 
+            font = new org.icepdf.core.pobjects.fonts.ofont.Font(library, entries);
+        }
+        return font;
     }
 
-    public FontFile createFontFile(Stream fontStream, int fontType, String fontSubType) {
+    public FontFile createFontFile(Stream fontStream, int fontType, Name fontSubType) {
         FontFile fontFile = null;
-        if (foundFontEngine()) {
-            try {
-                Class<?> fontClass = getNFontClass(fontType);
-                if (fontClass != null) {
-                    // convert the stream to byte[]
-                    Class[] bytArrayArg = {byte[].class, String.class};
-                    Constructor fontClassConstructor =
-                            fontClass.getDeclaredConstructor(bytArrayArg);
-                    byte[] data = fontStream.getDecodedStreamBytes(0);
-                    Object[] fontStreamBytes = {data, fontSubType};
-                    if (data.length > 0) {
-                        fontFile = (FontFile) fontClassConstructor
-                                .newInstance(fontStreamBytes);
-                    }
-                }
-            } catch (Throwable e) {
-                logger.log(Level.FINE, "Could not create instance of font file " + fontType);
-                if (fontType == FONT_TRUE_TYPE) {
-                    // we might have a very rare corner case where the file2 definition is actually a Open type font
-                    if (logger.isLoggable(Level.FINE)) {
-                        logger.fine("Trying to reload TrueType definition as OpenType.");
-                    }
-                    try {
-                        // force a OpentType font load.
-                        Class<?> fontClass = getNFontClass(FONT_OPEN_TYPE);
-                        if (fontClass != null) {
-                            // convert the stream to byte[]
-                            Class[] bytArrayArg = {byte[].class, String.class};
-                            Constructor fontClassConstructor =
-                                    fontClass.getDeclaredConstructor(bytArrayArg);
-                            byte[] data = fontStream.getDecodedStreamBytes(0);
-                            Object[] fontStreamBytes = {data, fontSubType};
-                            if (data.length > 0) {
-                                fontFile = (FontFile) fontClassConstructor
-                                        .newInstance(fontStreamBytes);
-                            }
-                        }
-                    } catch (Exception ex) {
-                        logger.log(Level.FINE, "Could not create instance of font file as OpenType." + fontType);
-                    }
-                }
-            }
-        } else if (awtFontLoading) {
+        if (FONT_OPEN_TYPE == fontType) {
+
+        } else if (FONT_TRUE_TYPE == fontType) {
+
+        } else if (FONT_TYPE_0 == fontType) {
+
+        } else if (FONT_TYPE_1 == fontType) {
+            fontFile = new FontType1(fontStream);
+        } else if (FONT_TYPE_1C == fontType) {
+            fontFile = new FontType1C(fontStream);
+        } else if (FONT_TYPE_3 == fontType) {
+//            fontClass = Class.forName(NFONT_TRUE_TYPE_3);
+        }
+        if (fontFile == null && awtFontLoading) {
             // see if the font file can be loaded with Java Fonts
             InputStream in = null;
             try {
@@ -216,21 +192,18 @@ public class FontFactory {
 
     public FontFile createFontFile(URL url, int fontType, String fontSubType) {
         FontFile fontFile = null;
-        if (foundFontEngine()) {
-            try {
-                Class<?> fontClass = getNFontClass(fontType);
-                if (fontClass != null) {
-                    // convert the stream to byte[]
-                    Class[] urlArg = {URL.class, String.class};
-                    Constructor fontClassConstructor =
-                            fontClass.getDeclaredConstructor(urlArg);
-                    Object[] fontUrl = {url, fontSubType};
-                    fontFile = (FontFile) fontClassConstructor.newInstance(fontUrl);
-                }
-            } catch (Throwable e) {
-                logger.log(Level.FINE, "Could not create instance of font file " + fontType, e);
-            }
-        } else {
+        if (FONT_OPEN_TYPE == fontType) {
+//            fontClass = Class.forName(NFONT_OPEN_TYPE);
+        } else if (FONT_TRUE_TYPE == fontType) {
+//            fontClass = Class.forName(NFONT_TRUE_TYPE);
+        } else if (FONT_TYPE_0 == fontType) {
+//            fontClass = Class.forName(NFONT_TRUE_TYPE_0);
+        } else if (FONT_TYPE_1 == fontType) {
+//            fontClass = Class.forName(NFONT_TRUE_TYPE_1);
+        } else if (FONT_TYPE_3 == fontType) {
+//            fontClass = Class.forName(NFONT_TRUE_TYPE_3);
+        }
+        if (fontFile == null) {
             // see if the font file can be loaded with Java Fonts
             try {
                 // make sure we try to load open type fonts as well, done as true type.
@@ -264,22 +237,6 @@ public class FontFactory {
         FontFactory.awtFontSubstitution = !FontFactory.awtFontSubstitution;
     }
 
-    private Class getNFontClass(int fontType) throws ClassNotFoundException {
-        Class fontClass = null;
-        if (FONT_OPEN_TYPE == fontType) {
-            fontClass = Class.forName(NFONT_OPEN_TYPE);
-        } else if (FONT_TRUE_TYPE == fontType) {
-            fontClass = Class.forName(NFONT_TRUE_TYPE);
-        } else if (FONT_TYPE_0 == fontType) {
-            fontClass = Class.forName(NFONT_TRUE_TYPE_0);
-        } else if (FONT_TYPE_1 == fontType) {
-            fontClass = Class.forName(NFONT_TRUE_TYPE_1);
-        } else if (FONT_TYPE_3 == fontType) {
-            fontClass = Class.forName(NFONT_TRUE_TYPE_3);
-        }
-        return fontClass;
-    }
-
     private String fontTypeToString(int fontType) {
 
         if (fontType == FONT_OPEN_TYPE) {
@@ -295,24 +252,6 @@ public class FontFactory {
         } else {
             return "unknown font type: " + fontType;
         }
-    }
-
-    /**
-     * Test if font engine is available on the class path and it has been
-     * disabled with the property awtFontSubstitution.
-     *
-     * @return true if font engine was found, false otherwise.
-     */
-    public static boolean foundFontEngine() {
-        // check class bath for NFont library
-        try {
-            Class.forName(NFONT_CLASS);
-            foundNFont = true;
-        } catch (ClassNotFoundException e) {
-            // keep quiet
-        }
-
-        return foundNFont && !awtFontSubstitution && SystemProperties.USE_NFONT;
     }
 
 }
