@@ -57,7 +57,7 @@ public class InformationPanel extends JPanel {
                 messageBundle.getString("viewer.dialog.documentInformation.notAvailable");
 
         // get information values if available
-        final PInfo documentInfo = document.getInfo();
+        final PInfo documentInfo = document.createOrGetInfo();
         if (documentInfo != null) {
             title = documentInfo.getTitle();
             author = documentInfo.getAuthor();
