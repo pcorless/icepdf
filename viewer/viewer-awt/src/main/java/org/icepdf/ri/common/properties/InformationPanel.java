@@ -58,29 +58,18 @@ public class InformationPanel extends JPanel {
 
         // get information values if available
         final PInfo documentInfo = document.createOrGetInfo();
-        if (documentInfo != null) {
-            title = documentInfo.getTitle();
-            author = documentInfo.getAuthor();
-            subject = documentInfo.getSubject();
-            keyWords = documentInfo.getKeywords();
-            creator = documentInfo.getCreator() != null ?
-                    documentInfo.getCreator() : notAvailable;
-            producer = documentInfo.getProducer() != null ?
-                    documentInfo.getProducer() : notAvailable;
-            creationDate = documentInfo.getCreationDate() != null ?
-                    documentInfo.getCreationDate().toString() : notAvailable;
-            modDate = documentInfo.getModDate() != null ?
-                    documentInfo.getModDate().toString() : notAvailable;
-        } else {
-            title = "";
-            author = "";
-            subject = "";
-            keyWords = "";
-            creator = "";
-            producer = "";
-            creationDate = "";
-            modDate = "";
-        }
+        title = documentInfo.getTitle();
+        author = documentInfo.getAuthor();
+        subject = documentInfo.getSubject();
+        keyWords = documentInfo.getKeywords();
+        creator = documentInfo.getCreator() != null ?
+                documentInfo.getCreator() : notAvailable;
+        producer = documentInfo.getProducer() != null ?
+                documentInfo.getProducer() : notAvailable;
+        creationDate = documentInfo.getCreationDate() != null ?
+                documentInfo.getCreationDate().toString() : notAvailable;
+        modDate = documentInfo.getModDate() != null ?
+                documentInfo.getModDate().toString() : notAvailable;
 
         setLayout(new GridBagLayout());
         setAlignmentY(JPanel.TOP_ALIGNMENT);
