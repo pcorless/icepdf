@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
@@ -26,8 +27,6 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
     public static final String SYMBOL_ENCODING_NAME = "SYMBOL";
     // ZAPF_DINGBATS
     public static final String ZAPF_DINGBATS_ENCODING_NAME = "ZAPF_DINGBATS";
-    // identity
-    public static final String IDENTITY_ENCODING_NAME = "identity";
 
     /**
      * Adobe standard Latin-text encoding. This is the built-in encoding defined
@@ -75,22 +74,44 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
      * character set for use with this encoding. No such fonts are among the
      * standard 14 predefined fonts.
      */
-//    public static final Encoding MAC_EXPERT_ENCODING;
+    public static Encoding macExpertEncoding;
+
+    public static Encoding symbolEncoding;
+    public static Encoding zapfDingBats;
 
     static {
-//        initializeIdentityEncodings();
-//        initializeUnicodeEncodings();
         initializeLatinEncodings();
-//        initializeOddBallEncodings();
+        initializeOddBallEncodings();
     }
 
     private String name;
     private String[] encodingMap;
 
-
     private Encoding(String name, String[] encodingMap) {
         this.name = name;
         this.encodingMap = encodingMap;
+    }
+
+    public Encoding(Encoding base, String[] diff) {
+        this.name = "diff";
+        String[] cMap = base.encodingMap.clone();
+        String name;
+        for (int code = 0, max = diff.length; code < max; code++) {
+            cMap[code] = diff[code];
+        }
+        encodingMap = cMap;
+    }
+
+    public Encoding(org.apache.fontbox.encoding.Encoding encoding) {
+        Map<Integer, String> fontBoxEncoding = encoding.getCodeToNameMap();
+        this.name = "embedded-font";
+        // this is just a guess,  will need to see an example if a simple font really only has 256 max.
+        String[] cMap = new String[256];
+        String name;
+        for (int code = 0, max = cMap.length; code < max; code++) {
+            cMap[code] = fontBoxEncoding.get(code);
+        }
+        encodingMap = cMap;
     }
 
     public String getName() {
@@ -102,6 +123,22 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
             return encodingMap[code];
         }
         return ".notdef";
+    }
+
+    public char getChar(String name) {
+        char ch = 0;
+        // simple check to see if we have a /Euro or /euro
+        if (name.equalsIgnoreCase("euro")) {
+            name = "Euro";
+        }
+        boolean isEuro = name.equalsIgnoreCase("euro");
+        for (int i = 0, max = encodingMap.length; i < max; i++) {
+            if (name.equals(encodingMap[i])) {
+                ch = (char) i;
+                break;
+            }
+        }
+        return ch;
     }
 
     /**
@@ -121,16 +158,15 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
         } else if (PDF_DOC_ENCODING_NAME.equals(name)) {
             return pdfDocEncoding;
         } else if (MAC_EXPERT_ENCODING_NAME.equals(name)) {
-            // todo return encoding
+            return macExpertEncoding;
         } else if (ZAPF_DINGBATS_ENCODING_NAME.equals(name)) {
-            // todo return encoding
+            return zapfDingBats;
         } else if (SYMBOL_ENCODING_NAME.equals(name)) {
-            // todo return encoding
+            return symbolEncoding;
         } else {
             // todo return identity
             return null;
         }
-        return null;
     }
 
     private static void initializeLatinEncodings() {
@@ -140,6 +176,18 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
         macRomanEncoding = new Encoding(MAC_ROMAN_ENCODING_NAME, mappings[1]);
         winAnsiEncoding = new Encoding(WIN_ANSI_ENCODING_NAME, mappings[2]);
         pdfDocEncoding = new Encoding(PDF_DOC_ENCODING_NAME, mappings[3]);
+    }
+
+    private static void initializeOddBallEncodings() {
+        EncodingReader encodingReader = new EncodingReader();
+        String[][] mappings = encodingReader.readEncoding("EncodingSymbol.txt", 1);
+        symbolEncoding = new Encoding(SYMBOL_ENCODING_NAME, mappings[0]);
+
+        mappings = encodingReader.readEncoding("EncodingZapf.txt", 1);
+        zapfDingBats = new Encoding(ZAPF_DINGBATS_ENCODING_NAME, mappings[0]);
+
+        mappings = encodingReader.readEncoding("EncodingExpert.txt", 1);
+        macExpertEncoding = new Encoding(MAC_EXPERT_ENCODING_NAME, mappings[0]);
     }
 
     private static class EncodingReader {
@@ -170,25 +218,6 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
                 logger.warning("Failed to read encoding " + fileName);
             }
             return null;
-        }
-
-        // latin pass in string[4][256] and [1][256] for the others
-        void readLine(String[][] mappings) {
-            // get string which is first token
-
-            // going to have 1  or 4 octal values afterwards.
-            // can look look at mapping for a hint
-
-            // get first octal convert to int
-            // mapping[1][int] = string
-
-            // look for next
-
-            // mapping[n][int] = string
-
-            // if next is - then
-            // mapping[n][int] = .notdef
-
         }
 
     }

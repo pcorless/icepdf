@@ -281,11 +281,15 @@ public class FontDescriptor extends Dictionary {
                 Stream fontStream = (Stream) library.getObject(entries, FONT_FILE_3);
                 Name subType = (Name) fontStream.getObject(SUBTYPE_KEY);
                 if (subType != null &&
-                        (subType.equals(FONT_FILE_3_TYPE_1C) ||
-                                subType.equals(FONT_FILE_3_CID_FONT_TYPE_0) ||
+                        (subType.equals(FONT_FILE_3_CID_FONT_TYPE_0) ||
                                 subType.equals(FONT_FILE_3_CID_FONT_TYPE_0C))
                 ) {
-                    // todo likely going to need to split out CID_FONT_TYPE_0, but not sure yet.
+                    // todo need to break out in the three CID types...
+                    font = fontFactory.createFontFile(
+                            fontStream, FontFactory.FONT_CID_TYPE_0, subType);
+                }
+                if (subType != null && subType.equals(FONT_FILE_3_TYPE_1C)) {
+//                        font = new NFontOpenType(fontStreamBytes);
                     font = fontFactory.createFontFile(
                             fontStream, FontFactory.FONT_TYPE_1C, subType);
                 }

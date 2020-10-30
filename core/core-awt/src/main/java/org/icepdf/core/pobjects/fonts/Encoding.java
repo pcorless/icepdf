@@ -21,5 +21,9 @@ package org.icepdf.core.pobjects.fonts;
  * @since 3.0
  */
 public interface Encoding {
+    String getName();
 
+    String getName(int code);
+
+    char getChar(String name);
 }

@@ -132,7 +132,7 @@ public abstract class Font extends Dictionary {
     protected Name subtype;
 
     // the encoding name associated with font.
-    protected Name encoding;
+    protected Name encodingName;
 
     /**
      * <p>Indicates that the font used to render this String object is in the
@@ -170,6 +170,7 @@ public abstract class Font extends Dictionary {
     protected boolean isVerticalWriting;
 
     // font substitution being used
+    // todo consider renaming isFontSubstitution to isEmbedded?
     protected boolean isFontSubstitution;
 
     // parent resource, needed by some type3 fonts to access resources.
@@ -235,7 +236,7 @@ public abstract class Font extends Dictionary {
     /**
      * Creates a new instance of a PDF Font.
      *
-     * @param library Libaray of all objects in PDF
+     * @param library Library of all objects in PDF
      * @param entries hash of parsed font attributes
      */
     public Font(Library library, HashMap entries) {
@@ -247,7 +248,7 @@ public abstract class Font extends Dictionary {
         // Type of the font, type 0, 1, 2, 3 etc.
         subtype = library.getName(entries, SUBTYPE_KEY);
 
-        encoding = library.getName(entries, ENCODING_KEY);
+        encodingName = library.getName(entries, ENCODING_KEY);
 
         // figure out type
         if (subtype != null) {
@@ -273,6 +274,7 @@ public abstract class Font extends Dictionary {
         if (tmp != null && tmp instanceof Name) {
             basefont = ((Name) tmp).getName();
         }
+//        basefont = cleanFontName(basefont);
     }
 
     /**
@@ -340,7 +342,7 @@ public abstract class Font extends Dictionary {
      * @return font encoding name.
      */
     public Name getEncoding() {
-        return encoding;
+        return encodingName;
     }
 
     /**

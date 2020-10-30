@@ -13,17 +13,16 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class FontType1 implements FontFile {
+public class ZFontType1 extends ZSimpleFont {
 
     private static final Logger logger =
-            Logger.getLogger(FontType1.class.toString());
+            Logger.getLogger(ZFontType1.class.toString());
 
     private static final int PFB_START_MARKER = 0x80;
 
@@ -34,9 +33,8 @@ public class FontType1 implements FontFile {
     //  maybe this should be simplefont state?
 
     // todo fontDamaged flags
-
-    public FontType1(Stream fontStream) {
-        InputStream in = null;
+    // todo credit pdfbox
+    public ZFontType1(Stream fontStream) {
         try {
             // add length correction code
             int length1 = fontStream.getInt(new Name("Length1"));
@@ -48,7 +46,7 @@ public class FontType1 implements FontFile {
             length2 = repairLength2(fontBytes, length1, length2);
 
             if (fontBytes.length > 0 && (fontBytes[0] & 0xff) == PFB_START_MARKER) {
-                // some bad files embed the entire PFB, see PDFBOX-2607
+                // some bad files embed the entire PFB
                 type1Font = Type1Font.createWithPFB(fontBytes);
             } else {
                 // the PFB embedded as two segments back-to-back
@@ -66,11 +64,41 @@ public class FontType1 implements FontFile {
         }
     }
 
+    private ZFontType1(ZFontType1 font) {
+//        this.echarAdvanceCache = font.echarAdvanceCache;
+        this.type1Font = font.type1Font;
+        this.encoding = font.encoding;
+        this.toUnicode = font.toUnicode;
+        this.missingWidth = font.missingWidth;
+        this.firstCh = font.firstCh;
+        this.ascent = font.ascent;
+        this.descent = font.descent;
+        this.widths = font.widths;
+        this.cMap = font.cMap;
+//        this.maxCharBounds = font.maxCharBounds;
+    }
+
     @Override
-    public Point2D echarAdvance(char ech) {
+    public Point2D echarAdvance(final char ech) {
         try {
-            float x = type1Font.getWidth(String.valueOf(ech)) * 0.001f;
-            return new Point2D.Float(x, 0);
+            float advance = type1Font.getWidth(String.valueOf(ech)) * 0.001f;
+
+            // widths uses original cid's, not the converted to unicode value.
+            if (widths != null && ech - firstCh >= 0 && ech - firstCh < widths.length) {
+                advance = widths[ech - firstCh] * size;
+            }
+//            else if (cidWidths != null) {
+//                Float width = cidWidths.get((int) ech);
+//                if (width != null) {
+//                    advance = cidWidths.get((int) ech) * awtFont.getSize2D();
+//                }
+//            }
+            // find any widths in the font descriptor
+            else if (missingWidth > 0) {
+                advance = missingWidth / 1000f;
+            }
+
+            return new Point2D.Float(advance, 0);
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -79,27 +107,60 @@ public class FontType1 implements FontFile {
 
     @Override
     public FontFile deriveFont(AffineTransform at) {
-        return this;
+        ZFontType1 font = new ZFontType1(this);
+        java.util.List<Number> matrix = type1Font.getFontMatrix();
+        font.fontMatrix = new AffineTransform(matrix.get(0).floatValue(), matrix.get(1).floatValue(),
+                matrix.get(2).floatValue(), matrix.get(3).floatValue(),
+                matrix.get(4).floatValue(), matrix.get(5).floatValue());
+        font.fontMatrix.concatenate(at);
+        font.fontMatrix.scale(font.size, font.size);
+        // clear font metric cache if we change the font's transform
+//        if (!font.getTransform().equals(this.awtFont.getTransform())) {
+//            this.echarAdvanceCache.clear();
+//        }
+//        font.maxCharBounds = this.maxCharBounds;
+        return font;
     }
 
     @Override
     public FontFile deriveFont(Encoding encoding, CMap toUnicode) {
-        return this;
+        ZFontType1 font = new ZFontType1(this);
+//        this.echarAdvanceCache.clear();
+        font.encoding = encoding;
+        font.toUnicode = toUnicode;
+        return font;
     }
 
     @Override
     public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent, char[] diff) {
-        return this;
+        ZFontType1 font = new ZFontType1(this);
+//        this.echarAdvanceCache.clear();
+        font.missingWidth = this.missingWidth;
+        font.firstCh = firstCh;
+        font.ascent = ascent;
+        font.descent = descent;
+        font.widths = widths;
+        font.cMap = diff;
+        return font;
     }
 
     @Override
     public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent, float descent, char[] diff) {
-        return this;
+        ZFontType1 font = new ZFontType1(this);
+//        this.echarAdvanceCache.clear();
+        font.missingWidth = this.missingWidth;
+        font.firstCh = firstCh;
+        font.ascent = ascent;
+        font.descent = descent;
+        // todo figure out why we have a map over an array, actually actually probably to do with the size and range of cid fonts.
+//        font.cidWidths = widths;
+        font.cMap = diff;
+        return font;
     }
 
     @Override
     public boolean canDisplayEchar(char ech) {
-        return false;
+        return type1Font.hasGlyph(String.valueOf(ech));
     }
 
     @Override
@@ -109,7 +170,20 @@ public class FontType1 implements FontFile {
 
     @Override
     public FontFile deriveFont(float pointsize) {
-        return this;
+        ZFontType1 font = new ZFontType1(this);
+        java.util.List<Number> matrix = type1Font.getFontMatrix();
+        // todo make simple font method to make getting affineTransform easier.
+        font.fontMatrix = new AffineTransform(matrix.get(0).floatValue(), matrix.get(1).floatValue(),
+                matrix.get(2).floatValue(), matrix.get(3).floatValue(),
+                matrix.get(4).floatValue(), matrix.get(5).floatValue());
+        font.fontMatrix.concatenate(font.fontMatrix);
+        font.fontMatrix.scale(pointsize, pointsize);
+        // clear font metric cache if we change the font's transform
+//        if (!font.getTransform().equals(this.awtFont.getTransform())) {
+//            this.echarAdvanceCache.clear();
+//        }
+//        font.maxCharBounds = this.maxCharBounds;
+        return font;
     }
 
     @Override
@@ -129,23 +203,28 @@ public class FontType1 implements FontFile {
     }
 
     @Override
+    public org.apache.fontbox.encoding.Encoding getEncoding() {
+        return type1Font.getEncoding();
+    }
+
+    @Override
     public String getFamily() {
         return type1Font.getFamilyName();
     }
 
     @Override
     public float getSize() {
-        return 1;
+        return size;
     }
 
     @Override
     public double getAscent() {
-        return 0;
+        return ascent;
     }
 
     @Override
     public double getDescent() {
-        return 0;
+        return descent;
     }
 
     @Override
@@ -204,12 +283,16 @@ public class FontType1 implements FontFile {
             AffineTransform af = g.getTransform();
             java.util.List<Number> fontMatrix = type1Font.getFontMatrix();
             Shape outline = type1Font.getPath(estr);
-            org.apache.fontbox.encoding.Encoding encoding = type1Font.getEncoding();
+//            org.apache.fontbox.encoding.Encoding encoding = type1Font.getEncoding();
 
             if (!type1Font.hasGlyph(estr)) {
+                // todo need a way to use the new Encoding...
                 org.icepdf.core.pobjects.fonts.zfont.Encoding encoding1 = org.icepdf.core.pobjects.fonts.zfont.Encoding.getInstance(org.icepdf.core.pobjects.fonts.zfont.Encoding.STANDARD_ENCODING_NAME);
                 String name = encoding1.getName(estr.charAt(0));
-                outline = type1Font.getPath(name);
+//                String name = encoding.getName(estr.charAt(0));
+                if (name != null) {
+                    outline = type1Font.getPath(name);
+                }
             }
 
             g.translate(x, y);

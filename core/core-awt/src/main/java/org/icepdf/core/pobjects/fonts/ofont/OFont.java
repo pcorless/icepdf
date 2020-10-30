@@ -20,8 +20,8 @@ import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.graphics.TextState;
 
-import java.awt.*;
 import java.awt.Font;
+import java.awt.*;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphMetrics;
 import java.awt.font.GlyphVector;
@@ -46,8 +46,7 @@ public class OFont implements FontFile {
             Logger.getLogger(OFont.class.toString());
 
     private Font awtFont;
-    private Rectangle2D maxCharBounds =
-            new Rectangle2D.Double(0.0, 0.0, 1.0, 1.0);
+    private Rectangle2D maxCharBounds = new Rectangle2D.Double(0.0, 0.0, 1.0, 1.0);
 
     // text layout map, very expensive to create, so we'll cache them.
     private HashMap<String, Point2D.Float> echarAdvanceCache;
@@ -65,7 +64,7 @@ public class OFont implements FontFile {
 
     public OFont(Font awtFont) {
         this.awtFont = awtFont;
-        maxCharBounds = new Rectangle2D.Double();
+//        maxCharBounds = new Rectangle2D.Double();
         this.echarAdvanceCache = new HashMap<>(256);
     }
 
@@ -329,6 +328,11 @@ public class OFont implements FontFile {
             sb.append(toUnicode(displayText.charAt(i)));
         }
         return sb.toString();
+    }
+
+    @Override
+    public org.apache.fontbox.encoding.Encoding getEncoding() {
+        return null;
     }
 
     public String toUnicode(char c1) {

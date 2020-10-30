@@ -18,8 +18,8 @@ package org.icepdf.core.pobjects.fonts;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.ofont.OFont;
-import org.icepdf.core.pobjects.fonts.zfont.FontType1;
-import org.icepdf.core.pobjects.fonts.zfont.FontType1C;
+import org.icepdf.core.pobjects.fonts.zfont.ZFontType1;
+import org.icepdf.core.pobjects.fonts.zfont.ZFontType1C;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
@@ -58,8 +58,11 @@ public class FontFactory {
     public static final int FONT_TRUE_TYPE = java.awt.Font.TRUETYPE_FONT;
     public static final int FONT_TYPE_0 = 6;
     public static final int FONT_TYPE_1 = java.awt.Font.TYPE1_FONT;
-    public static final int FONT_TYPE_1C = 8;
-    public static final int FONT_TYPE_3 = 7;
+    public static final int FONT_TYPE_1C = 7;
+    public static final int FONT_TYPE_3 = 8;
+    public static final int FONT_CID_TYPE_1C = 9;
+    public static final int FONT_CID_TYPE_0 = 10;
+    public static final int FONT_CID_TYPE_0C = 11;
 
     // Singleton instance of class
     private static FontFactory fontFactory;
@@ -110,7 +113,9 @@ public class FontFactory {
         Name subtype = library.getName(entries, SUBTYPE_KEY);
 
         // each type will have a specific instance but it's the dictionary that makes the factory
-        // call to build any embedded fonts.   Old engine did everything in the Font,  going ot break the init logic out
+        // call to build any embedded fonts.
+        //
+        // todo Old engine did everything in the Font,  going ot break the init logic out
         // into the separate instance to try and avoid all the nasty old logic.
 
         // simple fonts
@@ -119,8 +124,9 @@ public class FontFactory {
 //            if (of instanceof FontDescriptor && ((FontDescriptor) of).getObject(FONT_FILE_3) != null) {
 //                return new FontType1C(library, entries);
 //            }
-//            return new FontType1(library, entries);
+//            return new Type1Font(library, entries);
         }
+        // todo truetype, type3 and type0
         // composite fonts
         else if (FONT_SUBTYPE_CID_FONT_TYPE_0.equals(subtype) || FONT_SUBTYPE_CID_FONT_TYPE_2.equals(subtype)) {
             logger.warning("unimplemented, found CIDFontType " + subtype);
@@ -134,6 +140,9 @@ public class FontFactory {
         return font;
     }
 
+    // todo the whole font.derive font sort of indicates an element of reuse
+    //  maybe we should have base cash which does all the base parsing and then we'd save some time with the derive.
+    //  as it would onlys setup encoding, widths and sizes as needed. food for thought
     public FontFile createFontFile(Stream fontStream, int fontType, Name fontSubType) {
         FontFile fontFile = null;
         if (FONT_OPEN_TYPE == fontType) {
@@ -143,9 +152,9 @@ public class FontFactory {
         } else if (FONT_TYPE_0 == fontType) {
 
         } else if (FONT_TYPE_1 == fontType) {
-            fontFile = new FontType1(fontStream);
+            fontFile = new ZFontType1(fontStream);
         } else if (FONT_TYPE_1C == fontType) {
-            fontFile = new FontType1C(fontStream);
+            fontFile = new ZFontType1C(fontStream);
         } else if (FONT_TYPE_3 == fontType) {
 //            fontClass = Class.forName(NFONT_TRUE_TYPE_3);
         }

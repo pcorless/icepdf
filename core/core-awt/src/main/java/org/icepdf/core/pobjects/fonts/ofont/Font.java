@@ -61,8 +61,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
     // differences from the font's built-in encoding or from a specified predefined
     // encoding
     private Encoding encoding;
-    // encoding name for debugging reasons;
-    private Name encodingName;
+
 
     // An array of (LastChar ? FirstChar + 1) widths, each element being the
     // glyph width for the character code that equals FirstChar plus the array index.

@@ -78,6 +78,8 @@ public interface FontFile {
 
     String toUnicode(char displayChar);
 
+    org.apache.fontbox.encoding.Encoding getEncoding();
+
     /**
      * Returns name of nfont, such as "Times".
      *

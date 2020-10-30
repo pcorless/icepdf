@@ -36,6 +36,21 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
         return i;
     }
 
+    @Override
+    public String getName() {
+        return null;
+    }
+
+    @Override
+    public String getName(int code) {
+        return null;
+    }
+
+    @Override
+    public char getChar(String name) {
+        return 0;
+    }
+
     static Encoding getStandard() {
         return new Encoding(se);
     }
