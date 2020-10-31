@@ -1,4 +1,4 @@
-package org.icepdf.core.pobjects.fonts.zfont;
+package org.icepdf.core.pobjects.fonts.zfont.fontFiles;
 
 import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Encoding;

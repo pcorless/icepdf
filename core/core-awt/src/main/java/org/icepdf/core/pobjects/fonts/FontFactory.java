@@ -18,8 +18,9 @@ package org.icepdf.core.pobjects.fonts;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.ofont.OFont;
-import org.icepdf.core.pobjects.fonts.zfont.ZFontType1;
-import org.icepdf.core.pobjects.fonts.zfont.ZFontType1C;
+import org.icepdf.core.pobjects.fonts.zfont.Type1Font;
+import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType1;
+import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType1C;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
@@ -124,7 +125,7 @@ public class FontFactory {
 //            if (of instanceof FontDescriptor && ((FontDescriptor) of).getObject(FONT_FILE_3) != null) {
 //                return new FontType1C(library, entries);
 //            }
-//            return new Type1Font(library, entries);
+            return new Type1Font(library, entries);
         }
         // todo truetype, type3 and type0
         // composite fonts

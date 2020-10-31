@@ -15,13 +15,5 @@ public class SimpleFont extends Font {
     @Override
     public void init() {
         super.init();
-
-        if (widths != null) {
-            // Assigns the First character code defined in the font's Widths array
-            Object o = library.getObject(entries, FIRST_CHAR_KEY);
-            if (o != null) {
-                firstchar = ((Number) o).intValue();
-            }
-        }
     }
 }

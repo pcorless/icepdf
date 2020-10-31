@@ -257,15 +257,15 @@ public abstract class Font extends Dictionary {
                     CID_FORMAT : SIMPLE_FORMAT;
         }
 
-        int tmpInt = library.getInt(entries, FIRST_CHAR_KEY);
-        if (tmpInt != 0) {
-            firstchar = tmpInt;
-        }
-        tmpInt = library.getInt(entries, LAST_CHAR_KEY);
-        if (tmpInt != 0) {
-            lastchar = tmpInt;
+        Object o = library.getObject(entries, FIRST_CHAR_KEY);
+        if (o != null) {
+            firstchar = ((Number) o).intValue();
         }
 
+        o = library.getObject(entries, LAST_CHAR_KEY);
+        if (o != null) {
+            lastchar = ((Number) o).intValue();
+        }
 
         // font name, SanSerif is used as it has a a robust CID, and it
         // is the most commonly used font family for pdfs
