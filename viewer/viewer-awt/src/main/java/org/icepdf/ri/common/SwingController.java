@@ -23,6 +23,8 @@ import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.URIAction;
+import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.search.DocumentSearchController;
@@ -33,6 +35,7 @@ import org.icepdf.ri.common.properties.InformationDialog;
 import org.icepdf.ri.common.properties.PermissionsDialog;
 import org.icepdf.ri.common.properties.PropertiesDialog;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
+import org.icepdf.ri.common.utility.annotation.AnnotationFilter;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.annotation.properties.AnnotationPropertiesDialog;
 import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
@@ -44,6 +47,7 @@ import org.icepdf.ri.common.utility.signatures.SignaturesHandlerPanel;
 import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
 import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.common.views.annotations.AnnotationState;
+import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryFrame;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
@@ -87,6 +91,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
+import java.util.stream.Collectors;
 
 import static org.icepdf.core.util.PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE;
 import static org.icepdf.ri.util.ViewerPropertiesManager.*;
@@ -5626,6 +5631,36 @@ public class SwingController extends ComponentAdapter
                 documentViewController.deleteDestination(destination);
                 getDocumentViewController().getDocumentView().repaint();
                 break;
+        }
+    }
+
+    /**
+     * Changes privacy flag of the MarkupAnnotations given by the annotations filter
+     *
+     * @param filter The filter used to filter the annotations
+     * @param priv   The privacy status to use (true = private)
+     */
+    public void changeAnnotationsPrivacy(AnnotationFilter filter, boolean priv) {
+        if (document != null && viewer != null) {
+            final PageTree pt = document.getPageTree();
+            for (int i = 0; i < pt.getNumberOfPages(); ++i) {
+                final Page p = pt.getPage(i);
+                if (p.getAnnotations() != null) {
+                    final List<MarkupAnnotation> toChange = p.getAnnotations().stream().filter(a -> a instanceof MarkupAnnotation && filter.filter(a)).map(a -> (MarkupAnnotation) a).collect(Collectors.toList());
+                    for (final MarkupAnnotation a : toChange) {
+                        a.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, priv);
+                        a.setModifiedDate(PDate.formatDateTime(new Date()));
+                        a.getPopupAnnotation().setFlag(Annotation.FLAG_PRIVATE_CONTENTS, priv);
+                        a.getPopupAnnotation().setModifiedDate(PDate.formatDateTime(new Date()));
+                        final PageViewComponentImpl pvc = (PageViewComponentImpl) documentViewController.getDocumentViewModel().getPageComponents().get(i);
+                        final MarkupAnnotationComponent<?> comp = (MarkupAnnotationComponent<?>) pvc.getComponentFor(a);
+                        if (comp != null) {
+                            comp.getPopupAnnotationComponent().refreshPopupState();
+                            documentViewController.updateAnnotation(pvc.getComponentFor(a));
+                        }
+                    }
+                }
+            }
         }
     }
 }

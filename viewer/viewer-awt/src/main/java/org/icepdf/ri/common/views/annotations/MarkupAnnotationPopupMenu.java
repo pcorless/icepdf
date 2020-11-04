@@ -15,8 +15,13 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
+import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
+import org.icepdf.core.util.SystemProperties;
+import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.tools.DestinationHandler;
 import org.icepdf.ri.common.tools.FreeTextAnnotationHandler;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
@@ -28,9 +33,13 @@ import org.icepdf.ri.util.ViewerPropertiesManager;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
+import java.util.stream.Collectors;
+
+import static org.icepdf.core.util.SystemProperties.PRIVATE_PROPERTY_ENABLED;
 
 /**
  * Markup specific annotation context menu support, includes delete and properties commands,
@@ -58,6 +67,10 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
     // add/create annotation shortcuts
     protected JMenuItem addDestinationMenuItem;
     protected JMenuItem addFreeTextMenuItem1, addFreeTextMenuItem2;
+    // Set Annotation privacy
+    protected JMenuItem togglePrivacyMenuItem;
+    protected JMenuItem setAllPrivateMenuItem;
+    protected JMenuItem setAllPublicMenuItem;
 
     // delete root annotation and all child popup annotations.
     protected boolean deleteRoot;
@@ -157,6 +170,22 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
             addSeparator();
         }
 
+        if (PRIVATE_PROPERTY_ENABLED) {
+            final JMenu submenu = new JMenu(messageBundle.getString("viewer.annotation.popup.privacy.label"));
+            togglePrivacyMenuItem = new JMenuItem(messageBundle.getString("viewer.annotation.popup.privacy.toggle.label"));
+            togglePrivacyMenuItem.addActionListener(this);
+            submenu.add(togglePrivacyMenuItem);
+            setAllPrivateMenuItem = new JMenuItem(messageBundle.getString("viewer.annotation.popup.privacy.all.private.label"));
+            setAllPrivateMenuItem.addActionListener(this);
+            submenu.add(setAllPrivateMenuItem);
+            setAllPublicMenuItem = new JMenuItem(messageBundle.getString("viewer.annotation.popup.privacy.all.public.label"));
+            setAllPublicMenuItem.addActionListener(this);
+            submenu.add(setAllPublicMenuItem);
+            add(submenu);
+            addSeparator();
+            submenu.setEnabled(modifyDocument);
+        }
+
         // generic commands, open/minimize all
         openAllMenuItem.addActionListener(this);
         add(openAllMenuItem);
@@ -245,6 +274,18 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
 //            controller.setDocumentToolMode(DocumentViewModel.DISPLAY_TOOL_SELECTION);
             new FreeTextAnnotationHandler(controller.getDocumentViewController(), pageViewComponent)
                     .createFreeTextAnnotation(point.x, point.y - fontSize, false);
+        } else if (source == setAllPrivateMenuItem) {
+            ((SwingController) controller).changeAnnotationsPrivacy(a -> a instanceof MarkupAnnotation &&
+                    ((MarkupAnnotation) a).getTitleText().equals(SystemProperties.USER_NAME), true);
+        } else if (source == setAllPublicMenuItem) {
+            ((SwingController) controller).changeAnnotationsPrivacy(a -> a instanceof MarkupAnnotation &&
+                    ((MarkupAnnotation) a).getTitleText().equals(SystemProperties.USER_NAME), false);
+        } else if (source == togglePrivacyMenuItem) {
+            final MarkupAnnotation annot = (MarkupAnnotation) annotationComponent.getAnnotation();
+            final Set<Reference> references = annot.getReplyingAnnotations(true).stream()
+                    .map(Dictionary::getPObjectReference).collect(Collectors.toSet());
+            ((SwingController) controller).changeAnnotationsPrivacy(a -> references.contains(a.getPObjectReference())
+                    || a.getPObjectReference().equals(annot.getPObjectReference()), !annot.getFlagPrivateContents());
         }
     }
 }
