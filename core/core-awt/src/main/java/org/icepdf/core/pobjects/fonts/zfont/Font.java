@@ -103,6 +103,9 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
             if (differences != null) {
                 int c = 0;
                 for (Object oo : differences) {
+                    if (c == cMap.length - 1) {
+                        break;
+                    }
                     if (oo instanceof Number) {
                         c = ((Number) oo).intValue();
                     } else if (oo instanceof Name) {
@@ -159,7 +162,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         // todo some of these rules are wrong according the spec
         if (baseEncoding != null) {
             encoding = Encoding.getInstance(baseEncoding.getName());
-        } else if (!isFontSubstitution) {
+        } else if (!isFontSubstitution && font.getEncoding() != null) {
             encoding = new Encoding(font.getEncoding());
         } else if (basefont == null) {
             encoding = Encoding.standardEncoding;
@@ -212,6 +215,12 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
     //  or some hybrid
     protected void findFontIfNotEmbedded() {
         if (font == null) {
+
+            findSystemFont();
+            if (font != null) {
+                return;
+            }
+
             java.awt.Font awtFont;
             // get font style value.
             int style = FontUtil.guessAWTFontStyle(basefont);
@@ -256,6 +265,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                 }
             }
             // if still null, shouldn't be, assigned the basefont name
+            // todo, nice to cut in the font subsituttion, fontManger
             if (font == null) {
                 try {
                     awtFont = new java.awt.Font(basefont, style, 12);

@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.ofont.OFont;
 import org.icepdf.core.pobjects.fonts.zfont.Type1Font;
+import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType1;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType1C;
 import org.icepdf.core.util.Defs;
@@ -127,7 +128,11 @@ public class FontFactory {
 //            }
             return new Type1Font(library, entries);
         }
-        // todo truetype, type3 and type0
+        if (FONT_SUBTYPE_TRUE_TYPE.equals(subtype)) {
+            // todo build out truetype font. s
+            return new Type1Font(library, entries);
+        }
+        // type3 and type0
         // composite fonts
         else if (FONT_SUBTYPE_CID_FONT_TYPE_0.equals(subtype) || FONT_SUBTYPE_CID_FONT_TYPE_2.equals(subtype)) {
             logger.warning("unimplemented, found CIDFontType " + subtype);
@@ -149,7 +154,7 @@ public class FontFactory {
         if (FONT_OPEN_TYPE == fontType) {
 
         } else if (FONT_TRUE_TYPE == fontType) {
-
+            fontFile = new ZFontTrueType(fontStream);
         } else if (FONT_TYPE_0 == fontType) {
 
         } else if (FONT_TYPE_1 == fontType) {
@@ -205,7 +210,12 @@ public class FontFactory {
         if (FONT_OPEN_TYPE == fontType) {
 //            fontClass = Class.forName(NFONT_OPEN_TYPE);
         } else if (FONT_TRUE_TYPE == fontType) {
-//            fontClass = Class.forName(NFONT_TRUE_TYPE);
+            // todo get rid of URL, that a remanence of nfont,  no longer needed.
+            try {
+                fontFile = new ZFontTrueType(url.openStream());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         } else if (FONT_TYPE_0 == fontType) {
 //            fontClass = Class.forName(NFONT_TRUE_TYPE_0);
         } else if (FONT_TYPE_1 == fontType) {

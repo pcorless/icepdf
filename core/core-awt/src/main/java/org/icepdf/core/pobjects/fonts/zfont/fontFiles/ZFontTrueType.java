@@ -1,7 +1,8 @@
 package org.icepdf.core.pobjects.fonts.zfont.fontFiles;
 
 import org.apache.fontbox.cff.CFFParser;
-import org.apache.fontbox.cff.CFFType1Font;
+import org.apache.fontbox.ttf.TTFParser;
+import org.apache.fontbox.ttf.TrueTypeFont;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Encoding;
@@ -12,28 +13,35 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ZFontType1C extends ZSimpleFont {
+public class ZFontTrueType extends ZSimpleFont {
 
     private static final Logger logger =
             Logger.getLogger(ZFontType1C.class.toString());
 
-    private CFFType1Font cffType1Font;
+    private TrueTypeFont trueTypeFont;
 
-    public ZFontType1C(Stream fontStream) {
+    public ZFontTrueType(InputStream inputStream) throws IOException {
+        this(inputStream.readAllBytes());
+    }
+
+    public ZFontTrueType(Stream fontStream) {
+        this(fontStream.getDecodedStreamBytes());
+    }
+
+    public ZFontTrueType(byte[] fontBytes) {
         try {
-            byte[] fontBytes = fontStream.getDecodedStreamBytes();
-
             try {
                 if (fontBytes != null) {
-                    // note: this could be an OpenType file, fortunately CFFParser can handle that
-                    CFFParser cffParser = new CFFParser();
-                    cffType1Font = (CFFType1Font) cffParser.parse(fontBytes, new FontFileByteSource(fontStream)).get(0);
+                    TTFParser ttfParser = new TTFParser(true);
+                    trueTypeFont = ttfParser.parse(new ByteArrayInputStream(fontBytes));
                 }
             } catch (IOException e) {
                 logger.log(Level.FINE, "Error reading font file with ", e);
@@ -45,9 +53,9 @@ public class ZFontType1C extends ZSimpleFont {
         }
     }
 
-    private ZFontType1C(ZFontType1C font) {
+    private ZFontTrueType(ZFontTrueType font) {
 //        this.echarAdvanceCache = font.echarAdvanceCache;
-        this.cffType1Font = font.cffType1Font;
+        this.trueTypeFont = font.trueTypeFont;
         this.encoding = font.encoding;
         this.toUnicode = font.toUnicode;
         this.missingWidth = font.missingWidth;
@@ -60,9 +68,12 @@ public class ZFontType1C extends ZSimpleFont {
     }
 
     @Override
-    public Point2D echarAdvance(char ech) {
+    public Point2D.Float echarAdvance(char ech) {
         try {
-            float advance = cffType1Font.getWidth(String.valueOf(ech)) * 0.001f;
+
+            String name = encoding.getName(ech);
+            float advance = trueTypeFont.getWidth(name) * size * 0.001f;
+//            float advance = trueTypeFont.getWidth(String.valueOf(ech)) * size * 0.001f;
 
             // widths uses original cid's, not the converted to unicode value.
             if (widths != null && ech - firstCh >= 0 && ech - firstCh < widths.length) {
@@ -79,6 +90,9 @@ public class ZFontType1C extends ZSimpleFont {
                 advance = missingWidth / 1000f;
             }
 
+//            float x = advance * size * (float)fontMatrix.getScaleX();
+//            float y = advance * size * (float)fontMatrix.getShearY();
+//            return new Point2D.Float(x, y);
             return new Point2D.Float(advance, 0);
         } catch (IOException e) {
             e.printStackTrace();
@@ -88,13 +102,19 @@ public class ZFontType1C extends ZSimpleFont {
 
     @Override
     public org.apache.fontbox.encoding.Encoding getEncoding() {
-        return cffType1Font.getEncoding();
+        return null;
     }
 
     @Override
     public FontFile deriveFont(AffineTransform at) {
-        ZFontType1C font = new ZFontType1C(this);
-        java.util.List<Number> matrix = cffType1Font.getFontMatrix();
+        ZFontTrueType font = new ZFontTrueType(this);
+        java.util.List<Number> matrix = null;
+        // todo fix up later.
+        try {
+            matrix = trueTypeFont.getFontMatrix();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         font.fontMatrix = new AffineTransform(matrix.get(0).floatValue(), matrix.get(1).floatValue(),
                 matrix.get(2).floatValue(), matrix.get(3).floatValue(),
                 matrix.get(4).floatValue(), matrix.get(5).floatValue());
@@ -110,7 +130,7 @@ public class ZFontType1C extends ZSimpleFont {
 
     @Override
     public FontFile deriveFont(Encoding encoding, CMap toUnicode) {
-        ZFontType1C font = new ZFontType1C(this);
+        ZFontTrueType font = new ZFontTrueType(this);
 //        this.echarAdvanceCache.clear();
         font.encoding = encoding;
         font.toUnicode = toUnicode;
@@ -119,7 +139,7 @@ public class ZFontType1C extends ZSimpleFont {
 
     @Override
     public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent, char[] diff) {
-        ZFontType1C font = new ZFontType1C(this);
+        ZFontTrueType font = new ZFontTrueType(this);
 //        this.echarAdvanceCache.clear();
         font.missingWidth = this.missingWidth;
         font.firstCh = firstCh;
@@ -132,7 +152,7 @@ public class ZFontType1C extends ZSimpleFont {
 
     @Override
     public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent, float descent, char[] diff) {
-        ZFontType1C font = new ZFontType1C(this);
+        ZFontTrueType font = new ZFontTrueType(this);
 //        this.echarAdvanceCache.clear();
         font.missingWidth = this.missingWidth;
         font.firstCh = firstCh;
@@ -146,7 +166,12 @@ public class ZFontType1C extends ZSimpleFont {
 
     @Override
     public boolean canDisplayEchar(char ech) {
-        return cffType1Font.hasGlyph(String.valueOf(ech));
+        try {
+            return trueTypeFont.hasGlyph(String.valueOf(ech));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     @Override
@@ -156,12 +181,19 @@ public class ZFontType1C extends ZSimpleFont {
 
     @Override
     public FontFile deriveFont(float pointsize) {
-        ZFontType1C font = new ZFontType1C(this);
-        java.util.List<Number> matrix = cffType1Font.getFontMatrix();
+        ZFontTrueType font = new ZFontTrueType(this);
+        font.size = pointsize;
+        java.util.List<Number> matrix = null;
+        try {
+            matrix = trueTypeFont.getFontMatrix();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         // todo make simple font method to make getting affineTransform easier.
         font.fontMatrix = new AffineTransform(matrix.get(0).floatValue(), matrix.get(1).floatValue(),
                 matrix.get(2).floatValue(), matrix.get(3).floatValue(),
                 matrix.get(4).floatValue(), matrix.get(5).floatValue());
+//        font.fontMatrix.concatenate(font.fontMatrix);
         font.fontMatrix.scale(pointsize, pointsize);
         // clear font metric cache if we change the font's transform
 //        if (!font.getTransform().equals(this.awtFont.getTransform())) {
@@ -188,7 +220,12 @@ public class ZFontType1C extends ZSimpleFont {
 
     @Override
     public String getFamily() {
-        return cffType1Font.getName();
+        try {
+            return trueTypeFont.getName();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Override
@@ -260,21 +297,20 @@ public class ZFontType1C extends ZSimpleFont {
     public void drawEstring(Graphics2D g, String estr, float x, float y, long layout, int mode, Color strokeColor) {
         try {
             AffineTransform af = g.getTransform();
-            java.util.List<Number> fontMatrix = cffType1Font.getFontMatrix();
-            Shape outline = cffType1Font.getPath(estr);
+            java.util.List<Number> fontMatrix = trueTypeFont.getFontMatrix();
+            Shape outline = trueTypeFont.getPath(estr);
 
-            if (!cffType1Font.hasGlyph(estr)) {
+            if (!trueTypeFont.hasGlyph(estr)) {
                 // todo need a way to use the new Encoding...
 //                org.icepdf.core.pobjects.fonts.zfont.Encoding encoding1 = org.icepdf.core.pobjects.fonts.zfont.Encoding.getInstance(org.icepdf.core.pobjects.fonts.zfont.Encoding.STANDARD_ENCODING_NAME);
 //                String name = encoding1.getName(estr.charAt(0));
                 String name = encoding.getName(estr.charAt(0));
                 if (name != null) {
-                    outline = cffType1Font.getPath(name);
+                    outline = trueTypeFont.getPath(name);
                 }
             }
 
             g.translate(x, y);
-//            g.transform(new AffineTransform(0.001f, 0, 0, -0.001f, 0, 0));
             g.transform(this.fontMatrix);
             g.scale(1, -1);
 

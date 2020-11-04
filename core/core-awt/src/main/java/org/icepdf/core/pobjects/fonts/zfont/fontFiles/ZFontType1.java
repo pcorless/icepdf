@@ -176,7 +176,7 @@ public class ZFontType1 extends ZSimpleFont {
         font.fontMatrix = new AffineTransform(matrix.get(0).floatValue(), matrix.get(1).floatValue(),
                 matrix.get(2).floatValue(), matrix.get(3).floatValue(),
                 matrix.get(4).floatValue(), matrix.get(5).floatValue());
-        font.fontMatrix.concatenate(font.fontMatrix);
+//        font.fontMatrix.concatenate(font.fontMatrix);
         font.fontMatrix.scale(pointsize, pointsize);
         // clear font metric cache if we change the font's transform
 //        if (!font.getTransform().equals(this.awtFont.getTransform())) {
@@ -296,7 +296,9 @@ public class ZFontType1 extends ZSimpleFont {
             }
 
             g.translate(x, y);
-            g.transform(new AffineTransform(0.001f, 0, 0, -0.001f, 0, 0));
+//            g.transform(new AffineTransform(0.001f, 0, 0, -0.001f, 0, 0));
+            g.transform(this.fontMatrix);
+            g.scale(1, -1);
 
             if (TextState.MODE_FILL == mode || TextState.MODE_FILL_STROKE == mode ||
                     TextState.MODE_FILL_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
