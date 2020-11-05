@@ -72,7 +72,20 @@ public class ZFontTrueType extends ZSimpleFont {
         try {
 
             String name = encoding.getName(ech);
-            float advance = trueTypeFont.getWidth(name) * size * 0.001f;
+
+            // todo clean up matrix conversion
+            java.util.List<Number> matrix = null;
+            try {
+                matrix = trueTypeFont.getFontMatrix();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            AffineTransform fontMatrix = new AffineTransform(matrix.get(0).floatValue(), matrix.get(1).floatValue(),
+                    matrix.get(2).floatValue(), matrix.get(3).floatValue(),
+                    matrix.get(4).floatValue(), matrix.get(5).floatValue());
+
+            float advance = trueTypeFont.getWidth(name) * (float) fontMatrix.getScaleX();
+            advance = advance * size;
 //            float advance = trueTypeFont.getWidth(String.valueOf(ech)) * size * 0.001f;
 
             // widths uses original cid's, not the converted to unicode value.
