@@ -5493,7 +5493,7 @@ public class SwingController extends ComponentAdapter
 
         private final ActionMethod action;
 
-        protected BaseAction(ActionMethod action) {
+        public BaseAction(ActionMethod action) {
             this.action = action;
         }
 
