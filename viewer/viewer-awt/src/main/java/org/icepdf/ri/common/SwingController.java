@@ -5444,7 +5444,7 @@ public class SwingController extends ComponentAdapter
     public void dragExit(DropTargetEvent event) {
     }
 
-    private void prepareKeyMap(JComponent component) {
+    protected void prepareKeyMap(JComponent component) {
         addKeyAction(component, KEY_CODE_SAVE, MODIFIER_SAVE, new BaseAction(this::saveFile));
         addKeyAction(component, KEY_CODE_SAVE_AS, MODIFIER_SAVE_AS, new BaseAction(this::saveFileAs));
         addKeyAction(component, KEY_CODE_EXPORT_TEXT, MODIFIER_EXPORT_TEXT, new BaseAction(this::exportText));
@@ -5485,15 +5485,15 @@ public class SwingController extends ComponentAdapter
     }
 
     @FunctionalInterface
-    interface ActionMethod {
+    protected interface ActionMethod {
         void doAction();
     }
 
-    private class BaseAction extends AbstractAction {
+    protected class BaseAction extends AbstractAction {
 
         private final ActionMethod action;
 
-        private BaseAction(ActionMethod action) {
+        protected BaseAction(ActionMethod action) {
             this.action = action;
         }
 
