@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /**
@@ -34,13 +35,13 @@ public class StateManager {
             Logger.getLogger(StateManager.class.getName());
 
     // a list is all we might need. 
-    private HashMap<Reference, PObject> changes;
+    private final HashMap<Reference, PObject> changes;
     private final Set<Reference> updatedReferences = new HashSet<>();
 
     // access to xref size and next revision number.
-    private PTrailer trailer;
+    private final PTrailer trailer;
 
-    private int nextReferenceNumber;
+    private final AtomicInteger nextReferenceNumber;
 
     /**
      * Creates a new instance of the state manager.
@@ -54,9 +55,10 @@ public class StateManager {
 
         // number of objects is always one more then the current size and
         // thus the next available number.
+        nextReferenceNumber = new AtomicInteger();
         if (trailer != null) {
             CrossReference crossReference = trailer.getPrimaryCrossReference();
-            nextReferenceNumber = crossReference.getNextAvailableReferenceNumber();
+            nextReferenceNumber.set(crossReference.getNextAvailableReferenceNumber());
         }
     }
 
@@ -69,8 +71,7 @@ public class StateManager {
         // zero revision number for now but technically we can reuse
         // deleted references and increment the rev number.  For no we
         // keep it simple
-        Reference newReference = new Reference(nextReferenceNumber, 0);
-        nextReferenceNumber++;
+        Reference newReference = new Reference(nextReferenceNumber.getAndIncrement(), 0);
         return newReference;
     }
 
@@ -83,8 +84,10 @@ public class StateManager {
         changes.put(pObject.getReference(), pObject);
         int objectNumber = pObject.getReference().getObjectNumber();
         // check the reference numbers
-        if (nextReferenceNumber <= objectNumber) {
-            nextReferenceNumber = objectNumber + 1;
+        synchronized (this) {
+            if (nextReferenceNumber.get() <= objectNumber) {
+                nextReferenceNumber.set(objectNumber + 1);
+            }
         }
     }
 
