@@ -5476,7 +5476,7 @@ public class SwingController extends ComponentAdapter
                 new BaseAction(this::showViewerPreferences));
     }
 
-    private void addKeyAction(final JComponent component, final int keyCode, final int modifier, final BaseAction action) {
+    protected final void addKeyAction(final JComponent component, final int keyCode, final int modifier, final BaseAction action) {
         final InputMap inputMap = component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         final ActionMap actionMap = component.getActionMap();
         final String key = keyCode + "-" + modifier;
