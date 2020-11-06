@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 public class Type0Font {
 
     private static final Logger logger =
-            Logger.getLogger(Font.class.toString());
+            Logger.getLogger(SimpleFont.class.toString());
 
 
     public static final Name DESCENDANT_FONTS_KEY = new Name("DescendantFonts");
