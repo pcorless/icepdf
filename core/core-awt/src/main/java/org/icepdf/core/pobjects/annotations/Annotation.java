@@ -714,6 +714,9 @@ public abstract class Annotation extends Dictionary {
                         parseAppearanceDictionary(APPEARANCE_STREAM_NORMAL_KEY,
                                 appearance));
                 appearances.get(APPEARANCE_STREAM_NORMAL_KEY).setSelectedName(appearanceState);
+            } else {
+                //Broken pdf/appearance, create new
+                createNewAppearance();
             }
             // (Optional) The annotation’s rollover appearance.
             // Default value: the value of the N entry.
@@ -734,28 +737,32 @@ public abstract class Annotation extends Dictionary {
                                 appearance));
             }
         } else {
-            // new annotation, so setup the default appearance states.
-            Appearance newAppearance = new Appearance();
-            HashMap appearanceDictionary = new HashMap();
-            Rectangle2D rect = getUserSpaceRectangle();
-            if (rect == null) {
-                // we need a rect in order to render correctly, bail if not found.
-                throw new IllegalStateException("Annotation is missing required /rect value");
+                // new annotation, so setup the default appearance states.
+                createNewAppearance();
             }
-            if (rect.getWidth() <= 1) {
-                rect.setRect(rect.getX(), rect.getY(), 15, rect.getHeight());
-            }
-            if (rect.getHeight() <= 1) {
-                rect.setRect(rect.getX(), rect.getY(), rect.getWidth(), 15);
-            }
-            appearanceDictionary.put(BBOX_VALUE, new Rectangle2D.Float(
-                    0, 0, (float) rect.getWidth(), (float) rect.getHeight()));
+    }
 
-            newAppearance.addAppearance(APPEARANCE_STREAM_NORMAL_KEY,
-                    new AppearanceState(library, appearanceDictionary));
-            appearances.put(APPEARANCE_STREAM_NORMAL_KEY, newAppearance);
-            currentAppearance = APPEARANCE_STREAM_NORMAL_KEY;
+    private void createNewAppearance() {
+        Appearance newAppearance = new Appearance();
+        HashMap appearanceDictionary = new HashMap();
+        Rectangle2D rect = getUserSpaceRectangle();
+        if (rect == null) {
+            // we need a rect in order to render correctly, bail if not found.
+            throw new IllegalStateException("Annotation is missing required /rect value");
         }
+        if (rect.getWidth() <= 1) {
+            rect.setRect(rect.getX(), rect.getY(), 15, rect.getHeight());
+        }
+        if (rect.getHeight() <= 1) {
+            rect.setRect(rect.getX(), rect.getY(), rect.getWidth(), 15);
+        }
+        appearanceDictionary.put(BBOX_VALUE, new Rectangle2D.Float(
+                0, 0, (float) rect.getWidth(), (float) rect.getHeight()));
+
+        newAppearance.addAppearance(APPEARANCE_STREAM_NORMAL_KEY,
+                new AppearanceState(library, appearanceDictionary));
+        appearances.put(APPEARANCE_STREAM_NORMAL_KEY, newAppearance);
+        currentAppearance = APPEARANCE_STREAM_NORMAL_KEY;
     }
 
     private Appearance parseAppearanceDictionary(Name appearanceDictionary,
