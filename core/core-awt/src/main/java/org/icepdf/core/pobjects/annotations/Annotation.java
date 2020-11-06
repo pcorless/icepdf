@@ -721,6 +721,7 @@ public abstract class Annotation extends Dictionary {
                 }
             } else {
                 //Broken pdf/appearance, create new
+                logger.warning("Missing appearance stream");
                 createNewAppearance();
             }
             // (Optional) The annotation’s rollover appearance.
