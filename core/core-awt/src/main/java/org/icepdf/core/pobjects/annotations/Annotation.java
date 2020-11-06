@@ -716,12 +716,13 @@ public abstract class Annotation extends Dictionary {
                                     appearance));
                     appearances.get(APPEARANCE_STREAM_NORMAL_KEY).setSelectedName(appearanceState);
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, e, () -> "Error parsing annotation normal appearance, creating new one");
+                    logger.log(Level.WARNING, e, () -> "Error parsing annotation normal appearance, creating new one " +
+                            "for " + this);
                     createNewAppearance();
                 }
             } else {
                 //Broken pdf/appearance, create new
-                logger.warning("Missing appearance stream");
+                logger.warning("Missing appearance stream for " + this);
                 createNewAppearance();
             }
             // (Optional) The annotation’s rollover appearance.
@@ -734,7 +735,7 @@ public abstract class Annotation extends Dictionary {
                             parseAppearanceDictionary(APPEARANCE_STREAM_ROLLOVER_KEY,
                                     appearance));
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, e, () -> "Error parsing annotation rollover appearance");
+                    logger.log(Level.WARNING, e, () -> "Error parsing annotation rollover appearance for " + this);
                 }
             }
             // (Optional) The annotation’s down appearance.
@@ -747,7 +748,7 @@ public abstract class Annotation extends Dictionary {
                             parseAppearanceDictionary(APPEARANCE_STREAM_DOWN_KEY,
                                     appearance));
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, e, () -> "Error parsing annotation down appearance");
+                    logger.log(Level.WARNING, e, () -> "Error parsing annotation down appearance for " + this);
                 }
             }
         } else {
