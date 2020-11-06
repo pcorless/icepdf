@@ -710,10 +710,15 @@ public abstract class Annotation extends Dictionary {
             Object appearance = library.getObject(
                     (HashMap) AP, APPEARANCE_STREAM_NORMAL_KEY);
             if (appearance != null) {
-                appearances.put(APPEARANCE_STREAM_NORMAL_KEY,
-                        parseAppearanceDictionary(APPEARANCE_STREAM_NORMAL_KEY,
-                                appearance));
-                appearances.get(APPEARANCE_STREAM_NORMAL_KEY).setSelectedName(appearanceState);
+                try {
+                    appearances.put(APPEARANCE_STREAM_NORMAL_KEY,
+                            parseAppearanceDictionary(APPEARANCE_STREAM_NORMAL_KEY,
+                                    appearance));
+                    appearances.get(APPEARANCE_STREAM_NORMAL_KEY).setSelectedName(appearanceState);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, e, () -> "Error parsing annotation normal appearance, creating new one");
+                    createNewAppearance();
+                }
             } else {
                 //Broken pdf/appearance, create new
                 createNewAppearance();
@@ -723,23 +728,31 @@ public abstract class Annotation extends Dictionary {
             appearance = library.getObject(
                     (HashMap) AP, APPEARANCE_STREAM_ROLLOVER_KEY);
             if (appearance != null) {
-                appearances.put(APPEARANCE_STREAM_ROLLOVER_KEY,
-                        parseAppearanceDictionary(APPEARANCE_STREAM_ROLLOVER_KEY,
-                                appearance));
+                try {
+                    appearances.put(APPEARANCE_STREAM_ROLLOVER_KEY,
+                            parseAppearanceDictionary(APPEARANCE_STREAM_ROLLOVER_KEY,
+                                    appearance));
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, e, () -> "Error parsing annotation rollover appearance");
+                }
             }
             // (Optional) The annotation’s down appearance.
             // Default value: the value of the N entry.
             appearance = library.getObject(
                     (HashMap) AP, APPEARANCE_STREAM_DOWN_KEY);
             if (appearance != null) {
-                appearances.put(APPEARANCE_STREAM_DOWN_KEY,
-                        parseAppearanceDictionary(APPEARANCE_STREAM_DOWN_KEY,
-                                appearance));
+                try {
+                    appearances.put(APPEARANCE_STREAM_DOWN_KEY,
+                            parseAppearanceDictionary(APPEARANCE_STREAM_DOWN_KEY,
+                                    appearance));
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, e, () -> "Error parsing annotation down appearance");
+                }
             }
         } else {
-                // new annotation, so setup the default appearance states.
-                createNewAppearance();
-            }
+            // new annotation, so setup the default appearance states.
+            createNewAppearance();
+        }
     }
 
     private void createNewAppearance() {
