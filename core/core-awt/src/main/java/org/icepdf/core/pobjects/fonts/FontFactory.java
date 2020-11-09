@@ -18,7 +18,9 @@ package org.icepdf.core.pobjects.fonts;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.ofont.OFont;
+import org.icepdf.core.pobjects.fonts.zfont.TrueTypeFont;
 import org.icepdf.core.pobjects.fonts.zfont.Type1Font;
+import org.icepdf.core.pobjects.fonts.zfont.Type3Font;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType1;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType1C;
@@ -116,21 +118,15 @@ public class FontFactory {
 
         // each type will have a specific instance but it's the dictionary that makes the factory
         // call to build any embedded fonts.
-        //
-        // todo Old engine did everything in the Font,  going ot break the init logic out
-        // into the separate instance to try and avoid all the nasty old logic.
 
         // simple fonts
         if (FONT_SUBTYPE_TYPE_1.equals(subtype)) {
-//            Object of = library.getObject(entries, FONT_DESCRIPTOR_KEY);
-//            if (of instanceof FontDescriptor && ((FontDescriptor) of).getObject(FONT_FILE_3) != null) {
-//                return new FontType1C(library, entries);
-//            }
+            // treating type1 and type1c the same for now
             return new Type1Font(library, entries);
-        }
-        if (FONT_SUBTYPE_TRUE_TYPE.equals(subtype)) {
-            // todo build out truetype font. s
-            return new Type1Font(library, entries);
+        } else if (FONT_SUBTYPE_TRUE_TYPE.equals(subtype)) {
+            return new TrueTypeFont(library, entries);
+        } else if (FONT_SUBTYPE_TYPE_3.equals(subtype)) {
+            return new Type3Font(library, entries);
         }
         // type3 and type0
         // composite fonts

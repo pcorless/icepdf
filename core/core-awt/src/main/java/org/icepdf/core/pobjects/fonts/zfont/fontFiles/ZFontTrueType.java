@@ -87,6 +87,15 @@ public class ZFontTrueType extends ZSimpleFont {
     }
 
     @Override
+    public FontFile deriveFont(float pointsize) {
+        ZFontTrueType font = new ZFontTrueType(this);
+        font.fontMatrix = convertFontMatrix(trueTypeFont);
+        font.fontMatrix.scale(pointsize, -pointsize);
+//        font.maxCharBounds = this.maxCharBounds;
+        return font;
+    }
+
+    @Override
     public FontFile deriveFont(Encoding encoding, CMap toUnicode) {
         ZFontTrueType font = new ZFontTrueType(this);
         font.encoding = encoding;
@@ -125,15 +134,6 @@ public class ZFontTrueType extends ZSimpleFont {
             e.printStackTrace();
         }
         return false;
-    }
-
-    @Override
-    public FontFile deriveFont(float pointsize) {
-        ZFontTrueType font = new ZFontTrueType(this);
-        font.fontMatrix = convertFontMatrix(trueTypeFont);
-        font.fontMatrix.scale(pointsize, -pointsize);
-//        font.maxCharBounds = this.maxCharBounds;
-        return font;
     }
 
     @Override

@@ -206,9 +206,6 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
                 fontDescriptor.init();
             }
         }
-        if (font == null) {
-            System.out.println();
-        }
     }
 
     // todo temp method to get a font,  eventually replace with fontManager selection
