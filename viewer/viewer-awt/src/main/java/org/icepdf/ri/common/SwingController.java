@@ -5641,7 +5641,7 @@ public class SwingController extends ComponentAdapter
      * @param priv   The privacy status to use (true = private)
      */
     public void changeAnnotationsPrivacy(AnnotationFilter filter, boolean priv) {
-        if (document != null && viewer != null) {
+        if (document != null) {
             final PageTree pt = document.getPageTree();
             for (int i = 0; i < pt.getNumberOfPages(); ++i) {
                 final Page p = pt.getPage(i);
