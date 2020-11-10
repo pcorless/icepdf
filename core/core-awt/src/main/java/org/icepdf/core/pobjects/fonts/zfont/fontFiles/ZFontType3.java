@@ -27,8 +27,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.awt.Font.PLAIN;
-
 public class ZFontType3 extends ZSimpleFont implements Cloneable {
     private static final Logger logger =
             Logger.getLogger(ZFontType3.class.toString());
@@ -38,7 +36,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
     public static final Name CHAR_PROCS_KEY = new Name("CharProcs");
     public static final Name RESOURCES_KEY = new Name("Resources");
 
-    private final Library library;
+    private Library library;
     protected HashMap entries;
     private HashMap charProcedures;
     private HashMap<Name, SoftReference<Shapes>> charShapesCache;
@@ -63,12 +61,9 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
 
         glyph2user = new AffineTransform(1.0f, 0.0f, 0.0f, 1f, 0.0f, 0.0f);
 
-        // build the BBox
         Object o = library.getObject(properties, FONT_BBOX_KEY);
         if (o instanceof List) {
             List rectangle = (List) o;
-            // allocated the original two points that define the rectangle,
-            // as they are needed by the NFont
             bBox = new PRectangle(rectangle);
             bBox.setRect(bBox.getX(), bBox.getY(), bBox.getWidth(), bBox.getHeight());
             // couple corner cases of [0 0 0 0] /FontBBox, zero height will not intersect the clip.
@@ -78,7 +73,6 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
             }
         }
 
-        // build font matrix
         o = library.getObject(properties, FONT_MATRIX_KEY);
         if (o instanceof List) {
             List oFontMatrix = (List) o;
@@ -92,11 +86,10 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
             fontMatrix = new AffineTransform(0.001f, 0.0f, 0.0f, 0.001f, 0.0f, 0.0f);
         }
 
-        // set default mapping
+        // todo fix up all simple font unicode assignments
         toUnicode = null;//CMap.IDENTITY;
 
-        // get the glyphs, via loading the CharProcs resources, which should
-        // be name stream pairs.
+        // CharProcs resources, contains glyph name/stream pairs.
         o = library.getObject(properties, CHAR_PROCS_KEY);
         if (o instanceof HashMap) {
             charProcedures = (HashMap) o;
@@ -107,35 +100,8 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
         }
     }
 
-    public int getStyle() {
-        return PLAIN;
-    }
-
-    /**
-     * <p>Derive a new Type3 font program using the following font size.</p>
-     *
-     * @param size in device space of new font.
-     * @return new font with a modified size data.
-     */
-    public FontFile deriveFont(float size) {
-        ZFontType3 zFontType3 = null;
-        try {
-            zFontType3 = (ZFontType3) clone();
-        } catch (CloneNotSupportedException e) {
-            logger.log(Level.FINE, "Could not derive Type3 font ", e);
-        }
-        if (zFontType3 != null) {
-
-            zFontType3.size = size;
-//            ZFontType3.max = null;
-            zFontType3.setGlyph2User(new AffineTransform());
-        }
-        return zFontType3;
-    }
-
     @Override
     public FontFile deriveFont(Encoding encoding, CMap toUnicode) {
-        // todo create instance wrapper
         ZFontType3 font = (ZFontType3) deriveFont(this.size);
         font.encoding = encoding;
         return font;
@@ -150,45 +116,40 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
         font.missingWidth = missingWidth;
         font.ascent = ascent;
         font.descent = descent;
-        // diff cmap...
+        // todo diff cmap, likely not a type3 thing, see if an example shows up.
         return font;
     }
 
     @Override
     public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent, float descent, char[] diff) {
-        return null;
+        // not really applicable for type3 but lets play nice just in case
+        ZFontType3 font = (ZFontType3) deriveFont(this.size);
+        font.encoding = encoding;
+        font.firstCh = firstCh;
+        font.missingWidth = missingWidth;
+        font.ascent = ascent;
+        font.descent = descent;
+        return font;
     }
 
-    @Override
-    public org.apache.fontbox.encoding.Encoding getEncoding() {
-        return null;
-    }
-
-    /**
-     * <p>Derives a new Type 3 font program using the specified transformation.</p>
-     *
-     * @param affinetransform transform to be applied to all glyphs
-     * @return a new font where all glyphs are transformed by the specified
-     * transform.
-     */
-    public FontFile deriveFont(AffineTransform affinetransform) {
-        ZFontType3 ZFontType3 = null;
+    public FontFile deriveFont(float size) {
+        ZFontType3 font = null;
         try {
-            ZFontType3 = (ZFontType3) clone();
+            font = (ZFontType3) clone();
         } catch (CloneNotSupportedException e) {
             logger.log(Level.FINE, "Could not derive Type3 font ", e);
         }
-        ZFontType3.setGlyph2User(affinetransform);
-        return ZFontType3;
+        if (font != null) {
+            font.size = size;
+            font.setGlyph2User(new AffineTransform());
+        }
+        return font;
     }
 
-    /**
-     * <p>Gets Font matrics associated with this font.</p>
-     *
-     * @return affine transform for the mapping of glyph space to text space.
-     */
-    public AffineTransform getTransform() {
-        return new AffineTransform(fontMatrix);
+    public FontFile deriveFont(AffineTransform affinetransform) {
+        ZFontType3 font = (ZFontType3) deriveFont(this.size);
+        font.setGlyph2User(affinetransform);
+        return font;
     }
 
     /**
@@ -204,16 +165,17 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
     public void drawEstring(Graphics2D g2d, String string,
                             float x, float y,
                             long layout, int mode, Color color) {
-        Shapes shape;
+
         AffineTransform oldTransform = g2d.getTransform();
         AffineTransform currentCTM = g2d.getTransform();
-        currentCTM.concatenate(getTransform());
+        currentCTM.concatenate(fontMatrix);
         g2d.setTransform(currentCTM);
 
         g2d.translate(x / fontMatrix.getScaleX(), y / fontMatrix.getScaleY());
         g2d.scale(size, -size);
         char displayChar;
         try {
+            Shapes shape;
             for (int i = 0, length = string.length(); i < length; i++) {
                 displayChar = string.charAt(i);
                 shape = getGlyph(displayChar, color);
@@ -228,12 +190,6 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
         g2d.setTransform(oldTransform);
     }
 
-    /**
-     * <p>Calculates the  character advance of the given character.</p>
-     *
-     * @param displayChar character to get advance for
-     * @return advance of the specified character
-     */
     public Point2D echarAdvance(char displayChar) {
         String charName = encoding.getName(displayChar);
         float width = 0f;
@@ -248,14 +204,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
             }
         }
 
-//        if (logger.isLoggable(Level.FINER)) {
-//            logger.finer("echar advance:" + width +
-//                    " scale: " + m_.getScaleX() +
-//                    " scale: " + at_.getScaleX());
-//        }
-
-        return new Point2D.Float((float) (width * size),
-                (float) (width * size));
+        return new Point2D.Float(width * size, width * size);
     }
 
     /**
@@ -273,9 +222,8 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
 
     public Rectangle2D getMaxCharBounds() {
         AffineTransform af = new AffineTransform();
-        af.scale(size, -size);
+        af.scale(size, size);
         af.concatenate(fontMatrix);
-//        af.concatenate(at_);
         return af.createTransformedShape(bBox.toJava2dCoordinates()).getBounds2D();
     }
 
@@ -294,12 +242,6 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
         }
 
         PRectangle charRect = charBBoxes.get(charName);
-
-//        if (logger.isLoggable(Level.FINER)) {
-//            logger.finer("width : " + charRect.getWidth() + " " + bBox.getWidth());
-//            logger.finer("height : " + charRect.getHeight() + " " + bBox.getHeight());
-//        }
-
         r.setRect(0.0, r.getY(),
                 width * size,
                 charRect.getHeight() * size);
@@ -317,6 +259,12 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
      */
     public void setHorDisplacement(Name name, Point2D.Float displacement) {
         charWidths.put(name, displacement);
+    }
+
+    @Override
+    public org.apache.fontbox.encoding.Encoding getEncoding() {
+        // not really a thing for type3
+        return null;
     }
 
     /**
@@ -368,22 +316,10 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
         return ByteEncoding.ONE_BYTE;
     }
 
-    /**
-     * <p>Can the specified character be displayed by this font program.</p>
-     *
-     * @param c character to check if displayable.
-     * @return true, if character can be displayed; false, otherwise.
-     */
     public boolean canDisplay(char c) {
         return canDisplayEchar(c);
     }
 
-    /**
-     * <p>Can the specified character be displayed by this font program.</p>
-     *
-     * @param c character to check if displayable.
-     * @return true, if character can be displayed; false, otherwise.
-     */
     public boolean canDisplayEchar(char c) {
         return (getGlyph(c, Color.black) != null);
     }
@@ -397,12 +333,6 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
         return false;
     }
 
-    /**
-     * Uitility method for mapping glyph space to user space.
-     *
-     * @param affinetransform transforms all glphs by this transform which is
-     *                        adjusted for font size.
-     */
     private void setGlyph2User(AffineTransform affinetransform) {
         float fontSize = getSize();
         glyph2user = new AffineTransform(fontMatrix);
@@ -415,13 +345,6 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
         glyph2user.concatenate(affinetransform1);
     }
 
-    /**
-     * Utility method for dynamically loading the needed glyph data for the specified
-     * character number
-     *
-     * @param characterIndex character number of the glyph to display
-     * @return a new Shapes object containing paintable data.
-     */
     private Shapes getGlyph(int characterIndex, Color fillColor) {
         // Gets the name of the type3 character
         Name charName = new Name(encoding.getName((char) characterIndex));

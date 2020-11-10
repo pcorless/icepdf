@@ -16,6 +16,8 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.awt.Font.PLAIN;
+
 /**
  * Base class for
  */
@@ -163,7 +165,7 @@ public abstract class ZSimpleFont implements FontFile {
 
     @Override
     public int getStyle() {
-        return 0;
+        return PLAIN;
     }
 
     @Override
