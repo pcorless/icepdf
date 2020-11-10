@@ -145,7 +145,7 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
         widths = (List) (library.getObject(entries, WIDTHS_KEY));
         if (widths != null) {
             float[] newWidth = new float[256 - firstchar];
-            for (int i = 0, max = widths.size(); i < max; i++) {
+            for (int i = 0, max = widths.size(), max2 = newWidth.length; i < max && i < max2; i++) {
                 if (widths.get(i) != null) {
                     newWidth[i] = ((Number) widths.get(i)).floatValue() / 1000f;
                 }

@@ -38,7 +38,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
     public static final Name CHAR_PROCS_KEY = new Name("CharProcs");
     public static final Name RESOURCES_KEY = new Name("Resources");
 
-    private Library library;
+    private final Library library;
     protected HashMap entries;
     private HashMap charProcedures;
     private HashMap<Name, SoftReference<Shapes>> charShapesCache;
@@ -60,7 +60,6 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
     public ZFontType3(Library library, HashMap properties) {
         this.library = library;
         entries = properties;
-
 
         glyph2user = new AffineTransform(1.0f, 0.0f, 0.0f, 1f, 0.0f, 0.0f);
 
@@ -239,7 +238,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
         String charName = encoding.getName(displayChar);
         float width = 0f;
         if (charName != null && displayChar >= firstCh && displayChar <= 255) {
-            width = (float) (widths[displayChar - firstCh] * fontMatrix.getScaleX());
+            width = (float) (widths[displayChar - firstCh] * 1000 * fontMatrix.getScaleX());
         }
 
         if (width == 0.0f && charWidths.size() > 0) {
@@ -255,8 +254,8 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
 //                    " scale: " + at_.getScaleX());
 //        }
 
-        return new Point2D.Float((float) (width * size * glyph2user.getScaleX()),
-                (float) (width * size * glyph2user.getShearY()));
+        return new Point2D.Float((float) (width * size),
+                (float) (width * size));
     }
 
     /**
