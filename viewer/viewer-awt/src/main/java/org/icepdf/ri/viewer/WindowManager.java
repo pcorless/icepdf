@@ -138,7 +138,7 @@ public class WindowManager implements WindowManagementCallback {
 
     private void print(Controller controller, String printer) {
         controller.printAndExit(!PrintHelper.hasPrinter(printer), printer);
-        quit(controller, (JFrame) controller.getViewerFrame(), controller.getPropertiesManager().getPreferences());
+        quit(controller, controller.getViewerFrame(), controller.getPropertiesManager().getPreferences());
     }
 
     protected Controller commonWindowCreation() {
@@ -251,7 +251,7 @@ public class WindowManager implements WindowManagementCallback {
         }
     }
 
-    public void disposeWindow(Controller controller, JFrame viewer,
+    public void disposeWindow(Controller controller, Frame viewer,
                               Preferences preferences) {
         if (controllers.size() <= 1) {
             quit(controller, viewer, preferences);
@@ -270,7 +270,7 @@ public class WindowManager implements WindowManagementCallback {
         }
     }
 
-    public void quit(Controller controller, JFrame viewer,
+    public void quit(Controller controller, Frame viewer,
                      Preferences preferences) {
         saveViewerState(viewer);
 

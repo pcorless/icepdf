@@ -46,7 +46,7 @@ public class PreferencesDialog extends EscapeJDialog {
 
     private JTabbedPane propertiesTabbedPane;
 
-    public PreferencesDialog(JFrame frame, SwingController controller,
+    public PreferencesDialog(Frame frame, SwingController controller,
                              ResourceBundle messageBundle) {
         super(frame, true);
         setTitle(messageBundle.getString("viewer.dialog.viewerPreferences.title"));

@@ -254,7 +254,7 @@ public class SwingController extends ComponentAdapter
     protected JSplitPane utilityAndDocumentSplitPane;
     private int utilityAndDocumentSplitPaneLastDividerLocation;
     private JLabel statusLabel;
-    private JFrame viewer;
+    private Frame viewer;
     protected WindowManagementCallback windowManagementCallback;
     // simple model for swing controller, mainly printer and  file loading state.
     protected ViewModel viewModel;
@@ -1470,7 +1470,7 @@ public class SwingController extends ComponentAdapter
      *
      * @param v paren view frame.
      */
-    public void setViewerFrame(JFrame v) {
+    public void setViewerFrame(Frame v) {
         viewer = v;
         viewer.addWindowListener(this);
         viewer.addComponentListener(this);
@@ -3174,7 +3174,7 @@ public class SwingController extends ComponentAdapter
             viewer.setTitle(messageBundle.getString("viewer.window.title.default"));
             viewer.invalidate();
             viewer.validate();
-            viewer.getContentPane().repaint();
+            viewer.repaint();
         }
 
         reflectStateInComponents();
@@ -4598,20 +4598,24 @@ public class SwingController extends ComponentAdapter
         }
 
         // Hide the menubar?
-        if (viewerPref != null && viewerPref.hasHideMenubar()) {
-            if (viewerPref.getHideMenubar()) {
-                if ((viewer != null) && (viewer.getJMenuBar() != null)) {
-                    viewer.getJMenuBar().setVisible(false);
+        if (viewer instanceof JFrame){
+            final JMenuBar menuBar = ((JFrame) viewer).getJMenuBar();
+            if (viewerPref != null && viewerPref.hasHideMenubar()) {
+                if (viewerPref.getHideMenubar()) {
+                    if (menuBar != null) {
+                        menuBar.setVisible(false);
+                    }
+                }
+            } else {
+                if (menuBar != null) {
+                    menuBar.setVisible(
+                            !propertiesManager.getPreferences().getBoolean(
+                                    ViewerPropertiesManager.PROPERTY_VIEWPREF_HIDEMENUBAR,
+                                    false));
                 }
             }
-        } else {
-            if (viewer != null && viewer.getJMenuBar() != null) {
-                viewer.getJMenuBar().setVisible(
-                        !propertiesManager.getPreferences().getBoolean(
-                                ViewerPropertiesManager.PROPERTY_VIEWPREF_HIDEMENUBAR,
-                                false));
-            }
         }
+
 
         // Fit the GUI frame to the size of the document?
         if (viewerPref != null && viewerPref.hasFitWindow()) {
@@ -5166,7 +5170,7 @@ public class SwingController extends ComponentAdapter
         // So, we need to temporarily save what we'll need, for our later invocation of
         //  WindowManagementCallback.disposeWindow(), that dispose() would otherwise trash
         WindowManagementCallback wc = windowManagementCallback;
-        JFrame v = viewer;
+        Frame v = viewer;
 
         // save last used location.
         WindowManager.saveViewerState(v);
