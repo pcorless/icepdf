@@ -195,7 +195,7 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
         public String[][] readEncoding(String fileName, int width) {
             String[][] mappings = new String[width][256];
             try (InputStream inputStream = Encoding.class.getResourceAsStream(
-                    "/org/icepdf/core/pobjects/fonts/encoding/" + fileName);) {
+                    "/org/icepdf/core/pobjects/fonts/encoding/" + fileName)) {
                 BufferedReader encodingBuffer = new BufferedReader(new InputStreamReader(inputStream));
                 String currentLine, name, nextCode;
                 int code;

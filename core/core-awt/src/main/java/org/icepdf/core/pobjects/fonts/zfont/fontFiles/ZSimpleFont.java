@@ -105,7 +105,6 @@ public abstract class ZSimpleFont implements FontFile {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
     @Override

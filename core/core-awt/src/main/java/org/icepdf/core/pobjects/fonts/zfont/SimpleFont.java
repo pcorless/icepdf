@@ -4,8 +4,6 @@ import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.PRectangle;
 import org.icepdf.core.pobjects.Stream;
-import org.icepdf.core.pobjects.fonts.AFM;
-import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.pobjects.fonts.ofont.OFont;
 import org.icepdf.core.util.FontUtil;
@@ -32,7 +30,6 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
     private static final java.awt.Font[] fonts =
             GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
 
-    public static final Name FONT_DESCRIPTOR_KEY = new Name("FontDescriptor");
     public static final Name TO_UNICODE_KEY = new Name("ToUnicode");
     public static final Name BASE_ENCODING_KEY = new Name("BaseEncoding");
 
@@ -61,7 +58,6 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
      */
     public SimpleFont(Library library, HashMap entries) {
         super(library, entries);
-        // todo pull in base class dictionary init.
     }
 
     @Override
@@ -135,8 +131,7 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
                 descent = fontDescriptor.getDescent() / 1000f;
             }
             PRectangle tmpBBox = fontDescriptor.getFontBBox();
-            // allocated the original two points that define the rectangle,
-            // as they are needed by the NFont
+            // allocated the original two points that define the rectangle
             if (tmpBBox != null) {
                 bbox = tmpBBox.getOriginalPoints();
                 bbox.setRect(bbox.getX(), bbox.getY(), bbox.getWidth(), bbox.getHeight());
@@ -178,33 +173,6 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
         cMap = new String[256];
         for (char i = 0; i < 256; i++) {
             cMap[i] = encoding.getName(i);
-        }
-    }
-
-    protected void parseFontDescriptor() {
-        // Assign the font descriptor
-        Object of = library.getObject(entries, FONT_DESCRIPTOR_KEY);
-        if (of instanceof FontDescriptor) {
-            fontDescriptor = (FontDescriptor) of;
-        }
-        // encase of missing the type entry so we
-        else if (of instanceof HashMap) {
-            fontDescriptor = new FontDescriptor(library, (HashMap) of);
-        }
-        if (fontDescriptor != null) {
-            fontDescriptor.init();
-            if (fontDescriptor.getEmbeddedFont() != null) {
-                font = fontDescriptor.getEmbeddedFont();
-                isFontSubstitution = false;
-            }
-        }
-        // If there is no FontDescriptor then we most likely have a core afm
-        if (fontDescriptor == null && basefont != null) {
-            AFM fontMetrix = AFM.AFMs.get(basefont.toLowerCase());
-            if (fontMetrix != null) {
-                fontDescriptor = FontDescriptor.createDescriptor(library, fontMetrix);
-                fontDescriptor.init();
-            }
         }
     }
 

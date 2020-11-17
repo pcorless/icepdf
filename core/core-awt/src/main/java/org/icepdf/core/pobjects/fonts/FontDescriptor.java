@@ -273,30 +273,20 @@ public class FontDescriptor extends Dictionary {
             } else if (entries.containsKey(FONT_FILE_2)) {
                 Stream fontStream = (Stream) library.getObject(entries, FONT_FILE_2);
                 if (fontStream != null) {
-                    font = fontFactory.createFontFile(
-                            fontStream, FontFactory.FONT_TRUE_TYPE, null);
+                    font = fontFactory.createFontFile(fontStream, FontFactory.FONT_TRUE_TYPE, null);
                 }
             } else if (entries.containsKey(FONT_FILE_3)) {
 
                 Stream fontStream = (Stream) library.getObject(entries, FONT_FILE_3);
                 Name subType = (Name) fontStream.getObject(SUBTYPE_KEY);
-                if (subType != null &&
-                        (subType.equals(FONT_FILE_3_CID_FONT_TYPE_0) ||
-                                subType.equals(FONT_FILE_3_CID_FONT_TYPE_0C))
-                ) {
-                    // todo need to break out in the three CID types...
-                    font = fontFactory.createFontFile(
-                            fontStream, FontFactory.FONT_CID_TYPE_0, subType);
-                }
-                if (subType != null && subType.equals(FONT_FILE_3_TYPE_1C)) {
-//                        font = new NFontOpenType(fontStreamBytes);
-                    font = fontFactory.createFontFile(
-                            fontStream, FontFactory.FONT_TYPE_1C, subType);
-                }
-                if (subType != null && subType.equals(FONT_FILE_3_OPEN_TYPE)) {
-//                        font = new NFontOpenType(fontStreamBytes);
-                    font = fontFactory.createFontFile(
-                            fontStream, FontFactory.FONT_OPEN_TYPE, subType);
+                if (subType != null && subType.equals(FONT_FILE_3_CID_FONT_TYPE_0)) {
+                    font = fontFactory.createFontFile(fontStream, FontFactory.FONT_CID_TYPE_0, subType);
+                } else if (subType != null && subType.equals(FONT_FILE_3_CID_FONT_TYPE_0C)) {
+                    font = fontFactory.createFontFile(fontStream, FontFactory.FONT_CID_TYPE_0C, subType);
+                } else if (subType != null && subType.equals(FONT_FILE_3_TYPE_1C)) {
+                    font = fontFactory.createFontFile(fontStream, FontFactory.FONT_TYPE_1C, subType);
+                } else if (subType != null && subType.equals(FONT_FILE_3_OPEN_TYPE)) {
+                    font = fontFactory.createFontFile(fontStream, FontFactory.FONT_OPEN_TYPE, subType);
                 }
             }
         }

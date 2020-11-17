@@ -71,6 +71,7 @@ public abstract class Font extends Dictionary {
     public static final Name ENCODING_KEY = new Name("Encoding");
     public static final Name FIRST_CHAR_KEY = new Name("FirstChar");
     public static final Name LAST_CHAR_KEY = new Name("LastChar");
+    public static final Name FONT_DESCRIPTOR_KEY = new Name("FontDescriptor");
 
     /**
      * All glyphs have the same width (as opposed to proportional or
@@ -282,6 +283,33 @@ public abstract class Font extends Dictionary {
      * font so it can be used by the content parser.
      */
     public abstract void init();
+
+    protected void parseFontDescriptor() {
+        // Assign the font descriptor
+        Object of = library.getObject(entries, FONT_DESCRIPTOR_KEY);
+        if (of instanceof FontDescriptor) {
+            fontDescriptor = (FontDescriptor) of;
+        }
+        // encase of missing the type entry so we
+        else if (of instanceof HashMap) {
+            fontDescriptor = new FontDescriptor(library, (HashMap) of);
+        }
+        if (fontDescriptor != null) {
+            fontDescriptor.init();
+            if (fontDescriptor.getEmbeddedFont() != null) {
+                font = fontDescriptor.getEmbeddedFont();
+                isFontSubstitution = false;
+            }
+        }
+        // If there is no FontDescriptor then we most likely have a core afm
+        if (fontDescriptor == null && basefont != null) {
+            AFM fontMetrix = AFM.AFMs.get(basefont.toLowerCase());
+            if (fontMetrix != null) {
+                fontDescriptor = FontDescriptor.createDescriptor(library, fontMetrix);
+                fontDescriptor.init();
+            }
+        }
+    }
 
     /**
      * Gets the base name of the core 14 fonts, null if it does not match

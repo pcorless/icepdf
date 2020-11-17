@@ -18,10 +18,9 @@ package org.icepdf.core.pobjects.fonts;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.ofont.OFont;
-import org.icepdf.core.pobjects.fonts.zfont.TrueTypeFont;
-import org.icepdf.core.pobjects.fonts.zfont.Type1Font;
-import org.icepdf.core.pobjects.fonts.zfont.Type3Font;
+import org.icepdf.core.pobjects.fonts.zfont.*;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
+import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType0;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType1;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType1C;
 import org.icepdf.core.util.Defs;
@@ -71,25 +70,12 @@ public class FontFactory {
     // Singleton instance of class
     private static FontFactory fontFactory;
 
-    // NFont class path
-    private static final String FONT_CLASS =
-            "org.icepdf.core.pobjects.fonts.nfont.Font";
-    private static final String NFONT_OPEN_TYPE =
-            "org.icepdf.core.pobjects.fonts.nfont.NFontOpenType";
-    private static final String NFONT_TRUE_TYPE =
-            "org.icepdf.core.pobjects.fonts.nfont.NFontTrueType";
-    private static final String NFONT_TRUE_TYPE_0 =
-            "org.icepdf.core.pobjects.fonts.nfont.NFontType0";
-    private static final String NFONT_TRUE_TYPE_1 =
-            "org.icepdf.core.pobjects.fonts.nfont.NFontType1";
-    private static final String NFONT_TRUE_TYPE_3 =
-            "org.icepdf.core.pobjects.fonts.nfont.NFontType3";
-
     public static final Name FONT_SUBTYPE_TYPE_0 = new Name("Type0");
     public static final Name FONT_SUBTYPE_TYPE_1 = new Name("Type1");
     public static final Name FONT_SUBTYPE_MM_TYPE_1 = new Name("MMType1");
     public static final Name FONT_SUBTYPE_TYPE_3 = new Name("Type3");
     public static final Name FONT_SUBTYPE_TRUE_TYPE = new Name("TrueType");
+    // todo likely not needed here.
     public static final Name FONT_SUBTYPE_CID_FONT_TYPE_0 = new Name("CIDFontType0");
     public static final Name FONT_SUBTYPE_CID_FONT_TYPE_2 = new Name("CIDFontType2");
 
@@ -125,15 +111,17 @@ public class FontFactory {
             return new Type1Font(library, entries);
         } else if (FONT_SUBTYPE_TRUE_TYPE.equals(subtype)) {
             return new TrueTypeFont(library, entries);
+        } else if (FONT_SUBTYPE_TYPE_0.equals(subtype)) {
+            return new Type0Font(library, entries);
         } else if (FONT_SUBTYPE_TYPE_3.equals(subtype)) {
             return new Type3Font(library, entries);
         }
         // type3 and type0
         // composite fonts
-        else if (FONT_SUBTYPE_CID_FONT_TYPE_0.equals(subtype) || FONT_SUBTYPE_CID_FONT_TYPE_2.equals(subtype)) {
-            logger.warning("unimplemented, found CIDFontType " + subtype);
-        } else if (FONT_SUBTYPE_TYPE_0.equals(subtype)) {
-            logger.warning("unimplemented, found type 0");
+        else if (FONT_SUBTYPE_CID_FONT_TYPE_0.equals(subtype)) {
+            return new TypeCidType0Font(library, entries);
+        } else if (FONT_SUBTYPE_CID_FONT_TYPE_2.equals(subtype)) {
+            return new TypeCidType2Font(library, entries);
         }
         if (font == null) {
             // create OFont implementation. 
@@ -151,14 +139,16 @@ public class FontFactory {
 
         } else if (FONT_TRUE_TYPE == fontType) {
             fontFile = new ZFontTrueType(fontStream);
-        } else if (FONT_TYPE_0 == fontType) {
-
         } else if (FONT_TYPE_1 == fontType) {
             fontFile = new ZFontType1(fontStream);
         } else if (FONT_TYPE_1C == fontType) {
             fontFile = new ZFontType1C(fontStream);
-        } else if (FONT_TYPE_3 == fontType) {
-//            fontClass = Class.forName(NFONT_TRUE_TYPE_3);
+        } else if (FONT_CID_TYPE_0 == fontType) {
+            fontFile = new ZFontType0(fontStream);
+        } else if (FONT_CID_TYPE_0C == fontType) {
+            fontFile = new ZFontType0(fontStream);
+        } else if (FONT_CID_TYPE_1C == fontType) {
+            fontFile = new ZFontType0(fontStream);
         }
         if (fontFile == null && awtFontLoading) {
             // see if the font file can be loaded with Java Fonts

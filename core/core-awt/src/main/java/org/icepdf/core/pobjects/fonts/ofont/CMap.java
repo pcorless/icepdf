@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.fonts.ofont;
 
+import org.icepdf.core.io.SeekableByteArrayInputStream;
 import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.Name;
@@ -48,10 +49,12 @@ import java.util.logging.Logger;
  *
  * @since 1.0
  */
-class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
+public class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
 
     private static final Logger logger =
             Logger.getLogger(CMap.class.toString());
+
+    private static HashMap<Name, CMap> cMapCache = new HashMap<>();
 
     /**
      * Dictionary containing entries that define the character collection  for
@@ -111,7 +114,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
      * Defines mappings from character codes to Unicode character ranges.
      * Expressed in UTF-16BE encoding.
      */
-    private List<CMapRange> bfRange;
+    private List<CMapBfRange> bfRange;
 
     /**
      * Define mappings of individual input character codes to CIDS in the
@@ -122,7 +125,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
     /**
      * Similar to cIdChars but defines ranges of input codes.
      */
-    private HashMap cIdRange;
+    private List<CMapCidRange> cIdRange;
 
     /**
      * Define mappings if the normal mapping produces a CID for which no glyph
@@ -160,9 +163,25 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
         this.cMapStream = cMapStream;
     }
 
+    // todo pretty sure we don't need to extend dictionary, seems unnecessary.
+
     public CMap(Library l, HashMap h, InputStream cMapInputStream) {
         super(l, h);
         this.cMapInputStream = cMapInputStream;
+    }
+
+    public static CMap getInstance(Library library, Name name) {
+        if (cMapCache.containsKey(name)) {
+            return cMapCache.get(name);
+        }
+        byte[] cMapBytes = CMapReader.createStream(name);
+        CMap cMap = null;
+        if (cMapBytes != null) {
+            cMap = new CMap(library, new HashMap(), new SeekableByteArrayInputStream(cMapBytes));
+            cMap.init();
+        }
+        cMapCache.put(name, cMap);
+        return cMap;
     }
 
     public boolean isOneByte() {
@@ -225,6 +244,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
                 cMapInputStream = cMapStream.getDecodedByteArrayInputStream();
             }
 
+            // todo move to cmap loggin to finest
             // Print CMap ASCII
             if (logger.isLoggable(Level.FINER)) {
                 String content;
@@ -379,13 +399,13 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
                             // the next token will be vector or another Integer
                             token = parser.getStreamObject();
                             if (token instanceof List) {
-                                bfRange.add(new CMapRange(startRange,
+                                bfRange.add(new CMapBfRange(startRange,
                                         endRange,
                                         (List) token));
                             } else {
                                 hexToken = (StringObject) token;
                                 Integer offset = hexToken.getUnsignedInt(0, hexToken.getLength());
-                                bfRange.add(new CMapRange(startRange,
+                                bfRange.add(new CMapBfRange(startRange,
                                         endRange,
                                         offset));
                             }
@@ -404,7 +424,42 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
                     }
                     // find cIdRange
                     if (stringToken.equalsIgnoreCase("begincidrange")) {
+                        int numberOfbfRanges = (int) Float.parseFloat(previousToken.toString());
+                        if (cIdRange == null) {
+                            cIdRange = new ArrayList<>(numberOfbfRanges);
+                        }
+                        StringObject hexToken;
+                        Integer startRange;
+                        Integer endRange;
+                        // work through each range
+                        for (int i = 0; i < numberOfbfRanges; i++) {
+                            // look for start range.
+                            token = parser.getStreamObject();
+                            if (token instanceof StringObject) {
+                                hexToken = (StringObject) token;
+                                startRange = hexToken.getUnsignedInt(0, hexToken.getLength());
+                            } else {
+                                // likely a malformed cmap
+                                break;
+                            }
+                            // end range
+                            token = parser.getStreamObject();
+                            if (token instanceof StringObject) {
+                                hexToken = (StringObject) token;
+                                endRange = hexToken.getUnsignedInt(0, hexToken.getLength());
+                            } else {
+                                // likely a malformed cmap
+                                break;
+                            }
 
+                            // the next token will be vector or another Integer
+                            token = parser.getStreamObject();
+                            if (token instanceof Integer) {
+                                cIdRange.add(new CMapCidRange(startRange,
+                                        endRange,
+                                        (Integer) token));
+                            }
+                        }
                     }
                     // find notDefChars
                     if (stringToken.equalsIgnoreCase("beginnotdefchar")) {
@@ -422,6 +477,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
             logger.log(Level.SEVERE, "CMap parsing error", e);
         } catch (IOException e) {
             // eat it, end of file stream
+            logger.log(Level.SEVERE, "CMap parsing error", e);
         } finally {
             if (cMapInputStream != null) {
                 try {
@@ -443,7 +499,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
         }
         // check bfRange for matches, there may be many ranges to check
         if (bfRange != null) {
-            for (CMapRange aBfRange : bfRange) {
+            for (CMapBfRange aBfRange : bfRange) {
                 if (aBfRange.inRange(ch)) {
                     return String.valueOf(aBfRange.getCMapValue(ch));
                 }
@@ -481,12 +537,20 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
         }
         // check bfRange for matches, there may be many ranges to check
         if (bfRange != null) {
-            for (CMapRange aBfRange : bfRange) {
+            for (CMapBfRange aBfRange : bfRange) {
                 if (aBfRange.inRange(charMap)) {
                     return aBfRange.getCMapValue(charMap)[0];
                 }
             }
         }
+        if (cIdRange != null) {
+            for (CMapCidRange range : cIdRange) {
+                if (range.inRange(charMap)) {
+                    return range.getCMapValue(charMap);
+                }
+            }
+        }
+
         return charMap;
     }
 
@@ -511,7 +575,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
      * array.  ie <005f> maps to <00660066> and <0060> maps to <0066069> and
      * finally <0061> maps to <00660066006C>.
      */
-    class CMapRange {
+    class CMapBfRange implements CMapRange {
 
         // start value for a bfrange
         int startRange = 0;
@@ -530,7 +594,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
          * @param endRange    end range of mapping
          * @param offsetValue value to offset a mapping by
          */
-        public CMapRange(int startRange, int endRange, int offsetValue) {
+        public CMapBfRange(int startRange, int endRange, int offsetValue) {
             this.startRange = startRange;
             this.endRange = endRange;
             this.offsetValue = offsetValue;
@@ -543,9 +607,9 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
          *
          * @param startRange  start range of mapping
          * @param endRange    end range of the mapping
-         * @param offsetVecor offset mappped vector
+         * @param offsetVecor offset mapped vector
          */
-        public CMapRange(int startRange, int endRange, List offsetVecor) {
+        public CMapBfRange(int startRange, int endRange, List offsetVecor) {
             this.startRange = startRange;
             this.endRange = endRange;
             this.offsetVecor = offsetVecor;
@@ -584,6 +648,55 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
                 return test;
             }
         }
+    }
+
+    class CMapCidRange implements CMapRange {
+
+        // start value for a bfrange
+        int startRange = 0;
+        // end value for a bfrange
+        int endRange = 0;
+        // offset mapping
+        int offsetValue = 0;
+
+        /**
+         * Create a new instance of a CMapRange, when it is a simple range
+         * mapping with an offset value.
+         *
+         * @param startRange  start range of mapping
+         * @param endRange    end range of mapping
+         * @param offsetValue value to offset a mapping by
+         */
+        public CMapCidRange(int startRange, int endRange, int offsetValue) {
+            this.startRange = startRange;
+            this.endRange = endRange;
+            this.offsetValue = offsetValue;
+        }
+
+        /**
+         * Checks if a <code>value</code> is in the CMap bfrange.
+         *
+         * @param value value to check for containment
+         * @return true if the cmap falls inside one of the cidranges, false
+         * otherwise.
+         */
+        public boolean inRange(int value) {
+            return (value >= startRange && value <= endRange);
+        }
+
+        /**
+         * Get the mapped value of <code>value</code>.  It is assumed that
+         * inRange is called before this method is called.  If the
+         * <code>value</code> is not in the range then a value of -1 is returned
+         *
+         * @param value value to find corresponding CMap for
+         * @return the mapped CMap value for <code>value</code>, -1 if the
+         * <code>value</code> can not be mapped.
+         */
+        public char getCMapValue(char value) {
+
+            return (char) (offsetValue + (value - startRange));
+        }
 
     }
 
@@ -601,5 +714,20 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
             dest[j] = (char) ((s.charAt(i) << 8) | s.charAt(i + 1));
         }
         return dest;
+    }
+
+    private static class CMapReader {
+
+        public static byte[] createStream(Name fileName) {
+            try (
+                    InputStream inputStream = CMap.class.getResourceAsStream(
+                            "/org/icepdf/core/pobjects/fonts/cmap/" + fileName.toString())) {
+                return inputStream.readAllBytes();
+            } catch (IOException e) {
+                logger.warning("Failed to read CMap file " + fileName);
+            }
+            return null;
+        }
+
     }
 }

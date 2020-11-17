@@ -19,5 +19,6 @@ public class Type1Font extends SimpleFont {
     @Override
     public void init() {
         super.init();
+        inited = true;
     }
 }

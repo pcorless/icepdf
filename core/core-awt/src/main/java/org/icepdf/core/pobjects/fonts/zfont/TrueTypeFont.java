@@ -19,5 +19,6 @@ public class TrueTypeFont extends SimpleFont {
     @Override
     public void init() {
         super.init();
+        inited = true;
     }
 }
