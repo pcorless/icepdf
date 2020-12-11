@@ -3,7 +3,7 @@ package org.icepdf.core.pobjects.fonts.zfont;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.ofont.CMap;
-import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
+import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType2;
 import org.icepdf.core.util.Library;
 
 import java.util.HashMap;
@@ -28,9 +28,9 @@ public class TypeCidType2Font extends CompositeFont {
     protected void parseWidths() {
         super.parseWidths();
         if (widths != null || defaultWidth > -1) {
-            font = ((ZFontTrueType) font).deriveFont(defaultWidth, widths);
+            font = ((ZFontType2) font).deriveFont(defaultWidth, widths);
         } else {
-            font = ((ZFontTrueType) font).deriveFont(1000, null);
+            font = ((ZFontType2) font).deriveFont(1000, null);
         }
     }
 

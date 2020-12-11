@@ -31,7 +31,7 @@ public class ZFontType0 extends ZSimpleFont {
         byte[] fontBytes = fontStream.getDecodedStreamBytes();
         CFFFont cffFont = null;
         if (fontBytes != null && fontBytes.length > 0 && (fontBytes[0] & 0xff) == '%') {
-            // todo throw exception so substitution kicks in.
+            // todo throw exception so substitution kicks in? still not too sure what to do here for fallback
             logger.warning("Found PFB but expected embedded CFF font");
 //            fontIsDamaged = true;
         } else if (fontBytes != null) {

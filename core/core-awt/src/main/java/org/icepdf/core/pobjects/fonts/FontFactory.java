@@ -19,10 +19,7 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.ofont.OFont;
 import org.icepdf.core.pobjects.fonts.zfont.*;
-import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
-import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType0;
-import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType1;
-import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType1C;
+import org.icepdf.core.pobjects.fonts.zfont.fontFiles.*;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
@@ -66,6 +63,7 @@ public class FontFactory {
     public static final int FONT_CID_TYPE_1C = 9;
     public static final int FONT_CID_TYPE_0 = 10;
     public static final int FONT_CID_TYPE_0C = 11;
+    public static final int FONT_CID_TYPE_2 = 12;
 
     // Singleton instance of class
     private static FontFactory fontFactory;
@@ -145,10 +143,10 @@ public class FontFactory {
             fontFile = new ZFontType1C(fontStream);
         } else if (FONT_CID_TYPE_0 == fontType) {
             fontFile = new ZFontType0(fontStream);
-        } else if (FONT_CID_TYPE_0C == fontType) {
+        } else if (FONT_CID_TYPE_0C == fontType || FONT_CID_TYPE_1C == fontType) {
             fontFile = new ZFontType0(fontStream);
-        } else if (FONT_CID_TYPE_1C == fontType) {
-            fontFile = new ZFontType0(fontStream);
+        } else if (FONT_CID_TYPE_2 == fontType) {
+            fontFile = new ZFontType2(fontStream);
         }
         if (fontFile == null && awtFontLoading) {
             // see if the font file can be loaded with Java Fonts

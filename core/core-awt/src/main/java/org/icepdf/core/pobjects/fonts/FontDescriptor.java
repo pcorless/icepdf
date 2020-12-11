@@ -276,7 +276,13 @@ public class FontDescriptor extends Dictionary {
             } else if (entries.containsKey(FONT_FILE_2)) {
                 Stream fontStream = (Stream) library.getObject(entries, FONT_FILE_2);
                 if (fontStream != null) {
-                    font = fontFactory.createFontFile(fontStream, FontFactory.FONT_TRUE_TYPE, null);
+                    if (subtype != null && subtype.equals(FONT_FILE_3_CID_FONT_TYPE_2)) {
+                        font = fontFactory.createFontFile(
+                                fontStream, FontFactory.FONT_CID_TYPE_2, null);
+                    } else {
+                        font = fontFactory.createFontFile(
+                                fontStream, FontFactory.FONT_TRUE_TYPE, null);
+                    }
                 }
             } else if (entries.containsKey(FONT_FILE_3)) {
 
