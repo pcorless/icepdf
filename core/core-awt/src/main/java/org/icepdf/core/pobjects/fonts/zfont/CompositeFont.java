@@ -6,7 +6,6 @@ import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
-import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType0;
 import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
@@ -35,6 +34,9 @@ public abstract class CompositeFont extends Font {
     protected BoundingBox fontBBox;
 //    private int[] cid2gid = null;
 
+    protected float defaultWidth = -1;
+    protected float[] widths = null;
+
 
     public CompositeFont(Library library, HashMap entries) {
         super(library, entries);
@@ -53,7 +55,7 @@ public abstract class CompositeFont extends Font {
 
     protected abstract void parseCidToGidMap();
 
-    private void parseCidSystemInfo() {
+    protected void parseCidSystemInfo() {
         if (font != null) {
             return;
         }
@@ -116,29 +118,63 @@ public abstract class CompositeFont extends Font {
                     // e) Map the CID obtained in step (a) according to the CMap
                     // obtained in step (d), producing a Unicode value.
 //                    toUnicodeCMap = ucs2CMap;
-//                    font = ((NFontTrueType) font).deriveFont(toUnicodeCMap);
+//                    font = ((ZFontTrueType) font).deriveFont(toUnicodeCMap);
                 }
             }
         }
     }
 
-    private void parseWidths() {
+    protected void parseWidths() {
 
-        float defaultWidth = -1;
-        ArrayList individualWidths = null;
         if (library.getObject(entries, W_KEY) != null) {
-            individualWidths = (ArrayList) library.getObject(entries, W_KEY);
+            ArrayList individualWidths = (ArrayList) library.getObject(entries, W_KEY);
+            int maxLength = calculateWidthLength(individualWidths);
+            widths = new float[maxLength];
+            int current;
+            Object currentNext;
+            for (int i = 0, max = individualWidths.size() - 1; i < max; i++) {
+                current = ((Number) individualWidths.get(i)).intValue();
+                currentNext = individualWidths.get(i + 1);
+                if (currentNext instanceof ArrayList) {
+                    ArrayList widths2 = (ArrayList) currentNext;
+                    for (int j = 0, max2 = widths2.size(); j < max2; j++) {
+                        widths[current + j] = (float) (((Number) widths2.get(j)).intValue());
+                    }
+                    i++;
+                } else if (currentNext instanceof Number) {
+                    int currentEnd = ((Number) currentNext).intValue();
+                    float width2 = (float) (((Number) individualWidths.get(i + 2)).intValue());
+                    for (; current <= currentEnd; current++) {
+                        widths[current] = width2;
+                    }
+                    i += 2;
+                }
+            }
         }
         if (library.getObject(entries, DW_KEY) != null) {
             defaultWidth =
                     ((Number) library.getObject(entries, DW_KEY)).floatValue();
         }
 
-        if (individualWidths != null || defaultWidth > -1) {
-            font = ((ZFontType0) font).deriveFont(defaultWidth, individualWidths);
-        } else {
-            font = ((ZFontType0) font).deriveFont(1000, null);
+    }
+
+    private int calculateWidthLength(ArrayList widths) {
+        int current;
+        Object currentNext;
+        int maxGlph = 0;
+        for (int i = 0, max = widths.size() - 1; i < max; i++) {
+            current = ((Number) widths.get(i)).intValue();
+            currentNext = widths.get(i + 1);
+            if (currentNext instanceof ArrayList) {
+                ArrayList widths2 = (ArrayList) currentNext;
+                maxGlph = current + widths2.size();
+                i++;
+            } else if (currentNext instanceof Number) {
+                maxGlph = ((Number) currentNext).intValue();
+                i += 2;
+            }
         }
+        return maxGlph + 1;
     }
 
 }

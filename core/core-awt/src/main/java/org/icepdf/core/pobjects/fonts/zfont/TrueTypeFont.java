@@ -21,4 +21,6 @@ public class TrueTypeFont extends SimpleFont {
         super.init();
         inited = true;
     }
+
+
 }

@@ -9,7 +9,7 @@ import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
 /**
- * put your documentation comment here
+ * Encoding store
  */
 public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
 

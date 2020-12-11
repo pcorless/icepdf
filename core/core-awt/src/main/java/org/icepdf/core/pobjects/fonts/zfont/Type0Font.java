@@ -46,6 +46,7 @@ public class Type0Font extends org.icepdf.core.pobjects.fonts.Font {
         Object encoding = library.getName(entries, ENCODING_KEY);
         if (encoding instanceof Name) {
             cMap = CMap.getInstance(library, (Name) encoding);
+            // todo clean up encoding
             font = font.deriveFont(null, cMap);
         }
         if (cMap != null) {
@@ -79,13 +80,13 @@ public class Type0Font extends org.icepdf.core.pobjects.fonts.Font {
 //                    // special mapping
 //                    if (descendantFont.isFontSubstitution &&
 //                            toUnicodeCMap != null &&
-//                            font instanceof NFontTrueType) {
+//                            font instanceof ZFontTrueType) {
 //                        // get the encoding mapping
 //                        Object cmap = library.getObject(entries, ENCODING_KEY);
 //                        // try and load the cmap from the international jar.
 //                        if (cmap != null && cmap instanceof Name) {
 //                            CMap encodingCMap = CMap.getInstance(cmap.toString());
-//                            ((NFontTrueType) font).applyCidCMap(encodingCMap);
+//                            ((ZFontTrueType) font).applyCidCMap(encodingCMap);
 //                        }
 //                    }
 //                    if (!descendantFont.isFontSubstitution) {

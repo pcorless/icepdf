@@ -108,20 +108,20 @@ public class FontFactory {
         // simple fonts
         if (FONT_SUBTYPE_TYPE_1.equals(subtype)) {
             // treating type1 and type1c the same for now
-            return new Type1Font(library, entries);
+            font = new Type1Font(library, entries);
         } else if (FONT_SUBTYPE_TRUE_TYPE.equals(subtype)) {
-            return new TrueTypeFont(library, entries);
+            font = new TrueTypeFont(library, entries);
         } else if (FONT_SUBTYPE_TYPE_0.equals(subtype)) {
-            return new Type0Font(library, entries);
+            font = new Type0Font(library, entries);
         } else if (FONT_SUBTYPE_TYPE_3.equals(subtype)) {
-            return new Type3Font(library, entries);
+            font = new Type3Font(library, entries);
         }
         // type3 and type0
         // composite fonts
         else if (FONT_SUBTYPE_CID_FONT_TYPE_0.equals(subtype)) {
-            return new TypeCidType0Font(library, entries);
+            font = new TypeCidType0Font(library, entries);
         } else if (FONT_SUBTYPE_CID_FONT_TYPE_2.equals(subtype)) {
-            return new TypeCidType2Font(library, entries);
+            font = new TypeCidType2Font(library, entries);
         }
         if (font == null) {
             // create OFont implementation. 

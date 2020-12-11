@@ -295,7 +295,7 @@ public abstract class Font extends Dictionary {
             fontDescriptor = new FontDescriptor(library, (HashMap) of);
         }
         if (fontDescriptor != null) {
-            fontDescriptor.init();
+            fontDescriptor.init(subtype);
             if (fontDescriptor.getEmbeddedFont() != null) {
                 font = fontDescriptor.getEmbeddedFont();
                 isFontSubstitution = false;
@@ -306,7 +306,7 @@ public abstract class Font extends Dictionary {
             AFM fontMetrix = AFM.AFMs.get(basefont.toLowerCase());
             if (fontMetrix != null) {
                 fontDescriptor = FontDescriptor.createDescriptor(library, fontMetrix);
-                fontDescriptor.init();
+                fontDescriptor.init(subtype);
             }
         }
     }

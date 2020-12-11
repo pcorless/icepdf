@@ -55,7 +55,7 @@ public abstract class ZSimpleFont implements FontFile {
     public Point2D echarAdvance(final char ech) {
         try {
             String name = encoding.getName(ech);
-            // convert to pdf space
+            // todo, name conversion using glyphList
             float advance = fontBoxFont.getWidth(name);
             // widths uses original cid's.
             if (widths != null && ech - firstCh >= 0 && ech - firstCh < widths.length) {
@@ -82,7 +82,7 @@ public abstract class ZSimpleFont implements FontFile {
         try {
             AffineTransform af = g.getTransform();
             Shape outline = fontBoxFont.getPath(estr);
-            if (!fontBoxFont.hasGlyph(estr)) {
+            if (encoding != null && !fontBoxFont.hasGlyph(estr)) {
                 String name = encoding.getName(estr.charAt(0));
                 if (name != null) {
                     outline = fontBoxFont.getPath(name);

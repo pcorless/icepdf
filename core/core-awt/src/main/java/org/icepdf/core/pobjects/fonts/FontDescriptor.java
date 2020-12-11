@@ -55,6 +55,7 @@ public class FontDescriptor extends Dictionary {
     public static final Name AVG_WIDTH = new Name("AvgWidth");
     public static final Name MAX_WIDTH = new Name("MaxWidth");
     public static final Name MISSING_WIDTH = new Name("MissingWidth");
+
     public static final Name FONT_FILE = new Name("FontFile");
     public static final Name FONT_FILE_2 = new Name("FontFile2");
     public static final Name FONT_FILE_3 = new Name("FontFile3");
@@ -245,8 +246,10 @@ public class FontDescriptor extends Dictionary {
     /**
      * Initiate the Font Descriptor object. Reads embedded font programs
      * or CMap streams.
+     *
+     * @param subtype subtype of parent font
      */
-    public synchronized void init() {
+    public synchronized void init(Name subtype) {
 
         if (inited) {
             return;

@@ -327,7 +327,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         Object of = library.getObject(entries, FONT_DESCRIPTOR_KEY);
         if (of instanceof FontDescriptor) {
             fontDescriptor = (FontDescriptor) of;
-            fontDescriptor.init();
+            fontDescriptor.init(subtype);
         }
 
         // If there is no FontDescriptor then we most likely have a core afm
@@ -340,7 +340,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                 AFM fontMetrix = (AFM) afm;
                 // finally create a fontDescriptor based on AFM data.
                 fontDescriptor = FontDescriptor.createDescriptor(library, fontMetrix);
-                fontDescriptor.init();
+                fontDescriptor.init(subtype);
             }
         }
 

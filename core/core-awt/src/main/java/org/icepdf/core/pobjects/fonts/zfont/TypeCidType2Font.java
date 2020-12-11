@@ -1,10 +1,19 @@
 package org.icepdf.core.pobjects.fonts.zfont;
 
+import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Stream;
+import org.icepdf.core.pobjects.fonts.ofont.CMap;
+import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
 import org.icepdf.core.util.Library;
 
 import java.util.HashMap;
+import java.util.logging.Logger;
 
 public class TypeCidType2Font extends CompositeFont {
+
+    private static final Logger logger =
+            Logger.getLogger(TypeCidType2Font.class.toString());
+
     public TypeCidType2Font(Library library, HashMap entries) {
         super(library, entries);
     }
@@ -12,15 +21,31 @@ public class TypeCidType2Font extends CompositeFont {
     @Override
     public void init() {
         super.init();
+        parseCidToGidMap();
+        inited = true;
+    }
+
+    protected void parseWidths() {
+        super.parseWidths();
+        if (widths != null || defaultWidth > -1) {
+            font = ((ZFontTrueType) font).deriveFont(defaultWidth, widths);
+        } else {
+            font = ((ZFontTrueType) font).deriveFont(1000, null);
+        }
     }
 
     protected void parseCidToGidMap() {
         Object gidMap = library.getObject(entries, CID_TO_GID_MAP_KEY);
-        System.out.println();
-//        if (subtype.equals("CIDFontType2") &&
-//                ((ordering != null && ordering.startsWith("Identity")) || gidMap != null || !isFontSubstitution)) {
+
+        // ordering != null && ordering.startsWith("Identity")) || ((gidMap != null || !isFontSubstitution)
+        if (true) {
 //            CMap subfontToUnicodeCMap = toUnicodeCMap != null ? toUnicodeCMap : CMap.IDENTITY;
-//            if (gidMap == null || gidMap instanceof Name) {
+            if (gidMap == null) {
+//                throw new Exception("null CID_TO_GID_MAP_KEY " + gidMap);
+//                font = ((ZFontTrueType) font).deriveFont(CMap.IDENTITY, null);// subfontToUnicodeCMap);
+            }
+            if (gidMap instanceof Name) {
+//                throw new Exception("gidMap name " + gidMap);
 //                String mappingName = null;
 //                if (gidMap != null) {
 //                    mappingName = gidMap.toString();
@@ -31,12 +56,17 @@ public class TypeCidType2Font extends CompositeFont {
 //                // mapping name will be null only in a few corner cases, but
 //                // identity will be applied otherwise.
 //                if (mappingName == null || mappingName.equals("Identity")) {
-//                    font = ((NFontTrueType) font).deriveFont(CMap.IDENTITY, subfontToUnicodeCMap);
+//                    font = ((ZFontTrueType) font).deriveFont(CMap.IDENTITY, subfontToUnicodeCMap);
 //                }
-//            } else if (gidMap instanceof Stream) {
+            } else if (gidMap instanceof Stream) {
 //                try {
-//                    ByteArrayInputStream cidStream =
-//                            ((Stream) gidMap).getDecodedByteArrayInputStream();
+                CMap cidGidMap = new CMap(library, new HashMap(), (Stream) gidMap);
+                cidGidMap.init();
+//                    System.out.println();
+//                font = ((ZFontTrueType) font).deriveFont(cidGidMap, null);//toUnicodeCMap != null ? toUnicodeCMap : CMap.IDENTITY);
+//                    int test = cidGidMap.toSelector(39);
+
+//                    ByteArrayInputStream cidStream = ((Stream) gidMap).getDecodedByteArrayInputStream();
 //                    int character = 0;
 //                    int i = 0;
 //                    int length = cidStream.available() / 2;
@@ -51,18 +81,19 @@ public class TypeCidType2Font extends CompositeFont {
 //                        i++;
 //                    }
 //                    cidStream.close();
-//                    // apply the cidToGid mapping, but try figure out how many bytes are going to be in
-//                    // in each character, we use the toUnicode mapping if present.
-//                    CMap cidGidMap = new CMap(cidToGid);
+//                    System.out.println(cidToGid);
+                // apply the cidToGid mapping, but try figure out how many bytes are going to be in
+                // in each character, we use the toUnicode mapping if present.
+//                    CMap cidGidMap = CMap.getInstance(library, CID_TO_GID_MAP_KEY);
 //                    if (toUnicodeCMap != null) {
 //                        cidGidMap.applyBytes(toUnicodeCMap);
 //                    }
-//                    font = ((NFontTrueType) font).deriveFont(
+//                    font = ((ZFontTrueType) font).deriveFont(
 //                            cidGidMap.reverse(), toUnicodeCMap != null ? toUnicodeCMap : CMap.IDENTITY);
 //                } catch (IOException e) {
 //                    logger.log(Level.FINE, "Error reading CIDToGIDMap Stream.", e);
 //                }
-//            }
-//        }
+            }
+        }
     }
 }

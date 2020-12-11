@@ -12,7 +12,6 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -84,7 +83,7 @@ public class ZFontType0 extends ZSimpleFont {
     public Point2D echarAdvance(char ech) {
 
         float advance = 0;
-        if (widths != null) {
+        if (widths != null && ech < widths.length) {
             advance = widths[ech];
         }
         advance = advance * size * (float) fontMatrix.getScaleX();
@@ -130,32 +129,11 @@ public class ZFontType0 extends ZSimpleFont {
         }
     }
 
-    public FontFile deriveFont(float defaultWidth, ArrayList widths) {
+    public FontFile deriveFont(float defaultWidth, float[] widths) {
         // parse out the width notation and generate the width
         ZFontType0 font = (ZFontType0) deriveFont(size);
         if (widths != null) {
-            int current;
-            Object currentNext;
-            int maxLength = calculateWidthLength(widths);
-            font.widths = new float[maxLength];
-            for (int i = 0, max = widths.size() - 1; i < max; i++) {
-                current = ((Number) widths.get(i)).intValue();
-                currentNext = widths.get(i + 1);
-                if (currentNext instanceof ArrayList) {
-                    ArrayList widths2 = (ArrayList) currentNext;
-                    for (int j = 0, max2 = widths2.size(); j < max2; j++) {
-                        font.widths[current + j] = (float) (((Number) widths2.get(j)).intValue());
-                    }
-                    i++;
-                } else if (currentNext instanceof Number) {
-                    int currentEnd = ((Number) currentNext).intValue();
-                    float width2 = (float) (((Number) widths.get(i + 2)).intValue());
-                    for (; current <= currentEnd; current++) {
-                        font.widths[current] = width2;
-                    }
-                    i += 2;
-                }
-            }
+            font.widths = widths;
         } else {
 
         }
@@ -174,26 +152,6 @@ public class ZFontType0 extends ZSimpleFont {
         else {
             return null;
         }
-    }
-
-    // todo composte font candidate.
-    private int calculateWidthLength(ArrayList widths) {
-        int current;
-        Object currentNext;
-        int maxGlph = 0;
-        for (int i = 0, max = widths.size() - 1; i < max; i++) {
-            current = ((Number) widths.get(i)).intValue();
-            currentNext = widths.get(i + 1);
-            if (currentNext instanceof ArrayList) {
-                ArrayList widths2 = (ArrayList) currentNext;
-                maxGlph = current + widths2.size();
-                i++;
-            } else if (currentNext instanceof Number) {
-                maxGlph = ((Number) currentNext).intValue();
-                i += 2;
-            }
-        }
-        return maxGlph + 1;
     }
 
     @Override
