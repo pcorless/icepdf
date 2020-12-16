@@ -254,7 +254,8 @@ public class ZFontTrueType extends ZSimpleFont {
                     }
                     // (1, 0) - (Macintosh, Roman)
                     if (gid == 0 && cmapMacRoman != null) {
-                        int macCode = org.icepdf.core.pobjects.fonts.zfont.Encoding.macRomanEncoding.getChar(name);// INVERTED_MACOS_ROMAN.get(name);
+                        return cmapMacRoman.getGlyphId(code);
+//                        int macCode = org.icepdf.core.pobjects.fonts.zfont.Encoding.macRomanEncoding.getChar(name);// INVERTED_MACOS_ROMAN.get(name);
 //                    if (macCode != null) {
 //                        gid = cmapMacRoman.getGlyphId(code);
 //                    }

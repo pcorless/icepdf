@@ -55,8 +55,12 @@ public abstract class ZSimpleFont implements FontFile {
     public Point2D echarAdvance(final char ech) {
         try {
             String name = encoding.getName(ech);
-            // todo, name conversion using glyphList
-            float advance = fontBoxFont.getWidth(name);
+            float advance = 0.001; // todo should be DW.
+            if (name != null) {
+                advance = fontBoxFont.getWidth(name);
+            } else {
+                advance = widths[ech];//* 0.001f
+            }
             // widths uses original cid's.
             if (widths != null && ech - firstCh >= 0 && ech - firstCh < widths.length) {
                 float width = widths[ech - firstCh];

@@ -62,6 +62,7 @@ public class ZFontType2 extends ZSimpleFont {
         this.descent = font.descent;
         this.widths = font.widths;
         this.cMap = font.cMap;
+        this.size = font.size;
 //        this.maxCharBounds = font.maxCharBounds;
     }
 
@@ -71,7 +72,7 @@ public class ZFontType2 extends ZSimpleFont {
             return super.echarAdvance(ech);
         } else if (widths != null) {
             float advance = widths[ech] * 0.001f;
-            advance = advance * size;// * (float) fontMatrix.getScaleX();
+            advance = advance * size;//* (float) fontMatrix.getScaleX();
             return new Point2D.Float(advance, 0);
         } else {
             return new Point2D.Float(0.001f, 0);
@@ -142,6 +143,7 @@ public class ZFontType2 extends ZSimpleFont {
         ZFontType2 font = new ZFontType2(this);
         font.fontMatrix = convertFontMatrix(trueTypeFont);
         font.fontMatrix.scale(pointsize, -pointsize);
+        font.size = pointsize;
 //        font.maxCharBounds = this.maxCharBounds;
         return font;
     }
