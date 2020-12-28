@@ -11,4 +11,8 @@ As a result if you find yourself in a situation were you need to do rendering co
 uncomment `'qa:viewer-jfx',` in the root settings.gradle config file. There currently isn't a maven build for this
 application as it only appeals to a small group of users.
 
+### Launch
+
+`gradle --stacktrace :qa:viewer-jfx:run`
+
 Head over to https://openjfx.io/index.html to install JFX for your version of java. 
