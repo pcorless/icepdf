@@ -35,7 +35,7 @@ public class PreferencesController {
     public static final String LAST_PROJECT_KEY = "lastProjectName";
 
     private static final String HOME = System.getProperties().getProperty("user.home");
-    private static String defaultApplicationHome = HOME + "/.icesoft/icepdf-qa/";
+    private static String defaultApplicationHome = HOME + "/.icepdf/icepdf-qa/";
     private static String captureSetBasePath = defaultApplicationHome + "captures/";
     private static String contentSetBasePath = defaultApplicationHome + "contentSets/";
     private static String projectBasePath = defaultApplicationHome + "projects/";
