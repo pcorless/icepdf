@@ -45,7 +45,7 @@ import java.util.logging.Logger;
  *
  * @since 5.0
  */
-public abstract class AbstractContentParser implements ContentParser {
+public abstract class AbstractContentParser {
     private static final Logger logger =
             Logger.getLogger(AbstractContentParser.class.toString());
     private static boolean disableTransparencyGroups;
