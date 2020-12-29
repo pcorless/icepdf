@@ -48,13 +48,14 @@ import java.util.logging.Logger;
 public abstract class AbstractContentParser {
     private static final Logger logger =
             Logger.getLogger(AbstractContentParser.class.toString());
-    private static boolean disableTransparencyGroups;
-    private static boolean enabledOverPrint;
-    private static boolean enabledFontFallback;
 
-    private static boolean strokeAdjustmentEnabled;
-    private static float strokeAdjustmentThreshold;
-    private static float strokeAdjustmentValue;
+    private static final boolean disableTransparencyGroups;
+    private static final boolean enabledOverPrint;
+    private static final boolean enabledFontFallback;
+
+    private static final boolean strokeAdjustmentEnabled;
+    private static final float strokeAdjustmentThreshold;
+    private static final float strokeAdjustmentValue;
 
     public enum AlphaPaintType {
         ALPHA_FILL, ALPHA_STROKE
@@ -88,8 +89,8 @@ public abstract class AbstractContentParser {
 
     private static final float OVERPAINT_ALPHA = 0.4f;
 
-    private static ClipDrawCmd clipDrawCmd = new ClipDrawCmd();
-    private static NoClipDrawCmd noClipDrawCmd = new NoClipDrawCmd();
+    private static final ClipDrawCmd clipDrawCmd = new ClipDrawCmd();
+    private static final NoClipDrawCmd noClipDrawCmd = new NoClipDrawCmd();
 
     protected GraphicsState graphicState;
     protected Library library;
@@ -192,7 +193,7 @@ public abstract class AbstractContentParser {
      */
     public abstract Shapes parseTextBlocks(byte[][] source) throws UnsupportedEncodingException, InterruptedException;
 
-    protected static void consume_G(GraphicsState graphicState, Stack stack,
+    protected static void consume_G(GraphicsState graphicState, Stack<Object> stack,
                                     Library library) {
         float gray = ((Number) stack.pop()).floatValue();
         // Stroke Color Gray
@@ -203,7 +204,7 @@ public abstract class AbstractContentParser {
         }
     }
 
-    protected static void consume_g(GraphicsState graphicState, Stack stack,
+    protected static void consume_g(GraphicsState graphicState, Stack<Object> stack,
                                     Library library) {
         float gray = Math.abs(((Number) stack.pop()).floatValue());
         // Fill Color Gray
@@ -214,7 +215,7 @@ public abstract class AbstractContentParser {
         }
     }
 
-    protected static void consume_RG(GraphicsState graphicState, Stack stack,
+    protected static void consume_RG(GraphicsState graphicState, Stack<Object> stack,
                                      Library library) {
         if (stack.size() >= 3) {
             // set stoke colour
@@ -224,7 +225,7 @@ public abstract class AbstractContentParser {
         }
     }
 
-    protected static void consume_rg(GraphicsState graphicState, Stack stack,
+    protected static void consume_rg(GraphicsState graphicState, Stack<Object> stack,
                                      Library library) {
         if (stack.size() >= 3) {
             // set fill colour
@@ -234,7 +235,7 @@ public abstract class AbstractContentParser {
         }
     }
 
-    protected static void consume_K(GraphicsState graphicState, Stack stack, Library library) {
+    protected static void consume_K(GraphicsState graphicState, Stack<Object> stack, Library library) {
         if (stack.size() >= 4) {
             PColorSpace pColorSpace =
                     PColorSpace.getColorSpace(library, DeviceCMYK.DEVICECMYK_KEY);
@@ -245,7 +246,7 @@ public abstract class AbstractContentParser {
         }
     }
 
-    protected static void consume_k(GraphicsState graphicState, Stack stack, Library library) {
+    protected static void consume_k(GraphicsState graphicState, Stack<Object> stack, Library library) {
         if (stack.size() >= 4) {
             // build a colour space.
             PColorSpace pColorSpace =
@@ -257,7 +258,7 @@ public abstract class AbstractContentParser {
         }
     }
 
-    protected static void consume_CS(GraphicsState graphicState, Stack stack, Resources resources) {
+    protected static void consume_CS(GraphicsState graphicState, Stack<Object> stack, Resources resources) {
         Object tmp = stack.pop();
         if (tmp instanceof Name) {
             // Fill Color ColorSpace, resources call uses factory call to PColorSpace.getColorSpace
@@ -266,18 +267,18 @@ public abstract class AbstractContentParser {
         }
     }
 
-    protected static void consume_cs(GraphicsState graphicState, Stack stack, Resources resources) {
+    protected static void consume_cs(GraphicsState graphicState, Stack<Object> stack, Resources resources) {
         Name n = (Name) stack.pop();
         // Fill Color ColorSpace, resources call uses factory call to PColorSpace.getColorSpace
         // which returns an colour space including a pattern
         graphicState.setFillColorSpace(resources.getColorSpace(n));
     }
 
-    protected static void consume_ri(Stack stack) {
+    protected static void consume_ri(Stack<Object> stack) {
         stack.pop();
     }
 
-    protected static void consume_SC(GraphicsState graphicState, Stack stack,
+    protected static void consume_SC(GraphicsState graphicState, Stack<Object> stack,
                                      Library library, Resources resources,
                                      boolean isTint) {
         Object o = stack.peek();
@@ -330,7 +331,7 @@ public abstract class AbstractContentParser {
         }
     }
 
-    protected static void consume_sc(GraphicsState graphicState, Stack stack,
+    protected static void consume_sc(GraphicsState graphicState, Stack<Object> stack,
                                      Library library, Resources resources, boolean isTint) {
         Object o = null;
         if (!stack.isEmpty()) {
@@ -404,7 +405,7 @@ public abstract class AbstractContentParser {
         return graphicState;
     }
 
-    protected static void consume_cm(GraphicsState graphicState, Stack stack,
+    protected static void consume_cm(GraphicsState graphicState, Stack<Object> stack,
                                      boolean inTextBlock, AffineTransform textBlockBase) {
         float[] affineTransform = popFloatInOrder(stack, 6);
         // get the current CTM
@@ -438,13 +439,13 @@ public abstract class AbstractContentParser {
         }
     }
 
-    protected static void consume_i(Stack stack) {
+    protected static void consume_i(Stack<Object> stack) {
         if (stack.size() >= 1) {
             stack.pop();
         }
     }
 
-    protected static void consume_J(GraphicsState graphicState, Stack stack, Shapes shapes) {
+    protected static void consume_J(GraphicsState graphicState, Stack<Object> stack, Shapes shapes) {
 //        collectTokenFrequency(PdfOps.J_TOKEN);
         // get the value from the stack
         graphicState.setLineCap((int) (((Number) stack.pop()).floatValue()));
@@ -482,7 +483,7 @@ public abstract class AbstractContentParser {
      *                     the consumption of Do will skip Image based xObjects for performance.
      * @return graphic state after parsing xObject.
      */
-    protected static GraphicsState consume_Do(GraphicsState graphicState, Stack stack,
+    protected static GraphicsState consume_Do(GraphicsState graphicState, Stack<Object> stack,
                                               Shapes shapes, Resources resources,
                                               boolean viewParse, // events
                                               AtomicInteger imageIndex, Page page) throws InterruptedException {
@@ -634,7 +635,7 @@ public abstract class AbstractContentParser {
         return graphicState;
     }
 
-    protected static void consume_d(GraphicsState graphicState, Stack stack, Shapes shapes) {
+    protected static void consume_d(GraphicsState graphicState, Stack<Object> stack, Shapes shapes) {
         float dashPhase;
         float[] dashArray;
         try {
@@ -709,7 +710,7 @@ public abstract class AbstractContentParser {
         setStroke(shapes, graphicState);
     }
 
-    protected static void consume_j(GraphicsState graphicState, Stack stack, Shapes shapes) {
+    protected static void consume_j(GraphicsState graphicState, Stack<Object> stack, Shapes shapes) {
         // grab the value
         graphicState.setLineJoin((int) (((Number) stack.pop()).floatValue()));
         // Miter Join - the outer edges of the strokes for the two
@@ -733,7 +734,7 @@ public abstract class AbstractContentParser {
         setStroke(shapes, graphicState);
     }
 
-    protected static void consume_w(GraphicsState graphicState, Stack stack,
+    protected static void consume_w(GraphicsState graphicState, Stack<Object> stack,
                                     Shapes shapes, float glyph2UserSpaceScale) {
         // apply any type3 font scalling which is set via the glyph2User space affine transform.
         if (!stack.isEmpty()) {
@@ -751,12 +752,12 @@ public abstract class AbstractContentParser {
         }
     }
 
-    protected static void consume_M(GraphicsState graphicState, Stack stack, Shapes shapes) {
+    protected static void consume_M(GraphicsState graphicState, Stack<Object> stack, Shapes shapes) {
         graphicState.setMiterLimit(((Number) stack.pop()).floatValue());
         setStroke(shapes, graphicState);
     }
 
-    protected static void consume_gs(GraphicsState graphicState, Stack stack, Resources resources, Shapes shapes) {
+    protected static void consume_gs(GraphicsState graphicState, Stack<Object> stack, Resources resources, Shapes shapes) {
         Object gs = stack.pop();
         if (gs instanceof Name && resources != null) {
             // Get ExtGState and merge it with
@@ -770,7 +771,7 @@ public abstract class AbstractContentParser {
         }
     }
 
-    protected static void consume_Tf(GraphicsState graphicState, Stack stack, Resources resources) {
+    protected static void consume_Tf(GraphicsState graphicState, Stack<Object> stack, Resources resources) {
         float size = ((Number) stack.pop()).floatValue();
         Name name2 = (Name) stack.pop();
         // build the new font and initialize it.
@@ -782,12 +783,12 @@ public abstract class AbstractContentParser {
         if (graphicState.getTextState().font == null ||
                 graphicState.getTextState().font.getFont() == null) {
             // turn on the old awt font engine, as we have a null font
+            // todo revisit with GH-80
 //            FontFactory fontFactory = FontFactory.getInstance();
 //            boolean awtState = fontFactory.isAwtFontSubstitution();
 //            fontFactory.setAwtFontSubstitution(true);
             try {
-                // this should almost never happen but of course we have a few
-                // corner cases:
+                // this should almost never happen but of course we have a few corner cases:
                 // get the first pages resources, no need to lock the page, already locked.
                 Page page = resources.getLibrary().getCatalog().getPageTree().getPage(0);
                 page.initPageResources();
@@ -833,11 +834,11 @@ public abstract class AbstractContentParser {
         }
     }
 
-    protected static void consume_Tc(GraphicsState graphicState, Stack stack) {
+    protected static void consume_Tc(GraphicsState graphicState, Stack<Object> stack) {
         graphicState.getTextState().cspace = ((Number) stack.pop()).floatValue();
     }
 
-    protected static void consume_tm(GraphicsState graphicState, Stack stack,
+    protected static void consume_tm(GraphicsState graphicState, Stack<Object> stack,
                                      TextMetrics textMetrics,
                                      PageText pageText,
                                      double previousBTStart,
@@ -891,7 +892,7 @@ public abstract class AbstractContentParser {
         pageText.newLine(oCGs);
     }
 
-    protected static void consume_TD(GraphicsState graphicState, Stack stack,
+    protected static void consume_TD(GraphicsState graphicState, Stack<Object> stack,
                                      TextMetrics textMetrics,
                                      PageText pageText,
                                      LinkedList<OptionalContents> oCGs) {
@@ -911,7 +912,7 @@ public abstract class AbstractContentParser {
         }
     }
 
-    protected static void consume_double_quote(GraphicsState graphicState, Stack stack,
+    protected static void consume_double_quote(GraphicsState graphicState, Stack<Object> stack,
                                                Shapes shapes,
                                                TextMetrics textMetrics,
                                                GlyphOutlineClip glyphOutlineClip,
@@ -925,7 +926,7 @@ public abstract class AbstractContentParser {
         consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs);
     }
 
-    protected static void consume_single_quote(GraphicsState graphicState, Stack stack,
+    protected static void consume_single_quote(GraphicsState graphicState, Stack<Object> stack,
                                                Shapes shapes,
                                                TextMetrics textMetrics,
                                                GlyphOutlineClip glyphOutlineClip,
@@ -935,7 +936,7 @@ public abstract class AbstractContentParser {
         consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs);
     }
 
-    protected static void consume_Td(GraphicsState graphicState, Stack stack,
+    protected static void consume_Td(GraphicsState graphicState, Stack<Object> stack,
                                      TextMetrics textMetrics,
                                      PageText pageText,
                                      double previousBTStart,
@@ -957,7 +958,7 @@ public abstract class AbstractContentParser {
         }
     }
 
-    protected static void consume_Tz(GraphicsState graphicState, Stack stack) {
+    protected static void consume_Tz(GraphicsState graphicState, Stack<Object> stack) {
         Object ob = stack.pop();
         if (ob instanceof Number) {
             float hScaling = ((Number) ob).floatValue();
@@ -966,23 +967,23 @@ public abstract class AbstractContentParser {
         }
     }
 
-    protected static void consume_Tw(GraphicsState graphicState, Stack stack) {
+    protected static void consume_Tw(GraphicsState graphicState, Stack<Object> stack) {
         graphicState.getTextState().wspace = ((Number) stack.pop()).floatValue();
     }
 
-    protected static void consume_Tr(GraphicsState graphicState, Stack stack) {
+    protected static void consume_Tr(GraphicsState graphicState, Stack<Object> stack) {
         graphicState.getTextState().rmode = (int) ((Number) stack.pop()).floatValue();
     }
 
-    protected static void consume_TL(GraphicsState graphicState, Stack stack) {
+    protected static void consume_TL(GraphicsState graphicState, Stack<Object> stack) {
         graphicState.getTextState().leading = ((Number) stack.pop()).floatValue();
     }
 
-    protected static void consume_Ts(GraphicsState graphicState, Stack stack) {
+    protected static void consume_Ts(GraphicsState graphicState, Stack<Object> stack) {
         graphicState.getTextState().trise = ((Number) stack.pop()).floatValue();
     }
 
-    protected static GeneralPath consume_L(Stack stack,
+    protected static GeneralPath consume_L(Stack<Object> stack,
                                            GeneralPath geometricPath) {
         float y = ((Number) stack.pop()).floatValue();
         float x = ((Number) stack.pop()).floatValue();
@@ -993,7 +994,7 @@ public abstract class AbstractContentParser {
         return geometricPath;
     }
 
-    protected static GeneralPath consume_m(Stack stack,
+    protected static GeneralPath consume_m(Stack<Object> stack,
                                            GeneralPath geometricPath) {
         if (geometricPath == null) {
             geometricPath = new GeneralPath();
@@ -1006,7 +1007,7 @@ public abstract class AbstractContentParser {
         return geometricPath;
     }
 
-    protected static GeneralPath consume_c(Stack stack,
+    protected static GeneralPath consume_c(Stack<Object> stack,
                                            GeneralPath geometricPath) {
         if (!stack.isEmpty()) {
             float[] affineTransform = popFloatInOrder(stack, 6);
@@ -1044,7 +1045,7 @@ public abstract class AbstractContentParser {
     protected static GeneralPath consume_f(GraphicsState graphicState,
                                            Shapes shapes,
                                            GeneralPath geometricPath)
-            throws NoninvertibleTransformException, InterruptedException {
+            throws InterruptedException {
         if (geometricPath != null) {
             geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
             commonFill(shapes, graphicState, geometricPath);
@@ -1052,7 +1053,7 @@ public abstract class AbstractContentParser {
         return null;
     }
 
-    protected static GeneralPath consume_re(Stack stack,
+    protected static GeneralPath consume_re(Stack<Object> stack,
                                             GeneralPath geometricPath) {
         if (geometricPath == null) {
             geometricPath = new GeneralPath();
@@ -1075,7 +1076,7 @@ public abstract class AbstractContentParser {
         }
     }
 
-    protected static void consume_BDC(Stack stack,
+    protected static void consume_BDC(Stack<Object> stack,
                                       Shapes shapes,
                                       LinkedList<OptionalContents> oCGs,
                                       Resources resources) throws InterruptedException {
@@ -1123,7 +1124,7 @@ public abstract class AbstractContentParser {
         }
     }
 
-    protected static void consume_BMC(Stack stack,
+    protected static void consume_BMC(Stack<Object> stack,
                                       Shapes shapes,
                                       LinkedList<OptionalContents> oCGs,
                                       Resources resources) throws InterruptedException {
@@ -1151,7 +1152,7 @@ public abstract class AbstractContentParser {
     protected static GeneralPath consume_f_star(GraphicsState graphicState,
                                                 Shapes shapes,
                                                 GeneralPath geometricPath)
-            throws NoninvertibleTransformException, InterruptedException {
+            throws InterruptedException {
         if (geometricPath != null) {
             // need to apply pattern..
             geometricPath.setWindingRule(GeneralPath.WIND_EVEN_ODD);
@@ -1163,25 +1164,21 @@ public abstract class AbstractContentParser {
     protected static GeneralPath consume_b(GraphicsState graphicState,
                                            Shapes shapes,
                                            GeneralPath geometricPath)
-            throws NoninvertibleTransformException, InterruptedException {
+            throws InterruptedException {
         if (geometricPath != null) {
             geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
             geometricPath.closePath();
             commonFill(shapes, graphicState, geometricPath);
             commonStroke(graphicState, shapes, geometricPath);
         }
-        geometricPath = null;
-        return geometricPath;
+        return null;
     }
 
-    protected static GeneralPath consume_n(GeneralPath geometricPath)
-            throws NoninvertibleTransformException {
-        geometricPath = null;
-        return geometricPath;
+    protected static GeneralPath consume_n(GeneralPath geometricPath) {
+        return null;
     }
 
-    protected static void consume_W(GraphicsState graphicState, GeneralPath geometricPath)
-            throws NoninvertibleTransformException {
+    protected static void consume_W(GraphicsState graphicState, GeneralPath geometricPath) {
         if (geometricPath != null) {
             geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
             geometricPath.closePath();
@@ -1189,7 +1186,7 @@ public abstract class AbstractContentParser {
         }
     }
 
-    protected static void consume_v(Stack stack,
+    protected static void consume_v(Stack<Object> stack,
                                     GeneralPath geometricPath) {
         float y3 = ((Number) stack.pop()).floatValue();
         float x3 = ((Number) stack.pop()).floatValue();
@@ -1204,7 +1201,7 @@ public abstract class AbstractContentParser {
                 y3);
     }
 
-    protected static void consume_y(Stack stack,
+    protected static void consume_y(Stack<Object> stack,
                                     GeneralPath geometricPath) {
         float y3 = ((Number) stack.pop()).floatValue();
         float x3 = ((Number) stack.pop()).floatValue();
@@ -1216,7 +1213,7 @@ public abstract class AbstractContentParser {
     protected static GeneralPath consume_B(GraphicsState graphicState,
                                            Shapes shapes,
                                            GeneralPath geometricPath)
-            throws NoninvertibleTransformException, InterruptedException {
+            throws InterruptedException {
         if (geometricPath != null) {
             geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
             commonFill(shapes, graphicState, geometricPath);
@@ -1225,7 +1222,7 @@ public abstract class AbstractContentParser {
         return null;
     }
 
-    protected static GraphicsState consume_d0(GraphicsState graphicState, Stack stack) {
+    protected static GraphicsState consume_d0(GraphicsState graphicState, Stack<Object> stack) {
         // save the stack
         graphicState = graphicState.save();
         // need two pops to get  Wx and Wy data
@@ -1249,7 +1246,7 @@ public abstract class AbstractContentParser {
     protected static GeneralPath consume_b_star(GraphicsState graphicState,
                                                 Shapes shapes,
                                                 GeneralPath geometricPath)
-            throws NoninvertibleTransformException, InterruptedException {
+            throws InterruptedException {
         if (geometricPath != null) {
             geometricPath.setWindingRule(GeneralPath.WIND_EVEN_ODD);
             geometricPath.closePath();
@@ -1259,7 +1256,7 @@ public abstract class AbstractContentParser {
         return null;
     }
 
-    protected static GraphicsState consume_d1(GraphicsState graphicState, Stack stack) {
+    protected static GraphicsState consume_d1(GraphicsState graphicState, Stack<Object> stack) {
         // save the stack
         graphicState = graphicState.save();
         // need two pops to get  Wx and Wy data
@@ -1276,7 +1273,7 @@ public abstract class AbstractContentParser {
     protected static GeneralPath consume_B_star(GraphicsState graphicState,
                                                 Shapes shapes,
                                                 GeneralPath geometricPath)
-            throws NoninvertibleTransformException, InterruptedException {
+            throws InterruptedException {
         if (geometricPath != null) {
             geometricPath.setWindingRule(GeneralPath.WIND_EVEN_ODD);
             commonStroke(graphicState, shapes, geometricPath);
@@ -1294,16 +1291,16 @@ public abstract class AbstractContentParser {
         }
     }
 
-    protected static void consume_DP(Stack stack) {
+    protected static void consume_DP(Stack<Object> stack) {
         stack.pop(); // properties
         stack.pop(); // name
     }
 
-    protected static void consume_MP(Stack stack) {
+    protected static void consume_MP(Stack<Object> stack) {
         stack.pop();
     }
 
-    protected static void consume_sh(GraphicsState graphicState, Stack stack,
+    protected static void consume_sh(GraphicsState graphicState, Stack<Object> stack,
                                      Shapes shapes,
                                      Resources resources) throws InterruptedException {
         Object o = stack.peek();
@@ -1327,8 +1324,6 @@ public abstract class AbstractContentParser {
                             graphicState.getFillAlpha());
                 }
                 shapes.add(new PaintDrawCmd(pattern.getPaint()));
-                shapes.add(new ShapeDrawCmd(graphicState.getClip()));
-                shapes.add(new FillDrawCmd());
             } else {
                 // apply the current fill color along ith a little alpha
                 // to at least try to paint a colour for an unsupported mesh
@@ -1337,13 +1332,13 @@ public abstract class AbstractContentParser {
                         graphicState.getAlphaRule(),
                         0.50f);
                 shapes.add(new PaintDrawCmd(graphicState.getFillColor()));
-                shapes.add(new ShapeDrawCmd(graphicState.getClip()));
-                shapes.add(new FillDrawCmd());
             }
+            shapes.add(new ShapeDrawCmd(graphicState.getClip()));
+            shapes.add(new FillDrawCmd());
         }
     }
 
-    protected static void consume_TJ(GraphicsState graphicState, Stack stack,
+    protected static void consume_TJ(GraphicsState graphicState, Stack<Object> stack,
                                      Shapes shapes,
                                      TextMetrics textMetrics,
                                      GlyphOutlineClip glyphOutlineClip,
@@ -1377,7 +1372,7 @@ public abstract class AbstractContentParser {
         graphicState.set(tmp);
     }
 
-    protected static void consume_Tj(GraphicsState graphicState, Stack stack,
+    protected static void consume_Tj(GraphicsState graphicState, Stack<Object> stack,
                                      Shapes shapes,
                                      TextMetrics textMetrics,
                                      GlyphOutlineClip glyphOutlineClip,
@@ -1621,12 +1616,11 @@ public abstract class AbstractContentParser {
         // double check for a near zero value as it will really mess up the division result, zero is just fine.
         if (scale > 0.001 || scale == 0) {
             lineWidth /= scale;
-            graphicState.setLineWidth(lineWidth);
         } else {
             // corner case stroke adjustment,  still can't find anything in spec about this.
             lineWidth *= scale * 100;
-            graphicState.setLineWidth(lineWidth);
         }
+        graphicState.setLineWidth(lineWidth);
         // update the stroke and add the text to shapes
         setStroke(shapes, graphicState);
         shapes.add(new ColorDrawCmd(graphicState.getStrokeColor()));
@@ -1779,7 +1773,6 @@ public abstract class AbstractContentParser {
      * @param shapes        current shapes stack
      * @param graphicState  current graphics state.
      * @param geometricPath current path.
-     * @throws NoninvertibleTransformException error calculating current space.
      * @throws InterruptedException            thread interrupted.
      */
     private static void commonFill(Shapes shapes, GraphicsState graphicState, GeneralPath geometricPath)
@@ -1854,7 +1847,7 @@ public abstract class AbstractContentParser {
 //        }`
     }
 
-    private static Color commonRGB(Stack stack) {
+    private static Color commonRGB(Stack<Object> stack) {
         float blue = ((Number) stack.pop()).floatValue();
         float green = ((Number) stack.pop()).floatValue();
         float red = ((Number) stack.pop()).floatValue();
@@ -1864,7 +1857,7 @@ public abstract class AbstractContentParser {
         return new Color(red, green, blue);
     }
 
-    private static float[] commonCMYK(Stack stack){
+    private static float[] commonCMYK(Stack<Object> stack) {
         float k = ((Number) stack.pop()).floatValue();
         float y = ((Number) stack.pop()).floatValue();
         float m = ((Number) stack.pop()).floatValue();
@@ -1872,8 +1865,8 @@ public abstract class AbstractContentParser {
         return new float[]{c, m, y, k};
     }
 
-    private static float[] popFloatInOrder(Stack stack, int number){
-        float f[] = new float[number];
+    private static float[] popFloatInOrder(Stack<Object> stack, int number) {
+        float[] f = new float[number];
         int nCount = number - 1;
         // peek and pop all of the colour floats
         while (!stack.isEmpty() && stack.peek() instanceof Number && nCount >= 0) {

@@ -1,7 +1,7 @@
 package org.icepdf.core.util.content;
 
 /**
- * Content stream operands.
+ * PDF content stream operands.
  */
 public class Operands {
 
@@ -84,7 +84,7 @@ public class Operands {
             PERCENT = 76,
             NULL = 77;
 
-    public static int[] getType(byte[] ch, int offset, int length) {
+    public static int[] parseOperand(byte[] ch, int offset, int length) {
         byte c1, c2;
         byte c = ch[offset];
         switch (c) {
@@ -132,7 +132,6 @@ public class Operands {
                         } else if (length > 3) {
                             c2 = ch[offset + 3];
                             if (c2 == 'n') {
-                                // correct
                                 offset = length - 3;
                                 return new int[]{scn, offset};
                             } else {
@@ -263,7 +262,6 @@ public class Operands {
                     return new int[]{n, 0};
                 } else {
                     c1 = ch[offset + 1];
-                    // check for 'null'
                     if (c1 == 'u') {
                         if (length > 3) {
                             offset = length - 3;

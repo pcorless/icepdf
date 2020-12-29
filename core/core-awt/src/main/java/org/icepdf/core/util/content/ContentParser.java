@@ -1,6 +1,5 @@
 package org.icepdf.core.util.content;
 
-import org.icepdf.core.pobjects.OptionalContents;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.graphics.GlyphOutlineClip;
@@ -17,7 +16,7 @@ import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,35 +31,22 @@ public class ContentParser extends AbstractContentParser {
      * between document parses if needed.
      */
     public static Map<String, ImageReference> inlineImageCache =
-            Collections.synchronizedMap(new WeakHashMap<String, ImageReference>());
+            Collections.synchronizedMap(new WeakHashMap<>());
 
-    /**
-     * @param l PDF library master object.
-     * @param r resources
-     */
     public ContentParser(Library l, Resources r) {
         super(l, r);
     }
 
-    /**
-     * Parse a pages content stream.
-     *
-     * @param streamBytes byte stream containing page content
-     * @return a Shapes Object containing all the pages text and images shapes.
-     * @throws InterruptedException if current parse thread is interrupted.
-     * @throws IOException          unexpected end of content stream.
-     */
     public ContentParser parse(byte[][] streamBytes, Page page)
             throws InterruptedException, IOException {
         if (shapes == null) {
             shapes = new Shapes();
-            // Normal, clean content parse where graphics state is null
             if (graphicState == null) {
                 graphicState = new GraphicsState(shapes);
             }
             // If not null we have an Form XObject that contains a content stream
             // and we must copy the previous graphics states draw settings in order
-            // preserve colour and fill data for the XOjbects content stream.
+            // preserve colour and fill data for the XObjects content stream.
             else {
                 // the graphics state gets a new coordinate system.
                 graphicState.setCTM(new AffineTransform());
@@ -75,24 +61,20 @@ public class ContentParser extends AbstractContentParser {
 
         if (oCGs == null && library.getCatalog() != null &&
                 library.getCatalog().getOptionalContent() != null) {
-            oCGs = new LinkedList<OptionalContents>();
+            oCGs = new LinkedList<>();
         }
 
         if (logger.isLoggable(Level.FINER)) {
-            logger.finer("Parsing page content streams: " + streamBytes.length);
-            // print all the stream byte chunks.
+            logger.finer("Page content streams: " + streamBytes.length);
             for (byte[] streamByte : streamBytes) {
                 if (streamByte != null) {
-                    String tmp = new String(streamByte, "ISO-8859-1");
+                    String tmp = new String(streamByte, StandardCharsets.ISO_8859_1);
                     logger.finer("Content = " + tmp);
                 }
             }
         }
         int count = 0;
-        // great a parser to get tokens for stream
         Lexer lexer;
-
-        // test case for progress bar
         lexer = new Lexer();
         lexer.contentStream(streamBytes);
 
@@ -100,30 +82,19 @@ public class ContentParser extends AbstractContentParser {
         float yBTstart = 0;
 
         try {
-            // loop through each token returned form the parser
             Object tok;
             while (true) {
                 count++;
                 tok = lexer.nextToken();
-//                if (logger.isLoggable(Level.FINER)){
-//                    if (tok instanceof Integer) {
-//                        logger.finer(OperandNames.OPP_LOOKUP.get(tok));
-//                    } else {
-//                        logger.finer(String.valueOf(tok));
-//                    }
-//                }
-                // no more tokens break out.
                 if (tok == null) {
                     break;
                 }
 
-                // add any names and numbers and every thing else on the
-                // stack for future reference
+                // add any names and numbers and every thing else on the stack for future reference
                 if (!(tok instanceof Integer)) {
                     stack.push(tok);
                 } else {
-                    // minimize interrupted checks.
-                    if (count % 1000 == 0 && Thread.currentThread().isInterrupted()) {
+                    if (count % 10000 == 0 && Thread.currentThread().isInterrupted()) {
                         throw new InterruptedException("ContentParser thread interrupted");
                     }
 
@@ -249,7 +220,7 @@ public class ContentParser extends AbstractContentParser {
                             consume_BMC(stack, shapes, oCGs, resources);
                             break;
 
-                        /**
+                        /*
                          * External Object (XObject) a graphics object whose contents
                          * are defined by a self-contained content stream, separate
                          * from the content stream in which it is used. There are three
@@ -266,7 +237,7 @@ public class ContentParser extends AbstractContentParser {
                          *     longer recommended to be used. (NOT SUPPORTED)
                          */
                         // Paint the specified XObject. The operand name must appear as
-                        // a key in the XObject subdictionary of the current resource
+                        // a key in the XObject sub-dictionary of the current resource
                         // dictionary (see Section 3.7.2, "Resource Dictionaries"); the
                         // associated value must be a stream whose Type entry, if
                         // present, is XObject. The effect of Do depends on the value of
@@ -300,8 +271,6 @@ public class ContentParser extends AbstractContentParser {
 
                         // Set the line width in the graphics state
                         case Operands.w:
-                            consume_w(graphicState, stack, shapes, glyph2UserSpaceScale);
-                            break;
                         case Operands.LW:
                             consume_w(graphicState, stack, shapes, glyph2UserSpaceScale);
                             break;
@@ -315,8 +284,6 @@ public class ContentParser extends AbstractContentParser {
 
                         // Fill Color with ColorSpace
                         case Operands.sc:
-//                            consume_sc(graphicState, stack, library, resources, false);
-//                            break;
                         case Operands.scn:
                             consume_sc(graphicState, stack, library, resources, true);
                             break;
@@ -410,8 +377,6 @@ public class ContentParser extends AbstractContentParser {
                         //     required (n = 3).
                         //   - For DeviceCMYK, four operands are required (n = 4).
                         case Operands.SC:
-//                            consume_SC(graphicState, stack, library, resources, false);
-//                            break;
                         case Operands.SCN:
                             consume_SC(graphicState, stack, library, resources, true);
                             break;
@@ -438,7 +403,7 @@ public class ContentParser extends AbstractContentParser {
                             consume_K(graphicState, stack, library);
                             break;
 
-                        /**
+                        /*
                          * Type3 operators, update the text state with data from these operands
                          */
                         case Operands.d0:
@@ -544,7 +509,7 @@ public class ContentParser extends AbstractContentParser {
                             consume_W_star(graphicState, geometricPath);
                             break;
 
-                        /**
+                        /*
                          * Single marked-content point
                          */
                         // Designate a marked-content point with an associated property
@@ -568,7 +533,7 @@ public class ContentParser extends AbstractContentParser {
                                     resources);
                             break;
 
-                        /**
+                        /*
                          * We've seen a couple cases when the text state parameters are written
                          * outside of text blocks, this should cover these cases.
                          */
@@ -605,12 +570,7 @@ public class ContentParser extends AbstractContentParser {
             throw new InterruptedException("ContentParser thread interrupted");
         } catch (Throwable e) {
             logger.log(Level.WARNING, "Error parsing content stream. ", e);
-        } finally {
-            // End of stream set alpha state back to 1.0f, so that other
-            // streams aren't applied an incorrect alpha value.
-//            setAlpha(shapes, AlphaComposite.SRC_OVER, 1.0f);
         }
-
         return this;
     }
 
@@ -620,7 +580,7 @@ public class ContentParser extends AbstractContentParser {
      * @param source content stream source.
      * @return vector where each entry is the text extracted from a text block.
      */
-    public Shapes parseTextBlocks(byte[][] source) throws UnsupportedEncodingException, InterruptedException {
+    public Shapes parseTextBlocks(byte[][] source) throws InterruptedException {
 
         // great a parser to get tokens for stream
         Lexer parser = new Lexer();
@@ -641,12 +601,11 @@ public class ContentParser extends AbstractContentParser {
             // transformation matrix used to cMap core space to drawing space
             graphicState.getTextState().tmatrix = new AffineTransform();
             graphicState.getTextState().tlmatrix = new AffineTransform();
-//            graphicState.scale(1, -1);
 
             // loop through each token returned form the parser
             Object tok = parser.nextToken();
-            Stack<Object> stack = new Stack<Object>();
-            double yBTstart = 0;
+            Stack<Object> stack = new Stack<>();
+            double yBTStart = 0;
             int operand;
             while (tok != null) {
                 // add any names and numbers and every thing else on the
@@ -656,7 +615,7 @@ public class ContentParser extends AbstractContentParser {
                     switch (operand) {
                         case Operands.BT:
                             // start parseText, which parses until ET is reached
-                            yBTstart = parseText(parser, shapes, yBTstart);
+                            yBTStart = parseText(parser, shapes, yBTStart);
                             // free up some memory along the way. we don't need
                             // a full stack consume Tf tokens.
                             stack.clear();
@@ -760,8 +719,8 @@ public class ContentParser extends AbstractContentParser {
                                 previousBTStart, oCGs);
                         break;
 
-                    /**
-                     * Tranformation matrix
+                    /*
+                     * Transformation matrix
                      * tm =   |f1 f2 0|
                      *        |f3 f4 0|
                      *        |f5 f6 0|
@@ -832,8 +791,6 @@ public class ContentParser extends AbstractContentParser {
 
                     // Set the line width in the graphics state
                     case Operands.w:
-                        consume_w(graphicState, stack, shapes, glyph2UserSpaceScale);
-                        break;
                     case Operands.LW:
                         consume_w(graphicState, stack, shapes, glyph2UserSpaceScale);
                         break;
@@ -843,9 +800,6 @@ public class ContentParser extends AbstractContentParser {
                     case Operands.scn:
                         consume_sc(graphicState, stack, library, resources, true);
                         break;
-//                    case OperandNames.OP_scn:
-//                        consume_sc(graphicState, stack, library, resources, true);
-//                        break;
 
                     // Same as K, but for nonstroking operations.
                     case Operands.k:
@@ -962,7 +916,7 @@ public class ContentParser extends AbstractContentParser {
                         consume_Ts(graphicState, stack);
                         break;
 
-                    /**
+                    /*
                      * Begin a compatibility section. Unrecognized operators (along with
                      * their operands) will be ignored without error until the balancing
                      * EX operator is encountered.
@@ -978,7 +932,7 @@ public class ContentParser extends AbstractContentParser {
                         consume_single_quote(graphicState, stack, shapes, textMetrics,
                                 glyphOutlineClip, oCGs);
                         break;
-                    /**
+                    /*
                      * Move to the next line and show a text string, using aw as the
                      * word spacing and ac as the character spacing (setting the
                      * corresponding parameters in the text state). aw and ac are
@@ -1021,7 +975,7 @@ public class ContentParser extends AbstractContentParser {
     private void parseInlineImage(Lexer p, Shapes shapes, Page page) throws IOException {
         try {
             Object tok;
-            HashMap<Object, Object> iih = new HashMap<Object, Object>();
+            HashMap<Object, Object> iih = new HashMap<>();
             tok = p.nextToken();
             while (!tok.equals(Operands.ID)) {
                 if (ImageParams.BPC_KEY.equals(tok)) {
