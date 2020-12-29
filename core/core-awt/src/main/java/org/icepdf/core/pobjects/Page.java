@@ -29,14 +29,13 @@ import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.*;
 import org.icepdf.core.util.content.ContentParser;
-import org.icepdf.core.util.content.ContentParserFactory;
 
 import java.awt.*;
 import java.awt.geom.*;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -420,8 +419,7 @@ public class Page extends Dictionary {
             notifyPageInitializationStarted();
             if (contents != null) {
                 try {
-                    ContentParser cp = ContentParserFactory.getInstance()
-                            .getContentParser(library, resources);
+                    ContentParser cp = new ContentParser(library, resources);
                     byte[][] streams = new byte[contents.size()][];
                     byte[] stream;
                     for (int i = 0, max = contents.size(); i < max; i++) {
@@ -1603,8 +1601,7 @@ public class Page extends Dictionary {
         if (contents != null) {
             try {
 
-                ContentParser cp = ContentParserFactory.getInstance()
-                        .getContentParser(library, resources);
+                ContentParser cp = new ContentParser(library, resources);
                 byte[][] streams = new byte[contents.size()][];
                 for (int i = 0, max = contents.size(); i < max; i++) {
                     streams[i] = contents.get(i).getDecodedStreamBytes();

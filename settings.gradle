@@ -22,4 +22,4 @@ include 'core:core-awt',
         'examples:signatures'
 
 
-rootProject.name = 'icepdf-os'
+rootProject.name = 'icepdf'
