@@ -28,7 +28,7 @@ import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.*;
-import org.icepdf.core.util.content.ContentParser;
+import org.icepdf.core.util.parser.content.ContentParser;
 
 import java.awt.*;
 import java.awt.geom.*;

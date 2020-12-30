@@ -1,4 +1,4 @@
-package org.icepdf.core.util.content;
+package org.icepdf.core.util.parser.content;
 
 import org.icepdf.core.pobjects.HexStringObject;
 import org.icepdf.core.pobjects.LiteralStringObject;
@@ -17,6 +17,18 @@ public class Lexer {
     private static final Logger logger =
             Logger.getLogger(Lexer.class.toString());
 
+    private static final int
+            NO_MORE = 1,
+            NUMBER = 2,
+            OPERAND = 3,
+            LIT_STRING = 4,
+            HEX_STRING = 5,
+            NAME = 6,
+            COMMENT = 7,
+            DICTIONARY = 8,
+            ARRAY = 9,
+            BOOLEAN = 10;
+
     private int streamCount;
     private byte[][] streamsBytes;
 
@@ -26,19 +38,7 @@ public class Lexer {
 
     private int tokenType = 0;
 
-    private static final int
-            TOKEN_NO_MORE = 0,
-            TOKEN_NUMBER = 1,
-            TOKEN_OPERAND = 2,
-            TOKEN_LIT_STRING = 3,
-            TOKEN_HEX_STRING = 4,
-            TOKEN_NAME = 5,
-            TOKEN_COMMENT = 6,
-            TOKEN_DICTIONARY = 7,
-            TOKEN_ARRAY = 8,
-            TOKEN_BOOLEAN = 9;
-
-    public void contentStream(byte[][] in) {
+    public void setContentStream(byte[][] in) {
         streamsBytes = in;
         streamCount = 0;
         streamBytes = streamsBytes[streamCount];
@@ -47,7 +47,7 @@ public class Lexer {
         }
     }
 
-    public Object nextToken() throws IOException {
+    public Object next() throws IOException {
 
         if (streamBytes == null) {
             throw new IOException("Content Stream, null input stream bytes.");
@@ -58,23 +58,23 @@ public class Lexer {
 
         switch (tokenType) {
             // we have a name
-            case TOKEN_NUMBER:
+            case NUMBER:
                 return startNumber();
-            case TOKEN_OPERAND:
+            case OPERAND:
                 return startOperand();
-            case TOKEN_HEX_STRING:
+            case HEX_STRING:
                 return startHexString();
-            case TOKEN_LIT_STRING:
+            case LIT_STRING:
                 return startLiteralString();
-            case TOKEN_NAME:
+            case NAME:
                 return startName();
-            case TOKEN_ARRAY:
+            case ARRAY:
                 return startArray();
-            case TOKEN_DICTIONARY:
+            case DICTIONARY:
                 return startDictionary();
-            case TOKEN_BOOLEAN:
+            case BOOLEAN:
                 return startBoolean();
-            case TOKEN_COMMENT:
+            case COMMENT:
                 return startComment();
             default:
                 return null;
@@ -127,7 +127,7 @@ public class Lexer {
                 } else {
                     try {
                         pos += 2;
-                        Object tmp = nextToken();
+                        Object tmp = next();
                         // make sure we have an operand next as some streams can give
                         // us a false positive when EI and some white space is encountered.
                         if (tmp instanceof Integer && ((Integer) tmp) != Operands.OP &&
@@ -161,9 +161,6 @@ public class Lexer {
         return imageBytes;
     }
 
-    /**
-     * Utility for parsing a hex strings.
-     */
     private StringObject startHexString() {
         // skip the starting (
         startTokenPos = pos++;
@@ -185,9 +182,6 @@ public class Lexer {
         }
     }
 
-    /**
-     * Utility for parsing a lit strings.
-     */
     private StringObject startLiteralString() {
         // skip the starting (
         startTokenPos = pos;
@@ -332,9 +326,6 @@ public class Lexer {
         return new LiteralStringObject(captured, true);
     }
 
-    /**
-     * Utility for parsing a name.
-     */
     private Name startName() {
         // skip first / of name
         startTokenPos = pos++;
@@ -394,7 +385,7 @@ public class Lexer {
         int count = 1;
         while (!(streamBytes[pos] == '>' && streamBytes[pos + 1] == '>')) {
             if (count == 1) {
-                key = nextToken();
+                key = next();
                 // double check we don't have an empty dictionary << >>
                 if (key instanceof Integer &&
                         ((Integer) key) == Operands.OP) {
@@ -402,7 +393,7 @@ public class Lexer {
                 }
                 count++;
             } else if (count == 2) {
-                value = nextToken();
+                value = next();
                 h.put(key, value);
                 count = 1;
             }
@@ -459,7 +450,7 @@ public class Lexer {
         Object token;
         while (streamBytes[pos] != ']' && pos < numRead) {
             // add the tokens as we get them.
-            token = nextToken();
+            token = next();
             if (token instanceof Integer) {
                 // we gone to var, likely empty array
                 if (startTokenPos > pos) {
@@ -528,9 +519,6 @@ public class Lexer {
         }
     }
 
-    /**
-     * Utility to find the next token state.
-     */
     private void parseNextState() {
         // skip the white space
         while (pos <= numRead) {
@@ -549,7 +537,7 @@ public class Lexer {
                     numRead = streamBytes.length;
                     continue;
                 } else {
-                    tokenType = TOKEN_NO_MORE;
+                    tokenType = NO_MORE;
                     break;
                 }
             }
@@ -566,55 +554,55 @@ public class Lexer {
             byte c = streamBytes[pos];
             switch (c) {
                 case '/':
-                    tokenType = TOKEN_NAME;
+                    tokenType = NAME;
                     break;
                 case '(':
-                    tokenType = TOKEN_LIT_STRING;
+                    tokenType = LIT_STRING;
                     break;
                 case '[':
-                    tokenType = TOKEN_ARRAY;
+                    tokenType = ARRAY;
                     break;
                 case '<':
                     byte c2 = streamBytes[pos + 1];
                     if (c2 == '<') {
-                        tokenType = TOKEN_DICTIONARY;
+                        tokenType = DICTIONARY;
                     } else {
-                        tokenType = TOKEN_HEX_STRING;
+                        tokenType = HEX_STRING;
                     }
                     break;
                 case '-':
                 case '+':
-                    tokenType = TOKEN_NUMBER;
+                    tokenType = NUMBER;
                     break;
                 case 't':
-                    tokenType = TOKEN_BOOLEAN;
+                    tokenType = BOOLEAN;
                     break;
                 case 'f':
                     if (pos + 1 < numRead) {
                         c2 = streamBytes[pos + 1];
                         if (c2 == 'a') {
-                            tokenType = TOKEN_BOOLEAN;
+                            tokenType = BOOLEAN;
                         } else {
-                            tokenType = TOKEN_OPERAND;
+                            tokenType = OPERAND;
                         }
                     } else {
-                        tokenType = TOKEN_OPERAND;
+                        tokenType = OPERAND;
                     }
                     break;
                 case '%':
-                    tokenType = TOKEN_COMMENT;
+                    tokenType = COMMENT;
                     break;
                 default:
                     if (c <= '9' && c >= '-') {
-                        tokenType = TOKEN_NUMBER;
+                        tokenType = NUMBER;
                         break;
                     }
-                    tokenType = TOKEN_OPERAND;
+                    tokenType = OPERAND;
                     break;
             }
 
         } else {
-            tokenType = TOKEN_NO_MORE;
+            tokenType = NO_MORE;
         }
     }
 
