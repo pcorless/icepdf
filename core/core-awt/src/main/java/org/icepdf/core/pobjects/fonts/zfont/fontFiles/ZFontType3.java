@@ -11,8 +11,7 @@ import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.TextState;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.content.ContentParser;
-import org.icepdf.core.util.content.ContentParserFactory;
+import org.icepdf.core.util.parser.content.ContentParser;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -363,8 +362,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
                 if (resources == null) {
                     resources = parentResource;
                 }
-                ContentParser cp = ContentParserFactory.getInstance()
-                        .getContentParser(library, resources);
+                ContentParser cp = new ContentParser(library, resources);
                 // Read the type 3 content stream
                 try {
                     GraphicsState gs = new GraphicsState(new Shapes());
