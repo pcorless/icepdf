@@ -15,7 +15,7 @@ dependencies {
     implementation 'org.bouncycastle:bcpkix-jdk15on:' + "${BOUNCY_VERSION}"
     // tiff, jpeg2000 and jbig decoding
     implementation 'com.twelvemonkeys.imageio:imageio-tiff:'  + "${MONKEY_VERSION}"
-//    implementation 'com.github.jai-imageio:jai-imageio-jpeg2000:' + "${JAI_VERSION}"
+    implementation 'com.github.jai-imageio:jai-imageio-jpeg2000:' + "${JAI_VERSION}"
     implementation 'org.apache.pdfbox:jbig2-imageio:' + "${JBIG2_VERSION}"
 
 }

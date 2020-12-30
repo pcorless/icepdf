@@ -18,7 +18,7 @@ package org.icepdf.core.pobjects.annotations;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.content.ContentParser;
+import org.icepdf.core.util.parser.content.ContentParser;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;

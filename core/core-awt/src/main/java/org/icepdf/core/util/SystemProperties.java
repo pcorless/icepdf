@@ -16,7 +16,6 @@ public final class SystemProperties {
             "org.icepdf.core.page.annotation.privateProperty.enabled", false);
     /**
      * @see org.icepdf.core.pobjects.fonts.FontFactory
-     * @see org.icepdf.core.util.content.ContentParserFactory
      */
     public static final boolean USE_NFONT = Defs.sysPropertyBoolean("org.icepdf.core.useNFont", true);
 

@@ -1,4 +1,4 @@
-package org.icepdf.core.util.content;
+package org.icepdf.core.util.parser.content;
 
 /**
  * PDF content stream operands.

@@ -1,4 +1,4 @@
-package org.icepdf.core.util.content;
+package org.icepdf.core.util.parser.content;
 
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
@@ -76,7 +76,7 @@ public class ContentParser extends AbstractContentParser {
         int count = 0;
         Lexer lexer;
         lexer = new Lexer();
-        lexer.contentStream(streamBytes);
+        lexer.setContentStream(streamBytes);
 
         // text block y offset.
         float yBTstart = 0;
@@ -85,7 +85,7 @@ public class ContentParser extends AbstractContentParser {
             Object tok;
             while (true) {
                 count++;
-                tok = lexer.nextToken();
+                tok = lexer.next();
                 if (tok == null) {
                     break;
                 }
@@ -584,7 +584,7 @@ public class ContentParser extends AbstractContentParser {
 
         // great a parser to get tokens for stream
         Lexer parser = new Lexer();
-        parser.contentStream(source);
+        parser.setContentStream(source);
         Shapes shapes = new Shapes();
 
         if (graphicState == null) {
@@ -603,7 +603,7 @@ public class ContentParser extends AbstractContentParser {
             graphicState.getTextState().tlmatrix = new AffineTransform();
 
             // loop through each token returned form the parser
-            Object tok = parser.nextToken();
+            Object tok = parser.next();
             Stack<Object> stack = new Stack<>();
             double yBTStart = 0;
             int operand;
@@ -646,7 +646,7 @@ public class ContentParser extends AbstractContentParser {
                 } else {
                     stack.push(tok);
                 }
-                tok = parser.nextToken();
+                tok = parser.next();
             }
             // clear our temporary stack.
             stack.clear();
@@ -689,7 +689,7 @@ public class ContentParser extends AbstractContentParser {
         GlyphOutlineClip glyphOutlineClip = new GlyphOutlineClip();
 
         // start parsing of the BT block
-        nextToken = lexer.nextToken();
+        nextToken = lexer.next();
         int operand;
         while (!(nextToken instanceof Integer && (Integer) nextToken == Operands.ET)) {
 
@@ -949,7 +949,7 @@ public class ContentParser extends AbstractContentParser {
                 stack.push(nextToken);
             }
 
-            nextToken = lexer.nextToken();
+            nextToken = lexer.next();
             if (nextToken == null) {
                 break;
             }
@@ -976,7 +976,7 @@ public class ContentParser extends AbstractContentParser {
         try {
             Object tok;
             HashMap<Object, Object> iih = new HashMap<>();
-            tok = p.nextToken();
+            tok = p.next();
             while (!tok.equals(Operands.ID)) {
                 if (ImageParams.BPC_KEY.equals(tok)) {
                     tok = ImageParams.BITS_PER_COMPONENT_KEY;
@@ -997,9 +997,9 @@ public class ContentParser extends AbstractContentParser {
                 } else if (ImageParams.W_KEY.equals(tok)) {
                     tok = ImageParams.WIDTH_KEY;
                 }
-                Object tok1 = p.nextToken();
+                Object tok1 = p.next();
                 iih.put(tok, tok1);
-                tok = p.nextToken();
+                tok = p.next();
             }
             // For inline images in content streams, we have to use
             //   a byte[], instead of going back to the original file,

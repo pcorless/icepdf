@@ -23,7 +23,7 @@ import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
-import org.icepdf.core.util.content.ContentParser;
+import org.icepdf.core.util.parser.content.ContentParser;
 
 import java.awt.*;
 import java.util.HashMap;

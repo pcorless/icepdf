@@ -23,7 +23,7 @@ import org.icepdf.core.pobjects.graphics.commands.ColorDrawCmd;
 import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.content.ContentParser;
+import org.icepdf.core.util.parser.content.ContentParser;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
