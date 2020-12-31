@@ -37,6 +37,7 @@ public abstract class ZSimpleFont implements FontFile {
     protected int firstCh;
     protected float ascent;
     protected float descent;
+    protected Rectangle2D bbox = new Rectangle2D.Double(0.0, 0.0, 1.0, 1.0);
 
     // Why have one encoding when you can three.
     protected Encoding encoding;
@@ -47,7 +48,7 @@ public abstract class ZSimpleFont implements FontFile {
 
     // PDF specific size and text state transform
     protected float size = 1.0f;
-    protected AffineTransform fontMatrix;
+    protected AffineTransform fontMatrix = new AffineTransform();
 
     // todo fontDamaged flags
 
@@ -204,6 +205,19 @@ public abstract class ZSimpleFont implements FontFile {
     @Override
     public void setIsCid() {
 
+    }
+
+    protected Rectangle2D calculateBbox(Rectangle2D bbox) {
+        if (bbox != null) {
+            double scaleX = 0.001 / fontMatrix.getScaleX();
+            double scaleY = 0.001 / fontMatrix.getScaleY();
+            return new Rectangle2D.Double(
+                    bbox.getX() * scaleX,
+                    bbox.getY() * scaleY,
+                    bbox.getWidth() * scaleX,
+                    bbox.getHeight() * scaleY);
+        }
+        return this.bbox;
     }
 
     protected AffineTransform convertFontMatrix(FontBoxFont fontBoxFont) {

@@ -107,7 +107,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
     }
 
     @Override
-    public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent, char[] diff) {
+    public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
         ZFontType3 font = (ZFontType3) deriveFont(this.size);
         font.encoding = encoding;
         font.widths = widths;
@@ -115,12 +115,13 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
         font.missingWidth = missingWidth;
         font.ascent = ascent;
         font.descent = descent;
+        font.bbox = calculateBbox(bbox);
         // todo diff cmap, likely not a type3 thing, see if an example shows up.
         return font;
     }
 
     @Override
-    public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent, float descent, char[] diff) {
+    public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
         // not really applicable for type3 but lets play nice just in case
         ZFontType3 font = (ZFontType3) deriveFont(this.size);
         font.encoding = encoding;
@@ -128,6 +129,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
         font.missingWidth = missingWidth;
         font.ascent = ascent;
         font.descent = descent;
+        font.bbox = calculateBbox(bbox);
         return font;
     }
 

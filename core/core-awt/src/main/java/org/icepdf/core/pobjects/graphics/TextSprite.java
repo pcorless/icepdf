@@ -47,7 +47,7 @@ public class TextSprite {
             Defs.booleanProperty("org.icepdf.core.text.optimized.type3", true);
 
     // child GlyphText objects
-    private ArrayList<GlyphText> glyphTexts;
+    private final ArrayList<GlyphText> glyphTexts;
 
     // text bounds, including all child Glyph sprites, in glyph space
     // this bound is used during painting to respect painting clip.
@@ -55,7 +55,7 @@ public class TextSprite {
 
     // space reference for where glyph
     private AffineTransform graphicStateTransform;
-    private AffineTransform tmTransform;
+    private final AffineTransform tmTransform;
 
     // stroke color
     private Color strokeColor;
@@ -107,16 +107,17 @@ public class TextSprite {
         // to page space
         // IMPORTANT: where working in Java Coordinates with any of the Font bounds
         float w = width;//(float)stringBounds.getWidth();
-        float h = (float) (font.getAscent() + font.getDescent());
+        float h = (float) (font.getAscent() - font.getDescent());
+        Rectangle2D bbox = font.getMaxCharBounds();
 
         double descent = font.getDescent();
         double ascent = font.getAscent();
 
         if (h <= 0.0f) {
-            h = (float) (font.getMaxCharBounds().getHeight());
+            h = (float) bbox.getHeight();
         }
         if (w <= 0.0f) {
-            w = (float) font.getMaxCharBounds().getWidth();
+            w = (float) bbox.getWidth();
         }
         // zero height will not intersect with clip rectangle and maybe have visibility issues.
         // we generally get here if the font.getAscent is zero and as a result must compensate.
@@ -138,7 +139,7 @@ public class TextSprite {
         if (w < 0.0f || font.getSize() < 0) {
             glyphBounds = new Rectangle2D.Float(x + width, y - (float) descent, -w, h);
         } else {
-            glyphBounds = new Rectangle2D.Float(x, y - (float) ascent, w, h);
+            glyphBounds = new Rectangle2D.Float(x, y - h - (float) descent, w, h);
         }
 
         // add bounds to total text bounds.

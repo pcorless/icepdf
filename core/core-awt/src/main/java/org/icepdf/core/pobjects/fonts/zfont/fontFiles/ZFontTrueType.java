@@ -12,6 +12,7 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -69,8 +70,10 @@ public class ZFontTrueType extends ZSimpleFont {
         this.firstCh = font.firstCh;
         this.ascent = font.ascent;
         this.descent = font.descent;
+        this.bbox = font.bbox;
         this.widths = font.widths;
         this.cMap = font.cMap;
+        this.size = font.size;
         this.cmapWinUnicode = font.cmapWinUnicode;
         this.cmapWinSymbol = font.cmapWinSymbol;
         this.cmapMacRoman = font.cmapMacRoman;
@@ -154,6 +157,8 @@ public class ZFontTrueType extends ZSimpleFont {
         ZFontTrueType font = new ZFontTrueType(this);
         font.fontMatrix = convertFontMatrix(trueTypeFont);
         font.fontMatrix.scale(pointsize, -pointsize);
+        // todo clean up size usage vs fontMatrix.
+//        font.size = pointsize;
 //        font.maxCharBounds = this.maxCharBounds;
         return font;
     }
@@ -167,7 +172,7 @@ public class ZFontTrueType extends ZSimpleFont {
     }
 
     @Override
-    public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent, char[] diff) {
+    public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
         ZFontTrueType font = new ZFontTrueType(this);
         font.missingWidth = this.missingWidth;
         font.firstCh = firstCh;
@@ -175,17 +180,19 @@ public class ZFontTrueType extends ZSimpleFont {
         font.descent = descent;
         font.widths = widths;
         font.cMap = diff;
+        font.bbox = calculateBbox(bbox);
         return font;
     }
 
     @Override
-    public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent, float descent, char[] diff) {
+    public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
         ZFontTrueType font = new ZFontTrueType(this);
         font.missingWidth = this.missingWidth;
         font.firstCh = firstCh;
         font.ascent = ascent;
         font.descent = descent;
         font.cMap = diff;
+        font.bbox = calculateBbox(bbox);
         return font;
     }
 

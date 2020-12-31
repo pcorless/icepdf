@@ -47,10 +47,10 @@ public interface FontFile {
     FontFile deriveFont(Encoding encoding, CMap toUnicode);
 
     FontFile deriveFont(float[] widths, int firstCh, float missingWidth,
-                        float ascent, float descent, char[] diff);
+                        float ascent, float descent, Rectangle2D bbox, char[] diff);
 
     FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth,
-                        float ascent, float descent, char[] diff);
+                        float ascent, float descent, Rectangle2D bbox, char[] diff);
 
     boolean canDisplayEchar(char ech);
 

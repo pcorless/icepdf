@@ -10,6 +10,7 @@ import org.icepdf.core.pobjects.fonts.FontFile;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.util.Map;
 import java.util.logging.Level;
@@ -51,6 +52,7 @@ public class ZFontType1C extends ZSimpleFont {
         this.firstCh = font.firstCh;
         this.ascent = font.ascent;
         this.descent = font.descent;
+        this.bbox = font.bbox;
         this.widths = font.widths;
         this.cMap = font.cMap;
 //        this.maxCharBounds = font.maxCharBounds;
@@ -85,25 +87,29 @@ public class ZFontType1C extends ZSimpleFont {
     }
 
     @Override
-    public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent, char[] diff) {
+    public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
         ZFontType1C font = new ZFontType1C(this);
         font.missingWidth = this.missingWidth;
         font.firstCh = firstCh;
         font.ascent = ascent;
         font.descent = descent;
+        font.bbox = calculateBbox(bbox);
         font.widths = widths;
         font.cMap = diff != null ? diff : font.cMap;
+        font.bbox = calculateBbox(bbox);
         return font;
     }
 
     @Override
-    public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent, float descent, char[] diff) {
+    public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
         ZFontType1C font = new ZFontType1C(this);
         font.missingWidth = this.missingWidth;
         font.firstCh = firstCh;
         font.ascent = ascent;
         font.descent = descent;
+        font.bbox = calculateBbox(bbox);
         font.cMap = diff;
+        font.bbox = calculateBbox(bbox);
         return font;
     }
 

@@ -28,7 +28,7 @@ public class TypeCidType0Font extends CompositeFont {
 
     protected void parseCidToGidMap() {
         Object gidMap = library.getObject(entries, CID_TO_GID_MAP_KEY);
-        System.out.println();
+//        System.out.println();
 //        if (subtype.equals("CIDFontType0") && font instanceof ZFontOpenType && (isEmbedded || gidMap != null)) {
 //            font = ((ZFontOpenType) font).deriveFont(CMap.IDENTITY, toUnicodeCMap);
 //        }

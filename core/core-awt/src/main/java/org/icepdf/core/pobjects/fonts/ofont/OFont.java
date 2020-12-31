@@ -92,7 +92,7 @@ public class OFont implements FontFile {
     }
 
     public FontFile deriveFont(float[] widths, int firstCh, float missingWidth,
-                               float ascent, float descent, char[] diff) {
+                               float ascent, float descent, Rectangle2D bbox, char[] diff) {
         OFont font = new OFont(this);
         this.echarAdvanceCache.clear();
         font.missingWidth = this.missingWidth;
@@ -105,7 +105,7 @@ public class OFont implements FontFile {
     }
 
     public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth,
-                               float ascent, float descent, char[] diff) {
+                               float ascent, float descent, Rectangle2D bbox, char[] diff) {
         OFont font = new OFont(this);
         this.echarAdvanceCache.clear();
         font.missingWidth = this.missingWidth;

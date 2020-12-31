@@ -2,7 +2,6 @@ package org.icepdf.core.pobjects.fonts.zfont;
 
 import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.PRectangle;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.pobjects.fonts.ofont.OFont;
@@ -125,19 +124,12 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
         float descent = 0.0f;
         Rectangle2D bbox = null;
         if (fontDescriptor != null) {
-            if (fontDescriptor.getMissingWidth() > 0) {
-                missingWidth = fontDescriptor.getMissingWidth() / 1000f;
-                ascent = fontDescriptor.getAscent() / 1000f;
-                descent = fontDescriptor.getDescent() / 1000f;
-            }
-            PRectangle tmpBBox = fontDescriptor.getFontBBox();
-            // allocated the original two points that define the rectangle
-            if (tmpBBox != null) {
-                bbox = tmpBBox.getOriginalPoints();
-                bbox.setRect(bbox.getX(), bbox.getY(), bbox.getWidth(), bbox.getHeight());
-            }
+            missingWidth = fontDescriptor.getMissingWidth() / 1000f;
+            ascent = fontDescriptor.getAscent() / 1000f;
+            descent = fontDescriptor.getDescent() / 1000f;
+            bbox = fontDescriptor.getFontBBox();
         }
-        widths = (List) (library.getObject(entries, WIDTHS_KEY));
+        widths = (List) library.getObject(entries, WIDTHS_KEY);
         if (widths != null) {
             float[] newWidth = new float[256 - firstchar];
             for (int i = 0, max = widths.size(), max2 = newWidth.length; i < max && i < max2; i++) {
@@ -145,7 +137,7 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
                     newWidth[i] = ((Number) widths.get(i)).floatValue() / 1000f;
                 }
             }
-            font = font.deriveFont(newWidth, firstchar, missingWidth, ascent, descent, null);
+            font = font.deriveFont(newWidth, firstchar, missingWidth, ascent, descent, bbox, null);
         }
 //        else if (afm != null && isAFMFont) {
 //            font = font.deriveFont(afm.getWidths(), firstchar, missingWidth, ascent, descent, cMap);

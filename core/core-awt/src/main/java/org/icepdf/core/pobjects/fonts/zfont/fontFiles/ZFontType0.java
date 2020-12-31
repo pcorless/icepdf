@@ -11,6 +11,7 @@ import org.icepdf.core.pobjects.graphics.TextState;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.util.Map;
 import java.util.logging.Level;
@@ -74,6 +75,7 @@ public class ZFontType0 extends ZSimpleFont {
         this.firstCh = font.firstCh;
         this.ascent = font.ascent;
         this.descent = font.descent;
+        this.bbox = font.bbox;
         this.widths = font.widths;
         this.cMap = font.cMap;
 //        this.maxCharBounds = font.maxCharBounds;
@@ -180,7 +182,7 @@ public class ZFontType0 extends ZSimpleFont {
     }
 
     @Override
-    public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent, char[] diff) {
+    public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
         if (cidFont != null) {
             ZFontType0 font = new ZFontType0(this);
             font.missingWidth = this.missingWidth;
@@ -189,6 +191,7 @@ public class ZFontType0 extends ZSimpleFont {
             font.descent = descent;
             font.widths = widths;
             font.cMap = diff != null ? diff : font.cMap;
+            font.bbox = calculateBbox(bbox);
             return font;
         } else {
             return null;
@@ -196,7 +199,7 @@ public class ZFontType0 extends ZSimpleFont {
     }
 
     @Override
-    public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent, float descent, char[] diff) {
+    public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
         if (cidFont != null) {
             ZFontType0 font = new ZFontType0(this);
             font.missingWidth = this.missingWidth;
@@ -204,6 +207,7 @@ public class ZFontType0 extends ZSimpleFont {
             font.ascent = ascent;
             font.descent = descent;
             font.cMap = diff;
+            font.bbox = calculateBbox(bbox);
             return font;
         } else {
             return null;

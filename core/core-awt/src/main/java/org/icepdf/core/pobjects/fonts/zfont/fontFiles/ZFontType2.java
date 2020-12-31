@@ -14,6 +14,7 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Map;
@@ -63,6 +64,7 @@ public class ZFontType2 extends ZSimpleFont {
         this.widths = font.widths;
         this.cMap = font.cMap;
         this.size = font.size;
+        this.bbox = font.bbox;
 //        this.maxCharBounds = font.maxCharBounds;
     }
 
@@ -157,7 +159,7 @@ public class ZFontType2 extends ZSimpleFont {
     }
 
     @Override
-    public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent, char[] diff) {
+    public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
         ZFontType2 font = new ZFontType2(this);
         font.missingWidth = this.missingWidth;
         font.firstCh = firstCh;
@@ -165,17 +167,19 @@ public class ZFontType2 extends ZSimpleFont {
         font.descent = descent;
         font.widths = widths;
         font.cMap = diff;
+        font.bbox = calculateBbox(bbox);
         return font;
     }
 
     @Override
-    public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent, float descent, char[] diff) {
+    public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
         ZFontType2 font = new ZFontType2(this);
         font.missingWidth = this.missingWidth;
         font.firstCh = firstCh;
         font.ascent = ascent;
         font.descent = descent;
         font.cMap = diff;
+        font.bbox = calculateBbox(bbox);
         return font;
     }
 

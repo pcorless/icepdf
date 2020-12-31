@@ -633,11 +633,9 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         float ascent = 0.0f;
         float descent = 0.0f;
         if (fontDescriptor != null) {
-            if (fontDescriptor.getMissingWidth() > 0) {
-                missingWidth = fontDescriptor.getMissingWidth() / 1000f;
-                ascent = fontDescriptor.getAscent() / 1000f;
-                descent = fontDescriptor.getDescent() / 1000f;
-            }
+            missingWidth = fontDescriptor.getMissingWidth() / 1000f;
+            ascent = fontDescriptor.getAscent() / 1000f;
+            descent = fontDescriptor.getDescent() / 1000f;
         }
         if (widths != null) {
             float[] newWidth = new float[256 - firstchar];
@@ -646,12 +644,12 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                     newWidth[i] = ((Number) widths.get(i)).floatValue() / 1000f;
                 }
             }
-            font = font.deriveFont(newWidth, firstchar, missingWidth, ascent, descent, cMap);
+            font = font.deriveFont(newWidth, firstchar, missingWidth, ascent, descent, null, cMap);
         } else if (cidWidths != null) {
             // cidWidth are already scaled correct to .001
-            font = font.deriveFont(cidWidths, firstchar, missingWidth, ascent, descent, null);
+            font = font.deriveFont(cidWidths, firstchar, missingWidth, ascent, descent, null, null);
         } else if (afm != null && isAFMFont) {
-            font = font.deriveFont(afm.getWidths(), firstchar, missingWidth, ascent, descent, cMap);
+            font = font.deriveFont(afm.getWidths(), firstchar, missingWidth, ascent, descent, null, cMap);
         }
 
     }
