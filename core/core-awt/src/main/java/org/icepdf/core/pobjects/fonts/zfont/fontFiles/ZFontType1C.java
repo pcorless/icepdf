@@ -55,6 +55,7 @@ public class ZFontType1C extends ZSimpleFont {
         this.bbox = font.bbox;
         this.widths = font.widths;
         this.cMap = font.cMap;
+        this.size = font.size;
 //        this.maxCharBounds = font.maxCharBounds;
     }
 
@@ -107,7 +108,6 @@ public class ZFontType1C extends ZSimpleFont {
         font.firstCh = firstCh;
         font.ascent = ascent;
         font.descent = descent;
-        font.bbox = calculateBbox(bbox);
         font.cMap = diff;
         font.bbox = calculateBbox(bbox);
         return font;
@@ -138,6 +138,7 @@ public class ZFontType1C extends ZSimpleFont {
         ZFontType1C font = new ZFontType1C(this);
         font.fontMatrix = convertFontMatrix(cffType1Font);
         font.fontMatrix.scale(pointsize, -pointsize);
+        font.size = pointsize;
 //        font.maxCharBounds = this.maxCharBounds;
         return font;
     }

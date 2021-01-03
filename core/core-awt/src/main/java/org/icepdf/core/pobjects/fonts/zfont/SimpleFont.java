@@ -3,6 +3,7 @@ package org.icepdf.core.pobjects.fonts.zfont;
 import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
+import org.icepdf.core.pobjects.fonts.AFM;
 import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.pobjects.fonts.ofont.OFont;
 import org.icepdf.core.util.FontUtil;
@@ -36,13 +37,14 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
     public static final Name FIRST_CHAR_KEY = new Name("FirstChar");
     public static final Name DIFFERENCES_KEY = new Name("Differences");
 
-    // todo simple font props
-
     // An array of (LastChar ? FirstChar + 1) widths, each element being the
     // glyph width for the character code that equals FirstChar plus the array index.
     // For character codes outside the range FirstChar to LastChar, the value
     // of MissingWidth from the FontDescriptor entry for this font is used.
     protected List widths;
+
+    // Base 14 AFM fonts
+    protected AFM afm;
 
     // Base character mapping of 256 chars
     protected String[] cMap;
@@ -138,10 +140,9 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
                 }
             }
             font = font.deriveFont(newWidth, firstchar, missingWidth, ascent, descent, bbox, null);
+        } else if (afm != null) {
+            font = font.deriveFont(afm.getWidths(), firstchar, missingWidth, ascent, descent, bbox, null);
         }
-//        else if (afm != null && isAFMFont) {
-//            font = font.deriveFont(afm.getWidths(), firstchar, missingWidth, ascent, descent, cMap);
-//        }
     }
 
     protected void setBaseEncoding(Name baseEncoding) {

@@ -106,12 +106,12 @@ public class TextSprite {
         // we can change the bounds of glyphBounds as this is what needs to be normalized
         // to page space
         // IMPORTANT: where working in Java Coordinates with any of the Font bounds
-        float w = width;//(float)stringBounds.getWidth();
-        float h = (float) (font.getAscent() - font.getDescent());
-        Rectangle2D bbox = font.getMaxCharBounds();
-
         double descent = font.getDescent();
         double ascent = font.getAscent();
+        float w = width;//(float)stringBounds.getWidth();
+        float h = (float) (ascent - descent);
+
+        Rectangle2D bbox = font.getMaxCharBounds();
 
         if (h <= 0.0f) {
             h = (float) bbox.getHeight();
@@ -129,10 +129,10 @@ public class TextSprite {
                 // match the width, as it will make text selection work a bit better.
                 h = font.getSize();
             }
-            if (ascent == 0) {
-                ascent = h;
-            }
         }
+        // apply fontsize.
+        h *= font.getSize();
+        descent *= font.getSize();
 
         Rectangle2D.Float glyphBounds;
         // irregular negative layout of text,  need to create the bbox appropriately.

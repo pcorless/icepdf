@@ -73,7 +73,7 @@ public abstract class ZSimpleFont implements FontFile {
                 AffineTransform fontMatrix = convertFontMatrix(fontBoxFont);
                 advance = missingWidth / (float) fontMatrix.getScaleX();
             }
-            advance = advance * size * (float) fontMatrix.getScaleX();
+            advance = advance * (float) fontMatrix.getScaleX();
 
             return new Point2D.Float(advance, 0);
         } catch (IOException e) {

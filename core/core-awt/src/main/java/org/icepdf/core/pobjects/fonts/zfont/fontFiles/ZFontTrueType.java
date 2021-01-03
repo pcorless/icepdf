@@ -86,7 +86,6 @@ public class ZFontTrueType extends ZSimpleFont {
             return super.echarAdvance(ech);
         } else if (widths != null) {
             float advance = widths[ech] * 0.001f;
-            advance = advance * size;// * (float) fontMatrix.getScaleX();
             return new Point2D.Float(advance, 0);
         } else {
             return new Point2D.Float(0.001f, 0);
@@ -157,8 +156,7 @@ public class ZFontTrueType extends ZSimpleFont {
         ZFontTrueType font = new ZFontTrueType(this);
         font.fontMatrix = convertFontMatrix(trueTypeFont);
         font.fontMatrix.scale(pointsize, -pointsize);
-        // todo clean up size usage vs fontMatrix.
-//        font.size = pointsize;
+        font.size = pointsize;
 //        font.maxCharBounds = this.maxCharBounds;
         return font;
     }

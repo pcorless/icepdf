@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects.fonts;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
@@ -224,6 +225,13 @@ public class FontDescriptor extends Dictionary {
         if (value instanceof List) {
             List rectangle = (List) value;
             return new PRectangle(rectangle);
+        } else if (value instanceof int[]) {
+            int[] ints = (int[]) value;
+            List<Integer> intList = new ArrayList<Integer>(ints.length);
+            for (int i : ints) {
+                intList.add(i);
+            }
+            return new PRectangle(intList);
         }
         return null;
     }

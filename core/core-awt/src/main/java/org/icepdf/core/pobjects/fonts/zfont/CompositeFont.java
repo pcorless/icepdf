@@ -9,6 +9,7 @@ import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
 import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -155,6 +156,16 @@ public abstract class CompositeFont extends Font {
             defaultWidth =
                     ((Number) library.getObject(entries, DW_KEY)).floatValue();
         }
+
+        if (fontDescriptor != null) {
+            float missingWidth = fontDescriptor.getMissingWidth() / 1000f;
+            float ascent = fontDescriptor.getAscent() / 1000f;
+            float descent = fontDescriptor.getDescent() / 1000f;
+            Rectangle2D bbox = fontDescriptor.getFontBBox();
+            float[] widths = null;
+            font = font.deriveFont(widths, firstchar, missingWidth, ascent, descent, bbox, null);
+        }
+
 
     }
 
