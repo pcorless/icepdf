@@ -1,19 +1,16 @@
 package org.icepdf.core.pobjects.fonts.zfont;
 
-import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.AFM;
 import org.icepdf.core.pobjects.fonts.FontManager;
+import org.icepdf.core.pobjects.fonts.ofont.CMap;
 import org.icepdf.core.pobjects.fonts.ofont.OFont;
 import org.icepdf.core.util.FontUtil;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.Utils;
 
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -91,7 +88,6 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
         Object encodingValue = library.getObject(entries, ENCODING_KEY);
         if (encodingValue instanceof HashMap) {
             HashMap encodingDictionary = (HashMap) encodingValue;
-
             Name baseEncoding = library.getName(encodingDictionary, BASE_ENCODING_KEY);
             setBaseEncoding(baseEncoding);
 
@@ -117,7 +113,7 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
         } else {
             encoding = Encoding.standardEncoding;
         }
-        font = font.deriveFont(encoding, null);
+        font = font.deriveFont(encoding, toUnicodeCMap);
     }
 
     protected void parseWidth() {
@@ -306,46 +302,23 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
         Object objectUnicode = library.getObject(entries, TO_UNICODE_KEY);
         if (objectUnicode instanceof Stream) {
             Stream cMapStream = (Stream) objectUnicode;
-            InputStream cMapInputStream = cMapStream.getDecodedByteArrayInputStream();
             try {
-                // todo move into cmap class.
-                if (logger.isLoggable(Level.FINER)) {
-                    String content;
-                    if (cMapInputStream instanceof SeekableInput) {
-                        content = Utils.getContentFromSeekableInput((SeekableInput) cMapInputStream, false);
-                    } else {
-                        InputStream[] inArray = new InputStream[]{cMapInputStream};
-                        content = Utils.getContentAndReplaceInputStream(inArray, false);
-                        cMapInputStream = inArray[0];
-                    }
-                    logger.finer("ToUnicode CMAP = " + content);
-                }
-
-                // try and load the cmap stream
-//                new CMap(library, new HashMap(), (Stream) cMapStream);
+                toUnicodeCMap = new CMap(cMapStream);
+                toUnicodeCMap.init();
             } catch (Throwable e) {
-                logger.log(Level.SEVERE, "Error reading cmap file.", e);
-            } finally {
-                try {
-                    // close the stream
-                    if (cMapInputStream != null)
-                        cMapInputStream.close();
-                } catch (IOException e) {
-                    logger.log(Level.FINE, "CMap Reading/Parsing Error.", e);
-                }
+                logger.log(Level.SEVERE, "Error reading CMap file.", e);
             }
         }
-        // todo handle toUnicode maps that are name based.
         else if (objectUnicode instanceof Name) {
             Name unicodeName = (Name) objectUnicode;
             logger.warning("found unicodeName " + unicodeName);
-//            if (CMap.CMapNames.identity.equals(unicodeName)) {
-//                toUnicodeCMap = CMap.IDENTITY;
-//            } else if (CMap.CMapNames.identityV.equals(unicodeName)) {
-//                toUnicodeCMap = CMap.IDENTITY_V;
-//            } else if (CMap.CMapNames.identityH.equals(unicodeName)) {
-//                toUnicodeCMap = CMap.IDENTITY_H;
-//            }
+            if (CMap.IDENTITY_NAME.equals(unicodeName)) {
+                toUnicodeCMap = CMap.IDENTITY;
+            } else if (CMap.IDENTITY_V_NAME.equals(unicodeName)) {
+                toUnicodeCMap = CMap.IDENTITY_V;
+            } else if (CMap.IDENTITY_H_NAME.equals(unicodeName)) {
+                toUnicodeCMap = CMap.IDENTITY_H;
+            }
         }
     }
 

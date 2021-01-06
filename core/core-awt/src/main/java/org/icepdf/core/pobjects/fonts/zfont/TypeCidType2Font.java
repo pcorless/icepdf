@@ -60,7 +60,7 @@ public class TypeCidType2Font extends CompositeFont {
 //                }
             } else if (gidMap instanceof Stream) {
 //                try {
-                CMap cidGidMap = new CMap(library, new HashMap(), (Stream) gidMap);
+                CMap cidGidMap = new CMap((Stream) gidMap);
                 cidGidMap.init();
 //                    System.out.println();
 //                font = ((ZFontTrueType) font).deriveFont(cidGidMap, null);//toUnicodeCMap != null ? toUnicodeCMap : CMap.IDENTITY);

@@ -258,7 +258,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         // ToUnicode indicates that we now have CMap stream that need to be parsed
         Object objectUnicode = library.getObject(entries, TOUNICODE_KEY);
         if (objectUnicode != null && objectUnicode instanceof Stream) {
-            toUnicodeCMap = new CMap(library, new HashMap(), (Stream) objectUnicode);
+            toUnicodeCMap = new CMap((Stream) objectUnicode);
             toUnicodeCMap.init();
         }
 

@@ -45,7 +45,7 @@ public class Type0Font extends org.icepdf.core.pobjects.fonts.Font {
     private void parseEncoding() {
         Object encoding = library.getName(entries, ENCODING_KEY);
         if (encoding instanceof Name) {
-            cMap = CMap.getInstance(library, (Name) encoding);
+            cMap = CMap.getInstance((Name) encoding);
             // todo clean up encoding
             font = font.deriveFont(null, cMap);
         }

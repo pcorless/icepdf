@@ -17,11 +17,9 @@ package org.icepdf.core.pobjects.fonts.ofont;
 
 import org.icepdf.core.io.SeekableByteArrayInputStream;
 import org.icepdf.core.io.SeekableInput;
-import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.StringObject;
-import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Parser;
 import org.icepdf.core.util.Utils;
 
@@ -49,10 +47,18 @@ import java.util.logging.Logger;
  *
  * @since 1.0
  */
-public class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
+public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
 
     private static final Logger logger =
             Logger.getLogger(CMap.class.toString());
+
+    public static final Name IDENTITY_NAME = new Name("Identity");
+    public static final Name IDENTITY_V_NAME = new Name("Identity-V");
+    public static final Name IDENTITY_H_NAME = new Name("Identity-H");
+
+    public static final CMap IDENTITY = new CMapIdentity();
+    public static final CMap IDENTITY_H = new CMapIdentityH();
+    public static final CMap IDENTITY_V = new CMapIdentityV();
 
     private static HashMap<Name, CMap> cMapCache = new HashMap<>();
 
@@ -152,32 +158,29 @@ public class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.C
      * file itself. If the CMap file was created from a Font object then they
      * previously mentioned keys values must be parsed from the CMap file.
      *
-     * @param library    pointer to default library containing all document objects
-     * @param entries    HashMap containing all of the dictionary properties associated
      *                   with this object.  The HashMap will be empty if this object
      *                   was created via a Font objects ToUnicode key.
      * @param cMapStream stream containing CMap data.
      */
-    public CMap(Library library, HashMap entries, Stream cMapStream) {
-        super(library, entries);
+    public CMap(Stream cMapStream) {
         this.cMapStream = cMapStream;
     }
 
-    // todo pretty sure we don't need to extend dictionary, seems unnecessary.
-
-    public CMap(Library l, HashMap h, InputStream cMapInputStream) {
-        super(l, h);
+    public CMap(InputStream cMapInputStream) {
         this.cMapInputStream = cMapInputStream;
     }
 
-    public static CMap getInstance(Library library, Name name) {
+    public CMap() {
+    }
+
+    public static CMap getInstance(Name name) {
         if (cMapCache.containsKey(name)) {
             return cMapCache.get(name);
         }
         byte[] cMapBytes = CMapReader.createStream(name);
         CMap cMap = null;
         if (cMapBytes != null) {
-            cMap = new CMap(library, new HashMap(), new SeekableByteArrayInputStream(cMapBytes));
+            cMap = new CMap(new SeekableByteArrayInputStream(cMapBytes));
             cMap.init();
         }
         cMapCache.put(name, cMap);
@@ -239,12 +242,15 @@ public class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.C
      */
     public void init() {
         try {
+            if (cMapStream == null) {
+                logger.fine("Nothing to initialize named CMap");
+                return;
+            }
             // get the byes and push them through the parser to get objects in CMap
             if (cMapInputStream == null) {
                 cMapInputStream = cMapStream.getDecodedByteArrayInputStream();
             }
 
-            // todo move to cmap loggin to finest
             // Print CMap ASCII
             if (logger.isLoggable(Level.FINER)) {
                 String content;
@@ -256,9 +262,9 @@ public class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.C
                     cMapInputStream = inArray[0];
                 }
 
-                logger.finer("<------------------------ CMap");
+                logger.finer("Start CMap");
                 logger.finer(content);
-                logger.finer("CMap ------------------------>  ");
+                logger.finer("End CMap");
             }
 
             Parser parser = new Parser(cMapInputStream);
@@ -554,6 +560,7 @@ public class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.C
         return charMap;
     }
 
+    // todo isCFF probably not needed anymore if we know encoding?
     public char toSelector(char charMap, boolean isCFF) {
         return toSelector(charMap);
     }

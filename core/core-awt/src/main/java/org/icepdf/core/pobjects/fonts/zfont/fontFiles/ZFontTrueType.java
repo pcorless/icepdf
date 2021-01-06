@@ -15,7 +15,7 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.net.URL;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -35,8 +35,9 @@ public class ZFontTrueType extends ZSimpleFont {
 
     private TrueTypeFont trueTypeFont;
 
-    public ZFontTrueType(InputStream inputStream) throws IOException {
-        this(inputStream.readAllBytes());
+    public ZFontTrueType(URL url) throws IOException {
+        this(url.openStream().readAllBytes());
+        source = url;
     }
 
     public ZFontTrueType(Stream fontStream) {
@@ -74,6 +75,7 @@ public class ZFontTrueType extends ZSimpleFont {
         this.widths = font.widths;
         this.cMap = font.cMap;
         this.size = font.size;
+        this.source = font.source;
         this.cmapWinUnicode = font.cmapWinUnicode;
         this.cmapWinSymbol = font.cmapWinSymbol;
         this.cmapMacRoman = font.cmapMacRoman;

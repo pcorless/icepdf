@@ -45,6 +45,7 @@ public abstract class ZSimpleFont implements FontFile {
     protected CMap toUnicode;
 
     protected FontBoxFont fontBoxFont;
+    protected URL source;
 
     // PDF specific size and text state transform
     protected float size = 1.0f;
@@ -119,17 +120,31 @@ public abstract class ZSimpleFont implements FontFile {
 
     @Override
     public CMap getToUnicode() {
-        return null;
+        return toUnicode;
     }
 
     @Override
     public String toUnicode(String displayText) {
-        return null;
+        // Check string for displayable Glyphs,  try and substitute any failed ones
+        StringBuilder sb = new StringBuilder(displayText.length());
+        for (int i = 0; i < displayText.length(); i++) {
+            // Updated with displayable glyph when possible
+            sb.append(toUnicode(displayText.charAt(i)));
+        }
+        return sb.toString();
     }
 
     @Override
     public String toUnicode(char displayChar) {
-        return null;
+        // the toUnicode map is used for font substitution and especially for CID fonts.  If toUnicode is available
+        // we use it as is, if not then we can use the charDiff mapping, which takes care of font encoding
+        // differences.
+        char c = toUnicode == null ? getCharDiff(displayChar) : displayChar;
+
+        if (toUnicode != null) {
+            return toUnicode.toUnicode(c);
+        }
+        return String.valueOf(c);
     }
 
     @Override
@@ -199,12 +214,20 @@ public abstract class ZSimpleFont implements FontFile {
 
     @Override
     public URL getSource() {
-        return null;
+        return source;
     }
 
     @Override
     public void setIsCid() {
 
+    }
+
+    protected char getCharDiff(char character) {
+        if (cMap != null && character < cMap.length) {
+            return cMap[character];
+        } else {
+            return character;
+        }
     }
 
     protected Rectangle2D calculateBbox(Rectangle2D bbox) {

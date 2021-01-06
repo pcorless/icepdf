@@ -11,6 +11,8 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.io.IOException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.logging.Level;
@@ -56,6 +58,13 @@ public class ZFontType1 extends ZSimpleFont {
         }
     }
 
+    public ZFontType1(URL url) throws IOException {
+        byte[] fontBytes = url.openStream().readAllBytes();
+        source = url;
+        // todo clean up error handling
+        type1Font = Type1Font.createWithPFB(fontBytes);
+    }
+
     private ZFontType1(ZFontType1 font) {
         this.type1Font = font.type1Font;
         this.fontBoxFont = this.type1Font;
@@ -68,6 +77,7 @@ public class ZFontType1 extends ZSimpleFont {
         this.widths = font.widths;
         this.cMap = font.cMap;
         this.bbox = font.bbox;
+        this.source = font.source;
 //        this.maxCharBounds = font.maxCharBounds;
     }
 

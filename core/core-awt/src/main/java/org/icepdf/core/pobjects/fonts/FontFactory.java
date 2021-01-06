@@ -42,7 +42,7 @@ public class FontFactory {
             Logger.getLogger(FontFactory.class.toString());
 
     // allow scaling of large images to improve clarity on screen
-    private static boolean awtFontLoading;
+    private static final boolean awtFontLoading;
 
     // dynamic property to switch between font engine and awt font substitution. 
     private static boolean awtFontSubstitution;
@@ -191,22 +191,17 @@ public class FontFactory {
 
     public FontFile createFontFile(URL url, int fontType, String fontSubType) {
         FontFile fontFile = null;
-        if (FONT_OPEN_TYPE == fontType) {
-//            fontClass = Class.forName(NFONT_OPEN_TYPE);
-        } else if (FONT_TRUE_TYPE == fontType) {
-            // todo get rid of URL, that a remanence of nfont,  no longer needed.
-            try {
-                fontFile = new ZFontTrueType(url.openStream());
-            } catch (IOException e) {
-                e.printStackTrace();
+        try {
+            if (FONT_TRUE_TYPE == fontType || FONT_OPEN_TYPE == fontType) {
+                fontFile = new ZFontTrueType(url);
+            } else if (FONT_TYPE_1 == fontType) {
+                fontFile = new ZFontType1(url);
             }
-        } else if (FONT_TYPE_0 == fontType) {
-//            fontClass = Class.forName(NFONT_TRUE_TYPE_0);
-        } else if (FONT_TYPE_1 == fontType) {
-//            fontClass = Class.forName(NFONT_TRUE_TYPE_1);
-        } else if (FONT_TYPE_3 == fontType) {
-//            fontClass = Class.forName(NFONT_TRUE_TYPE_3);
+        } catch (IOException e) {
+            // logging and error handling needs to be addressed
+            e.printStackTrace();
         }
+        // todo, we may no longer needs this but no harm having it around for now.
         if (fontFile == null) {
             // see if the font file can be loaded with Java Fonts
             try {

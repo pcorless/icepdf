@@ -19,6 +19,7 @@ package org.icepdf.core.pobjects.fonts;
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.pobjects.fonts.ofont.CMap;
 import org.icepdf.core.util.Library;
 
 import java.util.HashMap;
@@ -135,6 +136,8 @@ public abstract class Font extends Dictionary {
     // the encoding name associated with font.
     protected Name encodingName;
 
+    protected CMap toUnicodeCMap;
+
     /**
      * <p>Indicates that the font used to render this String object is in the
      * Simple Font family and thus each glyph is represented by one byte.</p>
@@ -171,7 +174,6 @@ public abstract class Font extends Dictionary {
     protected boolean isVerticalWriting;
 
     // font substitution being used
-    // todo consider renaming isFontSubstitution to isEmbedded?
     protected boolean isFontSubstitution;
 
     // parent resource, needed by some type3 fonts to access resources.
