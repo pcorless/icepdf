@@ -44,19 +44,9 @@ public class ZFontType1C extends ZSimpleFont {
     }
 
     private ZFontType1C(ZFontType1C font) {
+        super(font);
         this.cffType1Font = font.cffType1Font;
         this.fontBoxFont = this.cffType1Font;
-        this.encoding = font.encoding;
-        this.toUnicode = font.toUnicode;
-        this.missingWidth = font.missingWidth;
-        this.firstCh = font.firstCh;
-        this.ascent = font.ascent;
-        this.descent = font.descent;
-        this.bbox = font.bbox;
-        this.widths = font.widths;
-        this.cMap = font.cMap;
-        this.size = font.size;
-//        this.maxCharBounds = font.maxCharBounds;
     }
 
     @Override

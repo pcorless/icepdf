@@ -61,6 +61,7 @@ public class ZFontType0 extends ZSimpleFont {
     }
 
     private ZFontType0(ZFontType0 font) {
+        super(font);
         this.cidFont = font.cidFont;
         this.t1Font = font.t1Font;
         if (t1Font != null) {
@@ -68,17 +69,6 @@ public class ZFontType0 extends ZSimpleFont {
         } else {
             this.fontBoxFont = font.cidFont;
         }
-        // todo clean up as this really isn't a simple font.
-        this.encoding = font.encoding;
-        this.toUnicode = font.toUnicode;
-        this.missingWidth = font.missingWidth;
-        this.firstCh = font.firstCh;
-        this.ascent = font.ascent;
-        this.descent = font.descent;
-        this.bbox = font.bbox;
-        this.widths = font.widths;
-        this.cMap = font.cMap;
-//        this.maxCharBounds = font.maxCharBounds;
     }
 
     @Override

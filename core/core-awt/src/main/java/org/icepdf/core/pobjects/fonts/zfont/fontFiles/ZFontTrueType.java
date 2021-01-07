@@ -63,23 +63,12 @@ public class ZFontTrueType extends ZSimpleFont {
     }
 
     private ZFontTrueType(ZFontTrueType font) {
+        super(font);
         this.trueTypeFont = font.trueTypeFont;
         this.fontBoxFont = this.trueTypeFont;
-        this.encoding = font.encoding;
-        this.toUnicode = font.toUnicode;
-        this.missingWidth = font.missingWidth;
-        this.firstCh = font.firstCh;
-        this.ascent = font.ascent;
-        this.descent = font.descent;
-        this.bbox = font.bbox;
-        this.widths = font.widths;
-        this.cMap = font.cMap;
-        this.size = font.size;
-        this.source = font.source;
         this.cmapWinUnicode = font.cmapWinUnicode;
         this.cmapWinSymbol = font.cmapWinSymbol;
         this.cmapMacRoman = font.cmapMacRoman;
-//        this.maxCharBounds = font.maxCharBounds;
     }
 
     @Override
@@ -245,8 +234,7 @@ public class ZFontTrueType extends ZSimpleFont {
     public int codeToGID(int code) {
         int gid = 0;
         try {
-            // todo clean up this is setup for font substitution not an embedded font
-            if (true) {//!isSymbolic()) {
+            if (cmapWinSymbol == null) {
                 String name = encoding != null ? encoding.getName(code) : ".notdef";  // todo fix hack
                 if (".notdef".equals(name)) {
                     return cmapWinUnicode.getGlyphId(code); // null
@@ -276,24 +264,22 @@ public class ZFontTrueType extends ZSimpleFont {
             // symbolic
             else {
                 // (3, 0) - (Windows, Symbol)
-                if (cmapWinSymbol != null) {
-                    gid = cmapWinSymbol.getGlyphId(code);
-                    if (code >= 0 && code <= 0xFF) {
-                        // the CMap may use one of the following code ranges,
-                        // so that we have to add the high byte to get the
-                        // mapped value
-                        if (gid == 0) {
-                            // F000 - F0FF
-                            gid = cmapWinSymbol.getGlyphId(code + START_RANGE_F000);
-                        }
-                        if (gid == 0) {
-                            // F100 - F1FF
-                            gid = cmapWinSymbol.getGlyphId(code + START_RANGE_F100);
-                        }
-                        if (gid == 0) {
-                            // F200 - F2FF
-                            gid = cmapWinSymbol.getGlyphId(code + START_RANGE_F200);
-                        }
+                gid = cmapWinSymbol.getGlyphId(code);
+                if (code >= 0 && code <= 0xFF) {
+                    // the CMap may use one of the following code ranges,
+                    // so that we have to add the high byte to get the
+                    // mapped value
+                    if (gid == 0) {
+                        // F000 - F0FF
+                        gid = cmapWinSymbol.getGlyphId(code + START_RANGE_F000);
+                    }
+                    if (gid == 0) {
+                        // F100 - F1FF
+                        gid = cmapWinSymbol.getGlyphId(code + START_RANGE_F100);
+                    }
+                    if (gid == 0) {
+                        // F200 - F2FF
+                        gid = cmapWinSymbol.getGlyphId(code + START_RANGE_F200);
                     }
                 }
 
@@ -303,17 +289,17 @@ public class ZFontTrueType extends ZSimpleFont {
                 }
 
                 // PDFBOX-3965: fallback for font has that the symbol flag but isn't
-                //            if (gid == 0 && cmapWinUnicode != null && encoding != null) {
-                //                String name = encoding.getName(code);
-                //                if (".notdef".equals(name)) {
-                //                    return 0;
-                //                }
-                //                String unicode = GlyphList.getAdobeGlyphList().toUnicode(name);
-                //                if (unicode != null) {
-                //                    int uni = unicode.codePointAt(0);
-                //                    gid = cmapWinUnicode.getGlyphId(uni);
-                //                }
-                //            }
+                if (gid == 0 && cmapWinUnicode != null && encoding != null) {
+                    String name = encoding.getName(code);
+                    if (".notdef".equals(name)) {
+                        return 0;
+                    }
+                    String unicode = GlyphList.getAdobeGlyphList().toUnicode(name);
+                    if (unicode != null) {
+                        int uni = unicode.codePointAt(0);
+                        gid = cmapWinUnicode.getGlyphId(uni);
+                    }
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();

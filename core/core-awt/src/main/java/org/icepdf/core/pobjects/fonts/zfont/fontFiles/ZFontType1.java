@@ -66,19 +66,9 @@ public class ZFontType1 extends ZSimpleFont {
     }
 
     private ZFontType1(ZFontType1 font) {
+        super(font);
         this.type1Font = font.type1Font;
         this.fontBoxFont = this.type1Font;
-        this.encoding = font.encoding;
-        this.toUnicode = font.toUnicode;
-        this.missingWidth = font.missingWidth;
-        this.firstCh = font.firstCh;
-        this.ascent = font.ascent;
-        this.descent = font.descent;
-        this.widths = font.widths;
-        this.cMap = font.cMap;
-        this.bbox = font.bbox;
-        this.source = font.source;
-//        this.maxCharBounds = font.maxCharBounds;
     }
 
     @Override

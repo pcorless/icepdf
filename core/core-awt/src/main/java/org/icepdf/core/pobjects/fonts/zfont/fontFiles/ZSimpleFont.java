@@ -44,6 +44,8 @@ public abstract class ZSimpleFont implements FontFile {
     protected char[] cMap;
     protected CMap toUnicode;
 
+    protected Boolean isSymbolic;
+
     protected FontBoxFont fontBoxFont;
     protected URL source;
 
@@ -52,6 +54,26 @@ public abstract class ZSimpleFont implements FontFile {
     protected AffineTransform fontMatrix = new AffineTransform();
 
     // todo fontDamaged flags
+
+    protected ZSimpleFont() {
+
+    }
+
+    protected ZSimpleFont(ZSimpleFont font) {
+        this.encoding = font.encoding;
+        this.isSymbolic = font.isSymbolic;
+        this.toUnicode = font.toUnicode;
+        this.missingWidth = font.missingWidth;
+        this.firstCh = font.firstCh;
+        this.ascent = font.ascent;
+        this.descent = font.descent;
+        this.bbox = font.bbox;
+        this.widths = font.widths;
+        this.cMap = font.cMap;
+        this.size = font.size;
+        this.source = font.source;
+//        this.maxCharBounds = font.maxCharBounds;
+    }
 
     @Override
     public Point2D echarAdvance(final char ech) {
