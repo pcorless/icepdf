@@ -18,6 +18,7 @@ import java.awt.geom.Rectangle2D;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ZFontType2 extends ZSimpleFont {
@@ -45,10 +46,11 @@ public class ZFontType2 extends ZSimpleFont {
 //                fontIsDamaged = true;
 //                LOG.warn("Found CFF/OTF but expected embedded TTF font " + fd.getFontName());
 //            }
-        } catch (NullPointerException | IOException e) {
+        } catch (Throwable e) {
 //            // NPE due to TTF parser being buggy
 //            fontIsDamaged = true;
 //            LOG.warn("Could not read embedded OTF for font " + getBaseFont(), e);
+            logger.log(Level.SEVERE, "Could not initialize type2 font", e);
         }
     }
 
@@ -56,18 +58,23 @@ public class ZFontType2 extends ZSimpleFont {
         super(font);
         this.trueTypeFont = font.trueTypeFont;
         this.fontBoxFont = this.trueTypeFont;
+        this.fontMatrix = convertFontMatrix(fontBoxFont);
     }
 
     @Override
     public Point2D echarAdvance(char ech) {
+        // todo, needs som more work.
+        float advance = defaultWidth;
         if (encoding != null) {
             return super.echarAdvance(ech);
-        } else if (widths != null) {
-            float advance = widths[ech] * 0.001f;
+        } else if (widths != null && ech < widths.length) {
+//            advance = widths[ech];
+//            advance = advance * (float) fontTransform.getScaleX() ;
+            advance = widths[ech] * 0.001f;
             advance = advance * size;//* (float) fontMatrix.getScaleX();
             return new Point2D.Float(advance, 0);
         } else {
-            return new Point2D.Float(0.001f, 0);
+            return new Point2D.Float(advance, 0);
         }
     }
 
@@ -88,7 +95,7 @@ public class ZFontType2 extends ZSimpleFont {
 
             // clean up,  not very efficient
             g.translate(x, y);
-            g.transform(this.fontMatrix);
+            g.transform(this.fontTransform);
 
             if (TextState.MODE_FILL == mode || TextState.MODE_FILL_STROKE == mode ||
                     TextState.MODE_FILL_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
@@ -113,30 +120,22 @@ public class ZFontType2 extends ZSimpleFont {
         ZFontType2 font = (ZFontType2) deriveFont(size);
         if (widths != null) {
             font.widths = widths;
-        } else {
-
+            font.defaultWidth = defaultWidth;
         }
-
         return font;
     }
 
     @Override
     public FontFile deriveFont(AffineTransform at) {
         ZFontType2 font = new ZFontType2(this);
-        font.fontMatrix = convertFontMatrix(trueTypeFont);
-        font.fontMatrix.concatenate(at);
-        font.fontMatrix.scale(font.size, -font.size);
-//        font.maxCharBounds = this.maxCharBounds;
+        font.setFontTransform(at);
         return font;
     }
 
     @Override
-    public FontFile deriveFont(float pointsize) {
+    public FontFile deriveFont(float pointSize) {
         ZFontType2 font = new ZFontType2(this);
-        font.fontMatrix = convertFontMatrix(trueTypeFont);
-        font.fontMatrix.scale(pointsize, -pointsize);
-        font.size = pointsize;
-//        font.maxCharBounds = this.maxCharBounds;
+        font.setPointSize(pointSize);
         return font;
     }
 

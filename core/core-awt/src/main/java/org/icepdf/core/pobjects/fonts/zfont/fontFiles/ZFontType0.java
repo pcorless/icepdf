@@ -69,24 +69,17 @@ public class ZFontType0 extends ZSimpleFont {
         } else {
             this.fontBoxFont = font.cidFont;
         }
+        this.fontMatrix = convertFontMatrix(fontBoxFont);
     }
 
     @Override
     public Point2D echarAdvance(char ech) {
-
-        float advance = 0;
+        float advance = defaultWidth;
         if (widths != null && ech < widths.length) {
             advance = widths[ech];
         }
-        advance = advance * size * (float) fontMatrix.getScaleX();
+        advance = advance * (float) fontTransform.getScaleX();
         return new Point2D.Float(advance, 0);
-//        return super.echarAdvance(ech);
-//        this.fontBoxFont.getWidth()
-//        if (t1Font != null) {
-//            t1Font.getWidth()
-//        } else {
-//            this.fontBoxFont = font.cidFont;
-//        }
     }
 
     @Override
@@ -105,7 +98,7 @@ public class ZFontType0 extends ZSimpleFont {
 
             // clean up,  not very efficient
             g.translate(x, y);
-            g.transform(this.fontMatrix);
+            g.transform(this.fontTransform);
 
             if (TextState.MODE_FILL == mode || TextState.MODE_FILL_STROKE == mode ||
                     TextState.MODE_FILL_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
@@ -126,10 +119,8 @@ public class ZFontType0 extends ZSimpleFont {
         ZFontType0 font = (ZFontType0) deriveFont(size);
         if (widths != null) {
             font.widths = widths;
-        } else {
-
+            font.defaultWidth = defaultWidth;
         }
-
         return font;
     }
 
@@ -150,9 +141,18 @@ public class ZFontType0 extends ZSimpleFont {
     public FontFile deriveFont(AffineTransform at) {
         if (cidFont != null) {
             ZFontType0 font = new ZFontType0(this);
-            font.fontMatrix = convertFontMatrix(cidFont);
-            font.fontMatrix.concatenate(at);
-            font.fontMatrix.scale(font.size, -font.size);
+            font.setFontTransform(at);
+            return font;
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public FontFile deriveFont(float pointSize) {
+        if (cidFont != null) {
+            ZFontType0 font = new ZFontType0(this);
+            font.setPointSize(pointSize);
             return font;
         } else {
             return null;
@@ -240,19 +240,6 @@ public class ZFontType0 extends ZSimpleFont {
     @Override
     public String getName() {
         return getFamily();
-    }
-
-    @Override
-    public FontFile deriveFont(float pointsize) {
-        if (cidFont != null) {
-            ZFontType0 font = new ZFontType0(this);
-            font.fontMatrix = convertFontMatrix(cidFont);
-            font.fontMatrix.scale(pointsize, -pointsize);
-            //        font.maxCharBounds = this.maxCharBounds;
-            return font;
-        } else {
-            return null;
-        }
     }
 
     /**

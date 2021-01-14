@@ -47,6 +47,7 @@ public class ZFontType1C extends ZSimpleFont {
         super(font);
         this.cffType1Font = font.cffType1Font;
         this.fontBoxFont = this.cffType1Font;
+        this.fontMatrix = convertFontMatrix(fontBoxFont);
     }
 
     @Override
@@ -62,10 +63,14 @@ public class ZFontType1C extends ZSimpleFont {
     @Override
     public FontFile deriveFont(AffineTransform at) {
         ZFontType1C font = new ZFontType1C(this);
-        font.fontMatrix = convertFontMatrix(cffType1Font);
-        font.fontMatrix.concatenate(at);
-        font.fontMatrix.scale(font.size, -font.size);
-//        font.maxCharBounds = this.maxCharBounds;
+        font.setFontTransform(at);
+        return font;
+    }
+
+    @Override
+    public FontFile deriveFont(float pointSize) {
+        ZFontType1C font = new ZFontType1C(this);
+        font.setPointSize(pointSize);
         return font;
     }
 
@@ -121,16 +126,6 @@ public class ZFontType1C extends ZSimpleFont {
     @Override
     public String getName() {
         return cffType1Font.getName();
-    }
-
-    @Override
-    public FontFile deriveFont(float pointsize) {
-        ZFontType1C font = new ZFontType1C(this);
-        font.fontMatrix = convertFontMatrix(cffType1Font);
-        font.fontMatrix.scale(pointsize, -pointsize);
-        font.size = pointsize;
-//        font.maxCharBounds = this.maxCharBounds;
-        return font;
     }
 
     private class FontFileByteSource implements CFFParser.ByteSource {

@@ -178,10 +178,12 @@ public abstract class CompositeFont extends Font {
             currentNext = widths.get(i + 1);
             if (currentNext instanceof ArrayList) {
                 ArrayList widths2 = (ArrayList) currentNext;
-                maxGlph = current + widths2.size();
+                int newMax = current + widths2.size();
+                maxGlph = Math.max(newMax, maxGlph);
                 i++;
             } else if (currentNext instanceof Number) {
-                maxGlph = ((Number) currentNext).intValue();
+                int newMax = ((Number) currentNext).intValue();
+                maxGlph = Math.max(newMax, maxGlph);
                 i += 2;
             }
         }

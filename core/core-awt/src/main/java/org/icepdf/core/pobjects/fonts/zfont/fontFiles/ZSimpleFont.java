@@ -39,6 +39,9 @@ public abstract class ZSimpleFont implements FontFile {
     protected float descent;
     protected Rectangle2D bbox = new Rectangle2D.Double(0.0, 0.0, 1.0, 1.0);
 
+    // cid specific, todo new subclass if we get a few more?
+    protected float defaultWidth;
+
     // Why have one encoding when you can three.
     protected Encoding encoding;
     protected char[] cMap;
@@ -52,6 +55,8 @@ public abstract class ZSimpleFont implements FontFile {
     // PDF specific size and text state transform
     protected float size = 1.0f;
     protected AffineTransform fontMatrix = new AffineTransform();
+    protected AffineTransform fontTransform = new AffineTransform();
+    protected AffineTransform gsTransform = new AffineTransform();
 
     // todo fontDamaged flags
 
@@ -72,7 +77,8 @@ public abstract class ZSimpleFont implements FontFile {
         this.cMap = font.cMap;
         this.size = font.size;
         this.source = font.source;
-//        this.maxCharBounds = font.maxCharBounds;
+        this.fontMatrix = font.fontMatrix;
+        this.fontTransform = font.fontTransform;
     }
 
     @Override
@@ -82,21 +88,19 @@ public abstract class ZSimpleFont implements FontFile {
             float advance = 0.001f; // todo should be DW.
             if (name != null) {
                 advance = fontBoxFont.getWidth(name);
-            } else {
-                advance = widths[ech];//* 0.001f
             }
             // widths uses original cid's.
             if (widths != null && ech - firstCh >= 0 && ech - firstCh < widths.length) {
                 float width = widths[ech - firstCh];
-                AffineTransform fontMatrix = convertFontMatrix(fontBoxFont);
-                advance = width / (float) fontMatrix.getScaleX();
+                if (width > 0) {
+                    advance = width / (float) fontMatrix.getScaleX();
+                }
             }
             // find any widths in the font descriptor
             else if (missingWidth > 0) {
-                AffineTransform fontMatrix = convertFontMatrix(fontBoxFont);
-                advance = missingWidth / (float) fontMatrix.getScaleX();
+                advance = missingWidth / (float) fontTransform.getScaleX();
             }
-            advance = advance * (float) fontMatrix.getScaleX();
+            advance = advance * (float) fontTransform.getScaleX();
 
             return new Point2D.Float(advance, 0);
         } catch (IOException e) {
@@ -119,7 +123,7 @@ public abstract class ZSimpleFont implements FontFile {
 
             // clean up,  not very efficient
             g.translate(x, y);
-            g.transform(this.fontMatrix);
+            g.transform(this.fontTransform);
 
             if (TextState.MODE_FILL == mode || TextState.MODE_FILL_STROKE == mode ||
                     TextState.MODE_FILL_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
@@ -244,6 +248,20 @@ public abstract class ZSimpleFont implements FontFile {
 
     }
 
+    protected void setFontTransform(AffineTransform at) {
+        gsTransform = new AffineTransform(at);
+        fontTransform = new AffineTransform(fontMatrix);
+        fontTransform.concatenate(at);
+        fontTransform.scale(size, -size);
+    }
+
+    protected void setPointSize(float pointSize) {
+        fontTransform = new AffineTransform(fontMatrix);
+        fontTransform.concatenate(gsTransform);
+        fontTransform.scale(pointSize, -pointSize);
+        size = pointSize;
+    }
+
     protected char getCharDiff(char character) {
         if (cMap != null && character < cMap.length) {
             return cMap[character];
@@ -256,6 +274,7 @@ public abstract class ZSimpleFont implements FontFile {
         if (bbox != null) {
             double scaleX = 0.001 / fontMatrix.getScaleX();
             double scaleY = 0.001 / fontMatrix.getScaleY();
+
             return new Rectangle2D.Double(
                     bbox.getX() * scaleX,
                     bbox.getY() * scaleY,
@@ -271,7 +290,7 @@ public abstract class ZSimpleFont implements FontFile {
             return new AffineTransform(matrix.get(0).floatValue(), matrix.get(1).floatValue(),
                     matrix.get(2).floatValue(), matrix.get(3).floatValue(),
                     matrix.get(4).floatValue(), matrix.get(5).floatValue());
-        } catch (IOException e) {
+        } catch (Throwable e) {
             logger.log(Level.WARNING, "Could not convert font matrix ", e);
         }
         return new AffineTransform(0.001f, 0, 0, -0.001f, 0, 0);

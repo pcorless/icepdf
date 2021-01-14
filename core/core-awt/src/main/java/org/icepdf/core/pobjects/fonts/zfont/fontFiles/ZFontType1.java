@@ -69,6 +69,7 @@ public class ZFontType1 extends ZSimpleFont {
         super(font);
         this.type1Font = font.type1Font;
         this.fontBoxFont = this.type1Font;
+        this.fontMatrix = convertFontMatrix(fontBoxFont);
     }
 
     @Override
@@ -84,12 +85,17 @@ public class ZFontType1 extends ZSimpleFont {
     @Override
     public FontFile deriveFont(AffineTransform at) {
         ZFontType1 font = new ZFontType1(this);
-        font.fontMatrix = convertFontMatrix(type1Font);
-        font.fontMatrix.concatenate(at);
-        font.fontMatrix.scale(font.size, -font.size);
-//        font.maxCharBounds = this.maxCharBounds;
+        font.setFontTransform(at);
         return font;
     }
+
+    @Override
+    public FontFile deriveFont(float pointSize) {
+        ZFontType1 font = new ZFontType1(this);
+        font.setPointSize(pointSize);
+        return font;
+    }
+
 
     @Override
     public FontFile deriveFont(Encoding encoding, CMap toUnicode) {
@@ -142,15 +148,6 @@ public class ZFontType1 extends ZSimpleFont {
     @Override
     public String getName() {
         return type1Font.getName();
-    }
-
-    @Override
-    public FontFile deriveFont(float pointsize) {
-        ZFontType1 font = new ZFontType1(this);
-        font.fontMatrix = convertFontMatrix(type1Font);
-        font.fontMatrix.scale(pointsize, -pointsize);
-//        font.maxCharBounds = this.maxCharBounds;
-        return font;
     }
 
     /**

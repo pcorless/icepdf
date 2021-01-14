@@ -19,10 +19,12 @@ public class TypeCidType0Font extends CompositeFont {
 
     protected void parseWidths() {
         super.parseWidths();
-        if (widths != null || defaultWidth > -1) {
-            font = ((ZFontType0) font).deriveFont(defaultWidth, widths);
-        } else {
-            font = ((ZFontType0) font).deriveFont(1000, null);
+        if (font instanceof ZFontType0) {
+            if (widths != null || defaultWidth > -1) {
+                font = ((ZFontType0) font).deriveFont(defaultWidth, widths);
+            } else {
+                font = ((ZFontType0) font).deriveFont(1000, null);
+            }
         }
     }
 

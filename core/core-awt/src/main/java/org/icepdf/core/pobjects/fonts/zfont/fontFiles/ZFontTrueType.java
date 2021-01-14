@@ -69,6 +69,8 @@ public class ZFontTrueType extends ZSimpleFont {
         this.cmapWinUnicode = font.cmapWinUnicode;
         this.cmapWinSymbol = font.cmapWinSymbol;
         this.cmapMacRoman = font.cmapMacRoman;
+        this.fontTransform = font.fontTransform;
+        this.fontMatrix = convertFontMatrix(fontBoxFont);
     }
 
     @Override
@@ -100,7 +102,7 @@ public class ZFontTrueType extends ZSimpleFont {
 
             // clean up,  not very efficient
             g.translate(x, y);
-            g.transform(this.fontMatrix);
+            g.transform(this.fontTransform);
 
             if (TextState.MODE_FILL == mode || TextState.MODE_FILL_STROKE == mode ||
                     TextState.MODE_FILL_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
@@ -135,20 +137,14 @@ public class ZFontTrueType extends ZSimpleFont {
     @Override
     public FontFile deriveFont(AffineTransform at) {
         ZFontTrueType font = new ZFontTrueType(this);
-        font.fontMatrix = convertFontMatrix(trueTypeFont);
-        font.fontMatrix.concatenate(at);
-        font.fontMatrix.scale(font.size, -font.size);
-//        font.maxCharBounds = this.maxCharBounds;
+        font.setFontTransform(at);
         return font;
     }
 
     @Override
-    public FontFile deriveFont(float pointsize) {
+    public FontFile deriveFont(float pointSize) {
         ZFontTrueType font = new ZFontTrueType(this);
-        font.fontMatrix = convertFontMatrix(trueTypeFont);
-        font.fontMatrix.scale(pointsize, -pointsize);
-        font.size = pointsize;
-//        font.maxCharBounds = this.maxCharBounds;
+        font.setPointSize(pointSize);
         return font;
     }
 
