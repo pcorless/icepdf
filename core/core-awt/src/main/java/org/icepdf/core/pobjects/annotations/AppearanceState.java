@@ -19,8 +19,7 @@ import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.content.ContentParser;
-import org.icepdf.core.util.content.ContentParserFactory;
+import org.icepdf.core.util.parser.content.ContentParser;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
@@ -77,8 +76,7 @@ public class AppearanceState extends Dictionary {
             matrix = new AffineTransform();
             originalContentStream = new String(stream.getDecodedStreamBytes());
             try {
-                ContentParser cp = ContentParserFactory.getInstance()
-                        .getContentParser(library, resources);
+                ContentParser cp = new ContentParser(library, resources);
                 shapes = cp.parse(new byte[][]{stream.getDecodedStreamBytes()}, null).getShapes();
             } catch (Exception e) {
                 shapes = new Shapes();
@@ -139,8 +137,7 @@ public class AppearanceState extends Dictionary {
 
     public void setContentStream(byte[] contentBytes){
         try {
-            ContentParser cp = ContentParserFactory.getInstance()
-                    .getContentParser(library, resources);
+            ContentParser cp = new ContentParser(library, resources);
             shapes = cp.parse(new byte[][]{contentBytes}, null).getShapes();
         } catch (Exception e) {
             shapes = new Shapes();
