@@ -23,7 +23,7 @@ public class ZFontType1C extends ZSimpleFont {
 
     private CFFType1Font cffType1Font;
 
-    public ZFontType1C(Stream fontStream) {
+    public ZFontType1C(Stream fontStream) throws Exception {
         try {
             byte[] fontBytes = fontStream.getDecodedStreamBytes();
             try {
@@ -40,6 +40,7 @@ public class ZFontType1C extends ZSimpleFont {
 
         } catch (Throwable e) {
             logger.log(Level.FINE, "Error reading font file with ", e);
+            throw new Exception(e);
         }
     }
 

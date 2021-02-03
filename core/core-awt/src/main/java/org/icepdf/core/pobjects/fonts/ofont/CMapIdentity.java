@@ -14,10 +14,6 @@ class CMapIdentity extends CMap {
         return ech;
     }
 
-    public String fromSelector(String str) {
-        return str;
-    }
-
     public char fromSelector(char ech) {
         return ech;
     }

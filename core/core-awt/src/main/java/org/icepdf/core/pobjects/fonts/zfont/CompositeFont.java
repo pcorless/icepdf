@@ -3,18 +3,17 @@ package org.icepdf.core.pobjects.fonts.zfont;
 import org.apache.fontbox.util.BoundingBox;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.StringObject;
-import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
+import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType2;
 import org.icepdf.core.util.Library;
 
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class CompositeFont extends Font {
+public abstract class CompositeFont extends SimpleFont {
 
     public static final Name CID_SYSTEM_INFO_KEY = new Name("CIDSystemInfo");
     public static final Name CID_TO_GID_MAP_KEY = new Name("CIDToGIDMap");
@@ -28,12 +27,7 @@ public abstract class CompositeFont extends Font {
     protected String ordering;
 
     protected final Map<Integer, Float> glyphHeights = new HashMap<>();
-    //    private final boolean isEmbedded;
-//    private final boolean isDamaged;
-    protected AffineTransform fontMatrix;
-    protected Float avgWidth = null;
     protected BoundingBox fontBBox;
-//    private int[] cid2gid = null;
 
     protected float defaultWidth = -1;
     protected float[] widths = null;
@@ -50,6 +44,7 @@ public abstract class CompositeFont extends Font {
         }
         // todo pull from simple and put in font.
         parseFontDescriptor();
+        findFontIfNotEmbedded();
         parseCidSystemInfo();
         parseWidths();
     }
@@ -93,6 +88,7 @@ public abstract class CompositeFont extends Font {
                 // might be a font loading error a we need check normal system fonts too
                 else if (ordering.startsWith("Identity")) {
                     font = fontManager.getInstance(basefont, fontFlags);
+                    font = new ZFontType2((ZFontTrueType) font);
                 }
                 // fallback traditional Chinese.
                 else {
@@ -115,7 +111,7 @@ public abstract class CompositeFont extends Font {
                     // (available from the ASN Web site; see the Bibliography).
 
                     // todo complete font cid setup.
-//                    CMap ucs2CMap = CMap.getInstance(ucs2CMapName);
+//                    CMap ucs2CMap = CMap.getInstance(new Name(ucs2CMapName));
                     // e) Map the CID obtained in step (a) according to the CMap
                     // obtained in step (d), producing a Unicode value.
 //                    toUnicodeCMap = ucs2CMap;
@@ -162,7 +158,6 @@ public abstract class CompositeFont extends Font {
             float ascent = fontDescriptor.getAscent() / 1000f;
             float descent = fontDescriptor.getDescent() / 1000f;
             Rectangle2D bbox = fontDescriptor.getFontBBox();
-            float[] widths = null;
             font = font.deriveFont(widths, firstchar, missingWidth, ascent, descent, bbox, null);
         }
 
@@ -190,4 +185,8 @@ public abstract class CompositeFont extends Font {
         return maxGlph + 1;
     }
 
+
+    public BoundingBox getFontBBox() {
+        return fontBBox;
+    }
 }

@@ -28,7 +28,7 @@ public class ZFontType1 extends ZSimpleFont {
     private Type1Font type1Font;
 
     // todo credit pdfbox for stream correction code
-    public ZFontType1(Stream fontStream) {
+    public ZFontType1(Stream fontStream) throws Exception {
         try {
             // add length correction code
             int length1 = fontStream.getInt(new Name("Length1"));
@@ -55,6 +55,7 @@ public class ZFontType1 extends ZSimpleFont {
             fontBoxFont = type1Font;
         } catch (Throwable e) {
             logger.log(Level.FINE, "Error reading font file with ", e);
+            throw new Exception(e);
         }
     }
 

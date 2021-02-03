@@ -1,5 +1,6 @@
 package org.icepdf.core.pobjects.fonts.zfont.fontFiles;
 
+import org.apache.fontbox.cff.Type2CharString;
 import org.apache.fontbox.ttf.*;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.CMap;
@@ -23,7 +24,7 @@ import java.util.logging.Logger;
 public class ZFontTrueType extends ZSimpleFont {
 
     private static final Logger logger =
-            Logger.getLogger(ZFontType1C.class.toString());
+            Logger.getLogger(ZFontTrueType.class.toString());
 
     private static final int START_RANGE_F000 = 0xF000;
     private static final int START_RANGE_F100 = 0xF100;
@@ -33,18 +34,22 @@ public class ZFontTrueType extends ZSimpleFont {
     private CmapSubtable cmapWinSymbol;
     private CmapSubtable cmapMacRoman;
 
-    private TrueTypeFont trueTypeFont;
+    protected TrueTypeFont trueTypeFont;
 
-    public ZFontTrueType(URL url) throws IOException {
+    protected ZFontTrueType() {
+
+    }
+
+    public ZFontTrueType(URL url) throws Exception {
         this(url.openStream().readAllBytes());
         source = url;
     }
 
-    public ZFontTrueType(Stream fontStream) {
+    public ZFontTrueType(Stream fontStream) throws Exception {
         this(fontStream.getDecodedStreamBytes());
     }
 
-    public ZFontTrueType(byte[] fontBytes) {
+    public ZFontTrueType(byte[] fontBytes) throws Exception {
         try {
             if (fontBytes != null) {
                 TTFParser ttfParser = new TTFParser(true);
@@ -53,35 +58,35 @@ public class ZFontTrueType extends ZSimpleFont {
 
                 extractCmapTable();
             }
-        } catch (IOException e) {
-            logger.log(Level.FINE, "Error reading font file with ", e);
-//                fontIsDamaged = true;
         } catch (Throwable e) {
-            logger.log(Level.FINE, "Error reading font file with ", e);
+            logger.log(Level.WARNING, "Error reading font file with ", e);
+//                fontIsDamaged = true;
+            throw new Exception(e);
         }
-
     }
 
-    private ZFontTrueType(ZFontTrueType font) {
+    protected ZFontTrueType(ZFontTrueType font) {
         super(font);
         this.trueTypeFont = font.trueTypeFont;
         this.fontBoxFont = this.trueTypeFont;
         this.cmapWinUnicode = font.cmapWinUnicode;
         this.cmapWinSymbol = font.cmapWinSymbol;
         this.cmapMacRoman = font.cmapMacRoman;
-        this.fontTransform = font.fontTransform;
         this.fontMatrix = convertFontMatrix(fontBoxFont);
     }
 
     @Override
     public Point2D echarAdvance(char ech) {
+        // todo need to work with the gid.....
         if (encoding != null) {
             return super.echarAdvance(ech);
         } else if (widths != null) {
-            float advance = widths[ech] * 0.001f;
+            // need to blow this out, lots of wrong
+            float advance = widths[ech] * 0.001f;// * (float) fontMatrix.getScaleX();
+            advance = (float) (advance * size * gsTransform.getScaleX());
             return new Point2D.Float(advance, 0);
         } else {
-            return new Point2D.Float(0.001f, 0);
+            return new Point2D.Float(1.0f, 0);
         }
     }
 
@@ -90,15 +95,23 @@ public class ZFontTrueType extends ZSimpleFont {
         try {
             AffineTransform af = g.getTransform();
             char echar = estr.charAt(0);
-            int gid = getCharToGid(echar);
-            GlyphData glyphData = trueTypeFont.getGlyph().getGlyph(gid);
+
             Shape outline;
-            if (glyphData == null) {
-                outline = new GeneralPath();
+            if (trueTypeFont instanceof OpenTypeFont) {
+                int cid = codeToGID(echar);
+                Type2CharString charstring = ((OpenTypeFont) trueTypeFont).getCFF().getFont().getType2CharString(cid);
+                outline = charstring.getPath();
             } else {
-                // must scaled by caller using FontMatrix
-                outline = glyphData.getPath();
+                int gid = getCharToGid(echar);
+                GlyphData glyphData = trueTypeFont.getGlyph().getGlyph(gid);
+                if (glyphData == null) {
+                    outline = new GeneralPath();
+                } else {
+                    // must scaled by caller using FontMatrix
+                    outline = glyphData.getPath();
+                }
             }
+
 
             // clean up,  not very efficient
             g.translate(x, y);
@@ -214,7 +227,7 @@ public class ZFontTrueType extends ZSimpleFont {
         return null;
     }
 
-    private int getCharToGid(char character) {
+    protected int getCharToGid(char character) {
 //        if (isType0CidSub) {
 //            // apply the typ0 encoding
 //            ech = type0Encoding.toSelector(ech);
@@ -231,7 +244,7 @@ public class ZFontTrueType extends ZSimpleFont {
         int gid = 0;
         try {
             if (cmapWinSymbol == null) {
-                String name = encoding != null ? encoding.getName(code) : ".notdef";  // todo fix hack
+                String name = encoding != null ? encoding.getName(code) : ".notdef2";  // todo fix hack
                 if (".notdef".equals(name)) {
                     return cmapWinUnicode.getGlyphId(code); // null
                 } else {
@@ -245,15 +258,15 @@ public class ZFontTrueType extends ZSimpleFont {
                     }
                     // (1, 0) - (Macintosh, Roman)
                     if (gid == 0 && cmapMacRoman != null) {
-                        return cmapMacRoman.getGlyphId(code);
-//                        int macCode = org.icepdf.core.pobjects.fonts.zfont.Encoding.macRomanEncoding.getChar(name);// INVERTED_MACOS_ROMAN.get(name);
-//                    if (macCode != null) {
-//                        gid = cmapMacRoman.getGlyphId(code);
-//                    }
+                        String macCode = GlyphList.getAdobeGlyphList().toUnicode(name);// INVERTED_MACOS_ROMAN.get(name);
+                        if (macCode != null) {
+                            int uni = macCode.codePointAt(0);
+                            gid = cmapMacRoman.getGlyphId(uni);
+                        }
                     }
                     // 'post' table
                     if (gid == 0) {
-                        gid = trueTypeFont.nameToGID(name);
+                        gid = code;//trueTypeFont.nameToGID(name);
                     }
                 }
             }
@@ -297,14 +310,14 @@ public class ZFontTrueType extends ZSimpleFont {
                     }
                 }
             }
-        } catch (IOException e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
 
         return gid;
     }
 
-    private void extractCmapTable() throws IOException {
+    protected void extractCmapTable() throws IOException {
         CmapTable cmapTable = trueTypeFont.getCmap();
         if (cmapTable != null) {
             // get all relevant "cmap" subtables

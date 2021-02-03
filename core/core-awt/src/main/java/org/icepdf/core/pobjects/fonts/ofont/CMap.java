@@ -23,6 +23,7 @@ import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.util.Parser;
 import org.icepdf.core.util.Utils;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -105,7 +106,7 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
      * Defines the source character code range.  Source CMap references must
      * be in this range.
      */
-    private int[][] codeSpaceRange;
+    protected int[][] codeSpaceRange;
 
     // determine if cmap is using one or two byte character maps.
     private boolean oneByte;
@@ -170,7 +171,34 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
         this.cMapInputStream = cMapInputStream;
     }
 
+    public CMap(int[] cidToGidMap) {
+        codeSpaceRange = new int[1][];
+        codeSpaceRange[0] = cidToGidMap;
+    }
+
     public CMap() {
+    }
+
+    public static int[] parseCidToGidMap(Stream cMapStream) {
+        try (ByteArrayInputStream cidStream = cMapStream.getDecodedByteArrayInputStream()) {
+            int character = 0;
+            int i = 0;
+            int length = cidStream.available() / 2;
+            int[] cidToGid = new int[length];
+            // parse the cidToGid stream out, arranging the high bit,
+            // each character position that has a value > 0 is a valid
+            // entry in the CFF.
+            while (character != -1 && i < length) {
+                character = cidStream.read();
+                character = (char) ((character << 8) | cidStream.read());
+                cidToGid[i] = (char) character;
+                i++;
+            }
+            return cidToGid;
+        } catch (IOException e) {
+            logger.log(Level.FINE, "Error reading CIDToGIDMap Stream.", e);
+        }
+        return null;
     }
 
     public static CMap getInstance(Name name) {
@@ -560,9 +588,14 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
         return charMap;
     }
 
-    // todo isCFF probably not needed anymore if we know encoding?
+    // todo isCFF probably not needed anymore if we know encoding or can do reverse then toSelector?
     public char toSelector(char charMap, boolean isCFF) {
         return toSelector(charMap);
+    }
+
+    public char fromSelector(char ch) {
+        // todo should be pulling from map but in reverse
+        return ch;
     }
 
     /**

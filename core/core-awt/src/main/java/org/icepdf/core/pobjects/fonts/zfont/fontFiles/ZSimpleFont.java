@@ -77,8 +77,9 @@ public abstract class ZSimpleFont implements FontFile {
         this.cMap = font.cMap;
         this.size = font.size;
         this.source = font.source;
-        this.fontMatrix = font.fontMatrix;
-        this.fontTransform = font.fontTransform;
+        this.gsTransform = new AffineTransform(gsTransform);
+        this.fontMatrix = new AffineTransform(font.fontMatrix);
+        this.fontTransform = new AffineTransform(font.fontTransform);
     }
 
     @Override

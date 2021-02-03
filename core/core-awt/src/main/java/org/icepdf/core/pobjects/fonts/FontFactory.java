@@ -133,21 +133,26 @@ public class FontFactory {
     //  as it would onlys setup encoding, widths and sizes as needed. food for thought
     public FontFile createFontFile(Stream fontStream, int fontType, Name fontSubType) {
         FontFile fontFile = null;
-        if (FONT_OPEN_TYPE == fontType) {
-
-        } else if (FONT_TRUE_TYPE == fontType) {
-            fontFile = new ZFontTrueType(fontStream);
-        } else if (FONT_TYPE_1 == fontType) {
-            fontFile = new ZFontType1(fontStream);
-        } else if (FONT_TYPE_1C == fontType) {
-            fontFile = new ZFontType1C(fontStream);
-        } else if (FONT_CID_TYPE_0 == fontType) {
-            fontFile = new ZFontType0(fontStream);
-        } else if (FONT_CID_TYPE_0C == fontType || FONT_CID_TYPE_1C == fontType) {
-            fontFile = new ZFontType0(fontStream);
-        } else if (FONT_CID_TYPE_2 == fontType) {
-            fontFile = new ZFontType2(fontStream);
+        try {
+            if (FONT_OPEN_TYPE == fontType) {
+                fontFile = new ZFontOpenType(fontStream);
+            } else if (FONT_TRUE_TYPE == fontType) {
+                fontFile = new ZFontTrueType(fontStream);
+            } else if (FONT_TYPE_1 == fontType) {
+                fontFile = new ZFontType1(fontStream);
+            } else if (FONT_TYPE_1C == fontType) {
+                fontFile = new ZFontType1C(fontStream);
+            } else if (FONT_CID_TYPE_0 == fontType) {
+                fontFile = new ZFontType0(fontStream);
+            } else if (FONT_CID_TYPE_0C == fontType || FONT_CID_TYPE_1C == fontType) {
+                fontFile = new ZFontType0(fontStream);
+            } else if (FONT_CID_TYPE_2 == fontType) {
+                fontFile = new ZFontType2(fontStream);
+            }
+        } catch (Throwable e) {
+            logger.log(Level.WARNING, "Error reading font file type " + FONT_OPEN_TYPE, e);
         }
+        // todo make a call about using the fontManager to load a substitution.
         if (fontFile == null && awtFontLoading) {
             // see if the font file can be loaded with Java Fonts
             InputStream in = null;
@@ -197,7 +202,7 @@ public class FontFactory {
             } else if (FONT_TYPE_1 == fontType) {
                 fontFile = new ZFontType1(url);
             }
-        } catch (IOException e) {
+        } catch (Throwable e) {
             // logging and error handling needs to be addressed
             e.printStackTrace();
         }

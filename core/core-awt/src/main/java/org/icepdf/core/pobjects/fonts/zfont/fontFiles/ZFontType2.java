@@ -21,24 +21,25 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ZFontType2 extends ZSimpleFont {
+public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
 
     private static final Logger logger =
             Logger.getLogger(ZFontType2.class.toString());
 
     private TrueTypeFont trueTypeFont;
 
-    // todo figure out how to translate this to cmap
-    private int[] cid2gid;
+    private CMap cid2gid;
 
     // todo credit pdfbox
-    public ZFontType2(Stream fontStream) {
+    public ZFontType2(Stream fontStream) throws Exception {
         try {
             byte[] fontBytes = fontStream.getDecodedStreamBytes();
             // embedded OTF or TTF
             OTFParser otfParser = new OTFParser(true);
             OpenTypeFont otf = otfParser.parse(new ByteArrayInputStream(fontBytes));
             trueTypeFont = otf;
+
+//            extractCmapTable();
 
 //            if (otf.isPostScript())
 //            {
@@ -49,9 +50,16 @@ public class ZFontType2 extends ZSimpleFont {
         } catch (Throwable e) {
 //            // NPE due to TTF parser being buggy
 //            fontIsDamaged = true;
-//            LOG.warn("Could not read embedded OTF for font " + getBaseFont(), e);
             logger.log(Level.SEVERE, "Could not initialize type2 font", e);
+            throw new Exception(e);
         }
+    }
+
+    public ZFontType2(ZFontTrueType font) {
+        super(font);
+        this.trueTypeFont = font.trueTypeFont;
+        this.fontBoxFont = this.trueTypeFont;
+        this.fontMatrix = convertFontMatrix(fontBoxFont);
     }
 
     private ZFontType2(ZFontType2 font) {
@@ -59,6 +67,7 @@ public class ZFontType2 extends ZSimpleFont {
         this.trueTypeFont = font.trueTypeFont;
         this.fontBoxFont = this.trueTypeFont;
         this.fontMatrix = convertFontMatrix(fontBoxFont);
+        this.cid2gid = font.cid2gid;
     }
 
     @Override
@@ -68,14 +77,21 @@ public class ZFontType2 extends ZSimpleFont {
         if (encoding != null) {
             return super.echarAdvance(ech);
         } else if (widths != null && ech < widths.length) {
-//            advance = widths[ech];
-//            advance = advance * (float) fontTransform.getScaleX() ;
-            advance = widths[ech] * 0.001f;
-            advance = advance * size;//* (float) fontMatrix.getScaleX();
-            return new Point2D.Float(advance, 0);
-        } else {
-            return new Point2D.Float(advance, 0);
+//            int gid = getCharToGid(ech);
+            float width = widths[ech];
+            if (width <= 1) {
+                advance = width;
+            } else {
+                advance = width * 0.001f;
+            }
         }
+        if (advance == 0) {
+            advance = 1.0f;
+        }
+
+        float x = advance * size;//* (float) gsTransform.getScaleX();
+        float y = advance * size;//* (float) gsTransform.getShearY();
+        return new Point2D.Float(x, y);
     }
 
     @Override
@@ -150,25 +166,19 @@ public class ZFontType2 extends ZSimpleFont {
     @Override
     public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
         ZFontType2 font = new ZFontType2(this);
-        font.missingWidth = this.missingWidth;
-        font.firstCh = firstCh;
-        font.ascent = ascent;
-        font.descent = descent;
-        font.widths = widths;
-        font.cMap = diff;
-        font.bbox = calculateBbox(bbox);
         return font;
     }
 
     @Override
     public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
         ZFontType2 font = new ZFontType2(this);
-        font.missingWidth = this.missingWidth;
-        font.firstCh = firstCh;
-        font.ascent = ascent;
-        font.descent = descent;
-        font.cMap = diff;
-        font.bbox = calculateBbox(bbox);
+        // todo widths array, have worked this inanother class, maybe not be applicable here?
+        return font;
+    }
+
+    public ZFontType2 deriveFont(CMap cid2gid, CMap toUnicode) {    // used by PDF Type 0
+        ZFontType2 font = new ZFontType2(this);
+        font.setCID(cid2gid, toUnicode);
         return font;
     }
 
@@ -205,6 +215,12 @@ public class ZFontType2 extends ZSimpleFont {
         return null;
     }
 
+    private void setCID(CMap cid, CMap uni) {
+        cid2gid = cid != null ? cid : null;//ur_.c2g_;
+//        touni_ = uni != null ? uni : /*c2g_==ur_.c2g_? CMap.IDENTITY:=>same as default*/ CMap.IDENTITY;
+//        spacech_ = Integer.MIN_VALUE;
+    }
+
     private int getCharToGid(char character) {
 //        if (isType0CidSub) {
 //            // apply the typ0 encoding
@@ -219,9 +235,13 @@ public class ZFontType2 extends ZSimpleFont {
     }
 
     public int codeToGID(int code) {
-
+        if (cid2gid != null) {
+            return cid2gid.toSelector((char) code);
+        }
+//        else {
+//            return super.codeToGID(code);
+//        }
         return code;
     }
-
 
 }

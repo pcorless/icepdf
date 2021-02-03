@@ -9,14 +9,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
-// todo
-public class Type0Font extends org.icepdf.core.pobjects.fonts.Font {
+public class Type0Font extends SimpleFont {
 
     private static final Logger logger =
             Logger.getLogger(SimpleFont.class.toString());
 
     public static final Name DESCENDANT_FONTS_KEY = new Name("DescendantFonts");
 
+    private CompositeFont descendantFont;
     private CMap cMap;
     private boolean isCMapPredefined;
 
@@ -37,16 +37,17 @@ public class Type0Font extends org.icepdf.core.pobjects.fonts.Font {
         }
 
         parseDescendantFont();
+        findFontIfNotEmbedded();
         parseEncoding();
 
         inited = true;
     }
 
-    private void parseEncoding() {
+    protected void parseEncoding() {
         Object encoding = library.getName(entries, ENCODING_KEY);
         if (encoding instanceof Name) {
             cMap = CMap.getInstance((Name) encoding);
-            // todo clean up encoding and fix fon substitution
+            // todo clean up encoding and fix font substitution
             font = font.deriveFont(null, cMap);
         }
         if (cMap != null) {
@@ -57,9 +58,9 @@ public class Type0Font extends org.icepdf.core.pobjects.fonts.Font {
     private void parseDescendantFont() {
         if (entries.containsKey(DESCENDANT_FONTS_KEY)) {
             Object descendant = library.getObject(entries, DESCENDANT_FONTS_KEY);
-            if (descendant != null && descendant instanceof List) {
+            if (descendant instanceof List) {
                 List descendantFonts = (List) descendant;
-                CompositeFont descendantFont = null;
+                descendantFont = null;
                 Object descendantFontObject = descendantFonts.get(0);
                 if (descendantFontObject instanceof Reference) {
                     Reference descendantFontReference = (Reference) descendantFontObject;
@@ -69,29 +70,9 @@ public class Type0Font extends org.icepdf.core.pobjects.fonts.Font {
                 }
 
                 if (descendantFont != null) {
-//                    if (toUnicodeCMap != null) {
-//                        descendantFont.toUnicodeCMap = toUnicodeCMap;
-//                    }
                     descendantFont.init();
                     font = descendantFont.getFont();
-//                    toUnicodeCMap = descendantFont.toUnicodeCMap;
-////                        charset = descendantFont.charset;
-//                    // we have a type0 cid font  which we need to setup some
-//                    // special mapping
-//                    if (descendantFont.isFontSubstitution &&
-//                            toUnicodeCMap != null &&
-//                            font instanceof ZFontTrueType) {
-//                        // get the encoding mapping
-//                        Object cmap = library.getObject(entries, ENCODING_KEY);
-//                        // try and load the cmap from the international jar.
-//                        if (cmap != null && cmap instanceof Name) {
-//                            CMap encodingCMap = CMap.getInstance(cmap.toString());
-//                            ((ZFontTrueType) font).applyCidCMap(encodingCMap);
-//                        }
-//                    }
-//                    if (!descendantFont.isFontSubstitution) {
-//                        isEmbedded = true;
-//                    }
+                    isFontSubstitution = descendantFont.isFontSubstitution() && font != null;
                 }
             }
         }

@@ -27,7 +27,7 @@ public class ZFontType0 extends ZSimpleFont {
     private FontBoxFont t1Font; // Top DICT that does not use CIDFont operators
 
     // todo credit pdfbox for stream correction code
-    public ZFontType0(Stream fontStream) {
+    public ZFontType0(Stream fontStream) throws Exception {
 
         byte[] fontBytes = fontStream.getDecodedStreamBytes();
         CFFFont cffFont = null;
@@ -43,6 +43,7 @@ public class ZFontType0 extends ZSimpleFont {
                 // todo throw exception so substitution kicks in.
                 logger.log(Level.WARNING, "Can't read the embedded CFF font ", e);
 //                fontIsDamaged = true;
+                throw new Exception(e);
             }
         }
 
@@ -75,11 +76,23 @@ public class ZFontType0 extends ZSimpleFont {
     @Override
     public Point2D echarAdvance(char ech) {
         float advance = defaultWidth;
-        if (widths != null && ech < widths.length) {
-            advance = widths[ech];
+        if (encoding != null) {
+            return super.echarAdvance(ech);
+        } else if (widths != null && ech < widths.length) {
+            float width = widths[ech];
+            if (width <= 1) {
+                advance = width;
+            } else {
+                advance = width * 0.001f;
+            }
         }
-        advance = advance * (float) fontTransform.getScaleX();
-        return new Point2D.Float(advance, 0);
+        if (advance == 0) {
+            advance = 1.0f;
+        }
+
+        float x = advance * size;//* (float) gsTransform.getScaleX();
+        float y = advance * size;//* (float) gsTransform.getShearY();
+        return new Point2D.Float(x, y);
     }
 
     @Override
@@ -139,69 +152,69 @@ public class ZFontType0 extends ZSimpleFont {
 
     @Override
     public FontFile deriveFont(AffineTransform at) {
-        if (cidFont != null) {
-            ZFontType0 font = new ZFontType0(this);
-            font.setFontTransform(at);
-            return font;
-        } else {
-            return null;
-        }
+//        if (cidFont != null) {
+        ZFontType0 font = new ZFontType0(this);
+        font.setFontTransform(at);
+        return font;
+//        } else {
+//            return this;
+//        }
     }
 
     @Override
     public FontFile deriveFont(float pointSize) {
-        if (cidFont != null) {
-            ZFontType0 font = new ZFontType0(this);
-            font.setPointSize(pointSize);
-            return font;
-        } else {
-            return null;
-        }
+//        if (cidFont != null) {
+        ZFontType0 font = new ZFontType0(this);
+        font.setPointSize(pointSize);
+        return font;
+//        } else {
+//            return this;
+//        }
     }
 
     @Override
     public FontFile deriveFont(Encoding encoding, CMap toUnicode) {
-        if (cidFont != null) {
-            ZFontType0 font = new ZFontType0(this);
-            font.encoding = encoding;
-            font.toUnicode = toUnicode;
-            return font;
-        } else {
-            return null;
-        }
+//        if (cidFont != null) {
+        ZFontType0 font = new ZFontType0(this);
+        font.encoding = encoding;
+        font.toUnicode = toUnicode;
+        return font;
+//        } else {
+//            return this;
+//        }
     }
 
     @Override
     public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
-        if (cidFont != null) {
-            ZFontType0 font = new ZFontType0(this);
-            font.missingWidth = this.missingWidth;
-            font.firstCh = firstCh;
-            font.ascent = ascent;
-            font.descent = descent;
-            font.widths = widths;
-            font.cMap = diff != null ? diff : font.cMap;
-            font.bbox = calculateBbox(bbox);
-            return font;
-        } else {
-            return null;
-        }
+//        if (cidFont != null) {
+        ZFontType0 font = new ZFontType0(this);
+        font.missingWidth = this.missingWidth;
+        font.firstCh = firstCh;
+        font.ascent = ascent;
+        font.descent = descent;
+        font.widths = widths;
+        font.cMap = diff != null ? diff : font.cMap;
+        font.bbox = calculateBbox(bbox);
+        return font;
+//        } else {
+//            return this;
+//        }
     }
 
     @Override
     public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
-        if (cidFont != null) {
-            ZFontType0 font = new ZFontType0(this);
-            font.missingWidth = this.missingWidth;
-            font.firstCh = firstCh;
-            font.ascent = ascent;
-            font.descent = descent;
-            font.cMap = diff;
-            font.bbox = calculateBbox(bbox);
-            return font;
-        } else {
-            return null;
-        }
+//        if (cidFont != null) {
+        ZFontType0 font = new ZFontType0(this);
+        font.missingWidth = this.missingWidth;
+        font.firstCh = firstCh;
+        font.ascent = ascent;
+        font.descent = descent;
+        font.cMap = diff;
+        font.bbox = calculateBbox(bbox);
+        return font;
+//        } else {
+//            return this;
+//        }
     }
 
     @Override

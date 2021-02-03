@@ -4,8 +4,13 @@ import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType0;
 import org.icepdf.core.util.Library;
 
 import java.util.HashMap;
+import java.util.logging.Logger;
 
 public class TypeCidType0Font extends CompositeFont {
+
+    private static final Logger logger =
+            Logger.getLogger(TypeCidType0Font.class.toString());
+
     public TypeCidType0Font(Library library, HashMap entries) {
         super(library, entries);
     }
@@ -13,7 +18,6 @@ public class TypeCidType0Font extends CompositeFont {
     @Override
     public void init() {
         super.init();
-        parseCidToGidMap();
         inited = true;
     }
 
@@ -25,14 +29,15 @@ public class TypeCidType0Font extends CompositeFont {
             } else {
                 font = ((ZFontType0) font).deriveFont(1000, null);
             }
+        } else {
+            // something bad happened font couldn't be loaded.
         }
     }
 
     protected void parseCidToGidMap() {
         Object gidMap = library.getObject(entries, CID_TO_GID_MAP_KEY);
-//        System.out.println();
-//        if (subtype.equals("CIDFontType0") && font instanceof ZFontOpenType && (isEmbedded || gidMap != null)) {
-//            font = ((ZFontOpenType) font).deriveFont(CMap.IDENTITY, toUnicodeCMap);
-//        }
+        if (gidMap != null) {
+            throw new IllegalStateException("CIDToGIDMap should not exist for TypeCidType0Font");
+        }
     }
 }
