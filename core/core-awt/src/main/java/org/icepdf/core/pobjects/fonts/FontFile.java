@@ -40,6 +40,8 @@ public interface FontFile {
 
     long LAYOUT_NONE = 0;
 
+    // todo do some refacotring of method name 'e' awlays seemed strange to me.
+
     Point2D echarAdvance(char ech);
 
     FontFile deriveFont(AffineTransform at);

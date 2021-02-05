@@ -30,26 +30,19 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
 
     private CMap cid2gid;
 
-    // todo credit pdfbox
     public ZFontType2(Stream fontStream) throws Exception {
         try {
             byte[] fontBytes = fontStream.getDecodedStreamBytes();
             // embedded OTF or TTF
             OTFParser otfParser = new OTFParser(true);
-            OpenTypeFont otf = otfParser.parse(new ByteArrayInputStream(fontBytes));
-            trueTypeFont = otf;
-
+            OpenTypeFont openTypeFont = otfParser.parse(new ByteArrayInputStream(fontBytes));
+            trueTypeFont = openTypeFont;
+            if (openTypeFont.isPostScript()) {
+                isDamaged = true;
+                logger.warning("Found CFF/OTF but expected embedded TTF font " + trueTypeFont.getName());
+            }
 //            extractCmapTable();
-
-//            if (otf.isPostScript())
-//            {
-//                // PDFBOX-3344 contains PostScript outlines instead of TrueType
-//                fontIsDamaged = true;
-//                LOG.warn("Found CFF/OTF but expected embedded TTF font " + fd.getFontName());
-//            }
         } catch (Throwable e) {
-//            // NPE due to TTF parser being buggy
-//            fontIsDamaged = true;
             logger.log(Level.SEVERE, "Could not initialize type2 font", e);
             throw new Exception(e);
         }

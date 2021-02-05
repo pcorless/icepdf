@@ -24,21 +24,15 @@ public class ZFontType1C extends ZSimpleFont {
     private CFFType1Font cffType1Font;
 
     public ZFontType1C(Stream fontStream) throws Exception {
+        byte[] fontBytes = fontStream.getDecodedStreamBytes();
         try {
-            byte[] fontBytes = fontStream.getDecodedStreamBytes();
-            try {
-                if (fontBytes != null) {
-                    // note: this could be an OpenType file, fortunately CFFParser can handle that
-                    CFFParser cffParser = new CFFParser();
-                    cffType1Font = (CFFType1Font) cffParser.parse(fontBytes, new FontFileByteSource(fontStream)).get(0);
-                }
-                fontBoxFont = cffType1Font;
-            } catch (IOException e) {
-                logger.log(Level.FINE, "Error reading font file with ", e);
-//                fontIsDamaged = true;
+            if (fontBytes != null) {
+                // note: this could be an OpenType file, fortunately CFFParser can handle that
+                CFFParser cffParser = new CFFParser();
+                cffType1Font = (CFFType1Font) cffParser.parse(fontBytes, new FontFileByteSource(fontStream)).get(0);
             }
-
-        } catch (Throwable e) {
+            fontBoxFont = cffType1Font;
+        } catch (IOException e) {
             logger.log(Level.FINE, "Error reading font file with ", e);
             throw new Exception(e);
         }

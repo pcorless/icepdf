@@ -25,6 +25,6 @@ public class Type3Font extends SimpleFont {
         font = new ZFontType3(library, entries);
         ((ZFontType3) font).setParentResource(parentResource);
         super.init();
-        inited = inited;
+        inited = true;
     }
 }

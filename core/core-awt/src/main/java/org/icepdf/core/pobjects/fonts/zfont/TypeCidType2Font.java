@@ -44,7 +44,7 @@ public class TypeCidType2Font extends CompositeFont {
         Object gidMap = library.getObject(entries, CID_TO_GID_MAP_KEY);
 
         // ordering != null && ordering.startsWith("Identity")) || ((gidMap != null || !isFontSubstitution)
-        if (true) {
+        if (!isFontSubstitution) {
 //            CMap subfontToUnicodeCMap = toUnicodeCMap != null ? toUnicodeCMap : CMap.IDENTITY;
             if (gidMap == null) {
 //                throw new Exception("null CID_TO_GID_MAP_KEY " + gidMap);

@@ -31,17 +31,14 @@ public class ZFontOpenType extends ZFontTrueType {
                 OpenTypeFont openTypeFont = otfParser.parse(new ByteArrayInputStream(fontBytes));
                 trueTypeFont = openTypeFont;
                 fontBoxFont = trueTypeFont;
-
                 if (openTypeFont.isPostScript()) {
-//                    fontIsDamaged = true;
-//                    logger.warning("Found CFF/OTF but expected embedded TTF font " + fd.getFontName());
+                    isDamaged = true;
+                    logger.warning("Found CFF/OTF but expected embedded TTF font " + trueTypeFont.getName());
                 }
-
                 extractCmapTable();
             }
         } catch (Throwable e) {
             logger.log(Level.WARNING, "Error reading font file with ", e);
-//                fontIsDamaged = true;
             throw new Exception(e);
         }
     }
@@ -57,11 +54,9 @@ public class ZFontOpenType extends ZFontTrueType {
             if (glyphData == null) {
                 outline = new GeneralPath();
             } else {
-                // must scaled by caller using FontMatrix
                 outline = glyphData.getPath();
             }
 
-            // clean up,  not very efficient
             g.translate(x, y);
             g.transform(this.fontTransform);
 

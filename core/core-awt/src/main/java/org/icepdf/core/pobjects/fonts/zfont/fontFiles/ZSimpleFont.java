@@ -58,7 +58,7 @@ public abstract class ZSimpleFont implements FontFile {
     protected AffineTransform fontTransform = new AffineTransform();
     protected AffineTransform gsTransform = new AffineTransform();
 
-    // todo fontDamaged flags
+    protected boolean isDamaged;
 
     protected ZSimpleFont() {
 
@@ -247,6 +247,10 @@ public abstract class ZSimpleFont implements FontFile {
     @Override
     public void setIsCid() {
 
+    }
+
+    public boolean isDamaged() {
+        return isDamaged;
     }
 
     protected void setFontTransform(AffineTransform at) {

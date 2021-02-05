@@ -22,27 +22,22 @@ public class ZFontType0 extends ZSimpleFont {
     private static final Logger logger =
             Logger.getLogger(ZFontType0.class.toString());
 
-    // todo shout out to PDFbox.
     private CFFCIDFont cidFont;  // Top DICT that uses CIDFont operators
     private FontBoxFont t1Font; // Top DICT that does not use CIDFont operators
 
-    // todo credit pdfbox for stream correction code
     public ZFontType0(Stream fontStream) throws Exception {
 
         byte[] fontBytes = fontStream.getDecodedStreamBytes();
         CFFFont cffFont = null;
         if (fontBytes != null && fontBytes.length > 0 && (fontBytes[0] & 0xff) == '%') {
-            // todo throw exception so substitution kicks in? still not too sure what to do here for fallback
             logger.warning("Found PFB but expected embedded CFF font");
-//            fontIsDamaged = true;
+            isDamaged = true;
         } else if (fontBytes != null) {
             CFFParser cffParser = new CFFParser();
             try {
                 cffFont = cffParser.parse(fontBytes, new FF3ByteSource(fontStream)).get(0);
             } catch (IOException e) {
-                // todo throw exception so substitution kicks in.
                 logger.log(Level.WARNING, "Can't read the embedded CFF font ", e);
-//                fontIsDamaged = true;
                 throw new Exception(e);
             }
         }

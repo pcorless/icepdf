@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ZFontTrueType extends ZSimpleFont {
+public class ZFontTrueType extends ZSimpleFont implements Cloneable {
 
     private static final Logger logger =
             Logger.getLogger(ZFontTrueType.class.toString());
@@ -60,7 +60,6 @@ public class ZFontTrueType extends ZSimpleFont {
             }
         } catch (Throwable e) {
             logger.log(Level.WARNING, "Error reading font file with ", e);
-//                fontIsDamaged = true;
             throw new Exception(e);
         }
     }
@@ -77,7 +76,6 @@ public class ZFontTrueType extends ZSimpleFont {
 
     @Override
     public Point2D echarAdvance(char ech) {
-        // todo need to work with the gid.....
         if (encoding != null) {
             return super.echarAdvance(ech);
         } else if (widths != null) {
@@ -111,9 +109,6 @@ public class ZFontTrueType extends ZSimpleFont {
                     outline = glyphData.getPath();
                 }
             }
-
-
-            // clean up,  not very efficient
             g.translate(x, y);
             g.transform(this.fontTransform);
 

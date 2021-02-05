@@ -66,6 +66,8 @@ public class FontDescriptor extends Dictionary {
     public static final Name FONT_FILE_3_CID_FONT_TYPE_0C = new Name("CIDFontType0C");
     public static final Name FONT_FILE_3_OPEN_TYPE = new Name("OpenType");
 
+    private boolean embeddedFontDamaged;
+
     /**
      * Creates a new instance of a FontDescriptor.
      *
@@ -215,6 +217,10 @@ public class FontDescriptor extends Dictionary {
         return font;
     }
 
+    public boolean isEmbeddedFontDamaged() {
+        return embeddedFontDamaged;
+    }
+
     /**
      * Gets the fonts bounding box.
      *
@@ -311,6 +317,7 @@ public class FontDescriptor extends Dictionary {
         // occurs.
         catch (Throwable e) {
             logger.log(Level.FINE, "Error Reading Embedded Font ", e);
+            embeddedFontDamaged = true;
         }
 
         inited = true;

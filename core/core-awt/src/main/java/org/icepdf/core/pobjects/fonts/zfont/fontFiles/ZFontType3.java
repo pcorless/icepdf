@@ -85,8 +85,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
             fontMatrix = new AffineTransform(0.001f, 0.0f, 0.0f, 0.001f, 0.0f, 0.0f);
         }
 
-        // todo fix up all simple font unicode assignments
-        toUnicode = null;//CMap.IDENTITY;
+        toUnicode = org.icepdf.core.pobjects.fonts.ofont.CMap.IDENTITY;
 
         // CharProcs resources, contains glyph name/stream pairs.
         o = library.getObject(properties, CHAR_PROCS_KEY);
