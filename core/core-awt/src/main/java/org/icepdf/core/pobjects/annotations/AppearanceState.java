@@ -24,8 +24,10 @@ import org.icepdf.core.util.parser.content.ContentParser;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * An appearance dictionary dictionary entry for N, R or D can be associated
@@ -56,12 +58,20 @@ public class AppearanceState extends Dictionary {
         if (streamOrDictionary instanceof Form) {
             try {
                 Form form = (Form) streamOrDictionary;
-                form.init();
-                originalContentStream = new String(((Form) streamOrDictionary).getDecodedStreamBytes());
+                originalContentStream = new String(form.getDecodedStreamBytes());
+                final boolean isMWFO = originalContentStream.contains("MWFOForm");
+                form.init(isMWFO);
+
                 resources = form.getResources();
                 shapes = form.getShapes();
                 matrix = form.getMatrix();
                 bbox = form.getBBox();
+                final Object lastFormO = getLastForm(library, form);
+                if (lastFormO instanceof Form && isMWFO){
+                    final Form lastForm = (Form) lastFormO;
+                    matrix = lastForm.getMatrix();
+                    bbox = lastForm.getBBox();
+                }
             } catch (InterruptedException e) {
                 logger.log(Level.WARNING, "Could not initialized AppearanceState", e);
             }
@@ -91,8 +101,22 @@ public class AppearanceState extends Dictionary {
         bbox = (Rectangle2D) library.getObject(entries, Annotation.BBOX_VALUE);
         InteractiveForm form = library.getCatalog().getInteractiveForm();
         // assign parent resource if not found in current appearance.
-        if (form != null){
+        if (form != null) {
             resources = form.getResources();
+        }
+    }
+
+    private static Object getLastForm(final Library library, final Object streamOrForm) {
+        if (streamOrForm instanceof Form) {
+            final Form form = (Form) streamOrForm;
+            final List<Object> subObjects = form.getResources().getEntries().entrySet().stream()
+                    .filter(e -> e.getKey() instanceof Name && ((Name) e.getKey()).getName().equals("XObject"))
+                    .map(e -> ((HashMap) e.getValue()).values().iterator().next()).collect(Collectors.toList());
+            return subObjects.size() == 1 ? getLastForm(library, subObjects.get(0)) : streamOrForm;
+        } else if (streamOrForm instanceof Reference) {
+            return getLastForm(library, library.getObject((Reference) streamOrForm));
+        } else {
+            return streamOrForm;
         }
     }
 
@@ -135,7 +159,7 @@ public class AppearanceState extends Dictionary {
         return originalContentStream;
     }
 
-    public void setContentStream(byte[] contentBytes){
+    public void setContentStream(byte[] contentBytes) {
         try {
             ContentParser cp = new ContentParser(library, resources);
             shapes = cp.parse(new byte[][]{contentBytes}, null).getShapes();

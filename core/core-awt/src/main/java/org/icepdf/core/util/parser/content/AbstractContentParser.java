@@ -122,13 +122,21 @@ public abstract class AbstractContentParser {
     // stack to help with the parse
     protected Stack<Object> stack = new Stack<>();
 
+    // currently parsing a MWFOForm
+    protected final boolean isMWFO;
+
     /**
      * @param l PDF library master object.
      * @param r resources
      */
     public AbstractContentParser(Library l, Resources r) {
+        this(l, r, false);
+    }
+
+    public AbstractContentParser(Library l, Resources r, boolean isMWFO) {
         library = l;
         resources = r;
+        this.isMWFO = isMWFO;
     }
 
     /**
@@ -180,7 +188,7 @@ public abstract class AbstractContentParser {
      * @param streamBytes byte stream containing page content
      * @return a Shapes Object containing all the pages text and images shapes.
      * @throws InterruptedException if current parse thread is interrupted.
-     * @throws java.io.IOException  unexpected end of content stream.
+     * @throws IOException          unexpected end of content stream.
      */
     public abstract ContentParser parse(byte[][] streamBytes, Page page)
             throws InterruptedException, IOException;
@@ -486,7 +494,7 @@ public abstract class AbstractContentParser {
     protected static GraphicsState consume_Do(GraphicsState graphicState, Stack<Object> stack,
                                               Shapes shapes, Resources resources,
                                               boolean viewParse, // events
-                                              AtomicInteger imageIndex, Page page) throws InterruptedException {
+                                              AtomicInteger imageIndex, Page page, boolean isMWFO) throws InterruptedException {
         Name xobjectName = (Name) stack.pop();
         if (resources == null) return graphicState;
         // Form XObject
@@ -521,83 +529,87 @@ public abstract class AbstractContentParser {
             // resources reference as a result we pass in the current
             // one in the hope that any resources can be found.
             formXObject.setParentResources(resources);
-            formXObject.init();
-            // 2.) concatenate matrix entry with the current CTM
-            AffineTransform af = new AffineTransform(graphicState.getCTM());
-            af.concatenate(formXObject.getMatrix());
-            shapes.add(new TransformDrawCmd(af));
-            // 3.) Clip according to the form BBox entry
-            if (graphicState.getClip() != null) {
-                AffineTransform matrix = formXObject.getMatrix();
-                Area bbox = new Area(formXObject.getBBox());
-                Area clip = graphicState.getClip();
-                // create inverse of matrix so we can transform
-                // the clip to form space.
-                try {
-                    matrix = matrix.createInverse();
-                } catch (NoninvertibleTransformException e) {
-                    logger.warning("Error create xObject matrix inverse");
-                }
-                // apply the new clip now that they are in the
-                // same space.
-                Shape shape = matrix.createTransformedShape(clip);
-                bbox.intersect(new Area(shape));
-                shapes.add(new ShapeDrawCmd(bbox));
+            formXObject.init(isMWFO);
+            if (isMWFO) {
+                shapes.add(formXObject.getShapes().getShapes());
             } else {
-                shapes.add(new ShapeDrawCmd(formXObject.getBBox()));
-            }
-            shapes.add(clipDrawCmd);
-            // 4.) Paint the graphics objects in font stream.
-            // still some work to do do here with regards to BM vs. alpha comp.
-            if ((formXObject.getExtGState() != null &&
-                    (formXObject.getExtGState().getBlendingMode() == null ||
-                            formXObject.getExtGState().getBlendingMode().equals(BlendComposite.NORMAL_VALUE)))) {
-                setAlpha(formXObject.getShapes(), graphicState, graphicState.getAlphaRule(),
-                        graphicState.getFillAlpha());
-                setAlpha(shapes, graphicState, graphicState.getAlphaRule(),
-                        graphicState.getFillAlpha());
-            }
-            // If we have a transparency group we paint it
-            // slightly different then a regular xObject as we
-            // need to capture the alpha which is only possible
-            // by paint the xObject to an image.
-            if (!disableTransparencyGroups &&
-                    ((formXObject.getBBox().getWidth() < FormDrawCmd.MAX_IMAGE_SIZE && formXObject.getBBox().getWidth() > 1) &&
-                            (formXObject.getBBox().getHeight() < FormDrawCmd.MAX_IMAGE_SIZE && formXObject.getBBox().getHeight() > 1)
-                            && (formXObject.getExtGState() != null &&
-                            (formXObject.getExtGState().getSMask() != null ||
-                                    (formXObject.getExtGState().getBlendingMode() != null &&
-                                            !formXObject.getExtGState().getBlendingMode().equals(BlendComposite.NORMAL_VALUE))
-                                    || (formXObject.getExtGState().getNonStrokingAlphConstant() < 1
-                                    && formXObject.getExtGState().getNonStrokingAlphConstant() > 0)))
-                    )) {
-                // add the hold form for further processing.
-                shapes.add(new FormDrawCmd(formXObject));
-            }
-            // the down side of painting to an image is that we
-            // lose quality if there is a affine transform, so
-            // if it isn't a group transparency we paint old way
-            // by just adding the objects to the shapes stack.
-            else {
-                shapes.add(new ShapesDrawCmd(formXObject.getShapes()));
-            }
-            // update text sprites with geometric path state
-            if (formXObject.getShapes() != null &&
-                    formXObject.getShapes().getPageText() != null) {
-                // normalize each sprite.
-                AffineTransform pageSpace = graphicState.getCTM();
-                pageSpace.concatenate(formXObject.getMatrix());
-                formXObject.getShapes().getPageText()
-                        .applyXObjectTransform(pageSpace);
-                // add the text to the current shapes for extraction and
-                // selection purposes.
-                PageText pageText = formXObject.getShapes().getPageText();
-                if (pageText != null && pageText.getPageLines() != null) {
-                    shapes.getPageText().addPageLines(
-                            pageText.getPageLines());
+                // 2.) concatenate matrix entry with the current CTM
+                AffineTransform af = new AffineTransform(graphicState.getCTM());
+                af.concatenate(formXObject.getMatrix());
+                shapes.add(new TransformDrawCmd(af));
+                // 3.) Clip according to the form BBox entry
+                if (graphicState.getClip() != null) {
+                    AffineTransform matrix = formXObject.getMatrix();
+                    Area bbox = new Area(formXObject.getBBox());
+                    Area clip = graphicState.getClip();
+                    // create inverse of matrix so we can transform
+                    // the clip to form space.
+                    try {
+                        matrix = matrix.createInverse();
+                    } catch (NoninvertibleTransformException e) {
+                        logger.warning("Error create xObject matrix inverse");
+                    }
+                    // apply the new clip now that they are in the
+                    // same space.
+                    Shape shape = matrix.createTransformedShape(clip);
+                    bbox.intersect(new Area(shape));
+                    shapes.add(new ShapeDrawCmd(bbox));
+                } else {
+                    shapes.add(new ShapeDrawCmd(formXObject.getBBox()));
                 }
+                shapes.add(clipDrawCmd);
+                // 4.) Paint the graphics objects in font stream.
+                // still some work to do do here with regards to BM vs. alpha comp.
+                if ((formXObject.getExtGState() != null &&
+                        (formXObject.getExtGState().getBlendingMode() == null ||
+                                formXObject.getExtGState().getBlendingMode().equals(BlendComposite.NORMAL_VALUE)))) {
+                    setAlpha(formXObject.getShapes(), graphicState, graphicState.getAlphaRule(),
+                            graphicState.getFillAlpha());
+                    setAlpha(shapes, graphicState, graphicState.getAlphaRule(),
+                            graphicState.getFillAlpha());
+                }
+                // If we have a transparency group we paint it
+                // slightly different then a regular xObject as we
+                // need to capture the alpha which is only possible
+                // by paint the xObject to an image.
+                if (!disableTransparencyGroups &&
+                        ((formXObject.getBBox().getWidth() < FormDrawCmd.MAX_IMAGE_SIZE && formXObject.getBBox().getWidth() > 1) &&
+                                (formXObject.getBBox().getHeight() < FormDrawCmd.MAX_IMAGE_SIZE && formXObject.getBBox().getHeight() > 1)
+                                && (formXObject.getExtGState() != null &&
+                                (formXObject.getExtGState().getSMask() != null ||
+                                        (formXObject.getExtGState().getBlendingMode() != null &&
+                                                !formXObject.getExtGState().getBlendingMode().equals(BlendComposite.NORMAL_VALUE))
+                                        || (formXObject.getExtGState().getNonStrokingAlphConstant() < 1
+                                        && formXObject.getExtGState().getNonStrokingAlphConstant() > 0)))
+                        )) {
+                    // add the hold form for further processing.
+                    shapes.add(new FormDrawCmd(formXObject));
+                }
+                // the down side of painting to an image is that we
+                // lose quality if there is a affine transform, so
+                // if it isn't a group transparency we paint old way
+                // by just adding the objects to the shapes stack.
+                else {
+                    shapes.add(new ShapesDrawCmd(formXObject.getShapes()));
+                }
+                // update text sprites with geometric path state
+                if (formXObject.getShapes() != null &&
+                        formXObject.getShapes().getPageText() != null) {
+                    // normalize each sprite.
+                    AffineTransform pageSpace = graphicState.getCTM();
+                    pageSpace.concatenate(formXObject.getMatrix());
+                    formXObject.getShapes().getPageText()
+                            .applyXObjectTransform(pageSpace);
+                    // add the text to the current shapes for extraction and
+                    // selection purposes.
+                    PageText pageText = formXObject.getShapes().getPageText();
+                    if (pageText != null && pageText.getPageLines() != null) {
+                        shapes.getPageText().addPageLines(
+                                pageText.getPageLines());
+                    }
+                }
+                shapes.add(new NoClipDrawCmd());
             }
-            shapes.add(new NoClipDrawCmd());
             //  5.) Restore the saved graphics state
             graphicState = graphicState.restore();
         }
@@ -631,6 +643,8 @@ public abstract class AbstractContentParser {
                 shapes.add(new ImageDrawCmd(imageReference));
                 graphicState.set(af);
             }
+        } else {
+            logger.warning("Not parsed");
         }
         return graphicState;
     }
@@ -745,7 +759,7 @@ public abstract class AbstractContentParser {
             // A line width of 0 shall denote the thinnest line that can be rendered at device resolution: 1 device
             // pixel wide.  0.15f is about the thinnest line we can draw reliably at low zoom levels
             if (scale == 0f) {
-                scale = (float)(0.15f / graphicState.getCTM().getScaleX());
+                scale = (float) (0.15f / graphicState.getCTM().getScaleX());
             }
             graphicState.setLineWidth(scale);
             setStroke(shapes, graphicState);
@@ -1773,7 +1787,7 @@ public abstract class AbstractContentParser {
      * @param shapes        current shapes stack
      * @param graphicState  current graphics state.
      * @param geometricPath current path.
-     * @throws InterruptedException            thread interrupted.
+     * @throws InterruptedException thread interrupted.
      */
     private static void commonFill(Shapes shapes, GraphicsState graphicState, GeneralPath geometricPath)
             throws InterruptedException {
