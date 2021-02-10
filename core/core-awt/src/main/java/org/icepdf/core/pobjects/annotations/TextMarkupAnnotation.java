@@ -24,13 +24,13 @@ import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.GeneralPath;
-import java.awt.geom.Rectangle2D;
+import java.awt.geom.*;
 import java.util.List;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Text markup annotations shall appear as highlights, underlines, strikeouts
@@ -178,19 +178,56 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
         if (shapes != null) {
             markupBounds = new ArrayList<>();
             markupPath = new GeneralPath();
-
-            ShapeDrawCmd shapeDrawCmd;
-            for (DrawCmd cmd : shapes.getShapes()) {
-                if (cmd instanceof ShapeDrawCmd) {
-                    shapeDrawCmd = (ShapeDrawCmd) cmd;
-                    markupBounds.add(shapeDrawCmd.getShape());
-                    markupPath.append(shapeDrawCmd.getShape(), false);
+            if (subtype.equals(SUBTYPE_UNDERLINE) || subtype.equals(SUBTYPE_STRIKE_OUT) || subtype.equals(SUBTYPE_SQUIGGLY)) {
+                setLineMarkup(shapes);
+            } else {
+                ShapeDrawCmd shapeDrawCmd;
+                for (DrawCmd cmd : shapes.getShapes()) {
+                    if (cmd instanceof ShapeDrawCmd) {
+                        shapeDrawCmd = (ShapeDrawCmd) cmd;
+                        markupBounds.add(shapeDrawCmd.getShape());
+                        markupPath.append(shapeDrawCmd.getShape(), false);
+                    }
                 }
             }
-
         }
         // try and generate an appearance stream.
         resetNullAppearanceStream();
+    }
+
+    private void setLineMarkup(final Shapes shapes) {
+        ShapeDrawCmd shapeDrawCmd;
+        // Should be one shape per line
+        final int shapesCount = (int) shapes.getShapes().stream().filter(s -> s instanceof ShapeDrawCmd).count();
+        final double bboxHDiv = getBbox().getHeight() / shapesCount;
+        final List<Rectangle2D> rectangles = IntStream.range(0, shapesCount).mapToObj(i -> new Rectangle2D.Double(getBbox().getX(), getBbox().getY() + i * bboxHDiv, getBbox().getWidth(), bboxHDiv)).collect(Collectors.toList());
+        for (DrawCmd cmd : shapes.getShapes()) {
+            if (cmd instanceof ShapeDrawCmd) {
+                shapeDrawCmd = (ShapeDrawCmd) cmd;
+                if (shapeDrawCmd.getShape() instanceof GeneralPath) {
+                    final GeneralPath gp = (GeneralPath) shapeDrawCmd.getShape();
+                    final PathIterator iter = gp.getPathIterator(new AffineTransform());
+                    final List<Point2D> points = new ArrayList<>();
+                    while (!iter.isDone()) {
+                        final double[] coords = new double[2];
+                        iter.currentSegment(coords);
+                        iter.next();
+                        points.add(new Point2D.Double(coords[0], coords[1]));
+                    }
+                    if (points.size() == 2 || (points.size() == 3 && points.get(2).getX() == 0 && points.get(2).getY() == 0)) {
+                        final Point2D first = points.get(0);
+                        final Point2D second = points.get(1);
+                        final Rectangle2D containing = rectangles.stream()
+                                .filter(r -> r.contains(first) && r.contains(second)).findFirst().orElse(getBbox());
+                        shapeDrawCmd = new ShapeDrawCmd(new Rectangle2D.Double(first.getX(), containing.getY(),
+                                second.getX() - first.getX(), containing.getHeight()));
+                    }
+
+                }
+                markupBounds.add(shapeDrawCmd.getShape());
+                markupPath.append(shapeDrawCmd.getShape(), false);
+            }
+        }
     }
 
     /**
