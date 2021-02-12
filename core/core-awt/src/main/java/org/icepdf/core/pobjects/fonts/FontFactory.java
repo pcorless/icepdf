@@ -104,7 +104,7 @@ public class FontFactory {
         // call to build any embedded fonts.
 
         // simple fonts
-        if (FONT_SUBTYPE_TYPE_1.equals(subtype)) {
+        if (FONT_SUBTYPE_TYPE_1.equals(subtype) || FONT_SUBTYPE_MM_TYPE_1.equals(subtype)) {
             // treating type1 and type1c the same for now
             font = new Type1Font(library, entries);
         } else if (FONT_SUBTYPE_TRUE_TYPE.equals(subtype)) {

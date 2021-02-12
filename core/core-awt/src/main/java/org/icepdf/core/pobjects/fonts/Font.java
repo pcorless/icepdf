@@ -301,6 +301,8 @@ public abstract class Font extends Dictionary {
             if (fontDescriptor.getEmbeddedFont() != null) {
                 font = fontDescriptor.getEmbeddedFont();
                 isFontSubstitution = false;
+            } else {
+                isFontSubstitution = true;
             }
         }
         // If there is no FontDescriptor then we most likely have a core afm

@@ -34,6 +34,8 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
     private CmapSubtable cmapWinSymbol;
     private CmapSubtable cmapMacRoman;
 
+    private HorizontalMetricsTable horizontalMetricsTable;
+
     protected TrueTypeFont trueTypeFont;
 
     protected ZFontTrueType() {
@@ -57,6 +59,7 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
                 fontBoxFont = trueTypeFont;
 
                 extractCmapTable();
+                extractMetricsTable();
             }
         } catch (Throwable e) {
             logger.log(Level.WARNING, "Error reading font file with ", e);
@@ -71,21 +74,34 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
         this.cmapWinUnicode = font.cmapWinUnicode;
         this.cmapWinSymbol = font.cmapWinSymbol;
         this.cmapMacRoman = font.cmapMacRoman;
+        this.horizontalMetricsTable = font.horizontalMetricsTable;
         this.fontMatrix = convertFontMatrix(fontBoxFont);
     }
 
     @Override
     public Point2D echarAdvance(char ech) {
-        if (encoding != null) {
-            return super.echarAdvance(ech);
-        } else if (widths != null) {
-            // need to blow this out, lots of wrong
-            float advance = widths[ech] * 0.001f;// * (float) fontMatrix.getScaleX();
+        float advance = 0;
+        try {
+            int gid = getCharToGid(ech);
+            int glyphId = ech - firstCh;
+            if (trueTypeFont == null || gid > trueTypeFont.getNumberOfGlyphs()) {
+                return new Point2D.Float(advance, 0);
+            } else if (widths != null && glyphId >= 0 && glyphId < widths.length && widths[glyphId] > 1) {
+                advance = widths[glyphId] * 0.001f;
+            } else if (widths != null && glyphId >= 0 && glyphId < widths.length && widths[glyphId] <= 1) {
+                advance = widths[glyphId];
+            }
+            if (advance == 0) {
+                int metricsWidth = horizontalMetricsTable.getAdvanceWidth(
+                        Math.min(gid, (int) horizontalMetricsTable.getLength() - 1));
+                advance = metricsWidth * (float) fontMatrix.getScaleX();
+            }
             advance = (float) (advance * size * gsTransform.getScaleX());
             return new Point2D.Float(advance, 0);
-        } else {
-            return new Point2D.Float(1.0f, 0);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Error getting font width", e);
         }
+        return new Point2D.Float(1.0f, 0);
     }
 
     @Override
@@ -310,6 +326,10 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
         }
 
         return gid;
+    }
+
+    protected void extractMetricsTable() throws IOException {
+        horizontalMetricsTable = trueTypeFont.getHorizontalMetrics();
     }
 
     protected void extractCmapTable() throws IOException {

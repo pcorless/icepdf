@@ -23,6 +23,9 @@ public class Type1Font extends SimpleFont {
         AFM a = AFM.AFMs.get(basefont.toLowerCase());
         if (a != null && a.getFontName() != null) {
             afm = a;
+            if (afm.getWidths() != null) {
+                isAFMFont = true;
+            }
         }
         super.init();
         inited = true;
