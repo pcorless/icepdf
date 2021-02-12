@@ -29,8 +29,6 @@ import java.util.List;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * Text markup annotations shall appear as highlights, underlines, strikeouts
@@ -200,20 +198,17 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
         for (DrawCmd cmd : shapes.getShapes()) {
             if (cmd instanceof ShapeDrawCmd) {
                 shapeDrawCmd = (ShapeDrawCmd) cmd;
-                if (shapeDrawCmd.getShape() instanceof GeneralPath) {
-                    final Shape shape = shapeDrawCmd.getShape();
-                    final List<Point2D> points = getPoints(shape);
-                    if (points.size() == 2 || (points.size() == 3 && points.get(2).getX() == 0 && points.get(2).getY() == 0)) {
-                        final Point2D first = points.get(0);
-                        final Point2D second = points.get(1);
-                        final List<Shape> quads = Arrays.asList(quadrilaterals);
-                        final Shape firstShape = getClosestShape(quads, first);
-                        final Shape secondShape = getClosestShape(quads, second);
-                        final Shape containing = firstShape == secondShape && firstShape.getBounds().height > 1 ?
-                                firstShape : getBbox();
-                        shapeDrawCmd = new ShapeDrawCmd(containing);
-                    }
-
+                final Shape shape = shapeDrawCmd.getShape();
+                final List<Point2D> points = getPoints(shape);
+                if (points.size() == 2 || (points.size() == 3 && points.get(2).getX() == 0 && points.get(2).getY() == 0)) {
+                    final Point2D first = points.get(0);
+                    final Point2D second = points.get(1);
+                    final List<Shape> quads = Arrays.asList(quadrilaterals);
+                    final Shape firstShape = getClosestShape(quads, first);
+                    final Shape secondShape = getClosestShape(quads, second);
+                    final Shape containing = firstShape == secondShape && firstShape.getBounds().height > 1 ?
+                            firstShape : getBbox();
+                    shapeDrawCmd = new ShapeDrawCmd(containing);
                 }
                 markupBounds.add(shapeDrawCmd.getShape());
                 markupPath.append(shapeDrawCmd.getShape(), false);
