@@ -197,30 +197,21 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
 
     private void setLineMarkup(final Shapes shapes) {
         ShapeDrawCmd shapeDrawCmd;
-        // Should be one shape per line
-        final int shapesCount = (int) shapes.getShapes().stream().filter(s -> s instanceof ShapeDrawCmd).count();
-        final double bboxHDiv = getBbox().getHeight() / shapesCount;
-        final List<Rectangle2D> rectangles = IntStream.range(0, shapesCount).mapToObj(i -> new Rectangle2D.Double(getBbox().getX(), getBbox().getY() + i * bboxHDiv, getBbox().getWidth(), bboxHDiv)).collect(Collectors.toList());
         for (DrawCmd cmd : shapes.getShapes()) {
             if (cmd instanceof ShapeDrawCmd) {
                 shapeDrawCmd = (ShapeDrawCmd) cmd;
                 if (shapeDrawCmd.getShape() instanceof GeneralPath) {
-                    final GeneralPath gp = (GeneralPath) shapeDrawCmd.getShape();
-                    final PathIterator iter = gp.getPathIterator(new AffineTransform());
-                    final List<Point2D> points = new ArrayList<>();
-                    while (!iter.isDone()) {
-                        final double[] coords = new double[2];
-                        iter.currentSegment(coords);
-                        iter.next();
-                        points.add(new Point2D.Double(coords[0], coords[1]));
-                    }
+                    final Shape shape = shapeDrawCmd.getShape();
+                    final List<Point2D> points = getPoints(shape);
                     if (points.size() == 2 || (points.size() == 3 && points.get(2).getX() == 0 && points.get(2).getY() == 0)) {
                         final Point2D first = points.get(0);
                         final Point2D second = points.get(1);
-                        final Rectangle2D containing = rectangles.stream()
-                                .filter(r -> r.contains(first) && r.contains(second)).findFirst().orElse(getBbox());
-                        shapeDrawCmd = new ShapeDrawCmd(new Rectangle2D.Double(first.getX(), containing.getY(),
-                                second.getX() - first.getX(), containing.getHeight()));
+                        final List<Shape> quads = Arrays.asList(quadrilaterals);
+                        final Shape firstShape = getClosestShape(quads, first);
+                        final Shape secondShape = getClosestShape(quads, second);
+                        final Shape containing = firstShape == secondShape && firstShape.getBounds().height > 1 ?
+                                firstShape : getBbox();
+                        shapeDrawCmd = new ShapeDrawCmd(containing);
                     }
 
                 }
@@ -228,6 +219,39 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
                 markupPath.append(shapeDrawCmd.getShape(), false);
             }
         }
+    }
+
+    private static Shape getClosestShape(final Collection<Shape> shapes, final Point2D point) {
+        for (final Shape shape : shapes) {
+            if (shape.contains(point)) {
+                return shape;
+            }
+        }
+        Shape closest = null;
+        double minDistance = Double.MAX_VALUE;
+        for (final Shape shape : shapes) {
+            final List<Point2D> points = getPoints(shape);
+            for (final Point2D point2D : points) {
+                final double distance = point2D.distance(point);
+                if (point2D.distance(point) < minDistance) {
+                    closest = shape;
+                    minDistance = distance;
+                }
+            }
+        }
+        return closest;
+    }
+
+    private static List<Point2D> getPoints(final Shape shape) {
+        final PathIterator iter = shape.getPathIterator(new AffineTransform());
+        final List<Point2D> points = new ArrayList<>();
+        while (!iter.isDone()) {
+            final double[] coords = new double[2];
+            iter.currentSegment(coords);
+            iter.next();
+            points.add(new Point2D.Float((float) coords[0], (float) coords[1]));
+        }
+        return points;
     }
 
     /**
