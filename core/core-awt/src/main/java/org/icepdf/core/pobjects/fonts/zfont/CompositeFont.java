@@ -158,7 +158,8 @@ public abstract class CompositeFont extends SimpleFont {
             float ascent = fontDescriptor.getAscent() / 1000f;
             float descent = fontDescriptor.getDescent() / 1000f;
             Rectangle2D bbox = fontDescriptor.getFontBBox();
-            font = font.deriveFont(widths, firstchar, missingWidth, ascent, descent, bbox, null);
+            // firstCh not a concept in cid fonts
+            font = font.deriveFont(widths, 0, missingWidth, ascent, descent, bbox, null);
         }
 
 
