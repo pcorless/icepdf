@@ -249,9 +249,9 @@ apple - 360 - -
 # additions necessary in practice
 shy - - 255 -
 # white space mappings, octal values. for 9,10,12 dec. OCT values.
-space 011 011 011 011
-space 012 012 012 012
-space 013 013 013 013
-space 014 014 014 014
-space 015 015 015 015
-space 240 240 240 240
+# space 011 011 011 011
+# space 012 012 012 012
+# space 013 013 013 013
+# space 014 014 014 014
+# space 015 015 015 015
+# space 240 240 240 240

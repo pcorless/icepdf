@@ -79,13 +79,15 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
     public static Encoding symbolEncoding;
     public static Encoding zapfDingBats;
 
+    public static Encoding identity;
+
     static {
         initializeLatinEncodings();
         initializeOddBallEncodings();
     }
 
-    private String name;
-    private String[] encodingMap;
+    private final String name;
+    private final String[] encodingMap;
 
     private Encoding(String name, String[] encodingMap) {
         this.name = name;
@@ -95,7 +97,6 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
     public Encoding(Encoding base, String[] diff) {
         this.name = "diff";
         String[] cMap = base.encodingMap.clone();
-        String name;
         for (int code = 0, max = diff.length; code < max; code++) {
             cMap[code] = diff[code];
         }
@@ -107,7 +108,6 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
         this.name = "embedded-font";
         // this is just a guess,  will need to see an example if a simple font really only has 256 max.
         String[] cMap = new String[256];
-        String name;
         for (int code = 0, max = cMap.length; code < max; code++) {
             cMap[code] = fontBoxEncoding.get(code);
         }
@@ -125,13 +125,13 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
         return ".notdef";
     }
 
-    public char getChar(String name) {
-        char ch = 0;
+    public Character getChar(String name) {
+        Character ch = null;
         // simple check to see if we have a /Euro or /euro
         if (name.equalsIgnoreCase("euro")) {
             name = "Euro";
         }
-        boolean isEuro = name.equalsIgnoreCase("euro");
+//        boolean isEuro = name.equalsIgnoreCase("euro");
         for (int i = 0, max = encodingMap.length; i < max; i++) {
             if (name.equals(encodingMap[i])) {
                 ch = (char) i;
@@ -164,8 +164,7 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
         } else if (SYMBOL_ENCODING_NAME.equals(name)) {
             return symbolEncoding;
         } else {
-            // todo return identity
-            return null;
+            return identity;
         }
     }
 
@@ -176,6 +175,7 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
         macRomanEncoding = new Encoding(MAC_ROMAN_ENCODING_NAME, mappings[1]);
         winAnsiEncoding = new Encoding(WIN_ANSI_ENCODING_NAME, mappings[2]);
         pdfDocEncoding = new Encoding(PDF_DOC_ENCODING_NAME, mappings[3]);
+        identity = new Encoding("Identity", new String[256]);
     }
 
     private static void initializeOddBallEncodings() {

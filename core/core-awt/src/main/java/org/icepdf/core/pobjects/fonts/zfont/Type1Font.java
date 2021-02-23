@@ -28,6 +28,12 @@ public class Type1Font extends SimpleFont {
             }
         }
         super.init();
+
+        if (encoding == null) {
+            encoding = Encoding.standardEncoding;
+            font = font.deriveFont(encoding, toUnicodeCMap);
+        }
+
         inited = true;
     }
 }

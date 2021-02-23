@@ -44,11 +44,11 @@ public class Type0Font extends SimpleFont {
     }
 
     protected void parseEncoding() {
-        Object encoding = library.getName(entries, ENCODING_KEY);
-        if (encoding instanceof Name) {
-            cMap = CMap.getInstance((Name) encoding);
-            // todo clean up encoding and fix font substitution
-            font = font.deriveFont(null, cMap);
+        Name name = library.getName(entries, ENCODING_KEY);
+        if (name != null) {
+            cMap = CMap.getInstance(name);
+            Encoding encoding = Encoding.getInstance((name).getName());
+            font = font.deriveFont(encoding, cMap);
         }
         if (cMap != null) {
             isCMapPredefined = true;

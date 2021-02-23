@@ -86,8 +86,6 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
             int glyphId = ech - firstCh;
             if (trueTypeFont == null || gid > trueTypeFont.getNumberOfGlyphs()) {
                 return new Point2D.Float(advance, 0);
-            } else if (widths != null && glyphId >= 0 && glyphId < widths.length && widths[glyphId] > 1) {
-                advance = widths[glyphId] * 0.001f;
             } else if (widths != null && glyphId >= 0 && glyphId < widths.length && widths[glyphId] <= 1) {
                 advance = widths[glyphId];
             }
@@ -111,22 +109,30 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
             char echar = estr.charAt(0);
 
             Shape outline;
+            int gid;
             if (trueTypeFont instanceof OpenTypeFont) {
                 int cid = codeToGID(echar);
                 Type2CharString charstring = ((OpenTypeFont) trueTypeFont).getCFF().getFont().getType2CharString(cid);
                 outline = charstring.getPath();
             } else {
-                int gid = getCharToGid(echar);
+                gid = getCharToGid(echar);
                 GlyphData glyphData = trueTypeFont.getGlyph().getGlyph(gid);
                 if (glyphData == null) {
                     outline = new GeneralPath();
                 } else {
-                    // must scaled by caller using FontMatrix
                     outline = glyphData.getPath();
                 }
             }
             g.translate(x, y);
             g.transform(this.fontTransform);
+
+            // apply font scaling experiment
+//            int glyphId = echar - firstCh;
+//            int metricsWidth = horizontalMetricsTable.getAdvanceWidth(
+//                    Math.min(gid, (int) horizontalMetricsTable.getLength() - 1));
+//            double width = widths != null && 0 <= glyphId && glyphId < widths.length && widths[glyphId] > 1 ? widths[glyphId] * 0.001f / fontTransform.getScaleX() : 0.0;
+//            double scale = metricsWidth / width;
+//            System.out.println(scale);
 
             if (TextState.MODE_FILL == mode || TextState.MODE_FILL_STROKE == mode ||
                     TextState.MODE_FILL_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
@@ -175,8 +181,16 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
     @Override
     public FontFile deriveFont(Encoding encoding, CMap toUnicode) {
         ZFontTrueType font = new ZFontTrueType(this);
-        font.encoding = encoding;
-        font.toUnicode = toUnicode;
+        if (encoding != null) {
+            font.encoding = encoding;
+        }
+        if (toUnicode != null) {
+            font.toUnicode = toUnicode;
+        }
+        if (font.toUnicode == null) {
+            font.toUnicode = org.icepdf.core.pobjects.fonts.ofont.CMap.IDENTITY;
+        }
+
         return font;
     }
 
@@ -255,30 +269,28 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
         int gid = 0;
         try {
             if (cmapWinSymbol == null) {
-                String name = encoding != null ? encoding.getName(code) : ".notdef2";  // todo fix hack
-                if (".notdef".equals(name)) {
-                    return cmapWinUnicode.getGlyphId(code); // null
-                } else {
-                    // (3, 1) - (Windows, Unicode)
-                    if (cmapWinUnicode != null) {
-                        String unicode = GlyphList.getAdobeGlyphList().toUnicode(name);
-                        if (unicode != null) {
-                            int uni = unicode.codePointAt(0);
-                            gid = cmapWinUnicode.getGlyphId(uni);
-                        }
+                String name = encoding != null ? encoding.getName(code) : ".notdef";
+                if (encoding == null) {
+                    return cmapMacRoman.getGlyphId(code);
+                }
+                // (3, 1) - (Windows, Unicode)
+                if (cmapWinUnicode != null && name != null) {
+                    String unicode = GlyphList.getAdobeGlyphList().toUnicode(name);
+                    if (unicode != null) {
+                        int uni = unicode.codePointAt(0);
+                        gid = cmapWinUnicode.getGlyphId(uni);
                     }
-                    // (1, 0) - (Macintosh, Roman)
-                    if (gid == 0 && cmapMacRoman != null) {
-                        String macCode = GlyphList.getAdobeGlyphList().toUnicode(name);// INVERTED_MACOS_ROMAN.get(name);
-                        if (macCode != null) {
-                            int uni = macCode.codePointAt(0);
-                            gid = cmapMacRoman.getGlyphId(uni);
-                        }
+                }
+                // (1, 0) - (Macintosh, Roman)
+                if (gid == 0 && cmapMacRoman != null && name != null) {
+                    Character macCode = org.icepdf.core.pobjects.fonts.zfont.Encoding.macRomanEncoding.getChar(name);
+                    if (macCode != null) {
+                        gid = cmapMacRoman.getGlyphId(macCode);
                     }
-                    // 'post' table
-                    if (gid == 0) {
-                        gid = code;//trueTypeFont.nameToGID(name);
-                    }
+                }
+                // 'post' table
+                if (gid == 0) {
+                    gid = code;
                 }
             }
             // symbolic

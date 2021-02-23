@@ -110,8 +110,6 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
             encoding = new Encoding(encoding, cMap);
         } else if (encodingValue instanceof Name) {
             setBaseEncoding((Name) encodingValue);
-        } else {
-            encoding = Encoding.standardEncoding;
         }
         font = font.deriveFont(encoding, toUnicodeCMap);
     }

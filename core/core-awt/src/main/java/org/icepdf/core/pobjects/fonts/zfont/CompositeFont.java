@@ -135,14 +135,14 @@ public abstract class CompositeFont extends SimpleFont {
                 if (currentNext instanceof ArrayList) {
                     ArrayList widths2 = (ArrayList) currentNext;
                     for (int j = 0, max2 = widths2.size(); j < max2; j++) {
-                        widths[current + j] = (float) (((Number) widths2.get(j)).intValue());
+                        widths[current + j] = (float) (((Number) widths2.get(j)).intValue()) * 0.001f;
                     }
                     i++;
                 } else if (currentNext instanceof Number) {
                     int currentEnd = ((Number) currentNext).intValue();
                     float width2 = (float) (((Number) individualWidths.get(i + 2)).intValue());
                     for (; current <= currentEnd; current++) {
-                        widths[current] = width2;
+                        widths[current] = width2 * 0.001f;
                     }
                     i += 2;
                 }

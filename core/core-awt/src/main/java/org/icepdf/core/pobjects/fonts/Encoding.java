@@ -25,5 +25,5 @@ public interface Encoding {
 
     String getName(int code);
 
-    char getChar(String name);
+    Character getChar(String name);
 }

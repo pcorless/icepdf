@@ -65,23 +65,13 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
 
     @Override
     public Point2D echarAdvance(char ech) {
-        // todo, needs som more work.
         float advance = defaultWidth;
-        if (encoding != null) {
-            return super.echarAdvance(ech);
-        } else if (widths != null && ech < widths.length) {
-//            int gid = getCharToGid(ech);
-            float width = widths[ech];
-            if (width <= 1) {
-                advance = width;
-            } else {
-                advance = width * 0.001f;
-            }
+        if (widths != null && ech < widths.length) {
+            advance = widths[ech];
         }
         if (advance == 0) {
             advance = 1.0f;
         }
-
         float x = advance * size;//* (float) gsTransform.getScaleX();
         float y = advance * size;//* (float) gsTransform.getShearY();
         return new Point2D.Float(x, y);
