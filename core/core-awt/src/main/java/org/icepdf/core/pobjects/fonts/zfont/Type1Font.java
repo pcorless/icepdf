@@ -18,8 +18,11 @@ public class Type1Font extends SimpleFont {
     }
 
     @Override
-    public void init() {
+    public synchronized void init() {
         // handle afm
+        if (inited) {
+            return;
+        }
         AFM a = AFM.AFMs.get(basefont.toLowerCase());
         if (a != null && a.getFontName() != null) {
             afm = a;

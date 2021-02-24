@@ -17,7 +17,7 @@ public class TrueTypeFont extends SimpleFont {
     }
 
     @Override
-    public void init() {
+    public synchronized void init() {
         super.init();
         inited = true;
     }

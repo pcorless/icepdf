@@ -21,7 +21,7 @@ public class TypeCidType2Font extends CompositeFont {
     }
 
     @Override
-    public void init() {
+    public synchronized void init() {
         super.init();
         parseCidToGidMap();
         inited = true;

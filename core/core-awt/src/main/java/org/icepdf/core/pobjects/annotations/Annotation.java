@@ -634,7 +634,7 @@ public abstract class Annotation extends Dictionary {
     }
 
     @SuppressWarnings("unchecked")
-    public void init() throws InterruptedException {
+    public synchronized void init() throws InterruptedException {
         super.init();
         // type of Annotation
         subtype = (Name) getObject(SUBTYPE_KEY);

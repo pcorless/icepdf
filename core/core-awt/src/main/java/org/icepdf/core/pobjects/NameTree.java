@@ -52,7 +52,7 @@ public class NameTree extends Dictionary {
     /**
      * Initiate the NameTree.
      */
-    public void init() {
+    public synchronized void init() {
         if (inited) {
             return;
         }

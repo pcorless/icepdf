@@ -29,7 +29,7 @@ public class ShadingType7Pattern extends ShadingMeshPattern {
         super(l, h, meshDataStream);
     }
 
-    public void init(GraphicsState graphicsState) {
+    public synchronized void init(GraphicsState graphicsState) {
         coordinates = new ArrayList<>();
         colorComponents = new ArrayList<>();
         try {

@@ -31,7 +31,7 @@ public class Type0Font extends SimpleFont {
     }
 
     @Override
-    public void init() {
+    public synchronized void init() {
         if (inited) {
             return;
         }

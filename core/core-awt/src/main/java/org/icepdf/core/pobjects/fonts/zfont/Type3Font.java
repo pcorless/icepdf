@@ -18,7 +18,7 @@ public class Type3Font extends SimpleFont {
     }
 
     @Override
-    public void init() {
+    public synchronized void init() {
         if (inited) {
             return;
         }

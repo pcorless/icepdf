@@ -60,7 +60,7 @@ public class InkAnnotation extends MarkupAnnotation {
     }
 
     @SuppressWarnings("unchecked")
-    public void init() throws InterruptedException {
+    public synchronized void init() throws InterruptedException {
         super.init();
         // look for an ink list
         List<List<Number>> inkLists = library.getArray(entries, INK_LIST_KEY);

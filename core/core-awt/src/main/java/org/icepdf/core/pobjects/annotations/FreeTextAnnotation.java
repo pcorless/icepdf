@@ -248,7 +248,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         super(l, h);
     }
 
-    public void init() throws InterruptedException{
+    public synchronized void init() throws InterruptedException {
         super.init();
 
         Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);

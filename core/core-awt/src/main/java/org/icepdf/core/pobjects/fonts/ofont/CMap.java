@@ -268,7 +268,7 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
      * end
      * end
      */
-    public void init() {
+    public synchronized void init() {
         try {
             if (cMapStream == null) {
                 logger.fine("Nothing to initialize named CMap");
