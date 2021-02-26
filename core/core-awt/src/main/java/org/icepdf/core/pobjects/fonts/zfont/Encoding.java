@@ -132,7 +132,8 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
             name = "Euro";
         }
 //        boolean isEuro = name.equalsIgnoreCase("euro");
-        for (int i = 0, max = encodingMap.length; i < max; i++) {
+        for (int i = encodingMap.length - 1; i >= 0; i--) {
+//        for (int i = 0, max = encodingMap.length; i < max; i++) {
             if (name.equals(encodingMap[i])) {
                 ch = (char) i;
                 break;

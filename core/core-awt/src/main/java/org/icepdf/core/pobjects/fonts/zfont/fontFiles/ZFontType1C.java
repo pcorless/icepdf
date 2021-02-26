@@ -51,6 +51,17 @@ public class ZFontType1C extends ZSimpleFont {
     }
 
     @Override
+    protected String codeToName(String estr) {
+        // might be able to blow this out out some point, but we're in the weeds at this point, not
+        // a lot of good examples.
+        if (org.icepdf.core.pobjects.fonts.zfont.Encoding.STANDARD_ENCODING_NAME.equals(encoding.getName())) {
+            return cffType1Font.getEncoding().getName(estr.charAt(0));
+        } else {
+            return estr;
+        }
+    }
+
+    @Override
     public void drawEstring(Graphics2D g, String estr, float x, float y, long layout, int mode, Color strokeColor) {
         super.drawEstring(g, estr, x, y, layout, mode, strokeColor);
     }

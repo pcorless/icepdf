@@ -110,13 +110,19 @@ public abstract class ZSimpleFont implements FontFile {
         }
     }
 
+    // allows sub classes to override the codeToName logic.
+    protected String codeToName(String estr) {
+        return estr;
+    }
+
     @Override
     public void drawEstring(Graphics2D g, String estr, float x, float y, long layout, int mode, Color strokeColor) {
         try {
             AffineTransform af = g.getTransform();
-            Shape outline = fontBoxFont.getPath(estr);
-            if (encoding != null && !fontBoxFont.hasGlyph(estr)) {
-                String name = encoding.getName(estr.charAt(0));
+            String name = codeToName(estr);
+            Shape outline = fontBoxFont.getPath(name);
+            if (encoding != null && !fontBoxFont.hasGlyph(name)) {
+                name = encoding.getName(estr.charAt(0));
                 if (name != null) {
                     outline = fontBoxFont.getPath(name);
                 }

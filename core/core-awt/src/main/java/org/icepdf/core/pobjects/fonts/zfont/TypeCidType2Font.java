@@ -5,6 +5,7 @@ import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.ofont.CMap;
 import org.icepdf.core.pobjects.fonts.ofont.CMapIdentityH;
 import org.icepdf.core.pobjects.fonts.ofont.CMapReverse;
+import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType2;
 import org.icepdf.core.util.Library;
 
@@ -23,6 +24,9 @@ public class TypeCidType2Font extends CompositeFont {
     @Override
     public synchronized void init() {
         super.init();
+        if (!(font instanceof ZFontType2)) {
+            font = new ZFontType2((ZFontTrueType) font);
+        }
         parseCidToGidMap();
         inited = true;
     }
@@ -44,35 +48,31 @@ public class TypeCidType2Font extends CompositeFont {
         Object gidMap = library.getObject(entries, CID_TO_GID_MAP_KEY);
 
         // ordering != null && ordering.startsWith("Identity")) || ((gidMap != null || !isFontSubstitution)
-        if (!isFontSubstitution) {
+//        if (!isFontSubstitution) {
 //            CMap subfontToUnicodeCMap = toUnicodeCMap != null ? toUnicodeCMap : CMap.IDENTITY;
-            if (gidMap == null) {
+        if (gidMap == null) {
 //                throw new Exception("null CID_TO_GID_MAP_KEY " + gidMap);
 //                font = ((ZFontTrueType) font).deriveFont(CMap.IDENTITY, null);// subfontToUnicodeCMap);
+        }
+        if (gidMap instanceof Name) {
+            String mappingName = null;
+            mappingName = gidMap.toString();
+            if (toUnicodeCMap instanceof CMapIdentityH) {
+                mappingName = toUnicodeCMap.toString();
             }
-            if (gidMap instanceof Name) {
-//                throw new Exception("gidMap name " + gidMap);
-                String mappingName = null;
-                if (gidMap != null) {
-                    mappingName = gidMap.toString();
-                }
-                if (toUnicodeCMap instanceof CMapIdentityH) {
-                    mappingName = toUnicodeCMap.toString();
-                }
-                // mapping name will be null only in a few corner cases, but
-                // identity will be applied otherwise.
-                if (mappingName == null || mappingName.equals("Identity")) {
-                    // subfontToUnicodeCMap
-                    font = ((ZFontType2) font).deriveFont(CMap.IDENTITY, null);
-                }
-            } else if (gidMap instanceof Stream) {
-                int[] cidToGidMap = CMap.parseCidToGidMap((Stream) gidMap);
-                CMap cidGidMap = new CMapReverse(cidToGidMap);
-                if (font instanceof ZFontType2) {
-                    // todo unicode should already be setup,  need to fix this signature.
-                    font = ((ZFontType2) font).deriveFont(cidGidMap, null);
-                }
+            // mapping name will be null only in a few corner cases, but
+            // identity will be applied otherwise.
+            if (mappingName == null || mappingName.equals("Identity")) {
+                // subfontToUnicodeCMap
+                font = ((ZFontType2) font).deriveFont(CMap.IDENTITY, toUnicodeCMap);
+            }
+        } else if (gidMap instanceof Stream) {
+            int[] cidToGidMap = CMap.parseCidToGidMap((Stream) gidMap);
+            CMap cidGidMap = new CMapReverse(cidToGidMap);
+            if (font instanceof ZFontType2) {
+                font = ((ZFontType2) font).deriveFont(cidGidMap, toUnicodeCMap);
             }
         }
+//        }
     }
 }

@@ -288,9 +288,22 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
                         gid = cmapMacRoman.getGlyphId(macCode);
                     }
                 }
-                // 'post' table
+                // 'post' table - comment is incorrect but keeping it for now as the post table is an encoding
+                // that we can use. With this little hack we still have issue showing some glyphs correctly.
+                // likely looking at font substitutions corner cases.
                 if (gid == 0) {
-                    gid = code;
+                    // still not happy with this, lots of mystery and deception that needs to be figured out.
+                    if (encoding != null) {
+                        if (encoding.getName().equals(org.icepdf.core.pobjects.fonts.zfont.Encoding.WIN_ANSI_ENCODING_NAME) && cmapWinUnicode != null) {
+                            gid = cmapWinUnicode.getGlyphId(code);
+                        } else if (encoding.getName().startsWith("Mac") && cmapMacRoman != null) {
+                            gid = cmapMacRoman.getGlyphId(code);
+                        } else {
+                            gid = code;
+                        }
+                    } else {
+                        gid = code;
+                    }
                 }
             }
             // symbolic
