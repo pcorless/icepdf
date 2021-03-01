@@ -131,8 +131,8 @@ public class TextSprite {
             }
         }
         // apply fontsize.
-        h *= font.getSize();
-        descent *= font.getSize();
+        h *= Math.abs(font.getSize());
+        descent *= Math.abs(font.getSize());
 
         Rectangle2D.Float glyphBounds;
         // irregular negative layout of text,  need to create the bbox appropriately.
