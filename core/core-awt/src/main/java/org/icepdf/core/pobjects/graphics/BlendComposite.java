@@ -50,9 +50,6 @@ import java.awt.image.ColorModel;
 import java.awt.image.DataBuffer;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.logging.Logger;
 
 public final class BlendComposite implements Composite {
@@ -101,38 +98,8 @@ public final class BlendComposite implements Composite {
     private static boolean disableBlendComposite;
 
     static {
-        // sets the shadow colour of the decorator.
         disableBlendComposite = Defs.booleanProperty(
                 "org.icepdf.core.paint.disableBlendComposite", false);
-
-        /*
-        Check for XRSurfaceData.XRInternalSurfaceData.getRaster implementation
-        On Linux, the implementation simply returns InternalError
-        We have to preventatively disable it, otherwise it will cause an InternalError when annotations using
-        BlendComposite are rendered
-        */
-        try {
-            final Class xrSurfaceDataClass = Class.forName("sun.java2d.xr.XRSurfaceData$XRInternalSurfaceData");
-            final Constructor constructor = xrSurfaceDataClass.getDeclaredConstructor(Class.forName("sun.java2d.xr.XRBackend"), int.class);
-            final Object xrSurfaceData = constructor.newInstance(null, 0);
-            final Method getRaster = xrSurfaceDataClass.getMethod("getRaster", int.class, int.class, int.class, int.class);
-            getRaster.invoke(xrSurfaceData, 0, 0, 0, 0);
-        } catch (final InvocationTargetException e) {
-            if (e.getCause() instanceof InternalError) {
-                disableBlendComposite = true;
-            }
-            /*
-            If there is another cause, this means that getRaster implementation is not simply "throw
-            new InternalError()", in which case this implementation may perfectly work with real values.
-            */
-        } catch (final InternalError e) {
-            disableBlendComposite = true;
-        } catch (final Exception ignored) {
-            /*
-            If there are other exceptions (NoSuchClass, NoSuchMethod, etc), this probably means that the api changed
-            or that java2d.xr is not available, in which case the blend composite rendering could work perfectly.
-            */
-        }
     }
 
     public static final Name NORMAL_VALUE = new Name("Normal");
