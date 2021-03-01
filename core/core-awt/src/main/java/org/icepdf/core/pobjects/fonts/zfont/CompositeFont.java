@@ -150,7 +150,7 @@ public abstract class CompositeFont extends SimpleFont {
         }
         if (library.getObject(entries, DW_KEY) != null) {
             defaultWidth =
-                    ((Number) library.getObject(entries, DW_KEY)).floatValue();
+                    ((Number) library.getObject(entries, DW_KEY)).floatValue() * 0.001f;
         }
 
         if (fontDescriptor != null) {
