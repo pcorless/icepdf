@@ -119,8 +119,8 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
         ZFontType2 font = (ZFontType2) deriveFont(size);
         if (widths != null) {
             font.widths = widths;
-            font.defaultWidth = defaultWidth;
         }
+        font.defaultWidth = defaultWidth * 0.001f;
         return font;
     }
 

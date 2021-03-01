@@ -72,6 +72,7 @@ public abstract class ZSimpleFont implements FontFile {
         this.firstCh = font.firstCh;
         this.ascent = font.ascent;
         this.descent = font.descent;
+        this.defaultWidth = font.defaultWidth;
         this.bbox = font.bbox;
         this.widths = font.widths;
         this.cMap = font.cMap;
