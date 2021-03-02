@@ -72,8 +72,8 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
         if (advance == 0) {
             advance = 1.0f;
         }
-        float x = advance * size;//* (float) gsTransform.getScaleX();
-        float y = advance * size;//* (float) gsTransform.getShearY();
+        float x = advance * size * (float) gsTransform.getScaleX();
+        float y = advance * size * (float) gsTransform.getShearY();
         return new Point2D.Float(x, y);
     }
 

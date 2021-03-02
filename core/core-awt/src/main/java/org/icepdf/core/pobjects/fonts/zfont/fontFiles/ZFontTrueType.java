@@ -269,23 +269,26 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
         int gid = 0;
         try {
             if (cmapWinSymbol == null) {
-                String name = encoding != null ? encoding.getName(code) : ".notdef";
                 if (encoding == null) {
                     return cmapMacRoman.getGlyphId(code);
                 }
-                // (3, 1) - (Windows, Unicode)
-                if (cmapWinUnicode != null && name != null) {
-                    String unicode = GlyphList.getAdobeGlyphList().toUnicode(name);
-                    if (unicode != null) {
-                        int uni = unicode.codePointAt(0);
-                        gid = cmapWinUnicode.getGlyphId(uni);
+                String name = encoding.getName(code);
+                // this is slow,  would like to improve.
+                if (!".notdef".equals(name)) {
+                    // (3, 1) - (Windows, Unicode)
+                    if (cmapWinUnicode != null && name != null) {
+                        String unicode = GlyphList.getAdobeGlyphList().toUnicode(name);
+                        if (unicode != null) {
+                            int uni = unicode.codePointAt(0);
+                            gid = cmapWinUnicode.getGlyphId(uni);
+                        }
                     }
-                }
-                // (1, 0) - (Macintosh, Roman)
-                if (gid == 0 && cmapMacRoman != null && name != null) {
-                    Character macCode = org.icepdf.core.pobjects.fonts.zfont.Encoding.macRomanEncoding.getChar(name);
-                    if (macCode != null) {
-                        gid = cmapMacRoman.getGlyphId(macCode);
+                    // (1, 0) - (Macintosh, Roman)
+                    if (gid == 0 && cmapMacRoman != null && name != null) {
+                        Character macCode = org.icepdf.core.pobjects.fonts.zfont.Encoding.macRomanEncoding.getChar(name);
+                        if (macCode != null) {
+                            gid = cmapMacRoman.getGlyphId(macCode);
+                        }
                     }
                 }
                 // 'post' table - comment is incorrect but keeping it for now as the post table is an encoding
@@ -294,7 +297,9 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
                 if (gid == 0) {
                     // still not happy with this, lots of mystery and deception that needs to be figured out.
                     if (encoding != null) {
-                        if (encoding.getName().equals(org.icepdf.core.pobjects.fonts.zfont.Encoding.WIN_ANSI_ENCODING_NAME) && cmapWinUnicode != null) {
+                        if (cmapWinUnicode != null &&
+                                (encoding.getName().equals(org.icepdf.core.pobjects.fonts.zfont.Encoding.WIN_ANSI_ENCODING_NAME)
+                                        || encoding.getName().equals("diff"))) {
                             gid = cmapWinUnicode.getGlyphId(code);
                         } else if (encoding.getName().startsWith("Mac") && cmapMacRoman != null) {
                             gid = cmapMacRoman.getGlyphId(code);

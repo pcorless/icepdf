@@ -29,7 +29,7 @@ public abstract class CompositeFont extends SimpleFont {
     protected final Map<Integer, Float> glyphHeights = new HashMap<>();
     protected BoundingBox fontBBox;
 
-    protected float defaultWidth = -1;
+    protected float defaultWidth = 1.0f;
     protected float[] widths = null;
 
 
