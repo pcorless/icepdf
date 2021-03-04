@@ -38,6 +38,7 @@ public class Type0Font extends SimpleFont {
 
         parseDescendantFont();
         findFontIfNotEmbedded();
+        parseToUnicode();
         parseEncoding();
 
         inited = true;
@@ -48,7 +49,7 @@ public class Type0Font extends SimpleFont {
         if (name != null) {
             cMap = CMap.getInstance(name);
             Encoding encoding = Encoding.getInstance((name).getName());
-            font = font.deriveFont(encoding, cMap);
+            font = font.deriveFont(encoding, toUnicodeCMap);
         }
         if (cMap != null) {
             isCMapPredefined = true;

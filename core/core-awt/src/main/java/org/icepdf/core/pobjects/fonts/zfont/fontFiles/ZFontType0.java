@@ -139,41 +139,28 @@ public class ZFontType0 extends ZSimpleFont {
 
     @Override
     public FontFile deriveFont(AffineTransform at) {
-//        if (cidFont != null) {
         ZFontType0 font = new ZFontType0(this);
         font.setFontTransform(at);
         return font;
-//        } else {
-//            return this;
-//        }
     }
 
     @Override
     public FontFile deriveFont(float pointSize) {
-//        if (cidFont != null) {
         ZFontType0 font = new ZFontType0(this);
         font.setPointSize(pointSize);
         return font;
-//        } else {
-//            return this;
-//        }
     }
 
     @Override
     public FontFile deriveFont(Encoding encoding, CMap toUnicode) {
-//        if (cidFont != null) {
         ZFontType0 font = new ZFontType0(this);
         font.encoding = encoding;
         font.toUnicode = toUnicode;
         return font;
-//        } else {
-//            return this;
-//        }
     }
 
     @Override
     public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
-//        if (cidFont != null) {
         ZFontType0 font = new ZFontType0(this);
         font.missingWidth = this.missingWidth;
         font.firstCh = firstCh;
@@ -183,9 +170,6 @@ public class ZFontType0 extends ZSimpleFont {
         font.cMap = diff != null ? diff : font.cMap;
         font.bbox = calculateBbox(bbox);
         return font;
-//        } else {
-//            return this;
-//        }
     }
 
     @Override

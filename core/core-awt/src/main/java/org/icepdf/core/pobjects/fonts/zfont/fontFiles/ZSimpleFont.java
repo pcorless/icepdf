@@ -149,7 +149,7 @@ public abstract class ZSimpleFont implements FontFile {
 
     @Override
     public Rectangle2D getMaxCharBounds() {
-        return new Rectangle2D.Double(0.0, 0.0, 1.0, 1.0);
+        return bbox;
     }
 
     @Override

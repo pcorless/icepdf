@@ -135,6 +135,8 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     public FontFile deriveFont(float pointSize) {
         ZFontType2 font = new ZFontType2(this);
         font.setPointSize(pointSize);
+        // todo further investigation to try and get text selection bounds working correctly
+//        font.bbox = calculateBbox(bbox);
         return font;
     }
 
@@ -149,13 +151,22 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     @Override
     public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
         ZFontType2 font = new ZFontType2(this);
+        font.firstCh = firstCh;
+        font.ascent = ascent;
+        font.descent = descent;
+        font.cMap = diff;
+        font.bbox = calculateBbox(bbox);
         return font;
     }
 
     @Override
     public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
         ZFontType2 font = new ZFontType2(this);
-        // todo widths array, have worked this inanother class, maybe not be applicable here?
+        font.firstCh = firstCh;
+        font.ascent = ascent;
+        font.descent = descent;
+        font.cMap = diff;
+        font.bbox = calculateBbox(bbox);
         return font;
     }
 
@@ -199,9 +210,7 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     }
 
     private void setCID(CMap cid, CMap uni) {
-        cid2gid = cid != null ? cid : null;//ur_.c2g_;
-//        touni_ = uni != null ? uni : /*c2g_==ur_.c2g_? CMap.IDENTITY:=>same as default*/ CMap.IDENTITY;
-//        spacech_ = Integer.MIN_VALUE;
+        cid2gid = cid != null ? cid : null;
     }
 
     private int getCharToGid(char character) {
@@ -221,9 +230,6 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
         if (cid2gid != null) {
             return cid2gid.toSelector((char) code);
         }
-//        else {
-//            return super.codeToGID(code);
-//        }
         return code;
     }
 
