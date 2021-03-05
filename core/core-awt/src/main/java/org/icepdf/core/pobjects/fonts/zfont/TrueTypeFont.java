@@ -20,6 +20,10 @@ public class TrueTypeFont extends SimpleFont {
     public synchronized void init() {
         super.init();
         inited = true;
+        if (encoding == null) {
+            encoding = Encoding.standardEncoding;
+            font = font.deriveFont(encoding, toUnicodeCMap);
+        }
     }
 
 

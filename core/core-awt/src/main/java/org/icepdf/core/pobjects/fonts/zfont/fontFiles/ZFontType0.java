@@ -168,7 +168,7 @@ public class ZFontType0 extends ZSimpleFont {
         font.descent = descent;
         font.widths = widths;
         font.cMap = diff != null ? diff : font.cMap;
-        font.bbox = calculateBbox(bbox);
+        font.bbox = bbox;
         return font;
     }
 
@@ -181,7 +181,7 @@ public class ZFontType0 extends ZSimpleFont {
         font.ascent = ascent;
         font.descent = descent;
         font.cMap = diff;
-        font.bbox = calculateBbox(bbox);
+        font.bbox = bbox;
         return font;
 //        } else {
 //            return this;

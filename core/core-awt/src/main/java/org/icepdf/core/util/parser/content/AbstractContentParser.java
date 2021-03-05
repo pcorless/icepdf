@@ -1467,7 +1467,6 @@ public abstract class AbstractContentParser {
         // glyph placement params
         float currentX, currentY;
         float newAdvanceX, newAdvanceY;
-        // Iterate through displayText to calculate the the new advanceX value
         for (int i = 0; i < textLength; i++) {
             currentChar = displayText.charAt(i);
 

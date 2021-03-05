@@ -22,6 +22,7 @@ import org.icepdf.core.util.Defs;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
+import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 
@@ -106,19 +107,11 @@ public class TextSprite {
         // we can change the bounds of glyphBounds as this is what needs to be normalized
         // to page space
         // IMPORTANT: where working in Java Coordinates with any of the Font bounds
-        double descent = font.getDescent();
-        double ascent = font.getAscent();
+        float descent = (float) font.getDescent();
+        float ascent = (float) font.getAscent();
         float w = width;//(float)stringBounds.getWidth();
-        float h = (float) (ascent - descent);
+        float h = ascent - descent;
 
-        Rectangle2D bbox = font.getMaxCharBounds();
-
-        if (h <= 0.0f) {
-            h = (float) bbox.getHeight();
-        }
-        if (w <= 0.0f) {
-            w = (float) bbox.getWidth();
-        }
         // zero height will not intersect with clip rectangle and maybe have visibility issues.
         // we generally get here if the font.getAscent is zero and as a result must compensate.
         if (h <= 0.0f) {
@@ -130,16 +123,13 @@ public class TextSprite {
                 h = font.getSize();
             }
         }
-        // apply fontsize.
+//        Rectangle2D.Float glyphBounds = new Rectangle2D.Float(x, y - ascent, w, h);
         h *= Math.abs(font.getSize());
-        descent *= Math.abs(font.getSize());
-
         Rectangle2D.Float glyphBounds;
-        // irregular negative layout of text,  need to create the bbox appropriately.
         if (w < 0.0f || font.getSize() < 0) {
-            glyphBounds = new Rectangle2D.Float(x + width, y - (float) descent, -w, h);
+            glyphBounds = new Rectangle2D.Float(x + width, y - ascent, -w, h);
         } else {
-            glyphBounds = new Rectangle2D.Float(x, y - h - (float) descent, w, h);
+            glyphBounds = new Rectangle2D.Float(x, y - ascent, w, h);
         }
 
         // add bounds to total text bounds.
@@ -296,7 +286,6 @@ public class TextSprite {
         this.fontSize = fontSize;
     }
 
-    /*
     private void drawBoundBox(Graphics2D gg) {
 
         // draw the characters
@@ -319,12 +308,11 @@ public class TextSprite {
         gg.setColor(oldColor);
         gg.setStroke(oldStroke);
     }
-    */
 
     public void setFont(FontFile font) {
         this.font = font;
     }
-    /*
+
     private void drawGyphBox(Graphics2D gg, GlyphText glyphSprite) {
 
         // draw the characters
@@ -348,9 +336,6 @@ public class TextSprite {
         gg.setStroke(oldStroke);
 
     }
-
-
-    */
 
     /**
      * Tests if the interior of the <code>TextSprite</code> bounds intersects the

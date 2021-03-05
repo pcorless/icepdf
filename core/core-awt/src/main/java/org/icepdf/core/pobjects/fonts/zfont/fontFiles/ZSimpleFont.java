@@ -8,6 +8,7 @@ import org.icepdf.core.pobjects.graphics.TextState;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
@@ -148,8 +149,32 @@ public abstract class ZSimpleFont implements FontFile {
     }
 
     @Override
+    public Shape getEstringOutline(String estr, float x, float y) {
+        try {
+            String name = codeToName(estr);
+            Shape glyph = fontBoxFont.getPath(name);
+            if (encoding != null && !fontBoxFont.hasGlyph(name)) {
+                name = encoding.getName(estr.charAt(0));
+                if (name != null) {
+                    glyph = fontBoxFont.getPath(name);
+                }
+            }
+
+            Area outline = new Area(glyph);
+            AffineTransform transform = new AffineTransform();
+            transform.translate(x, y);
+            transform.concatenate(fontTransform);
+            outline = outline.createTransformedArea(transform);
+            return outline;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
     public Rectangle2D getMaxCharBounds() {
-        return bbox;
+        return calculateBbox(bbox);
     }
 
     @Override
@@ -237,11 +262,6 @@ public abstract class ZSimpleFont implements FontFile {
     }
 
     @Override
-    public Shape getEstringOutline(String estr, float x, float y) {
-        return null;
-    }
-
-    @Override
     public ByteEncoding getByteEncoding() {
         return null;
     }
@@ -284,14 +304,10 @@ public abstract class ZSimpleFont implements FontFile {
 
     protected Rectangle2D calculateBbox(Rectangle2D bbox) {
         if (bbox != null) {
-            double scaleX = 0.001 / fontMatrix.getScaleX();
-            double scaleY = 0.001 / fontMatrix.getScaleY();
-
-            return new Rectangle2D.Double(
-                    bbox.getX() * scaleX,
-                    bbox.getY() * scaleY,
-                    bbox.getWidth() * scaleX,
-                    bbox.getHeight() * scaleY);
+            AffineTransform af = new AffineTransform();
+//            af.scale(size, size);
+            af.concatenate(fontMatrix);
+            return af.createTransformedShape(bbox).getBounds2D();
         }
         return this.bbox;
     }

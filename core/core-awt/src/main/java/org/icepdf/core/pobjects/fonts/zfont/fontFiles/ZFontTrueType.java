@@ -203,7 +203,7 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
         font.descent = descent;
         font.widths = widths;
         font.cMap = diff;
-        font.bbox = calculateBbox(bbox);
+        font.bbox = bbox;
         return font;
     }
 
@@ -215,7 +215,7 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
         font.ascent = ascent;
         font.descent = descent;
         font.cMap = diff;
-        font.bbox = calculateBbox(bbox);
+        font.bbox = bbox;
         return font;
     }
 

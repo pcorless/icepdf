@@ -114,7 +114,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
         font.missingWidth = missingWidth;
         font.ascent = ascent;
         font.descent = descent;
-        font.bbox = calculateBbox(bbox);
+        font.bbox = bbox;
         // todo diff cmap, likely not a type3 thing, see if an example shows up.
         return font;
     }
@@ -128,7 +128,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
         font.missingWidth = missingWidth;
         font.ascent = ascent;
         font.descent = descent;
-        font.bbox = calculateBbox(bbox);
+        font.bbox = bbox;
         return font;
     }
 
