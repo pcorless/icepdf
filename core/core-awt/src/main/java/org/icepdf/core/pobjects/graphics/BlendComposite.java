@@ -52,11 +52,6 @@ import java.awt.image.ColorModel;
 import java.awt.image.DataBuffer;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.logging.Logger;
 
 public final class BlendComposite implements Composite {
@@ -897,9 +892,10 @@ public final class BlendComposite implements Composite {
             }
         }
     }
-    private static void testCompositeSupport(){
+
+    private static void testCompositeSupport() {
         //Check composite support, on Linux it may throw internal error
-        final JPanel jpanel = new JPanel() {
+        final JPanel panel = new JPanel() {
             @Override
             protected void paintComponent(final Graphics g) {
                 final Graphics2D g2 = (Graphics2D) g;
@@ -922,25 +918,14 @@ public final class BlendComposite implements Composite {
         final JFrame frame = new JFrame();
         frame.setUndecorated(true);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        frame.add(jpanel);
+        frame.add(panel);
         frame.pack();
         frame.setSize(10, 10);
         frame.setLocation(0, 0);
         frame.setVisible(true);
         // Paint immediately, otherwise the disableBlendingComposite will go through untested
-        jpanel.paintImmediately(new Rectangle(0,0,10,10));
-        final Timer timer = new Timer(true);
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                SwingUtilities.invokeLater(() -> {
-                    //Hide and dispose frame
-                    frame.setVisible(false);
-                    frame.dispose();
-                    timer.cancel();
-                    timer.purge();
-                });
-            }
-        }, 500L);
+        panel.paintImmediately(new Rectangle(0, 0, 10, 10));
+        frame.setVisible(false);
+        frame.dispose();
     }
 }
