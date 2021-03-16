@@ -45,7 +45,9 @@ package org.icepdf.core.pobjects.graphics;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Defs;
 
+import javax.swing.*;
 import java.awt.*;
+import java.awt.geom.GeneralPath;
 import java.awt.image.ColorModel;
 import java.awt.image.DataBuffer;
 import java.awt.image.Raster;
@@ -53,6 +55,8 @@ import java.awt.image.WritableRaster;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.logging.Logger;
 
 public final class BlendComposite implements Composite {
@@ -105,34 +109,7 @@ public final class BlendComposite implements Composite {
         disableBlendComposite = Defs.booleanProperty(
                 "org.icepdf.core.paint.disableBlendComposite", false);
 
-        /*
-        Check for XRSurfaceData.XRInternalSurfaceData.getRaster implementation
-        On Linux, the implementation simply returns InternalError
-        We have to preventatively disable it, otherwise it will cause an InternalError when annotations using
-        BlendComposite are rendered
-        */
-        try {
-            final Class xrSurfaceDataClass = Class.forName("sun.java2d.xr.XRSurfaceData$XRInternalSurfaceData");
-            final Constructor constructor = xrSurfaceDataClass.getDeclaredConstructor(Class.forName("sun.java2d.xr.XRBackend"), int.class);
-            final Object xrSurfaceData = constructor.newInstance(null, 0);
-            final Method getRaster = xrSurfaceDataClass.getMethod("getRaster", int.class, int.class, int.class, int.class);
-            getRaster.invoke(xrSurfaceData, 0, 0, 0, 0);
-        } catch (final InvocationTargetException e) {
-            if (e.getCause() instanceof InternalError) {
-                disableBlendComposite = true;
-            }
-            /*
-            If there is another cause, this means that getRaster implementation is not simply "throw
-            new InternalError()", in which case this implementation may perfectly work with real values.
-            */
-        } catch (final InternalError e) {
-            disableBlendComposite = true;
-        } catch (final Exception ignored) {
-            /*
-            If there are other exceptions (NoSuchClass, NoSuchMethod, etc), this probably means that the api changed
-            or that java2d.xr is not available, in which case the blend composite rendering could work perfectly.
-            */
-        }
+        testCompositeSupport();
     }
 
     public static final Name NORMAL_VALUE = new Name("Normal");
@@ -919,5 +896,51 @@ public final class BlendComposite implements Composite {
                     };
             }
         }
+    }
+    private static void testCompositeSupport(){
+        //Check composite support, on Linux it may throw internal error
+        final JPanel jpanel = new JPanel() {
+            @Override
+            protected void paintComponent(final Graphics g) {
+                final Graphics2D g2 = (Graphics2D) g;
+                g2.setComposite(new BlendComposite(BlendingMode.MULTIPLY, 1));
+                g2.setColor(Color.RED);
+                final GeneralPath gp = new GeneralPath();
+                gp.append(new Rectangle(4, 4, 10, 10), false);
+                gp.append(new Rectangle(6, 6, 10, 10), false);
+                //Check here for internal error
+                try {
+                    g2.fill(gp);
+                } catch (final InternalError e) {
+                    logger.info("Disabling blend composite due to internal error");
+                    disableBlendComposite = true;
+                }
+            }
+        };
+        // Need XRSurfaceData, can't use simple BufferedImage
+        // Need a frame visible for the paint event to go through
+        final JFrame frame = new JFrame();
+        frame.setUndecorated(true);
+        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        frame.add(jpanel);
+        frame.pack();
+        frame.setSize(10, 10);
+        frame.setLocation(0, 0);
+        frame.setVisible(true);
+        // Paint immediately, otherwise the disableBlendingComposite will go through untested
+        jpanel.paintImmediately(new Rectangle(0,0,10,10));
+        final Timer timer = new Timer(true);
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                SwingUtilities.invokeLater(() -> {
+                    //Hide and dispose frame
+                    frame.setVisible(false);
+                    frame.dispose();
+                    timer.cancel();
+                    timer.purge();
+                });
+            }
+        }, 500L);
     }
 }
