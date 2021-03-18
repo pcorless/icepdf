@@ -150,12 +150,24 @@ public class StateManager {
      * @param knownChanges The changes to compare to
      * @return true if the changes are different, false otherwise
      */
-    public boolean hasChangedSince(Map<Reference, PObject> knownChanges) {
-        if (knownChanges.size() == changes.size()) {
-            return knownChanges.entrySet().stream().anyMatch(entry -> !Objects.equals(changes.get(entry.getKey()), entry.getValue()));
-        } else {
-            return true;
-        }
+    public boolean hasChangedSince(final Map<Reference, PObject> knownChanges) {
+        return !getChangesSince(knownChanges).isEmpty();
+    }
+
+    /**
+     * Returns the changes that happened since the changes that are given as arguments
+     *
+     * @param knownChanges The known changes
+     * @return The new changes
+     */
+    public Map<Reference, PObject> getChangesSince(final Map<Reference, PObject> knownChanges) {
+        final Map<Reference, PObject> newChanges = new HashMap<>(changes);
+        knownChanges.forEach((r, o) -> {
+            if (!updatedReferences.contains(r) && knownChanges.get(r).equals(o)) {
+                newChanges.remove(r);
+            }
+        });
+        return newChanges;
     }
 
     /**
