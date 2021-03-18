@@ -1,6 +1,7 @@
 package org.icepdf.core.pobjects.fonts.zfont;
 
 import org.icepdf.core.pobjects.fonts.AFM;
+import org.icepdf.core.pobjects.fonts.ofont.CMap;
 import org.icepdf.core.util.Library;
 
 import java.util.HashMap;
@@ -35,6 +36,13 @@ public class Type1Font extends SimpleFont {
         if (encoding == null) {
             encoding = Encoding.standardEncoding;
             font = font.deriveFont(encoding, toUnicodeCMap);
+            if (toUnicodeCMap == null) {
+                if (encoding != null) {
+                    toUnicodeCMap = GlyphList.guessToUnicode(encoding);
+                } else {
+                    toUnicodeCMap = CMap.IDENTITY;
+                }
+            }
         }
 
         inited = true;

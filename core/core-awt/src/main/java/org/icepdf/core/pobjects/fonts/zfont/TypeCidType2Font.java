@@ -2,7 +2,7 @@ package org.icepdf.core.pobjects.fonts.zfont;
 
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
-import org.icepdf.core.pobjects.fonts.ofont.CMap;
+import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.ofont.CMapIdentityH;
 import org.icepdf.core.pobjects.fonts.ofont.CMapReverse;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
@@ -49,8 +49,8 @@ public class TypeCidType2Font extends CompositeFont {
 
         // ordering != null && ordering.startsWith("Identity")) || ((gidMap != null || !isFontSubstitution)
         if (gidMap == null && !isFontSubstitution) {
-            CMap subfontToUnicodeCMap = toUnicodeCMap != null ? toUnicodeCMap : CMap.IDENTITY;
-            font = ((ZFontType2) font).deriveFont(CMap.IDENTITY, subfontToUnicodeCMap);
+            CMap subfontToUnicodeCMap = toUnicodeCMap != null ? toUnicodeCMap : org.icepdf.core.pobjects.fonts.ofont.CMap.IDENTITY;
+            font = ((ZFontType2) font).deriveFont(org.icepdf.core.pobjects.fonts.ofont.CMap.IDENTITY, subfontToUnicodeCMap);
         }
         if (gidMap instanceof Name) {
             String mappingName = null;
@@ -62,10 +62,10 @@ public class TypeCidType2Font extends CompositeFont {
             // identity will be applied otherwise.
             if (mappingName == null || mappingName.equals("Identity")) {
                 // subfontToUnicodeCMap
-                font = ((ZFontType2) font).deriveFont(CMap.IDENTITY, toUnicodeCMap);
+                font = ((ZFontType2) font).deriveFont(org.icepdf.core.pobjects.fonts.ofont.CMap.IDENTITY, toUnicodeCMap);
             }
         } else if (gidMap instanceof Stream) {
-            int[] cidToGidMap = CMap.parseCidToGidMap((Stream) gidMap);
+            int[] cidToGidMap = org.icepdf.core.pobjects.fonts.ofont.CMap.parseCidToGidMap((Stream) gidMap);
             CMap cidGidMap = new CMapReverse(cidToGidMap);
             if (font instanceof ZFontType2) {
                 font = ((ZFontType2) font).deriveFont(cidGidMap, toUnicodeCMap);

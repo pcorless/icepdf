@@ -1,5 +1,8 @@
 package org.icepdf.core.pobjects.fonts.zfont;
 
+import org.icepdf.core.pobjects.fonts.Encoding;
+import org.icepdf.core.pobjects.fonts.ofont.CMap;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,8 +31,7 @@ public class GlyphList {
     }
 
     public String toUnicode(String name) {
-        String unicode = nameToUnicode.get(name);
-        return unicode;
+        return nameToUnicode.get(name);
     }
 
     public static GlyphList getAdobeGlyphList() {
@@ -38,6 +40,29 @@ public class GlyphList {
 
     public static GlyphList getZapfDingBatsGlyphList() {
         return zapfDingBatsGlyphList;
+    }
+
+    public static CMap guessToUnicode(Encoding encoding) {
+        int[] toUnicode = new int[256];
+        String unicode;
+        for (int i = 0; i < 256; i++) {
+            unicode = adobeGlyphList.toUnicode(encoding.getName((char) i));
+            if (unicode != null) {
+                toUnicode[i] = unicode.codePointAt(0);
+            }
+        }
+        boolean properMap = true;
+        int codePoint;
+        String name;
+        for (int i = 0; i < 256; i++) {
+            codePoint = toUnicode[i];
+            name = encoding.getName(i);
+            if (codePoint != i && name != null && name.equals(".notdef")) {
+                properMap = false;
+                break;
+            }
+        }
+        return properMap ? new CMap(toUnicode) : CMap.IDENTITY;
     }
 
     private static void initializeAdobeGlyphList() {

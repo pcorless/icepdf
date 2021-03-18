@@ -428,4 +428,9 @@ public class OFont implements FontFile {
     public URL getSource() {
         return null;
     }
+
+    @Override
+    public AffineTransform getFontTransform() {
+        return null;
+    }
 }

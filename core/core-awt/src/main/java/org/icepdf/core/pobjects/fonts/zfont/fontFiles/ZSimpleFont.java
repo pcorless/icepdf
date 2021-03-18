@@ -4,6 +4,7 @@ import org.apache.fontbox.FontBoxFont;
 import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
+import org.icepdf.core.pobjects.fonts.zfont.GlyphList;
 import org.icepdf.core.pobjects.graphics.TextState;
 
 import java.awt.*;
@@ -115,6 +116,17 @@ public abstract class ZSimpleFont implements FontFile {
     // allows sub classes to override the codeToName logic.
     protected String codeToName(String estr) {
         return estr;
+    }
+
+    protected CMap deriveToUnicode(org.icepdf.core.pobjects.fonts.Encoding encoding, CMap toUnicode) {
+        if (toUnicode != null) {
+            return toUnicode;
+        }
+        // try and guess the encoding
+        if (encoding != null) {
+            return GlyphList.guessToUnicode(encoding);
+        }
+        return org.icepdf.core.pobjects.fonts.ofont.CMap.IDENTITY;
     }
 
     @Override
@@ -274,6 +286,11 @@ public abstract class ZSimpleFont implements FontFile {
     @Override
     public void setIsCid() {
 
+    }
+
+    @Override
+    public AffineTransform getFontTransform() {
+        return fontTransform;
     }
 
     public boolean isDamaged() {

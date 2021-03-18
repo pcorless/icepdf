@@ -84,7 +84,7 @@ public class ZFontType1C extends ZSimpleFont {
     public FontFile deriveFont(Encoding encoding, CMap toUnicode) {
         ZFontType1C font = new ZFontType1C(this);
         font.encoding = encoding;
-        font.toUnicode = toUnicode;
+        font.toUnicode = deriveToUnicode(encoding, toUnicode);
         return font;
     }
 

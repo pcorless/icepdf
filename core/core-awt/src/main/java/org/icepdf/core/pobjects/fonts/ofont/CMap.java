@@ -539,6 +539,9 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
                 }
             }
         }
+        if (codeSpaceRange != null && codeSpaceRange[0] != null && ch < codeSpaceRange[0].length - 1) {
+            return Character.toString(codeSpaceRange[0][ch]);
+        }
         return String.valueOf(ch);
     }
 

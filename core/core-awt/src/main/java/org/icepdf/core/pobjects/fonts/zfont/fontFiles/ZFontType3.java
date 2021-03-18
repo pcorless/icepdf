@@ -102,6 +102,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
     public FontFile deriveFont(Encoding encoding, CMap toUnicode) {
         ZFontType3 font = (ZFontType3) deriveFont(this.size);
         font.encoding = encoding;
+        font.toUnicode = deriveToUnicode(encoding, toUnicode);
         return font;
     }
 

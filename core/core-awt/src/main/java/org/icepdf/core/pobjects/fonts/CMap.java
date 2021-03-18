@@ -26,6 +26,8 @@ public interface CMap {
 
     Name TYPE = new Name("CMap");
 
+    void init();
+
     /**
      * Maps the character id to an underlying unicode value if available.
      *

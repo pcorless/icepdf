@@ -17,15 +17,11 @@ package org.icepdf.core.pobjects.fonts;
 
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
-import org.icepdf.core.pobjects.fonts.ofont.OFont;
 import org.icepdf.core.pobjects.fonts.zfont.*;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.*;
-import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.logging.Level;
@@ -40,19 +36,6 @@ public class FontFactory {
 
     private static final Logger logger =
             Logger.getLogger(FontFactory.class.toString());
-
-    // allow scaling of large images to improve clarity on screen
-    private static final boolean awtFontLoading;
-
-    // dynamic property to switch between font engine and awt font substitution. 
-    private static boolean awtFontSubstitution;
-
-    static {
-        // turn on font file loading using awt, can cause the jvm to crash
-        // if the font file is corrupt.
-        awtFontLoading =
-                Defs.sysPropertyBoolean("org.icepdf.core.awtFontLoading", true);
-    }
 
     public static final int FONT_OPEN_TYPE = 5;
     public static final int FONT_TRUE_TYPE = java.awt.Font.TRUETYPE_FONT;
@@ -128,9 +111,6 @@ public class FontFactory {
         return font;
     }
 
-    // todo the whole font.derive font sort of indicates an element of reuse
-    //  maybe we should have base cash which does all the base parsing and then we'd save some time with the derive.
-    //  as it would onlys setup encoding, widths and sizes as needed. food for thought
     public FontFile createFontFile(Stream fontStream, int fontType, Name fontSubType) {
         FontFile fontFile = null;
         try {
@@ -151,36 +131,6 @@ public class FontFactory {
             }
         } catch (Throwable e) {
             logger.log(Level.WARNING, "Error reading font file type " + FONT_OPEN_TYPE, e);
-        }
-        // todo make a call about using the fontManager to load a substitution.
-        if (fontFile == null && awtFontLoading) {
-            // see if the font file can be loaded with Java Fonts
-            InputStream in = null;
-            try {
-                in = fontStream.getDecodedByteArrayInputStream();
-                // make sure we try to load open type fonts as well, done as true type.
-                if (fontType == FONT_OPEN_TYPE) fontType = FONT_TRUE_TYPE;
-                java.awt.Font javaFont = java.awt.Font.createFont(fontType, in);
-                if (javaFont != null) {
-                    // create instance of OFont.
-                    fontFile = new OFont(javaFont);
-                    if (logger.isLoggable(Level.FINE)) {
-                        logger.fine("Successfully created embedded OFont: " + fontTypeToString(fontType));
-                    }
-                    try {
-                        in.close();
-                    } catch (IOException e) {
-                        logger.log(Level.FINE, "Error closing font stream.", e);
-                    }
-                }
-            } catch (Throwable e) {
-                logger.log(Level.FINE, "Error reading font file with ", e);
-                try {
-                    if (in != null) in.close();
-                } catch (Throwable e1) {
-                    logger.log(Level.FINE, "Error closing font stream.", e);
-                }
-            }
         }
         return fontFile;
     }
@@ -206,39 +156,7 @@ public class FontFactory {
             // logging and error handling needs to be addressed
             e.printStackTrace();
         }
-        // todo, we may no longer needs this but no harm having it around for now.
-        if (fontFile == null) {
-            // see if the font file can be loaded with Java Fonts
-            try {
-                // make sure we try to load open type fonts as well, done as true type.
-                if (fontType == FONT_OPEN_TYPE) fontType = FONT_TRUE_TYPE;
-                java.awt.Font javaFont = java.awt.Font.createFont(fontType, url.openStream());
-                if (javaFont != null) {
-
-                    // create instance of OFont.
-                    fontFile = new OFont(javaFont);
-
-                    if (logger.isLoggable(Level.FINE)) {
-                        logger.fine("Successfully loaded OFont: " + url);
-                    }
-                }
-            } catch (Throwable e) {
-                logger.log(Level.FINE, "Error reading font file with ", e);
-            }
-        }
         return fontFile;
-    }
-
-    public boolean isAwtFontSubstitution() {
-        return awtFontSubstitution;
-    }
-
-    public void setAwtFontSubstitution(boolean awtFontSubstitution) {
-        FontFactory.awtFontSubstitution = awtFontSubstitution;
-    }
-
-    public void toggleAwtFontSubstitution() {
-        FontFactory.awtFontSubstitution = !FontFactory.awtFontSubstitution;
     }
 
     private String fontTypeToString(int fontType) {

@@ -19,7 +19,6 @@ package org.icepdf.core.pobjects.fonts;
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Resources;
-import org.icepdf.core.pobjects.fonts.ofont.CMap;
 import org.icepdf.core.util.Library;
 
 import java.util.HashMap;

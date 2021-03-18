@@ -72,6 +72,8 @@ public interface FontFile {
 
     float getSize();
 
+    AffineTransform getFontTransform();
+
     /**
      * Returns maximum ascent glyphs above baseline.
      *

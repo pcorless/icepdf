@@ -185,13 +185,7 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
         if (encoding != null) {
             font.encoding = encoding;
         }
-        if (toUnicode != null) {
-            font.toUnicode = toUnicode;
-        }
-        if (font.toUnicode == null) {
-            font.toUnicode = org.icepdf.core.pobjects.fonts.ofont.CMap.IDENTITY;
-        }
-
+        font.toUnicode = deriveToUnicode(encoding, toUnicode);
         return font;
     }
 

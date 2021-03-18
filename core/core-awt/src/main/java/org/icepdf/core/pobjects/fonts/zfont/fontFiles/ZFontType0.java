@@ -155,7 +155,7 @@ public class ZFontType0 extends ZSimpleFont {
     public FontFile deriveFont(Encoding encoding, CMap toUnicode) {
         ZFontType0 font = new ZFontType0(this);
         font.encoding = encoding;
-        font.toUnicode = toUnicode;
+        font.toUnicode = deriveToUnicode(encoding, toUnicode);
         return font;
     }
 
