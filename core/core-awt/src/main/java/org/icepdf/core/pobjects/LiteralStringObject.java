@@ -17,7 +17,6 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontFile;
-import org.icepdf.core.pobjects.fonts.ofont.OFont;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.Utils;
 
@@ -209,7 +208,7 @@ public class LiteralStringObject implements StringObject {
     public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
 
         if (fontFormat == Font.SIMPLE_FORMAT
-                || (font.getByteEncoding() == FontFile.ByteEncoding.ONE_BYTE && !(font instanceof OFont))) {
+                || (font.getByteEncoding() == FontFile.ByteEncoding.ONE_BYTE)) {
             return stringData;
         } else if (fontFormat == Font.CID_FORMAT) {
             int length = getLength();

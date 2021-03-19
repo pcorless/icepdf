@@ -1,4 +1,4 @@
-package org.icepdf.core.pobjects.fonts.ofont;
+package org.icepdf.core.pobjects.fonts.zfont.cmap;
 
 public interface CMapRange {
 

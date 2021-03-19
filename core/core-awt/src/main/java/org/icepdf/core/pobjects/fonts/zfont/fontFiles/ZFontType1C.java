@@ -133,7 +133,7 @@ public class ZFontType1C extends ZSimpleFont {
         return cffType1Font.getName();
     }
 
-    private class FontFileByteSource implements CFFParser.ByteSource {
+    private static class FontFileByteSource implements CFFParser.ByteSource {
         private final Stream fontStream;
 
         public FontFileByteSource(Stream fontStream) {

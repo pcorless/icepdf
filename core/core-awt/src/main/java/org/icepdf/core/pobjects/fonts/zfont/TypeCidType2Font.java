@@ -3,8 +3,8 @@ package org.icepdf.core.pobjects.fonts.zfont;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.CMap;
-import org.icepdf.core.pobjects.fonts.ofont.CMapIdentityH;
-import org.icepdf.core.pobjects.fonts.ofont.CMapReverse;
+import org.icepdf.core.pobjects.fonts.zfont.cmap.CMapIdentityH;
+import org.icepdf.core.pobjects.fonts.zfont.cmap.CMapReverse;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType2;
 import org.icepdf.core.util.Library;
@@ -41,16 +41,15 @@ public class TypeCidType2Font extends CompositeFont {
             }
         } else {
             // something bad happened font couldn't be loaded.
+            logger.warning("Could not derive with because of null Type2CID font.");
         }
     }
 
     protected void parseCidToGidMap() {
         Object gidMap = library.getObject(entries, CID_TO_GID_MAP_KEY);
-
-        // ordering != null && ordering.startsWith("Identity")) || ((gidMap != null || !isFontSubstitution)
         if (gidMap == null && !isFontSubstitution) {
-            CMap subfontToUnicodeCMap = toUnicodeCMap != null ? toUnicodeCMap : org.icepdf.core.pobjects.fonts.ofont.CMap.IDENTITY;
-            font = ((ZFontType2) font).deriveFont(org.icepdf.core.pobjects.fonts.ofont.CMap.IDENTITY, subfontToUnicodeCMap);
+            CMap subfontToUnicodeCMap = toUnicodeCMap != null ? toUnicodeCMap : org.icepdf.core.pobjects.fonts.zfont.cmap.CMap.IDENTITY;
+            font = ((ZFontType2) font).deriveFont(org.icepdf.core.pobjects.fonts.zfont.cmap.CMap.IDENTITY, subfontToUnicodeCMap);
         }
         if (gidMap instanceof Name) {
             String mappingName = null;
@@ -61,16 +60,14 @@ public class TypeCidType2Font extends CompositeFont {
             // mapping name will be null only in a few corner cases, but
             // identity will be applied otherwise.
             if (mappingName == null || mappingName.equals("Identity")) {
-                // subfontToUnicodeCMap
-                font = ((ZFontType2) font).deriveFont(org.icepdf.core.pobjects.fonts.ofont.CMap.IDENTITY, toUnicodeCMap);
+                font = ((ZFontType2) font).deriveFont(org.icepdf.core.pobjects.fonts.zfont.cmap.CMap.IDENTITY, toUnicodeCMap);
             }
         } else if (gidMap instanceof Stream) {
-            int[] cidToGidMap = org.icepdf.core.pobjects.fonts.ofont.CMap.parseCidToGidMap((Stream) gidMap);
+            int[] cidToGidMap = org.icepdf.core.pobjects.fonts.zfont.cmap.CMap.parseCidToGidMap((Stream) gidMap);
             CMap cidGidMap = new CMapReverse(cidToGidMap);
             if (font instanceof ZFontType2) {
                 font = ((ZFontType2) font).deriveFont(cidGidMap, toUnicodeCMap);
             }
         }
-//        }
     }
 }

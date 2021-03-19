@@ -18,7 +18,7 @@ package org.icepdf.core.pobjects.fonts.ofont;
 import java.util.HashMap;
 
 /**
- * put your documentation comment here
+ * @deprecated
  */
 public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
     private char enc[];

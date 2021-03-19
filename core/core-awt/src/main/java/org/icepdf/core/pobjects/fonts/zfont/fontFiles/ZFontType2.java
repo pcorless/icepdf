@@ -26,7 +26,7 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     private static final Logger logger =
             Logger.getLogger(ZFontType2.class.toString());
 
-    private TrueTypeFont trueTypeFont;
+    private final TrueTypeFont trueTypeFont;
 
     private CMap cid2gid;
 
@@ -41,7 +41,6 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
                 isDamaged = true;
                 logger.warning("Found CFF/OTF but expected embedded TTF font " + trueTypeFont.getName());
             }
-//            extractCmapTable();
         } catch (Throwable e) {
             logger.log(Level.SEVERE, "Could not initialize type2 font", e);
             throw new Exception(e);
@@ -135,8 +134,6 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     public FontFile deriveFont(float pointSize) {
         ZFontType2 font = new ZFontType2(this);
         font.setPointSize(pointSize);
-        // todo further investigation to try and get text selection bounds working correctly
-//        font.bbox = calculateBbox(bbox);
         return font;
     }
 
@@ -210,7 +207,8 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     }
 
     private void setCID(CMap cid, CMap uni) {
-        cid2gid = cid != null ? cid : null;
+        cid2gid = cid;
+        toUnicode = uni;
     }
 
     private int getCharToGid(char character) {

@@ -39,6 +39,7 @@ import java.util.logging.Logger;
  * OFont is an awt Font wrapper used to aid in the paint of glyphs.
  *
  * @since 3.0
+ * @deprecated
  */
 public class OFont implements FontFile {
 

@@ -27,7 +27,6 @@ public class ZFontType1 extends ZSimpleFont {
 
     private Type1Font type1Font;
 
-    // todo credit pdfbox for stream correction code
     public ZFontType1(Stream fontStream) throws Exception {
         try {
             // add length correction code
@@ -151,37 +150,6 @@ public class ZFontType1 extends ZSimpleFont {
     }
 
     /**
-     * Some Type 1 fonts have an invalid Length1, which causes the binary segment of the font
-     * to be truncated, see PDFBOX-2350, PDFBOX-3677.
-     *
-     * @param bytes   Type 1 stream bytes
-     * @param length1 Length1 from the Type 1 stream
-     * @return repaired Length1 value
-     */
-    private int repairLength1(byte[] bytes, int length1) {
-        // scan backwards from the end of the first segment to find 'exec'
-        int offset = Math.max(0, length1 - 4);
-        if (offset <= 0 || offset > bytes.length - 4) {
-            offset = bytes.length - 4;
-        }
-
-        offset = findBinaryOffsetAfterExec(bytes, offset);
-        if (offset == 0 && length1 > 0) {
-            // 2nd try with brute force
-            offset = findBinaryOffsetAfterExec(bytes, bytes.length - 4);
-        }
-
-        if (length1 - offset != 0 && offset > 0) {
-            if (logger.isLoggable(Level.WARNING)) {
-                logger.warning("Ignored invalid Length1 " + length1 + " for Type 1 font " + getName());
-            }
-            return offset;
-        }
-
-        return length1;
-    }
-
-    /**
      * Some Type 1 fonts have an invalid Length2, see PDFBOX-3475. A negative /Length2 brings an
      * IllegalArgumentException in Arrays.copyOfRange(), a huge value eats up memory because of
      * padding.
@@ -200,24 +168,4 @@ public class ZFontType1 extends ZSimpleFont {
         return length2;
     }
 
-    private static int findBinaryOffsetAfterExec(byte[] bytes, int startOffset) {
-        int offset = startOffset;
-        while (offset > 0) {
-            if (bytes[offset + 0] == 'e'
-                    && bytes[offset + 1] == 'x'
-                    && bytes[offset + 2] == 'e'
-                    && bytes[offset + 3] == 'c') {
-                offset += 4;
-                // skip additional CR LF space characters
-                while (offset < bytes.length &&
-                        (bytes[offset] == '\r' || bytes[offset] == '\n' ||
-                                bytes[offset] == ' ' || bytes[offset] == '\t')) {
-                    offset++;
-                }
-                break;
-            }
-            offset--;
-        }
-        return offset;
-    }
 }

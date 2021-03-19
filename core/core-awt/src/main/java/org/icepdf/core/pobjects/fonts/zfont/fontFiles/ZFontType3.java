@@ -35,7 +35,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
     public static final Name CHAR_PROCS_KEY = new Name("CharProcs");
     public static final Name RESOURCES_KEY = new Name("Resources");
 
-    private Library library;
+    private final Library library;
     protected HashMap entries;
     private HashMap charProcedures;
     private HashMap<Name, SoftReference<Shapes>> charShapesCache;
@@ -85,7 +85,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
             fontMatrix = new AffineTransform(0.001f, 0.0f, 0.0f, 0.001f, 0.0f, 0.0f);
         }
 
-        toUnicode = org.icepdf.core.pobjects.fonts.ofont.CMap.IDENTITY;
+        toUnicode = org.icepdf.core.pobjects.fonts.zfont.cmap.CMap.IDENTITY;
 
         // CharProcs resources, contains glyph name/stream pairs.
         o = library.getObject(properties, CHAR_PROCS_KEY);

@@ -1,7 +1,7 @@
 package org.icepdf.core.pobjects.fonts.zfont;
 
 import org.icepdf.core.pobjects.fonts.Encoding;
-import org.icepdf.core.pobjects.fonts.ofont.CMap;
+import org.icepdf.core.pobjects.fonts.zfont.cmap.CMap;
 
 import java.io.BufferedReader;
 import java.io.IOException;

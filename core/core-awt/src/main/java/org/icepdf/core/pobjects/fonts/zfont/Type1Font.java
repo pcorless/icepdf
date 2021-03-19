@@ -1,7 +1,7 @@
 package org.icepdf.core.pobjects.fonts.zfont;
 
 import org.icepdf.core.pobjects.fonts.AFM;
-import org.icepdf.core.pobjects.fonts.ofont.CMap;
+import org.icepdf.core.pobjects.fonts.zfont.cmap.CMap;
 import org.icepdf.core.util.Library;
 
 import java.util.HashMap;

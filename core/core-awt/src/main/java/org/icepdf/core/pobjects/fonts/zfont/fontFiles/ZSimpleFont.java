@@ -126,7 +126,7 @@ public abstract class ZSimpleFont implements FontFile {
         if (encoding != null) {
             return GlyphList.guessToUnicode(encoding);
         }
-        return org.icepdf.core.pobjects.fonts.ofont.CMap.IDENTITY;
+        return org.icepdf.core.pobjects.fonts.zfont.cmap.CMap.IDENTITY;
     }
 
     @Override
@@ -339,6 +339,58 @@ public abstract class ZSimpleFont implements FontFile {
             logger.log(Level.WARNING, "Could not convert font matrix ", e);
         }
         return new AffineTransform(0.001f, 0, 0, -0.001f, 0, 0);
+    }
+
+    /**
+     * Some Type 1 fonts have an invalid Length1, which causes the binary segment of the font
+     * to be truncated, see PDFBOX-2350, PDFBOX-3677.
+     *
+     * @param bytes   Type 1 stream bytes
+     * @param length1 Length1 from the Type 1 stream
+     * @return repaired Length1 value
+     */
+    protected int repairLength1(byte[] bytes, int length1) {
+        // scan backwards from the end of the first segment to find 'exec'
+        int offset = Math.max(0, length1 - 4);
+        if (offset <= 0 || offset > bytes.length - 4) {
+            offset = bytes.length - 4;
+        }
+
+        offset = findBinaryOffsetAfterExec(bytes, offset);
+        if (offset == 0 && length1 > 0) {
+            // 2nd try with brute force
+            offset = findBinaryOffsetAfterExec(bytes, bytes.length - 4);
+        }
+
+        if (length1 - offset != 0 && offset > 0) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Ignored invalid Length1 " + length1 + " for Type 1 font " + getName());
+            }
+            return offset;
+        }
+
+        return length1;
+    }
+
+    protected static int findBinaryOffsetAfterExec(byte[] bytes, int startOffset) {
+        int offset = startOffset;
+        while (offset > 0) {
+            if (bytes[offset + 0] == 'e'
+                    && bytes[offset + 1] == 'x'
+                    && bytes[offset + 2] == 'e'
+                    && bytes[offset + 3] == 'c') {
+                offset += 4;
+                // skip additional CR LF space characters
+                while (offset < bytes.length &&
+                        (bytes[offset] == '\r' || bytes[offset] == '\n' ||
+                                bytes[offset] == ' ' || bytes[offset] == '\t')) {
+                    offset++;
+                }
+                break;
+            }
+            offset--;
+        }
+        return offset;
     }
 
 }

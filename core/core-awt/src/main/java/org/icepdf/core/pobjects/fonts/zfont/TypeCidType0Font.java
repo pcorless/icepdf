@@ -31,6 +31,7 @@ public class TypeCidType0Font extends CompositeFont {
             }
         } else {
             // something bad happened font couldn't be loaded.
+            logger.warning("Could not derive with because of null Type0CID font.");
         }
     }
 

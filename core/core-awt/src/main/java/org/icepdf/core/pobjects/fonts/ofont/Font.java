@@ -20,6 +20,7 @@ import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.AFM;
 import org.icepdf.core.pobjects.fonts.FontDescriptor;
+import org.icepdf.core.pobjects.fonts.zfont.cmap.CMap;
 import org.icepdf.core.util.FontUtil;
 import org.icepdf.core.util.Library;
 
@@ -31,8 +32,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
- *
+ * @deprecated
  */
 public class Font extends org.icepdf.core.pobjects.fonts.Font {
 

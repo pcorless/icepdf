@@ -127,14 +127,6 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
             g.translate(x, y);
             g.transform(this.fontTransform);
 
-            // apply font scaling experiment
-//            int glyphId = echar - firstCh;
-//            int metricsWidth = horizontalMetricsTable.getAdvanceWidth(
-//                    Math.min(gid, (int) horizontalMetricsTable.getLength() - 1));
-//            double width = widths != null && 0 <= glyphId && glyphId < widths.length && widths[glyphId] > 1 ? widths[glyphId] * 0.001f / fontTransform.getScaleX() : 0.0;
-//            double scale = metricsWidth / width;
-//            System.out.println(scale);
-
             if (TextState.MODE_FILL == mode || TextState.MODE_FILL_STROKE == mode ||
                     TextState.MODE_FILL_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
                 g.fill(outline);
@@ -158,10 +150,7 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
         ZFontTrueType font = (ZFontTrueType) deriveFont(size);
         if (widths != null) {
             font.widths = widths;
-        } else {
-
         }
-
         return font;
     }
 
@@ -221,7 +210,7 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
 //            e.printStackTrace();
 //        }
 //        return false;
-        // todo directly effects parsing cid string,  need to look at cmap instead to derive byte lenght for char
+        // todo directly effects parsing cid string,  need to look at cmap instead to derive byte length for char
         //  first, well pretty sure anyways.
         return true;
     }

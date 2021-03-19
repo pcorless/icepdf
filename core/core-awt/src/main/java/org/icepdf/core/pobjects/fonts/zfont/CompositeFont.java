@@ -42,7 +42,6 @@ public abstract class CompositeFont extends SimpleFont {
         if (inited) {
             return;
         }
-        // todo pull from simple and put in font.
         parseFontDescriptor();
         findFontIfNotEmbedded();
         parseCidSystemInfo();
@@ -110,7 +109,7 @@ public abstract class CompositeFont extends SimpleFont {
                     // d) Obtain the CMap with the name constructed in step (c)
                     // (available from the ASN Web site; see the Bibliography).
 
-                    // todo complete font cid setup.
+                    // todo complete font cid setup in future Non-roman font fix release
 //                    CMap ucs2CMap = CMap.getInstance(new Name(ucs2CMapName));
                     // e) Map the CID obtained in step (a) according to the CMap
                     // obtained in step (d), producing a Unicode value.
