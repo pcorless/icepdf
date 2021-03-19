@@ -44,7 +44,7 @@ public class ZFontOpenType extends ZFontTrueType {
     }
 
     @Override
-    public void drawEstring(Graphics2D g, String estr, float x, float y, long layout, int mode, Color strokeColor) {
+    public void paint(Graphics2D g, String estr, float x, float y, long layout, int mode, Color strokeColor) {
         try {
             AffineTransform af = g.getTransform();
             char echar = estr.charAt(0);

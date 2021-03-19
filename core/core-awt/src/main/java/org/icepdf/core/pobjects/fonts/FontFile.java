@@ -42,7 +42,7 @@ public interface FontFile {
 
     // todo do some refacotring of method name 'e' awlays seemed strange to me.
 
-    Point2D echarAdvance(char ech);
+    Point2D getAdvance(char ech);
 
     FontFile deriveFont(AffineTransform at);
 
@@ -54,7 +54,7 @@ public interface FontFile {
     FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth,
                         float ascent, float descent, Rectangle2D bbox, char[] diff);
 
-    boolean canDisplayEchar(char ech);
+    boolean canDisplay(char ech);
 
     void setIsCid();
 
@@ -124,21 +124,23 @@ public interface FontFile {
 
     /**
      * Returns the character that seems to be used as a space in the current encoding, or NOTDEF_CHAR if no such character.
+     *
      * @return associated space character.
      */
-    char getSpaceEchar();
+    char getSpace();
 
-    Rectangle2D getEstringBounds(String estr, int beginIndex, int limit);
+    Rectangle2D getBounds(String estr, int beginIndex, int limit);
 
     /**
      * Returns primary format, such as "Type1" or "OpenType".
-     * @return  "Type1" or "OpenType"
+     *
+     * @return "Type1" or "OpenType"
      */
     String getFormat();
 
-    void drawEstring(Graphics2D g, String estr, float x,
-                     float y, long layout, int mode,
-                     Color strokeColor);
+    void paint(Graphics2D g, String estr, float x,
+               float y, long layout, int mode,
+               Color strokeColor);
 
     /**
      * Get the glyph outline shape for the given estr translated to x,y.
@@ -148,7 +150,7 @@ public interface FontFile {
      * @param y    y coordinate to translate outline shape.
      * @return glyph outline of the estr.
      */
-    Shape getEstringOutline(String estr, float x, float y);
+    Shape getOutline(String estr, float x, float y);
 
     ByteEncoding getByteEncoding();
 

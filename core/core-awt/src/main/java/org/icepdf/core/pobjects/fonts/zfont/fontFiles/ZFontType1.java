@@ -72,13 +72,13 @@ public class ZFontType1 extends ZSimpleFont {
     }
 
     @Override
-    public Point2D echarAdvance(char ech) {
-        return super.echarAdvance(ech);
+    public Point2D getAdvance(char ech) {
+        return super.getAdvance(ech);
     }
 
     @Override
-    public void drawEstring(Graphics2D g, String estr, float x, float y, long layout, int mode, Color strokeColor) {
-        super.drawEstring(g, estr, x, y, layout, mode, strokeColor);
+    public void paint(Graphics2D g, String estr, float x, float y, long layout, int mode, Color strokeColor) {
+        super.paint(g, estr, x, y, layout, mode, strokeColor);
     }
 
     @Override
@@ -130,7 +130,7 @@ public class ZFontType1 extends ZSimpleFont {
     }
 
     @Override
-    public boolean canDisplayEchar(char ech) {
+    public boolean canDisplay(char ech) {
         return type1Font.hasGlyph(String.valueOf(ech));
     }
 

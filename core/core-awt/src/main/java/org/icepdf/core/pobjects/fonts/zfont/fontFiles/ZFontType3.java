@@ -163,9 +163,9 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
      * @param layout layout mode of this font, not value for type3 font
      * @param mode   rendering mode, not applicable for type3 fonts.
      */
-    public void drawEstring(Graphics2D g2d, String string,
-                            float x, float y,
-                            long layout, int mode, Color color) {
+    public void paint(Graphics2D g2d, String string,
+                      float x, float y,
+                      long layout, int mode, Color color) {
 
         AffineTransform oldTransform = g2d.getTransform();
         AffineTransform currentCTM = g2d.getTransform();
@@ -191,7 +191,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
         g2d.setTransform(oldTransform);
     }
 
-    public Point2D echarAdvance(char displayChar) {
+    public Point2D getAdvance(char displayChar) {
         String charName = encoding.getName(displayChar);
         float width = 0f;
         if (charName != null && displayChar >= firstCh && displayChar <= 255) {
@@ -309,7 +309,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
      *
      * @return space character, always 32.
      */
-    public char getSpaceEchar() {
+    public char getSpace() {
         return 32;
     }
 
@@ -318,10 +318,6 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
     }
 
     public boolean canDisplay(char c) {
-        return canDisplayEchar(c);
-    }
-
-    public boolean canDisplayEchar(char c) {
         return (getGlyph(c, Color.black) != null);
     }
 
@@ -400,7 +396,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
      * @param y    y coordinate to translate outline shape.
      * @return empty Area object.
      */
-    public Shape getEstringOutline(String estr, float x, float y) {
+    public Shape getOutline(String estr, float x, float y) {
         return new Area();
     }
 

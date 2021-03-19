@@ -86,7 +86,7 @@ public abstract class ZSimpleFont implements FontFile {
     }
 
     @Override
-    public Point2D echarAdvance(final char ech) {
+    public Point2D getAdvance(final char ech) {
         try {
             String name = encoding != null ? encoding.getName(ech) : null;
             float advance = 0.001f; // todo should be DW.
@@ -130,7 +130,7 @@ public abstract class ZSimpleFont implements FontFile {
     }
 
     @Override
-    public void drawEstring(Graphics2D g, String estr, float x, float y, long layout, int mode, Color strokeColor) {
+    public void paint(Graphics2D g, String estr, float x, float y, long layout, int mode, Color strokeColor) {
         try {
             AffineTransform af = g.getTransform();
             String name = codeToName(estr);
@@ -161,7 +161,7 @@ public abstract class ZSimpleFont implements FontFile {
     }
 
     @Override
-    public Shape getEstringOutline(String estr, float x, float y) {
+    public Shape getOutline(String estr, float x, float y) {
         try {
             String name = codeToName(estr);
             Shape glyph = fontBoxFont.getPath(name);
@@ -259,12 +259,12 @@ public abstract class ZSimpleFont implements FontFile {
     }
 
     @Override
-    public char getSpaceEchar() {
+    public char getSpace() {
         return 0;
     }
 
     @Override
-    public Rectangle2D getEstringBounds(String estr, int beginIndex, int limit) {
+    public Rectangle2D getBounds(String estr, int beginIndex, int limit) {
         return null;
     }
 

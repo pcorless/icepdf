@@ -63,7 +63,7 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     }
 
     @Override
-    public Point2D echarAdvance(char ech) {
+    public Point2D getAdvance(char ech) {
         float advance = defaultWidth;
         if (widths != null && ech < widths.length) {
             advance = widths[ech];
@@ -77,7 +77,7 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     }
 
     @Override
-    public void drawEstring(Graphics2D g, String estr, float x, float y, long layout, int mode, Color strokeColor) {
+    public void paint(Graphics2D g, String estr, float x, float y, long layout, int mode, Color strokeColor) {
         try {
             AffineTransform af = g.getTransform();
             char echar = estr.charAt(0);
@@ -174,7 +174,7 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     }
 
     @Override
-    public boolean canDisplayEchar(char ech) {
+    public boolean canDisplay(char ech) {
 //        try {
 //            return trueTypeFont.hasGlyph(String.valueOf(ech));
 //        } catch (IOException e) {

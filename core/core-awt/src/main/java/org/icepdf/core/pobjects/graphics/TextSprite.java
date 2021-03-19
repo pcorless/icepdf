@@ -109,13 +109,13 @@ public class TextSprite {
         // IMPORTANT: where working in Java Coordinates with any of the Font bounds
         float descent = (float) font.getDescent();
         float ascent = (float) font.getAscent();
-        float w = width;//(float)stringBounds.getWidth();
+        float w = width;
         float h = ascent - descent;
 
         // zero height will not intersect with clip rectangle and maybe have visibility issues.
         // we generally get here if the font.getAscent is zero and as a result must compensate.
         if (h <= 0.0f) {
-            Rectangle2D bounds = font.getEstringBounds(cid, 0, 1);
+            Rectangle2D bounds = font.getBounds(cid, 0, 1);
             if (bounds != null && bounds.getHeight() > 0) {
                 h = (float) bounds.getHeight();
             } else {
@@ -123,12 +123,20 @@ public class TextSprite {
                 h = font.getSize();
             }
         }
-//        Rectangle2D.Float glyphBounds = new Rectangle2D.Float(x, y - ascent, w, h);
+        // this is still terrible, should be applying the fontTransform but this little hack is fast until I can
+        // figure out the geometry for the corner cases.
         h *= Math.abs(font.getSize());
         Rectangle2D.Float glyphBounds;
+        // negative layout
         if (w < 0.0f || font.getSize() < 0) {
-            glyphBounds = new Rectangle2D.Float(x + width, y - ascent, -w, h);
-        } else {
+            glyphBounds = new Rectangle2D.Float(x + width, y - ascent, w, h);
+        }
+        // inverted layout
+        else if (font.getFontTransform() != null && font.getFontTransform().getScaleY() < 0) {
+            glyphBounds = new Rectangle2D.Float(x, y - h - descent, w, h);
+        }
+        // standard layout.
+        else {
             glyphBounds = new Rectangle2D.Float(x, y - ascent, w, h);
         }
 
@@ -229,7 +237,7 @@ public class TextSprite {
         for (GlyphText glyphText : glyphTexts) {
 
             // paint glyph
-            font.drawEstring(g2d,
+            font.paint(g2d,
                     glyphText.getCid(),
                     glyphText.getX(), glyphText.getY(),
                     FontFile.LAYOUT_NONE, rmode, strokeColor);
@@ -250,11 +258,11 @@ public class TextSprite {
         Area glyphOutline = null;
         for (GlyphText glyphText : glyphTexts) {
             if (glyphOutline != null) {
-                glyphOutline.add(new Area(font.getEstringOutline(
+                glyphOutline.add(new Area(font.getOutline(
                         glyphText.getCid(),
                         glyphText.getX(), glyphText.getY())));
             } else {
-                glyphOutline = new Area(font.getEstringOutline(
+                glyphOutline = new Area(font.getOutline(
                         glyphText.getCid(),
                         glyphText.getX(), glyphText.getY()));
             }

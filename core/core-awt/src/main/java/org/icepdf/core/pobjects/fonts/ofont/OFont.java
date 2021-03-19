@@ -130,7 +130,7 @@ public class OFont implements FontFile {
         return font;
     }
 
-    public boolean canDisplayEchar(char ech) {
+    public boolean canDisplay(char ech) {
         return true;
     }
 
@@ -141,7 +141,7 @@ public class OFont implements FontFile {
         return font;
     }
 
-    public Point2D echarAdvance(final char ech) {
+    public Point2D getAdvance(final char ech) {
 
         // create a glyph vector for the char
         float advance;
@@ -291,11 +291,11 @@ public class OFont implements FontFile {
         return awtFont.getNumGlyphs();
     }
 
-    public char getSpaceEchar() {
+    public char getSpace() {
         return 32;
     }
 
-    public Rectangle2D getEstringBounds(String estr, int beginIndex, int limit) {
+    public Rectangle2D getBounds(String estr, int beginIndex, int limit) {
         return null;
     }
 
@@ -303,11 +303,11 @@ public class OFont implements FontFile {
         return null;
     }
 
-    public void drawEstring(Graphics2D g, String displayText, float x, float y,
-                            long layout, int mode, Color strokecolor) {
+    public void paint(Graphics2D g, String displayText, float x, float y,
+                      long layout, int mode, Color strokecolor) {
 
         AffineTransform af = g.getTransform();
-        Shape outline = getEstringOutline(displayText, x, y);
+        Shape outline = getOutline(displayText, x, y);
 
         if (TextState.MODE_FILL == mode || TextState.MODE_FILL_STROKE == mode ||
                 TextState.MODE_FILL_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
@@ -392,7 +392,7 @@ public class OFont implements FontFile {
         return ByteEncoding.ONE_BYTE;
     }
 
-    public Shape getEstringOutline(String displayText, float x, float y) {
+    public Shape getOutline(String displayText, float x, float y) {
 
         displayText = toUnicode(displayText);
         FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
@@ -418,7 +418,7 @@ public class OFont implements FontFile {
 
                 // subtract the advance because we will be getting it from the fonts width
                 float adv1 = glyphVector.getGlyphMetrics(i).getAdvance();
-                double adv2 = echarAdvance(displayText.charAt(i)).getX();
+                double adv2 = getAdvance(displayText.charAt(i)).getX();
                 advance += -adv1 + adv2 + lastx;
             }
         }
