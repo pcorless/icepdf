@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.icepdf.os</groupId>
+    <groupId>com.github.pcorless.icepdf</groupId>
     <artifactId>icepdf</artifactId>
-    <version>6.3.3-SNAPSHOT</version>
+    <version>7.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>ICEpdf OS</name>
 
@@ -24,8 +24,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <bouncy.version>1.65</bouncy.version>
-        <twelve-monkey.version>3.4</twelve-monkey.version>
-        <jai-imageio.version>1.3.0</jai-imageio.version>
+        <twelve-monkey.version>3.6.4</twelve-monkey.version>
+        <jai-imageio.version>1.4.0</jai-imageio.version>
         <jbig2.version>3.0.3</jbig2.version>
     </properties>
 
