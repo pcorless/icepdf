@@ -20,6 +20,7 @@ import java.util.HashMap;
 /**
  * @deprecated
  */
+@Deprecated
 public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
     private char enc[];
 

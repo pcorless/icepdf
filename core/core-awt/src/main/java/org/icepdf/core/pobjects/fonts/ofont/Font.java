@@ -34,6 +34,7 @@ import java.util.logging.Logger;
 /**
  * @deprecated
  */
+@Deprecated
 public class Font extends org.icepdf.core.pobjects.fonts.Font {
 
     private static final Logger logger =

@@ -193,7 +193,6 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
     @Override
     public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
         ZFontTrueType font = new ZFontTrueType(this);
-        // todo why aren't we doing anything with widths?????
         font.firstCh = firstCh;
         font.ascent = ascent;
         font.descent = descent;

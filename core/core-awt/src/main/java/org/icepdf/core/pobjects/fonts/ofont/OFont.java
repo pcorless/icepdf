@@ -41,6 +41,7 @@ import java.util.logging.Logger;
  * @since 3.0
  * @deprecated
  */
+@Deprecated
 public class OFont implements FontFile {
 
     private static final Logger log =

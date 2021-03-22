@@ -18,7 +18,7 @@ package org.icepdf.core.pobjects.fonts;
 import org.icepdf.core.pobjects.Name;
 
 /**
- * CMap inteface.
+ * CMap interface.
  *
  * @since 3.0
  */

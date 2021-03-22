@@ -56,7 +56,6 @@ public class FontFactory {
     public static final Name FONT_SUBTYPE_MM_TYPE_1 = new Name("MMType1");
     public static final Name FONT_SUBTYPE_TYPE_3 = new Name("Type3");
     public static final Name FONT_SUBTYPE_TRUE_TYPE = new Name("TrueType");
-    // todo likely not needed here.
     public static final Name FONT_SUBTYPE_CID_FONT_TYPE_0 = new Name("CIDFontType0");
     public static final Name FONT_SUBTYPE_CID_FONT_TYPE_2 = new Name("CIDFontType2");
 
@@ -97,7 +96,6 @@ public class FontFactory {
         } else if (FONT_SUBTYPE_TYPE_3.equals(subtype)) {
             font = new Type3Font(library, entries);
         }
-        // type3 and type0
         // composite fonts
         else if (FONT_SUBTYPE_CID_FONT_TYPE_0.equals(subtype)) {
             font = new TypeCidType0Font(library, entries);
