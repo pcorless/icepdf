@@ -48,12 +48,6 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
 
     private Resources parentResource;
 
-    /**
-     * <p>Creates a new Type3 Font program.</p>
-     *
-     * @param library    PDF document's object library
-     * @param properties dictionary value associated with this object
-     */
     public ZFontType3(Library library, HashMap properties) {
         this.library = library;
         entries = properties;
