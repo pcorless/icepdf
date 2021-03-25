@@ -1297,6 +1297,17 @@ public class SwingViewBuilder {
         return btn;
     }
 
+    public JButton buildShowBookmarkUtilityButton(final String imageSize) {
+        JButton btn = makeToolbarButton(
+                messageBundle.getString("viewer.toolbar.tool.bookmarkUtility.label"),
+                messageBundle.getString("viewer.toolbar.tool.bookmarkUtility.tooltip"),
+                "utility_bookmarks", imageSize, buttonFont);
+        if (viewerController != null && btn != null) {
+            viewerController.setShowBookmarkUtilityPaneButton(btn);
+        }
+        return btn;
+    }
+
     public JToggleButton buildShowHideUtilityPaneButton() {
         JToggleButton btn = makeToolbarToggleButton(
                 messageBundle.getString("viewer.toolbar.utilityPane.label"),
@@ -1597,6 +1608,10 @@ public class SwingViewBuilder {
         if (propertiesManager.checkAndStoreBooleanProperty(
                 ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_UTILITY)) {
             addToToolBar(toolbar, buildShowAnnotationUtilityButton(iconSize));
+        }
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_BOOKMARK_UTILITY)) {
+            addToToolBar(toolbar, buildShowBookmarkUtilityButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
                 ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_PREVIEW)) {

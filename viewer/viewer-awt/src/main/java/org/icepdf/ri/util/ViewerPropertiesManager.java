@@ -192,6 +192,7 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_TEXT = "application.toolbar.annotation.text.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_PERMISSION = "application.toolbar.annotation.permission.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_UTILITY = "application.toolbar.annotation.toolbar.enabled";
+    public static final String PROPERTY_SHOW_TOOLBAR_BOOKMARK_UTILITY = "application.toolbar.bookmark.toolbar.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_PREVIEW = "application.toolbar.annotation.preview.enabled";
     // Individual control of the markup annotation context menu
     public static final String PROPERTY_SHOW_ANNOTATION_MARKUP_REPLY_TO = "application.annotation.show.markup.replyTo";
