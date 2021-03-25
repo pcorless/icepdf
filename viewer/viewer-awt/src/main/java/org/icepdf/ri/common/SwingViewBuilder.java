@@ -1291,7 +1291,7 @@ public class SwingViewBuilder {
         JButton btn = makeToolbarButton(
                 messageBundle.getString("viewer.toolbar.tool.annotationUtility.label"),
                 messageBundle.getString("viewer.toolbar.tool.annotationUtility.tooltip"),
-                "utility_pane", imageSize, buttonFont);
+                "utility_annotations", imageSize, buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setShowAnnotationUtilityPaneButton(btn);
         return btn;
