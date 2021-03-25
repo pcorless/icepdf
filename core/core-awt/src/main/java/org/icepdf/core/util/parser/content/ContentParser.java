@@ -142,7 +142,7 @@ public class ContentParser extends AbstractContentParser {
                             try {
                                 yBTstart = parseText(lexer, shapes, yBTstart);
                             } catch (Exception e) {
-                                logger.log(Level.FINEST, "Error parsing text block", e);
+                                logger.log(Level.SEVERE, "Error parsing text block", e);
                             } finally {
                                 inTextBlock = false;
                             }

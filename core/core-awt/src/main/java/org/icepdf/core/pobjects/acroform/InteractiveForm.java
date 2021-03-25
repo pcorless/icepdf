@@ -147,7 +147,7 @@ public class InteractiveForm extends Dictionary {
     }
 
     @SuppressWarnings("unchecked")
-    public void init() {
+    public synchronized void init() {
 
         // load the resources
         needAppearances = library.getBoolean(entries, NEEDS_APPEARANCES_KEY);

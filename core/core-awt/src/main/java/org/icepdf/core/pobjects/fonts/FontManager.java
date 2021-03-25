@@ -77,9 +77,7 @@ public class FontManager {
                     {"AvantGarde-Demi", "URWGothicL-Demi", "Arial"},
                     {"AvantGarde-DemiOblique", "URWGothicL-DemiObli", "Arial"},
                     {"Helvetica", "Helvetica", "Arial", "ArialMT", "NimbusSanL-Regu", "Nimbus Sans L"},
-//             {"Helvetica", "NimbusSanL-Regu", "Nimbus Sans L", "Arial", "ArialMT"},  // known problem in Phelps nfont engine
                     {"Helvetica-Oblique", "NimbusSanL-ReguItal", "Nimbus Sans L", "Helvetica,Italic", "Helvetica-Italic", "Arial,Italic", "Arial-Italic", "Arial-ItalicMT"},
-//             {"Helvetica-Bold", "NimbusSanL-Bold", "Nimbus Sans L", "Helvetica-Black", "Helvetica,Bold", "Arial,Bold", "Arial-Bold", "Arial-BoldMT"},  // known problem in Phelps nfont engine
                     {"Helvetica-Bold", "Helvetica,Bold", "Arial,Bold", "Arial-Bold", "Arial-BoldMT", "NimbusSanL-Bold", "Nimbus Sans L"},
                     {"Helvetica-BoldOblique", "NimbusSanL-BoldItal", "Helvetica-BlackOblique", "Nimbus Sans L", "Helvetica,BoldItalic", "Helvetica-BoldItalic", "Arial,BoldItalic", "Arial-BoldItalic", "Arial-BoldItalicMT"},
                     {"Helvetica-Black", "Helvetica,Bold", "Arial,Bold", "Arial-Bold", "Arial-BoldMT", "NimbusSanL-Bold", "Nimbus Sans L"},
@@ -654,12 +652,12 @@ public class FontManager {
     }
 
     /**
-     * <p>Get an instance of a NFont from the given font name and flag decoration
+     * <p>Get an instance of a FontFile from the given font name and flag decoration
      * information.</p>
      *
      * @param name  base name of font.
      * @param flags flags used to describe font.
-     * @return a new instance of NFont which best approximates the font described
+     * @return a new instance of FontFile which best approximates the font described
      * by the name and flags attribute.
      */
     public FontFile getInstance(String name, int flags) {
@@ -915,12 +913,12 @@ public class FontManager {
     }
 
     /**
-     * Gets a NFont instance by matching against font style commonalities in the
+     * Gets a FontFile instance by matching against font style commonalities in the
      * Java Cores libraries.
      *
      * @param fontName font name to search for
      * @param flags    style flags
-     * @return a valid NFont if a match is found, null otherwise.
+     * @return a valid FontFile if a match is found, null otherwise.
      */
     private FontFile getCoreJavaFont(String fontName, int flags) {
 
@@ -991,18 +989,17 @@ public class FontManager {
     }
 
     /**
-     * Gets a NFont instance by matching against font style commonalities in the
+     * Gets a FontFile instance by matching against font style commonalities in the
      * of know type1 fonts
      *
      * @param fontName font name to search for
      * @param flags    style flags
-     * @return a valid NFont if a match is found, null otherwise.
+     * @return a valid FontFile if a match is found, null otherwise.
      */
     private FontFile getType1Fonts(List<Object[]> fontList, String fontName, int flags) {
         FontFile font = null;
         boolean found = false;
         boolean isType1Available = true;
-        // find a match for family in the type 1 nfont table
         for (String[] TYPE1_FONT_DIFF : TYPE1_FONT_DIFFS) {
             for (String aTYPE1_FONT_DIFF : TYPE1_FONT_DIFF) {
                 // first check to see font name matches any elements
