@@ -21,7 +21,10 @@ import org.icepdf.core.util.Utils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -77,7 +80,11 @@ public class CrossReference {
     public int getNextAvailableReferenceNumber() {
         List<Integer> objectNumbers = Collections.list(hObjectNumber2Entry.keys());
         Collections.sort(objectNumbers);
-        return objectNumbers.get(objectNumbers.size() - 1) + 1;
+        if (objectNumbers.size() > 0) {
+            return objectNumbers.get(objectNumbers.size() - 1) + 1;
+        } else {
+            return 1;
+        }
     }
 
     /**

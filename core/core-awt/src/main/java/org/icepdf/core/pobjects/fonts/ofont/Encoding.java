@@ -18,8 +18,9 @@ package org.icepdf.core.pobjects.fonts.ofont;
 import java.util.HashMap;
 
 /**
- * put your documentation comment here
+ * @deprecated
  */
+@Deprecated
 public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
     private char enc[];
 
@@ -34,6 +35,21 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
             return enc[i];
         }
         return i;
+    }
+
+    @Override
+    public String getName() {
+        return null;
+    }
+
+    @Override
+    public String getName(int code) {
+        return null;
+    }
+
+    @Override
+    public Character getChar(String name) {
+        return 0;
     }
 
     static Encoding getStandard() {

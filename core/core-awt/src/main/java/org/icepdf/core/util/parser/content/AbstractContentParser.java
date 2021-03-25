@@ -1440,7 +1440,7 @@ public abstract class AbstractContentParser {
         // information.
         char currentChar = displayText.charAt(0);
         // Position of the specified glyph relative to the origin of glyphVector
-        float firstCharWidth = (float) textState.currentfont.echarAdvance(currentChar).getX();
+        float firstCharWidth = (float) textState.currentfont.getAdvance(currentChar).getX();
 
         if ((advanceX + firstCharWidth) < textMetrics.getPreviousAdvance()) {
             advanceX = textMetrics.getPreviousAdvance();
@@ -1467,12 +1467,11 @@ public abstract class AbstractContentParser {
         // glyph placement params
         float currentX, currentY;
         float newAdvanceX, newAdvanceY;
-        // Iterate through displayText to calculate the the new advanceX value
         for (int i = 0; i < textLength; i++) {
             currentChar = displayText.charAt(i);
 
             if (enabledFontFallback) {
-                boolean display = currentFont.canDisplayEchar(currentChar);
+                boolean display = currentFont.canDisplay(currentChar);
                 // slow display test, but allows us to fall back on a different font if needed.
                 if (!display) {
                     FontFile fontFile = FontManager.getInstance().getInstance(currentFont.getName(), 0);
@@ -1482,7 +1481,7 @@ public abstract class AbstractContentParser {
 
             // Position of the specified glyph relative to the origin of glyphVector
             // advance is handled by the particular font implementation.
-            newAdvanceX = (float) currentFont.echarAdvance(currentChar).getX();
+            newAdvanceX = (float) currentFont.getAdvance(currentChar).getX();
 
             newAdvanceY = newAdvanceX;
             if (!isVerticalWriting) {

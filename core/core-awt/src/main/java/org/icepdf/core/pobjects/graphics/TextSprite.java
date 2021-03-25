@@ -22,6 +22,7 @@ import org.icepdf.core.util.Defs;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
+import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 
@@ -47,7 +48,7 @@ public class TextSprite {
             Defs.booleanProperty("org.icepdf.core.text.optimized.type3", true);
 
     // child GlyphText objects
-    private ArrayList<GlyphText> glyphTexts;
+    private final ArrayList<GlyphText> glyphTexts;
 
     // text bounds, including all child Glyph sprites, in glyph space
     // this bound is used during painting to respect painting clip.
@@ -55,7 +56,7 @@ public class TextSprite {
 
     // space reference for where glyph
     private AffineTransform graphicStateTransform;
-    private AffineTransform tmTransform;
+    private final AffineTransform tmTransform;
 
     // stroke color
     private Color strokeColor;
@@ -106,39 +107,37 @@ public class TextSprite {
         // we can change the bounds of glyphBounds as this is what needs to be normalized
         // to page space
         // IMPORTANT: where working in Java Coordinates with any of the Font bounds
-        float w = width;//(float)stringBounds.getWidth();
-        float h = (float) (font.getAscent() + font.getDescent());
+        float descent = (float) font.getDescent();
+        float ascent = (float) font.getAscent();
+        float w = width;
+        float h = ascent - descent;
 
-        double descent = font.getDescent();
-        double ascent = font.getAscent();
-
-        if (h <= 0.0f) {
-            h = (float) (font.getMaxCharBounds().getHeight());
-        }
-        if (w <= 0.0f) {
-            w = (float) font.getMaxCharBounds().getWidth();
-        }
         // zero height will not intersect with clip rectangle and maybe have visibility issues.
         // we generally get here if the font.getAscent is zero and as a result must compensate.
         if (h <= 0.0f) {
-            Rectangle2D bounds = font.getEstringBounds(cid, 0, 1);
+            Rectangle2D bounds = font.getBounds(cid, 0, 1);
             if (bounds != null && bounds.getHeight() > 0) {
                 h = (float) bounds.getHeight();
             } else {
                 // match the width, as it will make text selection work a bit better.
                 h = font.getSize();
             }
-            if (ascent == 0) {
-                ascent = h;
-            }
         }
-
+        // this is still terrible, should be applying the fontTransform but this little hack is fast until I can
+        // figure out the geometry for the corner cases.
+        h *= Math.abs(font.getSize());
         Rectangle2D.Float glyphBounds;
-        // irregular negative layout of text,  need to create the bbox appropriately.
+        // negative layout
         if (w < 0.0f || font.getSize() < 0) {
-            glyphBounds = new Rectangle2D.Float(x + width, y - (float) descent, -w, h);
-        } else {
-            glyphBounds = new Rectangle2D.Float(x, y - (float) ascent, w, h);
+            glyphBounds = new Rectangle2D.Float(x + width, y - ascent, w, h);
+        }
+        // inverted layout
+        else if (font.getFontTransform() != null && font.getFontTransform().getScaleY() < 0) {
+            glyphBounds = new Rectangle2D.Float(x, y - h - descent, w, h);
+        }
+        // standard layout.
+        else {
+            glyphBounds = new Rectangle2D.Float(x, y - ascent, w, h);
         }
 
         // add bounds to total text bounds.
@@ -238,7 +237,7 @@ public class TextSprite {
         for (GlyphText glyphText : glyphTexts) {
 
             // paint glyph
-            font.drawEstring(g2d,
+            font.paint(g2d,
                     glyphText.getCid(),
                     glyphText.getX(), glyphText.getY(),
                     FontFile.LAYOUT_NONE, rmode, strokeColor);
@@ -259,11 +258,11 @@ public class TextSprite {
         Area glyphOutline = null;
         for (GlyphText glyphText : glyphTexts) {
             if (glyphOutline != null) {
-                glyphOutline.add(new Area(font.getEstringOutline(
+                glyphOutline.add(new Area(font.getOutline(
                         glyphText.getCid(),
                         glyphText.getX(), glyphText.getY())));
             } else {
-                glyphOutline = new Area(font.getEstringOutline(
+                glyphOutline = new Area(font.getOutline(
                         glyphText.getCid(),
                         glyphText.getX(), glyphText.getY()));
             }
@@ -295,7 +294,6 @@ public class TextSprite {
         this.fontSize = fontSize;
     }
 
-    /*
     private void drawBoundBox(Graphics2D gg) {
 
         // draw the characters
@@ -318,12 +316,11 @@ public class TextSprite {
         gg.setColor(oldColor);
         gg.setStroke(oldStroke);
     }
-    */
 
     public void setFont(FontFile font) {
         this.font = font;
     }
-    /*
+
     private void drawGyphBox(Graphics2D gg, GlyphText glyphSprite) {
 
         // draw the characters
@@ -347,9 +344,6 @@ public class TextSprite {
         gg.setStroke(oldStroke);
 
     }
-
-
-    */
 
     /**
      * Tests if the interior of the <code>TextSprite</code> bounds intersects the

@@ -23,7 +23,6 @@ import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.URIAction;
-import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.*;
@@ -52,9 +51,6 @@ import org.icepdf.ri.util.URLAccess;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 import org.icepdf.ri.viewer.WindowManager;
 
-import javax.print.attribute.PrintRequestAttributeSet;
-import javax.print.attribute.standard.Media;
-import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.PrintQuality;
 import javax.swing.Timer;
@@ -194,7 +190,6 @@ public class SwingController extends ComponentAdapter
     private JToggleButton fitHeightButton;
     private JToggleButton fitWidthButton;
     private JButton fullScreenButton;
-    private JToggleButton fontEngineButton;
     private JToggleButton facingPageViewContinuousButton;
     private JToggleButton singlePageViewContinuousButton;
     private JToggleButton facingPageViewNonContinuousButton;
@@ -1003,16 +998,6 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewBuilder, so that Controller can setup event handling
-     *
-     * @param btn button to assign
-     */
-    public void setFontEngineButton(JToggleButton btn) {
-        fontEngineButton = btn;
-        btn.addItemListener(this);
-    }
-
-    /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
      *
      * @param btn button to assign
@@ -1670,7 +1655,6 @@ public class SwingController extends ComponentAdapter
         setEnabled(annotationPrivacyComboBox, opened && !pdfCollection);
         setEnabled(textAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
         setEnabled(formHighlightButton, opened && !pdfCollection && hasForms());
-        setEnabled(fontEngineButton, opened && !pdfCollection);
         setEnabled(quickSearchToolBar, opened && !pdfCollection);
         setEnabled(facingPageViewContinuousButton, opened && !pdfCollection);
         setEnabled(singlePageViewContinuousButton, opened && !pdfCollection);
@@ -3301,8 +3285,6 @@ public class SwingController extends ComponentAdapter
         formHighlightButton = null;
         annotationEditingModeButton = null;
 
-        fontEngineButton = null;
-
         completeToolBar = null;
 
         outlinesTree = null;
@@ -4928,16 +4910,6 @@ public class SwingController extends ComponentAdapter
             } else if (source == fitWidthButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_WIDTH, false);
-                    doSetFocus = true;
-                }
-            } else if (source == fontEngineButton) {
-                if (e.getStateChange() == ItemEvent.SELECTED ||
-                        e.getStateChange() == ItemEvent.DESELECTED) {
-                    // get instance of the font factory
-                    FontFactory.getInstance().toggleAwtFontSubstitution();
-                    // refresh the document, refresh will happen by the component.
-                    ((AbstractDocumentView) documentViewController.getDocumentView()).firePropertyChange(
-                            PropertyConstants.DOCUMENT_VIEW_DEMO_MODE_CHANGE, false, true);
                     doSetFocus = true;
                 }
             }
