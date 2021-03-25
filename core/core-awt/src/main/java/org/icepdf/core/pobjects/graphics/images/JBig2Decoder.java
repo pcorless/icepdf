@@ -42,11 +42,6 @@ public class JBig2Decoder extends AbstractImageDecoder {
             "org.apache.pdfbox.jbig2.JBIG2ImageReaderSpi",
             "org.apache.pdfbox.jbig2.JBIG2Globals"};
 
-    private static final String[] JBIG2_LEVIGO = new String[]{
-            "com.levigo.jbig2.JBIG2ImageReader",
-            "com.levigo.jbig2.JBIG2ImageReaderSpi",
-            "com.levigo.jbig2.JBIG2Globals"};
-
     private static final Name JBIG2_GLOBALS_KEY = new Name("JBIG2Globals");
     private static final Name DECODE_PARMS_KEY = new Name("DecodeParms");
 
@@ -81,12 +76,6 @@ public class JBig2Decoder extends AbstractImageDecoder {
         } catch (IOException | InstantiationException | InvocationTargetException | NoSuchMethodException |
                 IllegalAccessException | ClassNotFoundException e) {
             logger.log(Level.WARNING, "Could not find Apache JBIG2 library on class path.");
-            try {
-                tmpImage = decodeJbig2(decodeParams, globalsStream, imageInputStream, JBIG2_LEVIGO);
-            } catch (IOException | InstantiationException | InvocationTargetException | NoSuchMethodException |
-                    IllegalAccessException | ClassNotFoundException ex) {
-                logger.log(Level.WARNING, "Could not find Levigo library on class path.");
-            }
         } finally {
             // dispose the stream
             if (imageInputStream != null) {

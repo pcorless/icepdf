@@ -18,13 +18,15 @@ package org.icepdf.core.pobjects.fonts;
 import org.icepdf.core.pobjects.Name;
 
 /**
- * CMap inteface.
+ * CMap interface.
  *
  * @since 3.0
  */
 public interface CMap {
 
     Name TYPE = new Name("CMap");
+
+    void init();
 
     /**
      * Maps the character id to an underlying unicode value if available.
@@ -35,6 +37,8 @@ public interface CMap {
     char toSelector(char ch);
 
     char toSelector(char ch, boolean isCFF);
+
+    char fromSelector(char ch);
 
     /**
      * Maps the character id to an underlying to unicode table. This method should

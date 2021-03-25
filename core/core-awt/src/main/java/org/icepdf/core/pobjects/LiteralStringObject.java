@@ -17,7 +17,6 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontFile;
-import org.icepdf.core.pobjects.fonts.ofont.OFont;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.Utils;
 
@@ -209,7 +208,7 @@ public class LiteralStringObject implements StringObject {
     public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
 
         if (fontFormat == Font.SIMPLE_FORMAT
-                || (font.getByteEncoding() == FontFile.ByteEncoding.ONE_BYTE && !(font instanceof OFont))) {
+                || (font.getByteEncoding() == FontFile.ByteEncoding.ONE_BYTE)) {
             return stringData;
         } else if (fontFormat == Font.CID_FORMAT) {
             int length = getLength();
@@ -220,11 +219,11 @@ public class LiteralStringObject implements StringObject {
                 for (int i = 0; i < length; i += charOffset) {
                     // check range for possible 2 byte char.
                     charValue = getUnsignedInt(i, 1);
-                    if (font.canDisplayEchar((char) charValue)) {
+                    if (font.canDisplay((char) charValue)) {
                         tmp.append((char) charValue);
                     } else {
                         int charValue2 = getUnsignedInt(i, 2);
-                        if (font.canDisplayEchar((char) charValue2)) {
+                        if (font.canDisplay((char) charValue2)) {
                             tmp.append((char) charValue2);
                             i += 1;
                         }
@@ -235,7 +234,7 @@ public class LiteralStringObject implements StringObject {
                 int charOffset = 2;
                 for (int i = 0; i < length; i += charOffset) {
                     int charValue2 = getUnsignedInt(i, 2);
-                    if (font.canDisplayEchar((char) charValue2)) {
+                    if (font.canDisplay((char) charValue2)) {
                         tmp.append((char) charValue2);
                     }
                 }

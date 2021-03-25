@@ -30,7 +30,7 @@ public class ShadingType4Pattern extends ShadingMeshPattern {
         super(l, h, meshDataStream);
     }
 
-    public void init(GraphicsState graphicsState) {
+    public synchronized void init(GraphicsState graphicsState) {
 
         vertexEdgeFlag = new ArrayList<>();
         coordinates = new ArrayList<>();

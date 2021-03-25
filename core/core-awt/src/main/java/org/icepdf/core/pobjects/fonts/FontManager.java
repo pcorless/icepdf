@@ -17,14 +17,15 @@ package org.icepdf.core.pobjects.fonts;
 
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.FontUtil;
+import org.icepdf.core.util.SystemProperties;
 
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.security.AccessControlException;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -76,9 +77,7 @@ public class FontManager {
                     {"AvantGarde-Demi", "URWGothicL-Demi", "Arial"},
                     {"AvantGarde-DemiOblique", "URWGothicL-DemiObli", "Arial"},
                     {"Helvetica", "Helvetica", "Arial", "ArialMT", "NimbusSanL-Regu", "Nimbus Sans L"},
-//             {"Helvetica", "NimbusSanL-Regu", "Nimbus Sans L", "Arial", "ArialMT"},  // known problem in Phelps nfont engine
                     {"Helvetica-Oblique", "NimbusSanL-ReguItal", "Nimbus Sans L", "Helvetica,Italic", "Helvetica-Italic", "Arial,Italic", "Arial-Italic", "Arial-ItalicMT"},
-//             {"Helvetica-Bold", "NimbusSanL-Bold", "Nimbus Sans L", "Helvetica-Black", "Helvetica,Bold", "Arial,Bold", "Arial-Bold", "Arial-BoldMT"},  // known problem in Phelps nfont engine
                     {"Helvetica-Bold", "Helvetica,Bold", "Arial,Bold", "Arial-Bold", "Arial-BoldMT", "NimbusSanL-Bold", "Nimbus Sans L"},
                     {"Helvetica-BoldOblique", "NimbusSanL-BoldItal", "Helvetica-BlackOblique", "Nimbus Sans L", "Helvetica,BoldItalic", "Helvetica-BoldItalic", "Arial,BoldItalic", "Arial-BoldItalic", "Arial-BoldItalicMT"},
                     {"Helvetica-Black", "Helvetica,Bold", "Arial,Bold", "Arial-Bold", "Arial-BoldMT", "NimbusSanL-Bold", "Nimbus Sans L"},
@@ -136,7 +135,7 @@ public class FontManager {
      * Java base font class, generally ${java.home}\lib\fonts.  This is the base font directory that is used
      * for searching for system fonts.  If all else fails this should be the fall back directory.
      */
-    public static String JAVA_FONT_PATH = Defs.sysProperty("java.home") + "/lib/fonts";
+    public static String JAVA_FONT_PATH = SystemProperties.JAVA_HOME + "/lib/fonts";
 
     /**
      * Default search path for fonts on windows systems.
@@ -364,7 +363,7 @@ public class FontManager {
         ArrayList<String> fontDirectories = new ArrayList<>();
         // load the appropriate font set for the OS.
         if (!skipSystemFonts) {
-            String operationSystem = System.getProperty("os.name");
+            String operationSystem = SystemProperties.OS_NAME;
             if (operationSystem != null) {
                 operationSystem = operationSystem.toLowerCase();
                 if (operationSystem.contains("win")) {
@@ -653,12 +652,12 @@ public class FontManager {
     }
 
     /**
-     * <p>Get an instance of a NFont from the given font name and flag decoration
+     * <p>Get an instance of a FontFile from the given font name and flag decoration
      * information.</p>
      *
      * @param name  base name of font.
      * @param flags flags used to describe font.
-     * @return a new instance of NFont which best approximates the font described
+     * @return a new instance of FontFile which best approximates the font described
      * by the name and flags attribute.
      */
     public FontFile getInstance(String name, int flags) {
@@ -914,12 +913,12 @@ public class FontManager {
     }
 
     /**
-     * Gets a NFont instance by matching against font style commonalities in the
+     * Gets a FontFile instance by matching against font style commonalities in the
      * Java Cores libraries.
      *
      * @param fontName font name to search for
      * @param flags    style flags
-     * @return a valid NFont if a match is found, null otherwise.
+     * @return a valid FontFile if a match is found, null otherwise.
      */
     private FontFile getCoreJavaFont(String fontName, int flags) {
 
@@ -990,18 +989,17 @@ public class FontManager {
     }
 
     /**
-     * Gets a NFont instance by matching against font style commonalities in the
+     * Gets a FontFile instance by matching against font style commonalities in the
      * of know type1 fonts
      *
      * @param fontName font name to search for
      * @param flags    style flags
-     * @return a valid NFont if a match is found, null otherwise.
+     * @return a valid FontFile if a match is found, null otherwise.
      */
     private FontFile getType1Fonts(List<Object[]> fontList, String fontName, int flags) {
         FontFile font = null;
         boolean found = false;
         boolean isType1Available = true;
-        // find a match for family in the type 1 nfont table
         for (String[] TYPE1_FONT_DIFF : TYPE1_FONT_DIFFS) {
             for (String aTYPE1_FONT_DIFF : TYPE1_FONT_DIFF) {
                 // first check to see font name matches any elements
