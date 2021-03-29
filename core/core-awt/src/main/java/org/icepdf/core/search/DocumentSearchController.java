@@ -208,9 +208,6 @@ public interface DocumentSearchController {
     SearchTerm addSearchTerm(String term, boolean caseSensitive,
                              boolean wholeWord, boolean regex);
 
-    SearchTerm addSearchTerm(String term, boolean caseSensitive,
-                             boolean wholeWord, boolean regex, Color highlightColor);
-
     /**
      * Add the search term to the list of search terms.  The term is split
      * into words based on white space and punctuation. No checks are done
