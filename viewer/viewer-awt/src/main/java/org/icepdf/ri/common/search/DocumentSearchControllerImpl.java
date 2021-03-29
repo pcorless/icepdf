@@ -30,6 +30,7 @@ import org.icepdf.ri.common.utility.search.SearchHitComponentFactory;
 import org.icepdf.ri.common.utility.search.SearchHitComponentFactoryImpl;
 import org.icepdf.ri.common.views.PageViewComponentImpl;
 
+import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.util.*;
 import java.util.logging.Level;
@@ -286,6 +287,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                                 wordHit = lineWords.get(w);
                                 wordHit.setHighlighted(true);
                                 wordHit.setHasHighlight(true);
+                                wordHit.setHighlightColor(term.getHighlightColor());
                                 hitWords.add(wordHit);
                                 addComponent(pageIndex, wordHit.getText(), wordHit.getBounds());
                             }
@@ -665,6 +667,11 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
 
     @Override
     public SearchTerm addSearchTerm(String term, boolean caseSensitive, boolean wholeWord, boolean regex) {
+        return addSearchTerm(term, caseSensitive, wholeWord, regex, Page.highlightColor);
+    }
+
+    @Override
+    public SearchTerm addSearchTerm(String term, boolean caseSensitive, boolean wholeWord, boolean regex, Color highlightColor) {
         // keep original copy
         String originalTerm = String.valueOf(term);
 
@@ -677,7 +684,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         ArrayList<String> searchPhrase = searchPhraseParser(term);
         // finally add the search term to the list and return it for management
         SearchTerm searchTerm =
-                new SearchTerm(originalTerm, searchPhrase, caseSensitive, wholeWord, regex);
+                new SearchTerm(originalTerm, searchPhrase, caseSensitive, wholeWord, regex, highlightColor);
         searchModel.addSearchTerm(searchTerm);
         return searchTerm;
     }

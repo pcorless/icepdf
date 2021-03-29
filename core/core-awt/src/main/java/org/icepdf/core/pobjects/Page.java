@@ -673,13 +673,13 @@ public class Page extends Dictionary {
                                 // paint whole word
                                 if (wordText.isHighlighted()) {
                                     textPath = new GeneralPath(wordText.getBounds());
-                                    g2.setColor(highlightColor);
+                                    g2.setColor(wordText.getHighlightColor());
                                     g2.fill(textPath);
                                 } else {
                                     for (GlyphText glyph : wordText.getGlyphs()) {
                                         if (glyph.isHighlighted()) {
                                             textPath = new GeneralPath(glyph.getBounds());
-                                            g2.setColor(highlightColor);
+                                            g2.setColor(glyph.getHighlightColor());
                                             g2.fill(textPath);
                                         }
                                     }

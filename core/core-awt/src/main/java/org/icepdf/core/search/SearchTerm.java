@@ -15,6 +15,9 @@
  */
 package org.icepdf.core.search;
 
+import org.icepdf.core.pobjects.Page;
+
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -33,6 +36,7 @@ public class SearchTerm {
     // number of string in search term, one or more strings that make
     // up a phrase. words, white space and punctuation
     private ArrayList<String> terms;
+    private final Color highlightColor;
 
     // case sensitive search
     private boolean caseSensitive;
@@ -52,19 +56,21 @@ public class SearchTerm {
      */
     public SearchTerm(String term, ArrayList<String> terms,
                       boolean caseSensitive, boolean wholeWord) {
-        this.term = term;
-        this.terms = terms;
-        this.caseSensitive = caseSensitive;
-        this.wholeWord = wholeWord;
+        this(term, terms, caseSensitive, wholeWord, false);
+    }
+
+    public SearchTerm(String term, ArrayList<String> terms, boolean caseSensitive, boolean wholeWord, boolean regex) {
+        this(term, terms, caseSensitive, wholeWord, regex, Page.highlightColor);
     }
 
     public SearchTerm(String term, ArrayList<String> terms,
-                      boolean caseSensitive, boolean wholeWord, boolean regex) {
+                      boolean caseSensitive, boolean wholeWord, boolean regex, Color highlightColor) {
         this.term = term;
         this.terms = terms;
         this.caseSensitive = caseSensitive;
         this.wholeWord = wholeWord;
         this.regex = regex;
+        this.highlightColor = highlightColor;
     }
 
     /**
@@ -113,6 +119,10 @@ public class SearchTerm {
             searchPattern = Pattern.compile(term, !caseSensitive ? Pattern.CASE_INSENSITIVE : 0);
         }
         return searchPattern;
+    }
+
+    public Color getHighlightColor() {
+        return highlightColor;
     }
 
     @Override
