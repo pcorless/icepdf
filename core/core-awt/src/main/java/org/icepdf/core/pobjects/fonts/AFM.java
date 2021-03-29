@@ -273,10 +273,10 @@ public class AFM {
             } else if (s1.equalsIgnoreCase("FamilyName")) {
                 familyName = st.nextToken();
             } else if (s1.equalsIgnoreCase("FontBBox")) {
-                fontBBox[0] = new Integer(st.nextToken());
-                fontBBox[1] = new Integer(st.nextToken());
-                fontBBox[2] = new Integer(st.nextToken());
-                fontBBox[3] = new Integer(st.nextToken());
+                fontBBox[0] = Integer.parseInt(st.nextToken());
+                fontBBox[1] = Integer.parseInt(st.nextToken());
+                fontBBox[2] = Integer.parseInt(st.nextToken());
+                fontBBox[3] = Integer.parseInt(st.nextToken());
             } else if (s1.equalsIgnoreCase("ItalicAngle")) {
                 italicAngle = new Float(st.nextToken());
             }

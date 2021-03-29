@@ -17,10 +17,12 @@ package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.Reference;
+import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
 import org.icepdf.core.util.SystemProperties;
+import org.icepdf.ri.common.DragDropColorList;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.tools.DestinationHandler;
 import org.icepdf.ri.common.tools.FreeTextAnnotationHandler;
@@ -33,6 +35,7 @@ import org.icepdf.ri.util.ViewerPropertiesManager;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.util.Comparator;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -71,6 +74,8 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
     protected JMenuItem togglePrivacyMenuItem;
     protected JMenuItem setAllPrivateMenuItem;
     protected JMenuItem setAllPublicMenuItem;
+    // Change color
+    protected JMenu changeColorMenu;
 
     // delete root annotation and all child popup annotations.
     protected boolean deleteRoot;
@@ -109,6 +114,7 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
                 messageBundle.getString("viewer.annotation.popup.openAll.label"));
         minimizeAllMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.minimizeAll.label"));
+        changeColorMenu = buildColorMenu();
 
         // annotation and destination creation shortcuts.
         if (propertiesManager.checkAndStoreBooleanProperty(
@@ -149,6 +155,12 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
             replyMenuItem.addActionListener(this);
             replyMenuItem.setEnabled(modifyDocument);
             add(replyMenuItem);
+        }
+
+        if (changeColorMenu.getMenuComponentCount() > 0) {
+            add(changeColorMenu);
+            addSeparator();
+            changeColorMenu.setEnabled(modifyDocument);
         }
 
         if (propertiesManager.checkAndStoreBooleanProperty(
@@ -200,6 +212,32 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
         // properties
         add(propertiesMenuItem);
         propertiesMenuItem.addActionListener(this);
+    }
+
+    private JMenu buildColorMenu() {
+        final JMenu colorMenu = new JMenu(
+                messageBundle.getString("viewer.annotation.popup.color.change.label"));
+        final java.util.List<JMenuItem> jMenuItems = DragDropColorList.retrieveColorLabels().stream()
+                .filter(cl -> !cl.getColor().equals(annotationComponent.annotation.getColor()))
+                .sorted(Comparator.comparing(DragDropColorList.ColorLabel::getLabel))
+                .map(cl -> {
+                            final JMenuItem item = new JMenuItem(cl.getLabel());
+                            item.setForeground(Color.BLACK);
+                            item.setBackground(cl.getColor());
+                            item.setOpaque(true);
+                            item.addActionListener(e -> {
+                                final Annotation annotation = annotationComponent.getAnnotation();
+                                annotation.setColor(cl.getColor());
+                                annotation.getPage().updateAnnotation(annotation);
+                                annotationComponent.resetAppearanceShapes();
+                                annotationComponent.repaint();
+                                controller.getDocumentViewController().updateAnnotation(annotationComponent);
+                            });
+                            return item;
+                        }
+                ).collect(Collectors.toList());
+        jMenuItems.forEach(colorMenu::add);
+        return colorMenu;
     }
 
     @Override

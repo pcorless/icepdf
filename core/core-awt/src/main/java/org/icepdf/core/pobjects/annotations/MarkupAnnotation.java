@@ -173,7 +173,7 @@ public abstract class MarkupAnnotation extends Annotation {
         super(l, h);
     }
 
-    public void init() throws InterruptedException {
+    public synchronized void init() throws InterruptedException {
         super.init();
         // title text
         titleText = getString(T_KEY);

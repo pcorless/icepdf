@@ -79,7 +79,7 @@ public class OptionalContentMembership extends Dictionary implements OptionalCon
     }
 
     @Override
-    public void init() {
+    public synchronized void init() {
         if (inited) {
             return;
         }

@@ -16,6 +16,7 @@
 package org.icepdf.ri.common.utility.search;
 
 import org.icepdf.core.search.DocumentSearchController;
+import org.icepdf.core.search.SearchMode;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
@@ -38,12 +39,14 @@ public class SimpleSearchHelper implements PropertyChangeListener {
     private int commentHits;
     private int commentIndex;
 
+    private SearchMode searchMode;
     private boolean commentsEnabled;
     private boolean wholeWord;
     private boolean caseSensitive;
 
     private SimpleSearchHelper(Builder builder) {
         controller = builder.controller;
+        searchMode = builder.wholePage ? SearchMode.PAGE : SearchMode.WORD;
         pattern = builder.pattern;
         wholeWord = builder.wholeWord;
         caseSensitive = builder.caseSensitive;
@@ -78,6 +81,7 @@ public class SimpleSearchHelper implements PropertyChangeListener {
     public void clearAll() {
         // reset high light states.
         searchController.clearAllSearchHighlight();
+        searchController.setSearchMode(searchMode);
         controller.getDocumentViewController().getViewContainer().repaint();
         // reset internal word counters
         wordHits = wordIndex = commentHits = commentIndex = 0;
@@ -191,6 +195,7 @@ public class SimpleSearchHelper implements PropertyChangeListener {
         private final String pattern;
 
         // optional search controls.
+        private boolean wholePage;
         private boolean wholeWord;
         private boolean caseSensitive;
         private boolean comments;
@@ -198,6 +203,11 @@ public class SimpleSearchHelper implements PropertyChangeListener {
         public Builder(Controller controller, String pattern) {
             this.controller = controller;
             this.pattern = pattern;
+        }
+
+        public Builder setWholePage(final boolean wholePage) {
+            this.wholePage = wholePage;
+            return this;
         }
 
         public Builder setWholeWord(boolean wholeWord) {
