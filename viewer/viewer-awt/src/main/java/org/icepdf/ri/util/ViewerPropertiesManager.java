@@ -80,10 +80,6 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_DEFAULT_ROTATION = "document.rotation";
     // page rotation
     public static final String PROPERTY_DEFAULT_VIEW_TYPE = "document.viewtype";
-    // default print media size.
-    public static final String PROPERTY_PRINT_MEDIA_SIZE_WIDTH = "document.print.mediasize.width";
-    public static final String PROPERTY_PRINT_MEDIA_SIZE_HEIGHT = "document.print.mediasize.height";
-    public static final String PROPERTY_PRINT_MEDIA_SIZE_UNIT = "document.print.mediasize.unit";
     // highlight and selection text colours.
     public static final String PROPERTY_TEXT_SELECTION_COLOR = "org.icepdf.core.views.page.text.selection.color";
     public static final String PROPERTY_TEXT_HIGHLIGHT_COLOR = "org.icepdf.core.views.page.text.highlight.color";
@@ -196,6 +192,7 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_TEXT = "application.toolbar.annotation.text.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_PERMISSION = "application.toolbar.annotation.permission.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_UTILITY = "application.toolbar.annotation.toolbar.enabled";
+    public static final String PROPERTY_SHOW_TOOLBAR_BOOKMARK_UTILITY = "application.toolbar.bookmark.toolbar.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_PREVIEW = "application.toolbar.annotation.preview.enabled";
     // Individual control of the markup annotation context menu
     public static final String PROPERTY_SHOW_ANNOTATION_MARKUP_REPLY_TO = "application.annotation.show.markup.replyTo";

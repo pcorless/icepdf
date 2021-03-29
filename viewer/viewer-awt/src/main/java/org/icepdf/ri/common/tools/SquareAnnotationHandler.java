@@ -22,6 +22,7 @@ import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.SquareAnnotation;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -194,7 +195,7 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
         ViewModel viewModel = documentViewController.getParentController().getViewModel();
         annotation.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, !viewModel.getAnnotationPrivacy());
         annotation.setCreationDate(PDate.formatDateTime(new Date()));
-        annotation.setTitleText(System.getProperty("user.name"));
+        annotation.setTitleText(SystemProperties.USER_NAME);
 
         annotation.setColor(lineColor);
         annotation.setOpacity(defaultOpacity);

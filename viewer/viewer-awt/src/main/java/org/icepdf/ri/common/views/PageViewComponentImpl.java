@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -44,6 +45,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
 
     // annotations component for this pageViewComp.
     protected ArrayList<AbstractAnnotationComponent> annotationComponents;
+    protected Map<Annotation, AnnotationComponent> annotationToComponent;
     protected ArrayList<DestinationComponent> destinationComponents;
     private Set<SearchHitComponent> searchHitComponents = new HashSet<>();
 
@@ -216,6 +218,18 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         return annotationComponents;
     }
 
+    /**
+     * Returns the annotation component linked to the given annotation
+     *
+     * @param annot The annotation
+     * @return The annotation component, or null if there is no match
+     */
+    public AnnotationComponent getComponentFor(Annotation annot) {
+        if (annotationToComponent == null){
+            initializeAnnotationsComponent(getPage());
+        }
+        return annotationToComponent.get(annot);
+    }
 
     /**
      * Gets a list of the annotation components used in this page view.
@@ -414,8 +428,10 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         // delegate to handler.
         if (annotationComponents == null) {
             annotationComponents = new ArrayList<>();
+            annotationToComponent = new HashMap<>();
         }
         annotationComponents.add((AbstractAnnotationComponent) annotation);
+        annotationToComponent.put(annotation.getAnnotation(), annotation);
         if (annotation instanceof PopupAnnotationComponent) {
             this.add((AbstractAnnotationComponent) annotation, JLayeredPane.POPUP_LAYER);
         } else if (annotation instanceof MarkupAnnotationComponent) {
@@ -436,6 +452,12 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
      */
     public void removeAnnotation(AnnotationComponent annotationComp) {
         annotationComponents.remove(annotationComp);
+        if (annotationComp.getAnnotation() != null) {
+            annotationToComponent.remove(annotationComp.getAnnotation());
+        } else {
+            annotationToComponent.entrySet().stream().filter(e -> e.getValue().equals(annotationComp)).findFirst()
+                    .ifPresent(e -> annotationToComponent.remove(e.getKey()));
+        }
         this.remove((AbstractAnnotationComponent) annotationComp);
         // make sure we remove the glue
         if (annotationComp instanceof MarkupAnnotationComponent) {
@@ -467,6 +489,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
             // we're cleaning up the page which may involve awt component manipulations o we queue
             // callback on the awt thread so we don't try and paint something we just removed
             annotationComponents = null;
+            annotationToComponent = null;
         });
     }
 
@@ -511,6 +534,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
             // get duplicates if the page has be gc'd
             if (annotationComponents == null) {
                 annotationComponents = new ArrayList<>(annotations.size());
+                annotationToComponent = new HashMap<>(annotations.size());
                 Annotation annotation;
                 for (int i = 0, max = annotations.size(); i < max; i++) {
                     annotation = annotations.get(i);
@@ -522,6 +546,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                         if (comp != null) {
                             // add for painting
                             annotationComponents.add(comp);
+                            annotationToComponent.put(annotation, comp);
                             // add to layout
                             if (comp instanceof PopupAnnotationComponent) {
                                 PopupAnnotationComponent popupAnnotationComponent = (PopupAnnotationComponent) comp;
