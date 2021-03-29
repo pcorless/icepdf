@@ -509,7 +509,7 @@ public class LineAnnotation extends MarkupAnnotation {
     }
 
     @SuppressWarnings("unchecked")
-    public void init() throws InterruptedException {
+    public synchronized void init() throws InterruptedException {
         super.init();
         // line points
         List<Number> value = library.getArray(entries, L_KEY);

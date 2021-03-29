@@ -31,6 +31,7 @@ import org.icepdf.core.pobjects.acroform.signature.exceptions.RevocationVerifica
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SelfSignedVerificationException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.SystemProperties;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
@@ -55,8 +56,8 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
     private static String caCertLocation = "/lib/security/cacerts";
 
     static {
-        String javaHome = Defs.sysProperty("java.home");
-        caCertLocation = Defs.sysProperty("org.icepdf.core.signatures.caCertPath", javaHome + caCertLocation);
+        caCertLocation = Defs.sysProperty("org.icepdf.core.signatures.caCertPath",
+                SystemProperties.JAVA_HOME + caCertLocation);
     }
 
     // data object descriptor codes.

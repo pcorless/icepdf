@@ -21,6 +21,7 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.AbstractTask;
 import org.icepdf.ri.common.DragDropColorList;
 import org.icepdf.ri.common.views.Controller;
@@ -31,12 +32,14 @@ import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.icepdf.core.util.SystemProperties.PRIVATE_PROPERTY_ENABLED;
 
 public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
 
@@ -131,7 +134,7 @@ public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
                     }
                     taskStatusMessage = loadingMessage.format(new Object[]{i + 1, pageCount});
                     taskProgress = i;
-                    String userName = System.getProperty("user.name");
+                    String userName = SystemProperties.USER_NAME;
                     Page page = currentDocument.getPageTree().getPage(i);
                     if (page != null) {
                         ArrayList<Reference> annotationReferences = page.getAnnotationReferences();
@@ -178,7 +181,7 @@ public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
                                             filter = true;
                                         }
                                     }
-                                    if (MarkupAnnotationPanel.PRIVATE_PROPERTY_ENABLED &&
+                                    if (PRIVATE_PROPERTY_ENABLED &&
                                             filterVisibility != MarkupAnnotationPanel.FilterVisibilityColumn.ALL) {
                                         if ((markupAnnotation.getFlagPrivateContents()
                                                 && filterVisibility == MarkupAnnotationPanel.FilterVisibilityColumn.PUBLIC)

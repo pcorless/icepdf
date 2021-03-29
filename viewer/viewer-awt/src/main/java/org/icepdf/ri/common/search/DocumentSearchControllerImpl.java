@@ -74,6 +74,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
 
     //Search mode is per-word or whole page
     private SearchMode searchMode = SearchMode.WORD;
+  
     //Page index to SearchHitComponents
     private final Map<Integer, Set<SearchHitComponent>> pageToComponents = new HashMap<>();
 

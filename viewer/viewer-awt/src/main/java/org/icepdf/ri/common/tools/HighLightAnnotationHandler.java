@@ -26,6 +26,7 @@ import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -176,7 +177,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
             // before assigning the default colour check to see if there is an entry in the properties manager
             checkAndApplyPreferences();
             annotation.setCreationDate(PDate.formatDateTime(new Date()));
-            annotation.setTitleText(System.getProperty("user.name"));
+            annotation.setTitleText(SystemProperties.USER_NAME);
             annotation.setMarkupBounds(highlightBounds);
             annotation.setMarkupPath(highlightPath);
             annotation.setBBox(tBbox);

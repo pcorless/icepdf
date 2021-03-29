@@ -75,11 +75,11 @@ public class Catalog extends Dictionary {
     private ViewerPreferences viewerPref;
     private InteractiveForm interactiveForm;
 
-    private boolean outlinesInited = false;
-    private boolean namesTreeInited = false;
-    private boolean destsInited = false;
-    private boolean viewerPrefInited = false;
-    private boolean optionalContentInited = false;
+    private volatile boolean outlinesInited = false;
+    private volatile boolean namesTreeInited = false;
+    private volatile boolean destsInited = false;
+    private volatile boolean viewerPrefInited = false;
+    private volatile boolean optionalContentInited = false;
 
     // Announce ICEpdf Core
     static {
@@ -168,10 +168,15 @@ public class Catalog extends Dictionary {
      */
     public Outlines getOutlines() {
         if (!outlinesInited) {
-            outlinesInited = true;
-            Object o = library.getObject(entries, OUTLINES_KEY);
-            if (o != null)
-                outlines = new Outlines(library, (HashMap) o);
+            synchronized (this) {
+                if (!outlinesInited) {
+                    Object o = library.getObject(entries, OUTLINES_KEY);
+                    if (o != null) {
+                        outlines = new Outlines(library, (HashMap) o);
+                    }
+                    outlinesInited = true;
+                }
+            }
         }
         return outlines;
     }
@@ -297,10 +302,14 @@ public class Catalog extends Dictionary {
     @SuppressWarnings("unchecked")
     public NamedDestinations getDestinations() {
         if (!destsInited) {
-            destsInited = true;
-            Object o = library.getObject(entries, DESTS_KEY);
-            if (o != null) {
-                dests = new NamedDestinations(library, (HashMap<Object, Object>) o);
+            synchronized (this) {
+                if (!destsInited) {
+                    Object o = library.getObject(entries, DESTS_KEY);
+                    if (o != null) {
+                        dests = new NamedDestinations(library, (HashMap<Object, Object>) o);
+                    }
+                    destsInited = true;
+                }
             }
         }
         return dests;
@@ -315,16 +324,20 @@ public class Catalog extends Dictionary {
      */
     public ViewerPreferences getViewerPreferences() {
         if (!viewerPrefInited) {
-            viewerPrefInited = true;
-            Object o = library.getObject(entries, VIEWERPREFERENCES_KEY);
-            if (o != null) {
-                if (o instanceof HashMap) {
-                    viewerPref = new ViewerPreferences(library, (HashMap) o);
-                    viewerPref.init();
-                } // strange corner case where there is a incorrect reference.
-                else if (o instanceof Catalog) {
-                    viewerPref = new ViewerPreferences(library, ((Catalog) o).getEntries());
-                    viewerPref.init();
+            synchronized (this) {
+                if (!viewerPrefInited) {
+                    Object o = library.getObject(entries, VIEWERPREFERENCES_KEY);
+                    if (o != null) {
+                        if (o instanceof HashMap) {
+                            viewerPref = new ViewerPreferences(library, (HashMap) o);
+                            viewerPref.init();
+                        } // strange corner case where there is a incorrect reference.
+                        else if (o instanceof Catalog) {
+                            viewerPref = new ViewerPreferences(library, ((Catalog) o).getEntries());
+                            viewerPref.init();
+                        }
+                    }
+                    viewerPrefInited = true;
                 }
             }
         }
@@ -338,14 +351,18 @@ public class Catalog extends Dictionary {
      */
     public OptionalContent getOptionalContent() {
         if (!optionalContentInited) {
-            optionalContentInited = true;
-            Object o = library.getObject(entries, OCPROPERTIES_KEY);
-            if (o != null && o instanceof HashMap) {
-                optionalContent = new OptionalContent(library, ((HashMap) o));
-                optionalContent.init();
-            } else {
-                optionalContent = new OptionalContent(library, new HashMap());
-                optionalContent.init();
+            synchronized (this) {
+                if (!optionalContentInited) {
+                    Object o = library.getObject(entries, OCPROPERTIES_KEY);
+                    if (o != null && o instanceof HashMap) {
+                        optionalContent = new OptionalContent(library, ((HashMap) o));
+                        optionalContent.init();
+                    } else {
+                        optionalContent = new OptionalContent(library, new HashMap());
+                        optionalContent.init();
+                    }
+                    optionalContentInited = true;
+                }
             }
         }
         return optionalContent;

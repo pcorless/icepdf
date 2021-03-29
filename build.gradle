@@ -27,7 +27,7 @@ defaultTasks 'taskReport', 'dependencyReport', 'sourcesJar', 'genPomFileForCoreJ
 // Main distribution for os bundle
 distributions {
     os {
-        distributionBaseName.set("icepdf-os")
+        distributionBaseName.set("icepdf")
         version "${VERSION + (RELEASE_TYPE?.trim()? '-' + RELEASE_TYPE:'')}"
         contents {
             duplicatesStrategy = 'exclude'
