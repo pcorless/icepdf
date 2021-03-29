@@ -21,7 +21,10 @@ import org.icepdf.core.util.Utils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -67,7 +70,7 @@ public class CrossReference {
     protected int offset;
 
     public CrossReference() {
-        hObjectNumber2Entry = new ConcurrentHashMap<Integer, Entry>(4096);
+        hObjectNumber2Entry = new ConcurrentHashMap<>(4096);
     }
 
     public void setTrailer(PTrailer trailer) {

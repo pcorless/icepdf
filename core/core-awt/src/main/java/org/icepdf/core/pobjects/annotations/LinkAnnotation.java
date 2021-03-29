@@ -156,7 +156,7 @@ public class LinkAnnotation extends Annotation {
         return linkAnnotation;
     }
 
-    public void init() throws InterruptedException {
+    public synchronized void init() throws InterruptedException {
         super.init();
         // try and generate an appearance stream.
         resetNullAppearanceStream();

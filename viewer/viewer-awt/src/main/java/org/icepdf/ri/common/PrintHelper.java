@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common;
 
+import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
@@ -22,13 +23,11 @@ import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.GraphicsRenderingHints;
 
 import javax.print.*;
-import javax.print.attribute.Attribute;
-import javax.print.attribute.AttributeSet;
-import javax.print.attribute.HashDocAttributeSet;
-import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.*;
 import javax.print.attribute.standard.*;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.geom.Rectangle2D;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterJob;
@@ -56,6 +55,8 @@ public class PrintHelper implements Printable {
 
     // private final as we execute this on teh host system and it must be immutable.
     private static final String PRINTER_STATUS_COMMAND = "lpstat -d";
+
+    private static final float DPI = 72f;
 
     private static boolean clippingFixEnabled;
 
@@ -106,26 +107,32 @@ public class PrintHelper implements Printable {
                        final float rotation,
                        final MediaSizeName paperSizeName,
                        final PrintQuality printQuality) {
-        this.container = container;
-        this.pageTree = pageTree;
-        this.userRotation = rotation;
+        this(container, pageTree, rotation, getDocAttributeSet(paperSizeName),
+                getPrintRequestAttributeSet(printQuality, paperSizeName));
+    }
 
-        // find available printers
-        services = lookForPrintServices();
+    private static HashDocAttributeSet getDocAttributeSet(MediaSizeName paperSizeName) {
+        HashDocAttributeSet docAttributeSet = new HashDocAttributeSet();
+        docAttributeSet.add(paperSizeName);
+        // setting margins to full paper size as PDF have their own margins
+        MediaSize mediaSize =
+                MediaSize.getMediaSizeForName(paperSizeName);
+        float[] size = mediaSize.getSize(MediaSize.INCH);
+        docAttributeSet.add(new MediaPrintableArea(0, 0, size[0], size[1],
+                MediaPrintableArea.INCH));
+        return docAttributeSet;
+    }
 
+    private static HashPrintRequestAttributeSet getPrintRequestAttributeSet(PrintQuality printQuality,
+                                                                            MediaSizeName paperSizeName) {
         // default printing properties.
-        // Print and document attributes sets.
-        printRequestAttributeSet =
+        HashPrintRequestAttributeSet printRequestAttributeSet =
                 new HashPrintRequestAttributeSet();
-        docAttributeSet = new HashDocAttributeSet();
-
         // assign print quality.
         printRequestAttributeSet.add(printQuality);
 
         // change paper
         printRequestAttributeSet.add(paperSizeName);
-        docAttributeSet.add(paperSizeName);
-
         // setting margins to full paper size as PDF have their own margins
         MediaSize mediaSize =
                 MediaSize.getMediaSizeForName(paperSizeName);
@@ -133,17 +140,7 @@ public class PrintHelper implements Printable {
         printRequestAttributeSet
                 .add(new MediaPrintableArea(0, 0, size[0], size[1],
                         MediaPrintableArea.INCH));
-        docAttributeSet.add(new MediaPrintableArea(0, 0, size[0], size[1],
-                MediaPrintableArea.INCH));
-
-        // default setup, all pages, shrink to fit and no dialog.
-        setupPrintService(0, this.pageTree.getNumberOfPages(), 1, true, false);
-
-        // display paper size.
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine("Paper Size: " + paperSizeName.getName() +
-                    " " + size[0] + " x " + size[1]);
-        }
+        return printRequestAttributeSet;
     }
 
     /**
@@ -257,6 +254,46 @@ public class PrintHelper implements Printable {
         printFitToMargin = shrinkToPrintableArea;
         this.printRequestAttributeSet = printRequestAttributeSet;
         this.printService = printService;
+    }
+
+    /**
+     * Returns the MediaSizeName corresponding to the first page in a document
+     *
+     * @param document The document
+     * @return The MediaSizeName if found, A4 by default
+     */
+    public static MediaSizeName guessMediaSizeName(final Document document) {
+        if (document != null) {
+            final PageTree pt = document.getPageTree();
+            if (pt.getNumberOfPages() > 0) {
+                final Rectangle2D.Float pdim = pt.getPage(0).getMediaBox();
+                final float width = pdim.width / DPI;
+                final float height = pdim.height / DPI;
+                return MediaSize.findMedia(width, height, Size2DSyntax.INCH);
+            }
+        }
+        return MediaSizeName.ISO_A4;
+    }
+
+    /**
+     * Checks that the given printer exists
+     *
+     * @param printer The printer name
+     * @return True if it exists or printer equals 'default'
+     */
+    public static boolean hasPrinter(String printer) {
+        preparePrintServices();
+        return printer.equals("default") || Arrays.stream(services).map(PrintService::getName).anyMatch(n -> n.equals(printer));
+    }
+
+    /**
+     * Sets the printer defined by the given name as current one
+     *
+     * @param name The name of the printer
+     */
+    public void setPrinter(String name) {
+        preparePrintServices();
+        Arrays.stream(services).filter(ps -> ps.getName().equals(name)).findAny().ifPresent(service -> printService = service);
     }
 
     /**
@@ -555,11 +592,13 @@ public class PrintHelper implements Printable {
                 window == null ? null : window.getGraphicsConfiguration();
         // try and trim the services list.
 //        services = new PrintService[]{services[0]};
+        int baseX = window != null ? window.getX() : container.getX();
+        int baseY = window != null ? window.getY() : container.getY();
 
         return ServiceUI.printDialog(graphicsConfiguration,
-                container.getX() + offset,
-                container.getY() + offset,
-                services, services[0],
+                baseX + offset,
+                baseY + offset,
+                services, printService == null ? services[0] : printService,
                 DocFlavor.SERVICE_FORMATTED.PRINTABLE,
                 printRequestAttributeSet);
     }
@@ -587,6 +626,9 @@ public class PrintHelper implements Printable {
         }
     }
 
+    /**
+     * Loads the print services
+     */
     public static void preparePrintServices() {
         services = lookForPrintServices();
     }
