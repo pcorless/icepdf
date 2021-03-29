@@ -25,11 +25,13 @@ import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.search.SearchTerm;
 import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.utility.search.SearchHitComponent;
+import org.icepdf.ri.common.utility.search.SearchHitComponentFactory;
+import org.icepdf.ri.common.utility.search.SearchHitComponentFactoryImpl;
+import org.icepdf.ri.common.views.PageViewComponentImpl;
 
 import java.awt.geom.Rectangle2D;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -64,6 +66,10 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     private SwingController viewerController;
     // assigned document for headless searching.
     protected Document document;
+    public static SearchHitComponentFactory componentFactory = new SearchHitComponentFactoryImpl();
+
+    //Page index to SearchHitComponents
+    private final Map<Integer, Set<SearchHitComponent>> pageToComponents = new HashMap<>();
 
     /**
      * Create a news instance of search controller. A search model is created
@@ -281,6 +287,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                                 wordHit.setHighlighted(true);
                                 wordHit.setHasHighlight(true);
                                 hitWords.add(wordHit);
+                                addComponent(pageIndex, wordHit.getText(), wordHit.getBounds());
                             }
 
                             for (int p = start2; p < end2; p++) {
@@ -693,6 +700,9 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     public void clearSearchHighlight(int pageIndex) {
         // clear cache and terms list
         searchModel.clearSearchResults(pageIndex);
+        PageViewComponentImpl pvc = (PageViewComponentImpl) viewerController.getDocumentViewController().getDocumentViewModel()
+                .getPageComponents().get(pageIndex);
+        pvc.clearSearchHighlights();
     }
 
     /**
@@ -702,6 +712,12 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      */
     public void clearAllSearchHighlight() {
         searchModel.clearSearchResults();
+        pageToComponents.forEach((key, shc) -> {
+            PageViewComponentImpl pvc = (PageViewComponentImpl) viewerController.getDocumentViewController().getDocumentViewModel()
+                    .getPageComponents().get(key);
+            pvc.clearSearchHighlights();
+        });
+        pageToComponents.clear();
     }
 
     /**
@@ -786,5 +802,33 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             cPrev = c;
         }
         return words;
+    }
+
+    /**
+     * Returns the components created by the search for a given page
+     *
+     * @param pageIndex The index of the page
+     * @return The set of components
+     */
+    public Set<SearchHitComponent> getComponentsFor(int pageIndex) {
+        return pageToComponents.getOrDefault(pageIndex, new HashSet<>());
+    }
+
+    /**
+     * Adds a component with the given arguments.
+     *
+     * @param pageIndex The page to add the component to
+     * @param text      The text of the component
+     * @param bounds    The bounds of the component
+     */
+    protected void addComponent(final int pageIndex, final String text, final Rectangle2D.Float bounds) {
+        final Set<SearchHitComponent> components = pageToComponents.getOrDefault(pageIndex, new HashSet<>());
+        final SearchHitComponent component = componentFactory.createComponent(text, bounds, document.getPageTree().getPage(pageIndex), viewerController);
+        if (!components.contains(component)) {
+            if (component != null) {
+                components.add(component);
+            }
+            pageToComponents.put(pageIndex, components);
+        }
     }
 }

@@ -9,7 +9,9 @@ import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.util.PropertyConstants;
+import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
 import org.icepdf.ri.common.tools.*;
+import org.icepdf.ri.common.utility.search.SearchHitComponent;
 import org.icepdf.ri.common.views.annotations.*;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
 
@@ -19,8 +21,9 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -44,6 +47,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     protected ArrayList<AbstractAnnotationComponent> annotationComponents;
     protected Map<Annotation, AnnotationComponent> annotationToComponent;
     protected ArrayList<DestinationComponent> destinationComponents;
+    private Set<SearchHitComponent> searchHitComponents = new HashSet<>();
 
     public PageViewComponentImpl(DocumentViewModel documentViewModel, PageTree pageTree,
                                  final int pageIndex, int width, int height) {
@@ -59,6 +63,11 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     public void setDocumentViewCallback(DocumentView parentDocumentView) {
         super.setDocumentViewCallback(parentDocumentView);
         textSelectionPageHandler.setDocumentViewController(documentViewController);
+    }
+
+    public void clearSearchHighlights() {
+        searchHitComponents.forEach(this::remove);
+        searchHitComponents.clear();
     }
 
     @Override
@@ -274,6 +283,16 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                     }
                     // paint selected text.
                     TextSelection.paintSelectedText(g, this, documentViewModel);
+                    if (searchController instanceof DocumentSearchControllerImpl) {
+                        Set<SearchHitComponent> newSearchHitComponents = ((DocumentSearchControllerImpl) searchController).getComponentsFor(pageIndex);
+                        if (!newSearchHitComponents.equals(searchHitComponents)) {
+                            searchHitComponents.forEach(this::remove);
+                            searchHitComponents = newSearchHitComponents;
+                            //In front of annotations, behind popups
+                            searchHitComponents.forEach(comp -> this.add(comp, JLayeredPane.MODAL_LAYER));
+                            validate();
+                        }
+                    }
                 }
             } catch (InterruptedException e) {
                 logger.fine("Interrupt exception during view text fetch.");
