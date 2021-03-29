@@ -26,6 +26,7 @@ import org.icepdf.ri.common.DragDropColorList;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.tools.DestinationHandler;
 import org.icepdf.ri.common.tools.FreeTextAnnotationHandler;
+import org.icepdf.ri.common.utility.annotation.AnnotationFilter;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.PageViewComponentImpl;
@@ -250,6 +251,7 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
             return;
         }
 
+        final AnnotationFilter userAnnotationFilter = new UserAnnotationFilter();
         if (source == replyMenuItem) {
             PopupAnnotationComponent popupAnnotationComponent = annotationComponent.getPopupAnnotationComponent();
             if (popupAnnotationComponent != null) popupAnnotationComponent.replyToSelectedMarkupExecute();
@@ -313,17 +315,22 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
             new FreeTextAnnotationHandler(controller.getDocumentViewController(), pageViewComponent)
                     .createFreeTextAnnotation(point.x, point.y - fontSize, false);
         } else if (source == setAllPrivateMenuItem) {
-            ((SwingController) controller).changeAnnotationsPrivacy(a -> a instanceof MarkupAnnotation &&
-                    ((MarkupAnnotation) a).getTitleText().equals(SystemProperties.USER_NAME), true);
+            ((SwingController) controller).changeAnnotationsPrivacy(userAnnotationFilter, true);
         } else if (source == setAllPublicMenuItem) {
-            ((SwingController) controller).changeAnnotationsPrivacy(a -> a instanceof MarkupAnnotation &&
-                    ((MarkupAnnotation) a).getTitleText().equals(SystemProperties.USER_NAME), false);
+            ((SwingController) controller).changeAnnotationsPrivacy(userAnnotationFilter, false);
         } else if (source == togglePrivacyMenuItem) {
             final MarkupAnnotation annot = (MarkupAnnotation) annotationComponent.getAnnotation();
             final Set<Reference> references = annot.getReplyingAnnotations(true).stream()
                     .map(Dictionary::getPObjectReference).collect(Collectors.toSet());
             ((SwingController) controller).changeAnnotationsPrivacy(a -> references.contains(a.getPObjectReference())
                     || a.getPObjectReference().equals(annot.getPObjectReference()), !annot.getFlagPrivateContents());
+        }
+    }
+
+    private static class UserAnnotationFilter implements AnnotationFilter {
+        @Override
+        public boolean filter(final Annotation a) {
+            return a instanceof MarkupAnnotation && ((MarkupAnnotation) a).getTitleText().equals(SystemProperties.USER_NAME);
         }
     }
 }
