@@ -90,6 +90,7 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
+import java.util.stream.Collectors;
 
 import static org.icepdf.core.util.PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE;
 import static org.icepdf.ri.util.ViewerPropertiesManager.*;
@@ -5684,13 +5685,18 @@ public class SwingController extends ComponentAdapter
             final MarkupAnnotation ma = (MarkupAnnotation) a;
             ma.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, priv);
             ma.setModifiedDate(PDate.formatDateTime(new Date()));
-            ma.getPopupAnnotation().setFlag(Annotation.FLAG_PRIVATE_CONTENTS, priv);
-            ma.getPopupAnnotation().setModifiedDate(PDate.formatDateTime(new Date()));
+            final PopupAnnotation pa = ma.getPopupAnnotation();
+            if (pa != null) {
+                pa.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, priv);
+                pa.setModifiedDate(PDate.formatDateTime(new Date()));
+            }
             final PageViewComponentImpl pvc = (PageViewComponentImpl)
                     documentViewController.getDocumentViewModel().getPageComponents().get(ma.getPageIndex());
             final MarkupAnnotationComponent<?> comp = (MarkupAnnotationComponent<?>) pvc.getComponentFor(ma);
             if (comp != null) {
-                comp.getPopupAnnotationComponent().refreshPopupState();
+                if (comp.getPopupAnnotationComponent() != null) {
+                    comp.getPopupAnnotationComponent().refreshPopupState();
+                }
                 documentViewController.updateAnnotation(comp);
             }
         });
@@ -5702,7 +5708,8 @@ public class SwingController extends ComponentAdapter
             for (int i = 0; i < pt.getNumberOfPages(); ++i) {
                 final Page p = pt.getPage(i);
                 if (p.getAnnotations() != null) {
-                    p.getAnnotations().stream().filter(filter::filter).forEach(toExecute);
+                    final List<Annotation> annotations = p.getAnnotations().stream().filter(filter::filter).collect(Collectors.toList());
+                    annotations.forEach(toExecute);
                 }
             }
         }
