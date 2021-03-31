@@ -1007,7 +1007,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                             OutlineItemTreeNode outlineNode =
                                     findOutlineTreeNode(outlineItemTreeNode.getChildAt(i), (OutlineItemTreeNode) node);
                             if (outlineNode != null) {
-                                swingController.showOutlinePanel();
+                                swingController.showOutlinePanel(true);
                                 TreePath outlinePath = new TreePath(outlineNode.getPath());
                                 outlineTree.setSelectionPath(outlinePath);
                                 outlineTree.scrollPathToVisible(outlinePath);

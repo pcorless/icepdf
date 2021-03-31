@@ -23,7 +23,7 @@ import java.net.URL;
 import java.util.Map;
 
 /**
- * Font file interfaces.  Common methods which encapsulate NFont and OFont
+ * Font file interfaces.
  * font rendering libraries.
  *
  * @since 3.0
@@ -40,36 +40,24 @@ public interface FontFile {
 
     long LAYOUT_NONE = 0;
 
-    Point2D echarAdvance(char ech);
+    // todo do some refacotring of method name 'e' awlays seemed strange to me.
+
+    Point2D getAdvance(char ech);
 
     FontFile deriveFont(AffineTransform at);
 
     FontFile deriveFont(Encoding encoding, CMap toUnicode);
 
     FontFile deriveFont(float[] widths, int firstCh, float missingWidth,
-                        float ascent, float descent, char[] diff);
+                        float ascent, float descent, Rectangle2D bbox, char[] diff);
 
     FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth,
-                        float ascent, float descent, char[] diff);
+                        float ascent, float descent, Rectangle2D bbox, char[] diff);
 
-    /**
-     * Can the character <var>ch</var> in the nfont's encoding be rendered?
-     *
-     * @param ech character to test for displayability.
-     * @return true if renderable, false otherwise.
-     */
-    boolean canDisplayEchar(char ech);
+    boolean canDisplay(char ech);
 
     void setIsCid();
 
-    /**
-     * Creates nfont a new <var>pointsize</var>, assuming 72 ppi.
-     * Note to subclassers: you must make a complete independent instance of the nfont here,
-     * even if point size and everything else is the same, as other <code>deriveFont</code> methods use this to make a clone and might make subsequent changes.
-     *
-     * @param pointsize point size of font.
-     * @return fontFile with associated point size.
-     */
     FontFile deriveFont(float pointsize);
 
     CMap getToUnicode();
@@ -78,14 +66,13 @@ public interface FontFile {
 
     String toUnicode(char displayChar);
 
-    /**
-     * Returns name of nfont, such as "Times".
-     *
-     * @return font family of font.
-     */
+    org.apache.fontbox.encoding.Encoding getEncoding();
+
     String getFamily();
 
     float getSize();
+
+    AffineTransform getFontTransform();
 
     /**
      * Returns maximum ascent glyphs above baseline.
@@ -115,32 +102,17 @@ public interface FontFile {
      */
     AffineTransform getTransform();
 
-    /**
-     * Returns nfont usage rights bit mask.
-     *
-     * @return fonts permission/rights.
-     */
     int getRights();
 
-    /**
-     * Returns name of nfont, such as "Times-Roman", which is different than the filename.
-     *
-     * @return font name
-     */
     String getName();
 
     /**
-     * Returns <code>true</code> iff nfont has hinted outlines, which is Type 1 and TrueType is a sign of higher quality.
+     * Returns <code>true</code> which is Type 1 and TrueType is a sign of higher quality.
      *
      * @return true if the font is hinted, otherwise false.
      */
     boolean isHinted();
 
-    /**
-     * Returns number of glyphs defined in nfont.
-     *
-     * @return number of glyphs in font.
-     */
     int getNumGlyphs();
 
     /**
@@ -152,21 +124,23 @@ public interface FontFile {
 
     /**
      * Returns the character that seems to be used as a space in the current encoding, or NOTDEF_CHAR if no such character.
+     *
      * @return associated space character.
      */
-    char getSpaceEchar();
+    char getSpace();
 
-    Rectangle2D getEstringBounds(String estr, int beginIndex, int limit);
+    Rectangle2D getBounds(String estr, int beginIndex, int limit);
 
     /**
      * Returns primary format, such as "Type1" or "OpenType".
-     * @return  "Type1" or "OpenType"
+     *
+     * @return "Type1" or "OpenType"
      */
     String getFormat();
 
-    void drawEstring(Graphics2D g, String estr, float x,
-                     float y, long layout, int mode,
-                     Color strokeColor);
+    void paint(Graphics2D g, String estr, float x,
+               float y, long layout, int mode,
+               Color strokeColor);
 
     /**
      * Get the glyph outline shape for the given estr translated to x,y.
@@ -176,7 +150,7 @@ public interface FontFile {
      * @param y    y coordinate to translate outline shape.
      * @return glyph outline of the estr.
      */
-    Shape getEstringOutline(String estr, float x, float y);
+    Shape getOutline(String estr, float x, float y);
 
     ByteEncoding getByteEncoding();
 

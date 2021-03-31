@@ -110,7 +110,7 @@ public class OptionalContent extends Dictionary {
 
     @Override
     @SuppressWarnings("unchecked")
-    public void init() {
+    public synchronized void init() {
         if (inited) {
             return;
         }

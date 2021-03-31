@@ -15,6 +15,9 @@
  */
 package org.icepdf.core.pobjects.graphics.text;
 
+import org.icepdf.core.pobjects.Page;
+
+import java.awt.*;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -46,6 +49,7 @@ public abstract class AbstractText implements Text {
     // highlight state
     protected boolean highlight;
     protected boolean highlightCursor;
+    private Color highlightColor = Page.highlightColor;
 
     // highlight hint for quicker painting
     protected boolean hasSelected;
@@ -112,6 +116,22 @@ public abstract class AbstractText implements Text {
      */
     public void setSelected(boolean selected) {
         this.selected = selected;
+    }
+
+
+    /**
+     * Sets the color to display if the text is highlighted
+     * @param c The color to highlight with
+     */
+    public void setHighlightColor(Color c){
+        this.highlightColor=c;
+    }
+
+    /**
+     * @return The highlight color
+     */
+    public Color getHighlightColor() {
+        return highlightColor;
     }
 
     /**
