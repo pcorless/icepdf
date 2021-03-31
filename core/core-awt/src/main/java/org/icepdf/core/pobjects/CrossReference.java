@@ -78,9 +78,13 @@ public class CrossReference {
     }
 
     public int getNextAvailableReferenceNumber() {
-        List<Integer> objectNumbers = Collections.list(hObjectNumber2Entry.keys());
+        final List<Integer> objectNumbers = new ArrayList<>(hObjectNumber2Entry.keySet());
         Collections.sort(objectNumbers);
-        return objectNumbers.isEmpty() ? 1 : objectNumbers.get(objectNumbers.size() - 1) + 1;
+        final int nextNumber = objectNumbers.isEmpty() ? 1 : objectNumbers.get(objectNumbers.size() - 1) + 1;
+        loadPeer();
+        loadPrevious();
+        final int peerMax = xrefPeer != null ? Math.max(nextNumber, xrefPeer.getNextAvailableReferenceNumber()) : nextNumber;
+        return xrefPrevious != null ? Math.max(peerMax, xrefPrevious.getNextAvailableReferenceNumber()) : peerMax;
     }
 
     /**
@@ -220,25 +224,14 @@ public class CrossReference {
         if (entry != null)
             return entry;
         /// fall back code to look for another xref table.
-        if (bIsCrossReferenceTable && !bHaveTriedLoadingPeer &&
-                xrefPeer == null && pTrailer != null) {
-            // Lazily load xrefPeer, using pTrailer
-            pTrailer.loadXRefStmIfApplicable();
-            xrefPeer = pTrailer.getCrossReferenceStream();
-            bHaveTriedLoadingPeer = true;
-        }
+        loadPeer();
         if (xrefPeer != null) {
             entry = xrefPeer.getEntryForObject(objectNumber);
             if (entry != null)
                 return entry;
         }
 
-        if (!bHaveTriedLoadingPrevious &&
-                xrefPrevious == null && pTrailer != null) {
-            // Lazily load xrefPrevious, using pTrailer
-            pTrailer.onDemandLoadAndSetupPreviousTrailer();
-            bHaveTriedLoadingPrevious = true;
-        }
+        loadPrevious();
         if (xrefPrevious != null) {
             entry = xrefPrevious.getEntryForObject(objectNumber);
             if (entry != null)
@@ -267,6 +260,25 @@ public class CrossReference {
     protected void addCompressedEntry(int objectNumber, int objectNumberOfContainingObjectStream, int indexWithinObjectStream) {
         CompressedEntry entry = new CompressedEntry(objectNumber, objectNumberOfContainingObjectStream, indexWithinObjectStream);
         hObjectNumber2Entry.put(objectNumber, entry);
+    }
+
+    private void loadPeer(){
+        if (bIsCrossReferenceTable && !bHaveTriedLoadingPeer &&
+                xrefPeer == null && pTrailer != null) {
+            // Lazily load xrefPeer, using pTrailer
+            pTrailer.loadXRefStmIfApplicable();
+            xrefPeer = pTrailer.getCrossReferenceStream();
+            bHaveTriedLoadingPeer = true;
+        }
+    }
+
+    private void loadPrevious(){
+        if (!bHaveTriedLoadingPrevious &&
+                xrefPrevious == null && pTrailer != null) {
+            // Lazily load xrefPrevious, using pTrailer
+            pTrailer.onDemandLoadAndSetupPreviousTrailer();
+            bHaveTriedLoadingPrevious = true;
+        }
     }
 
 
