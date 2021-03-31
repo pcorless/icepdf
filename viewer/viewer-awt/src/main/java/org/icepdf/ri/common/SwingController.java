@@ -4676,7 +4676,7 @@ public class SwingController extends ComponentAdapter
 
     @Override
     public PrintHelperFactory getPrintHelperFactory() {
-        return PrintHelperFactoryImpl.INSTANCE;
+        return PrintHelperFactoryImpl.getInstance();
     }
 
     /**

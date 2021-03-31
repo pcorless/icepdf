@@ -7,12 +7,15 @@ import java.util.ResourceBundle;
 /**
  * A Controller Factory
  */
+@FunctionalInterface
 public interface ControllerFactory {
 
     /**
      * @return A controller with no resource bundle
      */
-    Controller create();
+    default Controller create(){
+        return create(null);
+    }
 
     /**
      * Creates a controller with the given resource bundle

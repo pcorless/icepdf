@@ -11,6 +11,10 @@ import java.awt.*;
 import static org.icepdf.ri.common.print.PrintHelper.createDocAttributeSet;
 import static org.icepdf.ri.common.print.PrintHelper.createPrintRequestAttributeSet;
 
+/**
+ * represents a factory of PrintHelper
+ */
+@FunctionalInterface
 public interface PrintHelperFactory {
     /**
      * Creates a new <code>PrintHelper</code> instance using the specified
@@ -39,10 +43,10 @@ public interface PrintHelperFactory {
      * @param paperSizeName MediaSizeName constant of paper size to print to.
      * @param printQuality  quality of the print job, draft, quality etc.
      */
-    default PrintHelper createPrintHelper(Container container, PageTree pageTree,
-                                  final float rotation,
-                                  final MediaSizeName paperSizeName,
-                                  final PrintQuality printQuality){
+    default PrintHelper createPrintHelper(final Container container, final PageTree pageTree,
+                                          final float rotation,
+                                          final MediaSizeName paperSizeName,
+                                          final PrintQuality printQuality) {
         return createPrintHelper(container, pageTree, rotation, createDocAttributeSet(paperSizeName),
                 createPrintRequestAttributeSet(printQuality, paperSizeName));
     }
@@ -55,7 +59,7 @@ public interface PrintHelperFactory {
      * @param pageTree  document page tree.
      * @param rotation  rotation of page
      */
-    default PrintHelper createPrintHelper(Container container, PageTree pageTree, int rotation){
+    default PrintHelper createPrintHelper(final Container container, final PageTree pageTree, final int rotation) {
         return createPrintHelper(container, pageTree, rotation, MediaSizeName.NA_LETTER, PrintQuality.DRAFT);
     }
 }

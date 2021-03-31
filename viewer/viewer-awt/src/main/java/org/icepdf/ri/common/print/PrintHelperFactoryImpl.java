@@ -6,12 +6,26 @@ import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import java.awt.*;
 
-public class PrintHelperFactoryImpl implements PrintHelperFactory {
+/**
+ * A factory of PrintHelperImpl
+ */
+public final class PrintHelperFactoryImpl implements PrintHelperFactory {
 
-    public static final PrintHelperFactoryImpl INSTANCE = new PrintHelperFactoryImpl();
+    private static final PrintHelperFactoryImpl INSTANCE = new PrintHelperFactoryImpl();
+
+    private PrintHelperFactoryImpl() {
+    }
+
+    /**
+     * @return The factory instance
+     */
+    public static PrintHelperFactoryImpl getInstance() {
+        return INSTANCE;
+    }
 
     @Override
-    public PrintHelper createPrintHelper(final Container container, final PageTree pageTree, final float userRotation, final DocAttributeSet docAttributeSet, final PrintRequestAttributeSet printRequestAttributeSet) {
+    public PrintHelper createPrintHelper(final Container container, final PageTree pageTree, final float userRotation,
+                                         final DocAttributeSet docAttributeSet, final PrintRequestAttributeSet printRequestAttributeSet) {
         return new PrintHelperImpl(container, pageTree, userRotation, docAttributeSet, printRequestAttributeSet);
     }
 

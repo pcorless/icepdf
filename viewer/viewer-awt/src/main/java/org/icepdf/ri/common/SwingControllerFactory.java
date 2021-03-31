@@ -9,10 +9,17 @@ import java.util.ResourceBundle;
  */
 public final class SwingControllerFactory implements ControllerFactory {
 
-    public static final SwingControllerFactory INSTANCE = new SwingControllerFactory();
+    private static final SwingControllerFactory INSTANCE = new SwingControllerFactory();
 
     private SwingControllerFactory() {
 
+    }
+
+    /**
+     * @return The factory instance
+     */
+    public static SwingControllerFactory getInstance(){
+        return INSTANCE;
     }
 
     @Override
@@ -21,7 +28,7 @@ public final class SwingControllerFactory implements ControllerFactory {
     }
 
     @Override
-    public Controller create(ResourceBundle bundle) {
+    public Controller create(final ResourceBundle bundle) {
         return new SwingController(bundle);
     }
 }
