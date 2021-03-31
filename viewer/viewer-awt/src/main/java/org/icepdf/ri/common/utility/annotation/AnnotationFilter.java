@@ -11,6 +11,7 @@ public interface AnnotationFilter {
 
     /**
      * Filters an annotation
+     *
      * @param a The annotation
      * @return True if the annotation fulfills the filter condition, false otherwise
      */

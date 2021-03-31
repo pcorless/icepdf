@@ -20,6 +20,7 @@ import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
+import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.WatermarkCallback;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
@@ -27,17 +28,14 @@ import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.*;
-import org.icepdf.core.util.content.ContentParser;
-import org.icepdf.core.util.content.ContentParserFactory;
+import org.icepdf.core.util.parser.content.ContentParser;
 
 import java.awt.*;
 import java.awt.geom.*;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Stack;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -359,6 +357,18 @@ public class Page extends Dictionary {
                             a != null ? " " + a.getPObjectReference() + a.getEntries() : "");
                 }
             }
+            //The popup annotations may not be referenced in the page annotations entry, we have to add them manually.
+            final Set<Annotation> annotSet = new HashSet<>(annotations);
+            for (final Annotation annot : annotSet) {
+                if (annot instanceof MarkupAnnotation) {
+                    final PopupAnnotation popup = ((MarkupAnnotation) annot).getPopupAnnotation();
+                    if (popup != null && !annotSet.contains(popup)) {
+                        popup.init();
+                        v.add(popup);
+                        annotations.add(popup);
+                    }
+                }
+            }
         }
     }
 
@@ -409,8 +419,7 @@ public class Page extends Dictionary {
             notifyPageInitializationStarted();
             if (contents != null) {
                 try {
-                    ContentParser cp = ContentParserFactory.getInstance()
-                            .getContentParser(library, resources);
+                    ContentParser cp = new ContentParser(library, resources);
                     byte[][] streams = new byte[contents.size()][];
                     byte[] stream;
                     for (int i = 0, max = contents.size(); i < max; i++) {
@@ -664,13 +673,13 @@ public class Page extends Dictionary {
                                 // paint whole word
                                 if (wordText.isHighlighted()) {
                                     textPath = new GeneralPath(wordText.getBounds());
-                                    g2.setColor(highlightColor);
+                                    g2.setColor(wordText.getHighlightColor());
                                     g2.fill(textPath);
                                 } else {
                                     for (GlyphText glyph : wordText.getGlyphs()) {
                                         if (glyph.isHighlighted()) {
                                             textPath = new GeneralPath(glyph.getBounds());
-                                            g2.setColor(highlightColor);
+                                            g2.setColor(glyph.getHighlightColor());
                                             g2.fill(textPath);
                                         }
                                     }
@@ -1592,8 +1601,7 @@ public class Page extends Dictionary {
         if (contents != null) {
             try {
 
-                ContentParser cp = ContentParserFactory.getInstance()
-                        .getContentParser(library, resources);
+                ContentParser cp = new ContentParser(library, resources);
                 byte[][] streams = new byte[contents.size()][];
                 for (int i = 0, max = contents.size(); i < max; i++) {
                     streams[i] = contents.get(i).getDecodedStreamBytes();

@@ -26,7 +26,6 @@ import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
-import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.*;
@@ -49,6 +48,7 @@ import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
 import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationState;
+import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryFrame;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
@@ -57,9 +57,6 @@ import org.icepdf.ri.util.URLAccess;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 import org.icepdf.ri.viewer.WindowManager;
 
-import javax.print.attribute.PrintRequestAttributeSet;
-import javax.print.attribute.standard.Media;
-import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.PrintQuality;
 import javax.swing.Timer;
@@ -89,6 +86,7 @@ import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -185,6 +183,7 @@ public class SwingController extends ComponentAdapter
     private JButton searchButton;
     private JToggleButton showHideUtilityPaneButton;
     private JButton showAnnotationUtilityPaneButton;
+    private JButton showBookmarkUtilityPaneButton;
     private JButton firstPageButton;
     private JButton previousPageButton;
     private JButton nextPageButton;
@@ -199,7 +198,6 @@ public class SwingController extends ComponentAdapter
     private JToggleButton fitHeightButton;
     private JToggleButton fitWidthButton;
     private JButton fullScreenButton;
-    private JToggleButton fontEngineButton;
     private JToggleButton facingPageViewContinuousButton;
     private JToggleButton singlePageViewContinuousButton;
     private JToggleButton facingPageViewNonContinuousButton;
@@ -893,6 +891,16 @@ public class SwingController extends ComponentAdapter
      *
      * @param btn button to assign
      */
+    public void setShowBookmarkUtilityPaneButton(JButton btn) {
+        showBookmarkUtilityPaneButton = btn;
+        btn.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param btn button to assign
+     */
     public void setFirstPageButton(JButton btn) {
         firstPageButton = btn;
         btn.addActionListener(this);
@@ -1004,16 +1012,6 @@ public class SwingController extends ComponentAdapter
      */
     public void setFitHeightButton(JToggleButton btn) {
         fitHeightButton = btn;
-        btn.addItemListener(this);
-    }
-
-    /**
-     * Called by SwingViewBuilder, so that Controller can setup event handling
-     *
-     * @param btn button to assign
-     */
-    public void setFontEngineButton(JToggleButton btn) {
-        fontEngineButton = btn;
         btn.addItemListener(this);
     }
 
@@ -1622,6 +1620,7 @@ public class SwingController extends ComponentAdapter
         setEnabled(searchButton, opened && searchPanel != null && !pdfCollection);
         setEnabled(showHideUtilityPaneButton, opened && utilityTabbedPane != null);
         setEnabled(showAnnotationUtilityPaneButton, opened && utilityTabbedPane != null);
+        setEnabled(showBookmarkUtilityPaneButton, opened && utilityTabbedPane != null);
         setEnabled(currentPageNumberTextField, opened && nPages > 1 && !pdfCollection);
         if (numberOfPagesLabel != null) {
 
@@ -1675,7 +1674,6 @@ public class SwingController extends ComponentAdapter
         setEnabled(annotationPrivacyComboBox, opened && !pdfCollection);
         setEnabled(textAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
         setEnabled(formHighlightButton, opened && !pdfCollection && hasForms());
-        setEnabled(fontEngineButton, opened && !pdfCollection);
         setEnabled(quickSearchToolBar, opened && !pdfCollection);
         setEnabled(facingPageViewContinuousButton, opened && !pdfCollection);
         setEnabled(singlePageViewContinuousButton, opened && !pdfCollection);
@@ -2161,6 +2159,8 @@ public class SwingController extends ComponentAdapter
                 isUtilityPaneVisible());
         reflectSelectionInButton(showAnnotationUtilityPaneButton,
                 isAnnotationUtilityPaneVisible());
+        reflectSelectionInButton(showBookmarkUtilityPaneButton,
+                isBookmarkUtilityPaneVisible());
         reflectSelectionInButton(formHighlightButton,
                 viewModel.isWidgetAnnotationHighlight());
         reflectSelectionInButton(annotationEditingModeButton,
@@ -3306,8 +3306,6 @@ public class SwingController extends ComponentAdapter
         formHighlightButton = null;
         annotationEditingModeButton = null;
 
-        fontEngineButton = null;
-
         completeToolBar = null;
 
         outlinesTree = null;
@@ -3751,7 +3749,7 @@ public class SwingController extends ComponentAdapter
         PrintHelper printHelper = viewModel.getPrintHelper();
         // create a new print helper for this document instance
         if (printHelper == null) {
-            MediaSizeName mediaSizeName = loadDefaultPrinterProperties();
+            MediaSizeName mediaSizeName = PrintHelper.guessMediaSizeName(document);
             // create the new print help
             printHelper = new PrintHelper(documentViewController.getViewContainer(),
                     getPageTree(), documentViewController.getRotation(), mediaSizeName,
@@ -3766,8 +3764,6 @@ public class SwingController extends ComponentAdapter
         }
         viewModel.setPrintHelper(printHelper);
         viewModel.getPrintHelper().showPrintSetupDialog();
-        // save new printer attributes to properties
-        savePrinterProperties(printHelper);
     }
 
     /**
@@ -3788,8 +3784,6 @@ public class SwingController extends ComponentAdapter
                 mediaSize,
                 PrintQuality.NORMAL);
         viewModel.setPrintHelper(printHelper);
-        // save new printer attributes to properties
-        savePrinterProperties(printHelper);
     }
 
     /**
@@ -3839,7 +3833,7 @@ public class SwingController extends ComponentAdapter
             // below are for NA_letter in millimeters.
             PrintHelper printHelper = viewModel.getPrintHelper();
             if (printHelper == null) {
-                MediaSizeName mediaSizeName = loadDefaultPrinterProperties();
+                MediaSizeName mediaSizeName = PrintHelper.guessMediaSizeName(document);
                 // create the new print help
                 printHelper = new PrintHelper(documentViewController.getViewContainer(),
                         getPageTree(), documentViewController.getRotation(),
@@ -3863,8 +3857,6 @@ public class SwingController extends ComponentAdapter
                     withDialog  // show print dialog
             );
 
-            // save new printer attributes to properties
-            savePrinterProperties(printHelper);
             // if user cancelled the print job from the dialog, don't start printing
             // in the background.
             if (!canPrint) {
@@ -3876,60 +3868,6 @@ public class SwingController extends ComponentAdapter
             SwingUtilities.invokeLater(() -> setDisplayTool(documentIcon));
         }
 
-    }
-
-    /**
-     * Loads/set the media size name derived from the properties manager.
-     * Otherwise a default paper size of NA Letter is returned
-     *
-     * @return a MediaSizeName given the conditions above.
-     */
-    private MediaSizeName loadDefaultPrinterProperties() {
-        Preferences viewerPreferences = propertiesManager.getPreferences();
-        int printMediaUnit = viewerPreferences.getInt(
-                ViewerPropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_UNIT, 1000);
-        double printMediaWidth = viewerPreferences.getDouble(
-                ViewerPropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_WIDTH, 215.9);
-        double printMediaHeight = viewerPreferences.getDouble(
-                ViewerPropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_HEIGHT, 279.4);
-        // get the closed matching media name.
-        return MediaSize.findMedia((float) printMediaWidth,
-                (float) printMediaHeight,
-                printMediaUnit);
-    }
-
-    /**
-     * Utility that tries to save the state of the currently set MediaSize.
-     * The width height and unit values are written to the the propertiesManager.
-     * When the Viewer RI is exited the properties file is written to disk.
-     *
-     * @param printHelper instance of the open documents print helper.
-     */
-    private void savePrinterProperties(PrintHelper printHelper) {
-        PrintRequestAttributeSet printRequestAttributeSet =
-                printHelper.getPrintRequestAttributeSet();
-
-        Object printAttributeSet = printRequestAttributeSet.get(Media.class);
-
-        if (propertiesManager != null &&
-                printAttributeSet instanceof MediaSizeName) {
-            Preferences viewerPreferences = propertiesManager.getPreferences();
-            MediaSizeName paper = (MediaSizeName) printAttributeSet;
-            MediaSize mediaSize = MediaSize.getMediaSizeForName(paper);
-            // write out the new page size property values.
-            int printMediaUnit = MediaSize.MM;
-            viewerPreferences.put(
-                    ViewerPropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_UNIT,
-                    String.valueOf(printMediaUnit));
-            double printMediaWidth = mediaSize.getX(printMediaUnit);
-            viewerPreferences.put(
-                    ViewerPropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_WIDTH,
-                    String.valueOf(printMediaWidth));
-            double printMediaHeight = mediaSize.getY(printMediaUnit);
-            viewerPreferences.put(
-                    ViewerPropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_HEIGHT,
-                    String.valueOf(printMediaHeight));
-        }
     }
 
     private void renablePrintUI() {
@@ -4354,8 +4292,15 @@ public class SwingController extends ComponentAdapter
     }
 
     public boolean isAnnotationUtilityPaneVisible() {
-        return utilityTabbedPane != null && utilityTabbedPane.isVisible() &&
-                annotationPanel != null && annotationPanel.isVisible();
+        return isComponentUtilityPaneVisible(annotationPanel);
+    }
+
+    public boolean isBookmarkUtilityPaneVisible() {
+        return isComponentUtilityPaneVisible(outlinesScrollPane);
+    }
+
+    public boolean isComponentUtilityPaneVisible(final Component component) {
+        return isUtilityPaneVisible() && component != null && component.isVisible();
     }
 
     /**
@@ -4464,11 +4409,17 @@ public class SwingController extends ComponentAdapter
         if ((utilityTabbedPane != null) && (comp != null)) {
             if (utilityTabbedPane.indexOfComponent(comp) > -1) {
                 utilityTabbedPane.setSelectedComponent(comp);
-
                 return true;
             }
         }
 
+        return false;
+    }
+
+    protected boolean isUtilityTabSelected(Component comp) {
+        if (utilityTabbedPane != null && comp != null) {
+            return utilityTabbedPane.getSelectedComponent() == comp;
+        }
         return false;
     }
 
@@ -4526,29 +4477,7 @@ public class SwingController extends ComponentAdapter
     /**
      * Make the Annotation Link Panel visible, and if necessary, the utility pane that encloses it
      *
-     * @param selectedAnnotation the annotation to show in the panel
-     * @see #setUtilityPaneVisible(boolean)
-     */
-    public void showAnnotationPanel(AnnotationComponent selectedAnnotation) {
-        if (utilityTabbedPane != null) {
-            // Pass the selected annotation to the link panel
-            if (annotationPanel != null) {
-                annotationPanel.setEnabled(true);
-            }
-            setUtilityPaneVisible(true);
-            // select the annotationPanel tab
-            if (annotationPanel != null) {
-                boolean show = safelySelectUtilityPanel(annotationPanel);
-                if (show) {
-                    annotationPanel.setSelectedTab(ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_MARKUP);
-                }
-            }
-        }
-    }
-
-    /* Make the Annotation Link Panel visible, and if necessary, the utility pane that encloses it
-     *
-     * @param selectedAnnotation the annotation to show in the panel
+     * @param selectedDestination the destination to show in the panel
      * @see #setUtilityPaneVisible(boolean)
      */
     public void showAnnotationDestinationPanel(DestinationComponent selectedDestination) {
@@ -4587,15 +4516,46 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Make the outline panel panel visible.
+     * Make the Annotation Link Panel visible, and if necessary, the utility pane that encloses it
+     *
+     * @param forceShow Forces the utility pane to be visible
+     * @see #setUtilityPaneVisible(boolean)
      */
-    public void showOutlinePanel() {
-        if (utilityTabbedPane != null) {
-            // Pass the selected annotation to the link panel
-            if (outlinesScrollPane != null && utilityTabbedPane != null) {
-                utilityTabbedPane.setSelectedComponent(outlinesScrollPane);
-            }
+    public void showAnnotationPanel(final boolean forceShow) {
+        final boolean isShowing = showUtilityPanel(annotationPanel, forceShow);
+        if (annotationPanel != null && isShowing) {
+            annotationPanel.setSelectedTab(ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_MARKUP);
         }
+    }
+
+    /**
+     * Shows the given component in the utility panel
+     *
+     * @param panelToShow The component to show
+     * @param forceShow   Whether to force showing the utility panel or not
+     * @return whether the panel has been selected or not
+     */
+    protected boolean showUtilityPanel(final Component panelToShow, final boolean forceShow) {
+        if (utilityTabbedPane != null && panelToShow != null) {
+            // Pass the selected annotation to the link panel
+            panelToShow.setEnabled(true);
+        }
+        setUtilityPaneVisible(forceShow || (!isUtilityPaneVisible() || !isUtilityTabSelected(panelToShow) || utilityAndDocumentSplitPane.getLeftComponent() != utilityTabbedPane));
+        // select the annotationPanel tab
+        if (!isUtilityTabSelected(panelToShow)) {
+            return safelySelectUtilityPanel(panelToShow);
+        } else {
+            return true;
+        }
+    }
+
+    /**
+     * Make the outline panel panel visible
+     *
+     * @param forceShow Whether to force showing the utility pane or not
+     */
+    public void showOutlinePanel(final boolean forceShow) {
+        showUtilityPanel(outlinesScrollPane, forceShow);
     }
 
     /**
@@ -4867,7 +4827,9 @@ public class SwingController extends ComponentAdapter
                     } else if (source == showHideUtilityPaneMenuItem || source == showHideUtilityPaneButton) {
                         toggleUtilityPaneVisibility();
                     } else if (source == showAnnotationUtilityPaneButton) {
-                        showAnnotationPanel(null);
+                        showAnnotationPanel(false);
+                    } else if (source == showBookmarkUtilityPaneButton) {
+                        showOutlinePanel(false);
                     } else if (source == formHighlightButton) {
                         toggleFormHighlight();
                     } else if (source == annotationEditingModeButton) {
@@ -4993,16 +4955,6 @@ public class SwingController extends ComponentAdapter
             } else if (source == fitWidthButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_WIDTH, false);
-                    doSetFocus = true;
-                }
-            } else if (source == fontEngineButton) {
-                if (e.getStateChange() == ItemEvent.SELECTED ||
-                        e.getStateChange() == ItemEvent.DESELECTED) {
-                    // get instance of the font factory
-                    FontFactory.getInstance().toggleAwtFontSubstitution();
-                    // refresh the document, refresh will happen by the component.
-                    ((AbstractDocumentView) documentViewController.getDocumentView()).firePropertyChange(
-                            PropertyConstants.DOCUMENT_VIEW_DEMO_MODE_CHANGE, false, true);
                     doSetFocus = true;
                 }
             }
@@ -5574,7 +5526,7 @@ public class SwingController extends ComponentAdapter
                         if (logger.isLoggable(Level.FINE)) {
                             logger.fine("selected annotation " + annotationComponent);
                         }
-                        showAnnotationPanel(annotationComponent);
+                        showAnnotationPanel(true);
                     }
                 }
                 break;
@@ -5695,36 +5647,64 @@ public class SwingController extends ComponentAdapter
     }
 
 
-    public void changeAnnotationsVisibility(AnnotationFilter filter, boolean visible, boolean execInvert) {
-        if (document != null && viewer != null) {
+    public void changeAnnotationsVisibility(final AnnotationFilter filter, final boolean visible, final boolean execInvert) {
+        callOnFilteredAnnotations(a -> a instanceof MarkupAnnotation && filter.filter(a), a -> {
+            a.setFlag(Annotation.FLAG_HIDDEN, !visible);
+            a.setFlag(Annotation.FLAG_INVISIBLE, !visible);
+            final PopupAnnotation pa = ((MarkupAnnotation) a).getPopupAnnotation();
+            if (pa != null) {
+                if (pa.isOpen() && !visible) {
+                    pa.setOpen(false);
+                    final int idx = pa.getPageIndex();
+                    final AbstractAnnotationComponent comp = (AbstractAnnotationComponent) ((PageViewComponentImpl)
+                            documentViewController.getDocumentViewModel().getPageComponents().get(idx)).getComponentFor(pa);
+                    if (comp != null) {
+                        comp.setVisible(false);
+                    }
+                }
+            }
+        });
+        if (execInvert) {
+            changeAnnotationsVisibility(filter.invertFilter(), !visible, false);
+        }
+        if (viewer != null) {
+            viewer.validate();
+            viewer.repaint();
+        }
+    }
+
+    /**
+     * Changes privacy flag of the MarkupAnnotations given by the annotations filter
+     *
+     * @param filter The filter used to filter the annotations
+     * @param priv   The privacy status to use (true = private)
+     */
+    public void changeAnnotationsPrivacy(final AnnotationFilter filter, final boolean priv) {
+        callOnFilteredAnnotations(a -> a instanceof MarkupAnnotation && filter.filter(a), a -> {
+            final MarkupAnnotation ma = (MarkupAnnotation) a;
+            ma.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, priv);
+            ma.setModifiedDate(PDate.formatDateTime(new Date()));
+            ma.getPopupAnnotation().setFlag(Annotation.FLAG_PRIVATE_CONTENTS, priv);
+            ma.getPopupAnnotation().setModifiedDate(PDate.formatDateTime(new Date()));
+            final PageViewComponentImpl pvc = (PageViewComponentImpl)
+                    documentViewController.getDocumentViewModel().getPageComponents().get(ma.getPageIndex());
+            final MarkupAnnotationComponent<?> comp = (MarkupAnnotationComponent<?>) pvc.getComponentFor(ma);
+            if (comp != null) {
+                comp.getPopupAnnotationComponent().refreshPopupState();
+                documentViewController.updateAnnotation(comp);
+            }
+        });
+    }
+
+    private void callOnFilteredAnnotations(final AnnotationFilter filter, final Consumer<Annotation> toExecute) {
+        if (document != null) {
             final PageTree pt = document.getPageTree();
             for (int i = 0; i < pt.getNumberOfPages(); ++i) {
                 final Page p = pt.getPage(i);
                 if (p.getAnnotations() != null) {
-                    p.getAnnotations().stream().filter(a ->
-                            (a instanceof MarkupAnnotation || a instanceof PopupAnnotation) && filter.filter(a)).forEach(a -> {
-                        a.setFlag(Annotation.FLAG_HIDDEN, !visible);
-                        a.setFlag(Annotation.FLAG_INVISIBLE, !visible);
-                        if (a instanceof PopupAnnotation) {
-                            final PopupAnnotation pa = (PopupAnnotation) a;
-                            if (pa.isOpen() && !visible) {
-                                pa.setOpen(false);
-                                final int idx = pa.getPageIndex();
-                                final AbstractAnnotationComponent comp = (AbstractAnnotationComponent) ((PageViewComponentImpl)
-                                        documentViewController.getDocumentViewModel().getPageComponents().get(idx)).getComponentFor(pa);
-                                if (comp != null) {
-                                    comp.setVisible(false);
-                                }
-                            }
-                        }
-                    });
-                    if (execInvert) {
-                        changeAnnotationsVisibility(filter.invertFilter(), !visible, false);
-                    }
+                    p.getAnnotations().stream().filter(filter::filter).forEach(toExecute);
                 }
             }
-            viewer.validate();
-            viewer.repaint();
         }
     }
 }

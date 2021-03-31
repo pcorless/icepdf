@@ -21,6 +21,7 @@ import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.search.DestinationResult;
 import org.icepdf.core.search.DocumentSearchController;
+import org.icepdf.core.search.SearchMode;
 import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
@@ -64,7 +65,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
     private boolean comments;
     private boolean outlines;
     private boolean destinations;
-
+    private SearchMode searchMode;
     // parent swing controller
     private Controller controller;
     // append nodes for found text.
@@ -82,7 +83,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         if (pattern != null && !pattern.isEmpty()) {
             searchPattern = Pattern.compile(isCaseSensitive() ? pattern : pattern.toLowerCase());
         }
-
+        searchMode = builder.wholePage ? SearchMode.PAGE : SearchMode.WORD;
         wholeWord = builder.wholeWord;
         caseSensitive = builder.caseSensitive;
         cumulative = builder.cumulative;
@@ -131,6 +132,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         if (!cumulative) {
             searchController.clearAllSearchHighlight();
         }
+        searchController.setSearchMode(searchMode);
         searchController.addSearchTerm(pattern, caseSensitive, wholeWord, regex);
 
         Document document = controller.getDocument();
@@ -351,6 +353,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         private BaseSearchModel searchModel;
 
         // optional search controls.
+        private boolean wholePage;
         private boolean wholeWord;
         private boolean caseSensitive;
         private boolean cumulative;
@@ -369,6 +372,11 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
 
         public Builder setSearchModel(BaseSearchModel searchModel) {
             this.searchModel = searchModel;
+            return this;
+        }
+
+        public Builder setWholePage(boolean wholePage) {
+            this.wholePage = wholePage;
             return this;
         }
 

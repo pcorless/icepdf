@@ -20,6 +20,8 @@ import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.util.Library;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * As mentioned in 12.5.2, "Annotation Dictionaries," the meaning of an
@@ -171,7 +173,7 @@ public abstract class MarkupAnnotation extends Annotation {
         super(l, h);
     }
 
-    public void init() throws InterruptedException {
+    public synchronized void init() throws InterruptedException {
         super.init();
         // title text
         titleText = getString(T_KEY);
@@ -306,6 +308,29 @@ public abstract class MarkupAnnotation extends Annotation {
 
     public MarkupAnnotation getInReplyToAnnotation() {
         return inReplyToAnnotation;
+    }
+
+    /**
+     * Returns all the annotations which reply to this annotation
+     *
+     * @param recursive Whether to return also the annotations replying to the replies, etc.
+     * @return The set of replies
+     */
+    public Set<MarkupAnnotation> getReplyingAnnotations(final boolean recursive) {
+        final Set<MarkupAnnotation> replyingAnnotations = new HashSet<>();
+        getPage().getAnnotations().forEach(a -> {
+            if (a instanceof MarkupAnnotation) {
+                final MarkupAnnotation markupAnnotation = (MarkupAnnotation) a;
+                final MarkupAnnotation irt = markupAnnotation.inReplyToAnnotation;
+                if (irt != null && irt.getPObjectReference().equals(this.getPObjectReference())) {
+                    replyingAnnotations.add(markupAnnotation);
+                    if (recursive) {
+                        replyingAnnotations.addAll(markupAnnotation.getReplyingAnnotations(true));
+                    }
+                }
+            }
+        });
+        return replyingAnnotations;
     }
 
     public String getSubject() {

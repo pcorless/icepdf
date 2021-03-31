@@ -143,6 +143,7 @@ public class Stream extends Dictionary {
         // decompress the stream
         if (compressed) {
             try {
+                // todo, could nio all a little speed up here.
                 ByteArrayInputStream streamInput = new ByteArrayInputStream(rawBytes);
                 long rawStreamLength = rawBytes.length;
                 InputStream input = getDecodedInputStream(streamInput, rawStreamLength);

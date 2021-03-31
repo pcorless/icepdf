@@ -598,6 +598,8 @@ public abstract class Annotation extends Dictionary {
                 annot = new TextAnnotation(library, hashMap);
             } else if (subType.equals(Annotation.SUBTYPE_POPUP)) {
                 annot = new PopupAnnotation(library, hashMap);
+            } else if (PolyAnnotation.isPolyAnnotation(subType)) {
+                annot = new PolyAnnotation(library, hashMap);
             } else if (subType.equals(Annotation.SUBTYPE_WIDGET)) {
                 Name fieldType = library.getName(hashMap, FieldDictionary.FT_KEY);
                 if (fieldType == null) {
@@ -632,7 +634,7 @@ public abstract class Annotation extends Dictionary {
     }
 
     @SuppressWarnings("unchecked")
-    public void init() throws InterruptedException {
+    public synchronized void init() throws InterruptedException {
         super.init();
         // type of Annotation
         subtype = (Name) getObject(SUBTYPE_KEY);
@@ -710,52 +712,74 @@ public abstract class Annotation extends Dictionary {
             Object appearance = library.getObject(
                     (HashMap) AP, APPEARANCE_STREAM_NORMAL_KEY);
             if (appearance != null) {
-                appearances.put(APPEARANCE_STREAM_NORMAL_KEY,
-                        parseAppearanceDictionary(APPEARANCE_STREAM_NORMAL_KEY,
-                                appearance));
-                appearances.get(APPEARANCE_STREAM_NORMAL_KEY).setSelectedName(appearanceState);
+                try {
+                    appearances.put(APPEARANCE_STREAM_NORMAL_KEY,
+                            parseAppearanceDictionary(APPEARANCE_STREAM_NORMAL_KEY,
+                                    appearance));
+                    appearances.get(APPEARANCE_STREAM_NORMAL_KEY).setSelectedName(appearanceState);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, e, () -> "Error parsing annotation normal appearance, creating new one " +
+                            "for " + this);
+                    createNewAppearance();
+                }
+            } else {
+                //Broken pdf/appearance, create new
+                logger.warning("Missing appearance stream for " + this);
+                createNewAppearance();
             }
             // (Optional) The annotation’s rollover appearance.
             // Default value: the value of the N entry.
             appearance = library.getObject(
                     (HashMap) AP, APPEARANCE_STREAM_ROLLOVER_KEY);
             if (appearance != null) {
-                appearances.put(APPEARANCE_STREAM_ROLLOVER_KEY,
-                        parseAppearanceDictionary(APPEARANCE_STREAM_ROLLOVER_KEY,
-                                appearance));
+                try {
+                    appearances.put(APPEARANCE_STREAM_ROLLOVER_KEY,
+                            parseAppearanceDictionary(APPEARANCE_STREAM_ROLLOVER_KEY,
+                                    appearance));
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, e, () -> "Error parsing annotation rollover appearance for " + this);
+                }
             }
             // (Optional) The annotation’s down appearance.
             // Default value: the value of the N entry.
             appearance = library.getObject(
                     (HashMap) AP, APPEARANCE_STREAM_DOWN_KEY);
             if (appearance != null) {
-                appearances.put(APPEARANCE_STREAM_DOWN_KEY,
-                        parseAppearanceDictionary(APPEARANCE_STREAM_DOWN_KEY,
-                                appearance));
+                try {
+                    appearances.put(APPEARANCE_STREAM_DOWN_KEY,
+                            parseAppearanceDictionary(APPEARANCE_STREAM_DOWN_KEY,
+                                    appearance));
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, e, () -> "Error parsing annotation down appearance for " + this);
+                }
             }
         } else {
             // new annotation, so setup the default appearance states.
-            Appearance newAppearance = new Appearance();
-            HashMap appearanceDictionary = new HashMap();
-            Rectangle2D rect = getUserSpaceRectangle();
-            if (rect == null) {
-                // we need a rect in order to render correctly, bail if not found.
-                throw new IllegalStateException("Annotation is missing required /rect value");
-            }
-            if (rect.getWidth() <= 1) {
-                rect.setRect(rect.getX(), rect.getY(), 15, rect.getHeight());
-            }
-            if (rect.getHeight() <= 1) {
-                rect.setRect(rect.getX(), rect.getY(), rect.getWidth(), 15);
-            }
-            appearanceDictionary.put(BBOX_VALUE, new Rectangle2D.Float(
-                    0, 0, (float) rect.getWidth(), (float) rect.getHeight()));
-
-            newAppearance.addAppearance(APPEARANCE_STREAM_NORMAL_KEY,
-                    new AppearanceState(library, appearanceDictionary));
-            appearances.put(APPEARANCE_STREAM_NORMAL_KEY, newAppearance);
-            currentAppearance = APPEARANCE_STREAM_NORMAL_KEY;
+            createNewAppearance();
         }
+    }
+
+    private void createNewAppearance() {
+        Appearance newAppearance = new Appearance();
+        HashMap appearanceDictionary = new HashMap();
+        Rectangle2D rect = getUserSpaceRectangle();
+        if (rect == null) {
+            // we need a rect in order to render correctly, bail if not found.
+            throw new IllegalStateException("Annotation is missing required /rect value");
+        }
+        if (rect.getWidth() <= 1) {
+            rect.setRect(rect.getX(), rect.getY(), 15, rect.getHeight());
+        }
+        if (rect.getHeight() <= 1) {
+            rect.setRect(rect.getX(), rect.getY(), rect.getWidth(), 15);
+        }
+        appearanceDictionary.put(BBOX_VALUE, new Rectangle2D.Float(
+                0, 0, (float) rect.getWidth(), (float) rect.getHeight()));
+
+        newAppearance.addAppearance(APPEARANCE_STREAM_NORMAL_KEY,
+                new AppearanceState(library, appearanceDictionary));
+        appearances.put(APPEARANCE_STREAM_NORMAL_KEY, newAppearance);
+        currentAppearance = APPEARANCE_STREAM_NORMAL_KEY;
     }
 
     private Appearance parseAppearanceDictionary(Name appearanceDictionary,
