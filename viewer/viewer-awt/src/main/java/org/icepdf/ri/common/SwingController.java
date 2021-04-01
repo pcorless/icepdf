@@ -25,6 +25,7 @@ import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
+import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.*;
@@ -49,6 +50,7 @@ import org.icepdf.ri.common.utility.search.SearchToolBar;
 import org.icepdf.ri.common.utility.signatures.SignaturesHandlerPanel;
 import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
 import org.icepdf.ri.common.views.*;
+import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryFrame;
@@ -88,6 +90,7 @@ import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -4478,7 +4481,6 @@ public class SwingController extends ComponentAdapter
         }
     }
 
-
     /**
      * Make the Annotation Link Panel visible, and if necessary, the utility pane that encloses it
      *
@@ -5653,10 +5655,37 @@ public class SwingController extends ComponentAdapter
                 if (annotationPanel != null && annotationPanel.getDestinationsPanel() != null) {
                     annotationPanel.getDestinationsPanel().removeNameTreeNode(destination);
                 }
-                // remove the destination component from the the page component
+                // remove the destination component from the page component
                 documentViewController.deleteDestination(destination);
                 getDocumentViewController().getDocumentView().repaint();
                 break;
+        }
+    }
+
+
+    public void changeAnnotationsVisibility(final AnnotationFilter filter, final boolean visible, final boolean execInvert) {
+        callOnFilteredAnnotations(a -> a instanceof MarkupAnnotation && filter.filter(a), a -> {
+            a.setFlag(Annotation.FLAG_HIDDEN, !visible);
+            a.setFlag(Annotation.FLAG_INVISIBLE, !visible);
+            final PopupAnnotation pa = ((MarkupAnnotation) a).getPopupAnnotation();
+            if (pa != null) {
+                if (pa.isOpen() && !visible) {
+                    pa.setOpen(false);
+                    final int idx = pa.getPageIndex();
+                    final AbstractAnnotationComponent comp = (AbstractAnnotationComponent) ((PageViewComponentImpl)
+                            documentViewController.getDocumentViewModel().getPageComponents().get(idx)).getComponentFor(pa);
+                    if (comp != null) {
+                        comp.setVisible(false);
+                    }
+                }
+            }
+        });
+        if (execInvert) {
+            changeAnnotationsVisibility(filter.invertFilter(), !visible, false);
+        }
+        if (viewer != null) {
+            viewer.validate();
+            viewer.repaint();
         }
     }
 
@@ -5666,25 +5695,36 @@ public class SwingController extends ComponentAdapter
      * @param filter The filter used to filter the annotations
      * @param priv   The privacy status to use (true = private)
      */
-    public void changeAnnotationsPrivacy(AnnotationFilter filter, boolean priv) {
+    public void changeAnnotationsPrivacy(final AnnotationFilter filter, final boolean priv) {
+        callOnFilteredAnnotations(a -> a instanceof MarkupAnnotation && filter.filter(a), a -> {
+            final MarkupAnnotation ma = (MarkupAnnotation) a;
+            ma.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, priv);
+            ma.setModifiedDate(PDate.formatDateTime(new Date()));
+            final PopupAnnotation pa = ma.getPopupAnnotation();
+            if (pa != null) {
+                pa.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, priv);
+                pa.setModifiedDate(PDate.formatDateTime(new Date()));
+            }
+            final PageViewComponentImpl pvc = (PageViewComponentImpl)
+                    documentViewController.getDocumentViewModel().getPageComponents().get(ma.getPageIndex());
+            final MarkupAnnotationComponent<?> comp = (MarkupAnnotationComponent<?>) pvc.getComponentFor(ma);
+            if (comp != null) {
+                if (comp.getPopupAnnotationComponent() != null) {
+                    comp.getPopupAnnotationComponent().refreshPopupState();
+                }
+                documentViewController.updateAnnotation(comp);
+            }
+        });
+    }
+
+    private void callOnFilteredAnnotations(final AnnotationFilter filter, final Consumer<Annotation> toExecute) {
         if (document != null) {
             final PageTree pt = document.getPageTree();
             for (int i = 0; i < pt.getNumberOfPages(); ++i) {
                 final Page p = pt.getPage(i);
                 if (p.getAnnotations() != null) {
-                    final List<MarkupAnnotation> toChange = p.getAnnotations().stream().filter(a -> a instanceof MarkupAnnotation && filter.filter(a)).map(a -> (MarkupAnnotation) a).collect(Collectors.toList());
-                    for (final MarkupAnnotation a : toChange) {
-                        a.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, priv);
-                        a.setModifiedDate(PDate.formatDateTime(new Date()));
-                        a.getPopupAnnotation().setFlag(Annotation.FLAG_PRIVATE_CONTENTS, priv);
-                        a.getPopupAnnotation().setModifiedDate(PDate.formatDateTime(new Date()));
-                        final PageViewComponentImpl pvc = (PageViewComponentImpl) documentViewController.getDocumentViewModel().getPageComponents().get(i);
-                        final MarkupAnnotationComponent<?> comp = (MarkupAnnotationComponent<?>) pvc.getComponentFor(a);
-                        if (comp != null) {
-                            comp.getPopupAnnotationComponent().refreshPopupState();
-                            documentViewController.updateAnnotation(pvc.getComponentFor(a));
-                        }
-                    }
+                    final List<Annotation> annotations = p.getAnnotations().stream().filter(filter::filter).collect(Collectors.toList());
+                    annotations.forEach(toExecute);
                 }
             }
         }

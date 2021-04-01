@@ -730,6 +730,4 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
             sortAndFilterAnnotationData();
         }
     }
-
-
 }
