@@ -26,7 +26,7 @@ import java.util.ResourceBundle;
 /**
  * The PreferencesDialog exposes numbers settings that would normally only be configurable with system properties.
  * Default values can still be added to the ICEpdfDefault.properties.  As a general rule system properties should
- * be used when using the rendering core only and the PreferenceDialog should be used when configuring the Viewer RI.
+ * be used when using the rendering org.icepdf.core only and the PreferenceDialog should be used when configuring the Viewer RI.
  * <p>
  * Panel visibility can be controlled with the following preference values.
  * <ul>
@@ -46,7 +46,7 @@ public class PreferencesDialog extends EscapeJDialog {
 
     private JTabbedPane propertiesTabbedPane;
 
-    public PreferencesDialog(JFrame frame, SwingController controller,
+    public PreferencesDialog(Frame frame, SwingController controller,
                              ResourceBundle messageBundle) {
         super(frame, true);
         setTitle(messageBundle.getString("viewer.dialog.viewerPreferences.title"));
@@ -61,52 +61,7 @@ public class PreferencesDialog extends EscapeJDialog {
             }
         });
 
-        propertiesTabbedPane = new JTabbedPane();
-        propertiesTabbedPane.setAlignmentY(JPanel.TOP_ALIGNMENT);
-
-        ViewerPropertiesManager propertiesManager = ViewerPropertiesManager.getInstance();
-
-        // build the general preferences tab
-        if (propertiesManager.checkAndStoreBooleanProperty(
-                ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_GENERAL)) {
-            propertiesTabbedPane.addTab(
-                    messageBundle.getString("viewer.dialog.viewerPreferences.section.general.title"),
-                    new GeneralPreferencesPanel(controller, propertiesManager, messageBundle));
-        }
-        // build the annotation preferences tab
-        if (propertiesManager.checkAndStoreBooleanProperty(
-                ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_ANNOTATIONS)) {
-            propertiesTabbedPane.addTab(
-                    messageBundle.getString("viewer.dialog.viewerPreferences.section.annotations.title"),
-                    new AnnotationPreferencesPanel(controller, propertiesManager, messageBundle));
-        }
-        // build the imaging preferences tab
-        if (propertiesManager.checkAndStoreBooleanProperty(
-                ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_IMAGING)) {
-            propertiesTabbedPane.addTab(
-                    messageBundle.getString("viewer.dialog.viewerPreferences.section.imaging.title"),
-                    new ImagingPreferencesPanel(controller, propertiesManager, messageBundle));
-        }
-        // build the fonts preferences tab
-        if (propertiesManager.checkAndStoreBooleanProperty(
-                ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_FONTS)) {
-            propertiesTabbedPane.addTab(
-                    messageBundle.getString("viewer.dialog.viewerPreferences.section.fonts.title"),
-                    new FontsPreferencesPanel(controller, propertiesManager, messageBundle));
-        }
-        // build the advanced preferences tab
-        if (propertiesManager.checkAndStoreBooleanProperty(
-                ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_ADVANCED)) {
-            propertiesTabbedPane.addTab(
-                    messageBundle.getString("viewer.dialog.viewerPreferences.section.advanced.title"),
-                    new AdvancedPreferencesPanel(controller, propertiesManager, messageBundle));
-        }
-        if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_EXIMPORT, true)) {
-            propertiesTabbedPane.addTab(
-                    messageBundle.getString("viewer.dialog.viewerPreferences.section.eximport.title"),
-                    new ExImportPreferencesPanel(controller, propertiesManager, messageBundle, this));
-        }
-
+        propertiesTabbedPane = createTabbedPane(controller, messageBundle);
 
         JPanel layoutPanel = new JPanel(new GridBagLayout());
 
@@ -125,6 +80,94 @@ public class PreferencesDialog extends EscapeJDialog {
         this.add(layoutPanel, BorderLayout.NORTH);
         this.pack();
         setLocationRelativeTo(frame);
+    }
+
+    protected GeneralPreferencesPanel createGeneralPreferencesPanel(SwingController controller,
+                                                                    ViewerPropertiesManager propertiesManager,
+                                                                    ResourceBundle messageBundle) {
+        return new GeneralPreferencesPanel(controller, propertiesManager, messageBundle);
+    }
+
+    protected AnnotationPreferencesPanel createAnnotationPreferencesPanel(SwingController controller,
+                                                                          ViewerPropertiesManager propertiesManager,
+                                                                          ResourceBundle messageBundle) {
+        return new AnnotationPreferencesPanel(controller, propertiesManager, messageBundle);
+    }
+
+    protected ImagingPreferencesPanel createImagingPreferencesPanel(SwingController controller,
+                                                                    ViewerPropertiesManager propertiesManager,
+                                                                    ResourceBundle messageBundle) {
+        return new ImagingPreferencesPanel(controller, propertiesManager, messageBundle);
+
+    }
+
+    protected FontsPreferencesPanel createFontsPreferencesPanel(SwingController controller,
+                                                                ViewerPropertiesManager propertiesManager,
+                                                                ResourceBundle messageBundle) {
+        return new FontsPreferencesPanel(controller, propertiesManager, messageBundle);
+    }
+
+    protected AdvancedPreferencesPanel createAdvancedPreferencesPanel(SwingController controller,
+                                                                      ViewerPropertiesManager propertiesManager,
+                                                                      ResourceBundle messageBundle) {
+        return new AdvancedPreferencesPanel(controller, propertiesManager, messageBundle);
+    }
+
+    protected ExImportPreferencesPanel createExImportPreferencesPanel(SwingController controller,
+                                                                      ViewerPropertiesManager propertiesManager,
+                                                                      ResourceBundle messageBundle,
+                                                                      Dialog parent) {
+        return new ExImportPreferencesPanel(controller, propertiesManager, messageBundle, parent);
+    }
+
+    protected JTabbedPane createTabbedPane(SwingController controller, ResourceBundle messageBundle) {
+        final JTabbedPane propertiesTabbedPane = new JTabbedPane();
+        propertiesTabbedPane.setAlignmentY(JPanel.TOP_ALIGNMENT);
+
+        ViewerPropertiesManager propertiesManager = ViewerPropertiesManager.getInstance();
+
+        // build the general preferences tab
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_GENERAL)) {
+            propertiesTabbedPane.addTab(
+                    messageBundle.getString("viewer.dialog.viewerPreferences.section.general.title"),
+                    createGeneralPreferencesPanel(controller, propertiesManager, messageBundle));
+        }
+        // build the annotation preferences tab
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_ANNOTATIONS)) {
+            propertiesTabbedPane.addTab(
+                    messageBundle.getString("viewer.dialog.viewerPreferences.section.annotations.title"),
+                    createAnnotationPreferencesPanel(controller, propertiesManager, messageBundle));
+        }
+        // build the imaging preferences tab
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_IMAGING)) {
+            propertiesTabbedPane.addTab(
+                    messageBundle.getString("viewer.dialog.viewerPreferences.section.imaging.title"),
+                    createImagingPreferencesPanel(controller, propertiesManager, messageBundle));
+        }
+        // build the fonts preferences tab
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_FONTS)) {
+            propertiesTabbedPane.addTab(
+                    messageBundle.getString("viewer.dialog.viewerPreferences.section.fonts.title"),
+                    createFontsPreferencesPanel(controller, propertiesManager, messageBundle));
+        }
+        // build the advanced preferences tab
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_ADVANCED)) {
+            propertiesTabbedPane.addTab(
+                    messageBundle.getString("viewer.dialog.viewerPreferences.section.advanced.title"),
+                    createAdvancedPreferencesPanel(controller, propertiesManager, messageBundle));
+        }
+        // build the export/import preferences tab
+        if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_EXIMPORT, true)) {
+            propertiesTabbedPane.addTab(
+                    messageBundle.getString("viewer.dialog.viewerPreferences.section.eximport.title"),
+                    createExImportPreferencesPanel(controller, propertiesManager, messageBundle, this));
+        }
+        return propertiesTabbedPane;
     }
 
     /**

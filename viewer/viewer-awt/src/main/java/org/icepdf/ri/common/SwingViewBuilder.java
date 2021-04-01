@@ -280,7 +280,7 @@ import java.util.prefs.Preferences;
  * @author Mark Collette
  * @since 2.0
  */
-public class SwingViewBuilder {
+public class SwingViewBuilder implements ViewBuilder {
 
     private static final Logger logger =
             Logger.getLogger(SwingViewBuilder.class.toString());

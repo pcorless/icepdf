@@ -29,6 +29,10 @@ import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.*;
 import org.icepdf.ri.common.preferences.PreferencesDialog;
+import org.icepdf.ri.common.print.PrintHelper;
+import org.icepdf.ri.common.print.PrintHelperFactory;
+import org.icepdf.ri.common.print.PrintHelperFactoryImpl;
+import org.icepdf.ri.common.print.PrinterTask;
 import org.icepdf.ri.common.properties.FontDialog;
 import org.icepdf.ri.common.properties.InformationDialog;
 import org.icepdf.ri.common.properties.PermissionsDialog;
@@ -249,12 +253,12 @@ public class SwingController extends ComponentAdapter
     private ThumbnailsPanel thumbnailsPanel;
     private LayersPanel layersPanel;
     private SignaturesHandlerPanel signaturesPanel;
-    private AnnotationPanel annotationPanel;
-    private JTabbedPane utilityTabbedPane;
-    private JSplitPane utilityAndDocumentSplitPane;
+    protected AnnotationPanel annotationPanel;
+    protected JTabbedPane utilityTabbedPane;
+    protected JSplitPane utilityAndDocumentSplitPane;
     private int utilityAndDocumentSplitPaneLastDividerLocation;
     private JLabel statusLabel;
-    private JFrame viewer;
+    private Frame viewer;
     protected WindowManagementCallback windowManagementCallback;
     // simple model for swing controller, mainly printer and  file loading state.
     protected ViewModel viewModel;
@@ -272,6 +276,10 @@ public class SwingController extends ComponentAdapter
     protected static ResourceBundle messageBundle = null;
 
     protected ViewerPropertiesManager propertiesManager;
+
+    static {
+        PrintHelper.preloadServices();
+    }
 
     /**
      * Create a Controller object, and its associated ViewerModel
@@ -299,7 +307,6 @@ public class SwingController extends ComponentAdapter
             SwingController.messageBundle = ResourceBundle.getBundle(
                     ViewerPropertiesManager.DEFAULT_MESSAGE_BUNDLE);
         }
-        new Thread(PrintHelper::preparePrintServices).start();
     }
 
     /**
@@ -1467,7 +1474,7 @@ public class SwingController extends ComponentAdapter
      *
      * @param v paren view frame.
      */
-    public void setViewerFrame(JFrame v) {
+    public void setViewerFrame(Frame v) {
         viewer = v;
         viewer.addWindowListener(this);
         viewer.addComponentListener(this);
@@ -1528,7 +1535,7 @@ public class SwingController extends ComponentAdapter
      * Utility method to set the state of all the different GUI elements. Mainly
      * to enable/disable the GUI elements when a file is opened/closed respectively.
      */
-    private void reflectStateInComponents() {
+    protected void reflectStateInComponents() {
         boolean opened = document != null;
         boolean pdfCollection = opened && isPdfCollection();
 
@@ -1753,7 +1760,7 @@ public class SwingController extends ComponentAdapter
                 permissions.getPermissions(Permissions.MODIFY_DOCUMENT);
     }
 
-    private void setEnabled(JComponent comp, boolean ena) {
+    protected void setEnabled(JComponent comp, boolean ena) {
         if (comp != null)
             comp.setEnabled(ena);
     }
@@ -1895,7 +1902,7 @@ public class SwingController extends ComponentAdapter
      * display panel.
      * @see #setDisplayTool
      */
-    protected int getDocumentViewToolMode() {
+    public int getDocumentViewToolMode() {
         return documentViewController.getToolMode();
     }
 
@@ -3173,7 +3180,7 @@ public class SwingController extends ComponentAdapter
             viewer.setTitle(messageBundle.getString("viewer.window.title.default"));
             viewer.invalidate();
             viewer.validate();
-            viewer.getContentPane().repaint();
+            viewer.repaint();
         }
 
         reflectStateInComponents();
@@ -3749,13 +3756,13 @@ public class SwingController extends ComponentAdapter
         if (printHelper == null) {
             MediaSizeName mediaSizeName = PrintHelper.guessMediaSizeName(document);
             // create the new print help
-            printHelper = new PrintHelper(documentViewController.getViewContainer(),
+            printHelper = getPrintHelperFactory().createPrintHelper(documentViewController.getViewContainer(),
                     getPageTree(), documentViewController.getRotation(), mediaSizeName,
                     PrintQuality.NORMAL);
         }
-        // reuse previous print attributes if they exist. 
+        // reuse previous print attributes if they exist.
         else {
-            printHelper = new PrintHelper(documentViewController.getViewContainer(),
+            printHelper = getPrintHelperFactory().createPrintHelper(documentViewController.getViewContainer(),
                     getPageTree(), documentViewController.getRotation(),
                     printHelper.getDocAttributeSet(),
                     printHelper.getPrintRequestAttributeSet());
@@ -3776,7 +3783,7 @@ public class SwingController extends ComponentAdapter
      * @param mediaSize MediaSizeName constant of paper size to print to.
      */
     public void setPrintDefaultMediaSizeName(MediaSizeName mediaSize) {
-        PrintHelper printHelper = new PrintHelper(
+        PrintHelper printHelper = getPrintHelperFactory().createPrintHelper(
                 documentViewController.getViewContainer(), getPageTree(),
                 documentViewController.getRotation(),
                 mediaSize,
@@ -3833,11 +3840,11 @@ public class SwingController extends ComponentAdapter
             if (printHelper == null) {
                 MediaSizeName mediaSizeName = PrintHelper.guessMediaSizeName(document);
                 // create the new print help
-                printHelper = new PrintHelper(documentViewController.getViewContainer(),
+                printHelper = getPrintHelperFactory().createPrintHelper(documentViewController.getViewContainer(),
                         getPageTree(), documentViewController.getRotation(),
                         mediaSizeName, PrintQuality.NORMAL);
             } else {
-                printHelper = new PrintHelper(documentViewController.getViewContainer(),
+                printHelper = getPrintHelperFactory().createPrintHelper(documentViewController.getViewContainer(),
                         getPageTree(), documentViewController.getRotation(),
                         printHelper.getDocAttributeSet(),
                         printHelper.getPrintRequestAttributeSet());
@@ -3865,7 +3872,6 @@ public class SwingController extends ComponentAdapter
         } finally {
             SwingUtilities.invokeLater(() -> setDisplayTool(documentIcon));
         }
-
     }
 
     private void renablePrintUI() {
@@ -4619,20 +4625,24 @@ public class SwingController extends ComponentAdapter
         }
 
         // Hide the menubar?
-        if (viewerPref != null && viewerPref.hasHideMenubar()) {
-            if (viewerPref.getHideMenubar()) {
-                if ((viewer != null) && (viewer.getJMenuBar() != null)) {
-                    viewer.getJMenuBar().setVisible(false);
+        if (viewer instanceof JFrame){
+            final JMenuBar menuBar = ((JFrame) viewer).getJMenuBar();
+            if (viewerPref != null && viewerPref.hasHideMenubar()) {
+                if (viewerPref.getHideMenubar()) {
+                    if (menuBar != null) {
+                        menuBar.setVisible(false);
+                    }
+                }
+            } else {
+                if (menuBar != null) {
+                    menuBar.setVisible(
+                            !propertiesManager.getPreferences().getBoolean(
+                                    ViewerPropertiesManager.PROPERTY_VIEWPREF_HIDEMENUBAR,
+                                    false));
                 }
             }
-        } else {
-            if (viewer != null && viewer.getJMenuBar() != null) {
-                viewer.getJMenuBar().setVisible(
-                        !propertiesManager.getPreferences().getBoolean(
-                                ViewerPropertiesManager.PROPERTY_VIEWPREF_HIDEMENUBAR,
-                                false));
-            }
         }
+
 
         // Fit the GUI frame to the size of the document?
         if (viewerPref != null && viewerPref.hasFitWindow()) {
@@ -4663,6 +4673,11 @@ public class SwingController extends ComponentAdapter
     //
     // Controller interface
     //
+
+    @Override
+    public PrintHelperFactory getPrintHelperFactory() {
+        return PrintHelperFactoryImpl.getInstance();
+    }
 
     /**
      * A Document is the root of the object hierarchy, giving access
@@ -5174,7 +5189,7 @@ public class SwingController extends ComponentAdapter
         // So, we need to temporarily save what we'll need, for our later invocation of
         //  WindowManagementCallback.disposeWindow(), that dispose() would otherwise trash
         WindowManagementCallback wc = windowManagementCallback;
-        JFrame v = viewer;
+        Frame v = viewer;
 
         // save last used location.
         WindowManager.saveViewerState(v);
