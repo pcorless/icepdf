@@ -23,6 +23,7 @@ import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -117,7 +118,7 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
                         Annotation.SUBTYPE_TEXT,
                         bbox);
         textAnnotation.setCreationDate(PDate.formatDateTime(new Date()));
-        textAnnotation.setTitleText(System.getProperty("user.name"));
+        textAnnotation.setTitleText(SystemProperties.USER_NAME);
         textAnnotation.setContents("");
 
 

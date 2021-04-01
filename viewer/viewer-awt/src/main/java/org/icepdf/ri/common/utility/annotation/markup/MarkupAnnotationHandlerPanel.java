@@ -24,11 +24,13 @@ import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.AbstractWorkerPanel;
+import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.utility.annotation.AnnotationCellRender;
 import org.icepdf.ri.common.utility.annotation.AnnotationTreeNode;
 import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.common.views.annotations.*;
 
+import javax.swing.FocusManager;
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
@@ -38,6 +40,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -52,7 +56,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
     private DefaultMutableTreeNode pageTreeNode;
 
     private MarkupAnnotationPanel parentMarkupAnnotationPanel;
-
+    private final Set<Annotation> annotationSet = new HashSet<>();
     private Pattern searchPattern;
     private MarkupAnnotationPanel.SortColumn sortType;
     private MarkupAnnotationPanel.FilterSubTypeColumn filterType;
@@ -216,6 +220,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
     }
 
     public void refreshMarkupTree() {
+        annotationSet.clear();
         resetTree();
         buildWorkerTaskUI();
     }
@@ -227,6 +232,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
     }
 
     public void addAnnotation(Annotation annotation, Pattern searchPattern) {
+        annotationSet.add(annotation);
         if (annotation instanceof MarkupAnnotation) {
             descendFormTree(pageTreeNode, annotation, searchPattern);
             expandAllNodes();
@@ -262,6 +268,41 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
     public void endProgressControls() {
         progressBar.setVisible(false);
         progressLabel.setVisible(false);
+
+
+        //Don't show/hide annotations if the user is not currently playing with the annotations panel
+        final Component focusOwner = FocusManager.getCurrentManager().getFocusOwner();
+        if (isMarkupAnnotationPanelFocused(focusOwner)) {
+            ((SwingController) controller).changeAnnotationsVisibility(a -> annotationSet.contains(a) ||
+                            (a instanceof PopupAnnotation && annotationSet.contains(((PopupAnnotation) a).getParent())),
+                    true, true);
+            final PropertyChangeListener listener = propertyChangeEvent -> {
+                final Object newValue = propertyChangeEvent.getNewValue();
+                if (newValue instanceof Component) {
+                    final Component comp = (Component) newValue;
+                    //Sometimes the root comp temporarily gets the focus
+                    final Component rootComp = controller.getViewerFrame().getComponent(0);
+                    if (rootComp != comp && !isMarkupAnnotationPanelFocused(comp)) {
+                        ((SwingController) controller).changeAnnotationsVisibility(a -> true, true, false);
+                        FocusManager.getCurrentManager().removePropertyChangeListener(this);
+                    }
+                }
+            };
+            FocusManager.getCurrentManager().addPropertyChangeListener(listener);
+        }
+    }
+
+    private boolean isMarkupAnnotationPanelFocused(final Component component) {
+        if (component != null) {
+            Container parent = component.getParent();
+            while (parent != null) {
+                if (parent == parentMarkupAnnotationPanel) {
+                    return true;
+                }
+                parent = parent.getParent();
+            }
+        }
+        return false;
     }
 
     @Override

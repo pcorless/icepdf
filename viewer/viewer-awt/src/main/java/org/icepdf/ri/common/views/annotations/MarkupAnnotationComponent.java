@@ -20,6 +20,7 @@ import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.tools.TextAnnotationHandler;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.AnnotationComponent;
@@ -151,7 +152,7 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
                 annotation.setCreationDate(PDate.formatDateTime(new Date()));
             }
             if (annotation.getTitleText() == null) {
-                annotation.setTitleText(System.getProperty("user.name"));
+                annotation.setTitleText(SystemProperties.USER_NAME);
             }
             if (annotation.getContents() == null) {
                 annotation.setContents("");
@@ -224,8 +225,6 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
                     popupBounds.setLocation(x, y);
                     popupComponent.setBounds(popupBounds);
                 }
-                popup.setModifiedDate(PDate.formatDateTime(new Date()));
-                documentViewController.updateAnnotation(popupComponent);
             }
             // no markupAnnotation so we need to create one and display for
             // the addition comments.

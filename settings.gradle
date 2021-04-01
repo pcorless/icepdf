@@ -1,5 +1,6 @@
 include 'core:core-awt',
         'viewer:viewer-awt',
+//        'qa:viewer-jfx',
         'examples:annotation:callback',
             'examples:annotation:creation',
         'examples:capture:listener',
@@ -21,4 +22,4 @@ include 'core:core-awt',
         'examples:signatures'
 
 
-rootProject.name = 'icepdf-os'
+rootProject.name = 'icepdf'

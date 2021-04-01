@@ -23,8 +23,7 @@ import org.icepdf.core.pobjects.graphics.commands.ColorDrawCmd;
 import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.content.ContentParser;
-import org.icepdf.core.util.content.ContentParserFactory;
+import org.icepdf.core.util.parser.content.ContentParser;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -43,7 +42,6 @@ import java.util.logging.Logger;
  * intervals to fill the area to be painted. The graphics objects to
  * use for tiling are described by a content stream. (PDF 1.2)
  *
- * @author ICEsoft Technologies Inc.
  * @since 3.0
  */
 public class TilingPattern extends Stream implements Pattern {
@@ -288,8 +286,7 @@ public class TilingPattern extends Stream implements Pattern {
 
         // Build a new content parser for the content streams and apply the
         // content stream of the calling content stream.
-        ContentParser cp = ContentParserFactory.getInstance()
-                .getContentParser(library, resources);
+        ContentParser cp = new ContentParser(library, resources);
         cp.setGraphicsState(parentGraphicState);
         try {
             shapes = cp.parse(new byte[][]{getDecodedStreamBytes()}, null).getShapes();
