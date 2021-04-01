@@ -609,6 +609,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         if (source == minimizeButton) {
             this.setVisible(false);
             annotation.setOpen(false);
+            annotation.setModifiedDate(PDate.formatDateTime(new Date()));
+            documentViewController.updateAnnotation(this);
         } else if (source == privateToggleButton) {
             boolean selected = privateToggleButton.isSelected();
             MarkupAnnotation markupAnnotation = annotation.getParent();
@@ -711,6 +713,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 selectedMarkupAnnotation.setModifiedDate(PDate.formatDateTime(new Date()));
                 selectedMarkupAnnotation.setContents(
                         document.getText(0, document.getLength()));
+                documentViewController.updateAnnotation(getMarkupAnnotationComponent());
                 // add them to the container, using absolute positioning.
                 documentViewController.updateAnnotation(this);
             }
@@ -725,6 +728,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             // update the annotations internals.
             selectedMarkupAnnotation.setModifiedDate(PDate.formatDateTime(new Date()));
             selectedMarkupAnnotation.setContents(content);
+            documentViewController.updateAnnotation(getMarkupAnnotationComponent());
             // should already be on the awt thread but just encase,  we update the textArea too.
             SwingUtilities.invokeLater(() -> {
                 textArea.getDocument().removeDocumentListener(PopupAnnotationComponent.this);

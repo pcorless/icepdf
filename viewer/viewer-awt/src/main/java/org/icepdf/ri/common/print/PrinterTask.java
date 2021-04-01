@@ -13,8 +13,9 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.ri.common;
+package org.icepdf.ri.common.print;
 
+import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.DocumentViewModelImpl;
 
 import javax.print.CancelablePrintJob;

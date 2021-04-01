@@ -526,14 +526,14 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         if (documentViewController.getAnnotationCallback() != null) {
             documentViewController.getAnnotationCallback().pageAnnotationsInitialized(page);
         }
-        if (annotations != null && annotations.size() > 0) {
+        if (annotations != null && !annotations.isEmpty()) {
             // we don't want to re-initialize the component as we'll
             // get duplicates if the page has be gc'd
             if (annotationComponents == null) {
                 annotationComponents = new ArrayList<>(annotations.size());
                 annotationToComponent = new HashMap<>(annotations.size());
                 Annotation annotation;
-                for (int i = 0, max = annotations.size(); i < max; i++) {
+                for (int i = 0; i < annotations.size(); i++) {
                     annotation = annotations.get(i);
                     // parser can sometimes return an empty array depending on the PDF syntax being used.
                     if (annotation != null) {
@@ -572,10 +572,10 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                             comp.revalidate();
                             comp.repaint();
                         }
-
                     }
                 }
             }
+
         }
     }
 

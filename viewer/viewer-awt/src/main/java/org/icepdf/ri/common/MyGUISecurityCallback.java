@@ -31,7 +31,7 @@ import java.util.ResourceBundle;
  */
 public class MyGUISecurityCallback implements SecurityCallback {
 
-    private JFrame parentFrame;
+    private Frame parentFrame;
     private ResourceBundle messageBundle;
 
     /**
@@ -42,7 +42,7 @@ public class MyGUISecurityCallback implements SecurityCallback {
      * @param frame frame that the dialog will be centered on.
      *              @param messageBundle  message bundle for i18n.
      */
-    public MyGUISecurityCallback(JFrame frame, ResourceBundle messageBundle) {
+    public MyGUISecurityCallback(Frame frame, ResourceBundle messageBundle) {
         parentFrame = frame;
         this.messageBundle = messageBundle;
     }
@@ -82,7 +82,7 @@ public class MyGUISecurityCallback implements SecurityCallback {
         /**
          * Creates the permissions dialog.
          */
-        public PasswordDialog(JFrame frame) {
+        public PasswordDialog(Frame frame) {
             super(frame, true);
             setTitle(messageBundle.getString("viewer.dialog.security.title"));
 
