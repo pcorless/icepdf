@@ -200,7 +200,6 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_SHOW_ANNOTATION_MARKUP_SET_STATUS = "application.annotation.show.markup.setStatus";
 
     // highlight annotation default colour as defined by the last used colour for each type.
-    public static final String PROPERTY_ANNOTATION_HIGHLIGHT_BUTTON_COLOR = "application.viewer.preference.annotation.highlight.button.color";
     public static final String PROPERTY_ANNOTATION_HIGHLIGHT_COLOR = "application.viewer.preference.annotation.highlight.color";
     public static final String PROPERTY_ANNOTATION_HIGHLIGHT_OPACITY = "application.viewer.preference.annotation.highlight.opacity";
     public static final String PROPERTY_ANNOTATION_STRIKE_OUT_COLOR = "application.viewer.preference.annotation.strikeout.color";
@@ -209,7 +208,6 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_ANNOTATION_UNDERLINE_OPACITY = "application.viewer.preference.annotation.underline.opacity";
     public static final String PROPERTY_ANNOTATION_SQUIGGLY_COLOR = "application.viewer.preference.annotation.squiggly.color";
     public static final String PROPERTY_ANNOTATION_SQUIGGLY_OPACITY = "application.viewer.preference.annotation.squiggly.opacity";
-    public static final String PROPERTY_ANNOTATION_TEXT_BUTTON_COLOR = "application.viewer.preference.annotation.text.button.color";
     public static final String PROPERTY_ANNOTATION_TEXT_COLOR = "application.viewer.preference.annotation.text.color";
     public static final String PROPERTY_ANNOTATION_TEXT_OPACITY = "application.viewer.preference.annotation.text.opacity";
     public static final String PROPERTY_ANNOTATION_TEXT_ICON = "application.viewer.preference.annotation.text.icon";
