@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
+import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -124,7 +125,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
         annotation.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, !viewModel.getAnnotationPrivacy());
 
         annotation.setCreationDate(PDate.formatDateTime(new Date()));
-        annotation.setTitleText(System.getProperty("user.name"));
+        annotation.setTitleText(SystemProperties.USER_NAME);
         annotation.setContents("");
 
         // apply store settings

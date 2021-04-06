@@ -62,7 +62,7 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
      * @param document        document
      * @param messageBundle   i18n message bundle
      */
-    public FontDialog(JFrame frame, SwingController swingController, Document document,
+    public FontDialog(Frame frame, SwingController swingController, Document document,
                       ResourceBundle messageBundle) {
         super(frame, true);
         setFocusable(true);

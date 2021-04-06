@@ -36,7 +36,6 @@ import java.util.logging.Logger;
  * to this type of shading, in addition to those common to all shading
  * dictionaries
  *
- * @author ICEsoft Technologies Inc.
  * @since 5.0
  */
 public class ShadingType1Pattern extends ShadingType2Pattern {

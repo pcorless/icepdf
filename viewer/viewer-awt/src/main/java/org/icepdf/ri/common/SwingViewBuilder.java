@@ -18,8 +18,8 @@ package org.icepdf.ri.common;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReferenceFactory;
-import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.annotation.destinations.DestinationsPanel;
 import org.icepdf.ri.common.utility.annotation.markup.MarkupAnnotationPanel;
@@ -280,7 +280,7 @@ import java.util.prefs.Preferences;
  * @author Mark Collette
  * @since 2.0
  */
-public class SwingViewBuilder {
+public class SwingViewBuilder implements ViewBuilder {
 
     private static final Logger logger =
             Logger.getLogger(SwingViewBuilder.class.toString());
@@ -305,12 +305,8 @@ public class SwingViewBuilder {
 
     protected static boolean isMacOs;
 
-    private static boolean isDemo;
-
     static {
-        isMacOs = Defs.sysProperty("os.name").contains("OS X");
-        // check for demo system property
-        isDemo = Defs.sysPropertyBoolean("org.icepdf.ri.viewer.demo", false);
+        isMacOs = SystemProperties.OS_NAME.contains("OS X");
     }
 
     /**
@@ -1198,11 +1194,6 @@ public class SwingViewBuilder {
         if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_SEARCH))
             addToToolBar(toolbar, buildQuickSearchToolBar());
 
-        // we only add the configurable font engin in the demo version
-        if (isDemo) {
-            addToToolBar(toolbar, buildDemoToolBar());
-        }
-
         // Set the toolbar back to null if no components were added
         // The result of this will properly disable the necessary menu items for controlling the toolbar
         if (toolbar.getComponentCount() == 0) {
@@ -1300,9 +1291,20 @@ public class SwingViewBuilder {
         JButton btn = makeToolbarButton(
                 messageBundle.getString("viewer.toolbar.tool.annotationUtility.label"),
                 messageBundle.getString("viewer.toolbar.tool.annotationUtility.tooltip"),
-                "utility_pane", imageSize, buttonFont);
+                "utility_annotations", imageSize, buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setShowAnnotationUtilityPaneButton(btn);
+        return btn;
+    }
+
+    public JButton buildShowBookmarkUtilityButton(final String imageSize) {
+        JButton btn = makeToolbarButton(
+                messageBundle.getString("viewer.toolbar.tool.bookmarkUtility.label"),
+                messageBundle.getString("viewer.toolbar.tool.bookmarkUtility.tooltip"),
+                "utility_bookmarks", imageSize, buttonFont);
+        if (viewerController != null && btn != null) {
+            viewerController.setShowBookmarkUtilityPaneButton(btn);
+        }
         return btn;
     }
 
@@ -1490,16 +1492,6 @@ public class SwingViewBuilder {
         return btn;
     }
 
-    public JToggleButton buildFontEngineButton() {
-        JToggleButton btn = makeToolbarToggleButton(
-                messageBundle.getString("viewer.toolbar.pageFit.fontEngine.label"),
-                messageBundle.getString("viewer.toolbar.pageFit.fontEngine.tooltip"),
-                "font-engine", 118, 25, buttonFont);
-        if (viewerController != null && btn != null)
-            viewerController.setFontEngineButton(btn);
-        return btn;
-    }
-
     public JToggleButton buildFitWidthButton() {
         JToggleButton btn = makeToolbarToggleButton(
                 messageBundle.getString("viewer.toolbar.pageFit.fitWidth.label"),
@@ -1609,13 +1601,17 @@ public class SwingViewBuilder {
                 ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_TEXT)) {
             addToToolBar(toolbar, buildTextAnnotationToolButton(iconSize));
         }
-        if (propertiesManager.checkAndStoreBooleanProperty(
+        if (SystemProperties.PRIVATE_PROPERTY_ENABLED && propertiesManager.checkAndStoreBooleanProperty(
                 ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_PERMISSION)) {
             addToToolBar(toolbar, buildAnnotationPermissionCombBox());
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
                 ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_UTILITY)) {
             addToToolBar(toolbar, buildShowAnnotationUtilityButton(iconSize));
+        }
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_BOOKMARK_UTILITY)) {
+            addToToolBar(toolbar, buildShowBookmarkUtilityButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
                 ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_PREVIEW)) {
@@ -1702,13 +1698,6 @@ public class SwingViewBuilder {
             toolbar.addSeparator();
             addToToolBar(toolbar, buildAnnotationEditingModeToolButton(iconSize));
         }
-        return toolbar;
-    }
-
-    public JToolBar buildDemoToolBar() {
-        JToolBar toolbar = new JToolBar();
-        commonToolBarSetup(toolbar, false);
-        addToToolBar(toolbar, buildFontEngineButton());
         return toolbar;
     }
 

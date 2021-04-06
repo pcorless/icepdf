@@ -69,7 +69,7 @@ public class PopupAnnotation extends Annotation {
         super(l, h);
     }
 
-    public void init() throws InterruptedException{
+    public synchronized void init() throws InterruptedException {
         super.init();
     }
 

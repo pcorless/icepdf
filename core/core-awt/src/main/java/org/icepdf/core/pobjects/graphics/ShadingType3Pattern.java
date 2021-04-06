@@ -32,7 +32,6 @@ import java.util.logging.Logger;
  * circles.  Shading of this type are commonly used to depict three-dimensional
  * spheres and cones.</p>
  *
- * @author ICEsoft Technologies Inc.
  * @since 3.0
  */
 public class ShadingType3Pattern extends ShadingPattern {

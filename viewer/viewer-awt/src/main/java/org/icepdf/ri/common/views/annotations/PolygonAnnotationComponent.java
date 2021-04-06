@@ -36,7 +36,11 @@ public class PolygonAnnotationComponent extends MarkupAnnotationComponent {
     public PolygonAnnotationComponent(MarkupAnnotation annotation, DocumentViewController documentViewController,
                                       AbstractPageViewComponent pageViewComponent) {
         super(annotation, documentViewController, pageViewComponent);
-        isShowInvisibleBorder = true;
+        isShowInvisibleBorder = false;
+        isEditable = false;
+        isRollover = false;
+        isMovable = false;
+        isResizable = false;
     }
 
     @Override

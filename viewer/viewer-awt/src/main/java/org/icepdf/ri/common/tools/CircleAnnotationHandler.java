@@ -21,6 +21,7 @@ import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.CircleAnnotation;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -188,7 +189,7 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
 
         checkAndApplyPreferences();
         annotation.setCreationDate(PDate.formatDateTime(new Date()));
-        annotation.setTitleText(System.getProperty("user.name"));
+        annotation.setTitleText(SystemProperties.USER_NAME);
         annotation.setColor(lineColor);
         annotation.setOpacity(defaultOpacity);
         if (annotation.isFillColor() || useInternalColor) {

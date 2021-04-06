@@ -393,7 +393,7 @@ public class Parser {
             else if (nextToken.equals(">>")) {
                 deepnessCount--;
                 // check for extra >> which we want to ignore
-                if (!isTrailer && deepnessCount >= 0) {
+                if (isTrailer ? deepnessCount > 0 : deepnessCount >= 0) {
                     if (!stack.isEmpty()) {
                         HashMap<Object, Object> hashMap = new HashMap<>();
                         Object obj = stack.pop();
