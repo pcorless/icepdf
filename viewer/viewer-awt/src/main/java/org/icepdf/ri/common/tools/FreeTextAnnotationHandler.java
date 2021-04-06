@@ -148,7 +148,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
 
         // set the annotation tool to the given tool
         documentViewController.getParentController().setDocumentToolMode(
-                preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SELECTION_ENABLED, 0));
+                preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SELECTION_TYPE, 0));
 
         // request focus so that editing can take place.
         ((FreeTextAnnotationComponent) comp).requestTextAreaFocus();

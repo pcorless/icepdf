@@ -32,7 +32,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Arrays;
 import java.util.ResourceBundle;
-import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
 /**
@@ -142,7 +141,7 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
         final JLabel autoselectLabel = new JLabel(
                 messageBundle.getString("viewer.dialog.viewerPreferences.section.annotations.misc.autoselect.label"));
         final int toolIdx = ViewerPropertiesManager.getInstance().getPreferences()
-                .getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_SELECTION_ENABLED, 0);
+                .getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_SELECTION_TYPE, 0);
         autoselectCbb.setSelectedItem(Arrays.stream(tools).filter(t -> t.toolIdx == toolIdx).findAny().orElse(tools[0]));
         autoselectCbb.addActionListener(actionEvent -> {
             final JComboBox<ToolItem> box = (JComboBox<ToolItem>) actionEvent.getSource();

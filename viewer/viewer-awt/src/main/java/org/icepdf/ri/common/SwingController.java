@@ -384,13 +384,6 @@ public class SwingController extends ComponentAdapter
      */
     public void setPropertiesManager(ViewerPropertiesManager propertiesManager) {
         this.propertiesManager = propertiesManager;
-        //Migrate old boolean property to new int property
-        final String property = propertiesManager.getPreferences().get(PROPERTY_ANNOTATION_INK_SELECTION_ENABLED, "false");
-        if (property.equals("true")) {
-            ALL_SELECTION_PROPERTIES.forEach(p -> propertiesManager.setInt(p, DocumentViewModel.DISPLAY_TOOL_SELECTION));
-        } else if (property.equals("false")) {
-            ALL_SELECTION_PROPERTIES.forEach(p -> propertiesManager.setInt(p, 0));
-        }
     }
 
     /**

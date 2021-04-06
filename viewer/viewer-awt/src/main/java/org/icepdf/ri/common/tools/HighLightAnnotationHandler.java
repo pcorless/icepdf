@@ -253,7 +253,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
 
         // set the annotation tool to the given tool
         documentViewController.getParentController().setDocumentToolMode(
-                preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_SELECTION_ENABLED, 0));
+                preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_SELECTION_TYPE, 0));
     }
 
     public static ArrayList<Shape> getSelectedTextBounds(AbstractPageViewComponent pageViewComponent,
