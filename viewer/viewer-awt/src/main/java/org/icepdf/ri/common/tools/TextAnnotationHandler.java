@@ -107,7 +107,7 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
     }
 
     public void mousePressed(MouseEvent e) {
-
+        checkAndApplyPreferences();
     }
 
     public static TextAnnotation createTextAnnotation(Library library, Rectangle bbox,

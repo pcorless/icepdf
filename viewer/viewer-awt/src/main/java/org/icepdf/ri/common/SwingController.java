@@ -5016,51 +5016,46 @@ public class SwingController extends ComponentAdapter
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION);
                 }
-            } else if (source == highlightAnnotationToolButton ||
-                    (highlightAnnotationToolButton != null && highlightAnnotationToolButton.equals(source)) ||
-                    source == highlightAnnotationPropertiesToolButton) {
+            } else if (checkAnnotationButton(source, highlightAnnotationToolButton,
+                    highlightAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION);
                 }
-            } else if (source == strikeOutAnnotationToolButton ||
-                    source == strikeOutAnnotationPropertiesToolButton) {
+            } else if (checkAnnotationButton(source, strikeOutAnnotationToolButton,
+                    strikeOutAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_STRIKEOUT_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_STRIKEOUT_ANNOTATION);
                 }
-            } else if (source == underlineAnnotationToolButton ||
-                    source == underlineAnnotationPropertiesToolButton) {
+            } else if (checkAnnotationButton(source, underlineAnnotationToolButton,
+                    underlineAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_UNDERLINE_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_UNDERLINE_ANNOTATION);
                 }
-            } else if (source == lineAnnotationToolButton ||
-                    source == lineAnnotationPropertiesToolButton) {
+            } else if (checkAnnotationButton(source, lineAnnotationToolButton, lineAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_LINE_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINE_ANNOTATION);
                 }
-            } else if (source == lineArrowAnnotationToolButton ||
-                    source == lineArrowAnnotationPropertiesToolButton) {
+            } else if (checkAnnotationButton(source, lineArrowAnnotationToolButton,
+                    lineArrowAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_LINE_ARROW_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINE_ARROW_ANNOTATION);
                 }
-            } else if (source == squareAnnotationToolButton ||
-                    source == squareAnnotationPropertiesToolButton) {
+            } else if (checkAnnotationButton(source, squareAnnotationToolButton, squareAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_SQUARE_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SQUARE_ANNOTATION);
                 }
-            } else if (source == circleAnnotationToolButton ||
-                    source == circleAnnotationPropertiesToolButton) {
+            } else if (checkAnnotationButton(source, circleAnnotationToolButton, circleAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_CIRCLE_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_CIRCLE_ANNOTATION);
                 }
-            } else if (source == inkAnnotationToolButton ||
-                    source == inkAnnotationPropertiesToolButton) {
+            } else if (checkAnnotationButton(source, inkAnnotationToolButton, inkAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_INK_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_INK_ANNOTATION);
@@ -5071,9 +5066,7 @@ public class SwingController extends ComponentAdapter
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_FREE_TEXT_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_FREE_TEXT_ANNOTATION);
                 }
-            } else if (source == textAnnotationToolButton ||
-                    (textAnnotationToolButton != null && textAnnotationToolButton.equals(source)) ||
-                    source == textAnnotationPropertiesToolButton) {
+            } else if (checkAnnotationButton(source, textAnnotationToolButton, textAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION);
@@ -5118,6 +5111,11 @@ public class SwingController extends ComponentAdapter
         } finally {
             setDisplayTool(tool);
         }
+    }
+
+    private static boolean checkAnnotationButton(final Object source, final AnnotationColorToggleButton button,
+                                          final JToggleButton propertiesButton){
+        return source == button || source == button.getColorButton() || source == propertiesButton;
     }
 
     //

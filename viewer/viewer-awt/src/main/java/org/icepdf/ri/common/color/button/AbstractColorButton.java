@@ -163,6 +163,10 @@ public abstract class AbstractColorButton extends AbstractButton
         if (dropDownArrowButton != null) dropDownArrowButton.setEnabled(enabled);
     }
 
+    public AbstractButton getColorButton() {
+        return colorButton;
+    }
+
     @Override
     public boolean isSelected() {
         return colorButton.isSelected();

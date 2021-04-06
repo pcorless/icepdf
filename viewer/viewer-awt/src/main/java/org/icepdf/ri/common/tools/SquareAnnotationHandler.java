@@ -154,6 +154,7 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
     }
 
     public void mousePressed(MouseEvent e) {
+        checkAndApplyPreferences();
         int x = e.getX();
         int y = e.getY();
         if (rectangle == null) {
@@ -188,8 +189,6 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
                         documentViewController.getDocument().getPageTree().getLibrary(),
                         Annotation.SUBTYPE_SQUARE,
                         tBbox);
-
-        checkAndApplyPreferences();
 
         // set the private contents flag.
         ViewModel viewModel = documentViewController.getParentController().getViewModel();
