@@ -16,8 +16,8 @@
 package org.icepdf.ri.common.preferences;
 
 import org.icepdf.core.util.PropertyConstants;
-import org.icepdf.ri.common.ColorChooserButton;
-import org.icepdf.ri.common.DragDropColorList;
+import org.icepdf.ri.common.color.DragDropColorList;
+import org.icepdf.ri.common.color.button.ColorChooserButton;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 

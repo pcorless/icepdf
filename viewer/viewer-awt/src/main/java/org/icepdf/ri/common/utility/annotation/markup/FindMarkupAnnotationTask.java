@@ -23,7 +23,7 @@ import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.AbstractTask;
-import org.icepdf.ri.common.DragDropColorList;
+import org.icepdf.ri.common.color.DragDropColorList;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.PageComponentSelector;
 

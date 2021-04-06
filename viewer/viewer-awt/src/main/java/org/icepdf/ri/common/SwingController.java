@@ -29,6 +29,8 @@ import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.*;
+import org.icepdf.ri.common.color.button.AbstractColorButton;
+import org.icepdf.ri.common.color.button.annotation.AnnotationColorToggleButton;
 import org.icepdf.ri.common.preferences.PreferencesDialog;
 import org.icepdf.ri.common.print.PrintHelper;
 import org.icepdf.ri.common.print.PrintHelperFactory;
@@ -217,13 +219,13 @@ public class SwingController extends ComponentAdapter
     // main annotation toolbar
     private AnnotationColorToggleButton highlightAnnotationToolButton;
     private JToggleButton linkAnnotationToolButton;
-    private JToggleButton strikeOutAnnotationToolButton;
-    private JToggleButton underlineAnnotationToolButton;
-    private JToggleButton lineAnnotationToolButton;
-    private JToggleButton lineArrowAnnotationToolButton;
-    private JToggleButton squareAnnotationToolButton;
-    private JToggleButton circleAnnotationToolButton;
-    private JToggleButton inkAnnotationToolButton;
+    private AnnotationColorToggleButton strikeOutAnnotationToolButton;
+    private AnnotationColorToggleButton underlineAnnotationToolButton;
+    private AnnotationColorToggleButton lineAnnotationToolButton;
+    private AnnotationColorToggleButton lineArrowAnnotationToolButton;
+    private AnnotationColorToggleButton squareAnnotationToolButton;
+    private AnnotationColorToggleButton circleAnnotationToolButton;
+    private AnnotationColorToggleButton inkAnnotationToolButton;
     private JToggleButton freeTextAnnotationToolButton;
     private AnnotationColorToggleButton textAnnotationToolButton;
     private JButton annotationSummaryButton;
@@ -1113,7 +1115,7 @@ public class SwingController extends ComponentAdapter
      *
      * @param btn button to assign
      */
-    public void setStrikeOutAnnotationToolButton(JToggleButton btn) {
+    public void setStrikeOutAnnotationToolButton(AnnotationColorToggleButton btn) {
         this.strikeOutAnnotationToolButton = btn;
         btn.addItemListener(this);
     }
@@ -1123,7 +1125,7 @@ public class SwingController extends ComponentAdapter
      *
      * @param btn button to assign
      */
-    public void setUnderlineAnnotationToolButton(JToggleButton btn) {
+    public void setUnderlineAnnotationToolButton(AnnotationColorToggleButton btn) {
         this.underlineAnnotationToolButton = btn;
         btn.addItemListener(this);
     }
@@ -1133,7 +1135,7 @@ public class SwingController extends ComponentAdapter
      *
      * @param btn button to assign
      */
-    public void setLineAnnotationToolButton(JToggleButton btn) {
+    public void setLineAnnotationToolButton(AnnotationColorToggleButton btn) {
         this.lineAnnotationToolButton = btn;
         btn.addItemListener(this);
     }
@@ -1143,7 +1145,7 @@ public class SwingController extends ComponentAdapter
      *
      * @param btn button to assign
      */
-    public void setLineArrowAnnotationToolButton(JToggleButton btn) {
+    public void setLineArrowAnnotationToolButton(AnnotationColorToggleButton btn) {
         this.lineArrowAnnotationToolButton = btn;
         btn.addItemListener(this);
     }
@@ -1153,7 +1155,7 @@ public class SwingController extends ComponentAdapter
      *
      * @param btn button to assign
      */
-    public void setSquareAnnotationToolButton(JToggleButton btn) {
+    public void setSquareAnnotationToolButton(AnnotationColorToggleButton btn) {
         this.squareAnnotationToolButton = btn;
         btn.addItemListener(this);
     }
@@ -1163,7 +1165,7 @@ public class SwingController extends ComponentAdapter
      *
      * @param btn button to assign
      */
-    public void setCircleAnnotationToolButton(JToggleButton btn) {
+    public void setCircleAnnotationToolButton(AnnotationColorToggleButton btn) {
         this.circleAnnotationToolButton = btn;
         btn.addItemListener(this);
     }
@@ -1173,11 +1175,10 @@ public class SwingController extends ComponentAdapter
      *
      * @param btn button to assign
      */
-    public void setInkAnnotationToolButton(JToggleButton btn) {
+    public void setInkAnnotationToolButton(AnnotationColorToggleButton btn) {
         this.inkAnnotationToolButton = btn;
         btn.addItemListener(this);
     }
-
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
      *
@@ -5610,12 +5611,7 @@ public class SwingController extends ComponentAdapter
                 }
                 break;
             case ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE:
-                if (highlightAnnotationToolButton != null) {
-                    highlightAnnotationToolButton.refreshColorPanel();
-                }
-                if (textAnnotationToolButton != null) {
-                    textAnnotationToolButton.refreshColorPanel();
-                }
+                getColorButtons().stream().filter(Objects::nonNull).forEach(AbstractColorButton::refreshColorPanel);
                 if (annotationPanel != null &&
                         annotationPanel.getMarkupAnnotationPanel() != null) {
                     annotationPanel.getMarkupAnnotationPanel().refreshColorPanel();
@@ -5662,6 +5658,10 @@ public class SwingController extends ComponentAdapter
         }
     }
 
+    private Collection<AnnotationColorToggleButton> getColorButtons(){
+        return new HashSet<>(Arrays.asList(highlightAnnotationToolButton, strikeOutAnnotationToolButton, underlineAnnotationToolButton,lineAnnotationToolButton,
+                lineArrowAnnotationToolButton,squareAnnotationToolButton,circleAnnotationToolButton,inkAnnotationToolButton,textAnnotationToolButton));
+    }
 
     public void changeAnnotationsVisibility(final AnnotationFilter filter, final boolean visible, final boolean execInvert) {
         callOnFilteredAnnotations(a -> a instanceof MarkupAnnotation && filter.filter(a), a -> {

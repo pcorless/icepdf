@@ -17,7 +17,7 @@ package org.icepdf.ri.common.utility.annotation;
 
 import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.ri.common.CompoundIcon;
-import org.icepdf.ri.common.ImageColorIcon;
+import org.icepdf.ri.common.color.button.ImageColorIcon;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
