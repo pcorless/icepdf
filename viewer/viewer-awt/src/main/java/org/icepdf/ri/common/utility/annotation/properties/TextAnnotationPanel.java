@@ -17,7 +17,7 @@ package org.icepdf.ri.common.utility.annotation.properties;
 
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
-import org.icepdf.ri.common.color.RgbColorChooser;
+import org.icepdf.ri.common.widgets.RgbColorChooser;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.util.ViewerPropertiesManager;

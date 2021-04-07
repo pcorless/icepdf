@@ -13,9 +13,9 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.ri.common.color.button;
+package org.icepdf.ri.common.widgets;
 
-import org.icepdf.ri.common.color.button.annotation.AnnotationColorPropertyPanel;
+import org.icepdf.ri.common.widgets.annotations.AnnotationColorPropertyPanel;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.ViewerPropertiesManager;

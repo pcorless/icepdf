@@ -23,7 +23,7 @@ import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
 import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.common.color.DragDropColorList;
+import org.icepdf.ri.common.widgets.DragDropColorList;
 import org.icepdf.ri.common.tools.DestinationHandler;
 import org.icepdf.ri.common.tools.FreeTextAnnotationHandler;
 import org.icepdf.ri.common.utility.annotation.AnnotationFilter;

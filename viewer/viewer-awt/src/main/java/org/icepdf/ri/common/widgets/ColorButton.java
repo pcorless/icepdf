@@ -13,25 +13,25 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.ri.common.color.button;
+package org.icepdf.ri.common.widgets;
 
 import javax.swing.*;
 import java.awt.*;
 
 /**
- * ColorToggleButton with a base color picker model.
+ * ColorButton with a base color picker model.
  *
  * @since 6.3
  */
-public class ColorToggleButton extends JToggleButton implements PaintButtonInterface {
+public class ColorButton extends JButton implements PaintButtonInterface {
 
     protected PaintButtonBase paintButtonBase;
 
-    public ColorToggleButton() {
+    public ColorButton() {
         paintButtonBase = new PaintButtonBase(this);
     }
 
-    public ColorToggleButton(Color color, Shape colorBound, float alpha) {
+    public ColorButton(Color color, Shape colorBound, float alpha) {
         paintButtonBase = new PaintButtonBase(this, color, colorBound, alpha);
     }
 

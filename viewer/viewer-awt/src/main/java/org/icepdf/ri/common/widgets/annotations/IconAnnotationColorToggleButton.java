@@ -1,4 +1,4 @@
-package org.icepdf.ri.common.color.button.annotation;
+package org.icepdf.ri.common.widgets.annotations;
 
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.images.Images;

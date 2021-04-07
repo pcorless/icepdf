@@ -16,7 +16,7 @@
 package org.icepdf.ri.common.preferences;
 
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.ri.common.color.button.ColorChooserButton;
+import org.icepdf.ri.common.widgets.ColorChooserButton;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.utility.annotation.properties.ValueLabelItem;
 import org.icepdf.ri.common.views.AbstractDocumentView;

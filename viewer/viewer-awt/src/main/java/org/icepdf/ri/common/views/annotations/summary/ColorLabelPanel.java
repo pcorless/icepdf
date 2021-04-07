@@ -18,7 +18,7 @@ package org.icepdf.ri.common.views.annotations.summary;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.util.PropertyConstants;
-import org.icepdf.ri.common.color.DragDropColorList;
+import org.icepdf.ri.common.widgets.DragDropColorList;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.Controller;
 

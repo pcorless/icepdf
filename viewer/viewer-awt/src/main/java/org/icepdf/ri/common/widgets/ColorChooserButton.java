@@ -13,10 +13,8 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.ri.common.color.button;
+package org.icepdf.ri.common.widgets;
 
-
-import org.icepdf.ri.common.color.RgbColorChooser;
 
 import javax.swing.*;
 import java.awt.*;

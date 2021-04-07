@@ -13,13 +13,13 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.ri.common.color.button.annotation;
+package org.icepdf.ri.common.widgets.annotations;
 
-import org.icepdf.ri.common.color.DragDropColorList;
-import org.icepdf.ri.common.color.RgbColorChooser;
-import org.icepdf.ri.common.color.button.AbstractColorButton;
-import org.icepdf.ri.common.color.button.ColorChooserButton;
-import org.icepdf.ri.common.color.button.ColorIcon;
+import org.icepdf.ri.common.widgets.DragDropColorList;
+import org.icepdf.ri.common.widgets.RgbColorChooser;
+import org.icepdf.ri.common.widgets.AbstractColorButton;
+import org.icepdf.ri.common.widgets.ColorChooserButton;
+import org.icepdf.ri.common.widgets.ColorIcon;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 

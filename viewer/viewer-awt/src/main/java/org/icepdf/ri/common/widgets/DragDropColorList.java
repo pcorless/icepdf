@@ -13,10 +13,9 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.ri.common.color;
+package org.icepdf.ri.common.widgets;
 
 import org.icepdf.core.util.PropertyConstants;
-import org.icepdf.ri.common.color.button.ColorChooserButton;
 import org.icepdf.ri.common.ListItemTransferHandler;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.util.ViewerPropertiesManager;
