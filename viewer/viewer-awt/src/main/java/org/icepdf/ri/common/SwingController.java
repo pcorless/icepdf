@@ -4280,7 +4280,7 @@ public class SwingController extends ComponentAdapter
 
     public void setDocumentToolMode(final int toolType) {
         // nothing to do tool should already be setup.
-        if (documentViewController.isToolModeSelected(toolType))
+        if (toolType == 0 || documentViewController.isToolModeSelected(toolType))
             return;
 
         // set the tool mode

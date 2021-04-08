@@ -26,7 +26,6 @@ import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
@@ -195,11 +194,9 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
         popupAnnotationComponent.setVisible(false);
         popupAnnotationComponent.getAnnotation().setOpen(false);
 
-        // set the annotation tool to he select tool
-        if (preferences.getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_SELECTION_ENABLED, false)) {
-            documentViewController.getParentController().setDocumentToolMode(
-                    DocumentViewModel.DISPLAY_TOOL_SELECTION);
-        }
+        // set the annotation tool to the given tool
+        documentViewController.getParentController().setDocumentToolMode(
+                preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_SELECTION_TYPE, 0));
 
         // clear the path
         inkPath = null;

@@ -18,10 +18,7 @@ package org.icepdf.ri.util;
 import javax.swing.*;
 import java.io.*;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.Properties;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
@@ -155,15 +152,25 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_VIEWPREF_FITWINDOW = "application.viewerpreferences.fitwindow";
     public static final String PROPERTY_VIEWPREF_FORM_HIGHLIGHT = "application.viewerpreferences.form.highlight";
     public static final String PROPERTY_VIEWPREF_ANNOTATION_EDIT_MODE = "application.viewerpreferences.annotation.editmode";
-    // annotation handler default to selection tool after annotation is created.
-    public static final String PROPERTY_ANNOTATION_HIGHLIGHT_SELECTION_ENABLED = "application.annotation.highlight.selection.enabled";
-    public static final String PROPERTY_ANNOTATION_LINE_SELECTION_ENABLED = "application.annotation.line.selection.enabled";
-    public static final String PROPERTY_ANNOTATION_LINK_SELECTION_ENABLED = "application.annotation.link.selection.enabled";
-    public static final String PROPERTY_ANNOTATION_SQUARE_SELECTION_ENABLED = "application.annotation.rectangle.selection.enabled";
-    public static final String PROPERTY_ANNOTATION_CIRCLE_SELECTION_ENABLED = "application.annotation.circle.selection.enabled";
-    public static final String PROPERTY_ANNOTATION_INK_SELECTION_ENABLED = "application.annotation.ink.selection.enabled";
-    public static final String PROPERTY_ANNOTATION_FREE_TEXT_SELECTION_ENABLED = "application.annotation.freetext.selection.enabled";
-    public static final String PROPERTY_ANNOTATION_TEXT_SELECTION_ENABLED = "application.annotation.text.selection.enabled";
+    // annotation handler default to selected tool after annotation is created.
+    public static final String PROPERTY_ANNOTATION_HIGHLIGHT_SELECTION_TYPE = "application.annotation.highlight.selection.type";
+    public static final String PROPERTY_ANNOTATION_LINE_SELECTION_TYPE = "application.annotation.line.selection.type";
+    public static final String PROPERTY_ANNOTATION_LINK_SELECTION_TYPE = "application.annotation.link.selection.type";
+    public static final String PROPERTY_ANNOTATION_SQUARE_SELECTION_TYPE = "application.annotation.rectangle.selection.type";
+    public static final String PROPERTY_ANNOTATION_CIRCLE_SELECTION_TYPE = "application.annotation.circle.selection.type";
+    public static final String PROPERTY_ANNOTATION_INK_SELECTION_TYPE = "application.annotation.ink.selection.type";
+    public static final String PROPERTY_ANNOTATION_FREE_TEXT_SELECTION_TYPE = "application.annotation.freetext.selection.type";
+    public static final String PROPERTY_ANNOTATION_TEXT_SELECTION_TYPE = "application.annotation.text.selection.type";
+    public static final Set<String> ALL_SELECTION_PROPERTIES = new HashSet<>(Arrays.asList(
+            ViewerPropertiesManager.PROPERTY_ANNOTATION_CIRCLE_SELECTION_TYPE,
+            ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_SELECTION_TYPE,
+            ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_SELECTION_TYPE,
+            ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_SELECTION_TYPE,
+            ViewerPropertiesManager.PROPERTY_ANNOTATION_LINK_SELECTION_TYPE,
+            ViewerPropertiesManager.PROPERTY_ANNOTATION_SQUARE_SELECTION_TYPE,
+            ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_SELECTION_TYPE,
+            ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SELECTION_TYPE
+    ));
     // properties used to control visibility of annotation controls on main utility panel.
     public static final String PROPERTY_ANNOTATION_PROPERTIES_HIGHLIGHT_ENABLED = "application.annotation.properties.highlight.enabled";
     public static final String PROPERTY_ANNOTATION_PROPERTIES_UNDERLINE_ENABLED = "application.annotation.properties.underline.enabled";
