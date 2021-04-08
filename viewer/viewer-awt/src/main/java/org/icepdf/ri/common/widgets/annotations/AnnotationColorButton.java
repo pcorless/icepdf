@@ -13,8 +13,11 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.ri.common;
+package org.icepdf.ri.common.widgets.annotations;
 
+import org.icepdf.ri.common.widgets.AbstractColorButton;
+import org.icepdf.ri.common.widgets.ColorButton;
+import org.icepdf.ri.common.widgets.PaintButtonInterface;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.images.Images;
 
@@ -28,14 +31,14 @@ import java.util.logging.Logger;
  *
  * @since 6.3
  */
-public class AnnotationColorButton extends AbstractColorButton {
+public abstract class AnnotationColorButton extends AbstractColorButton {
 
     private static final Logger logger = Logger.getLogger(AnnotationColorToggleButton.class.toString());
 
-    public AnnotationColorButton(Controller controller,
+    protected AnnotationColorButton(Controller controller,
                                  ResourceBundle messageBundle,
                                  String title, String toolTip, String imageName,
-                                 final String imageSize, java.awt.Font font) {
+                                 final String imageSize, Font font) {
         super(controller, messageBundle);
 
         colorButton = new ColorButton();

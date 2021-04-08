@@ -147,6 +147,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
     }
 
     public void mousePressed(MouseEvent e) {
+        checkAndApplyPreferences();
         Point startPoint = e.getPoint();
         startOfLine = new Point(startPoint.x, startPoint.y);
         // annotation selection box.
@@ -188,9 +189,6 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         annotation.setStartOfLine(points[0]);
         annotation.setEndOfLine(points[1]);
         annotation.setBorderStyle(borderStyle);
-
-        // apply preferences
-        checkAndApplyPreferences();
 
         annotation.setColor(lineColor);
         annotation.setInteriorColor(internalColor);

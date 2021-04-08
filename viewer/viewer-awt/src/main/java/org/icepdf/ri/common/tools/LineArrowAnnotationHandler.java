@@ -18,6 +18,7 @@ package org.icepdf.ri.common.tools;
 import org.icepdf.core.pobjects.annotations.LineAnnotation;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import java.awt.*;
 import java.util.logging.Logger;
@@ -74,4 +75,11 @@ public class LineArrowAnnotationHandler extends LineAnnotationHandler {
         }
     }
 
+    @Override
+    protected void checkAndApplyPreferences() {
+        lineColor = new Color(preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_ARROW_COLOR, lineColor.getRGB()));
+        internalColor = new Color(preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_ARROW_FILL_COLOR,
+                internalColor.getRGB()));
+        opacity = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_ARROW_OPACITY, opacity);
+    }
 }

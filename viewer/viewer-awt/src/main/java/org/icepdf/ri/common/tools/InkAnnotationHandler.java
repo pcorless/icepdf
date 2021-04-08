@@ -126,6 +126,7 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
     }
 
     public void mousePressed(MouseEvent e) {
+        checkAndApplyPreferences();
         // annotation selection box.
         if (inkPath == null) {
             inkPath = new GeneralPath();
@@ -164,7 +165,6 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
         ViewModel viewModel = documentViewController.getParentController().getViewModel();
         annotation.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, !viewModel.getAnnotationPrivacy());
 
-        checkAndApplyPreferences();
         annotation.setCreationDate(PDate.formatDateTime(new Date()));
         annotation.setTitleText(SystemProperties.USER_NAME);
         annotation.setColor(inkColor);

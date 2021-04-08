@@ -187,7 +187,6 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
         ViewModel viewModel = documentViewController.getParentController().getViewModel();
         annotation.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, !viewModel.getAnnotationPrivacy());
 
-        checkAndApplyPreferences();
         annotation.setCreationDate(PDate.formatDateTime(new Date()));
         annotation.setTitleText(SystemProperties.USER_NAME);
         annotation.setColor(lineColor);

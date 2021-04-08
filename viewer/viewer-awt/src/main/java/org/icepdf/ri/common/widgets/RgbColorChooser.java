@@ -13,7 +13,7 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.ri.common;
+package org.icepdf.ri.common.widgets;
 
 import javax.swing.*;
 import javax.swing.colorchooser.AbstractColorChooserPanel;
@@ -47,7 +47,7 @@ public class RgbColorChooser {
      * @return the selected color or <code>null</code> if the user opted out
      * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      *                           returns true.
-     * @see java.awt.GraphicsEnvironment#isHeadless
+     * @see GraphicsEnvironment#isHeadless
      */
     public static Color showDialog(Component component, String title, Color initialColor)
             throws HeadlessException {
@@ -99,25 +99,25 @@ public class RgbColorChooser {
         return colorTracker.getColor();
     }
 
+    private static class ColorTracker implements ActionListener, Serializable {
+        private JColorChooser chooser;
+        private Color color;
+
+        ColorTracker(JColorChooser c) {
+            chooser = c;
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            color = chooser.getColor();
+        }
+
+        public void setColor(Color color) {
+            this.color = color;
+        }
+
+        public Color getColor() {
+            return color;
+        }
+    }
 }
 
-class ColorTracker implements ActionListener, Serializable {
-    private JColorChooser chooser;
-    private Color color;
-
-    ColorTracker(JColorChooser c) {
-        chooser = c;
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        color = chooser.getColor();
-    }
-
-    public void setColor(Color color) {
-        this.color = color;
-    }
-
-    public Color getColor() {
-        return color;
-    }
-}

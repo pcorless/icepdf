@@ -13,8 +13,9 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.ri.common;
+package org.icepdf.ri.common.widgets;
 
+import org.icepdf.ri.common.widgets.annotations.AnnotationColorPropertyPanel;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.ViewerPropertiesManager;
@@ -160,6 +161,10 @@ public abstract class AbstractColorButton extends AbstractButton
         if (annotationColorPropertyPanel != null) annotationColorPropertyPanel.setEnabled(enabled);
         if (colorButton != null) colorButton.setEnabled(enabled);
         if (dropDownArrowButton != null) dropDownArrowButton.setEnabled(enabled);
+    }
+
+    public AbstractButton getColorButton() {
+        return colorButton;
     }
 
     @Override
