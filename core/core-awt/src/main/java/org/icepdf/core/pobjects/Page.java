@@ -812,10 +812,12 @@ public class Page extends Dictionary {
      * the method @link{#createAnnotation} for creating new annotations.
      *
      * @param newAnnotation annotation object to add
+     * @param isNew annotation is new and should be added to stateManager, otherwise change will be part of the document
+     *              but not yet added to the stateManager as the change was likely a missing content stream or popup.
      * @return reference to annotation that was added.
      */
     @SuppressWarnings("unchecked")
-    public Annotation addAnnotation(Annotation newAnnotation) {
+    public Annotation addAnnotation(Annotation newAnnotation, boolean isNew) {
 
         // make sure the page annotations have been initialized.
         if (annotations == null) {
@@ -839,20 +841,18 @@ public class Page extends Dictionary {
             // update annots dictionary with new annotations reference,
             annotations.add(newAnnotation.getPObjectReference());
             // add the page as state change
-            stateManager.addChange(
-                    new PObject(this, this.getPObjectReference()));
+            stateManager.addChange(new PObject(this, this.getPObjectReference()), isNew);
         } else if (isAnnotAReference && annotations != null) {
             // get annots array from page
             // update annots dictionary with new annotations reference,
             annotations.add(newAnnotation.getPObjectReference());
             // add the annotations reference dictionary as state has changed
             stateManager.addChange(
-                    new PObject(annotations, library.getObjectReference(
-                            entries, ANNOTS_KEY)));
+                    new PObject(annotations, library.getObjectReference(entries, ANNOTS_KEY)), isNew);
         }
         // we need to add the a new annots reference
         else {
-            List<Reference> annotsVector = new ArrayList(4);
+            List<Reference> annotsVector = new ArrayList<>(4);
             annotsVector.add(newAnnotation.getPObjectReference());
 
             // create a new Dictionary of annotations using an external reference
@@ -866,8 +866,8 @@ public class Page extends Dictionary {
 
             // add the page and the new dictionary to the state change
             stateManager.addChange(
-                    new PObject(this, this.getPObjectReference()));
-            stateManager.addChange(annotsPObject);
+                    new PObject(this, this.getPObjectReference()), isNew);
+            stateManager.addChange(annotsPObject, isNew);
 
             this.annotations = new ArrayList<>();
         }
@@ -883,7 +883,7 @@ public class Page extends Dictionary {
         library.addObject(newAnnotation, newAnnotation.getPObjectReference());
 
         // finally add the new annotations to the state manager
-        stateManager.addChange(new PObject(newAnnotation, newAnnotation.getPObjectReference()));
+        stateManager.addChange(new PObject(newAnnotation, newAnnotation.getPObjectReference()), isNew);
 
         // return to caller for further manipulations.
         return newAnnotation;

@@ -156,7 +156,8 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
 
     public static PopupAnnotation createPopupAnnotation(Library library, Rectangle bbox,
                                                         MarkupAnnotation parent,
-                                                        AffineTransform pageSpace) {
+                                                        AffineTransform pageSpace,
+                                                        boolean isNew) {
         // text annotation are special as the annotation has fixed size.
         PopupAnnotation popupAnnotation = (PopupAnnotation)
                 AnnotationFactory.buildAnnotation(
@@ -165,15 +166,14 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
                         bbox);
         // save the annotation
         StateManager stateManager = library.getStateManager();
-        stateManager.addChange(new PObject(popupAnnotation,
-                popupAnnotation.getPObjectReference()));
+        stateManager.addChange(new PObject(popupAnnotation, popupAnnotation.getPObjectReference()), isNew);
         library.addObject(popupAnnotation, popupAnnotation.getPObjectReference());
 
         // setup up some default values
         popupAnnotation.setOpen(true);
         popupAnnotation.setParent(parent);
         parent.setPopupAnnotation(popupAnnotation);
-        popupAnnotation.resetAppearanceStream(0, 0, pageSpace);
+        popupAnnotation.resetAppearanceStream(0, 0, pageSpace, isNew);
         return popupAnnotation;
     }
 

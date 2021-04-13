@@ -93,6 +93,9 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
         }
     }
 
+    // created for rendering only, not created by the user,  set when state manager shouldn't record the change
+    protected boolean isSynthetic;
+
     public static final int resizeBoxSize = 4;
 
     // reusable border
@@ -585,7 +588,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
                 dy = endOfMousePress.getY() - startOfMousePress.getY();
             }
 
-            annotation.resetAppearanceStream(dx, -dy, getToPageSpaceTransform());
+            annotation.resetAppearanceStream(dx, -dy, getToPageSpaceTransform(), true);
 
             // fire new bounds change event, let the listener handle
             // how to deal with the bound change.
@@ -708,5 +711,13 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
 
     public boolean isShowInvisibleBorder() {
         return isShowInvisibleBorder;
+    }
+
+    public boolean isSynthetic() {
+        return isSynthetic;
+    }
+
+    public void setSynthetic(boolean synthetic) {
+        isSynthetic = synthetic;
     }
 }

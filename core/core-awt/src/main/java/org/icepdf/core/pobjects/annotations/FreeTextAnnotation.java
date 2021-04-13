@@ -398,7 +398,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     }
 
     @Override
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
 
         Appearance appearance = appearances.get(currentAppearance);
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
@@ -532,7 +532,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         // create/update the appearance stream of the xObject.
         StateManager stateManager = library.getStateManager();
         Form form = updateAppearanceStream(shapes, bbox, matrix,
-                PostScriptEncoder.generatePostScript(shapes.getShapes()));
+                PostScriptEncoder.generatePostScript(shapes.getShapes()), isNew);
         generateExternalGraphicsState(form, opacity);
 
         if (form != null) {
