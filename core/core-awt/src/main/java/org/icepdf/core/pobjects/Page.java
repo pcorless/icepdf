@@ -812,6 +812,8 @@ public class Page extends Dictionary {
      * the method @link{#createAnnotation} for creating new annotations.
      *
      * @param newAnnotation annotation object to add
+     * @param isNew annotation is new and should be added to stateManager, otherwise change will be part of the document
+     *              but not yet added to the stateManager as the change was likely a missing content stream or popup.
      * @return reference to annotation that was added.
      */
     @SuppressWarnings("unchecked")

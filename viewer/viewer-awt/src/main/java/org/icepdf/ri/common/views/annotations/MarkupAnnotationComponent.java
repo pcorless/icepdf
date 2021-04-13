@@ -178,6 +178,7 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
             comp.setBounds(bBox);
             // resets user space rectangle to match bbox converted to page space
             comp.refreshAnnotationRect();
+            // not new, which means the popup wasn't part of the document, we don't want to save it at this time
             comp.setSynthetic(!isNew);
 
             // add them to the container, using absolute positioning.
@@ -228,10 +229,9 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
                     popupComponent.setBounds(popupBounds);
                 }
             }
-            // no markupAnnotation so we need to create one and display for
-            // the addition comments.
+            // no markupAnnotation so we need to create one and display for the addition comments.
             else {
-                // convert bbox and start and end line points.
+                // user initiated change, so we'll mark the popup state as changed and queue it for saving.
                 createPopupAnnotationComponent(true);
             }
         }

@@ -884,7 +884,7 @@ public abstract class Annotation extends Dictionary {
             if (rectangle != null) {
                 setBBox(rectangle.getBounds());
             }
-            resetAppearanceStream(new AffineTransform(), false);
+            resetAppearanceStream(new AffineTransform());
         }
     }
 
@@ -1979,7 +1979,16 @@ public abstract class Annotation extends Dictionary {
                 (float) tBbox.getWidth(), (float) tBbox.getHeight()));
     }
 
+    /**
+     * Reset the appearance stream given the specified location and page space transform.
+     * @param dx coord-x
+     * @param dy coord-y
+     * @param pageSpace page space transform
+     * @param isNew marks the reset as happening because of a
+     */
     public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew);
+
+//    public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace);
 
     public void resetAppearanceStream(AffineTransform pageSpace, boolean isNew) {
         resetAppearanceStream(0, 0, pageSpace, isNew);

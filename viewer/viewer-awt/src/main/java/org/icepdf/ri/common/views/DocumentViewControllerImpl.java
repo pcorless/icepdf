@@ -1331,6 +1331,7 @@ public class DocumentViewControllerImpl
 
     public void updateAnnotation(AnnotationComponent annotationComponent) {
         if (documentViewModel != null && annotationComponent != null) {
+            // user initiated change, make sure to store the change
             annotationComponent.setSynthetic(false);
             if (annotationCallback != null) {
                 annotationCallback.updateAnnotation(annotationComponent);
@@ -1346,6 +1347,7 @@ public class DocumentViewControllerImpl
 
     public void updatedSummaryAnnotation(AnnotationComponent annotationComponent) {
         if (documentViewModel != null && annotationComponent != null) {
+            // user initiated change, make sure to store the change
             annotationComponent.setSynthetic(false);
             if (annotationCallback != null) {
                 annotationCallback.updateAnnotation(annotationComponent);

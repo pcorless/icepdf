@@ -35,7 +35,7 @@ public class StateManager {
             Logger.getLogger(StateManager.class.getName());
 
     // a list is all we might need. 
-    private final HashMap<Reference, PObject> changes;
+    private final HashMap<Reference, Change> changes;
 
     // access to xref size and next revision number.
     private final PTrailer trailer;

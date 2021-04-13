@@ -539,7 +539,7 @@ public class LineAnnotation extends MarkupAnnotation {
             if (rectangle != null) {
                 setBBox(rectangle.getBounds());
             }
-            resetAppearanceStream(new AffineTransform(), false);
+            resetAppearanceStream(new AffineTransform());
         }
         // try and generate an appearance stream.
         resetNullAppearanceStream();
