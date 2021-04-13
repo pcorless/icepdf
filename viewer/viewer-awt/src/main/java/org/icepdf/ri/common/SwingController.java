@@ -5115,7 +5115,7 @@ public class SwingController extends ComponentAdapter
 
     private static boolean checkAnnotationButton(final Object source, final AnnotationColorToggleButton button,
                                           final JToggleButton propertiesButton){
-        return source == button || source == button.getColorButton() || source == propertiesButton;
+        return source == button || (button != null && source == button.getColorButton()) || source == propertiesButton;
     }
 
     //
