@@ -237,6 +237,10 @@ public class StateManager {
             return pObject;
         }
 
+        public boolean isNew() {
+            return isNew;
+        }
+
         @Override
         public boolean equals(final Object o) {
             if (this == o) return true;
