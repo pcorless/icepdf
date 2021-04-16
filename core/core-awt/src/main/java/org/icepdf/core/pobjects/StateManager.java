@@ -31,11 +31,10 @@ import java.util.logging.Logger;
  * @since 4.0
  */
 public class StateManager {
-    private static final Logger logger =
-            Logger.getLogger(StateManager.class.getName());
+    private static final Logger logger = Logger.getLogger(StateManager.class.getName());
 
     // a list is all we might need. 
-    private final HashMap<Reference, Change> changes;
+    private final Map<Reference, Change> changes;
 
     // access to xref size and next revision number.
     private final PTrailer trailer;
