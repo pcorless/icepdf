@@ -181,7 +181,7 @@ public class MyAnnotationCallback implements AnnotationCallback {
         Document document = documentViewController.getDocument();
         PageTree pageTree = document.getPageTree();
         Page page = pageTree.getPage(pageComponent.getPageIndex());
-        page.addAnnotation(annotationComponent.getAnnotation());
+        page.addAnnotation(annotationComponent.getAnnotation(), !annotationComponent.isSynthetic());
 
         // no we have let the pageComponent now about it.
         ((PageViewComponentImpl) pageComponent).addAnnotation(annotationComponent);

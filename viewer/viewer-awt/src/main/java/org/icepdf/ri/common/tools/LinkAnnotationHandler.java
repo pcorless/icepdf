@@ -19,7 +19,6 @@ import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 import org.icepdf.ri.util.ViewerPropertiesManager;
@@ -92,11 +91,9 @@ public class LinkAnnotationHandler extends SelectionBoxHandler
         // add them to the container, using absolute positioning.
         documentViewController.addNewAnnotation(comp);
 
-        // set the annotation tool to he select tool
-        if (preferences.getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_LINK_SELECTION_ENABLED, false)) {
-            documentViewController.getParentController().setDocumentToolMode(
-                    DocumentViewModel.DISPLAY_TOOL_SELECTION);
-        }
+        // set the annotation tool to the given tool
+        documentViewController.getParentController().setDocumentToolMode(
+                preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_LINK_SELECTION_TYPE, 0));
 
         // clear the rectangle
         clearRectangle(pageViewComponent);

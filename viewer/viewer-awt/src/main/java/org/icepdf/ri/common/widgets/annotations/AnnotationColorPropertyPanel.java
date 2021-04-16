@@ -13,8 +13,13 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.ri.common;
+package org.icepdf.ri.common.widgets.annotations;
 
+import org.icepdf.ri.common.widgets.DragDropColorList;
+import org.icepdf.ri.common.widgets.RgbColorChooser;
+import org.icepdf.ri.common.widgets.AbstractColorButton;
+import org.icepdf.ri.common.widgets.ColorChooserButton;
+import org.icepdf.ri.common.widgets.ColorIcon;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 
@@ -37,19 +42,19 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
     // layouts constraint
     private GridBagConstraints constraints;
 
-    private Controller controller;
-    private ResourceBundle messageBundle;
+    protected Controller controller;
+    protected ResourceBundle messageBundle;
 
     // optional/lazy loaded panels.
     private JPanel recentColorsPanel;
     private JPanel labeledColorPanel;
 
     // main controls
-    private JButton colourPickerButton;
-    private JButton preferencesButton;
+    protected JButton colourPickerButton;
+    protected JButton preferencesButton;
 
     // last selected color;
-    private Color lastColor = Color.RED;
+    protected Color lastColor = Color.RED;
 
     protected AbstractColorButton annotationColorButton;
 

@@ -161,7 +161,7 @@ public class NewAnnotationPrePageLoad {
                                 // add the action to the annotation
                                 linkAnnotation.addAction(action);
                                 // add it to the page.
-                                page.addAnnotation(linkAnnotation);
+                                page.addAnnotation(linkAnnotation, true);
                             }
                         }
                         // removed the search highlighting

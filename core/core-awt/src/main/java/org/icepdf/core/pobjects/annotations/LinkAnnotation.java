@@ -210,7 +210,7 @@ public class LinkAnnotation extends Annotation {
     }
 
     @Override
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
 
     }
 }

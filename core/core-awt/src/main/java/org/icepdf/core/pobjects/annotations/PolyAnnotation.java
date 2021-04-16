@@ -88,7 +88,7 @@ public class PolyAnnotation extends MarkupAnnotation {
     }
 
     @Override
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew) {
 
     }
 }

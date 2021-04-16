@@ -1853,7 +1853,8 @@ public abstract class Annotation extends Dictionary {
      * @param rawBytes raw bytes of string data making up the content stream.
      * @return new Form object with updated appearance stream.
      */
-    public Form updateAppearanceStream(Shapes shapes, Rectangle2D bbox, AffineTransform matrix, byte[] rawBytes) {
+    public Form updateAppearanceStream(Shapes shapes, Rectangle2D bbox, AffineTransform matrix, byte[] rawBytes,
+                                       boolean isNew) {
         // update the appearance stream
         // create/update the appearance stream of the xObject.
         StateManager stateManager = library.getStateManager();
@@ -1978,10 +1979,23 @@ public abstract class Annotation extends Dictionary {
                 (float) tBbox.getWidth(), (float) tBbox.getHeight()));
     }
 
-    public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace);
+    /**
+     * Reset the appearance stream given the specified location and page space transform.
+     * @param dx coord-x
+     * @param dy coord-y
+     * @param pageSpace page space transform
+     * @param isNew marks the reset as happening because of a
+     */
+    public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew);
+
+//    public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace);
+
+    public void resetAppearanceStream(AffineTransform pageSpace, boolean isNew) {
+        resetAppearanceStream(0, 0, pageSpace, isNew);
+    }
 
     public void resetAppearanceStream(AffineTransform pageSpace) {
-        resetAppearanceStream(0, 0, pageSpace);
+        resetAppearanceStream(0, 0, pageSpace, false);
     }
 
     public Shapes getShapes() {

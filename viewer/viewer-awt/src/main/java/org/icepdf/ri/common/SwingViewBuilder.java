@@ -20,6 +20,8 @@ import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReferenceFactory;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.SystemProperties;
+import org.icepdf.ri.common.widgets.annotations.AnnotationColorToggleButton;
+import org.icepdf.ri.common.widgets.annotations.IconAnnotationColorToggleButton;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.annotation.destinations.DestinationsPanel;
 import org.icepdf.ri.common.utility.annotation.markup.MarkupAnnotationPanel;
@@ -1732,46 +1734,47 @@ public class SwingViewBuilder implements ViewBuilder {
     }
 
     public AbstractButton buildHighlightAnnotationToolButton(final String imageSize) {
-        // put it all together for a dropdown button
-        HighlightAnnotationToggleButton annotationColorButton = new HighlightAnnotationToggleButton(
-                viewerController,
-                messageBundle,
+        AnnotationColorToggleButton btn = makeAnnotationToggleButton(
                 messageBundle.getString("viewer.toolbar.tool.highlight.label"),
                 messageBundle.getString("viewer.toolbar.tool.highlight.tooltip"),
-                "highlight_annot_c", imageSize, buttonFont);
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_COLOR,
+                "highlight_annot_c", imageSize, buttonFont, 0.5f);
         if (viewerController != null) {
-            viewerController.setHighlightAnnotationToolButton(annotationColorButton);
+            viewerController.setHighlightAnnotationToolButton(btn);
         }
         // put it all together for a dropdown button
-        return annotationColorButton;
+        return btn;
     }
 
-    public JToggleButton buildStrikeOutAnnotationToolButton(final String imageSize) {
-        JToggleButton btn = makeToolbarToggleButton(
+    public AbstractButton buildStrikeOutAnnotationToolButton(final String imageSize) {
+        AnnotationColorToggleButton btn = makeAnnotationToggleButton(
                 messageBundle.getString("viewer.toolbar.tool.strikeOut.label"),
                 messageBundle.getString("viewer.toolbar.tool.strikeOut.tooltip"),
-                "strikeout", imageSize, buttonFont);
-        if (viewerController != null && btn != null)
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_STRIKE_OUT_COLOR,
+                "strikeout_c", imageSize, buttonFont, 1f);
+        if (viewerController != null)
             viewerController.setStrikeOutAnnotationToolButton(btn);
         return btn;
     }
 
-    public JToggleButton buildUnderlineAnnotationToolButton(final String imageSize) {
-        JToggleButton btn = makeToolbarToggleButton(
+    public AbstractButton buildUnderlineAnnotationToolButton(final String imageSize) {
+        AnnotationColorToggleButton btn = makeAnnotationToggleButton(
                 messageBundle.getString("viewer.toolbar.tool.underline.label"),
                 messageBundle.getString("viewer.toolbar.tool.underline.tooltip"),
-                "underline", imageSize, buttonFont);
-        if (viewerController != null && btn != null)
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_COLOR,
+                "underline_c", imageSize, buttonFont, 1f);
+        if (viewerController != null)
             viewerController.setUnderlineAnnotationToolButton(btn);
         return btn;
     }
 
-    public JToggleButton buildLineAnnotationToolButton(final String imageSize) {
-        JToggleButton btn = makeToolbarToggleButton(
+    public AbstractButton buildLineAnnotationToolButton(final String imageSize) {
+        AnnotationColorToggleButton btn = makeAnnotationToggleButton(
                 messageBundle.getString("viewer.toolbar.tool.line.label"),
                 messageBundle.getString("viewer.toolbar.tool.line.tooltip"),
-                "line", imageSize, buttonFont);
-        if (viewerController != null && btn != null)
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_COLOR,
+                "line_c", imageSize, buttonFont, 1f);
+        if (viewerController != null)
             viewerController.setLineAnnotationToolButton(btn);
         return btn;
     }
@@ -1786,42 +1789,46 @@ public class SwingViewBuilder implements ViewBuilder {
         return btn;
     }
 
-    public JToggleButton buildLineArrowAnnotationToolButton(final String imageSize) {
-        JToggleButton btn = makeToolbarToggleButton(
+    public AbstractButton buildLineArrowAnnotationToolButton(final String imageSize) {
+        AnnotationColorToggleButton btn = makeAnnotationToggleButton(
                 messageBundle.getString("viewer.toolbar.tool.lineArrow.label"),
                 messageBundle.getString("viewer.toolbar.tool.lineArrow.tooltip"),
-                "arrow", imageSize, buttonFont);
-        if (viewerController != null && btn != null)
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_ARROW_COLOR,
+                "arrow_c", imageSize, buttonFont, 1f);
+        if (viewerController != null)
             viewerController.setLineArrowAnnotationToolButton(btn);
         return btn;
     }
 
-    public JToggleButton buildSquareAnnotationToolButton(final String imageSize) {
-        JToggleButton btn = makeToolbarToggleButton(
+    public AbstractButton buildSquareAnnotationToolButton(final String imageSize) {
+        AnnotationColorToggleButton btn = makeAnnotationToggleButton(
                 messageBundle.getString("viewer.toolbar.tool.rectangle.label"),
                 messageBundle.getString("viewer.toolbar.tool.rectangle.tooltip"),
-                "square", imageSize, buttonFont);
-        if (viewerController != null && btn != null)
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_SQUARE_COLOR,
+                "square_c", imageSize, buttonFont, 1f);
+        if (viewerController != null)
             viewerController.setSquareAnnotationToolButton(btn);
         return btn;
     }
 
-    public JToggleButton buildCircleAnnotationToolButton(final String imageSize) {
-        JToggleButton btn = makeToolbarToggleButton(
+    public AbstractButton buildCircleAnnotationToolButton(final String imageSize) {
+        AnnotationColorToggleButton btn = makeAnnotationToggleButton(
                 messageBundle.getString("viewer.toolbar.tool.circle.label"),
                 messageBundle.getString("viewer.toolbar.tool.circle.tooltip"),
-                "circle", imageSize, buttonFont);
-        if (viewerController != null && btn != null)
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_CIRCLE_COLOR,
+                "circle_c", imageSize, buttonFont, 1f);
+        if (viewerController != null)
             viewerController.setCircleAnnotationToolButton(btn);
         return btn;
     }
 
-    public JToggleButton buildInkAnnotationToolButton(final String imageSize) {
-        JToggleButton btn = makeToolbarToggleButton(
+    public AbstractButton buildInkAnnotationToolButton(final String imageSize) {
+        AnnotationColorToggleButton btn = makeAnnotationToggleButton(
                 messageBundle.getString("viewer.toolbar.tool.ink.label"),
                 messageBundle.getString("viewer.toolbar.tool.ink.tooltip"),
-                "ink", imageSize, buttonFont);
-        if (viewerController != null && btn != null)
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_COLOR,
+                "ink_c", imageSize, buttonFont, 1f);
+        if (viewerController != null)
             viewerController.setInkAnnotationToolButton(btn);
         return btn;
     }
@@ -1837,13 +1844,12 @@ public class SwingViewBuilder implements ViewBuilder {
     }
 
     public AbstractButton buildTextAnnotationToolButton(final String imageSize) {
-        TextAnnotationToggleButton btn = new TextAnnotationToggleButton(
-                viewerController,
-                messageBundle,
+        AnnotationColorToggleButton btn = makeAnnotationToggleButton(
                 messageBundle.getString("viewer.toolbar.tool.textAnno.label"),
                 messageBundle.getString("viewer.toolbar.tool.textAnno.tooltip"),
-                "text_annot_c", imageSize, buttonFont);
-        if (viewerController != null && btn != null)
+                ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_COLOR,
+                "text_annot_c", imageSize, buttonFont, 0.5f);
+        if (viewerController != null)
             viewerController.setTextAnnotationToolButton(btn);
         return btn;
     }
@@ -2316,6 +2322,11 @@ public class SwingViewBuilder implements ViewBuilder {
         }
     }
 
+    protected AnnotationColorToggleButton makeAnnotationToggleButton(String title, String toolTip, String colorPreferenceKey,
+                                                                     String imageName, String imageSize, Font font, float alpha) {
+        return new IconAnnotationColorToggleButton(viewerController, messageBundle, title, toolTip,
+                colorPreferenceKey, imageName, imageSize, font, alpha);
+    }
     /**
      * Utility method for creating toggle buttons.
      *
