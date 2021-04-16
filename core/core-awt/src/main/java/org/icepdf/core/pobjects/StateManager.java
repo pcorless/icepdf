@@ -135,14 +135,7 @@ public class StateManager {
      * @return If there are any changes from objects that were manipulated by user interaction
      */
     public boolean isChange() {
-        Collection<Change> changeValues = changes.values();
-        Change[] changeArray = changeValues.toArray(new Change[0]);
-        for (Change change : changeArray) {
-            if (change.isNew) {
-                return true;
-            }
-        }
-        return false;
+        return changes.values().stream().anyMatch(c -> c.isNew);
     }
 
     /**
