@@ -115,9 +115,9 @@ public class StateManager {
      * Returns an instance of the specified reference
      *
      * @param reference reference to look for an existing usage
-     * @return PObject of corresponding reference if present, false otherwise.
+     * @return The change if it exists or null
      */
-    public Object getChange(Reference reference) {
+    public Change getChange(Reference reference) {
         return changes.get(reference);
     }
 
