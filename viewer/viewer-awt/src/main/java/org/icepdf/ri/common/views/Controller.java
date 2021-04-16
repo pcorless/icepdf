@@ -20,6 +20,7 @@ import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.ri.common.NameTreeNode;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.WindowManagementCallback;
+import org.icepdf.ri.common.print.PrintHelperFactory;
 import org.icepdf.ri.common.utility.outline.OutlineItemTreeNode;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 
@@ -38,6 +39,12 @@ import java.util.ResourceBundle;
  * @since 2.0
  */
 public interface Controller extends PropertyChangeListener {
+
+    /**
+     * @return The PrintHelperFactory used to create print helpers
+     */
+    PrintHelperFactory getPrintHelperFactory();
+
     /**
      * A Document is the root of the object hierarchy, giving access
      * to the contents of a PDF file.
@@ -176,6 +183,14 @@ public interface Controller extends PropertyChangeListener {
      * @param showDialog If true show a print dialog before starting to print
      */
     void print(boolean showDialog);
+
+    /**
+     * Prints the document with the given printer, assuming we're exiting after that
+     *
+     * @param showDialog If true show a print dialog before starting to print
+     * @param printer The name of the printer
+     */
+    void printAndExit(boolean showDialog, String printer);
 
     /**
      * Save the file

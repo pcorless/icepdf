@@ -118,7 +118,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
     public abstract void reset();
 
     @Override
-    public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace);
+    public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew);
 
     @Override
     protected void renderAppearanceStream(Graphics2D g) {

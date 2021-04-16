@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /**
@@ -34,13 +35,12 @@ public class StateManager {
             Logger.getLogger(StateManager.class.getName());
 
     // a list is all we might need. 
-    private HashMap<Reference, PObject> changes;
-    private final Set<Reference> updatedReferences = new HashSet<>();
+    private final HashMap<Reference, Change> changes;
 
     // access to xref size and next revision number.
-    private PTrailer trailer;
+    private final PTrailer trailer;
 
-    private int nextReferenceNumber;
+    private final AtomicInteger nextReferenceNumber;
 
     /**
      * Creates a new instance of the state manager.
@@ -54,9 +54,10 @@ public class StateManager {
 
         // number of objects is always one more then the current size and
         // thus the next available number.
+        nextReferenceNumber = new AtomicInteger();
         if (trailer != null) {
             CrossReference crossReference = trailer.getPrimaryCrossReference();
-            nextReferenceNumber = crossReference.getNextAvailableReferenceNumber();
+            nextReferenceNumber.set(crossReference.getNextAvailableReferenceNumber());
         }
     }
 
@@ -69,8 +70,7 @@ public class StateManager {
         // zero revision number for now but technically we can reuse
         // deleted references and increment the rev number.  For no we
         // keep it simple
-        Reference newReference = new Reference(nextReferenceNumber, 0);
-        nextReferenceNumber++;
+        Reference newReference = new Reference(nextReferenceNumber.getAndIncrement(), 0);
         return newReference;
     }
 
@@ -80,11 +80,24 @@ public class StateManager {
      * @param pObject object to add to cache.
      */
     public void addChange(PObject pObject) {
-        changes.put(pObject.getReference(), pObject);
+        addChange(pObject, true);
+    }
+
+    /**
+     * Add a new PObject containing changed data to the cache.
+     *
+     * @param pObject object to add to cache.
+     * @param isNew   new indicates a new object that should be saved when isChanged() is called.  If false the object
+     *                was added but because the object wasn't present for rendering and was created by the core library.
+     */
+    public void addChange(PObject pObject, boolean isNew) {
+        changes.put(pObject.getReference(), new Change(pObject, isNew));
         int objectNumber = pObject.getReference().getObjectNumber();
         // check the reference numbers
-        if (nextReferenceNumber <= objectNumber) {
-            nextReferenceNumber = objectNumber + 1;
+        synchronized (this) {
+            if (nextReferenceNumber.get() <= objectNumber) {
+                nextReferenceNumber.set(objectNumber + 1);
+            }
         }
     }
 
@@ -119,28 +132,33 @@ public class StateManager {
     }
 
     /**
-     * @return If there are any changes
+     * @return If there are any changes from objects that were manipulated by user interaction
      */
-    public boolean isChanged() {
-        return !changes.isEmpty();
+    public boolean isChange() {
+        Collection<Change> changeValues = changes.values();
+        Change[] changeArray = changeValues.toArray(new Change[0]);
+        for (Change change : changeArray) {
+            if (change.isNew) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @return If there are any changes that end up in the state manager form user interactions or annotations
+     * needing to create missing content streams or popups.
+     */
+    public boolean isNoChange() {
+        return changes.isEmpty();
     }
 
 
     /**
      * @return an unmodifiable copy of the current changes
      */
-    public Map<Reference, PObject> getChanges() {
+    public Map<Reference, Change> getChanges() {
         return Collections.unmodifiableMap(new HashMap<>(changes));
-    }
-
-
-    /**
-     * @return same as getChanges(), but also clears the updatedReferences set
-     */
-    public Map<Reference, PObject> getAndSaveChanges() {
-        //TODO find better name for function
-        updatedReferences.clear();
-        return getChanges();
     }
 
 
@@ -150,7 +168,7 @@ public class StateManager {
      * @param knownChanges The changes to compare to
      * @return true if the changes are different, false otherwise
      */
-    public boolean hasChangedSince(Map<Reference, PObject> knownChanges) {
+    public boolean hasChangedSince(final Map<Reference, Change> knownChanges) {
         if (knownChanges.size() == changes.size()) {
             return knownChanges.entrySet().stream().anyMatch(entry -> !Objects.equals(changes.get(entry.getKey()), entry.getValue()));
         } else {
@@ -170,22 +188,11 @@ public class StateManager {
     /**
      * @return An Iterator&lt;PObject&gt; for all the changes objects, sorted
      */
-    public Iterator<PObject> iteratorSortedByObjectNumber() {
-        Collection<PObject> coll = changes.values();
-/*
- * This code allows me to force an object to be treated as modified,
- * so I can debug how we write out that kind of object, before we
- * add a ui to actually edit it.
-Reference ref = new Reference(10,0);
-Object ob = trailer.getLibrary().getObject(ref);
-logger.severe("Object 10: " + ob + "  ob.class: " + ob.getClass().getName());
-java.util.HashSet<PObject> hs = new java.util.HashSet<PObject>(coll);
-hs.add(new PObject(ob, ref));
-coll = hs;
-*/
-        PObject[] arr = coll.toArray(new PObject[coll.size()]);
+    public Iterator<Change> iteratorSortedByObjectNumber() {
+        Collection<Change> coll = changes.values();
+        Change[] arr = coll.toArray(new Change[0]);
         Arrays.sort(arr, new PObjectComparatorByReferenceObjectNumber());
-        List<PObject> sortedList = Arrays.asList(arr);
+        List<Change> sortedList = Arrays.asList(arr);
         return sortedList.iterator();
     }
 
@@ -195,16 +202,16 @@ coll = hs;
 
 
     private static class PObjectComparatorByReferenceObjectNumber
-            implements Comparator<PObject> {
-        public int compare(PObject a, PObject b) {
+            implements Comparator<Change> {
+        public int compare(Change a, Change b) {
             if (a == null && b == null)
                 return 0;
             else if (a == null)
                 return -1;
             else if (b == null)
                 return 1;
-            Reference ar = a.getReference();
-            Reference br = b.getReference();
+            Reference ar = a.pObject.getReference();
+            Reference br = b.pObject.getReference();
             if (ar == null && br == null)
                 return 0;
             else if (ar == null)
@@ -218,6 +225,37 @@ coll = hs;
             else if (aron > bron)
                 return 1;
             return 0;
+        }
+    }
+
+    /**
+     * Wrapper class of a pObject and how it was created.  The newFlag differentiates if the object was created
+     * by a user action vs the core library creating an object that isn't in the source file but needed for rendering.
+     */
+    public static class Change {
+        private final PObject pObject;
+        private final boolean isNew;
+
+        public Change(final PObject pObject, final boolean isNew) {
+            this.pObject = pObject;
+            this.isNew = isNew;
+        }
+
+        public PObject getPObject() {
+            return pObject;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            final Change change = (Change) o;
+            return isNew == change.isNew && Objects.equals(pObject, change.pObject);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(pObject, isNew);
         }
     }
 }

@@ -53,11 +53,12 @@ public class ButtonWidgetAnnotation extends AbstractWidgetAnnotation<ButtonField
     /**
      * Button appearance streams are fixed, all that is done in this method is appearance selected state
      * is set and the change persisted to the StateManager.
-     * @param dx current location of the annotation
-     * @param dy current location of the annotation
+     *
+     * @param dx        current location of the annotation
+     * @param dy        current location of the annotation
      * @param pageSpace current page space.
      */
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew) {
         // update the appearanceState in the state manager so the change will persist.
         Appearance appearance = appearances.get(currentAppearance);
         if (appearance != null) {
@@ -80,7 +81,7 @@ public class ButtonWidgetAnnotation extends AbstractWidgetAnnotation<ButtonField
             //getFieldDictionary().getParent().getEntries().put(FieldDictionary.V_KEY, selectedName);
             // add to state manager.
             stateManager.addChange(new PObject(getFieldDictionary().getParent(),
-                    getFieldDictionary().getParent().getPObjectReference()));
+                    getFieldDictionary().getParent().getPObjectReference()), isNew);
         }
 
         if (originalAppearance == null){

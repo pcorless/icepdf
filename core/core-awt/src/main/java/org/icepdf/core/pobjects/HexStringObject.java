@@ -239,7 +239,7 @@ public class HexStringObject implements StringObject {
                 // 0 cid is valid, so we have ot be careful we don't exclude the
                 // cid 00 = 0 or 0000 = 0, not 0000 = 00.
                 if (!(offset < length && charValue == 0) &&
-                        font.canDisplayEchar((char) charValue)) {
+                        font.canDisplay((char) charValue)) {
                     tmp.append((char) charValue);
                     lastIndex = 0;
                 } else {
@@ -260,11 +260,11 @@ public class HexStringObject implements StringObject {
                     // check range for possible 2 byte char ie mixed mode.
                     charValue = getUnsignedInt(first);
                     if (font.getByteEncoding() == FontFile.ByteEncoding.MIXED_BYTE &&
-                            font.canDisplayEchar((char) charValue) && font.getSource() != null) {
+                            font.canDisplay((char) charValue) && font.getSource() != null) {
                         tmp.append((char) charValue);
                     } else {
                         charValue = getUnsignedInt(i, 4);
-                        if (font.canDisplayEchar((char) charValue)) {
+                        if (font.canDisplay((char) charValue)) {
                             tmp.append((char) charValue);
                             i += 2;
                         }
@@ -272,7 +272,7 @@ public class HexStringObject implements StringObject {
                 } else {
                     charValue = getUnsignedInt(i, 4);
                     // should never have a 4 digit zero value.
-                    if (font.canDisplayEchar((char) charValue)) {
+                    if (font.canDisplay((char) charValue)) {
                         tmp.append((char) charValue);
                         i += 2;
                     }

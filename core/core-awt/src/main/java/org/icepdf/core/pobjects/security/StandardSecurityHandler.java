@@ -20,6 +20,7 @@ import org.icepdf.core.pobjects.Reference;
 
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.logging.Logger;
 
 /**
  * <p>ICEpdf's standard security handler allows access permissions and up to two passwords
@@ -31,7 +32,7 @@ import java.util.HashMap;
  * the passwords are stored in the encryption dictionary. (An application may
  * also create an encrypted document without any user interaction, if it has some
  * other source of information about what passwords and permissions to use.)</p>
- * 
+ *
  * <p>If a user attempts to open an encrypted document that has a user password, the
  * viewer application should prompt for a password. Correctly supplying either
  * password allows the user to open the document, decrypt it, and display it on the
@@ -45,42 +46,42 @@ import java.util.HashMap;
  * the same as the user password) allows full (owner) access to the
  * document. This unlimited access includes the ability to change the
  * document's passwords and access permissions.</li>
- * 
+ *
  * <li>Opening the document with the correct user password (or opening a
  * document that does not have a user password) allows additional operations
  * to be performed according to the user access permissions specified in the
  * document's encryption dictionary.</li>
  * </ul>
- * 
+ *
  * <p>Access permissions are specified in the form of flags corresponding to the
  * various operations, and the set of operations to which they correspond,
  * depends in turn on the security handler's revision number (also stored in the
  * encryption dictionary). If the revision number is 2 or greater, the
  * operations to which user access can be controlled are as follows:
- * 
+ *
  * <ul>
  * <li>Modifying the document's contents</li>
- * 
+ *
  * <li>Copying or otherwise extracting text and graphics from the document,
  * including extraction for accessibility purposes (that is, to make the
  * contents of the document accessible through assistive technologies such
  * as screen readers or Braille output devices</li>
- * 
+ *
  * <li>Adding or modifying text annotations and interactive form fields</li>
- * 
+ *
  * <li>Printing the document</li>
  * </ul>
- * 
+ *
  * <p>If the security handler's revision number is 3 or greater, user access to the
  * following operations can be controlled more selectively:
  * <ul>
  * <li>Filling in forms (that is, filling in existing interactive form fields)
  * and signing the document (which amounts to filling in existing signature
  * fields, a type of interactive form field)</li>
- * 
+ *
  * <li>Assembling the document: inserting, rotating, or deleting pages and
  * creating navigation elements such as bookmarks or thumbnail images </li>
- * 
+ *
  * <li>Printing to a representation from which a faithful digital copy of the
  * PDF content could be generated. Disallowing such printing may result in
  * degradation of output quality (a feature implemented as "Print As Image"
@@ -97,6 +98,7 @@ import java.util.HashMap;
  */
 public class StandardSecurityHandler extends SecurityHandler {
 
+    private static final Logger logger = Logger.getLogger(StandardSecurityHandler.class.getName());
     public static final Name NAME_KEY = new Name("Name");
     public static final Name IDENTITY_KEY = new Name("Identity");
 
@@ -121,7 +123,8 @@ public class StandardSecurityHandler extends SecurityHandler {
     }
 
     public boolean isAuthorized(String password) {
-        if (encryptionDictionary.getRevisionNumber() < 5) {
+        final int revision = encryptionDictionary.getRevisionNumber();
+        if (revision < 5) {
             boolean value = standardEncryption.authenticateUserPassword(password);
             // check password against user password
             if (!value) {
@@ -136,7 +139,7 @@ public class StandardSecurityHandler extends SecurityHandler {
                 this.password = password;
             }
             return value;
-        } else if (encryptionDictionary.getRevisionNumber() == 5) {
+        } else if (revision == 5 || revision == 6) {
             // try and calculate the document key.
             byte[] encryptionKey = standardEncryption.encryptionKeyAlgorithm(
                     password,
@@ -144,6 +147,7 @@ public class StandardSecurityHandler extends SecurityHandler {
             this.password = password;
             return encryptionKey != null;
         } else {
+            logger.warning("Unknown encryption revision : " + revision);
             return false;
         }
     }

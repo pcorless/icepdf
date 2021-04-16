@@ -18,7 +18,9 @@ import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.util.Defs;
-import org.icepdf.ri.common.PrintHelper;
+import org.icepdf.ri.common.print.PrintHelper;
+import org.icepdf.ri.common.print.PrintHelperFactory;
+import org.icepdf.ri.common.print.PrintHelperFactoryImpl;
 
 import javax.print.DocFlavor;
 import javax.print.PrintException;
@@ -73,6 +75,8 @@ public class PrintServices {
         Defs.setProperty("org.icepdf.core.print.render", "VALUE_RENDER_SPEED");
         Defs.setProperty("org.icepdf.core.print.stroke", "VALUE_STROKE_PURE");
     }
+
+    public static PrintHelperFactory printHelperFactory = PrintHelperFactoryImpl.getInstance();
 
     /**
      * Attempts to Print PDF documents which are specified as application
@@ -167,7 +171,7 @@ public class PrintServices {
 
             // create a new print helper with a specified paper size and print
             // quality
-            PrintHelper printHelper = new PrintHelper(null, pdf.getPageTree(),
+            PrintHelper printHelper = printHelperFactory.createPrintHelper(null, pdf.getPageTree(),
                     0f, MediaSizeName.NA_LEGAL, PrintQuality.DRAFT);
             // try and print pages 1 - 10, 1 copy, scale to fit paper.
             printHelper.setupPrintService(selectedService, 0, 0, 1, true);

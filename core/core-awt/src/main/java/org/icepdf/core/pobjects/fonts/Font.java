@@ -59,6 +59,8 @@ import java.util.HashMap;
  * the root font, and its associated CID Font is called its descendant.</p>
  *
  * @since 1.0
+ *
+ *
  */
 public abstract class Font extends Dictionary {
 
@@ -69,6 +71,7 @@ public abstract class Font extends Dictionary {
     public static final Name ENCODING_KEY = new Name("Encoding");
     public static final Name FIRST_CHAR_KEY = new Name("FirstChar");
     public static final Name LAST_CHAR_KEY = new Name("LastChar");
+    public static final Name FONT_DESCRIPTOR_KEY = new Name("FontDescriptor");
 
     /**
      * All glyphs have the same width (as opposed to proportional or
@@ -130,7 +133,9 @@ public abstract class Font extends Dictionary {
     protected Name subtype;
 
     // the encoding name associated with font.
-    protected Name encoding;
+    protected Name encodingName;
+
+    protected CMap toUnicodeCMap;
 
     /**
      * <p>Indicates that the font used to render this String object is in the
@@ -233,7 +238,7 @@ public abstract class Font extends Dictionary {
     /**
      * Creates a new instance of a PDF Font.
      *
-     * @param library Libaray of all objects in PDF
+     * @param library Library of all objects in PDF
      * @param entries hash of parsed font attributes
      */
     public Font(Library library, HashMap entries) {
@@ -245,7 +250,7 @@ public abstract class Font extends Dictionary {
         // Type of the font, type 0, 1, 2, 3 etc.
         subtype = library.getName(entries, SUBTYPE_KEY);
 
-        encoding = library.getName(entries, ENCODING_KEY);
+        encodingName = library.getName(entries, ENCODING_KEY);
 
         // figure out type
         if (subtype != null) {
@@ -254,15 +259,15 @@ public abstract class Font extends Dictionary {
                     CID_FORMAT : SIMPLE_FORMAT;
         }
 
-        int tmpInt = library.getInt(entries, FIRST_CHAR_KEY);
-        if (tmpInt != 0) {
-            firstchar = tmpInt;
-        }
-        tmpInt = library.getInt(entries, LAST_CHAR_KEY);
-        if (tmpInt != 0) {
-            lastchar = tmpInt;
+        Object o = library.getObject(entries, FIRST_CHAR_KEY);
+        if (o != null) {
+            firstchar = ((Number) o).intValue();
         }
 
+        o = library.getObject(entries, LAST_CHAR_KEY);
+        if (o != null) {
+            lastchar = ((Number) o).intValue();
+        }
 
         // font name, SanSerif is used as it has a a robust CID, and it
         // is the most commonly used font family for pdfs
@@ -271,6 +276,7 @@ public abstract class Font extends Dictionary {
         if (tmp != null && tmp instanceof Name) {
             basefont = ((Name) tmp).getName();
         }
+//        basefont = cleanFontName(basefont);
     }
 
     /**
@@ -278,6 +284,35 @@ public abstract class Font extends Dictionary {
      * font so it can be used by the content parser.
      */
     public abstract void init();
+
+    protected void parseFontDescriptor() {
+        // Assign the font descriptor
+        Object of = library.getObject(entries, FONT_DESCRIPTOR_KEY);
+        if (of instanceof FontDescriptor) {
+            fontDescriptor = (FontDescriptor) of;
+        }
+        // encase of missing the type entry so we
+        else if (of instanceof HashMap) {
+            fontDescriptor = new FontDescriptor(library, (HashMap) of);
+        }
+        if (fontDescriptor != null) {
+            fontDescriptor.init(subtype);
+            if (fontDescriptor.getEmbeddedFont() != null) {
+                font = fontDescriptor.getEmbeddedFont();
+                isFontSubstitution = false;
+            } else {
+                isFontSubstitution = true;
+            }
+        }
+        // If there is no FontDescriptor then we most likely have a core afm
+        if (fontDescriptor == null && basefont != null) {
+            AFM fontMetrix = AFM.AFMs.get(basefont.toLowerCase());
+            if (fontMetrix != null) {
+                fontDescriptor = FontDescriptor.createDescriptor(library, fontMetrix);
+                fontDescriptor.init(subtype);
+            }
+        }
+    }
 
     /**
      * Gets the base name of the core 14 fonts, null if it does not match
@@ -338,7 +373,7 @@ public abstract class Font extends Dictionary {
      * @return font encoding name.
      */
     public Name getEncoding() {
-        return encoding;
+        return encodingName;
     }
 
     /**

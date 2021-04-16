@@ -58,7 +58,7 @@ public class Library {
     static {
         try {
             commonPoolThreads =
-                    Defs.intProperty("org.icepdf.core.library.threadPoolSize", 2);
+                    Defs.intProperty("org.icepdf.core.library.threadPoolSize", 4);
             if (commonPoolThreads < 1) {
                 commonPoolThreads = 2;
             }
@@ -204,10 +204,14 @@ public class Library {
             return null;
         }
         Object o = dictionaryEntries.get(key);
-        if (o == null)
+        if (o == null) {
             return null;
+        }
         if (o instanceof Reference) {
             o = getObject((Reference) o);
+        }
+        if (o instanceof StateManager.Change) {
+            o = ((StateManager.Change)o).getPObject().getObject();
         }
         return o;
     }

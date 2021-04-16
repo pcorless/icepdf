@@ -21,6 +21,7 @@ import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.search.DestinationResult;
 import org.icepdf.core.search.DocumentSearchController;
+import org.icepdf.core.search.SearchMode;
 import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
@@ -64,7 +65,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
     private boolean comments;
     private boolean outlines;
     private boolean destinations;
-
+    private SearchMode searchMode;
     // parent swing controller
     private Controller controller;
     // append nodes for found text.
@@ -82,7 +83,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         if (pattern != null && !pattern.isEmpty()) {
             searchPattern = Pattern.compile(isCaseSensitive() ? pattern : pattern.toLowerCase());
         }
-
+        searchMode = builder.wholePage ? SearchMode.PAGE : SearchMode.WORD;
         wholeWord = builder.wholeWord;
         caseSensitive = builder.caseSensitive;
         cumulative = builder.cumulative;
@@ -131,6 +132,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         if (!cumulative) {
             searchController.clearAllSearchHighlight();
         }
+        searchController.setSearchMode(searchMode);
         searchController.addSearchTerm(pattern, caseSensitive, wholeWord, regex);
 
         Document document = controller.getDocument();
@@ -299,47 +301,86 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         return destinations;
     }
 
-    class SearchResult {
-        public String nodeText;
+    public static class SearchResult {
+        private final String nodeText;
+
+        public SearchResult() {
+            this.nodeText = null;
+        }
+
+        public SearchResult(String nodeText) {
+            this.nodeText = nodeText;
+        }
+
+        public String getNodeText() {
+            return nodeText;
+        }
     }
 
-    class TextResult extends SearchResult {
-        List<LineText> lineItems;
-        int currentPage;
+    public static class TextResult extends SearchResult {
+        private final List<LineText> lineItems;
+        private final int currentPage;
 
-        TextResult(List<LineText> lineItems, String nodeText, int currentPage) {
+        public TextResult(List<LineText> lineItems, String nodeText, int currentPage) {
+            super(nodeText);
             this.lineItems = lineItems;
-            this.nodeText = nodeText;
             this.currentPage = currentPage;
+        }
+
+        public List<LineText> getLineItems() {
+            return lineItems;
+        }
+
+        public int getCurrentPage() {
+            return currentPage;
         }
     }
 
-    class CommentsResult extends SearchResult {
-        ArrayList<MarkupAnnotation> markupAnnotations;
-        int currentPage;
+    public static class CommentsResult extends SearchResult {
+        private final List<MarkupAnnotation> markupAnnotations;
+        private final int currentPage;
 
-        CommentsResult(ArrayList<MarkupAnnotation> markupAnnotations, String nodeText, int currentPage) {
+        public CommentsResult(List<MarkupAnnotation> markupAnnotations, String nodeText, int currentPage) {
+            super(nodeText);
             this.markupAnnotations = markupAnnotations;
-            this.nodeText = nodeText;
             this.currentPage = currentPage;
+        }
+
+        public List<MarkupAnnotation> getMarkupAnnotations() {
+            return markupAnnotations;
+        }
+
+        public int getCurrentPage() {
+            return currentPage;
         }
     }
 
-    class OutlineResult extends SearchResult {
-        ArrayList<OutlineItem> outlinesMatches;
+    public static class OutlineResult extends SearchResult {
+        private final List<OutlineItem> outlinesMatches;
 
-        OutlineResult(ArrayList<OutlineItem> outlinesMatches) {
+        public OutlineResult(List<OutlineItem> outlinesMatches) {
+            super(null);
             this.outlinesMatches = outlinesMatches;
         }
-    }
 
-    class DestinationsResult extends SearchResult {
-        ArrayList<DestinationResult> destinationsResult;
-
-        DestinationsResult(ArrayList<DestinationResult> destinationsResult) {
-            this.destinationsResult = destinationsResult;
+        public List<OutlineItem> getOutlinesMatches() {
+            return outlinesMatches;
         }
     }
+
+    public static class DestinationsResult extends SearchResult {
+        private final List<DestinationResult> destinationsResult;
+
+        public DestinationsResult(List<DestinationResult> destinationsResult) {
+            super(null);
+            this.destinationsResult = destinationsResult;
+        }
+
+        public List<DestinationResult> getDestinationsResult() {
+            return destinationsResult;
+        }
+    }
+
 
     public static class Builder {
 
@@ -351,6 +392,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         private BaseSearchModel searchModel;
 
         // optional search controls.
+        private boolean wholePage;
         private boolean wholeWord;
         private boolean caseSensitive;
         private boolean cumulative;
@@ -369,6 +411,11 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
 
         public Builder setSearchModel(BaseSearchModel searchModel) {
             this.searchModel = searchModel;
+            return this;
+        }
+
+        public Builder setWholePage(boolean wholePage) {
+            this.wholePage = wholePage;
             return this;
         }
 
