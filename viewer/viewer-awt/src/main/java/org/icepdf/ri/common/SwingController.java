@@ -29,8 +29,6 @@ import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.*;
-import org.icepdf.ri.common.widgets.AbstractColorButton;
-import org.icepdf.ri.common.widgets.annotations.AnnotationColorToggleButton;
 import org.icepdf.ri.common.preferences.PreferencesDialog;
 import org.icepdf.ri.common.print.PrintHelper;
 import org.icepdf.ri.common.print.PrintHelperFactory;
@@ -57,6 +55,8 @@ import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryFrame;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
+import org.icepdf.ri.common.widgets.AbstractColorButton;
+import org.icepdf.ri.common.widgets.annotations.AnnotationColorToggleButton;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
 import org.icepdf.ri.util.TextExtractionTask;
 import org.icepdf.ri.util.URLAccess;
@@ -1194,6 +1194,7 @@ public class SwingController extends ComponentAdapter
         this.inkAnnotationToolButton = btn;
         btn.addItemListener(this);
     }
+
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
      *
@@ -3434,7 +3435,7 @@ public class SwingController extends ComponentAdapter
      * when the window is closed.
      */
     public void saveFile() {
-        if (document.getStateManager().hasChangedSince(savedChanges)) {
+        if (document.getStateManager().isChange()) {
             if (saveFilePath != null && !saveFilePath.isEmpty()) {
                 File out = new File(saveFilePath);
                 if (out.getParentFile() != null) {
@@ -3559,33 +3560,27 @@ public class SwingController extends ComponentAdapter
                     saveFileAs();
                 } else {
                     // save file stream
-                    try {
-                        // If we don't know where the file came from, it's because we
-                        //  used Document.contentStream() or Document.setByteArray(),
-                        //  or we used setUrl() with disk caching disabled.
-                        //  with no path or URL as the origin.
-                        // Note that we used to detect scenarios where we could access
-                        //  the file directly, or re-download it, to avoid locking our
-                        //  internal data structures for long periods for large PDFs,
-                        //  but that could cause problems with slow network links too,
-                        //  and would complicate the incremental update code, so we're
-                        //  harmonising on this approach.
-                        FileOutputStream fileOutputStream = new FileOutputStream(file);
-                        BufferedOutputStream buf = new BufferedOutputStream(
-                                fileOutputStream, 4096 * 2);
+                    // If we don't know where the file came from, it's because we
+                    //  used Document.contentStream() or Document.setByteArray(),
+                    //  or we used setUrl() with disk caching disabled.
+                    //  with no path or URL as the origin.
+                    // Note that we used to detect scenarios where we could access
+                    //  the file directly, or re-download it, to avoid locking our
+                    //  internal data structures for long periods for large PDFs,
+                    //  but that could cause problems with slow network links too,
+                    //  and would complicate the incremental update code, so we're
+                    //  harmonising on this approach.
+                    try (final FileOutputStream fileOutputStream = new FileOutputStream(file);
+                         final BufferedOutputStream buf = new BufferedOutputStream(fileOutputStream, 4096 * 2)) {
 
                         // We want 'save as' or 'save a copy to always occur
-                        if (!document.getStateManager().hasChangedSince(savedChanges)) {
+                        if (!document.getStateManager().isChange()) {
                             // save as copy
                             document.writeToOutputStream(buf);
                         } else {
                             // save as will append changes.
                             document.saveToOutputStream(buf);
                         }
-                        buf.flush();
-                        fileOutputStream.flush();
-                        buf.close();
-                        fileOutputStream.close();
                         savedChanges = document.getStateManager().getChanges();
                     } catch (MalformedURLException e) {
                         logger.log(Level.FINE, "Malformed URL Exception ", e);
@@ -3721,7 +3716,7 @@ public class SwingController extends ComponentAdapter
                 } else if (res == JOptionPane.NO_OPTION) {
                     // nothing to do, just fall through.
                 } else if (res == JOptionPane.CANCEL_OPTION) {
-                    // supress the close action
+                    // suppress the close action
                     return true;
                 }
             }
@@ -4712,7 +4707,7 @@ public class SwingController extends ComponentAdapter
         }
 
         // Hide the menubar?
-        if (viewer instanceof JFrame){
+        if (viewer instanceof JFrame) {
             final JMenuBar menuBar = ((JFrame) viewer).getJMenuBar();
             if (viewerPref != null && viewerPref.hasHideMenubar()) {
                 if (viewerPref.getHideMenubar()) {
@@ -5199,7 +5194,7 @@ public class SwingController extends ComponentAdapter
     }
 
     private static boolean checkAnnotationButton(final Object source, final AnnotationColorToggleButton button,
-                                          final JToggleButton propertiesButton){
+                                                 final JToggleButton propertiesButton) {
         return source == button || (button != null && source == button.getColorButton()) || source == propertiesButton;
     }
 
@@ -5754,9 +5749,9 @@ public class SwingController extends ComponentAdapter
         }
     }
 
-    private Collection<AnnotationColorToggleButton> getColorButtons(){
-        return new HashSet<>(Arrays.asList(highlightAnnotationToolButton, strikeOutAnnotationToolButton, underlineAnnotationToolButton,lineAnnotationToolButton,
-                lineArrowAnnotationToolButton,squareAnnotationToolButton,circleAnnotationToolButton,inkAnnotationToolButton,textAnnotationToolButton));
+    private Collection<AnnotationColorToggleButton> getColorButtons() {
+        return new HashSet<>(Arrays.asList(highlightAnnotationToolButton, strikeOutAnnotationToolButton, underlineAnnotationToolButton, lineAnnotationToolButton,
+                lineArrowAnnotationToolButton, squareAnnotationToolButton, circleAnnotationToolButton, inkAnnotationToolButton, textAnnotationToolButton));
     }
 
     public void changeAnnotationsVisibility(final AnnotationFilter filter, final boolean visible, final boolean execInvert) {
