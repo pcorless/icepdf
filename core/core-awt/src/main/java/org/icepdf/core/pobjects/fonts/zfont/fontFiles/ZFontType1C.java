@@ -98,6 +98,7 @@ public class ZFontType1C extends ZSimpleFont {
         font.widths = widths;
         font.cMap = diff != null ? diff : font.cMap;
         font.bbox = bbox;
+        font.maxCharBounds = null;
         return font;
     }
 
@@ -110,6 +111,7 @@ public class ZFontType1C extends ZSimpleFont {
         font.descent = descent;
         font.cMap = diff;
         font.bbox = bbox;
+        font.maxCharBounds = null;
         return font;
     }
 

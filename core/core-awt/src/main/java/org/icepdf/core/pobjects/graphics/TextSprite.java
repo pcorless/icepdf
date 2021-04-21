@@ -106,8 +106,8 @@ public class TextSprite {
         // we can change the bounds of glyphBounds as this is what needs to be normalized
         // to page space
         // IMPORTANT: where working in Java Coordinates with any of the Font bounds
-        float descent = (float) font.getDescent() * font.getSize();
-        float ascent = (float) font.getAscent() * font.getSize();
+        float descent = (float) font.getDescent();
+        float ascent = (float) font.getAscent();
         float w = width;
         float h = ascent - descent;
         // width/height are kept unscaled for coords, w/h are scaled to get correct bounds w/h

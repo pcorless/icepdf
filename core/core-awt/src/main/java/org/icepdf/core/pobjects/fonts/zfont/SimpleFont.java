@@ -140,7 +140,7 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
             font = font.deriveFont(newWidth, firstchar, missingWidth, ascent, descent, bbox, null);
         }
         // currently not using afm, instead using font's width table, seems more reliable
-        else if (afm != null && !isFontSubstitution) {
+        else if (afm != null) {
             font = font.deriveFont(afm.getWidths(), firstchar, missingWidth, ascent, descent, bbox, null);
         }
     }

@@ -126,6 +126,7 @@ public class ZFontType1 extends ZSimpleFont {
         font.descent = descent;
         font.cMap = diff;
         font.bbox = bbox;
+        font.maxCharBounds = null;
         return font;
     }
 
