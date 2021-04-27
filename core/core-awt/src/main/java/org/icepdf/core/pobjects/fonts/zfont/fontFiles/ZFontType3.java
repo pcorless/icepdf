@@ -104,12 +104,15 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
     public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
         ZFontType3 font = (ZFontType3) deriveFont(this.size);
         font.encoding = encoding;
-        font.widths = widths;
+        if (widths != null && widths.length > 0) {
+            font.widths = widths;
+        }
         font.firstCh = firstCh;
         font.missingWidth = missingWidth;
         font.ascent = ascent;
         font.descent = descent;
         font.bbox = bbox;
+        font.maxCharBounds = null;
         return font;
     }
 
@@ -123,6 +126,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
         font.ascent = ascent;
         font.descent = descent;
         font.bbox = bbox;
+        font.maxCharBounds = null;
         return font;
     }
 
@@ -219,27 +223,6 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
         af.scale(size, size);
         af.concatenate(fontMatrix);
         return af.createTransformedShape(bBox.toJava2dCoordinates()).getBounds2D();
-    }
-
-    public Rectangle2D getCharBounds(char displayChar) {
-        Rectangle2D r = getMaxCharBounds();
-
-        String charName = encoding.getName(displayChar);
-        float width = 0f;
-        if (widths != null && displayChar - firstCh >= 0 && displayChar - firstCh < widths.length) {
-            width = widths[displayChar - firstCh];
-
-        }
-
-        if (width == 0.0f) {
-            width = charWidths.get(charName).x;
-        }
-
-        PRectangle charRect = charBBoxes.get(charName);
-        r.setRect(0.0, r.getY(),
-                width * size,
-                charRect.getHeight() * size);
-        return r;
     }
 
     /**

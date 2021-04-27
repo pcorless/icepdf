@@ -77,6 +77,20 @@ public class ZFontType1 extends ZSimpleFont {
     }
 
     @Override
+    protected String codeToName(String estr) {
+        return codeToName(estr.charAt(0));
+    }
+
+    protected String codeToName(int code) {
+        if (encoding != null &&
+                org.icepdf.core.pobjects.fonts.zfont.Encoding.STANDARD_ENCODING_NAME.equals(encoding.getName())) {
+            return type1Font.getEncoding().getName(code);
+        } else {
+            return String.valueOf((char) code);
+        }
+    }
+
+    @Override
     public void paint(Graphics2D g, String estr, float x, float y, long layout, int mode, Color strokeColor) {
         super.paint(g, estr, x, y, layout, mode, strokeColor);
     }
@@ -111,7 +125,9 @@ public class ZFontType1 extends ZSimpleFont {
         font.firstCh = firstCh;
         font.ascent = ascent;
         font.descent = descent;
-        font.widths = widths;
+        if (widths != null && widths.length > 0) {
+            font.widths = widths;
+        }
         font.cMap = diff != null ? diff : font.cMap;
         font.bbox = bbox;
         return font;
@@ -126,12 +142,13 @@ public class ZFontType1 extends ZSimpleFont {
         font.descent = descent;
         font.cMap = diff;
         font.bbox = bbox;
+        font.maxCharBounds = null;
         return font;
     }
 
     @Override
     public boolean canDisplay(char ech) {
-        return type1Font.hasGlyph(String.valueOf(ech));
+        return type1Font.hasGlyph(codeToName(ech));
     }
 
     @Override

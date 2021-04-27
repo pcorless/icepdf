@@ -40,6 +40,7 @@ public abstract class ZSimpleFont implements FontFile {
     protected float ascent;
     protected float descent;
     protected Rectangle2D bbox = new Rectangle2D.Double(0.0, 0.0, 1.0, 1.0);
+    protected Rectangle2D maxCharBounds;
 
     // cid specific, todo new subclass if we get a few more?
     protected float defaultWidth;
@@ -186,7 +187,10 @@ public abstract class ZSimpleFont implements FontFile {
 
     @Override
     public Rectangle2D getMaxCharBounds() {
-        return calculateBbox(bbox);
+        AffineTransform af = new AffineTransform();
+        af.scale(size, -size);
+        af.concatenate(fontMatrix);
+        return af.createTransformedShape(bbox).getBounds2D();
     }
 
     @Override
@@ -225,12 +229,34 @@ public abstract class ZSimpleFont implements FontFile {
 
     @Override
     public double getAscent() {
-        return ascent;
+        if (ascent != 0) {
+            return ascent * size;
+        } else {
+            if (maxCharBounds == null) {
+                maxCharBounds = getMaxCharBounds();
+            }
+            return maxCharBounds.getY();
+        }
+
     }
+
+    public double getHeight() {
+        if (maxCharBounds == null) {
+            maxCharBounds = getMaxCharBounds();
+        }
+        return maxCharBounds.getHeight();
+    }
+
 
     @Override
     public double getDescent() {
-        return descent;
+        if (descent != 0) {
+            return descent * size;
+        } else {
+            double height = getHeight();
+            double ascent = getAscent();
+            return height - ascent;
+        }
     }
 
     @Override
@@ -309,6 +335,7 @@ public abstract class ZSimpleFont implements FontFile {
         fontTransform.concatenate(gsTransform);
         fontTransform.scale(pointSize, -pointSize);
         size = pointSize;
+        maxCharBounds = null;
     }
 
     protected char getCharDiff(char character) {
@@ -317,16 +344,6 @@ public abstract class ZSimpleFont implements FontFile {
         } else {
             return character;
         }
-    }
-
-    protected Rectangle2D calculateBbox(Rectangle2D bbox) {
-        if (bbox != null) {
-            AffineTransform af = new AffineTransform();
-//            af.scale(size, size);
-            af.concatenate(fontMatrix);
-            return af.createTransformedShape(bbox).getBounds2D();
-        }
-        return this.bbox;
     }
 
     protected AffineTransform convertFontMatrix(FontBoxFont fontBoxFont) {

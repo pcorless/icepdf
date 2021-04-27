@@ -102,8 +102,7 @@ public class TextSprite {
      * @return new GlyphText object containing the text data.
      */
     public GlyphText addText(String cid, String unicode, float x, float y, float width) {
-
-        // x,y must not chance as it will affect painting of the glyph,
+        // x,y must not change as it will affect painting of the glyph,
         // we can change the bounds of glyphBounds as this is what needs to be normalized
         // to page space
         // IMPORTANT: where working in Java Coordinates with any of the Font bounds
@@ -111,10 +110,13 @@ public class TextSprite {
         float ascent = (float) font.getAscent();
         float w = width;
         float h = ascent - descent;
+        // width/height are kept unscaled for coords, w/h are scaled to get correct bounds w/h
+        float height = h;
+        h = Math.abs(h);
 
         // zero height will not intersect with clip rectangle and maybe have visibility issues.
         // we generally get here if the font.getAscent is zero and as a result must compensate.
-        if (h <= 0.0f) {
+        if (h == 0.0f) {
             Rectangle2D bounds = font.getBounds(cid, 0, 1);
             if (bounds != null && bounds.getHeight() > 0) {
                 h = (float) bounds.getHeight();
@@ -122,18 +124,20 @@ public class TextSprite {
                 // match the width, as it will make text selection work a bit better.
                 h = font.getSize();
             }
+            height = h;
         }
+        // can't have Rectangle2D with negative w or h, api will zero the bounds.
+        w = Math.abs(w);
         // this is still terrible, should be applying the fontTransform but this little hack is fast until I can
         // figure out the geometry for the corner cases.
-        h *= Math.abs(font.getSize());
         Rectangle2D.Float glyphBounds;
         // negative layout
-        if (w < 0.0f || font.getSize() < 0) {
-            glyphBounds = new Rectangle2D.Float(x + width, y - ascent, w, h);
+        if (width < 0.0f || font.getSize() < 0) {
+            glyphBounds = new Rectangle2D.Float(x + width, y - descent, w, h);
         }
         // inverted layout
         else if (font.getFontTransform() != null && font.getFontTransform().getScaleY() < 0) {
-            glyphBounds = new Rectangle2D.Float(x, y - h - descent, w, h);
+            glyphBounds = new Rectangle2D.Float(x, y - height, w, h);
         }
         // standard layout.
         else {
