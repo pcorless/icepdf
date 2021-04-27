@@ -42,17 +42,6 @@ public class AnnotationComponentFactory {
     protected static final Logger logger =
             Logger.getLogger(AnnotationComponentFactory.class.toString());
 
-    private static final String BUTTON_FIELD_CLASS =
-            "org.icepdf.core.pro.acroform.ButtonFieldComponent";
-    private static final String CHOICE_FIELD_CLASS =
-            "org.icepdf.core.pro.acroform.ChoiceFieldComponent";
-    private static final String TEXT_FIELD_CLASS =
-            "org.icepdf.core.pro.acroform.TextFieldComponent";
-    private static final String SIGNATURE_FIELD_CLASS =
-            "org.icepdf.ri.common.views.annotations.acroform.SignatureFieldComponent";
-    private static final String SIGNATURE_PRO_FIELD_CLASS =
-            "org.icepdf.core.pro.acroform.SignatureFieldComponent";
-
     private AnnotationComponentFactory() {
     }
 
