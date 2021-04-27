@@ -184,7 +184,9 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
         font.firstCh = firstCh;
         font.ascent = ascent;
         font.descent = descent;
-        font.widths = widths;
+        if (widths != null && widths.length > 0) {
+            font.widths = widths;
+        }
         font.cMap = diff;
         font.bbox = bbox;
         font.maxCharBounds = null;

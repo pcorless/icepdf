@@ -235,7 +235,7 @@ public abstract class ZSimpleFont implements FontFile {
             if (maxCharBounds == null) {
                 maxCharBounds = getMaxCharBounds();
             }
-            return -maxCharBounds.getY();
+            return maxCharBounds.getY();
         }
 
     }

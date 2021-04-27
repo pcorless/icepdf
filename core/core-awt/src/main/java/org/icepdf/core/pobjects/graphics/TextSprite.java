@@ -133,11 +133,11 @@ public class TextSprite {
         Rectangle2D.Float glyphBounds;
         // negative layout
         if (width < 0.0f || font.getSize() < 0) {
-            glyphBounds = new Rectangle2D.Float(x + width, y - (descent), w, h);
+            glyphBounds = new Rectangle2D.Float(x + width, y - descent, w, h);
         }
         // inverted layout
         else if (font.getFontTransform() != null && font.getFontTransform().getScaleY() < 0) {
-            glyphBounds = new Rectangle2D.Float(x, y - height - descent, w, h);
+            glyphBounds = new Rectangle2D.Float(x, y - height, w, h);
         }
         // standard layout.
         else {

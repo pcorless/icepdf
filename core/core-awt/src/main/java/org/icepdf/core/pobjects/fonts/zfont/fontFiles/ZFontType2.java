@@ -153,6 +153,9 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
         font.descent = descent;
         font.cMap = diff;
         font.bbox = bbox;
+        if (widths != null && widths.length > 0) {
+            font.widths = widths;
+        }
         font.maxCharBounds = null;
         return font;
     }

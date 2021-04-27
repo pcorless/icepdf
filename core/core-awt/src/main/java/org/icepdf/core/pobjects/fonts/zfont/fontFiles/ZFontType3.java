@@ -104,7 +104,9 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
     public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
         ZFontType3 font = (ZFontType3) deriveFont(this.size);
         font.encoding = encoding;
-        font.widths = widths;
+        if (widths != null && widths.length > 0) {
+            font.widths = widths;
+        }
         font.firstCh = firstCh;
         font.missingWidth = missingWidth;
         font.ascent = ascent;
