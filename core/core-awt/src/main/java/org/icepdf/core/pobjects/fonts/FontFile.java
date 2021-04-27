@@ -40,8 +40,6 @@ public interface FontFile {
 
     long LAYOUT_NONE = 0;
 
-    // todo do some refacotring of method name 'e' awlays seemed strange to me.
-
     Point2D getAdvance(char ech);
 
     FontFile deriveFont(AffineTransform at);
@@ -54,11 +52,11 @@ public interface FontFile {
     FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth,
                         float ascent, float descent, Rectangle2D bbox, char[] diff);
 
+    FontFile deriveFont(float pointSize);
+
     boolean canDisplay(char ech);
 
     void setIsCid();
-
-    FontFile deriveFont(float pointsize);
 
     CMap getToUnicode();
 

@@ -166,9 +166,12 @@ public class ZFontType0 extends ZSimpleFont {
         font.firstCh = firstCh;
         font.ascent = ascent;
         font.descent = descent;
-        font.widths = widths;
+        if (widths != null && widths.length > 0) {
+            font.widths = widths;
+        }
         font.cMap = diff != null ? diff : font.cMap;
         font.bbox = bbox;
+        font.maxCharBounds = null;
         return font;
     }
 
@@ -181,6 +184,7 @@ public class ZFontType0 extends ZSimpleFont {
         font.descent = descent;
         font.cMap = diff;
         font.bbox = bbox;
+        font.maxCharBounds = null;
         return font;
     }
 
