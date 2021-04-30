@@ -220,8 +220,9 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
 
     public Rectangle2D getMaxCharBounds() {
         AffineTransform af = new AffineTransform();
-        af.scale(size, size);
+        af.scale(size, -size);
         af.concatenate(fontMatrix);
+        af.concatenate(fontTransform);
         return af.createTransformedShape(bBox.toJava2dCoordinates()).getBounds2D();
     }
 
