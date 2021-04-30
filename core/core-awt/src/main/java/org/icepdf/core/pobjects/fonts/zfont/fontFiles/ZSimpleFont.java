@@ -235,7 +235,7 @@ public abstract class ZSimpleFont implements FontFile {
             if (maxCharBounds == null) {
                 maxCharBounds = getMaxCharBounds();
             }
-            return maxCharBounds.getY();
+            return -maxCharBounds.getY();
         }
     }
 
@@ -246,7 +246,7 @@ public abstract class ZSimpleFont implements FontFile {
         } else {
             double height = getHeight();
             double ascent = getAscent();
-            return height - ascent;
+            return -Math.abs(height - ascent);
         }
     }
 

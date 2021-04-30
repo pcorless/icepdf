@@ -111,7 +111,6 @@ public class TextSprite {
         float w = width;
         float h = ascent - descent;
         // width/height are kept unscaled for coords, w/h are scaled to get correct bounds w/h
-        float height = h;
         h = Math.abs(h);
 
         // zero height will not intersect with clip rectangle and maybe have visibility issues.
@@ -124,7 +123,6 @@ public class TextSprite {
                 // match the width, as it will make text selection work a bit better.
                 h = font.getSize();
             }
-            height = h;
         }
         // can't have Rectangle2D with negative w or h, api will zero the bounds.
         w = Math.abs(w);

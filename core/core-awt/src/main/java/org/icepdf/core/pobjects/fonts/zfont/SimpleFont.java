@@ -93,7 +93,7 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
             if (differences != null) {
                 int c = 0;
                 for (Object oo : differences) {
-                    if (c == cMap.length - 1) {
+                    if (c == cMap.length) {
                         break;
                     }
                     if (oo instanceof Number) {
