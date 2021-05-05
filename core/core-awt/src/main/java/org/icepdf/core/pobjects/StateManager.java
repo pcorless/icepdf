@@ -31,11 +31,10 @@ import java.util.logging.Logger;
  * @since 4.0
  */
 public class StateManager {
-    private static final Logger logger =
-            Logger.getLogger(StateManager.class.getName());
+    private static final Logger logger = Logger.getLogger(StateManager.class.getName());
 
     // a list is all we might need. 
-    private final HashMap<Reference, Change> changes;
+    private final Map<Reference, Change> changes;
 
     // access to xref size and next revision number.
     private final PTrailer trailer;
@@ -116,9 +115,9 @@ public class StateManager {
      * Returns an instance of the specified reference
      *
      * @param reference reference to look for an existing usage
-     * @return PObject of corresponding reference if present, false otherwise.
+     * @return The change if it exists or null
      */
-    public Object getChange(Reference reference) {
+    public Change getChange(Reference reference) {
         return changes.get(reference);
     }
 
@@ -135,14 +134,7 @@ public class StateManager {
      * @return If there are any changes from objects that were manipulated by user interaction
      */
     public boolean isChange() {
-        Collection<Change> changeValues = changes.values();
-        Change[] changeArray = changeValues.toArray(new Change[0]);
-        for (Change change : changeArray) {
-            if (change.isNew) {
-                return true;
-            }
-        }
-        return false;
+        return changes.values().stream().anyMatch(c -> c.isNew);
     }
 
     /**
@@ -151,6 +143,29 @@ public class StateManager {
      */
     public boolean isNoChange() {
         return changes.isEmpty();
+    }
+
+
+    /**
+     * @return an unmodifiable copy of the current changes
+     */
+    public Map<Reference, Change> getChanges() {
+        return Collections.unmodifiableMap(new HashMap<>(changes));
+    }
+
+
+    /**
+     * Checks that the given and the current list of changes are the same or not
+     *
+     * @param knownChanges The changes to compare to
+     * @return true if the changes are different, false otherwise
+     */
+    public boolean hasChangedSince(final Map<Reference, Change> knownChanges) {
+        if (knownChanges.size() == changes.size()) {
+            return knownChanges.entrySet().stream().anyMatch(entry -> !Objects.equals(changes.get(entry.getKey()), entry.getValue()));
+        } else {
+            return true;
+        }
     }
 
     /**
@@ -209,11 +224,11 @@ public class StateManager {
      * Wrapper class of a pObject and how it was created.  The newFlag differentiates if the object was created
      * by a user action vs the core library creating an object that isn't in the source file but needed for rendering.
      */
-    public class Change {
-        protected PObject pObject;
-        protected boolean isNew;
+    public static class Change {
+        private final PObject pObject;
+        private final boolean isNew;
 
-        public Change(PObject pObject, boolean isNew) {
+        public Change(final PObject pObject, final boolean isNew) {
             this.pObject = pObject;
             this.isNew = isNew;
         }
@@ -221,6 +236,22 @@ public class StateManager {
         public PObject getPObject() {
             return pObject;
         }
+
+        public boolean isNew() {
+            return isNew;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            final Change change = (Change) o;
+            return isNew == change.isNew && Objects.equals(pObject, change.pObject);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(pObject, isNew);
+        }
     }
 }
-

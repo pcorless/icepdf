@@ -35,6 +35,8 @@ public class KeyEventConstants {
     public static final int MODIFIER_OPEN_URL = MENU_SHORTCUT_KEY_MASK;
     public static final int KEY_CODE_CLOSE = KeyEvent.VK_W;
     public static final int MODIFIER_CLOSE = MENU_SHORTCUT_KEY_MASK;
+    public static final int KEY_CODE_SAVE = KeyEvent.VK_S;
+    public static final int MODIFIER_SAVE = MENU_SHORTCUT_KEY_MASK;
     public static final int KEY_CODE_SAVE_AS = KeyEvent.VK_S;
     public static final int MODIFIER_SAVE_AS = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_MASK;
     public static final int KEY_CODE_PRINT_SETUP = KeyEvent.VK_P;
