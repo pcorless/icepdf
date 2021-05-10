@@ -1114,6 +1114,9 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             commentPanel.setBackground(color);
             resetComponentColors();
         }
+        if (contextMenu != null) {
+            ((MarkupAnnotationPopupMenu) contextMenu).refreshColorMenu();
+        }
     }
 
     @Override

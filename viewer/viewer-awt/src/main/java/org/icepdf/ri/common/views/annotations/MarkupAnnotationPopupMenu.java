@@ -23,19 +23,21 @@ import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
 import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.common.widgets.DragDropColorList;
 import org.icepdf.ri.common.tools.DestinationHandler;
 import org.icepdf.ri.common.tools.FreeTextAnnotationHandler;
 import org.icepdf.ri.common.utility.annotation.AnnotationFilter;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.PageViewComponentImpl;
+import org.icepdf.ri.common.widgets.DragDropColorList;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.logging.Level;
@@ -215,28 +217,44 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
         propertiesMenuItem.addActionListener(this);
     }
 
+    void refreshColorMenu() {
+        changeColorMenu.removeAll();
+        final JMenu newColorMenu = buildColorMenu();
+        final java.util.List<JMenuItem> items = new ArrayList<>();
+        for (int i = 0; i < newColorMenu.getItemCount(); i++) {
+            items.add(newColorMenu.getItem(i));
+        }
+        items.forEach(changeColorMenu::add);
+    }
+
     private JMenu buildColorMenu() {
         final JMenu colorMenu = new JMenu(
                 messageBundle.getString("viewer.annotation.popup.color.change.label"));
-        final java.util.List<JMenuItem> jMenuItems = DragDropColorList.retrieveColorLabels().stream()
-                .filter(cl -> !cl.getColor().equals(annotationComponent.annotation.getColor()))
-                .sorted(Comparator.comparing(DragDropColorList.ColorLabel::getLabel))
-                .map(cl -> {
-                            final JMenuItem item = new JMenuItem(cl.getLabel());
-                            item.setForeground(Color.BLACK);
-                            item.setBackground(cl.getColor());
-                            item.setOpaque(true);
-                            item.addActionListener(e -> {
-                                final Annotation annotation = annotationComponent.getAnnotation();
-                                annotation.setColor(cl.getColor());
-                                annotation.getPage().updateAnnotation(annotation);
-                                annotationComponent.resetAppearanceShapes();
-                                annotationComponent.repaint();
-                                controller.getDocumentViewController().updateAnnotation(annotationComponent);
-                            });
-                            return item;
-                        }
-                ).collect(Collectors.toList());
+
+        final java.util.List<JMenuItem> jMenuItems;
+        if (annotationComponent != null && annotationComponent.annotation != null) {
+            jMenuItems = DragDropColorList.retrieveColorLabels().stream()
+                    .filter(cl -> !cl.getColor().equals(annotationComponent.annotation.getColor()))
+                    .sorted(Comparator.comparing(DragDropColorList.ColorLabel::getLabel))
+                    .map(cl -> {
+                                final JMenuItem item = new JMenuItem(cl.getLabel());
+                                item.setForeground(Color.BLACK);
+                                item.setBackground(cl.getColor());
+                                item.setOpaque(true);
+                                item.addActionListener(e -> {
+                                    final Annotation annotation = annotationComponent.getAnnotation();
+                                    annotation.setColor(cl.getColor());
+                                    annotation.getPage().updateAnnotation(annotation);
+                                    annotationComponent.resetAppearanceShapes();
+                                    annotationComponent.repaint();
+                                    controller.getDocumentViewController().updateAnnotation(annotationComponent);
+                                });
+                                return item;
+                            }
+                    ).collect(Collectors.toList());
+        } else {
+            jMenuItems = Collections.emptyList();
+        }
         jMenuItems.forEach(colorMenu::add);
         return colorMenu;
     }
