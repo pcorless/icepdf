@@ -30,7 +30,6 @@ import org.icepdf.ri.common.utility.search.SearchHitComponent;
 import org.icepdf.ri.common.utility.search.SearchHitComponentFactory;
 import org.icepdf.ri.common.utility.search.SearchHitComponentFactoryImpl;
 import org.icepdf.ri.common.views.PageViewComponentImpl;
-import org.icepdf.ri.util.Pair;
 
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
@@ -74,7 +73,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
 
     //Search mode is per-word or whole page
     private SearchMode searchMode = SearchMode.WORD;
-  
+
     //Page index to SearchHitComponents
     private final Map<Integer, Set<SearchHitComponent>> pageToComponents = new HashMap<>();
 
@@ -390,8 +389,8 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                 searchString = searchString.replace("\n", " ");
             }
             //Always use regex to search
-            final Pattern pattern = term.isRegex() ? term.getRegexPattern() :
-                    Pattern.compile(Pattern.quote(term.getTerm()), term.isCaseSensitive() ? Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE : 0);
+            final Pattern pattern = term.isRegex() ? term.getRegexPattern() : Pattern.compile(Pattern.quote(term.getTerm()),
+                    term.isCaseSensitive() ? 0 : Pattern.CASE_INSENSITIVE);
             final Matcher matcher = pattern.matcher(searchString);
             final List<SearchHit> hits = new ArrayList<>();
             while (matcher.find()) {
