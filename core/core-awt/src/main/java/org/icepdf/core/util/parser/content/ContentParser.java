@@ -34,7 +34,11 @@ public class ContentParser extends AbstractContentParser {
             Collections.synchronizedMap(new WeakHashMap<>());
 
     public ContentParser(Library l, Resources r) {
-        super(l, r);
+        this(l, r, false);
+    }
+
+    public ContentParser(Library l, Resources r, boolean isMWFO) {
+        super(l, r, isMWFO);
     }
 
     public ContentParser parse(byte[][] streamBytes, Page page)
@@ -244,7 +248,7 @@ public class ContentParser extends AbstractContentParser {
                         // the XObject's Subtype entry, which may be Image , Form, or PS
                         case Operands.Do:
                             graphicState = consume_Do(graphicState, stack, shapes,
-                                    resources, true, imageIndex, page);
+                                    resources, true, imageIndex, page, isMWFO);
                             break;
 
                         // Fill the path, using the even-odd rule to determine the
@@ -627,7 +631,7 @@ public class ContentParser extends AbstractContentParser {
                             stack.clear();
                             break;
                         case Operands.Do:
-                            consume_Do(graphicState, stack, shapes, resources, false, null, null);
+                            consume_Do(graphicState, stack, shapes, resources, false, null, null, isMWFO);
                             stack.clear();
                             break;
                         case Operands.BI:
@@ -665,7 +669,7 @@ public class ContentParser extends AbstractContentParser {
      * @param shapes          container of all shapes for the page content being parsed
      * @param previousBTStart y offset of previous BT definition.
      * @return y offset of the this BT definition.
-     * @throws java.io.IOException end of content stream is found
+     * @throws IOException end of content stream is found
      */
     private float parseText(Lexer lexer, Shapes shapes, double previousBTStart)
             throws IOException, InterruptedException {

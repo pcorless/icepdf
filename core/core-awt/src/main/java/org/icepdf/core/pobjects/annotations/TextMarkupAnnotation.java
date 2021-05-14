@@ -24,9 +24,7 @@ import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.GeneralPath;
-import java.awt.geom.Rectangle2D;
+import java.awt.geom.*;
 import java.util.List;
 import java.util.*;
 import java.util.logging.Level;
@@ -178,19 +176,77 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
         if (shapes != null) {
             markupBounds = new ArrayList<>();
             markupPath = new GeneralPath();
-
-            ShapeDrawCmd shapeDrawCmd;
-            for (DrawCmd cmd : shapes.getShapes()) {
-                if (cmd instanceof ShapeDrawCmd) {
-                    shapeDrawCmd = (ShapeDrawCmd) cmd;
-                    markupBounds.add(shapeDrawCmd.getShape());
-                    markupPath.append(shapeDrawCmd.getShape(), false);
+            if (subtype.equals(SUBTYPE_UNDERLINE) || subtype.equals(SUBTYPE_STRIKE_OUT) || subtype.equals(SUBTYPE_SQUIGGLY)) {
+                setLineMarkup(shapes);
+            } else {
+                ShapeDrawCmd shapeDrawCmd;
+                for (DrawCmd cmd : shapes.getShapes()) {
+                    if (cmd instanceof ShapeDrawCmd) {
+                        shapeDrawCmd = (ShapeDrawCmd) cmd;
+                        markupBounds.add(shapeDrawCmd.getShape());
+                        markupPath.append(shapeDrawCmd.getShape(), false);
+                    }
                 }
             }
-
         }
         // try and generate an appearance stream.
         resetNullAppearanceStream();
+    }
+
+    private void setLineMarkup(final Shapes shapes) {
+        ShapeDrawCmd shapeDrawCmd;
+        for (DrawCmd cmd : shapes.getShapes()) {
+            if (cmd instanceof ShapeDrawCmd) {
+                shapeDrawCmd = (ShapeDrawCmd) cmd;
+                final Shape shape = shapeDrawCmd.getShape();
+                final List<Point2D> points = getPoints(shape);
+                if (points.size() == 2 || (points.size() == 3 && points.get(2).getX() == 0 && points.get(2).getY() == 0)) {
+                    final Point2D first = points.get(0);
+                    final Point2D second = points.get(1);
+                    final List<Shape> quads = Arrays.asList(quadrilaterals);
+                    final Shape firstShape = getClosestShape(quads, first);
+                    final Shape secondShape = getClosestShape(quads, second);
+                    final Shape containing = firstShape == secondShape && firstShape.getBounds().height > 1 ?
+                            firstShape : getBbox();
+                    shapeDrawCmd = new ShapeDrawCmd(containing);
+                }
+                markupBounds.add(shapeDrawCmd.getShape());
+                markupPath.append(shapeDrawCmd.getShape(), false);
+            }
+        }
+    }
+
+    private static Shape getClosestShape(final Collection<Shape> shapes, final Point2D point) {
+        for (final Shape shape : shapes) {
+            if (shape.contains(point)) {
+                return shape;
+            }
+        }
+        Shape closest = null;
+        double minDistance = Double.MAX_VALUE;
+        for (final Shape shape : shapes) {
+            final List<Point2D> points = getPoints(shape);
+            for (final Point2D point2D : points) {
+                final double distance = point2D.distance(point);
+                if (point2D.distance(point) < minDistance) {
+                    closest = shape;
+                    minDistance = distance;
+                }
+            }
+        }
+        return closest;
+    }
+
+    private static List<Point2D> getPoints(final Shape shape) {
+        final PathIterator iter = shape.getPathIterator(new AffineTransform());
+        final List<Point2D> points = new ArrayList<>();
+        while (!iter.isDone()) {
+            final double[] coords = new double[2];
+            iter.currentSegment(coords);
+            iter.next();
+            points.add(new Point2D.Float((float) coords[0], (float) coords[1]));
+        }
+        return points;
     }
 
     /**

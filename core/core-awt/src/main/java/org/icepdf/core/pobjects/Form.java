@@ -160,10 +160,11 @@ public class Form extends Stream {
         this.parentResource = parentResource;
     }
 
-    /**
-     *
-     */
     public synchronized void init() throws InterruptedException {
+        init(false);
+    }
+
+    public synchronized void init(final boolean isMWFO) throws InterruptedException {
         if (inited) {
             return;
         }
@@ -183,8 +184,8 @@ public class Form extends Stream {
             leafResources = parentResource;
         }
         // Build a new content parser for the content streams and apply the
-        // content stream of the calling content stream. 
-        ContentParser cp = new ContentParser(library, leafResources);
+        // content stream of the calling content stream.
+        ContentParser cp = new ContentParser(library, leafResources, isMWFO);
         cp.setGraphicsState(graphicsState);
         byte[] in = getDecodedStreamBytes();
         if (in != null) {
