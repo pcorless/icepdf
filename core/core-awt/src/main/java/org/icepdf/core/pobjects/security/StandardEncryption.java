@@ -26,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.*;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -107,10 +108,10 @@ class StandardEncryption {
     private byte[] rc4Key = null;
 
     // user password;
-    private String userPassword = "";
+    private String userPassword = null;
 
     // user password;
-    private String ownerPassword = "";
+    private String ownerPassword = null;
 
     /**
      * Create a new instance of the StandardEncryption object.
@@ -131,8 +132,8 @@ class StandardEncryption {
      * @param inputData       date to encrypted/decrypt.
      * @return encrypted/decrypted data.
      */
-    public byte[] generalEncryptionAlgorithm(Reference objectReference,
-                                             byte[] encryptionKey,
+    public synchronized byte[] generalEncryptionAlgorithm(final Reference objectReference,
+                                             final byte[] encryptionKey,
                                              final String algorithmType,
                                              byte[] inputData,
                                              boolean encrypt) {
@@ -151,8 +152,8 @@ class StandardEncryption {
 
             // optimization, if the encryptionKey and objectReference are the
             // same there is no reason to calculate a new key.
-            if (rc4Key == null || this.encryptionKey != encryptionKey ||
-                    this.objectReference != objectReference) {
+            if (rc4Key == null || !Arrays.equals(this.encryptionKey, encryptionKey) ||
+                    !this.objectReference.equals(objectReference)) {
 
                 this.objectReference = objectReference;
 
@@ -321,8 +322,8 @@ class StandardEncryption {
 
             // optimization, if the encryptionKey and objectReference are the
             // same there is no reason to calculate a new key.
-            if (rc4Key == null || this.encryptionKey != encryptionKey ||
-                    this.objectReference != objectReference) {
+            if (rc4Key == null || !Arrays.equals(this.encryptionKey, encryptionKey) ||
+                    !this.objectReference.equals(objectReference)) {
 
                 this.objectReference = objectReference;
 
@@ -1070,6 +1071,9 @@ class StandardEncryption {
                 break;
             }
         }
+        if (found) {
+            this.userPassword = userPassword;
+        }
         return found;
     }
 
@@ -1135,9 +1139,12 @@ class StandardEncryption {
             boolean isValid = authenticateUserPassword(tmpUserPassword);
 
             if (isValid) {
-                userPassword = tmpUserPassword;
+                this.userPassword = tmpUserPassword;
                 this.ownerPassword = ownerPassword;
                 // setup permissions if valid
+            } else {
+                this.userPassword = "";
+                this.ownerPassword = "";
             }
 
             return isValid;

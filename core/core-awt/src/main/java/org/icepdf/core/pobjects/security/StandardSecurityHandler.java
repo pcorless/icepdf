@@ -170,6 +170,24 @@ public class StandardSecurityHandler extends SecurityHandler {
         }
     }
 
+    @Override
+    public boolean hasUserPassword() {
+        if (encryptionKey != null) {
+            return standardEncryption.getUserPassword() != null;
+        } else {
+            return isUserAuthorized("");
+        }
+    }
+
+    @Override
+    public boolean hasOwnerPassword() {
+        if (encryptionKey != null) {
+            return standardEncryption.getOwnerPassword() != null;
+        } else {
+            return isOwnerAuthorized("");
+        }
+    }
+
     public byte[] encrypt(Reference objectReference,
                           byte[] encryptionKey,
                           byte[] data) {

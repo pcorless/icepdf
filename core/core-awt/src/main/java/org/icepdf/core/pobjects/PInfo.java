@@ -105,10 +105,20 @@ public class PInfo extends Dictionary {
      * Sets a custom property to the PDF
      *
      * @param key   The name of the property
-     * @param value The value
+     * @param value The unencrypted value
+     */
+    public void setCustomExtension(final Name key, final String value) {
+        setProperty(key, getEncryptedString(value));
+    }
+
+    /**
+     * Sets a custom property to the PDF
+     *
+     * @param key   The name of the property
+     * @param value The unencrypted value
      */
     public void setCustomExtension(final String key, final String value) {
-        setProperty(new Name(key), new LiteralStringObject(value));
+        setCustomExtension(new Name(key), value);
     }
 
     /**
@@ -126,7 +136,7 @@ public class PInfo extends Dictionary {
      * @param title The title
      */
     public void setTitle(final String title) {
-        setProperty(TITLE_KEY, new LiteralStringObject(title));
+        setProperty(TITLE_KEY, getEncryptedString(title));
     }
 
     /**
@@ -144,7 +154,7 @@ public class PInfo extends Dictionary {
      * @param author The author
      */
     public void setAuthor(final String author) {
-        setProperty(AUTHOR_KEY, new LiteralStringObject(author));
+        setProperty(AUTHOR_KEY, getEncryptedString(author));
     }
 
     /**
@@ -162,7 +172,7 @@ public class PInfo extends Dictionary {
      * @param subject The subject
      */
     public void setSubject(final String subject) {
-        setProperty(SUBJECT_KEY, new LiteralStringObject(subject));
+        setProperty(SUBJECT_KEY, getEncryptedString(subject));
     }
 
     /**
@@ -180,7 +190,7 @@ public class PInfo extends Dictionary {
      * @param keywords A varargs of keywords. They will be separated by a comma
      */
     public void setKeywords(final String... keywords) {
-        setProperty(KEYWORDS_KEY, new LiteralStringObject(String.join(", ", keywords)));
+        setProperty(KEYWORDS_KEY, getEncryptedString(String.join(", ", keywords)));
     }
 
     /**
@@ -199,7 +209,7 @@ public class PInfo extends Dictionary {
      * @param creator the creator
      */
     public void setCreator(final String creator) {
-        setProperty(CREATOR_KEY, new LiteralStringObject(creator));
+        setProperty(CREATOR_KEY, getEncryptedString(creator));
     }
 
     /**
@@ -218,7 +228,7 @@ public class PInfo extends Dictionary {
      * @param producer the producer
      */
     public void setProducer(final String producer) {
-        setProperty(PRODUCER_KEY, new LiteralStringObject(producer));
+        setProperty(PRODUCER_KEY, getEncryptedString(producer));
     }
 
     /**
@@ -241,7 +251,7 @@ public class PInfo extends Dictionary {
      * @param date The creation date
      */
     public void setCreationDate(final PDate date) {
-        setProperty(CREATIONDATE_KEY, new LiteralStringObject(date.toString()));
+        setProperty(CREATIONDATE_KEY, getEncryptedString(date.toString()));
     }
 
     /**
@@ -264,7 +274,7 @@ public class PInfo extends Dictionary {
      * @param date The modification date
      */
     public void setModDate(final PDate date) {
-        setProperty(MODDATE_KEY, new LiteralStringObject(date.toString()));
+        setProperty(MODDATE_KEY, getEncryptedString(date.toString()));
     }
 
     /**
@@ -405,5 +415,13 @@ public class PInfo extends Dictionary {
 
     private void clearCustomProps() {
         getAllCustomExtensions().keySet().forEach(k -> entries.remove(k));
+    }
+
+    private LiteralStringObject getEncryptedString(final String value) {
+        if (securityManager != null) {
+            return new LiteralStringObject(value, getPObjectReference(), securityManager);
+        } else {
+            return new LiteralStringObject(value);
+        }
     }
 }
