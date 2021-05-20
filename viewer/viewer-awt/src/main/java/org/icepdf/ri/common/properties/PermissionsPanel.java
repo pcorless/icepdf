@@ -73,10 +73,10 @@ public class PermissionsPanel extends JPanel {
                 securityMethod = standardSecurity;
 
                 // Get user and owner passwords, owner first, just encase it has a password.
-                if (!securityManager.getSecurityHandler().isOwnerAuthorized("")) {
+                if (securityManager.getSecurityHandler().hasOwnerPassword()) {
                     ownerPassword = yes;
                 }
-                if (!securityManager.getSecurityHandler().isUserAuthorized("")) {
+                if (securityManager.getSecurityHandler().hasUserPassword()) {
                     userPassword = yes;
                 }
                 if (!permissions.getPermissions(Permissions.PRINT_DOCUMENT)) {

@@ -75,9 +75,10 @@ public class PTrailer extends Dictionary {
 
     /**
      * Create a new PTrailer object
-     * @param library document library
+     *
+     * @param library    document library
      * @param dictionary trailer dictionary
-     * @param xrefTable xref table reference
+     * @param xrefTable  xref table reference
      * @param xrefStream xref stream reference
      */
     public PTrailer(Library library, HashMap dictionary, CrossReference xrefTable, CrossReference xrefStream) {
@@ -215,9 +216,11 @@ public class PTrailer extends Dictionary {
      * @return information dictionary
      */
     public PInfo getInfo() {
-        Object info = library.getObject(entries, INFO_KEY);
+        final Object info = library.getObject(entries, INFO_KEY);
         if (info instanceof HashMap) {
-            return new PInfo(library, (HashMap) info);
+            final PInfo pInfo = new PInfo(library, (HashMap) info);
+            pInfo.setPObjectReference(library.getReference(entries, INFO_KEY));
+            return pInfo;
         } else {
             return null;
         }
@@ -244,6 +247,7 @@ public class PTrailer extends Dictionary {
     /**
      * After this PTrailer is parsed, we store it's location within the PDF
      * here, for future use.
+     *
      * @param pos position in file of trailer.
      */
     public void setPosition(long pos) {
@@ -317,10 +321,9 @@ public class PTrailer extends Dictionary {
     }
 
     /**
-     *
      * @return true if the trailer is a compressed trailer, false if it's compressed
      */
-    public boolean isCompressedXref(){
+    public boolean isCompressedXref() {
         return entries.containsKey(TYPE_KEY);
     }
 

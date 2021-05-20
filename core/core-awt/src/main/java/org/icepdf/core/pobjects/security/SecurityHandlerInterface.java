@@ -59,6 +59,16 @@ public interface SecurityHandlerInterface {
     boolean isOwnerAuthorized(String password);
 
     /**
+     * @return Whether the document has a user password
+     */
+    boolean hasUserPassword();
+
+    /**
+     * @return Whether the document has an owner password
+     */
+    boolean hasOwnerPassword();
+
+    /**
      * Encrypt the PDF data bytestream or string.
      *
      * @param objectReference reference to PDF object being encrypted; this object
