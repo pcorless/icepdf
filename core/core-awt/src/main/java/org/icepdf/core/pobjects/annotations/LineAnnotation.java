@@ -509,7 +509,7 @@ public class LineAnnotation extends MarkupAnnotation {
     }
 
     @SuppressWarnings("unchecked")
-    public void init() throws InterruptedException {
+    public synchronized void init() throws InterruptedException {
         super.init();
         // line points
         List<Number> value = library.getArray(entries, L_KEY);
@@ -548,7 +548,7 @@ public class LineAnnotation extends MarkupAnnotation {
     /**
      * Resets the annotations appearance stream.
      */
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
 
         // nothing to reset,  creating new annotation.
         if (startOfLine == null || endOfLine == null) {
@@ -648,7 +648,7 @@ public class LineAnnotation extends MarkupAnnotation {
 
         // mark the change.
         StateManager stateManager = library.getStateManager();
-        stateManager.addChange(new PObject(this, this.getPObjectReference()));
+        stateManager.addChange(new PObject(this, this.getPObjectReference()), isNew);
     }
 
     public Point2D getStartOfLine() {

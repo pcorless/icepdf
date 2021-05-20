@@ -43,6 +43,8 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.icepdf.core.util.SystemProperties.INTERACTIVE_ANNOTATIONS;
+
 /**
  * AbstractAnnotationComponent contains base functionality for annotation
  * components which are used to display annotation for a given page view. This
@@ -56,15 +58,10 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
 
     protected static final Logger logger =
             Logger.getLogger(AbstractAnnotationComponent.class.toString());
-    protected static boolean isInteractiveAnnotationsEnabled;
     protected static Color annotationHighlightColor;
     protected static float annotationHighlightAlpha;
 
     static {
-        // enables interactive annotation support.
-        isInteractiveAnnotationsEnabled =
-                Defs.sysPropertyBoolean(
-                        "org.icepdf.core.annotations.interactive.enabled", true);
 
         // sets annotation selected highlight colour
         try {
@@ -95,6 +92,9 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
             annotationHighlightAlpha = 0.4f;
         }
     }
+
+    // created for rendering only, not created by the user,  set when state manager shouldn't record the change
+    protected boolean isSynthetic;
 
     public static final int resizeBoxSize = 4;
 
@@ -153,7 +153,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
         isResizable = !(annotation.getFlagReadOnly() || annotation.getFlagLocked());
 
         // lock UI controls.
-        if (isInteractiveAnnotationsEnabled) {
+        if (INTERACTIVE_ANNOTATIONS) {
             addMouseListener(this);
             addMouseMotionListener(this);
 
@@ -403,7 +403,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
             annotation.setCurrentAppearance(Annotation.APPEARANCE_STREAM_DOWN_KEY);
         }
 
-        if (isInteractiveAnnotationsEnabled &&
+        if (INTERACTIVE_ANNOTATIONS &&
                 !annotation.getFlagReadOnly()) {
             initiateMouseMoved(e);
         }
@@ -415,7 +415,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
     protected boolean additionalActionsHandler(Name additionalActionKey, MouseEvent e) {
         if (!(AbstractPageViewComponent.isAnnotationTool(
                 documentViewController.getDocumentViewModel().getViewToolMode())) &&
-                isInteractiveAnnotationsEnabled) {
+                INTERACTIVE_ANNOTATIONS) {
             if (documentViewController.getAnnotationCallback() != null) {
                 int x = -1, y = -1;
                 if (e != null) {
@@ -588,7 +588,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
                 dy = endOfMousePress.getY() - startOfMousePress.getY();
             }
 
-            annotation.resetAppearanceStream(dx, -dy, getToPageSpaceTransform());
+            annotation.resetAppearanceStream(dx, -dy, getToPageSpaceTransform(), true);
 
             // fire new bounds change event, let the listener handle
             // how to deal with the bound change.
@@ -612,7 +612,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
             // fire the main action associated with the
             if (!actionFired && !(AbstractPageViewComponent.isAnnotationTool(
                     documentViewController.getDocumentViewModel().getViewToolMode())) &&
-                    isInteractiveAnnotationsEnabled) {
+                    INTERACTIVE_ANNOTATIONS) {
                 if (documentViewController.getAnnotationCallback() != null) {
                     // get the A and AA entries.
                     Action action = annotation.getAction();
@@ -711,5 +711,13 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
 
     public boolean isShowInvisibleBorder() {
         return isShowInvisibleBorder;
+    }
+
+    public boolean isSynthetic() {
+        return isSynthetic;
+    }
+
+    public void setSynthetic(boolean synthetic) {
+        isSynthetic = synthetic;
     }
 }

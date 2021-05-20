@@ -51,6 +51,7 @@ public class InformationPanel extends JPanel {
         final String producer;
         final String creationDate;
         final String modDate;
+        final String path;
 
         // get duplicate names from message bundle
         final String notAvailable =
@@ -71,6 +72,17 @@ public class InformationPanel extends JPanel {
         modDate = documentInfo.getModDate() != null ?
                 documentInfo.getModDate().toString() : notAvailable;
 
+        final String origin = document.getDocumentOrigin();
+        if (origin == null || origin.isEmpty()) {
+            final String location = document.getDocumentLocation();
+            if (location == null || location.isEmpty()) {
+                path = "";
+            } else {
+                path = location;
+            }
+        } else {
+            path = origin;
+        }
         setLayout(new GridBagLayout());
         setAlignmentY(JPanel.TOP_ALIGNMENT);
 
@@ -108,6 +120,8 @@ public class InformationPanel extends JPanel {
         addGB(layoutPanel, new JLabel(
                         messageBundle.getString("viewer.dialog.documentInformation.modified.label")),
                 0, 7, 1, 1);
+        addGB(layoutPanel, new JLabel(messageBundle.getString("viewer.dialog.documentInformation.path.label")),
+                0, 8, 1, 1);
 
         final boolean canModify = document.getSecurityManager() == null ||
                 document.getSecurityManager().getPermissions().getPermissions(Permissions.MODIFY_DOCUMENT);
@@ -125,6 +139,7 @@ public class InformationPanel extends JPanel {
         constraints.insets = new Insets(5, 5, 5, 5);
         addGB(layoutPanel, new JLabel(creationDate), 1, 6, 1, 1);
         addGB(layoutPanel, new JLabel(modDate), 1, 7, 1, 1);
+        addGB(layoutPanel, new JLabel(path), 1, 8, 1, 1);
         constraints.anchor = GridBagConstraints.NORTH;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.insets = new Insets(5, 5, 5, 5);

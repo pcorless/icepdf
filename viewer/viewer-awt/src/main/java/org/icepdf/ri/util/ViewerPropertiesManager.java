@@ -18,10 +18,7 @@ package org.icepdf.ri.util;
 import javax.swing.*;
 import java.io.*;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.Properties;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
@@ -80,10 +77,6 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_DEFAULT_ROTATION = "document.rotation";
     // page rotation
     public static final String PROPERTY_DEFAULT_VIEW_TYPE = "document.viewtype";
-    // default print media size.
-    public static final String PROPERTY_PRINT_MEDIA_SIZE_WIDTH = "document.print.mediasize.width";
-    public static final String PROPERTY_PRINT_MEDIA_SIZE_HEIGHT = "document.print.mediasize.height";
-    public static final String PROPERTY_PRINT_MEDIA_SIZE_UNIT = "document.print.mediasize.unit";
     // highlight and selection text colours.
     public static final String PROPERTY_TEXT_SELECTION_COLOR = "org.icepdf.core.views.page.text.selection.color";
     public static final String PROPERTY_TEXT_HIGHLIGHT_COLOR = "org.icepdf.core.views.page.text.highlight.color";
@@ -159,15 +152,25 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_VIEWPREF_FITWINDOW = "application.viewerpreferences.fitwindow";
     public static final String PROPERTY_VIEWPREF_FORM_HIGHLIGHT = "application.viewerpreferences.form.highlight";
     public static final String PROPERTY_VIEWPREF_ANNOTATION_EDIT_MODE = "application.viewerpreferences.annotation.editmode";
-    // annotation handler default to selection tool after annotation is created.
-    public static final String PROPERTY_ANNOTATION_HIGHLIGHT_SELECTION_ENABLED = "application.annotation.highlight.selection.enabled";
-    public static final String PROPERTY_ANNOTATION_LINE_SELECTION_ENABLED = "application.annotation.line.selection.enabled";
-    public static final String PROPERTY_ANNOTATION_LINK_SELECTION_ENABLED = "application.annotation.link.selection.enabled";
-    public static final String PROPERTY_ANNOTATION_SQUARE_SELECTION_ENABLED = "application.annotation.rectangle.selection.enabled";
-    public static final String PROPERTY_ANNOTATION_CIRCLE_SELECTION_ENABLED = "application.annotation.circle.selection.enabled";
-    public static final String PROPERTY_ANNOTATION_INK_SELECTION_ENABLED = "application.annotation.ink.selection.enabled";
-    public static final String PROPERTY_ANNOTATION_FREE_TEXT_SELECTION_ENABLED = "application.annotation.freetext.selection.enabled";
-    public static final String PROPERTY_ANNOTATION_TEXT_SELECTION_ENABLED = "application.annotation.text.selection.enabled";
+    // annotation handler default to selected tool after annotation is created.
+    public static final String PROPERTY_ANNOTATION_HIGHLIGHT_SELECTION_TYPE = "application.annotation.highlight.selection.type";
+    public static final String PROPERTY_ANNOTATION_LINE_SELECTION_TYPE = "application.annotation.line.selection.type";
+    public static final String PROPERTY_ANNOTATION_LINK_SELECTION_TYPE = "application.annotation.link.selection.type";
+    public static final String PROPERTY_ANNOTATION_SQUARE_SELECTION_TYPE = "application.annotation.rectangle.selection.type";
+    public static final String PROPERTY_ANNOTATION_CIRCLE_SELECTION_TYPE = "application.annotation.circle.selection.type";
+    public static final String PROPERTY_ANNOTATION_INK_SELECTION_TYPE = "application.annotation.ink.selection.type";
+    public static final String PROPERTY_ANNOTATION_FREE_TEXT_SELECTION_TYPE = "application.annotation.freetext.selection.type";
+    public static final String PROPERTY_ANNOTATION_TEXT_SELECTION_TYPE = "application.annotation.text.selection.type";
+    public static final Set<String> ALL_SELECTION_PROPERTIES = new HashSet<>(Arrays.asList(
+            ViewerPropertiesManager.PROPERTY_ANNOTATION_CIRCLE_SELECTION_TYPE,
+            ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_SELECTION_TYPE,
+            ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_SELECTION_TYPE,
+            ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_SELECTION_TYPE,
+            ViewerPropertiesManager.PROPERTY_ANNOTATION_LINK_SELECTION_TYPE,
+            ViewerPropertiesManager.PROPERTY_ANNOTATION_SQUARE_SELECTION_TYPE,
+            ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_SELECTION_TYPE,
+            ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SELECTION_TYPE
+    ));
     // properties used to control visibility of annotation controls on main utility panel.
     public static final String PROPERTY_ANNOTATION_PROPERTIES_HIGHLIGHT_ENABLED = "application.annotation.properties.highlight.enabled";
     public static final String PROPERTY_ANNOTATION_PROPERTIES_UNDERLINE_ENABLED = "application.annotation.properties.underline.enabled";
@@ -196,6 +199,7 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_TEXT = "application.toolbar.annotation.text.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_PERMISSION = "application.toolbar.annotation.permission.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_UTILITY = "application.toolbar.annotation.toolbar.enabled";
+    public static final String PROPERTY_SHOW_TOOLBAR_BOOKMARK_UTILITY = "application.toolbar.bookmark.toolbar.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_PREVIEW = "application.toolbar.annotation.preview.enabled";
     // Individual control of the markup annotation context menu
     public static final String PROPERTY_SHOW_ANNOTATION_MARKUP_REPLY_TO = "application.annotation.show.markup.replyTo";
@@ -203,7 +207,6 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_SHOW_ANNOTATION_MARKUP_SET_STATUS = "application.annotation.show.markup.setStatus";
 
     // highlight annotation default colour as defined by the last used colour for each type.
-    public static final String PROPERTY_ANNOTATION_HIGHLIGHT_BUTTON_COLOR = "application.viewer.preference.annotation.highlight.button.color";
     public static final String PROPERTY_ANNOTATION_HIGHLIGHT_COLOR = "application.viewer.preference.annotation.highlight.color";
     public static final String PROPERTY_ANNOTATION_HIGHLIGHT_OPACITY = "application.viewer.preference.annotation.highlight.opacity";
     public static final String PROPERTY_ANNOTATION_STRIKE_OUT_COLOR = "application.viewer.preference.annotation.strikeout.color";
@@ -212,7 +215,6 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_ANNOTATION_UNDERLINE_OPACITY = "application.viewer.preference.annotation.underline.opacity";
     public static final String PROPERTY_ANNOTATION_SQUIGGLY_COLOR = "application.viewer.preference.annotation.squiggly.color";
     public static final String PROPERTY_ANNOTATION_SQUIGGLY_OPACITY = "application.viewer.preference.annotation.squiggly.opacity";
-    public static final String PROPERTY_ANNOTATION_TEXT_BUTTON_COLOR = "application.viewer.preference.annotation.text.button.color";
     public static final String PROPERTY_ANNOTATION_TEXT_COLOR = "application.viewer.preference.annotation.text.color";
     public static final String PROPERTY_ANNOTATION_TEXT_OPACITY = "application.viewer.preference.annotation.text.opacity";
     public static final String PROPERTY_ANNOTATION_TEXT_ICON = "application.viewer.preference.annotation.text.icon";
@@ -256,6 +258,7 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_ANNOTATION_QUICK_COLOR = "application.viewer.utility.annotation.filter.quick.color";
 
     // text search panel settings
+    public static final String PROPERTY_SEARCH_PANEL_WHOLE_PAGE_ENABLED = "application.viewer.utility.search.whole.page.enabled";
     public static final String PROPERTY_SEARCH_PANEL_REGEX_ENABLED = "application.viewer.utility.search.regex.enabled";
     public static final String PROPERTY_SEARCH_PANEL_WHOLE_WORDS_ENABLED = "application.viewer.utility.search.whole.words.enabled";
     public static final String PROPERTY_SEARCH_PANEL_CASE_SENSITIVE_ENABLED = "application.viewer.utility.search.case.sensitive.enabled";

@@ -248,7 +248,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         super(l, h);
     }
 
-    public void init() throws InterruptedException{
+    public synchronized void init() throws InterruptedException {
         super.init();
 
         Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
@@ -398,7 +398,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     }
 
     @Override
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
 
         Appearance appearance = appearances.get(currentAppearance);
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
@@ -443,7 +443,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         }
         fontFile = fontFile.deriveFont(fontSize);
         // init font's metrics
-        fontFile.echarAdvance(' ');
+        fontFile.getAdvance(' ');
         TextSprite textSprites =
                 new TextSprite(fontFile,
                         content.length(),
@@ -456,7 +456,9 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         // iterate over each line of text painting the strings.
         StringBuilder contents = new StringBuilder(content);
 
-        float lineHeight = (float) (Math.floor(fontFile.getAscent()) + Math.floor(fontFile.getDescent()));
+//        Rectangle2D fontBounds = fontFile.getMaxCharBounds();
+        // todo temporary get working until I can get back to calculating max char bounds.
+        float lineHeight = fontSize;
 
         float borderOffsetX = borderStyle.getStrokeWidth() / 2 + 1;  // 1 pixel padding
         float borderOffsetY = borderStyle.getStrokeWidth() / 2;
@@ -466,7 +468,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
         float currentX;
         // we don't want to shift the whole line width just the ascent
-        float currentY = advanceY + (float) fontFile.getAscent();
+        float currentY = advanceY + lineHeight;
 
         float lastx = 0;
         float newAdvanceX;
@@ -475,7 +477,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
             currentChar = contents.charAt(i);
 
-            newAdvanceX = (float) fontFile.echarAdvance(currentChar).getX();
+            newAdvanceX = (float) fontFile.getAdvance(currentChar).getX();
             currentX = advanceX + lastx;
             lastx += newAdvanceX;
 
@@ -530,7 +532,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         // create/update the appearance stream of the xObject.
         StateManager stateManager = library.getStateManager();
         Form form = updateAppearanceStream(shapes, bbox, matrix,
-                PostScriptEncoder.generatePostScript(shapes.getShapes()));
+                PostScriptEncoder.generatePostScript(shapes.getShapes()), isNew);
         generateExternalGraphicsState(form, opacity);
 
         if (form != null) {
@@ -570,7 +572,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             org.icepdf.core.pobjects.fonts.Font newFont;
             if (form.getResources() == null ||
                     form.getResources().getFont(EMBEDDED_FONT_NAME) == null) {
-                newFont = new org.icepdf.core.pobjects.fonts.ofont.Font(
+                newFont = new org.icepdf.core.pobjects.fonts.zfont.SimpleFont(
                         library, fontDictionary);
                 newFont.setPObjectReference(stateManager.getNewReferenceNumber());
                 // create font entry
@@ -595,7 +597,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                 }
                 newFont = form.getResources().getFont(EMBEDDED_FONT_NAME);
                 Reference reference = newFont.getPObjectReference();
-                newFont = new org.icepdf.core.pobjects.fonts.ofont.Font(library, fontDictionary);
+                newFont = new org.icepdf.core.pobjects.fonts.zfont.SimpleFont(library, fontDictionary);
                 newFont.setPObjectReference(reference);
             }
             // update hard reference to state manager and weak library reference.

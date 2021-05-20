@@ -120,7 +120,7 @@ public class AnnotationState implements Memento {
             // mark it as not deleted
             annotation.setDeleted(false);
             // re-add it to the page
-            page.addAnnotation(annotation);
+            page.addAnnotation(annotation, true);
             // finally update the pageComponent so we can see it again.
             ((Component) annotationComponent).setVisible(true);
             // refresh bounds for any resizes

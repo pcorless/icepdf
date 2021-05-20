@@ -16,7 +16,6 @@
 package org.icepdf.ri.common;
 
 import org.icepdf.core.pobjects.Document;
-import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -32,10 +31,9 @@ public class AboutDialog extends EscapeJDialog implements ActionListener, Window
 
     private JButton ok;
     private Timer timer;
-    private int whichTimer;
+    private final int whichTimer;
 
     private static final int WAIT_TIME = 3000; //time to wait in milliseconds
-    private static final String IMAGE = "icelogo.png"; //image to include in the dialog
 
     public static final int NO_BUTTONS = 0;
     public static final int OK = 2;
@@ -55,10 +53,10 @@ public class AboutDialog extends EscapeJDialog implements ActionListener, Window
         setResizable(false);
 
         JPanel panelImage = new javax.swing.JPanel();
-        ImageIcon icon = new ImageIcon(Images.get(IMAGE));
-        JLabel iconLabel = new JLabel(icon);
-        iconLabel.setBorder(BorderFactory.createEmptyBorder());
-        panelImage.add(iconLabel);
+//        ImageIcon icon = new ImageIcon(Images.get(IMAGE));
+//        JLabel iconLabel = new JLabel(icon);
+//        iconLabel.setBorder(BorderFactory.createEmptyBorder());
+//        panelImage.add(iconLabel);
 
         JLabel label;
 
@@ -83,7 +81,7 @@ public class AboutDialog extends EscapeJDialog implements ActionListener, Window
             c2 = c1 + 1;
         }
         panel1.add(Box.createVerticalStrut(10));
-        label = new JLabel(text.substring(c2, text.length()));
+        label = new JLabel(text.substring(c2));
         label.setAlignmentX(0.5f);
         panel1.add(label);
 

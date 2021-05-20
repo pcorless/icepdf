@@ -81,7 +81,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
      * @param dy            y offset of the annotation
      * @param pageTransform current page transform.
      */
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
         ChoiceFieldType choiceFieldType =
                 fieldDictionary.getChoiceFieldType();
 

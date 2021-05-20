@@ -556,7 +556,7 @@ public class Document {
         String startxref = "startxref";
         int startxrefIndexToMatch = startxref.length() - 1;
 
-        while (currentPosition >= 0 && (endOfFile - currentPosition) < 2048) {
+        while (currentPosition >= 0 && (endOfFile - currentPosition) < 65536) {
             in.seekAbsolute(currentPosition);
             int curr = in.read();
             if (curr < 0)

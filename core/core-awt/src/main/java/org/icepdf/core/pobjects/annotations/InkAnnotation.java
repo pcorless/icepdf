@@ -60,7 +60,7 @@ public class InkAnnotation extends MarkupAnnotation {
     }
 
     @SuppressWarnings("unchecked")
-    public void init() throws InterruptedException {
+    public synchronized void init() throws InterruptedException {
         super.init();
         // look for an ink list
         List<List<Number>> inkLists = library.getArray(entries, INK_LIST_KEY);
@@ -178,7 +178,7 @@ public class InkAnnotation extends MarkupAnnotation {
     /**
      * Resets the annotations appearance stream.
      */
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew) {
 
         // setup clean shapes
         Appearance appearance = appearances.get(currentAppearance);
@@ -234,7 +234,7 @@ public class InkAnnotation extends MarkupAnnotation {
 
         // mark the change.
         StateManager stateManager = library.getStateManager();
-        stateManager.addChange(new PObject(this, this.getPObjectReference()));
+        stateManager.addChange(new PObject(this, this.getPObjectReference()), isNew);
 
     }
 

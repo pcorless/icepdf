@@ -20,6 +20,7 @@ import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.AFM;
 import org.icepdf.core.pobjects.fonts.FontDescriptor;
+import org.icepdf.core.pobjects.fonts.zfont.cmap.CMap;
 import org.icepdf.core.util.FontUtil;
 import org.icepdf.core.util.Library;
 
@@ -31,9 +32,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
- *
+ * @deprecated
  */
+@Deprecated
 public class Font extends org.icepdf.core.pobjects.fonts.Font {
 
     private static final Logger logger =
@@ -61,8 +62,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
     // differences from the font's built-in encoding or from a specified predefined
     // encoding
     private Encoding encoding;
-    // encoding name for debugging reasons;
-    private Name encodingName;
+
 
     // An array of (LastChar ? FirstChar + 1) widths, each element being the
     // glyph width for the character code that equals FirstChar plus the array index.
@@ -259,7 +259,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         // ToUnicode indicates that we now have CMap stream that need to be parsed
         Object objectUnicode = library.getObject(entries, TOUNICODE_KEY);
         if (objectUnicode != null && objectUnicode instanceof Stream) {
-            toUnicodeCMap = new CMap(library, new HashMap(), (Stream) objectUnicode);
+            toUnicodeCMap = new CMap((Stream) objectUnicode);
             toUnicodeCMap.init();
         }
 
@@ -328,7 +328,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         Object of = library.getObject(entries, FONT_DESCRIPTOR_KEY);
         if (of instanceof FontDescriptor) {
             fontDescriptor = (FontDescriptor) of;
-            fontDescriptor.init();
+            fontDescriptor.init(subtype);
         }
 
         // If there is no FontDescriptor then we most likely have a core afm
@@ -341,7 +341,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                 AFM fontMetrix = (AFM) afm;
                 // finally create a fontDescriptor based on AFM data.
                 fontDescriptor = FontDescriptor.createDescriptor(library, fontMetrix);
-                fontDescriptor.init();
+                fontDescriptor.init(subtype);
             }
         }
 
@@ -483,7 +483,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         // font family based on what the font name best matches up with none
         // font family font names.  if all else fails use serif as it is the most'
         // common font.
-        if (!isFontSubstitution && font != null &&
+        if (!isFontSubstitution && font == null &&
                 !font.getName().toLowerCase().contains(font.getFamily().toLowerCase())) {
             // see if we working with a sans serif font
             if ((font.getName().toLowerCase().contains("times new roman") ||
@@ -550,7 +550,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
 
         if (logger.isLoggable(Level.FINE)) {
             logger.fine(name + " - " + encodingName + " " + basefont + " " + font.getName() + " " +
-                    awtFont.toString() + " " + isFontSubstitution);
+                    font.toString() + " " + isFontSubstitution);
         }
 
         inited = true;
@@ -634,11 +634,9 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         float ascent = 0.0f;
         float descent = 0.0f;
         if (fontDescriptor != null) {
-            if (fontDescriptor.getMissingWidth() > 0) {
-                missingWidth = fontDescriptor.getMissingWidth() / 1000f;
-                ascent = fontDescriptor.getAscent() / 1000f;
-                descent = fontDescriptor.getDescent() / 1000f;
-            }
+            missingWidth = fontDescriptor.getMissingWidth() / 1000f;
+            ascent = fontDescriptor.getAscent() / 1000f;
+            descent = fontDescriptor.getDescent() / 1000f;
         }
         if (widths != null) {
             float[] newWidth = new float[256 - firstchar];
@@ -647,12 +645,12 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                     newWidth[i] = ((Number) widths.get(i)).floatValue() / 1000f;
                 }
             }
-            font = font.deriveFont(newWidth, firstchar, missingWidth, ascent, descent, cMap);
+            font = font.deriveFont(newWidth, firstchar, missingWidth, ascent, descent, null, cMap);
         } else if (cidWidths != null) {
             // cidWidth are already scaled correct to .001
-            font = font.deriveFont(cidWidths, firstchar, missingWidth, ascent, descent, null);
+            font = font.deriveFont(cidWidths, firstchar, missingWidth, ascent, descent, null, null);
         } else if (afm != null && isAFMFont) {
-            font = font.deriveFont(afm.getWidths(), firstchar, missingWidth, ascent, descent, cMap);
+            font = font.deriveFont(afm.getWidths(), firstchar, missingWidth, ascent, descent, null, cMap);
         }
 
     }

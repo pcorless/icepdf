@@ -41,7 +41,7 @@ public class PermissionsDialog extends EscapeJDialog {
      * @param document      document
      * @param messageBundle i18n message bundle
      */
-    public PermissionsDialog(JFrame frame, Document document,
+    public PermissionsDialog(Frame frame, Document document,
                              ResourceBundle messageBundle) {
         super(frame, true);
         setTitle(messageBundle.getString("viewer.dialog.documentPermissions.title"));

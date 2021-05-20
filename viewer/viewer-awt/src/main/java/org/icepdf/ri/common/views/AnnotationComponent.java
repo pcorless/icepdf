@@ -141,4 +141,8 @@ public interface AnnotationComponent {
      */
     void dispose();
 
+    boolean isSynthetic();
+
+    void setSynthetic(boolean synthetic);
+
 }

@@ -173,7 +173,7 @@ public class NewAnnotationPostPageLoad {
                                 // create a new URI action
                                 org.icepdf.core.pobjects.actions.Action action =
                                         createURIAction(document.getPageTree().getLibrary(),
-                                                "http://www.icepdf.org");
+                                                "https://github.com/pcorless/icepdf");
                                 // or create a new goTo Annotation that links to the page
                                 // number represented by pageCount.
                                 //                    org.icepdf.core.pobjects.actions.Action action =

@@ -39,7 +39,7 @@ public class PropertiesDialog extends EscapeJDialog {
 
     private final JButton okButton;
 
-    public PropertiesDialog(final JFrame frame, final SwingController controller,
+    public PropertiesDialog(final Frame frame, final SwingController controller,
                             final ResourceBundle messageBundle) {
         super(frame, true);
 
