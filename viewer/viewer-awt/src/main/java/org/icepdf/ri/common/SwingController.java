@@ -57,6 +57,7 @@ import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryFrame;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
+import org.icepdf.ri.util.*;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
 import org.icepdf.ri.util.TextExtractionTask;
 import org.icepdf.ri.util.URLAccess;
@@ -101,6 +102,7 @@ import java.util.stream.Collectors;
 import static org.icepdf.core.util.PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE;
 import static org.icepdf.ri.util.ViewerPropertiesManager.*;
 
+
 /**
  * Controller is the meat of a PDF viewing application. It is the Controller
  * aspect of the Model-View-Controller (MVC) framework.<br>
@@ -144,6 +146,7 @@ public class SwingController extends ComponentAdapter
     private JMenuItem openURLMenuItem;
     private JMenuItem closeMenuItem;
     private JMenuItem saveAsFileMenuItem;
+    private JMenuItem sendMailMenuItem;
     private JMenuItem exportTextMenuItem;
     private JMenuItem propertiesMenuItem;
     private JMenuItem permissionsMenuItem;
@@ -441,6 +444,16 @@ public class SwingController extends ComponentAdapter
      */
     public void setSaveAsFileMenuItem(JMenuItem mi) {
         saveAsFileMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
+     */
+    public void setSendMailMenuItem(JMenuItem mi) {
+        sendMailMenuItem = mi;
         mi.addActionListener(this);
     }
 
@@ -1567,6 +1580,7 @@ public class SwingController extends ComponentAdapter
         // menu items.
         setEnabled(closeMenuItem, opened);
         setEnabled(saveAsFileMenuItem, opened);
+        setEnabled(sendMailMenuItem, opened);
         setEnabled(exportTextMenuItem, opened && canExtract && !pdfCollection);
         setEnabled(propertiesMenuItem, opened);
 
@@ -3211,6 +3225,7 @@ public class SwingController extends ComponentAdapter
         openURLMenuItem = null;
         closeMenuItem = null;
         saveAsFileMenuItem = null;
+        sendMailMenuItem = null;
         exportTextMenuItem = null;
         permissionsMenuItem = null;
         propertiesMenuItem = null;
@@ -4734,6 +4749,8 @@ public class SwingController extends ComponentAdapter
                 }
             } else if (source == saveAsFileMenuItem || source == saveAsFileButton) {
                 saveFile();
+            } else if (source == sendMailMenuItem) {
+                MailSender.sendMail(this);
             } else if (source == exportTextMenuItem) {
                 exportText();
             } else if (source == exitMenuItem) {
