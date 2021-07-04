@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.views;
 
+import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.ri.common.CurrentPageChanger;
 import org.icepdf.ri.common.KeyListenerPageChanger;
 import org.icepdf.ri.common.MouseWheelListenerPageChanger;
@@ -182,30 +183,10 @@ public class TwoPageView extends AbstractDocumentView {
     }
 
     public Dimension getDocumentSize() {
-        float pageViewWidth = 0;
-        float pageViewHeight = 0;
-        if (pagesPanel != null) {
-            int count = pagesPanel.getComponentCount();
-            Component comp;
-            // should only have one page view decorator for single page view.
-            for (int i = 0; i < count; i++) {
-                comp = pagesPanel.getComponent(i);
-                if (comp instanceof PageViewDecorator) {
-                    PageViewDecorator pvd = (PageViewDecorator) comp;
-                    Dimension dim = pvd.getPreferredSize();
-                    pageViewWidth = dim.width;
-                    pageViewHeight = dim.height;
-                    break;
-                }
-            }
-        }
-        // normalize the dimensions to a zoom level of zero.
-        float currentZoom = documentViewController.getDocumentViewModel().getViewZoom();
-        pageViewWidth = Math.abs(pageViewWidth / currentZoom);
-        pageViewHeight = Math.abs(pageViewHeight / currentZoom);
+        final PDimension dimension = getMaxPageDimension();
+        float pageViewWidth = (float) dimension.getWidth();
+        float pageViewHeight = (float) dimension.getHeight();
 
-        // two pages wide, generalization, pages are usually the same size we
-        // don't bother to look at the second pages size for the time being. 
         pageViewWidth *= 2;
 
         // add any horizontal padding from layout manager

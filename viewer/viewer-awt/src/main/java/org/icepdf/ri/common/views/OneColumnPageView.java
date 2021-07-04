@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.views;
 
+import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.ri.common.CurrentPageChanger;
 import org.icepdf.ri.common.KeyListenerPageColumnChanger;
 
@@ -75,7 +76,6 @@ public class OneColumnPageView extends AbstractDocumentView {
         gbc.insets =  // component spacer [top, left, bottom, right]
                 new Insets(layoutInserts, layoutInserts, layoutInserts, layoutInserts);
         gbc.gridwidth = GridBagConstraints.REMAINDER;      // one component per row
-
         this.setLayout(new GridBagLayout());
         this.add(pagesPanel, gbc);
 
@@ -134,25 +134,9 @@ public class OneColumnPageView extends AbstractDocumentView {
     }
 
     public Dimension getDocumentSize() {
-        float pageViewWidth = 0;
-        float pageViewHeight = 0;
-        if (pagesPanel != null) {
-            int currCompIndex = documentViewController.getCurrentPageIndex();
-            int numComponents = pagesPanel.getComponentCount();
-            if (currCompIndex >= 0 && currCompIndex < numComponents) {
-                Component comp = pagesPanel.getComponent(currCompIndex);
-                if (comp instanceof PageViewDecorator) {
-                    PageViewDecorator pvd = (PageViewDecorator) comp;
-                    Dimension dim = pvd.getPreferredSize();
-                    pageViewWidth = dim.width;
-                    pageViewHeight = dim.height;
-                }
-            }
-        }
-        // normalize the dimensions to a zoom level of zero.
-        float currentZoom = documentViewController.getDocumentViewModel().getViewZoom();
-        pageViewWidth = Math.abs(pageViewWidth / currentZoom);
-        pageViewHeight = Math.abs(pageViewHeight / currentZoom);
+        final PDimension dimension = getMaxPageDimension();
+        float pageViewWidth = (float) dimension.getWidth();
+        float pageViewHeight = (float) dimension.getHeight();
 
         // add any horizontal padding from layout manager
         pageViewWidth += AbstractDocumentView.horizontalSpace * 2;
