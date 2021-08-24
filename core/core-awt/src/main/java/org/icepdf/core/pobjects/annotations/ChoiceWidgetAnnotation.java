@@ -142,7 +142,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
             stateManager.addChange(new PObject(this, this.getPObjectReference()));
 
             // compress the form object stream.
-            if (false && compressAppearanceStream) {
+            if (compressAppearanceStream) {
                 appearanceStream.getEntries().put(Stream.FILTER_KEY, new Name("FlateDecode"));
             } else {
                 appearanceStream.getEntries().remove(Stream.FILTER_KEY);

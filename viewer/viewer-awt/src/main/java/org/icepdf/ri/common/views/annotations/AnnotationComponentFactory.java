@@ -16,14 +16,12 @@
 package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.acroform.ButtonFieldDictionary;
 import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
 import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.common.views.annotations.acroform.ButtonComponent;
-import org.icepdf.ri.common.views.annotations.acroform.ChoiceComponent;
-import org.icepdf.ri.common.views.annotations.acroform.SignatureComponent;
-import org.icepdf.ri.common.views.annotations.acroform.TexComponent;
+import org.icepdf.ri.common.views.annotations.acroform.*;
 
 import java.awt.*;
 import java.util.logging.Logger;
@@ -95,8 +93,22 @@ public class AnnotationComponentFactory {
                 AbstractWidgetAnnotation widgetAnnotation = (AbstractWidgetAnnotation) annotation;
                 Name fieldType = widgetAnnotation.getFieldDictionary().getFieldType();
                 if (FieldDictionaryFactory.TYPE_BUTTON.equals(fieldType)) {
-                    return new ButtonComponent(
-                            (ButtonWidgetAnnotation) annotation, documentViewController, pageViewComponent);
+                    ButtonWidgetAnnotation buttonWidgetAnnotation =
+                            AbstractButtonComponent.getButtonWidgetAnnotation(annotation);
+                    ButtonFieldDictionary fieldDictionary = buttonWidgetAnnotation.getFieldDictionary();
+                    ButtonFieldDictionary.ButtonFieldType buttonFieldType = fieldDictionary.getButtonFieldType();
+                    if (buttonFieldType == ButtonFieldDictionary.ButtonFieldType.CHECK_BUTTON) {
+                        return new CheckButtonComponent(
+                                buttonWidgetAnnotation, documentViewController, pageViewComponent);
+                    } else if (buttonFieldType == ButtonFieldDictionary.ButtonFieldType.RADIO_BUTTON) {
+                        return new RadioButtonComponent(
+                                buttonWidgetAnnotation, documentViewController, pageViewComponent);
+                    } else if (buttonFieldType == ButtonFieldDictionary.ButtonFieldType.PUSH_BUTTON) {
+                        return new PushButtonComponent(
+                                buttonWidgetAnnotation, documentViewController, pageViewComponent);
+                    } else {
+                        logger.warning("Unknown button type " + fieldType);
+                    }
                 } else if (FieldDictionaryFactory.TYPE_CHOICE.equals(fieldType)) {
                     return new ChoiceComponent(
                             (ChoiceWidgetAnnotation) annotation, documentViewController, pageViewComponent);
