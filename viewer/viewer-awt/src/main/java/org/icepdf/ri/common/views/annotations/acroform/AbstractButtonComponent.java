@@ -28,6 +28,7 @@ public abstract class AbstractButtonComponent extends AbstractAnnotationComponen
             isResizable = false;
             isMovable = false;
         }
+        this.annotation.addPropertyChangeListener(this);
     }
 
     protected abstract void buttonActuated();

@@ -11,8 +11,9 @@ import javax.swing.*;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
-public class CheckButtonComponent extends AbstractButtonComponent {
+public class CheckButtonComponent extends AbstractButtonComponent implements PropertyChangeListener {
 
     public CheckButtonComponent(ButtonWidgetAnnotation annotation, DocumentViewController documentViewController,
                                 AbstractPageViewComponent pageViewComponent) {
@@ -54,7 +55,7 @@ public class CheckButtonComponent extends AbstractButtonComponent {
         Name newValue = annotation.toggle();
         fieldDictionary.setFieldValue(newValue, annotation.getPObjectReference());
         parentFieldDictionary.setFieldValue(newValue, annotation.getPObjectReference());
-
+        resetAppearanceShapes();
         this.getParent().repaint();
     }
 }
