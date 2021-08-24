@@ -419,7 +419,11 @@ public class PInfo extends Dictionary {
 
     private LiteralStringObject getEncryptedString(final String value) {
         if (securityManager != null) {
-            return new LiteralStringObject(value, getPObjectReference(), securityManager);
+            try {
+                return new LiteralStringObject(value, getPObjectReference(), securityManager);
+            } catch (final Exception e){
+                return new LiteralStringObject(value);
+            }
         } else {
             return new LiteralStringObject(value);
         }
