@@ -49,6 +49,13 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
         fieldDictionary = new ChoiceFieldDictionary(library, entries);
     }
 
+    public ChoiceWidgetAnnotation(Annotation widgetAnnotation) {
+        super(widgetAnnotation.getLibrary(), widgetAnnotation.getEntries());
+        fieldDictionary = new ChoiceFieldDictionary(library, entries);
+        // copy over the reference number.
+        setPObjectReference(widgetAnnotation.getPObjectReference());
+    }
+
     /**
      * Some choices lists are lacking the /opt key so we need to do our best to generate the list from the shapes.
      *

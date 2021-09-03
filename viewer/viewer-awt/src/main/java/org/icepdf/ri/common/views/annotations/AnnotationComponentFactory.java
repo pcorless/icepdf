@@ -17,6 +17,7 @@ package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.acroform.ButtonFieldDictionary;
+import org.icepdf.core.pobjects.acroform.ChoiceFieldDictionary;
 import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
 import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
@@ -25,6 +26,8 @@ import org.icepdf.ri.common.views.annotations.acroform.*;
 
 import java.awt.*;
 import java.util.logging.Logger;
+
+import static org.icepdf.core.pobjects.acroform.ButtonFieldDictionary.ButtonFieldType.*;
 
 /**
  * AnnotationComponentFactory is responsible for building an annotation component
@@ -97,23 +100,34 @@ public class AnnotationComponentFactory {
                             AbstractButtonComponent.getButtonWidgetAnnotation(annotation);
                     ButtonFieldDictionary fieldDictionary = buttonWidgetAnnotation.getFieldDictionary();
                     ButtonFieldDictionary.ButtonFieldType buttonFieldType = fieldDictionary.getButtonFieldType();
-                    if (buttonFieldType == ButtonFieldDictionary.ButtonFieldType.CHECK_BUTTON) {
+                    if (buttonFieldType == CHECK_BUTTON) {
                         return new CheckButtonComponent(
                                 buttonWidgetAnnotation, documentViewController, pageViewComponent);
-                    } else if (buttonFieldType == ButtonFieldDictionary.ButtonFieldType.RADIO_BUTTON) {
+                    } else if (buttonFieldType == RADIO_BUTTON) {
                         return new RadioButtonComponent(
                                 buttonWidgetAnnotation, documentViewController, pageViewComponent);
-                    } else if (buttonFieldType == ButtonFieldDictionary.ButtonFieldType.PUSH_BUTTON) {
+                    } else if (buttonFieldType == PUSH_BUTTON) {
                         return new PushButtonComponent(
                                 buttonWidgetAnnotation, documentViewController, pageViewComponent);
                     } else {
                         logger.warning("Unknown button type " + fieldType);
                     }
                 } else if (FieldDictionaryFactory.TYPE_CHOICE.equals(fieldType)) {
-                    return new ChoiceComponent(
-                            (ChoiceWidgetAnnotation) annotation, documentViewController, pageViewComponent);
+                    ChoiceWidgetAnnotation choiceWidgetAnnotation =
+                            AbstractChoiceComponent.getButtonWidgetAnnotation(annotation);
+                    final ChoiceFieldDictionary choiceFieldDictionary = choiceWidgetAnnotation.getFieldDictionary();
+                    ChoiceFieldDictionary.ChoiceFieldType choiceFieldType = choiceFieldDictionary.getChoiceFieldType();
+                    if (choiceFieldType == ChoiceFieldDictionary.ChoiceFieldType.CHOICE_COMBO ||
+                            choiceFieldType == ChoiceFieldDictionary.ChoiceFieldType.CHOICE_EDITABLE_COMBO) {
+                        return new ChoiceComboComponent(choiceWidgetAnnotation, documentViewController, pageViewComponent);
+                    } else if (choiceFieldType == ChoiceFieldDictionary.ChoiceFieldType.CHOICE_LIST_SINGLE_SELECT ||
+                            choiceFieldType == ChoiceFieldDictionary.ChoiceFieldType.CHOICE_LIST_MULTIPLE_SELECT) {
+                        return new ChoiceListComponent(choiceWidgetAnnotation, documentViewController, pageViewComponent);
+                    } else {
+                        logger.warning("Unknown choice type " + fieldType);
+                    }
                 } else if (FieldDictionaryFactory.TYPE_TEXT.equals(fieldType)) {
-                    return new TexComponent(
+                    return new TextWidgetComponent(
                             (TextWidgetAnnotation) annotation, documentViewController, pageViewComponent);
                 } else if (FieldDictionaryFactory.TYPE_SIGNATURE.equals(fieldType)) {
                     return new SignatureComponent((SignatureWidgetAnnotation) annotation, documentViewController,

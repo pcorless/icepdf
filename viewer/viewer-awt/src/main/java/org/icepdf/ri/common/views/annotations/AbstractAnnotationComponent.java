@@ -152,7 +152,6 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
         isMovable = !(annotation.getFlagReadOnly() || annotation.getFlagLocked());
         isResizable = !(annotation.getFlagReadOnly() || annotation.getFlagLocked());
 
-        // lock UI controls.
         if (INTERACTIVE_ANNOTATIONS) {
             addMouseListener(this);
             addMouseMotionListener(this);

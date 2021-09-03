@@ -23,7 +23,6 @@ public class PushButtonComponent extends AbstractButtonComponent implements Prop
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        // nothing to do, buttons don't have a value
     }
 
     @Override

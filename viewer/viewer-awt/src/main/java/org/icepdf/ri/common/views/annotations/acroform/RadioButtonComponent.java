@@ -33,14 +33,13 @@ public class RadioButtonComponent extends AbstractButtonComponent implements Pro
         if ("valueFieldReset".equals(propertyName)) {
             ButtonFieldDictionary fieldDictionary = annotation.getFieldDictionary();
             ButtonFieldDictionary parentFieldDictionary = (ButtonFieldDictionary) fieldDictionary.getParent();
-            // turn everything off
             if (parentFieldDictionary != null && !parentFieldDictionary.hasFieldValue()) {
                 for (Object childWidget : parentFieldDictionary.getKids()) {
                     if (childWidget instanceof ButtonWidgetAnnotation) {
                         ((ButtonWidgetAnnotation) childWidget).turnOff();
                     }
                 }
-            } // find a default value and turn on.
+            }
             else if (parentFieldDictionary != null && parentFieldDictionary.hasFieldValue()) {
                 Name defaultValue = (Name) parentFieldDictionary.getDefaultFieldValue();
                 parentFieldDictionary.setFieldValue(defaultValue, parentFieldDictionary.getPObjectReference());
@@ -88,7 +87,6 @@ public class RadioButtonComponent extends AbstractButtonComponent implements Pro
             if (annotation.isOn()) {
                 return;
             }
-            // turn off all children elements
             else {
                 if (fieldDictionary.getParent() != null && fieldDictionary.getParent().getKids() != null) {
                     ArrayList kids = parentFieldDictionary.getKids();
@@ -99,7 +97,6 @@ public class RadioButtonComponent extends AbstractButtonComponent implements Pro
                         }
                     }
                 }
-                // save value to parent
                 Name newValue = annotation.toggle();
                 parentFieldDictionary.setFieldValue(newValue, annotation.getPObjectReference());
             }

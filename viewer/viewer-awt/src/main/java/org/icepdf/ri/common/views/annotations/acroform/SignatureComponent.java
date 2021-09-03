@@ -36,7 +36,7 @@ import java.awt.event.MouseEvent;
 import java.util.logging.Logger;
 
 /**
- * UI component that represents a Acroform signature widget in the interactive UI.
+ * UI component that represents an Acroform signature widget in the interactive UI.
  * Focus, mouse, validation and form submission is handled by this class.
  *
  * @since 6.1
