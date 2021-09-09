@@ -257,13 +257,6 @@ public abstract class ZSimpleFont implements FontFile {
         return maxCharBounds.getHeight();
     }
 
-    public double getHeight() {
-        if (maxCharBounds == null) {
-            maxCharBounds = getMaxCharBounds();
-        }
-        return maxCharBounds.getHeight();
-    }
-
     @Override
     public AffineTransform getTransform() {
         return null;
