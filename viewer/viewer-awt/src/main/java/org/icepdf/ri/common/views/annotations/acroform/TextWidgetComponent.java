@@ -144,6 +144,8 @@ public class TextWidgetComponent extends AbstractAnnotationComponent<TextWidgetA
         KeyboardFocusManager focusManager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
         focusManager.addPropertyChangeListener(this);
 
+        this.annotation.addPropertyChangeListener(this);
+
         revalidate();
     }
 

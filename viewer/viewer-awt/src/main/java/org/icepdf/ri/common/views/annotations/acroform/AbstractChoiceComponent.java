@@ -39,8 +39,24 @@ public abstract class AbstractChoiceComponent extends AbstractAnnotationComponen
 
         KeyboardFocusManager focusManager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
         focusManager.addPropertyChangeListener(this);
+        this.annotation.addPropertyChangeListener(this);
 
         revalidate();
+    }
+
+    public static ChoiceWidgetAnnotation getButtonWidgetAnnotation(Annotation annotation) {
+        ChoiceWidgetAnnotation widget = null;
+        if (annotation instanceof ChoiceWidgetAnnotation) {
+            widget = (ChoiceWidgetAnnotation) annotation;
+        } else {
+            try {
+                widget = new ChoiceWidgetAnnotation(annotation);
+                widget.init();
+            } catch (InterruptedException e) {
+                logger.warning("ChoiceWidgetAnnotation initialization interrupted.");
+            }
+        }
+        return widget;
     }
 
     @Override
@@ -61,8 +77,7 @@ public abstract class AbstractChoiceComponent extends AbstractAnnotationComponen
 
     @Override
     public void paintComponent(Graphics g) {
-        // look into this, seems wrong
-        isShowInvisibleBorder = false;
+
     }
 
     @Override
@@ -71,21 +86,6 @@ public abstract class AbstractChoiceComponent extends AbstractAnnotationComponen
     }
 
     public abstract boolean isActive();
-
-    public static ChoiceWidgetAnnotation getButtonWidgetAnnotation(Annotation annotation) {
-        ChoiceWidgetAnnotation widget = null;
-        if (annotation instanceof ChoiceWidgetAnnotation) {
-            widget = (ChoiceWidgetAnnotation) annotation;
-        } else {
-            try {
-                widget = new ChoiceWidgetAnnotation(annotation);
-                widget.init();
-            } catch (InterruptedException e) {
-                logger.fine("ChoiceWidgetAnnotation initialization interrupted.");
-            }
-        }
-        return widget;
-    }
 
 }
 
