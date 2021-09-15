@@ -29,8 +29,6 @@ import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.*;
-import org.icepdf.ri.common.widgets.AbstractColorButton;
-import org.icepdf.ri.common.widgets.annotations.AnnotationColorToggleButton;
 import org.icepdf.ri.common.preferences.PreferencesDialog;
 import org.icepdf.ri.common.print.PrintHelper;
 import org.icepdf.ri.common.print.PrintHelperFactory;
@@ -57,6 +55,8 @@ import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryFrame;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
+import org.icepdf.ri.common.widgets.AbstractColorButton;
+import org.icepdf.ri.common.widgets.annotations.AnnotationColorToggleButton;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
 import org.icepdf.ri.util.TextExtractionTask;
 import org.icepdf.ri.util.URLAccess;
@@ -1179,6 +1179,7 @@ public class SwingController extends ComponentAdapter
         this.inkAnnotationToolButton = btn;
         btn.addItemListener(this);
     }
+
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
      *
@@ -4432,8 +4433,12 @@ public class SwingController extends ComponentAdapter
     }
 
     public void showSearch() {
-        SearchToolBar searchBar = (SearchToolBar) quickSearchToolBar;
+        final SearchToolBar searchBar = (SearchToolBar) quickSearchToolBar;
+        final String selectedText = documentViewController.getSelectedText();
         if (searchBar != null) {
+            if (selectedText != null && !selectedText.trim().isEmpty()) {
+                searchBar.setSearchText(selectedText.trim());
+            }
             searchBar.focusTextField();
         } else {
             showSearchPanel();
@@ -4446,6 +4451,16 @@ public class SwingController extends ComponentAdapter
      * @see #setUtilityPaneVisible(boolean)
      */
     public void showSearchPanel() {
+        final String selectedText = documentViewController.getSelectedText();
+        if (selectedText != null && !selectedText.trim().isEmpty()) {
+            showSearchPanel(selectedText.trim());
+        } else {
+            showSearchPanel(searchPanel.getSearchPhrase());
+        }
+    }
+
+    public void showSearchPanel(final String searchPhrase) {
+        searchPanel.setSearchPhrase(searchPhrase);
         if (utilityTabbedPane != null && searchPanel != null) {
             // make sure the utility pane is visible
             if (!utilityTabbedPane.isVisible()) {
@@ -4458,16 +4473,10 @@ public class SwingController extends ComponentAdapter
                     // select the search panel
                     safelySelectUtilityPanel(searchPanel);
                 }
-
                 // request focus
                 searchPanel.requestFocus();
             }
         }
-    }
-
-    public void showSearchPanel(String searchPhrase) {
-        searchPanel.setSearchPhrase(searchPhrase);
-        showSearchPanel();
     }
 
     public void nextSearchResult() {
@@ -4628,7 +4637,7 @@ public class SwingController extends ComponentAdapter
         }
 
         // Hide the menubar?
-        if (viewer instanceof JFrame){
+        if (viewer instanceof JFrame) {
             final JMenuBar menuBar = ((JFrame) viewer).getJMenuBar();
             if (viewerPref != null && viewerPref.hasHideMenubar()) {
                 if (viewerPref.getHideMenubar()) {
@@ -5114,7 +5123,7 @@ public class SwingController extends ComponentAdapter
     }
 
     private static boolean checkAnnotationButton(final Object source, final AnnotationColorToggleButton button,
-                                          final JToggleButton propertiesButton){
+                                                 final JToggleButton propertiesButton) {
         return source == button || (button != null && source == button.getColorButton()) || source == propertiesButton;
     }
 
@@ -5656,9 +5665,9 @@ public class SwingController extends ComponentAdapter
         }
     }
 
-    private Collection<AnnotationColorToggleButton> getColorButtons(){
-        return new HashSet<>(Arrays.asList(highlightAnnotationToolButton, strikeOutAnnotationToolButton, underlineAnnotationToolButton,lineAnnotationToolButton,
-                lineArrowAnnotationToolButton,squareAnnotationToolButton,circleAnnotationToolButton,inkAnnotationToolButton,textAnnotationToolButton));
+    private Collection<AnnotationColorToggleButton> getColorButtons() {
+        return new HashSet<>(Arrays.asList(highlightAnnotationToolButton, strikeOutAnnotationToolButton, underlineAnnotationToolButton, lineAnnotationToolButton,
+                lineArrowAnnotationToolButton, squareAnnotationToolButton, circleAnnotationToolButton, inkAnnotationToolButton, textAnnotationToolButton));
     }
 
     public void changeAnnotationsVisibility(final AnnotationFilter filter, final boolean visible, final boolean execInvert) {
