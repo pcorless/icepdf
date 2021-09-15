@@ -516,7 +516,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         if (document == null) document = viewerController.getDocument();
         Page page = document.getPageTree().getPage(pageIndex);
         Library library = document.getCatalog().getLibrary();
-        ArrayList<Reference> annotationReferences = page.getAnnotationReferences();
+        List<Reference> annotationReferences = page.getAnnotationReferences();
         ArrayList<MarkupAnnotation> foundAnnotations = new ArrayList<>();
         if (annotationReferences != null && annotationReferences.size() > 0) {
             // get search terms from model and search for each occurrence.

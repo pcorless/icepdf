@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * <p>This class represents the leaves of a <code>PageTree</code> object known
@@ -283,10 +284,11 @@ public class Page extends Dictionary {
      *
      * @return list of a pages annotation reference list.
      */
-    public ArrayList<Reference> getAnnotationReferences() {
+    public List<Reference> getAnnotationReferences() {
         Object annots = library.getObject(entries, ANNOTS_KEY);
         if (annots != null && annots instanceof ArrayList) {
-            return (ArrayList<Reference>) annots;
+            final List<Object> list = (List<Object>) annots;
+            return list.stream().filter(Reference.class::isInstance).map(Reference.class::cast).collect(Collectors.toList());
         }
         return null;
     }
