@@ -86,7 +86,7 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
 
     @Override
     public void resetAppearanceShapes() {
-        // our only purpose is to update the popup annotation color.
+        // our only purpose is to update the popup annotation color and the color menu.
         if (annotation != null) {
             PopupAnnotation popup = annotation.getPopupAnnotation();
             if (popup != null) {
@@ -105,6 +105,7 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
                     }
                 }
             }
+            ((MarkupAnnotationPopupMenu) contextMenu).refreshColorMenu();
         }
     }
 
@@ -236,7 +237,6 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
             }
         }
     }
-
 
 
     public boolean isActive() {
