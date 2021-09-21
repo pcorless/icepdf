@@ -137,7 +137,7 @@ public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
                     String userName = SystemProperties.USER_NAME;
                     Page page = currentDocument.getPageTree().getPage(i);
                     if (page != null) {
-                        ArrayList<Reference> annotationReferences = page.getAnnotationReferences();
+                        List<Reference> annotationReferences = page.getAnnotationReferences();
                         if (annotationReferences != null && annotationReferences.size() > 0) {
                             for (Object annotationReference : annotationReferences) {
                                 if (isCancelled()) {
