@@ -98,6 +98,7 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.icepdf.core.util.PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE;
@@ -2551,14 +2552,21 @@ public class SwingController extends ComponentAdapter
         }
     }
 
-    private String getTempSaveFileName(String originalFilePath) {
-        String[] pathSplit = originalFilePath.split("/");
-        String name = pathSplit[pathSplit.length - 1];
-        String[] nameAndExt = name.split("\\.");
-        if (nameAndExt.length != 2) {
-            return null;
+    private static String getTempSaveFileName(final String originalFilePath) {
+        final String separator = File.separator;
+        final String[] pathSplit = originalFilePath.split(Pattern.quote(separator));
+        final String name = pathSplit[pathSplit.length - 1];
+        final String[] dotSplit = name.split("\\.");
+        final String basename = getBasename(dotSplit);
+        return Arrays.stream(pathSplit).limit(pathSplit.length - 1).collect(Collectors.joining(separator))
+                + separator + '.' + basename + "-tmp.pdf";
+    }
+
+    private static String getBasename(final String[] dotSplit) {
+        if (dotSplit.length == 1) {
+            return dotSplit[0];
         } else {
-            return Arrays.stream(pathSplit).limit(pathSplit.length - 1).collect(Collectors.joining("/")) + "/." + nameAndExt[0] + "-tmp.pdf";
+            return Arrays.stream(dotSplit).limit(dotSplit.length - 1).collect(Collectors.joining("."));
         }
     }
 
