@@ -4809,7 +4809,7 @@ public class SwingController extends ComponentAdapter
                                         document.getNumberOfPages() > MAX_SELECT_ALL_PAGE_COUNT)) {
                             // get the text.
                             StringSelection stringSelection = new StringSelection(
-                                    documentViewController.getSelectedText());
+                                    documentViewController.getFlatSelectedText());
                             Toolkit.getDefaultToolkit().getSystemClipboard()
                                     .setContents(stringSelection, stringSelection);
                         } else {
