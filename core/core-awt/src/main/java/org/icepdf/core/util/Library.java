@@ -208,7 +208,10 @@ public class Library {
             o = getObject((Reference) o);
         }
         if (o instanceof StateManager.Change) {
-            o = ((StateManager.Change)o).getPObject().getObject();
+            o = ((StateManager.Change) o).getPObject().getObject();
+        }
+        if (o instanceof PObject) {
+            o = ((PObject) o).getObject();
         }
         return o;
     }
