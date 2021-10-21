@@ -118,8 +118,14 @@ public class StateManager {
      * @param reference reference to look for an existing usage
      * @return Change of corresponding reference if present, false otherwise.
      */
-    public Change getChange(Reference reference) {
-        return changes.get(reference);
+    public Object getChange(Reference reference) {
+        Change change = changes.get(reference);
+        if (change != null) {
+            return change.getPObject();
+        } else {
+            logger.warning("No change object was found for " + reference);
+            return null;
+        }
     }
 
     /**
