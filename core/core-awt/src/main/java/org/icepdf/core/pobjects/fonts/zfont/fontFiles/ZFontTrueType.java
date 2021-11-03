@@ -62,7 +62,7 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
                 extractMetricsTable();
             }
         } catch (Throwable e) {
-            logger.log(Level.WARNING, "Error reading font file with ", e);
+            logger.log(Level.FINE, "Error reading font file with", e);
             throw new Exception(e);
         }
     }
@@ -137,7 +137,7 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
             }
             g.setTransform(af);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.FINE, "Error painting TrueType font", e);
         }
     }
 
@@ -223,7 +223,7 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
         try {
             return trueTypeFont.getName();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.FINE, "Error finding font family name", e);
         }
         return null;
     }
@@ -233,7 +233,7 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
         try {
             return trueTypeFont.getName();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.FINE, "Error finding font family name", e);
         }
         return null;
     }
@@ -338,7 +338,7 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
                 }
             }
         } catch (Throwable e) {
-            e.printStackTrace();
+            logger.log(Level.FINE, "Error deriving codeToGID", e);
         }
 
         return gid;

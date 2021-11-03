@@ -110,7 +110,7 @@ public class ZFontType0 extends ZSimpleFont {
             }
             g.setTransform(af);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.FINE, "Error painting FontType0 font", e);
         }
     }
 
@@ -216,7 +216,7 @@ public class ZFontType0 extends ZSimpleFont {
                 t1Font.getName();
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.FINE, "Error finding font family name", e);
         }
         return null;
     }
