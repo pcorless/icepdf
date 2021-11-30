@@ -32,6 +32,7 @@ import java.awt.geom.AffineTransform;
 public class BlendCompositeDrawCmd extends AbstractDrawCmd {
 
     private Composite blendComposite;
+    private boolean alphaCompositeFallback;
 
     public BlendCompositeDrawCmd(Name blendComposite, float alpha) {
         // check for -1, value not set and default should be used.
@@ -41,13 +42,34 @@ public class BlendCompositeDrawCmd extends AbstractDrawCmd {
         this.blendComposite = BlendComposite.getInstance(blendComposite, alpha);
     }
 
+    /**
+     * Enables fallback paint when a paint error was thrown trying to paint a BlendComposite. It should be noted
+     * this problem only happens on X11 window systems (linux/unix/osx?).  And is limited to the Viewer application when
+     * trying to paint Annotations on a swing/awt canvas.  This problem doesn't affect full page rending as all that
+     * painting is written to a raster before painting to the swing/awt graphics. And similarly headless pages captures
+     * are fine, fallback code shouldn't kick in.
+     * <p>
+     * Fallback paint simply adds a transparency effect which is usually close enough for most annotation types that
+     * enable blending like text highlight annotations.
+     * <p>
+     * It's a JDK issue which currently can only be addressed by enabling the system property
+     * -Dsun.java2d.opengl=true on a system that supports OpenGL.
+     */
+    public void enableAlphaCompositePaint() {
+        alphaCompositeFallback = true;
+    }
+
     @Override
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,
                               Shape clip, AffineTransform base, OptionalContentState optionalContentState,
                               boolean paintAlpha, PaintTimer paintTimer) {
 
         if (paintAlpha && blendComposite != null) {
-            g.setComposite(blendComposite);
+            if (!alphaCompositeFallback) {
+                g.setComposite(blendComposite);
+            } else {
+                g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, .30f));
+            }
         }
 
         return currentShape;
