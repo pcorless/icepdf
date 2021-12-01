@@ -17,11 +17,7 @@ package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
-import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.FontManager;
-import org.icepdf.core.pobjects.graphics.TextSprite;
-import org.icepdf.core.pobjects.graphics.commands.DrawCmd;
-import org.icepdf.core.pobjects.graphics.commands.TextSpriteDrawCmd;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.utility.annotation.properties.FreeTextAnnotationPanel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
@@ -44,7 +40,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.ArrayList;
 import java.util.logging.Logger;
 
 /**
@@ -70,9 +65,9 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
 
     private static final Logger logger =
             Logger.getLogger(FreeTextAnnotation.class.toString());
+    private final ScalableTextArea freeTextPane;
     // font file cache.
     protected Font fontFile;
-    private ScalableTextArea freeTextPane;
     private boolean contentTextChange;
 
     public FreeTextAnnotationComponent(FreeTextAnnotation annotation, DocumentViewController documentViewController,
@@ -81,25 +76,6 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
         isRollover = false;
         isShowInvisibleBorder = false;
 
-        // update the shapes array pruning any text glyphs as well as
-        // extra any useful font information for the editing of this annotation.
-        if (annotation.getShapes() != null) {
-            ArrayList<DrawCmd> shapes = annotation.getShapes().getShapes();
-            DrawCmd cmd;
-            for (int i = 0; i < shapes.size(); i++) {
-                cmd = shapes.get(i);
-                if (cmd instanceof TextSpriteDrawCmd) {
-                    // grab the font reference
-                    TextSprite tmp = ((TextSpriteDrawCmd) cmd).getTextSprite();
-                    FontFile font = tmp.getFont();
-                    annotation.setFontSize((int) font.getSize());
-                    annotation.setFontColor(tmp.getStrokeColor());
-                    // remove all text.
-                    shapes.remove(i);
-                }
-            }
-            ((FreeTextAnnotation) annotation).clearShapes();
-        }
         // create the textArea to display the text.
         freeTextPane = new ScalableTextArea(documentViewController.getDocumentViewModel());
 
@@ -109,6 +85,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
         freeTextPane.setMargin(new Insets(0, 0, 0, 0));
         // lock the field until the correct tool selects it.
         freeTextPane.setEditable(false);
+        applyAppearanceStreamToFreeTextPane();
         // clean up the contents make sure we have \n instead of \r
         String contents = annotation.getContents();
         if (contents != null) {
@@ -148,7 +125,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
         super.validate();
     }
 
-    public void setAppearanceStream() {
+    private void applyAppearanceStreamToFreeTextPane() {
         // copy over annotation properties from the free text annotation.
         DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         fontFile = FontManager.getInstance().initialize().getType1AWTFont(
@@ -177,21 +154,20 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
         } else {
             freeTextPane.setBorder(BorderFactory.createEmptyBorder());
         }
+        freeTextPane.revalidate();
+    }
 
+    private void applyFreeTextPanelContents() {
         String content = null;
         try {
-            content = freeTextPane.getDocument().getText(0,
-                    freeTextPane.getDocument().getLength());
+            content = freeTextPane.getDocument().getText(0, freeTextPane.getDocument().getLength());
         } catch (BadLocationException e) {
             logger.warning("Error getting rich text.");
         }
         Rectangle tBbox = convertToPageSpace(getBounds());
-
-        // generate the shapes
-        annotation.setBBox(tBbox);
+        annotation.setBBox(new Rectangle(0, 0, tBbox.width, tBbox.height));
         annotation.setContents(content);
         annotation.setRichText(freeTextPane.getText());
-        freeTextPane.revalidate();
     }
 
     @Override
@@ -321,7 +297,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
     @Override
     public void resetAppearanceShapes() {
         super.resetAppearanceShapes();
-        setAppearanceStream();
+        applyFreeTextPanelContents();
         annotation.resetAppearanceStream(getToPageSpaceTransform());
     }
 
@@ -333,6 +309,15 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
         String regExp = "[<][?]\\s*[xml].*[?][>]";
         strXML = strXML.replaceFirst(regExp, "");
         return strXML;
+    }
+
+    public void focusGained(FocusEvent e) {
+        super.focusGained(e);
+
+    }
+
+    public void requestTextAreaFocus() {
+        freeTextPane.requestFocus();
     }
 
     public class MyHtml2Text extends HTMLEditorKit.ParserCallback {
@@ -357,19 +342,9 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
         }
     }
 
-    public void focusGained(FocusEvent e) {
-        super.focusGained(e);
-
-    }
-
-    public void requestTextAreaFocus() {
-        freeTextPane.requestFocus();
-    }
-
-
     private class DashedBorder extends AbstractBorder {
-        private BasicStroke stroke;
-        private Color color;
+        private final BasicStroke stroke;
+        private final Color color;
 
         DashedBorder(BorderStyle borderStyle, Color color) {
             int thickness = (int) borderStyle.getStrokeWidth();
