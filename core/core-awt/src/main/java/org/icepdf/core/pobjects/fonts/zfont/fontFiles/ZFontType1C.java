@@ -119,6 +119,12 @@ public class ZFontType1C extends ZSimpleFont {
 
     @Override
     public boolean canDisplay(char ech) {
+        if (cffType1Font.getEncoding() != null) {
+            String name = cffType1Font.getEncoding().getName(ech);
+            if (name != null && !name.equals(".notdef")) {
+                return cffType1Font.hasGlyph(name);
+            }
+        }
         return cffType1Font.hasGlyph(String.valueOf(ech));
     }
 
