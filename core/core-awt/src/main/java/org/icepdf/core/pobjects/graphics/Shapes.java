@@ -16,10 +16,7 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.graphics.commands.DrawCmd;
-import org.icepdf.core.pobjects.graphics.commands.FormDrawCmd;
-import org.icepdf.core.pobjects.graphics.commands.ImageDrawCmd;
-import org.icepdf.core.pobjects.graphics.commands.ShapesDrawCmd;
+import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Defs;
 
@@ -119,6 +116,21 @@ public class Shapes {
         this.paintAlpha = paintAlpha;
     }
 
+    /**
+     * Disable BlendComposites for compatibility with x11 windowing system that fail to paint this blending type.
+     * This is generally on done for annotation appearance streams were the numbers of shapes is quite small compared
+     * to a shapes associated with a page.
+     * Work around is to use -Dsun.java2d.opengl=true when available
+     */
+    public void disableBlendComposite() {
+        DrawCmd nextShape;
+        for (DrawCmd shape : shapes) {
+            nextShape = shape;
+            if (nextShape instanceof BlendCompositeDrawCmd) {
+                ((BlendCompositeDrawCmd) nextShape).enableAlphaCompositePaint();
+            }
+        }
+    }
 
     /**
      * Paint the graphics stack to the graphics context
@@ -126,7 +138,7 @@ public class Shapes {
      * @param g graphics context to paint to.
      * @throws InterruptedException thread interrupted.
      */
-    public void paint(Graphics2D g) throws InterruptedException{
+    public void paint(Graphics2D g) throws InterruptedException {
         try {
             interrupted = false;
             AffineTransform base = new AffineTransform(g.getTransform());

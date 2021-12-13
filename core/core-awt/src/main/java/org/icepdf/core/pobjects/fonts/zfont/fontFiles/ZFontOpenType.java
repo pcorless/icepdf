@@ -38,7 +38,7 @@ public class ZFontOpenType extends ZFontTrueType {
                 extractCmapTable();
             }
         } catch (Throwable e) {
-            logger.log(Level.WARNING, "Error reading font file with ", e);
+            logger.log(Level.FINE, "Error reading font file with", e);
             throw new Exception(e);
         }
     }
@@ -70,7 +70,7 @@ public class ZFontOpenType extends ZFontTrueType {
             }
             g.setTransform(af);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.FINE, "Error painting OpenType font", e);
         }
     }
 }

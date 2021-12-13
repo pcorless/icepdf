@@ -157,7 +157,7 @@ public abstract class ZSimpleFont implements FontFile {
             }
             g.setTransform(af);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.FINE, "Error painting SimpleFont", e);
         }
     }
 
@@ -180,7 +180,7 @@ public abstract class ZSimpleFont implements FontFile {
             outline = outline.createTransformedArea(transform);
             return outline;
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.FINE, "Error painting font outline", e);
         }
         return null;
     }

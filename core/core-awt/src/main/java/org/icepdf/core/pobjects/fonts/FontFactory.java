@@ -151,8 +151,7 @@ public class FontFactory {
                 fontFile = new ZFontType1(url);
             }
         } catch (Throwable e) {
-            // logging and error handling needs to be addressed
-            e.printStackTrace();
+            logger.log(Level.FINE, "Could not create instance of font file " + fontType, e);
         }
         return fontFile;
     }
