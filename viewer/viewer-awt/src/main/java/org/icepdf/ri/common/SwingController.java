@@ -3737,7 +3737,15 @@ public class SwingController extends ComponentAdapter
      * Show tabbed pane interface for annotation properties.
      */
     public void showAnnotationProperties(AnnotationComponent annotationComponent) {
-        showAnnotationProperties(annotationComponent, viewer);
+        // grab a reference to the page so that it isn't de-referenced when the new
+        // dialog get referenced. At least I think that's what might be happening.
+        PageTree pageTree = getPageTree();
+        Page page = pageTree.getPage(documentViewController.getCurrentPageIndex());
+        try {
+            showAnnotationProperties(annotationComponent, viewer);
+        } finally {
+            page = null;
+        }
     }
 
     /**
