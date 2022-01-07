@@ -1996,10 +1996,12 @@ public abstract class Annotation extends Dictionary {
 
     /**
      * Reset the appearance stream given the specified location and page space transform.
-     * @param dx coord-x
-     * @param dy coord-y
+     *
+     * @param dx        coord-x
+     * @param dy        coord-y
      * @param pageSpace page space transform
-     * @param isNew marks the reset as happening because of a
+     * @param isNew     marks the reset as happening because of user interaction not created because of a missing content
+     *                  stream.
      */
     public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew);
 
