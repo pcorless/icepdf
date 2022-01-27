@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects.annotations;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.FontManager;
+import org.icepdf.core.pobjects.fonts.zfont.Encoding;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.TextState;
@@ -409,11 +410,10 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         // create the new font to draw with
         if (fontFile == null || fontPropertyChanged) {
             fontFile = FontManager.getInstance().initialize().getInstance(fontName, 0);
+            fontFile = fontFile.deriveFont(Encoding.standardEncoding, null);
             fontPropertyChanged = false;
         }
         fontFile = fontFile.deriveFont(fontSize);
-        // init font's metrics
-        fontFile.getAdvance(' ');
         TextSprite textSprites =
                 new TextSprite(fontFile,
                         content.length(),
@@ -450,7 +450,6 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             currentX = advanceX + lastx;
             lastx += newAdvanceX;
 
-            // get normalized from from text sprite
             if (!(currentChar == '\n' || currentChar == '\r')) {
                 textSprites.addText(
                         String.valueOf(currentChar), // cid
