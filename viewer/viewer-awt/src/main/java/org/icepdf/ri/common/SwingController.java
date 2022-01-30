@@ -57,10 +57,7 @@ import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryFrame;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
 import org.icepdf.ri.common.widgets.AbstractColorButton;
 import org.icepdf.ri.common.widgets.annotations.AnnotationColorToggleButton;
-import org.icepdf.ri.util.BareBonesBrowserLaunch;
-import org.icepdf.ri.util.TextExtractionTask;
-import org.icepdf.ri.util.URLAccess;
-import org.icepdf.ri.util.ViewerPropertiesManager;
+import org.icepdf.ri.util.*;
 import org.icepdf.ri.viewer.WindowManager;
 
 import javax.print.attribute.standard.MediaSizeName;
