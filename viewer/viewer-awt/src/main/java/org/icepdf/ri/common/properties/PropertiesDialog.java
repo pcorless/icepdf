@@ -37,7 +37,7 @@ public class PropertiesDialog extends EscapeJDialog {
 
     private FontPanel fontPanel;
 
-    public PropertiesDialog(JFrame frame, SwingController controller,
+    public PropertiesDialog(Frame frame, SwingController controller,
                             ResourceBundle messageBundle) {
         super(frame, true);
 

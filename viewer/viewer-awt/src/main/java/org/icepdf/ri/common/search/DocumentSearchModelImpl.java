@@ -19,10 +19,8 @@ import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.search.SearchTerm;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Document search model is used by the DocumentSearchController as a way to
@@ -44,7 +42,7 @@ public class DocumentSearchModelImpl {
 
     // cache to detect page dispose/initialize cycle so that we can research when
     // needed.
-    private HashMap<Integer, WeakReference<PageText>> searchResultCache;
+    private Map<Integer, WeakReference<PageText>> searchResultCache;
 
     // list of terms that made up the full search, usually just one, but
     // you never know.
@@ -59,7 +57,7 @@ public class DocumentSearchModelImpl {
      * Creates a new instance with empty search terms and search result caches.
      */
     public DocumentSearchModelImpl() {
-        searchResultCache = new HashMap<>(256);
+        searchResultCache = new ConcurrentHashMap<>(256);
         searchTerms = new ArrayList<>();
     }
 

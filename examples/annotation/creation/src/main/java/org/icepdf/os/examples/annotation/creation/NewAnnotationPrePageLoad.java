@@ -151,7 +151,7 @@ public class NewAnnotationPrePageLoad {
                                 // create a new URI action
                                 org.icepdf.core.pobjects.actions.Action action =
                                         createURIAction(document.getPageTree().getLibrary(),
-                                                "http://www.icepdf.org");
+                                                "https://github.com/pcorless/icepdf");
                                 // or create a new goTo Annotation that links to the page
                                 // number represented by pageCount.
                                 //                    org.icepdf.core.pobjects.actions.Action action =
@@ -161,7 +161,7 @@ public class NewAnnotationPrePageLoad {
                                 // add the action to the annotation
                                 linkAnnotation.addAction(action);
                                 // add it to the page.
-                                page.addAnnotation(linkAnnotation);
+                                page.addAnnotation(linkAnnotation, true);
                             }
                         }
                         // removed the search highlighting

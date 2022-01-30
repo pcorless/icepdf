@@ -46,7 +46,7 @@ public class AnnotationFactory {
      * @param subType type of annotation to create
      * @param rect    bounds of new annotation specified in user space.
      * @return new annotation object with the same properties as the one
-     *         specified in annotaiton state.
+     * specified in annotation state.
      */
     public static Annotation buildAnnotation(Library library,
                                              final Name subType,
@@ -56,9 +56,7 @@ public class AnnotationFactory {
             return LinkAnnotation.getInstance(library, rect);
         }
         // highlight version of a TextMarkup annotation.
-        else if (subType.equals(TextMarkupAnnotation.SUBTYPE_HIGHLIGHT) ||
-                subType.equals(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT) ||
-                subType.equals(TextMarkupAnnotation.SUBTYPE_UNDERLINE)) {
+        else if (TextMarkupAnnotation.isTextMarkupAnnotation(subType)) {
             return TextMarkupAnnotation.getInstance(library, rect,
                     subType);
         } else if (subType.equals(Annotation.SUBTYPE_LINE)) {

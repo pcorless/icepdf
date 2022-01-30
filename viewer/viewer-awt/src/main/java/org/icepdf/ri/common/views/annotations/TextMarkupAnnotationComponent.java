@@ -48,18 +48,25 @@ public class TextMarkupAnnotationComponent extends MarkupAnnotationComponent<Tex
 
     @Override
     public boolean contains(int x, int y) {
-        if (super.contains(x, y) &&
-                annotation != null && annotation.getMarkupPath() != null) {
-            // convert the mouse coords to component space.
+        boolean contains = super.contains(x, y);
+        if (contains && annotation != null && annotation.getMarkupPath() != null) {
+            // page space
             AffineTransform pageTransform = getPageSpaceTransform();
-            Rectangle compBounds = getBounds();
             shape = annotation.getMarkupPath().createTransformedShape(pageTransform);
+
+            // offset for annotation space
+            Rectangle compBounds = getBounds();
             AffineTransform af = new AffineTransform(1, 0, 0, 1, -compBounds.x, -compBounds.y);
             shape = af.createTransformedShape(shape);
-            // we do the contains test on the annotations shape.
-            return shape.contains(x, y);
+            Rectangle rect = shape.getBounds();
+
+            // bail if the markup shape and comp bounds don't line up at all
+            if (!rect.intersects(new Rectangle(0, 0, compBounds.width, compBounds.height))) {
+                return true;
+            }
+            return rect.contains(x, y);
         }
-        return super.contains(x, y);
+        return contains;
     }
 
     Shape shape;

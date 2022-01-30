@@ -92,13 +92,12 @@ public final class BlendComposite implements Composite {
         LUMINOSITY
     }
 
-    // System property to disable blending modes other then AlphaComposite.  Oracle's MacOS Java implementation is
+    // System property to disable blending modes other than AlphaComposite.  Oracle's MacOS Java implementation is
     // throwing a not implemented exception on JDK 1.8.0_131 when a custom blend composite is set on the graphics
-    // graphics context.
+    // context.
     private static boolean disableBlendComposite;
 
     static {
-        // sets the shadow colour of the decorator.
         disableBlendComposite = Defs.booleanProperty(
                 "org.icepdf.core.paint.disableBlendComposite", false);
     }

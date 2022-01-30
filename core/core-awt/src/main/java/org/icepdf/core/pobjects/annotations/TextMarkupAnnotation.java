@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
+import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.commands.*;
@@ -26,10 +27,8 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -51,6 +50,9 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
     public static final Name SUBTYPE_UNDERLINE = new Name("Underline");
     public static final Name SUBTYPE_SQUIGGLY = new Name("Squiggly");
     public static final Name SUBTYPE_STRIKE_OUT = new Name("StrikeOut");
+
+    public static final Set<Name> ALL_SUBTYPES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(SUBTYPE_HIGHLIGHT,
+            SUBTYPE_UNDERLINE, SUBTYPE_SQUIGGLY, SUBTYPE_STRIKE_OUT)));
 
     private static Color highlightColor;
     private static Color strikeOutColor;
@@ -196,7 +198,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
      *
      * @param library document library
      * @param rect    bounding rectangle in user space
-     *                @param  subType subtype of the markup annotation
+     * @param subType subtype of the markup annotation
      * @return new TextMarkupAnnotation Instance.
      */
     public static TextMarkupAnnotation getInstance(Library library,
@@ -238,16 +240,13 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
 
 
     public static boolean isTextMarkupAnnotation(Name subType) {
-        return SUBTYPE_HIGHLIGHT.equals(subType) ||
-                SUBTYPE_UNDERLINE.equals(subType) ||
-                SUBTYPE_SQUIGGLY.equals(subType) ||
-                SUBTYPE_STRIKE_OUT.equals(subType);
+        return ALL_SUBTYPES.contains(subType);
     }
 
     /**
      * Resets the annotations appearance stream.
      */
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
 
         // check if we have anything to reset.
         if (markupBounds == null) {
@@ -331,7 +330,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
         // update the appearance stream
         // create/update the appearance stream of the xObject.
         Form form = updateAppearanceStream(shapes, bbox, matrix,
-                PostScriptEncoder.generatePostScript(shapes.getShapes()));
+                PostScriptEncoder.generatePostScript(shapes.getShapes()), isNew);
         generateExternalGraphicsState(form, opacity);
     }
 

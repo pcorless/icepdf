@@ -26,6 +26,7 @@ import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -176,7 +177,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
             // before assigning the default colour check to see if there is an entry in the properties manager
             checkAndApplyPreferences();
             annotation.setCreationDate(PDate.formatDateTime(new Date()));
-            annotation.setTitleText(System.getProperty("user.name"));
+            annotation.setTitleText(SystemProperties.USER_NAME);
             annotation.setMarkupBounds(highlightBounds);
             annotation.setMarkupPath(highlightPath);
             annotation.setBBox(tBbox);
@@ -211,8 +212,8 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
 
     protected void checkAndApplyPreferences() {
         Color color = null;
-        if (preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_BUTTON_COLOR, -1) != -1) {
-            int rgb = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_BUTTON_COLOR, 0);
+        if (preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_COLOR, -1) != -1) {
+            int rgb = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_COLOR, 0);
             color = new Color(rgb);
         }
         // apply the settings or system property base colour for the given subtype.
@@ -250,11 +251,9 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
         // create the text markup annotation.
         createTextMarkupAnnotation(highlightBounds);
 
-        // set the annotation tool to he select tool
-        if (preferences.getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_SELECTION_ENABLED, false)) {
-            documentViewController.getParentController().setDocumentToolMode(
-                    DocumentViewModel.DISPLAY_TOOL_SELECTION);
-        }
+        // set the annotation tool to the given tool
+        documentViewController.getParentController().setDocumentToolMode(
+                preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_SELECTION_TYPE, 0));
     }
 
     public static ArrayList<Shape> getSelectedTextBounds(AbstractPageViewComponent pageViewComponent,

@@ -16,9 +16,11 @@
 package org.icepdf.ri.common.utility.annotation.markup;
 
 import org.icepdf.core.pobjects.annotations.*;
-import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.*;
+import org.icepdf.ri.common.widgets.DragDropColorList;
+import org.icepdf.ri.common.widgets.ColorIcon;
+import org.icepdf.ri.common.widgets.annotations.QuickPaintAnnotationButton;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.Controller;
@@ -41,6 +43,7 @@ import java.util.prefs.Preferences;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import static org.icepdf.core.util.SystemProperties.PRIVATE_PROPERTY_ENABLED;
 import static org.icepdf.ri.util.ViewerPropertiesManager.PROPERTY_SEARCH_MARKUP_PANEL_CASE_SENSITIVE_ENABLED;
 import static org.icepdf.ri.util.ViewerPropertiesManager.PROPERTY_SEARCH_MARKUP_PANEL_REGEX_ENABLED;
 
@@ -56,13 +59,6 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
 
     private static final Logger logger =
             Logger.getLogger(MarkupAnnotationPanel.class.toString());
-
-    public static boolean PRIVATE_PROPERTY_ENABLED;
-
-    static {
-        PRIVATE_PROPERTY_ENABLED = Defs.booleanProperty(
-                "org.icepdf.core.page.annotation.privateProperty.enabled", false);
-    }
 
     public static final String COLUMN_PROPERTY = "Column";
 
@@ -737,6 +733,4 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
             sortAndFilterAnnotationData();
         }
     }
-
-
 }

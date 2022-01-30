@@ -20,6 +20,7 @@ import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.tools.TextAnnotationHandler;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.AnnotationComponent;
@@ -85,7 +86,7 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
 
     @Override
     public void resetAppearanceShapes() {
-        // our only purpose is to update the popup annotation color.
+        // our only purpose is to update the popup annotation color and the color menu.
         if (annotation != null) {
             PopupAnnotation popup = annotation.getPopupAnnotation();
             if (popup != null) {
@@ -104,6 +105,7 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
                     }
                 }
             }
+            ((MarkupAnnotationPopupMenu) contextMenu).refreshColorMenu();
         }
     }
 
@@ -151,7 +153,7 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
                 annotation.setCreationDate(PDate.formatDateTime(new Date()));
             }
             if (annotation.getTitleText() == null) {
-                annotation.setTitleText(System.getProperty("user.name"));
+                annotation.setTitleText(SystemProperties.USER_NAME);
             }
             if (annotation.getContents() == null) {
                 annotation.setContents("");
@@ -159,9 +161,10 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
         }
         PopupAnnotation popupAnnotation = null;
         if (annotation != null && annotation.getPopupAnnotation() == null) {
+
             popupAnnotation = TextAnnotationHandler.createPopupAnnotation(
                     documentViewController.getDocument().getPageTree().getLibrary(),
-                    tBbox, annotation, getToPageSpaceTransform());
+                    tBbox, annotation, getToPageSpaceTransform(), isNew);
             annotation.setPopupAnnotation(popupAnnotation);
         } else if (annotation != null) {
             popupAnnotation = annotation.getPopupAnnotation();
@@ -176,6 +179,8 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
             comp.setBounds(bBox);
             // resets user space rectangle to match bbox converted to page space
             comp.refreshAnnotationRect();
+            // not new, which means the popup wasn't part of the document, we don't want to save it at this time
+            comp.setSynthetic(!isNew);
 
             // add them to the container, using absolute positioning.
             documentViewController.addNewAnnotation(comp);
@@ -225,15 +230,13 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
                     popupComponent.setBounds(popupBounds);
                 }
             }
-            // no markupAnnotation so we need to create one and display for
-            // the addition comments.
+            // no markupAnnotation so we need to create one and display for the addition comments.
             else {
-                // convert bbox and start and end line points.
+                // user initiated change, so we'll mark the popup state as changed and queue it for saving.
                 createPopupAnnotationComponent(true);
             }
         }
     }
-
 
 
     public boolean isActive() {
