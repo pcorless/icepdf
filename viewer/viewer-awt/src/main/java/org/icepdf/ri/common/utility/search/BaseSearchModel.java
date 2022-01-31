@@ -11,6 +11,8 @@ public interface BaseSearchModel {
 
     void addFoundTextEntry(SearchTextTask.TextResult outlineResult, SearchTextTask searchTextTask);
 
+    void addFoundFormsEntry(SearchTextTask.FormsResult outlineResult, SearchTextTask searchTextTask);
+
     void addFoundDestinationEntry(SearchTextTask.DestinationsResult outlineResult, SearchTextTask searchTextTask);
 
     MessageFormat setupSearchingMessageForm();

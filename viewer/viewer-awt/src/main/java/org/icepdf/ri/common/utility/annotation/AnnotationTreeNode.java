@@ -53,14 +53,23 @@ public class AnnotationTreeNode extends AbstractAnnotationTreeNode<Annotation> {
 
     /**
      * Utility for setting the label via a message bundle resource.
-     * @param markupAnnotation markup annotation to apply message too.
+     *
+     * @param annotation    annotation to apply message too.
      * @param messageBundle ri message bundle
      */
-    public void applyMessage(Annotation markupAnnotation, ResourceBundle messageBundle) {
-        String text = caseSensitive ? markupAnnotation.getContents() : markupAnnotation.getContents().toLowerCase();
-        this.annotation = markupAnnotation;
+    public void applyMessage(Annotation annotation, ResourceBundle messageBundle) {
+        String text = null;
+        if (annotation instanceof TextWidgetAnnotation) {
+            text = (String) ((TextWidgetAnnotation) annotation).getFieldDictionary().getFieldValue();
+        } else {
+            final String contents = annotation.getContents();
+            if (contents != null) {
+                text = caseSensitive ? contents : contents.toLowerCase();
+            }
+        }
+        this.annotation = annotation;
         // todo trim to a specific width.
-        if (text == null || text.length() == 0) {
+        if (text == null || text.isEmpty()) {
             text = getNullMessage(messageBundle);
         } else if (searchPattern != null) {
             // pepper the text with html so we can show hits.
@@ -112,6 +121,8 @@ public class AnnotationTreeNode extends AbstractAnnotationTreeNode<Annotation> {
             message = messageBundle.getString("viewer.utilityPane.markupAnnotation.view.tree.ink.empty.label");
         } else if (annotation instanceof PopupAnnotation) {
             message = messageBundle.getString("viewer.utilityPane.markupAnnotation.view.tree.popup.empty.label");
+        } else if (annotation instanceof TextWidgetAnnotation) {
+            message = messageBundle.getString("viewer.utilityPane.markupAnnotation.view.tree.form.empty.label");
         } else {
             message = messageBundle.getString("viewer.utilityPane.markupAnnotation.view.tree.unknown.empty.label");
         }

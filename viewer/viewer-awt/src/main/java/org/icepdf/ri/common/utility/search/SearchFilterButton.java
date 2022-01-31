@@ -21,6 +21,7 @@ public class SearchFilterButton extends DropDownButton {
     private final JCheckBoxMenuItem caseSensitiveCheckbox;
     private final JCheckBoxMenuItem cumulativeCheckbox;
     private final JCheckBoxMenuItem textCheckbox;
+    private final JCheckBoxMenuItem formsCheckbox;
     private final JCheckBoxMenuItem commentsCheckbox;
     private final JCheckBoxMenuItem destinationsCheckbox;
     private final JCheckBoxMenuItem outlinesCheckbox;
@@ -41,6 +42,7 @@ public class SearchFilterButton extends DropDownButton {
         boolean isCumulative = preferences.getBoolean(PROPERTY_SEARCH_PANEL_CUMULATIVE_ENABLED, false);
 
         boolean isText = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SEARCH_TEXT_ENABLED, true);
+        boolean isForms = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SEARCH_FORMS_ENABLED, true);
         boolean isComments = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SEARCH_COMMENTS_ENABLED, false);
         boolean isDestinations = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SEARCH_DEST_ENABLED, false);
         boolean isOutlines = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SEARCH_OUTLINES_ENABLED, false);
@@ -91,6 +93,12 @@ public class SearchFilterButton extends DropDownButton {
             component.notifySearchFiltersChanged();
             preferences.putBoolean(PROPERTY_SEARCH_PANEL_SEARCH_TEXT_ENABLED, isText());
         });
+        formsCheckbox = new PersistentJCheckBoxMenuItem(messageBundle.getString(
+                "viewer.utilityPane.search.forms.label"), isText);
+        formsCheckbox.addActionListener(actionEvent -> {
+            component.notifySearchFiltersChanged();
+            preferences.putBoolean(PROPERTY_SEARCH_PANEL_SEARCH_FORMS_ENABLED, isText());
+        });
         commentsCheckbox = new PersistentJCheckBoxMenuItem(messageBundle.getString(
                 "viewer.utilityPane.search.comments.label"), isComments);
         commentsCheckbox.addActionListener(actionEvent -> {
@@ -123,6 +131,7 @@ public class SearchFilterButton extends DropDownButton {
             add(cumulativeCheckbox);
             addSeparator();
             add(textCheckbox);
+            add(formsCheckbox);
             add(commentsCheckbox);
             add(outlinesCheckbox);
             add(destinationsCheckbox);
@@ -157,6 +166,10 @@ public class SearchFilterButton extends DropDownButton {
 
     public JCheckBoxMenuItem getTextCheckbox() {
         return textCheckbox;
+    }
+
+    public JCheckBoxMenuItem getFormsCheckbox() {
+        return formsCheckbox;
     }
 
     public JCheckBoxMenuItem getCommentsCheckbox() {
@@ -199,6 +212,10 @@ public class SearchFilterButton extends DropDownButton {
         return textCheckbox.isSelected();
     }
 
+    public boolean isForms() {
+        return formsCheckbox.isSelected();
+    }
+
     public boolean isComments() {
         return commentsCheckbox.isSelected();
     }
@@ -225,6 +242,7 @@ public class SearchFilterButton extends DropDownButton {
                 .setShowPages(isShowPages())
                 .setRegex(isRegex())
                 .setText(isText())
+                .setForms(isForms())
                 .setDestinations(isDestinations())
                 .setOutlines(isOutlines())
                 .setComments(isComments()).build();

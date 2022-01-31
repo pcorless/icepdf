@@ -18,6 +18,7 @@ package org.icepdf.ri.common.utility.search;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.OutlineItem;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
+import org.icepdf.core.pobjects.annotations.TextWidgetAnnotation;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.search.DestinationResult;
 import org.icepdf.core.search.DocumentSearchController;
@@ -62,6 +63,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
     private boolean regex;
     private boolean r2L;
     private boolean text;
+    private boolean forms;
     private boolean comments;
     private boolean outlines;
     private boolean destinations;
@@ -91,6 +93,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         showPages = builder.showPages;
         r2L = builder.r2L;
         text = builder.text;
+        forms = builder.forms;
         comments = builder.comments;
         outlines = builder.outlines;
         destinations = builder.destinations;
@@ -137,7 +140,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
 
         Document document = controller.getDocument();
         // iterate over each page in the document
-        if (text || comments) {
+        if (text || comments || forms) {
             for (int i = 0; i < document.getNumberOfPages(); i++) {
                 // break if needed
                 if (isCancelled()) {
@@ -186,6 +189,16 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
                         publish(new CommentsResult(matchMarkupAnnotations, nodeText, current));
                     }
                 }
+                if (forms) {
+                    final List<TextWidgetAnnotation> annotations = searchController.searchForms(current);
+                    if (!annotations.isEmpty()) {
+                        final int hitCount = annotations.size();
+                        messageArguments = new Object[]{String.valueOf((current + 1)), hitCount, hitCount};
+                        final String nodeText =
+                                searchResultMessageForm != null ? searchResultMessageForm.format(messageArguments) : "";
+                        publish(new FormsResult(annotations, nodeText, current));
+                    }
+                }
             }
         }
         // outlines and destination are outside the page tree so we search for them separately
@@ -226,6 +239,9 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
                 } else if (searchResult instanceof TextResult) {
                     TextResult textResult = (TextResult) searchResult;
                     searchModel.addFoundTextEntry(textResult, this);
+                } else if (searchResult instanceof FormsResult) {
+                    FormsResult formsResult = (FormsResult) searchResult;
+                    searchModel.addFoundFormsEntry(formsResult, this);
                 } else if (searchResult instanceof OutlineResult) {
                     OutlineResult outlineResult = (OutlineResult) searchResult;
                     searchModel.addFoundOutlineEntry(outlineResult, this);
@@ -289,6 +305,10 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         return text;
     }
 
+    public boolean isForms() {
+        return forms;
+    }
+
     public boolean isComments() {
         return comments;
     }
@@ -329,6 +349,25 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
 
         public List<LineText> getLineItems() {
             return lineItems;
+        }
+
+        public int getCurrentPage() {
+            return currentPage;
+        }
+    }
+
+    public static class FormsResult extends SearchResult {
+        private final List<TextWidgetAnnotation> widgets;
+        private final int currentPage;
+
+        public FormsResult(List<TextWidgetAnnotation> widgets, String nodeText, int currentPage) {
+            super(nodeText);
+            this.widgets = widgets;
+            this.currentPage = currentPage;
+        }
+
+        public List<TextWidgetAnnotation> getWidgets() {
+            return widgets;
         }
 
         public int getCurrentPage() {
@@ -400,6 +439,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         private boolean r2L;
         private boolean regex;
         private boolean text;
+        private boolean forms;
         private boolean comments;
         private boolean outlines;
         private boolean destinations;
@@ -451,6 +491,11 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
 
         public Builder setText(boolean text) {
             this.text = text;
+            return this;
+        }
+
+        public Builder setForms(boolean forms) {
+            this.forms = forms;
             return this;
         }
 

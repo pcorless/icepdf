@@ -15,8 +15,10 @@
  */
 package org.icepdf.core.search;
 
+import org.icepdf.core.pobjects.Form;
 import org.icepdf.core.pobjects.OutlineItem;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
+import org.icepdf.core.pobjects.annotations.TextWidgetAnnotation;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
@@ -92,6 +94,7 @@ public interface DocumentSearchController {
 
     /**
      * Sets the search mode
+     *
      * @param searchMode The searchMode
      */
     void setSearchMode(SearchMode searchMode);
@@ -110,6 +113,14 @@ public interface DocumentSearchController {
      * @return list of words that match the term and search properties.
      */
     ArrayList<WordText> searchPage(int pageIndex);
+
+    /**
+     * Search the forms in the given page.
+     *
+     * @param pageIndex page to search
+     * @return
+     */
+    List<TextWidgetAnnotation> searchForms(final int pageIndex);
 
     /**
      * Search page only return MarkupAnnotations that are hits.
