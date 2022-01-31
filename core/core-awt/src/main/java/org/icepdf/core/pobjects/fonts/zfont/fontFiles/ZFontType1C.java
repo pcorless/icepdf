@@ -52,8 +52,8 @@ public class ZFontType1C extends ZSimpleFont {
 
     @Override
     protected String codeToName(String estr) {
-        // might be able to blow this out out some point, but we're in the weeds at this point, not
-        // a lot of good examples.
+        // This isn't quite right yet.  But if we are using the standard encoding as set in the TypeFont class
+        // use the font's internal encoding.
         if (org.icepdf.core.pobjects.fonts.zfont.Encoding.STANDARD_ENCODING_NAME.equals(encoding.getName())) {
             return cffType1Font.getEncoding().getName(estr.charAt(0));
         } else {
@@ -95,9 +95,12 @@ public class ZFontType1C extends ZSimpleFont {
         font.firstCh = firstCh;
         font.ascent = ascent;
         font.descent = descent;
-        font.widths = widths;
+        if (widths != null && widths.length > 0) {
+            font.widths = widths;
+        }
         font.cMap = diff != null ? diff : font.cMap;
         font.bbox = bbox;
+        font.maxCharBounds = null;
         return font;
     }
 
@@ -110,11 +113,18 @@ public class ZFontType1C extends ZSimpleFont {
         font.descent = descent;
         font.cMap = diff;
         font.bbox = bbox;
+        font.maxCharBounds = null;
         return font;
     }
 
     @Override
     public boolean canDisplay(char ech) {
+        if (cffType1Font.getEncoding() != null) {
+            String name = cffType1Font.getEncoding().getName(ech);
+            if (name != null && !name.equals(".notdef")) {
+                return cffType1Font.hasGlyph(name);
+            }
+        }
         return cffType1Font.hasGlyph(String.valueOf(ech));
     }
 

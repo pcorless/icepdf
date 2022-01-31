@@ -90,8 +90,8 @@ public class FontPropertiesManager {
         try {
             fontManager.readSystemFonts(paths);
         } catch (Exception e) {
-            if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.WARNING, "Error reading system fonts path: ", e);
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, "Error reading system fonts path: ", e);
             }
         }
     }

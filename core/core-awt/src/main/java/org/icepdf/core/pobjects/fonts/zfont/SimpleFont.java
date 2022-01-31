@@ -93,7 +93,7 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
             if (differences != null) {
                 int c = 0;
                 for (Object oo : differences) {
-                    if (c == cMap.length - 1) {
+                    if (c == cMap.length) {
                         break;
                     }
                     if (oo instanceof Number) {
@@ -142,6 +142,8 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
         // currently not using afm, instead using font's width table, seems more reliable
         else if (afm != null && !isFontSubstitution) {
             font = font.deriveFont(afm.getWidths(), firstchar, missingWidth, ascent, descent, bbox, null);
+        } else if (bbox != null) {
+            font = font.deriveFont(new float[0], firstchar, missingWidth, ascent, descent, bbox, null);
         }
     }
 

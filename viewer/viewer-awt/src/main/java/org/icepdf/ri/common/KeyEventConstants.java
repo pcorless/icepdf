@@ -21,7 +21,7 @@ import java.awt.event.KeyEvent;
 
 /**
  * The KeyEvent Class contains the key event and input event used for menu
- * and button manipulatin via the keyboard.  This class may need to be changed
+ * and button manipulation via the keyboard.  This class may need to be changed
  * depending on region and languages.
  */
 public class KeyEventConstants {
@@ -39,6 +39,8 @@ public class KeyEventConstants {
     public static final int MODIFIER_SAVE = MENU_SHORTCUT_KEY_MASK;
     public static final int KEY_CODE_SAVE_AS = KeyEvent.VK_S;
     public static final int MODIFIER_SAVE_AS = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_MASK;
+    public static final int KEY_CODE_SEND_MAIL = KeyEvent.VK_M;
+    public static final int MODIFIER_SEND_MAIL = MENU_SHORTCUT_KEY_MASK;
     public static final int KEY_CODE_PRINT_SETUP = KeyEvent.VK_P;
     public static final int MODIFIER_PRINT_SETUP = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_MASK;
     public static final int KEY_CODE_PRINT = KeyEvent.VK_P;
@@ -64,9 +66,9 @@ public class KeyEventConstants {
     public static final int MODIFIER_ZOOM_OUT = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_MASK;
 
     public static final int KEY_CODE_ROTATE_LEFT = KeyEvent.VK_L;
-    public static final int MODIFIER_ROTATE_LEFT = MENU_SHORTCUT_KEY_MASK;
+    public static final int MODIFIER_ROTATE_LEFT = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_MASK;
     public static final int KEY_CODE_ROTATE_RIGHT = KeyEvent.VK_R;
-    public static final int MODIFIER_ROTATE_RIGHT = MENU_SHORTCUT_KEY_MASK;
+    public static final int MODIFIER_ROTATE_RIGHT = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_MASK;
 
     public static final int KEY_CODE_FIRST_PAGE = KeyEvent.VK_UP;
     public static final int MODIFIER_FIRST_PAGE = MENU_SHORTCUT_KEY_MASK;

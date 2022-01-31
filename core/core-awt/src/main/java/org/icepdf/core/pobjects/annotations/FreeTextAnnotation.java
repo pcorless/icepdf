@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects.annotations;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.FontManager;
+import org.icepdf.core.pobjects.fonts.zfont.Encoding;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.TextState;
@@ -163,6 +164,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     public static Color defaultFillColor;
     public static Color defaultBorderColor;
     public static int defaultFontSize;
+
     static {
 
         // sets annotation free text font colour
@@ -218,6 +220,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         }
 
     }
+
     protected String defaultAppearance;
     protected int quadding = QUADDING_LEFT_JUSTIFIED;
     protected String defaultStylingString;
@@ -248,7 +251,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         super(l, h);
     }
 
-    public synchronized void init() throws InterruptedException {
+    public void init() throws InterruptedException {
         super.init();
 
         Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
@@ -307,39 +310,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
         // check for defaultStylingString and if so parse out the
         // font style, weight and name.
-        if (defaultStylingString != null) {
-            StringTokenizer toker = new StringTokenizer(defaultStylingString, ";");
-            while (toker.hasMoreElements()) {
-                String cssProperty = (String) toker.nextElement();
-                if (cssProperty != null && cssProperty.contains("font-family")) {
-                    fontName = cssProperty.substring(cssProperty.indexOf(":") + 1).trim();
-                } else if (cssProperty != null && cssProperty.contains("color")) {
-                    String colorString = cssProperty.substring(cssProperty.indexOf(":") + 1).trim();
-                    fontColor = new Color(ColorUtil.convertColor(colorString));
-                } else if (cssProperty != null && cssProperty.contains("font-weight")) {
-                    String fontStyle = cssProperty.substring(cssProperty.indexOf(":") + 1).trim();
-                    switch (fontStyle) {
-                        case "normal":
-                            this.fontStyle = Font.PLAIN;
-                            break;
-                        case "italic":
-                            this.fontStyle = Font.ITALIC;
-                            break;
-                        case "bold":
-                            this.fontStyle = Font.BOLD;
-                            break;
-                    }
-                } else if (cssProperty != null && cssProperty.contains("font-size")) {
-                    String fontSize = cssProperty.substring(cssProperty.indexOf(":") + 1).trim();
-                    fontSize = fontSize.substring(0, fontSize.indexOf('p'));
-                    try {
-                        this.fontSize = (int) Float.parseFloat(fontSize);
-                    } catch (NumberFormatException e) {
-                        logger.finer("Error parsing font size: " + fontSize);
-                    }
-                }
-            }
-        }
+        parseDefaultStylingString();
         // try and generate an appearance stream.
         resetNullAppearanceStream();
     }
@@ -439,11 +410,10 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         // create the new font to draw with
         if (fontFile == null || fontPropertyChanged) {
             fontFile = FontManager.getInstance().initialize().getInstance(fontName, 0);
+            fontFile = fontFile.deriveFont(Encoding.standardEncoding, null);
             fontPropertyChanged = false;
         }
         fontFile = fontFile.deriveFont(fontSize);
-        // init font's metrics
-        fontFile.getAdvance(' ');
         TextSprite textSprites =
                 new TextSprite(fontFile,
                         content.length(),
@@ -456,7 +426,6 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         // iterate over each line of text painting the strings.
         StringBuilder contents = new StringBuilder(content);
 
-//        Rectangle2D fontBounds = fontFile.getMaxCharBounds();
         // todo temporary get working until I can get back to calculating max char bounds.
         float lineHeight = fontSize;
 
@@ -481,7 +450,6 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             currentX = advanceX + lastx;
             lastx += newAdvanceX;
 
-            // get normalized from from text sprite
             if (!(currentChar == '\n' || currentChar == '\r')) {
                 textSprites.addText(
                         String.valueOf(currentChar), // cid
@@ -685,6 +653,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
     public void setDefaultAppearance(String defaultAppearance) {
         this.defaultAppearance = defaultAppearance;
+        entries.put(DA_KEY, defaultAppearance);
     }
 
     public int getQuadding() {
@@ -693,6 +662,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
     public void setQuadding(int quadding) {
         this.quadding = quadding;
+        entries.put(Q_KEY, quadding);
     }
 
     public String getRichText() {
@@ -763,6 +733,48 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
     public void setStrokeType(boolean strokeType) {
         this.strokeType = strokeType;
+    }
+
+    public void setDefaultStylingString(String defaultStylingString) {
+        this.defaultStylingString = defaultStylingString;
+        parseDefaultStylingString();
+        entries.put(DS_KEY, defaultStylingString);
+    }
+
+    private void parseDefaultStylingString() {
+        if (defaultStylingString != null) {
+            StringTokenizer toker = new StringTokenizer(defaultStylingString, ";");
+            while (toker.hasMoreElements()) {
+                String cssProperty = (String) toker.nextElement();
+                if (cssProperty != null && cssProperty.contains("font-family")) {
+                    fontName = cssProperty.substring(cssProperty.indexOf(":") + 1).trim();
+                } else if (cssProperty != null && cssProperty.contains("color")) {
+                    String colorString = cssProperty.substring(cssProperty.indexOf(":") + 1).trim();
+                    fontColor = new Color(ColorUtil.convertColor(colorString));
+                } else if (cssProperty != null && cssProperty.contains("font-weight")) {
+                    String fontStyle = cssProperty.substring(cssProperty.indexOf(":") + 1).trim();
+                    switch (fontStyle) {
+                        case "normal":
+                            this.fontStyle = Font.PLAIN;
+                            break;
+                        case "italic":
+                            this.fontStyle = Font.ITALIC;
+                            break;
+                        case "bold":
+                            this.fontStyle = Font.BOLD;
+                            break;
+                    }
+                } else if (cssProperty != null && cssProperty.contains("font-size")) {
+                    String fontSize = cssProperty.substring(cssProperty.indexOf(":") + 1).trim();
+                    fontSize = fontSize.substring(0, fontSize.indexOf('p'));
+                    try {
+                        this.fontSize = (int) Float.parseFloat(fontSize);
+                    } catch (NumberFormatException e) {
+                        logger.finer("Error parsing font size: " + fontSize);
+                    }
+                }
+            }
+        }
     }
 
     public static final String BODY_START =

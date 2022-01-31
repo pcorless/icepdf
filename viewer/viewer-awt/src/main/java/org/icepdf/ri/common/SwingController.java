@@ -57,10 +57,7 @@ import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryFrame;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
 import org.icepdf.ri.common.widgets.AbstractColorButton;
 import org.icepdf.ri.common.widgets.annotations.AnnotationColorToggleButton;
-import org.icepdf.ri.util.BareBonesBrowserLaunch;
-import org.icepdf.ri.util.TextExtractionTask;
-import org.icepdf.ri.util.URLAccess;
-import org.icepdf.ri.util.ViewerPropertiesManager;
+import org.icepdf.ri.util.*;
 import org.icepdf.ri.viewer.WindowManager;
 
 import javax.print.attribute.standard.MediaSizeName;
@@ -103,6 +100,7 @@ import java.util.stream.Collectors;
 
 import static org.icepdf.core.util.PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE;
 import static org.icepdf.ri.util.ViewerPropertiesManager.*;
+
 
 /**
  * Controller is the meat of a PDF viewing application. It is the Controller
@@ -148,6 +146,7 @@ public class SwingController extends ComponentAdapter
     private JMenuItem closeMenuItem;
     private JMenuItem saveFileMenuItem;
     private JMenuItem saveAsFileMenuItem;
+    private JMenuItem sendMailMenuItem;
     private JMenuItem exportTextMenuItem;
     private JMenuItem propertiesMenuItem;
     private JMenuItem permissionsMenuItem;
@@ -457,6 +456,16 @@ public class SwingController extends ComponentAdapter
      */
     public void setSaveAsFileMenuItem(JMenuItem mi) {
         saveAsFileMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
+     */
+    public void setSendMailMenuItem(JMenuItem mi) {
+        sendMailMenuItem = mi;
         mi.addActionListener(this);
     }
 
@@ -1585,6 +1594,7 @@ public class SwingController extends ComponentAdapter
         setEnabled(closeMenuItem, opened);
         setEnabled(saveFileMenuItem, opened);
         setEnabled(saveAsFileMenuItem, opened);
+        setEnabled(sendMailMenuItem, opened);
         setEnabled(exportTextMenuItem, opened && canExtract && !pdfCollection);
         setEnabled(propertiesMenuItem, opened);
 
@@ -3273,6 +3283,7 @@ public class SwingController extends ComponentAdapter
         openURLMenuItem = null;
         closeMenuItem = null;
         saveAsFileMenuItem = null;
+        sendMailMenuItem = null;
         exportTextMenuItem = null;
         permissionsMenuItem = null;
         propertiesMenuItem = null;
@@ -3823,7 +3834,15 @@ public class SwingController extends ComponentAdapter
      * Show tabbed pane interface for annotation properties.
      */
     public void showAnnotationProperties(AnnotationComponent annotationComponent) {
-        showAnnotationProperties(annotationComponent, viewer);
+        // grab a reference to the page so that it isn't de-referenced when the new
+        // dialog get referenced. At least I think that's what might be happening.
+        PageTree pageTree = getPageTree();
+        Page page = pageTree.getPage(documentViewController.getCurrentPageIndex());
+        try {
+            showAnnotationProperties(annotationComponent, viewer);
+        } finally {
+            page = null;
+        }
     }
 
     /**
@@ -4519,8 +4538,12 @@ public class SwingController extends ComponentAdapter
     }
 
     public void showSearch() {
-        SearchToolBar searchBar = (SearchToolBar) quickSearchToolBar;
+        final SearchToolBar searchBar = (SearchToolBar) quickSearchToolBar;
+        final String selectedText = documentViewController.getSelectedText();
         if (searchBar != null) {
+            if (selectedText != null && !selectedText.trim().isEmpty()) {
+                searchBar.setSearchText(selectedText.trim());
+            }
             searchBar.focusTextField();
         } else {
             showSearchPanel();
@@ -4533,6 +4556,16 @@ public class SwingController extends ComponentAdapter
      * @see #setUtilityPaneVisible(boolean)
      */
     public void showSearchPanel() {
+        final String selectedText = documentViewController.getSelectedText();
+        if (selectedText != null && !selectedText.trim().isEmpty()) {
+            showSearchPanel(selectedText.trim());
+        } else {
+            showSearchPanel(searchPanel.getSearchPhrase());
+        }
+    }
+
+    public void showSearchPanel(final String searchPhrase) {
+        searchPanel.setSearchPhrase(searchPhrase);
         if (utilityTabbedPane != null && searchPanel != null) {
             // make sure the utility pane is visible
             if (!utilityTabbedPane.isVisible()) {
@@ -4545,16 +4578,10 @@ public class SwingController extends ComponentAdapter
                     // select the search panel
                     safelySelectUtilityPanel(searchPanel);
                 }
-
                 // request focus
                 searchPanel.requestFocus();
             }
         }
-    }
-
-    public void showSearchPanel(String searchPhrase) {
-        searchPanel.setSearchPhrase(searchPhrase);
-        showSearchPanel();
     }
 
     public void nextSearchResult() {
@@ -4822,6 +4849,8 @@ public class SwingController extends ComponentAdapter
                 saveFile();
             } else if (source == saveAsFileMenuItem) {
                 saveFileAs();
+            } else if (source == sendMailMenuItem) {
+                MailSender.sendMail(this);
             } else if (source == exportTextMenuItem) {
                 exportText();
             } else if (source == exitMenuItem) {
@@ -4888,7 +4917,7 @@ public class SwingController extends ComponentAdapter
                                         document.getNumberOfPages() > MAX_SELECT_ALL_PAGE_COUNT)) {
                             // get the text.
                             StringSelection stringSelection = new StringSelection(
-                                    documentViewController.getSelectedText());
+                                    documentViewController.getFlatSelectedText());
                             Toolkit.getDefaultToolkit().getSystemClipboard()
                                     .setContents(stringSelection, stringSelection);
                         } else {

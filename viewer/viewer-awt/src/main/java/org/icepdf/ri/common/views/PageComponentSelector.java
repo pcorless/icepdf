@@ -25,6 +25,7 @@ import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Utility for locating a Component on a page and setup up focus within int he context of the
@@ -77,7 +78,7 @@ public class PageComponentSelector {
         for (pageIndex = 0; pageIndex < pages; pageIndex++) {
             // check is page's annotation array for a matching reference.
             Page page = document.getPageTree().getPage(pageIndex);
-            ArrayList<Reference> annotationReferences = page.getAnnotationReferences();
+            List<Reference> annotationReferences = page.getAnnotationReferences();
             if (annotationReferences != null) {
                 for (Reference reference : annotationReferences) {
                     if (reference.equals(widgetAnnotation.getPObjectReference())) {
@@ -161,7 +162,7 @@ public class PageComponentSelector {
         for (pageIndex = 0; pageIndex < pages; pageIndex++) {
             // check is page's annotation array for a matching reference.
             Page page = document.getPageTree().getPage(pageIndex);
-            ArrayList<Reference> annotationReferences = page.getAnnotationReferences();
+            List<Reference> annotationReferences = page.getAnnotationReferences();
             if (annotationReferences != null) {
                 for (Reference reference : annotationReferences) {
                     if (reference.equals(widgetAnnotation.getPObjectReference())) {

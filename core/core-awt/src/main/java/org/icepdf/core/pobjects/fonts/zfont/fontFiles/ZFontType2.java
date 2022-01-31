@@ -105,7 +105,7 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
             }
             g.setTransform(af);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.FINE, "Error painting FontType2 font", e);
         }
     }
 
@@ -153,6 +153,10 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
         font.descent = descent;
         font.cMap = diff;
         font.bbox = bbox;
+        if (widths != null && widths.length > 0) {
+            font.widths = widths;
+        }
+        font.maxCharBounds = null;
         return font;
     }
 
@@ -164,6 +168,7 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
         font.descent = descent;
         font.cMap = diff;
         font.bbox = bbox;
+        font.maxCharBounds = null;
         return font;
     }
 
@@ -191,7 +196,7 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
         try {
             return trueTypeFont.getName();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.FINE, "Error finding font family name", e);
         }
         return null;
     }
@@ -201,7 +206,7 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
         try {
             return trueTypeFont.getName();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.FINE, "Error finding font name", e);
         }
         return null;
     }

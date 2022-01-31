@@ -1385,12 +1385,27 @@ public abstract class Annotation extends Dictionary {
             g.transform(tAs);
 
             AffineTransform preAf = g.getTransform();
+            boolean paintFailed = false;
             // regular paint
             try {
                 appearanceState.getShapes().paint(g);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 logger.fine("Page Annotation Painting interrupted.");
+            } catch (InternalError e) {
+                logger.info("Java2D has encountered implementation issue, likely on Linux X11. ");
+                logger.info("Try using the system property -Dsun.java2d.opengl=true as a possible solution");
+                logger.info("Falling back to transparency effects instead of composite paint");
+                paintFailed = true;
+            }
+            if (paintFailed) {
+                try {
+                    appearanceState.getShapes().disableBlendComposite();
+                    appearanceState.getShapes().paint(g);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    logger.fine("Page Annotation Painting interrupted.");
+                }
             }
 
             g.setTransform(preAf);
@@ -1981,10 +1996,12 @@ public abstract class Annotation extends Dictionary {
 
     /**
      * Reset the appearance stream given the specified location and page space transform.
-     * @param dx coord-x
-     * @param dy coord-y
+     *
+     * @param dx        coord-x
+     * @param dy        coord-y
      * @param pageSpace page space transform
-     * @param isNew marks the reset as happening because of a
+     * @param isNew     marks the reset as happening because of user interaction not created because of a missing content
+     *                  stream.
      */
     public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew);
 
