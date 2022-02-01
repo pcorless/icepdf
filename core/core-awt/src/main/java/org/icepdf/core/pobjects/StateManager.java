@@ -41,6 +41,9 @@ public class StateManager {
 
     private final AtomicInteger nextReferenceNumber;
 
+    // snapshot of currently saved changes
+    private Map<Reference, StateManager.Change> savedChangesSnapshot = new HashMap<>();
+
     /**
      * Creates a new instance of the state manager.
      *
@@ -153,22 +156,21 @@ public class StateManager {
 
 
     /**
-     * @return an unmodifiable copy of the current changes
+     * Sets a snapshot of the current changes.
      */
-    public Map<Reference, Change> getChanges() {
-        return Collections.unmodifiableMap(new HashMap<>(changes));
+    public void setChangesSnapshot() {
+        savedChangesSnapshot = Collections.unmodifiableMap(new HashMap<>(changes));
     }
 
-
     /**
-     * Checks that the given and the current list of changes are the same or not
+     * Checks that the last changesSnapshot and the current list of changes are the same or not
      *
-     * @param knownChanges The changes to compare to
      * @return true if the changes are different, false otherwise
      */
-    public boolean hasChangedSince(final Map<Reference, Change> knownChanges) {
-        if (knownChanges.size() == changes.size()) {
-            return knownChanges.entrySet().stream().anyMatch(entry -> !Objects.equals(changes.get(entry.getKey()), entry.getValue()));
+    public boolean hasChangedSinceLastSnapshot() {
+        if (savedChangesSnapshot.size() == changes.size()) {
+            return savedChangesSnapshot.entrySet().stream()
+                    .anyMatch(entry -> !Objects.equals(changes.get(entry.getKey()), entry.getValue()));
         } else {
             return true;
         }

@@ -284,7 +284,6 @@ public class SwingController extends ComponentAdapter
     protected static ResourceBundle messageBundle = null;
 
     protected ViewerPropertiesManager propertiesManager;
-    private Map<Reference, StateManager.Change> savedChanges = new HashMap<>();
     private String saveFilePath = null;
 
     static {
@@ -3462,7 +3461,7 @@ public class SwingController extends ComponentAdapter
                         try (OutputStream stream = new BufferedOutputStream(new FileOutputStream(out))) {
                             document.saveToOutputStream(stream);
                             stream.flush();
-                            savedChanges = document.getStateManager().getChanges();
+                            document.getStateManager().setChangesSnapshot();
                         } catch (IOException e) {
                             logger.log(Level.FINE, "IO Exception ", e);
                         }
@@ -3600,7 +3599,7 @@ public class SwingController extends ComponentAdapter
                             // save as will append changes.
                             document.saveToOutputStream(buf);
                         }
-                        savedChanges = document.getStateManager().getChanges();
+                        document.getStateManager().setChangesSnapshot();
                     } catch (MalformedURLException e) {
                         logger.log(Level.FINE, "Malformed URL Exception ", e);
                     } catch (IOException e) {
@@ -3718,7 +3717,7 @@ public class SwingController extends ComponentAdapter
         // check if document changes have been made, if so ask the user if they
         // want to save the changes.
         if (document != null) {
-            boolean documentChanges = document.getStateManager().hasChangedSince(savedChanges);
+            boolean documentChanges = document.getStateManager().hasChangedSinceLastSnapshot();
             if (documentChanges) {
                 MessageFormat formatter = new MessageFormat(
                         messageBundle.getString("viewer.dialog.saveOnClose.noUpdates.msg"));
