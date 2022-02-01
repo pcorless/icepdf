@@ -21,7 +21,10 @@ import org.icepdf.core.util.Utils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -67,7 +70,7 @@ public class CrossReference {
     protected int offset;
 
     public CrossReference() {
-        hObjectNumber2Entry = new ConcurrentHashMap<Integer, Entry>(4096);
+        hObjectNumber2Entry = new ConcurrentHashMap<>(4096);
     }
 
     public void setTrailer(PTrailer trailer) {
@@ -75,9 +78,13 @@ public class CrossReference {
     }
 
     public int getNextAvailableReferenceNumber() {
-        List<Integer> objectNumbers = Collections.list(hObjectNumber2Entry.keys());
+        final List<Integer> objectNumbers = new ArrayList<>(hObjectNumber2Entry.keySet());
         Collections.sort(objectNumbers);
-        return objectNumbers.get(objectNumbers.size() - 1) + 1;
+        final int nextNumber = objectNumbers.isEmpty() ? 1 : objectNumbers.get(objectNumbers.size() - 1) + 1;
+        loadPeer();
+        loadPrevious();
+        final int peerMax = xrefPeer != null ? Math.max(nextNumber, xrefPeer.getNextAvailableReferenceNumber()) : nextNumber;
+        return xrefPrevious != null ? Math.max(peerMax, xrefPrevious.getNextAvailableReferenceNumber()) : peerMax;
     }
 
     /**
@@ -217,25 +224,14 @@ public class CrossReference {
         if (entry != null)
             return entry;
         /// fall back code to look for another xref table.
-        if (bIsCrossReferenceTable && !bHaveTriedLoadingPeer &&
-                xrefPeer == null && pTrailer != null) {
-            // Lazily load xrefPeer, using pTrailer
-            pTrailer.loadXRefStmIfApplicable();
-            xrefPeer = pTrailer.getCrossReferenceStream();
-            bHaveTriedLoadingPeer = true;
-        }
+        loadPeer();
         if (xrefPeer != null) {
             entry = xrefPeer.getEntryForObject(objectNumber);
             if (entry != null)
                 return entry;
         }
 
-        if (!bHaveTriedLoadingPrevious &&
-                xrefPrevious == null && pTrailer != null) {
-            // Lazily load xrefPrevious, using pTrailer
-            pTrailer.onDemandLoadAndSetupPreviousTrailer();
-            bHaveTriedLoadingPrevious = true;
-        }
+        loadPrevious();
         if (xrefPrevious != null) {
             entry = xrefPrevious.getEntryForObject(objectNumber);
             if (entry != null)
@@ -264,6 +260,25 @@ public class CrossReference {
     protected void addCompressedEntry(int objectNumber, int objectNumberOfContainingObjectStream, int indexWithinObjectStream) {
         CompressedEntry entry = new CompressedEntry(objectNumber, objectNumberOfContainingObjectStream, indexWithinObjectStream);
         hObjectNumber2Entry.put(objectNumber, entry);
+    }
+
+    private void loadPeer(){
+        if (bIsCrossReferenceTable && !bHaveTriedLoadingPeer &&
+                xrefPeer == null && pTrailer != null) {
+            // Lazily load xrefPeer, using pTrailer
+            pTrailer.loadXRefStmIfApplicable();
+            xrefPeer = pTrailer.getCrossReferenceStream();
+            bHaveTriedLoadingPeer = true;
+        }
+    }
+
+    private void loadPrevious(){
+        if (!bHaveTriedLoadingPrevious &&
+                xrefPrevious == null && pTrailer != null) {
+            // Lazily load xrefPrevious, using pTrailer
+            pTrailer.onDemandLoadAndSetupPreviousTrailer();
+            bHaveTriedLoadingPrevious = true;
+        }
     }
 
 

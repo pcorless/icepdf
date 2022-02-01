@@ -28,7 +28,6 @@ import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.AnnotationCallback;
 import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
@@ -147,6 +146,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
     }
 
     public void mousePressed(MouseEvent e) {
+        checkAndApplyPreferences();
         Point startPoint = e.getPoint();
         startOfLine = new Point(startPoint.x, startPoint.y);
         // annotation selection box.
@@ -189,9 +189,6 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         annotation.setEndOfLine(points[1]);
         annotation.setBorderStyle(borderStyle);
 
-        // apply preferences
-        checkAndApplyPreferences();
-
         annotation.setColor(lineColor);
         annotation.setInteriorColor(internalColor);
         annotation.setOpacity(opacity);
@@ -230,11 +227,9 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         popupAnnotationComponent.setVisible(false);
         popupAnnotationComponent.getAnnotation().setOpen(false);
 
-        // set the annotation tool to he select tool
-        if (preferences.getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_SELECTION_ENABLED, false)) {
-            documentViewController.getParentController().setDocumentToolMode(
-                    DocumentViewModel.DISPLAY_TOOL_SELECTION);
-        }
+        // set the annotation tool to the given tool
+        documentViewController.getParentController().setDocumentToolMode(
+                preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_SELECTION_TYPE, 0));
 
         // clear the rectangle
         clearRectangle(pageViewComponent);

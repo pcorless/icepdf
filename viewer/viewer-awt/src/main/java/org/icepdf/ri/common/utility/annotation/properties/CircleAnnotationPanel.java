@@ -17,9 +17,9 @@ package org.icepdf.ri.common.utility.annotation.properties;
 
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.CircleAnnotation;
-import org.icepdf.ri.common.RgbColorChooser;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.Controller;
+import org.icepdf.ri.common.widgets.RgbColorChooser;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;

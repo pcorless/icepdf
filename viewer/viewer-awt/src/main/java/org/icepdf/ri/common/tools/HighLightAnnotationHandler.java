@@ -212,8 +212,8 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
 
     protected void checkAndApplyPreferences() {
         Color color = null;
-        if (preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_BUTTON_COLOR, -1) != -1) {
-            int rgb = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_BUTTON_COLOR, 0);
+        if (preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_COLOR, -1) != -1) {
+            int rgb = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_COLOR, 0);
             color = new Color(rgb);
         }
         // apply the settings or system property base colour for the given subtype.
@@ -251,11 +251,9 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
         // create the text markup annotation.
         createTextMarkupAnnotation(highlightBounds);
 
-        // set the annotation tool to he select tool
-        if (preferences.getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_SELECTION_ENABLED, false)) {
-            documentViewController.getParentController().setDocumentToolMode(
-                    DocumentViewModel.DISPLAY_TOOL_SELECTION);
-        }
+        // set the annotation tool to the given tool
+        documentViewController.getParentController().setDocumentToolMode(
+                preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_SELECTION_TYPE, 0));
     }
 
     public static ArrayList<Shape> getSelectedTextBounds(AbstractPageViewComponent pageViewComponent,

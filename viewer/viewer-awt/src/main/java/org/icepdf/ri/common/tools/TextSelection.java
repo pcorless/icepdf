@@ -347,7 +347,7 @@ public class TextSelection extends SelectionBoxHandler {
                                     if (wordText.isHighlightCursor()) {
                                         gg.setColor(Page.highlightCursorColor);
                                     } else {
-                                        gg.setColor(Page.highlightColor);
+                                        gg.setColor(wordText.getHighlightColor());
                                     }
                                     gg.fill(textPath);
                                 }

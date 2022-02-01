@@ -30,7 +30,7 @@ public class IncrementalUpdater {
         StateManager stateManager = document.getStateManager();
         PTrailer trailer = stateManager.getTrailer();
 
-        if (!stateManager.isChanged()) {
+        if (stateManager.isNoChange()) {
             return 0L;
         }
 
@@ -40,9 +40,9 @@ public class IncrementalUpdater {
         BaseWriter writer = new BaseWriter(trailer, securityManager, output, documentLength);
         writer.initializeWriters();
         writer.writeNewLine();
-        Iterator<PObject> changes = stateManager.iteratorSortedByObjectNumber();
+        Iterator<StateManager.Change> changes = stateManager.iteratorSortedByObjectNumber();
         while (changes.hasNext()) {
-            PObject pobject = changes.next();
+            PObject pobject = changes.next().getPObject();
             writer.writePObject(pobject);
         }
 

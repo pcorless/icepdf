@@ -28,17 +28,17 @@ import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.*;
-import org.icepdf.core.util.content.ContentParser;
-import org.icepdf.core.util.content.ContentParserFactory;
+import org.icepdf.core.util.parser.content.ContentParser;
 
 import java.awt.*;
 import java.awt.geom.*;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * <p>This class represents the leaves of a <code>PageTree</code> object known
@@ -284,10 +284,11 @@ public class Page extends Dictionary {
      *
      * @return list of a pages annotation reference list.
      */
-    public ArrayList<Reference> getAnnotationReferences() {
+    public List<Reference> getAnnotationReferences() {
         Object annots = library.getObject(entries, ANNOTS_KEY);
         if (annots != null && annots instanceof ArrayList) {
-            return (ArrayList<Reference>) annots;
+            final List<Object> list = (List<Object>) annots;
+            return list.stream().filter(Reference.class::isInstance).map(Reference.class::cast).collect(Collectors.toList());
         }
         return null;
     }
@@ -420,8 +421,7 @@ public class Page extends Dictionary {
             notifyPageInitializationStarted();
             if (contents != null) {
                 try {
-                    ContentParser cp = ContentParserFactory.getInstance()
-                            .getContentParser(library, resources);
+                    ContentParser cp = new ContentParser(library, resources);
                     byte[][] streams = new byte[contents.size()][];
                     byte[] stream;
                     for (int i = 0, max = contents.size(); i < max; i++) {
@@ -675,13 +675,13 @@ public class Page extends Dictionary {
                                 // paint whole word
                                 if (wordText.isHighlighted()) {
                                     textPath = new GeneralPath(wordText.getBounds());
-                                    g2.setColor(highlightColor);
+                                    g2.setColor(wordText.getHighlightColor());
                                     g2.fill(textPath);
                                 } else {
                                     for (GlyphText glyph : wordText.getGlyphs()) {
                                         if (glyph.isHighlighted()) {
                                             textPath = new GeneralPath(glyph.getBounds());
-                                            g2.setColor(highlightColor);
+                                            g2.setColor(glyph.getHighlightColor());
                                             g2.fill(textPath);
                                         }
                                     }
@@ -814,10 +814,12 @@ public class Page extends Dictionary {
      * the method @link{#createAnnotation} for creating new annotations.
      *
      * @param newAnnotation annotation object to add
+     * @param isNew annotation is new and should be added to stateManager, otherwise change will be part of the document
+     *              but not yet added to the stateManager as the change was likely a missing content stream or popup.
      * @return reference to annotation that was added.
      */
     @SuppressWarnings("unchecked")
-    public Annotation addAnnotation(Annotation newAnnotation) {
+    public Annotation addAnnotation(Annotation newAnnotation, boolean isNew) {
 
         // make sure the page annotations have been initialized.
         if (annotations == null) {
@@ -841,20 +843,18 @@ public class Page extends Dictionary {
             // update annots dictionary with new annotations reference,
             annotations.add(newAnnotation.getPObjectReference());
             // add the page as state change
-            stateManager.addChange(
-                    new PObject(this, this.getPObjectReference()));
+            stateManager.addChange(new PObject(this, this.getPObjectReference()), isNew);
         } else if (isAnnotAReference && annotations != null) {
             // get annots array from page
             // update annots dictionary with new annotations reference,
             annotations.add(newAnnotation.getPObjectReference());
             // add the annotations reference dictionary as state has changed
             stateManager.addChange(
-                    new PObject(annotations, library.getObjectReference(
-                            entries, ANNOTS_KEY)));
+                    new PObject(annotations, library.getObjectReference(entries, ANNOTS_KEY)), isNew);
         }
         // we need to add the a new annots reference
         else {
-            List<Reference> annotsVector = new ArrayList(4);
+            List<Reference> annotsVector = new ArrayList<>(4);
             annotsVector.add(newAnnotation.getPObjectReference());
 
             // create a new Dictionary of annotations using an external reference
@@ -868,8 +868,8 @@ public class Page extends Dictionary {
 
             // add the page and the new dictionary to the state change
             stateManager.addChange(
-                    new PObject(this, this.getPObjectReference()));
-            stateManager.addChange(annotsPObject);
+                    new PObject(this, this.getPObjectReference()), isNew);
+            stateManager.addChange(annotsPObject, isNew);
 
             this.annotations = new ArrayList<>();
         }
@@ -885,7 +885,7 @@ public class Page extends Dictionary {
         library.addObject(newAnnotation, newAnnotation.getPObjectReference());
 
         // finally add the new annotations to the state manager
-        stateManager.addChange(new PObject(newAnnotation, newAnnotation.getPObjectReference()));
+        stateManager.addChange(new PObject(newAnnotation, newAnnotation.getPObjectReference()), isNew);
 
         // return to caller for further manipulations.
         return newAnnotation;
@@ -998,8 +998,7 @@ public class Page extends Dictionary {
 
         StateManager stateManager = library.getStateManager();
         // if we are doing an update we have at least on annot
-        List<Object> annotations = (List)
-                library.getObject(entries, ANNOTS_KEY);
+        List<Object> annotations = (List) library.getObject(entries, ANNOTS_KEY);
 
         // make sure annotations is in part of page.
         boolean found = false;
@@ -1603,8 +1602,7 @@ public class Page extends Dictionary {
         if (contents != null) {
             try {
 
-                ContentParser cp = ContentParserFactory.getInstance()
-                        .getContentParser(library, resources);
+                ContentParser cp = new ContentParser(library, resources);
                 byte[][] streams = new byte[contents.size()][];
                 for (int i = 0, max = contents.size(); i < max; i++) {
                     streams[i] = contents.get(i).getDecodedStreamBytes();

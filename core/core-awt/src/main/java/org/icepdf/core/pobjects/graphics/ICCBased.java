@@ -77,7 +77,7 @@ public class ICCBased extends PColorSpace {
     /**
      *
      */
-    public void init() {
+    public synchronized void init() {
         if (inited) {
             return;
         }

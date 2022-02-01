@@ -23,16 +23,23 @@ import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.URIAction;
-import org.icepdf.core.pobjects.fonts.FontFactory;
+import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
+import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.*;
 import org.icepdf.ri.common.preferences.PreferencesDialog;
+import org.icepdf.ri.common.print.PrintHelper;
+import org.icepdf.ri.common.print.PrintHelperFactory;
+import org.icepdf.ri.common.print.PrintHelperFactoryImpl;
+import org.icepdf.ri.common.print.PrinterTask;
 import org.icepdf.ri.common.properties.FontDialog;
 import org.icepdf.ri.common.properties.InformationDialog;
 import org.icepdf.ri.common.properties.PermissionsDialog;
 import org.icepdf.ri.common.properties.PropertiesDialog;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
+import org.icepdf.ri.common.utility.annotation.AnnotationFilter;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.annotation.properties.AnnotationPropertiesDialog;
 import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
@@ -43,9 +50,13 @@ import org.icepdf.ri.common.utility.search.SearchToolBar;
 import org.icepdf.ri.common.utility.signatures.SignaturesHandlerPanel;
 import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
 import org.icepdf.ri.common.views.*;
+import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationState;
+import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryFrame;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
+import org.icepdf.ri.common.widgets.AbstractColorButton;
+import org.icepdf.ri.common.widgets.annotations.AnnotationColorToggleButton;
 import org.icepdf.ri.util.*;
 import org.icepdf.ri.viewer.WindowManager;
 
@@ -80,9 +91,11 @@ import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.icepdf.core.util.PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE;
@@ -181,6 +194,7 @@ public class SwingController extends ComponentAdapter
     private JButton searchButton;
     private JToggleButton showHideUtilityPaneButton;
     private JButton showAnnotationUtilityPaneButton;
+    private JButton showBookmarkUtilityPaneButton;
     private JButton firstPageButton;
     private JButton previousPageButton;
     private JButton nextPageButton;
@@ -195,7 +209,6 @@ public class SwingController extends ComponentAdapter
     private JToggleButton fitHeightButton;
     private JToggleButton fitWidthButton;
     private JButton fullScreenButton;
-    private JToggleButton fontEngineButton;
     private JToggleButton facingPageViewContinuousButton;
     private JToggleButton singlePageViewContinuousButton;
     private JToggleButton facingPageViewNonContinuousButton;
@@ -210,13 +223,13 @@ public class SwingController extends ComponentAdapter
     // main annotation toolbar
     private AnnotationColorToggleButton highlightAnnotationToolButton;
     private JToggleButton linkAnnotationToolButton;
-    private JToggleButton strikeOutAnnotationToolButton;
-    private JToggleButton underlineAnnotationToolButton;
-    private JToggleButton lineAnnotationToolButton;
-    private JToggleButton lineArrowAnnotationToolButton;
-    private JToggleButton squareAnnotationToolButton;
-    private JToggleButton circleAnnotationToolButton;
-    private JToggleButton inkAnnotationToolButton;
+    private AnnotationColorToggleButton strikeOutAnnotationToolButton;
+    private AnnotationColorToggleButton underlineAnnotationToolButton;
+    private AnnotationColorToggleButton lineAnnotationToolButton;
+    private AnnotationColorToggleButton lineArrowAnnotationToolButton;
+    private AnnotationColorToggleButton squareAnnotationToolButton;
+    private AnnotationColorToggleButton circleAnnotationToolButton;
+    private AnnotationColorToggleButton inkAnnotationToolButton;
     private JToggleButton freeTextAnnotationToolButton;
     private AnnotationColorToggleButton textAnnotationToolButton;
     private JButton annotationSummaryButton;
@@ -249,12 +262,12 @@ public class SwingController extends ComponentAdapter
     private ThumbnailsPanel thumbnailsPanel;
     private LayersPanel layersPanel;
     private SignaturesHandlerPanel signaturesPanel;
-    private AnnotationPanel annotationPanel;
-    private JTabbedPane utilityTabbedPane;
-    private JSplitPane utilityAndDocumentSplitPane;
+    protected AnnotationPanel annotationPanel;
+    protected JTabbedPane utilityTabbedPane;
+    protected JSplitPane utilityAndDocumentSplitPane;
     private int utilityAndDocumentSplitPaneLastDividerLocation;
     private JLabel statusLabel;
-    private JFrame viewer;
+    private Frame viewer;
     protected WindowManagementCallback windowManagementCallback;
     // simple model for swing controller, mainly printer and  file loading state.
     protected ViewModel viewModel;
@@ -272,8 +285,11 @@ public class SwingController extends ComponentAdapter
     protected static ResourceBundle messageBundle = null;
 
     protected ViewerPropertiesManager propertiesManager;
-    private Map<Reference, PObject> savedChanges = new HashMap<>();
     private String saveFilePath = null;
+
+    static {
+        PrintHelper.preloadServices();
+    }
 
     /**
      * Create a Controller object, and its associated ViewerModel
@@ -301,7 +317,6 @@ public class SwingController extends ComponentAdapter
             SwingController.messageBundle = ResourceBundle.getBundle(
                     ViewerPropertiesManager.DEFAULT_MESSAGE_BUNDLE);
         }
-        new Thread(PrintHelper::preparePrintServices).start();
     }
 
     /**
@@ -911,6 +926,16 @@ public class SwingController extends ComponentAdapter
      *
      * @param btn button to assign
      */
+    public void setShowBookmarkUtilityPaneButton(JButton btn) {
+        showBookmarkUtilityPaneButton = btn;
+        btn.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param btn button to assign
+     */
     public void setFirstPageButton(JButton btn) {
         firstPageButton = btn;
         btn.addActionListener(this);
@@ -1026,16 +1051,6 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewBuilder, so that Controller can setup event handling
-     *
-     * @param btn button to assign
-     */
-    public void setFontEngineButton(JToggleButton btn) {
-        fontEngineButton = btn;
-        btn.addItemListener(this);
-    }
-
-    /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
      *
      * @param btn button to assign
@@ -1125,7 +1140,7 @@ public class SwingController extends ComponentAdapter
      *
      * @param btn button to assign
      */
-    public void setStrikeOutAnnotationToolButton(JToggleButton btn) {
+    public void setStrikeOutAnnotationToolButton(AnnotationColorToggleButton btn) {
         this.strikeOutAnnotationToolButton = btn;
         btn.addItemListener(this);
     }
@@ -1135,7 +1150,7 @@ public class SwingController extends ComponentAdapter
      *
      * @param btn button to assign
      */
-    public void setUnderlineAnnotationToolButton(JToggleButton btn) {
+    public void setUnderlineAnnotationToolButton(AnnotationColorToggleButton btn) {
         this.underlineAnnotationToolButton = btn;
         btn.addItemListener(this);
     }
@@ -1145,7 +1160,7 @@ public class SwingController extends ComponentAdapter
      *
      * @param btn button to assign
      */
-    public void setLineAnnotationToolButton(JToggleButton btn) {
+    public void setLineAnnotationToolButton(AnnotationColorToggleButton btn) {
         this.lineAnnotationToolButton = btn;
         btn.addItemListener(this);
     }
@@ -1155,7 +1170,7 @@ public class SwingController extends ComponentAdapter
      *
      * @param btn button to assign
      */
-    public void setLineArrowAnnotationToolButton(JToggleButton btn) {
+    public void setLineArrowAnnotationToolButton(AnnotationColorToggleButton btn) {
         this.lineArrowAnnotationToolButton = btn;
         btn.addItemListener(this);
     }
@@ -1165,7 +1180,7 @@ public class SwingController extends ComponentAdapter
      *
      * @param btn button to assign
      */
-    public void setSquareAnnotationToolButton(JToggleButton btn) {
+    public void setSquareAnnotationToolButton(AnnotationColorToggleButton btn) {
         this.squareAnnotationToolButton = btn;
         btn.addItemListener(this);
     }
@@ -1175,7 +1190,7 @@ public class SwingController extends ComponentAdapter
      *
      * @param btn button to assign
      */
-    public void setCircleAnnotationToolButton(JToggleButton btn) {
+    public void setCircleAnnotationToolButton(AnnotationColorToggleButton btn) {
         this.circleAnnotationToolButton = btn;
         btn.addItemListener(this);
     }
@@ -1185,7 +1200,7 @@ public class SwingController extends ComponentAdapter
      *
      * @param btn button to assign
      */
-    public void setInkAnnotationToolButton(JToggleButton btn) {
+    public void setInkAnnotationToolButton(AnnotationColorToggleButton btn) {
         this.inkAnnotationToolButton = btn;
         btn.addItemListener(this);
     }
@@ -1494,7 +1509,7 @@ public class SwingController extends ComponentAdapter
      *
      * @param v paren view frame.
      */
-    public void setViewerFrame(JFrame v) {
+    public void setViewerFrame(Frame v) {
         viewer = v;
         viewer.addWindowListener(this);
         viewer.addComponentListener(this);
@@ -1555,7 +1570,7 @@ public class SwingController extends ComponentAdapter
      * Utility method to set the state of all the different GUI elements. Mainly
      * to enable/disable the GUI elements when a file is opened/closed respectively.
      */
-    private void reflectStateInComponents() {
+    protected void reflectStateInComponents() {
         boolean opened = document != null;
         boolean pdfCollection = opened && isPdfCollection();
 
@@ -1582,6 +1597,7 @@ public class SwingController extends ComponentAdapter
 
         // menu items.
         setEnabled(closeMenuItem, opened);
+        setEnabled(saveFileMenuItem, opened);
         setEnabled(saveAsFileMenuItem, opened);
         setEnabled(sendMailMenuItem, opened);
         setEnabled(exportTextMenuItem, opened && canExtract && !pdfCollection);
@@ -1646,6 +1662,7 @@ public class SwingController extends ComponentAdapter
         setEnabled(searchButton, opened && searchPanel != null && !pdfCollection);
         setEnabled(showHideUtilityPaneButton, opened && utilityTabbedPane != null);
         setEnabled(showAnnotationUtilityPaneButton, opened && utilityTabbedPane != null);
+        setEnabled(showBookmarkUtilityPaneButton, opened && utilityTabbedPane != null);
         setEnabled(currentPageNumberTextField, opened && nPages > 1 && !pdfCollection);
         if (numberOfPagesLabel != null) {
 
@@ -1699,7 +1716,6 @@ public class SwingController extends ComponentAdapter
         setEnabled(annotationPrivacyComboBox, opened && !pdfCollection);
         setEnabled(textAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
         setEnabled(formHighlightButton, opened && !pdfCollection && hasForms());
-        setEnabled(fontEngineButton, opened && !pdfCollection);
         setEnabled(quickSearchToolBar, opened && !pdfCollection);
         setEnabled(facingPageViewContinuousButton, opened && !pdfCollection);
         setEnabled(singlePageViewContinuousButton, opened && !pdfCollection);
@@ -1781,7 +1797,7 @@ public class SwingController extends ComponentAdapter
                 permissions.getPermissions(Permissions.MODIFY_DOCUMENT);
     }
 
-    private void setEnabled(JComponent comp, boolean ena) {
+    protected void setEnabled(JComponent comp, boolean ena) {
         if (comp != null)
             comp.setEnabled(ena);
     }
@@ -1923,7 +1939,7 @@ public class SwingController extends ComponentAdapter
      * display panel.
      * @see #setDisplayTool
      */
-    protected int getDocumentViewToolMode() {
+    public int getDocumentViewToolMode() {
         return documentViewController.getToolMode();
     }
 
@@ -2185,6 +2201,8 @@ public class SwingController extends ComponentAdapter
                 isUtilityPaneVisible());
         reflectSelectionInButton(showAnnotationUtilityPaneButton,
                 isAnnotationUtilityPaneVisible());
+        reflectSelectionInButton(showBookmarkUtilityPaneButton,
+                isBookmarkUtilityPaneVisible());
         reflectSelectionInButton(formHighlightButton,
                 viewModel.isWidgetAnnotationHighlight());
         reflectSelectionInButton(annotationEditingModeButton,
@@ -2549,14 +2567,21 @@ public class SwingController extends ComponentAdapter
         }
     }
 
-    private String getTempSaveFileName(String originalFilePath) {
-        String[] pathSplit = originalFilePath.split("/");
-        String name = pathSplit[pathSplit.length - 1];
-        String[] nameAndExt = name.split("\\.");
-        if (nameAndExt.length != 2) {
-            return null;
+    private static String getTempSaveFileName(final String originalFilePath) {
+        final String separator = File.separator;
+        final String[] pathSplit = originalFilePath.split(Pattern.quote(separator));
+        final String name = pathSplit[pathSplit.length - 1];
+        final String[] dotSplit = name.split("\\.");
+        final String basename = getBasename(dotSplit);
+        return Arrays.stream(pathSplit).limit(pathSplit.length - 1).collect(Collectors.joining(separator))
+                + separator + '.' + basename + "-tmp.pdf";
+    }
+
+    private static String getBasename(final String[] dotSplit) {
+        if (dotSplit.length == 1) {
+            return dotSplit[0];
         } else {
-            return Arrays.stream(pathSplit).limit(pathSplit.length - 1).collect(Collectors.joining("/")) + "/." + nameAndExt[0] + "-tmp.pdf";
+            return Arrays.stream(dotSplit).limit(dotSplit.length - 1).collect(Collectors.joining("."));
         }
     }
 
@@ -3151,10 +3176,6 @@ public class SwingController extends ComponentAdapter
         // set the go to page combo box in the mainToolbar
         reflectStateInComponents();
         updateDocumentView();
-        //TODO not very clean and 100% reliable
-        Timer initialChangesTimer = new Timer(500, event -> savedChanges = document.getStateManager().getAndSaveChanges());
-        initialChangesTimer.setRepeats(false);
-        initialChangesTimer.start();
     }
 
     /**
@@ -3240,7 +3261,7 @@ public class SwingController extends ComponentAdapter
             viewer.setTitle(messageBundle.getString("viewer.window.title.default"));
             viewer.invalidate();
             viewer.validate();
-            viewer.getContentPane().repaint();
+            viewer.repaint();
         }
 
         reflectStateInComponents();
@@ -3372,8 +3393,6 @@ public class SwingController extends ComponentAdapter
         formHighlightButton = null;
         annotationEditingModeButton = null;
 
-        fontEngineButton = null;
-
         completeToolBar = null;
 
         outlinesTree = null;
@@ -3440,7 +3459,7 @@ public class SwingController extends ComponentAdapter
      * when the window is closed.
      */
     public void saveFile() {
-        if (document.getStateManager().hasChangedSince(savedChanges)) {
+        if (document.getStateManager().isChange()) {
             if (saveFilePath != null && !saveFilePath.isEmpty()) {
                 File out = new File(saveFilePath);
                 if (out.getParentFile() != null) {
@@ -3448,7 +3467,7 @@ public class SwingController extends ComponentAdapter
                         try (OutputStream stream = new BufferedOutputStream(new FileOutputStream(out))) {
                             document.saveToOutputStream(stream);
                             stream.flush();
-                            savedChanges = document.getStateManager().getAndSaveChanges();
+                            document.getStateManager().setChangesSnapshot();
                         } catch (IOException e) {
                             logger.log(Level.FINE, "IO Exception ", e);
                         }
@@ -3565,34 +3584,28 @@ public class SwingController extends ComponentAdapter
                     saveFileAs();
                 } else {
                     // save file stream
-                    try {
-                        // If we don't know where the file came from, it's because we
-                        //  used Document.contentStream() or Document.setByteArray(),
-                        //  or we used setUrl() with disk caching disabled.
-                        //  with no path or URL as the origin.
-                        // Note that we used to detect scenarios where we could access
-                        //  the file directly, or re-download it, to avoid locking our
-                        //  internal data structures for long periods for large PDFs,
-                        //  but that could cause problems with slow network links too,
-                        //  and would complicate the incremental update code, so we're
-                        //  harmonising on this approach.
-                        FileOutputStream fileOutputStream = new FileOutputStream(file);
-                        BufferedOutputStream buf = new BufferedOutputStream(
-                                fileOutputStream, 4096 * 2);
+                    // If we don't know where the file came from, it's because we
+                    //  used Document.contentStream() or Document.setByteArray(),
+                    //  or we used setUrl() with disk caching disabled.
+                    //  with no path or URL as the origin.
+                    // Note that we used to detect scenarios where we could access
+                    //  the file directly, or re-download it, to avoid locking our
+                    //  internal data structures for long periods for large PDFs,
+                    //  but that could cause problems with slow network links too,
+                    //  and would complicate the incremental update code, so we're
+                    //  harmonising on this approach.
+                    try (final FileOutputStream fileOutputStream = new FileOutputStream(file);
+                         final BufferedOutputStream buf = new BufferedOutputStream(fileOutputStream, 4096 * 2)) {
 
                         // We want 'save as' or 'save a copy to always occur
-                        if (!document.getStateManager().hasChangedSince(savedChanges)) {
+                        if (!document.getStateManager().isChange()) {
                             // save as copy
                             document.writeToOutputStream(buf);
                         } else {
                             // save as will append changes.
                             document.saveToOutputStream(buf);
                         }
-                        buf.flush();
-                        fileOutputStream.flush();
-                        buf.close();
-                        fileOutputStream.close();
-                        savedChanges = document.getStateManager().getAndSaveChanges();
+                        document.getStateManager().setChangesSnapshot();
                     } catch (MalformedURLException e) {
                         logger.log(Level.FINE, "Malformed URL Exception ", e);
                     } catch (IOException e) {
@@ -3710,7 +3723,7 @@ public class SwingController extends ComponentAdapter
         // check if document changes have been made, if so ask the user if they
         // want to save the changes.
         if (document != null) {
-            boolean documentChanges = document.getStateManager().hasChangedSince(savedChanges);
+            boolean documentChanges = document.getStateManager().hasChangedSinceLastSnapshot();
             if (documentChanges) {
                 MessageFormat formatter = new MessageFormat(
                         messageBundle.getString("viewer.dialog.saveOnClose.noUpdates.msg"));
@@ -3727,7 +3740,7 @@ public class SwingController extends ComponentAdapter
                 } else if (res == JOptionPane.NO_OPTION) {
                     // nothing to do, just fall through.
                 } else if (res == JOptionPane.CANCEL_OPTION) {
-                    // supress the close action
+                    // suppress the close action
                     return true;
                 }
             }
@@ -3826,7 +3839,15 @@ public class SwingController extends ComponentAdapter
      * Show tabbed pane interface for annotation properties.
      */
     public void showAnnotationProperties(AnnotationComponent annotationComponent) {
-        showAnnotationProperties(annotationComponent, viewer);
+        // grab a reference to the page so that it isn't de-referenced when the new
+        // dialog get referenced. At least I think that's what might be happening.
+        PageTree pageTree = getPageTree();
+        Page page = pageTree.getPage(documentViewController.getCurrentPageIndex());
+        try {
+            showAnnotationProperties(annotationComponent, viewer);
+        } finally {
+            page = null;
+        }
     }
 
     /**
@@ -3850,13 +3871,13 @@ public class SwingController extends ComponentAdapter
         if (printHelper == null) {
             MediaSizeName mediaSizeName = PrintHelper.guessMediaSizeName(document);
             // create the new print help
-            printHelper = new PrintHelper(documentViewController.getViewContainer(),
+            printHelper = getPrintHelperFactory().createPrintHelper(documentViewController.getViewContainer(),
                     getPageTree(), documentViewController.getRotation(), mediaSizeName,
                     PrintQuality.NORMAL);
         }
-        // reuse previous print attributes if they exist. 
+        // reuse previous print attributes if they exist.
         else {
-            printHelper = new PrintHelper(documentViewController.getViewContainer(),
+            printHelper = getPrintHelperFactory().createPrintHelper(documentViewController.getViewContainer(),
                     getPageTree(), documentViewController.getRotation(),
                     printHelper.getDocAttributeSet(),
                     printHelper.getPrintRequestAttributeSet());
@@ -3877,7 +3898,7 @@ public class SwingController extends ComponentAdapter
      * @param mediaSize MediaSizeName constant of paper size to print to.
      */
     public void setPrintDefaultMediaSizeName(MediaSizeName mediaSize) {
-        PrintHelper printHelper = new PrintHelper(
+        PrintHelper printHelper = getPrintHelperFactory().createPrintHelper(
                 documentViewController.getViewContainer(), getPageTree(),
                 documentViewController.getRotation(),
                 mediaSize,
@@ -3934,11 +3955,11 @@ public class SwingController extends ComponentAdapter
             if (printHelper == null) {
                 MediaSizeName mediaSizeName = PrintHelper.guessMediaSizeName(document);
                 // create the new print help
-                printHelper = new PrintHelper(documentViewController.getViewContainer(),
+                printHelper = getPrintHelperFactory().createPrintHelper(documentViewController.getViewContainer(),
                         getPageTree(), documentViewController.getRotation(),
                         mediaSizeName, PrintQuality.NORMAL);
             } else {
-                printHelper = new PrintHelper(documentViewController.getViewContainer(),
+                printHelper = getPrintHelperFactory().createPrintHelper(documentViewController.getViewContainer(),
                         getPageTree(), documentViewController.getRotation(),
                         printHelper.getDocAttributeSet(),
                         printHelper.getPrintRequestAttributeSet());
@@ -3966,7 +3987,6 @@ public class SwingController extends ComponentAdapter
         } finally {
             SwingUtilities.invokeLater(() -> setDisplayTool(documentIcon));
         }
-
     }
 
     private void renablePrintUI() {
@@ -4371,7 +4391,7 @@ public class SwingController extends ComponentAdapter
 
     public void setDocumentToolMode(final int toolType) {
         // nothing to do tool should already be setup.
-        if (documentViewController.isToolModeSelected(toolType))
+        if (toolType == 0 || documentViewController.isToolModeSelected(toolType))
             return;
 
         // set the tool mode
@@ -4391,8 +4411,15 @@ public class SwingController extends ComponentAdapter
     }
 
     public boolean isAnnotationUtilityPaneVisible() {
-        return utilityTabbedPane != null && utilityTabbedPane.isVisible() &&
-                annotationPanel != null && annotationPanel.isVisible();
+        return isComponentUtilityPaneVisible(annotationPanel);
+    }
+
+    public boolean isBookmarkUtilityPaneVisible() {
+        return isComponentUtilityPaneVisible(outlinesScrollPane);
+    }
+
+    public boolean isComponentUtilityPaneVisible(final Component component) {
+        return isUtilityPaneVisible() && component != null && component.isVisible();
     }
 
     /**
@@ -4501,7 +4528,6 @@ public class SwingController extends ComponentAdapter
         if ((utilityTabbedPane != null) && (comp != null)) {
             if (utilityTabbedPane.indexOfComponent(comp) > -1) {
                 utilityTabbedPane.setSelectedComponent(comp);
-
                 return true;
             }
         }
@@ -4509,9 +4535,20 @@ public class SwingController extends ComponentAdapter
         return false;
     }
 
+    protected boolean isUtilityTabSelected(Component comp) {
+        if (utilityTabbedPane != null && comp != null) {
+            return utilityTabbedPane.getSelectedComponent() == comp;
+        }
+        return false;
+    }
+
     public void showSearch() {
-        SearchToolBar searchBar = (SearchToolBar) quickSearchToolBar;
+        final SearchToolBar searchBar = (SearchToolBar) quickSearchToolBar;
+        final String selectedText = documentViewController.getSelectedText();
         if (searchBar != null) {
+            if (selectedText != null && !selectedText.trim().isEmpty()) {
+                searchBar.setSearchText(selectedText.trim());
+            }
             searchBar.focusTextField();
         } else {
             showSearchPanel();
@@ -4524,6 +4561,16 @@ public class SwingController extends ComponentAdapter
      * @see #setUtilityPaneVisible(boolean)
      */
     public void showSearchPanel() {
+        final String selectedText = documentViewController.getSelectedText();
+        if (selectedText != null && !selectedText.trim().isEmpty()) {
+            showSearchPanel(selectedText.trim());
+        } else {
+            showSearchPanel(searchPanel.getSearchPhrase());
+        }
+    }
+
+    public void showSearchPanel(final String searchPhrase) {
+        searchPanel.setSearchPhrase(searchPhrase);
         if (utilityTabbedPane != null && searchPanel != null) {
             // make sure the utility pane is visible
             if (!utilityTabbedPane.isVisible()) {
@@ -4536,16 +4583,10 @@ public class SwingController extends ComponentAdapter
                     // select the search panel
                     safelySelectUtilityPanel(searchPanel);
                 }
-
                 // request focus
                 searchPanel.requestFocus();
             }
         }
-    }
-
-    public void showSearchPanel(String searchPhrase) {
-        searchPanel.setSearchPhrase(searchPhrase);
-        showSearchPanel();
     }
 
     public void nextSearchResult() {
@@ -4563,29 +4604,7 @@ public class SwingController extends ComponentAdapter
     /**
      * Make the Annotation Link Panel visible, and if necessary, the utility pane that encloses it
      *
-     * @param selectedAnnotation the annotation to show in the panel
-     * @see #setUtilityPaneVisible(boolean)
-     */
-    public void showAnnotationPanel(AnnotationComponent selectedAnnotation) {
-        if (utilityTabbedPane != null) {
-            // Pass the selected annotation to the link panel
-            if (annotationPanel != null) {
-                annotationPanel.setEnabled(true);
-            }
-            setUtilityPaneVisible(true);
-            // select the annotationPanel tab
-            if (annotationPanel != null) {
-                boolean show = safelySelectUtilityPanel(annotationPanel);
-                if (show) {
-                    annotationPanel.setSelectedTab(ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_MARKUP);
-                }
-            }
-        }
-    }
-
-    /* Make the Annotation Link Panel visible, and if necessary, the utility pane that encloses it
-     *
-     * @param selectedAnnotation the annotation to show in the panel
+     * @param selectedDestination the destination to show in the panel
      * @see #setUtilityPaneVisible(boolean)
      */
     public void showAnnotationDestinationPanel(DestinationComponent selectedDestination) {
@@ -4624,15 +4643,46 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Make the outline panel panel visible.
+     * Make the Annotation Link Panel visible, and if necessary, the utility pane that encloses it
+     *
+     * @param forceShow Forces the utility pane to be visible
+     * @see #setUtilityPaneVisible(boolean)
      */
-    public void showOutlinePanel() {
-        if (utilityTabbedPane != null) {
-            // Pass the selected annotation to the link panel
-            if (outlinesScrollPane != null && utilityTabbedPane != null) {
-                utilityTabbedPane.setSelectedComponent(outlinesScrollPane);
-            }
+    public void showAnnotationPanel(final boolean forceShow) {
+        final boolean isShowing = showUtilityPanel(annotationPanel, forceShow);
+        if (annotationPanel != null && isShowing) {
+            annotationPanel.setSelectedTab(ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_MARKUP);
         }
+    }
+
+    /**
+     * Shows the given component in the utility panel
+     *
+     * @param panelToShow The component to show
+     * @param forceShow   Whether to force showing the utility panel or not
+     * @return whether the panel has been selected or not
+     */
+    protected boolean showUtilityPanel(final Component panelToShow, final boolean forceShow) {
+        if (utilityTabbedPane != null && panelToShow != null) {
+            // Pass the selected annotation to the link panel
+            panelToShow.setEnabled(true);
+        }
+        setUtilityPaneVisible(forceShow || (!isUtilityPaneVisible() || !isUtilityTabSelected(panelToShow) || utilityAndDocumentSplitPane.getLeftComponent() != utilityTabbedPane));
+        // select the annotationPanel tab
+        if (!isUtilityTabSelected(panelToShow)) {
+            return safelySelectUtilityPanel(panelToShow);
+        } else {
+            return true;
+        }
+    }
+
+    /**
+     * Make the outline panel panel visible
+     *
+     * @param forceShow Whether to force showing the utility pane or not
+     */
+    public void showOutlinePanel(final boolean forceShow) {
+        showUtilityPanel(outlinesScrollPane, forceShow);
     }
 
     /**
@@ -4697,18 +4747,21 @@ public class SwingController extends ComponentAdapter
         }
 
         // Hide the menubar?
-        if (viewerPref != null && viewerPref.hasHideMenubar()) {
-            if (viewerPref.getHideMenubar()) {
-                if ((viewer != null) && (viewer.getJMenuBar() != null)) {
-                    viewer.getJMenuBar().setVisible(false);
+        if (viewer instanceof JFrame) {
+            final JMenuBar menuBar = ((JFrame) viewer).getJMenuBar();
+            if (viewerPref != null && viewerPref.hasHideMenubar()) {
+                if (viewerPref.getHideMenubar()) {
+                    if (menuBar != null) {
+                        menuBar.setVisible(false);
+                    }
                 }
-            }
-        } else {
-            if (viewer != null && viewer.getJMenuBar() != null) {
-                viewer.getJMenuBar().setVisible(
-                        !propertiesManager.getPreferences().getBoolean(
-                                ViewerPropertiesManager.PROPERTY_VIEWPREF_HIDEMENUBAR,
-                                false));
+            } else {
+                if (menuBar != null) {
+                    menuBar.setVisible(
+                            !propertiesManager.getPreferences().getBoolean(
+                                    ViewerPropertiesManager.PROPERTY_VIEWPREF_HIDEMENUBAR,
+                                    false));
+                }
             }
         }
 
@@ -4741,6 +4794,11 @@ public class SwingController extends ComponentAdapter
     //
     // Controller interface
     //
+
+    @Override
+    public PrintHelperFactory getPrintHelperFactory() {
+        return PrintHelperFactoryImpl.getInstance();
+    }
 
     /**
      * A Document is the root of the object hierarchy, giving access
@@ -4794,10 +4852,10 @@ public class SwingController extends ComponentAdapter
                 }
             } else if (source == saveFileMenuItem || source == saveFileButton) {
                 saveFile();
-            } else if (source == sendMailMenuItem) {
-                MailSender.sendMail(this);
             } else if (source == saveAsFileMenuItem) {
                 saveFileAs();
+            } else if (source == sendMailMenuItem) {
+                MailSender.sendMail(this);
             } else if (source == exportTextMenuItem) {
                 exportText();
             } else if (source == exitMenuItem) {
@@ -4864,7 +4922,7 @@ public class SwingController extends ComponentAdapter
                                         document.getNumberOfPages() > MAX_SELECT_ALL_PAGE_COUNT)) {
                             // get the text.
                             StringSelection stringSelection = new StringSelection(
-                                    documentViewController.getSelectedText());
+                                    documentViewController.getFlatSelectedText());
                             Toolkit.getDefaultToolkit().getSystemClipboard()
                                     .setContents(stringSelection, stringSelection);
                         } else {
@@ -4908,7 +4966,9 @@ public class SwingController extends ComponentAdapter
                     } else if (source == showHideUtilityPaneMenuItem || source == showHideUtilityPaneButton) {
                         toggleUtilityPaneVisibility();
                     } else if (source == showAnnotationUtilityPaneButton) {
-                        showAnnotationPanel(null);
+                        showAnnotationPanel(false);
+                    } else if (source == showBookmarkUtilityPaneButton) {
+                        showOutlinePanel(false);
                     } else if (source == formHighlightButton) {
                         toggleFormHighlight();
                     } else if (source == annotationEditingModeButton) {
@@ -5036,16 +5096,6 @@ public class SwingController extends ComponentAdapter
                     setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_WIDTH, false);
                     doSetFocus = true;
                 }
-            } else if (source == fontEngineButton) {
-                if (e.getStateChange() == ItemEvent.SELECTED ||
-                        e.getStateChange() == ItemEvent.DESELECTED) {
-                    // get instance of the font factory
-                    FontFactory.getInstance().toggleAwtFontSubstitution();
-                    // refresh the document, refresh will happen by the component.
-                    ((AbstractDocumentView) documentViewController.getDocumentView()).firePropertyChange(
-                            PropertyConstants.DOCUMENT_VIEW_DEMO_MODE_CHANGE, false, true);
-                    doSetFocus = true;
-                }
             }
             // tool selection - a call to setDocumentToolMode will generate
             // the property change even which the view and child components
@@ -5088,51 +5138,46 @@ public class SwingController extends ComponentAdapter
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION);
                 }
-            } else if (source == highlightAnnotationToolButton ||
-                    (highlightAnnotationToolButton != null && highlightAnnotationToolButton.equals(source)) ||
-                    source == highlightAnnotationPropertiesToolButton) {
+            } else if (checkAnnotationButton(source, highlightAnnotationToolButton,
+                    highlightAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION);
                 }
-            } else if (source == strikeOutAnnotationToolButton ||
-                    source == strikeOutAnnotationPropertiesToolButton) {
+            } else if (checkAnnotationButton(source, strikeOutAnnotationToolButton,
+                    strikeOutAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_STRIKEOUT_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_STRIKEOUT_ANNOTATION);
                 }
-            } else if (source == underlineAnnotationToolButton ||
-                    source == underlineAnnotationPropertiesToolButton) {
+            } else if (checkAnnotationButton(source, underlineAnnotationToolButton,
+                    underlineAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_UNDERLINE_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_UNDERLINE_ANNOTATION);
                 }
-            } else if (source == lineAnnotationToolButton ||
-                    source == lineAnnotationPropertiesToolButton) {
+            } else if (checkAnnotationButton(source, lineAnnotationToolButton, lineAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_LINE_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINE_ANNOTATION);
                 }
-            } else if (source == lineArrowAnnotationToolButton ||
-                    source == lineArrowAnnotationPropertiesToolButton) {
+            } else if (checkAnnotationButton(source, lineArrowAnnotationToolButton,
+                    lineArrowAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_LINE_ARROW_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINE_ARROW_ANNOTATION);
                 }
-            } else if (source == squareAnnotationToolButton ||
-                    source == squareAnnotationPropertiesToolButton) {
+            } else if (checkAnnotationButton(source, squareAnnotationToolButton, squareAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_SQUARE_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SQUARE_ANNOTATION);
                 }
-            } else if (source == circleAnnotationToolButton ||
-                    source == circleAnnotationPropertiesToolButton) {
+            } else if (checkAnnotationButton(source, circleAnnotationToolButton, circleAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_CIRCLE_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_CIRCLE_ANNOTATION);
                 }
-            } else if (source == inkAnnotationToolButton ||
-                    source == inkAnnotationPropertiesToolButton) {
+            } else if (checkAnnotationButton(source, inkAnnotationToolButton, inkAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_INK_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_INK_ANNOTATION);
@@ -5143,9 +5188,7 @@ public class SwingController extends ComponentAdapter
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_FREE_TEXT_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_FREE_TEXT_ANNOTATION);
                 }
-            } else if (source == textAnnotationToolButton ||
-                    (textAnnotationToolButton != null && textAnnotationToolButton.equals(source)) ||
-                    source == textAnnotationPropertiesToolButton) {
+            } else if (checkAnnotationButton(source, textAnnotationToolButton, textAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION);
@@ -5190,6 +5233,11 @@ public class SwingController extends ComponentAdapter
         } finally {
             setDisplayTool(tool);
         }
+    }
+
+    private static boolean checkAnnotationButton(final Object source, final AnnotationColorToggleButton button,
+                                                 final JToggleButton propertiesButton) {
+        return source == button || (button != null && source == button.getColorButton()) || source == propertiesButton;
     }
 
     //
@@ -5264,7 +5312,7 @@ public class SwingController extends ComponentAdapter
         // So, we need to temporarily save what we'll need, for our later invocation of
         //  WindowManagementCallback.disposeWindow(), that dispose() would otherwise trash
         WindowManagementCallback wc = windowManagementCallback;
-        JFrame v = viewer;
+        Frame v = viewer;
 
         // save last used location.
         WindowManager.saveViewerState(v);
@@ -5583,7 +5631,7 @@ public class SwingController extends ComponentAdapter
                         if (logger.isLoggable(Level.FINE)) {
                             logger.fine("selected annotation " + annotationComponent);
                         }
-                        showAnnotationPanel(annotationComponent);
+                        showAnnotationPanel(true);
                     }
                 }
                 break;
@@ -5651,12 +5699,7 @@ public class SwingController extends ComponentAdapter
                 }
                 break;
             case ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE:
-                if (highlightAnnotationToolButton != null) {
-                    highlightAnnotationToolButton.refreshColorPanel();
-                }
-                if (textAnnotationToolButton != null) {
-                    textAnnotationToolButton.refreshColorPanel();
-                }
+                getColorButtons().stream().filter(Objects::nonNull).forEach(AbstractColorButton::refreshColorPanel);
                 if (annotationPanel != null &&
                         annotationPanel.getMarkupAnnotationPanel() != null) {
                     annotationPanel.getMarkupAnnotationPanel().refreshColorPanel();
@@ -5696,10 +5739,82 @@ public class SwingController extends ComponentAdapter
                 if (annotationPanel != null && annotationPanel.getDestinationsPanel() != null) {
                     annotationPanel.getDestinationsPanel().removeNameTreeNode(destination);
                 }
-                // remove the destination component from the the page component
+                // remove the destination component from the page component
                 documentViewController.deleteDestination(destination);
                 getDocumentViewController().getDocumentView().repaint();
                 break;
+        }
+    }
+
+    private Collection<AnnotationColorToggleButton> getColorButtons() {
+        return new HashSet<>(Arrays.asList(highlightAnnotationToolButton, strikeOutAnnotationToolButton, underlineAnnotationToolButton, lineAnnotationToolButton,
+                lineArrowAnnotationToolButton, squareAnnotationToolButton, circleAnnotationToolButton, inkAnnotationToolButton, textAnnotationToolButton));
+    }
+
+    public void changeAnnotationsVisibility(final AnnotationFilter filter, final boolean visible, final boolean execInvert) {
+        callOnFilteredAnnotations(a -> a instanceof MarkupAnnotation && filter.filter(a), a -> {
+            a.setFlag(Annotation.FLAG_HIDDEN, !visible);
+            a.setFlag(Annotation.FLAG_INVISIBLE, !visible);
+            final PopupAnnotation pa = ((MarkupAnnotation) a).getPopupAnnotation();
+            if (pa != null) {
+                if (pa.isOpen() && !visible) {
+                    pa.setOpen(false);
+                    final int idx = pa.getPageIndex();
+                    final AbstractAnnotationComponent comp = (AbstractAnnotationComponent) ((PageViewComponentImpl)
+                            documentViewController.getDocumentViewModel().getPageComponents().get(idx)).getComponentFor(pa);
+                    if (comp != null) {
+                        comp.setVisible(false);
+                    }
+                }
+            }
+        });
+        if (execInvert) {
+            changeAnnotationsVisibility(filter.invertFilter(), !visible, false);
+        }
+        if (viewer != null) {
+            viewer.validate();
+            viewer.repaint();
+        }
+    }
+
+    /**
+     * Changes privacy flag of the MarkupAnnotations given by the annotations filter
+     *
+     * @param filter The filter used to filter the annotations
+     * @param priv   The privacy status to use (true = private)
+     */
+    public void changeAnnotationsPrivacy(final AnnotationFilter filter, final boolean priv) {
+        callOnFilteredAnnotations(a -> a instanceof MarkupAnnotation && filter.filter(a), a -> {
+            final MarkupAnnotation ma = (MarkupAnnotation) a;
+            ma.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, priv);
+            ma.setModifiedDate(PDate.formatDateTime(new Date()));
+            final PopupAnnotation pa = ma.getPopupAnnotation();
+            if (pa != null) {
+                pa.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, priv);
+                pa.setModifiedDate(PDate.formatDateTime(new Date()));
+            }
+            final PageViewComponentImpl pvc = (PageViewComponentImpl)
+                    documentViewController.getDocumentViewModel().getPageComponents().get(ma.getPageIndex());
+            final MarkupAnnotationComponent<?> comp = (MarkupAnnotationComponent<?>) pvc.getComponentFor(ma);
+            if (comp != null) {
+                if (comp.getPopupAnnotationComponent() != null) {
+                    comp.getPopupAnnotationComponent().refreshPopupState();
+                }
+                documentViewController.updateAnnotation(comp);
+            }
+        });
+    }
+
+    private void callOnFilteredAnnotations(final AnnotationFilter filter, final Consumer<Annotation> toExecute) {
+        if (document != null) {
+            final PageTree pt = document.getPageTree();
+            for (int i = 0; i < pt.getNumberOfPages(); ++i) {
+                final Page p = pt.getPage(i);
+                if (p.getAnnotations() != null) {
+                    final List<Annotation> annotations = p.getAnnotations().stream().filter(filter::filter).collect(Collectors.toList());
+                    annotations.forEach(toExecute);
+                }
+            }
         }
     }
 }

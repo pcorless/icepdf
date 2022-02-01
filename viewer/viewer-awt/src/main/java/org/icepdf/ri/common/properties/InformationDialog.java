@@ -41,7 +41,7 @@ public class InformationDialog extends EscapeJDialog {
      * @param document        document
      * @param messageBundle   i18n message bundle
      */
-    public InformationDialog(JFrame frame, Document document,
+    public InformationDialog(Frame frame, Document document,
                              ResourceBundle messageBundle) {
         super(frame, true);
         setTitle(messageBundle.getString("viewer.dialog.documentInformation.title"));

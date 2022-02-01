@@ -137,8 +137,13 @@ public class LazyObjectLoader {
                 seekableInput.seekAbsolute(position);
                 Parser parser = new Parser(seekableInput);
                 Object obj = parser.getObject(library);
-                if (obj instanceof PObject)
-                    obj = ((PObject) obj).getObject();
+                if (obj instanceof PObject) {
+                    PObject pObject = ((PObject) obj);
+                    obj = pObject.getObject();
+                    // don't cache the trailer, it's not reused directly, and we have a problem PDF where the same
+                    // object number is reused for content in a file, GH-208
+                    library.removeObject(pObject.getReference());
+                }
                 trailer = (PTrailer) obj;
                 if (trailer != null)
                     trailer.setPosition(position);

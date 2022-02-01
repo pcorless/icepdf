@@ -27,7 +27,6 @@ import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
@@ -107,7 +106,7 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
     }
 
     public void mousePressed(MouseEvent e) {
-
+        checkAndApplyPreferences();
     }
 
     public static TextAnnotation createTextAnnotation(Library library, Rectangle bbox,
@@ -157,7 +156,8 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
 
     public static PopupAnnotation createPopupAnnotation(Library library, Rectangle bbox,
                                                         MarkupAnnotation parent,
-                                                        AffineTransform pageSpace) {
+                                                        AffineTransform pageSpace,
+                                                        boolean isNew) {
         // text annotation are special as the annotation has fixed size.
         PopupAnnotation popupAnnotation = (PopupAnnotation)
                 AnnotationFactory.buildAnnotation(
@@ -166,15 +166,14 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
                         bbox);
         // save the annotation
         StateManager stateManager = library.getStateManager();
-        stateManager.addChange(new PObject(popupAnnotation,
-                popupAnnotation.getPObjectReference()));
+        stateManager.addChange(new PObject(popupAnnotation, popupAnnotation.getPObjectReference()), isNew);
         library.addObject(popupAnnotation, popupAnnotation.getPObjectReference());
 
         // setup up some default values
         popupAnnotation.setOpen(true);
         popupAnnotation.setParent(parent);
         parent.setPopupAnnotation(popupAnnotation);
-        popupAnnotation.resetAppearanceStream(0, 0, pageSpace);
+        popupAnnotation.resetAppearanceStream(0, 0, pageSpace, isNew);
         return popupAnnotation;
     }
 
@@ -216,23 +215,14 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
         popupAnnotationComponent.setVisible(true);
         popupAnnotationComponent.getAnnotation().setOpen(true);
         popupAnnotationComponent.focusTextArea();
-        // set the annotation tool to he select tool
-        if (preferences.getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_SELECTION_ENABLED, false)) {
-            documentViewController.getParentController().setDocumentToolMode(
-                    DocumentViewModel.DISPLAY_TOOL_SELECTION);
-        }
+        // set the annotation tool to the given tool
+        documentViewController.getParentController().setDocumentToolMode(
+                preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_SELECTION_TYPE, 0));
     }
 
     protected void checkAndApplyPreferences() {
-        if (preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_BUTTON_COLOR, -1) != -1) {
-            int rgb = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_BUTTON_COLOR, 0);
-            defaultFillColor = new Color(rgb);
-        }
-
-        if (defaultFillColor == null) {
-            if (preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_COLOR, -1) != -1) {
-                defaultFillColor = new Color(preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_COLOR, -1));
-            }
+        if (preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_COLOR, -1) != -1) {
+            defaultFillColor = new Color(preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_COLOR, -1));
         }
         defaultIcon = preferences.get(
                 ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_ICON, TextAnnotation.COMMENT_ICON.toString());

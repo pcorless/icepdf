@@ -43,7 +43,7 @@ public class WidgetAnnotation extends AbstractWidgetAnnotation {
         fieldDictionary = new FieldDictionary(library, entries);
     }
 
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew) {
 
     }
 

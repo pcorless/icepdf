@@ -18,6 +18,7 @@ package org.icepdf.ri.viewer;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.*;
+import org.icepdf.ri.common.print.PrintHelper;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
@@ -58,6 +59,9 @@ public class WindowManager implements WindowManagementCallback {
     private static int newWindowInvocationCounter = 0;
 
     private ResourceBundle messageBundle = null;
+
+    public static ControllerFactory controllerFactory = SwingControllerFactory.getInstance();
+    public static ViewBuilderFactory viewBuilderFactory = SwingViewBuilderFactory.getInstance();
 
     private WindowManager() {
     }
@@ -134,10 +138,10 @@ public class WindowManager implements WindowManagementCallback {
 
     private void print(Controller controller, String printer) {
         controller.printAndExit(!PrintHelper.hasPrinter(printer), printer);
-        quit(controller, (JFrame) controller.getViewerFrame(), controller.getPropertiesManager().getPreferences());
+        quit(controller, controller.getViewerFrame(), controller.getPropertiesManager().getPreferences());
     }
 
-    protected Controller commonWindowCreation(){
+    protected Controller commonWindowCreation() {
         return commonWindowCreation(true);
     }
 
@@ -165,8 +169,7 @@ public class WindowManager implements WindowManagementCallback {
             // eating error, as we can continue with out alarm
         }
 
-        SwingViewBuilder factory =
-                new SwingViewBuilder((SwingController) controller, viewType, pageFit, pageRotation);
+        ViewBuilder factory = viewBuilderFactory.create(controller, viewType, pageFit, pageRotation);
 
         JFrame frame = factory.buildViewerFrame();
         if (frame != null) {
@@ -248,7 +251,7 @@ public class WindowManager implements WindowManagementCallback {
         }
     }
 
-    public void disposeWindow(Controller controller, JFrame viewer,
+    public void disposeWindow(Controller controller, Frame viewer,
                               Preferences preferences) {
         if (controllers.size() <= 1) {
             quit(controller, viewer, preferences);
@@ -267,7 +270,7 @@ public class WindowManager implements WindowManagementCallback {
         }
     }
 
-    public void quit(Controller controller, JFrame viewer,
+    public void quit(Controller controller, Frame viewer,
                      Preferences preferences) {
         saveViewerState(viewer);
 

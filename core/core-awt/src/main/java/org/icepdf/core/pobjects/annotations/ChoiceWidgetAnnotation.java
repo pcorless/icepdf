@@ -49,6 +49,13 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
         fieldDictionary = new ChoiceFieldDictionary(library, entries);
     }
 
+    public ChoiceWidgetAnnotation(Annotation widgetAnnotation) {
+        super(widgetAnnotation.getLibrary(), widgetAnnotation.getEntries());
+        fieldDictionary = new ChoiceFieldDictionary(library, entries);
+        // copy over the reference number.
+        setPObjectReference(widgetAnnotation.getPObjectReference());
+    }
+
     /**
      * Some choices lists are lacking the /opt key so we need to do our best to generate the list from the shapes.
      *
@@ -81,7 +88,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
      * @param dy            y offset of the annotation
      * @param pageTransform current page transform.
      */
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
         ChoiceFieldType choiceFieldType =
                 fieldDictionary.getChoiceFieldType();
 
@@ -142,7 +149,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
             stateManager.addChange(new PObject(this, this.getPObjectReference()));
 
             // compress the form object stream.
-            if (false && compressAppearanceStream) {
+            if (compressAppearanceStream) {
                 appearanceStream.getEntries().put(Stream.FILTER_KEY, new Name("FlateDecode"));
             } else {
                 appearanceStream.getEntries().remove(Stream.FILTER_KEY);

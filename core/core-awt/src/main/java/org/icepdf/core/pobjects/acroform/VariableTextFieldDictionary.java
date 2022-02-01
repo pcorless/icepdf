@@ -23,8 +23,7 @@ import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
-import org.icepdf.core.util.content.ContentParser;
-import org.icepdf.core.util.content.ContentParserFactory;
+import org.icepdf.core.util.parser.content.ContentParser;
 
 import java.awt.*;
 import java.util.HashMap;
@@ -136,8 +135,7 @@ public class VariableTextFieldDictionary extends FieldDictionary {
             // the font and colour information we need to generate a new content stream
             if (resources != null) {
                 try {
-                    ContentParser cp = ContentParserFactory.getInstance()
-                            .getContentParser(library, resources);
+                    ContentParser cp = new ContentParser(library, resources);
                     cp.parseTextBlocks(new byte[][]{defaultAppearance.getBytes()});
                     GraphicsState gs = cp.getGraphicsState();
                     if (gs != null) {
@@ -178,8 +176,7 @@ public class VariableTextFieldDictionary extends FieldDictionary {
             if (resources == null) {
                 resources = library.getCatalog().getInteractiveForm().getResources();
             }
-            ContentParser cp = ContentParserFactory.getInstance()
-                    .getContentParser(library, resources);
+            ContentParser cp = new ContentParser(library, resources);
             // use full parser so we parse the font color.
             cp.parse(new byte[][]{possibleContent.getBytes()}, null);
             GraphicsState gs = cp.getGraphicsState();

@@ -183,6 +183,12 @@ public class SearchToolBar extends JToolBar implements ActionListener, BaseSearc
         }
     }
 
+    public void setSearchText(final String text) {
+        if (searchTextField != null) {
+            searchTextField.setText(text);
+        }
+    }
+
     @Override
     public void updateProgressControls(String message) {
         if (searchTextTask.isCancelled() || searchTextTask.isDone()) {

@@ -18,7 +18,7 @@ package org.icepdf.ri.common;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 
-import javax.swing.*;
+import java.awt.*;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
@@ -38,7 +38,7 @@ public interface WindowManagementCallback {
 
     void newWindow(URL url);
 
-    void disposeWindow(Controller controller, JFrame viewer, Preferences preferences);
+    void disposeWindow(Controller controller, Frame viewer, Preferences preferences);
 
     void minimiseAllWindows();
 
@@ -48,7 +48,7 @@ public interface WindowManagementCallback {
 
     List getWindowDocumentOriginList(Controller giveIndex);
 
-    void quit(Controller controller, JFrame viewer,
+    void quit(Controller controller, Frame viewer,
               Preferences preferences);
 
     ViewerPropertiesManager getProperties();

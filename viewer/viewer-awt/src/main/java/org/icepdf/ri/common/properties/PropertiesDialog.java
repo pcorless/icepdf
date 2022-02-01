@@ -16,11 +16,13 @@
 package org.icepdf.ri.common.properties;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.PObject;
 import org.icepdf.ri.common.EscapeJDialog;
 import org.icepdf.ri.common.SwingController;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
@@ -33,35 +35,28 @@ import java.util.ResourceBundle;
 public class PropertiesDialog extends EscapeJDialog {
 
     // layouts constraint
-    private GridBagConstraints constraints;
+    private final GridBagConstraints constraints;
 
-    private FontPanel fontPanel;
+    private final JButton okButton;
 
-    public PropertiesDialog(JFrame frame, SwingController controller,
-                            ResourceBundle messageBundle) {
+    public PropertiesDialog(final Frame frame, final SwingController controller,
+                            final ResourceBundle messageBundle) {
         super(frame, true);
 
-        Document document = controller.getDocument();
+        final Document document = controller.getDocument();
 
         setTitle(messageBundle.getString("viewer.dialog.documentProperties.tab.title"));
 
         // Create GUI elements
-        final JButton okButton = new JButton(messageBundle.getString("viewer.button.ok.label"));
-        okButton.setMnemonic(messageBundle.getString("viewer.button.ok.mnemonic").charAt(0));
-        okButton.addActionListener(e -> {
-            if (e.getSource() == okButton) {
-                setVisible(false);
-                dispose();
-            }
-        });
 
-        JTabbedPane propertiesTabbedPane = new JTabbedPane();
+        final JTabbedPane propertiesTabbedPane = new JTabbedPane();
         propertiesTabbedPane.setAlignmentY(JPanel.TOP_ALIGNMENT);
 
         // build the description
+        final InformationPanel infoPanel = new InformationPanel(document, messageBundle);
         propertiesTabbedPane.addTab(
                 messageBundle.getString("viewer.dialog.documentProperties.tab.description"),
-                new InformationPanel(document, messageBundle));
+                infoPanel);
 
         // build out the security tab
         propertiesTabbedPane.addTab(
@@ -69,12 +64,16 @@ public class PropertiesDialog extends EscapeJDialog {
                 new PermissionsPanel(document, messageBundle));
 
         // build out the fonts tab.
-        fontPanel = new FontPanel(controller);
+        final FontPanel fontPanel = new FontPanel(controller);
         addWindowListener(fontPanel);
         propertiesTabbedPane.addTab(
                 messageBundle.getString("viewer.dialog.documentProperties.tab.fonts"),
                 fontPanel);
-        JPanel layoutPanel = new JPanel(new GridBagLayout());
+
+        // build out custom properties panel
+        final CustomPropertiesPanel customPanel = new CustomPropertiesPanel(document, messageBundle, this);
+        propertiesTabbedPane.addTab(messageBundle.getString("viewer.dialog.documentProperties.tab.custom"), customPanel);
+        final JPanel layoutPanel = new JPanel(new GridBagLayout());
 
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.BOTH;
@@ -82,21 +81,49 @@ public class PropertiesDialog extends EscapeJDialog {
         constraints.weighty = 0;
         constraints.insets = new Insets(5, 5, 5, 5);
         constraints.anchor = GridBagConstraints.NORTH;
-        addGB(layoutPanel, propertiesTabbedPane, 0, 0, 1, 1);
+        addGB(layoutPanel, propertiesTabbedPane, 0, 0, 10, 1);
+        //dummies
+        for (int i = 0; i < 8; ++i) {
+            addGB(layoutPanel, new JLabel(), i, 1, 1, 1);
+        }
 
-        constraints.fill = GridBagConstraints.NONE;
-        addGB(layoutPanel, okButton, 0, 1, 1, 1);
+        final JButton cancelButton = new JButton(messageBundle.getString("viewer.button.cancel.label"));
+        cancelButton.setMnemonic(messageBundle.getString("viewer.button.cancel.mnemonic").charAt(0));
+        cancelButton.addActionListener(e -> {
+            setVisible(false);
+            dispose();
+        });
+        okButton = new JButton(messageBundle.getString("viewer.button.ok.label"));
+        okButton.setMnemonic(messageBundle.getString("viewer.button.ok.mnemonic").charAt(0));
+        okButton.addActionListener(e -> {
+            if (e.getSource() == okButton) {
+                final Map<String, String> allProperties = infoPanel.getProperties();
+                allProperties.putAll(customPanel.getProperties());
+                if (document.getInfo().update(allProperties)) {
+                    document.getStateManager().addChange(new PObject(document.getInfo().getEntries(),
+                            document.getInfo().getPObjectReference()));
+                }
+                setVisible(false);
+                dispose();
+            }
+        });
+        addGB(layoutPanel, okButton, 8, 1, 1, 1);
+        addGB(layoutPanel, cancelButton, 9, 1, 1, 1);
 
         this.setLayout(new BorderLayout(15, 15));
-        this.add(layoutPanel, BorderLayout.NORTH);
+        add(layoutPanel, BorderLayout.NORTH);
 
-        setSize(540, 440);
+        pack();
         setLocationRelativeTo(frame);
     }
 
-    private void addGB(JPanel layout, Component component,
-                       int x, int y,
-                       int rowSpan, int colSpan) {
+    void setOkEnabled(final boolean enabled) {
+        okButton.setEnabled(enabled);
+    }
+
+    private void addGB(final JPanel layout, final Component component,
+                       final int x, final int y,
+                       final int rowSpan, final int colSpan) {
         constraints.gridx = x;
         constraints.gridy = y;
         constraints.gridwidth = rowSpan;

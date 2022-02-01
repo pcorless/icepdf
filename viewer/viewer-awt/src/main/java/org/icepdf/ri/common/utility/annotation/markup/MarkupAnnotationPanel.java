@@ -17,11 +17,17 @@ package org.icepdf.ri.common.utility.annotation.markup;
 
 import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.core.util.PropertyConstants;
-import org.icepdf.ri.common.*;
+import org.icepdf.ri.common.DropDownButton;
+import org.icepdf.ri.common.MutableDocument;
+import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.SwingViewBuilder;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
+import org.icepdf.ri.common.widgets.ColorIcon;
+import org.icepdf.ri.common.widgets.DragDropColorList;
+import org.icepdf.ri.common.widgets.annotations.QuickPaintAnnotationButton;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 
@@ -730,6 +736,4 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
             sortAndFilterAnnotationData();
         }
     }
-
-
 }

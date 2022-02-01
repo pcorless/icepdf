@@ -21,7 +21,7 @@ import java.awt.event.KeyEvent;
 
 /**
  * The KeyEvent Class contains the key event and input event used for menu
- * and button manipulatin via the keyboard.  This class may need to be changed
+ * and button manipulation via the keyboard.  This class may need to be changed
  * depending on region and languages.
  */
 public class KeyEventConstants {
@@ -38,13 +38,13 @@ public class KeyEventConstants {
     public static final int KEY_CODE_SAVE = KeyEvent.VK_S;
     public static final int MODIFIER_SAVE = MENU_SHORTCUT_KEY_MASK;
     public static final int KEY_CODE_SAVE_AS = KeyEvent.VK_S;
-    public static final int MODIFIER_SAVE_AS = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_MASK;
+    public static final int MODIFIER_SAVE_AS = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_DOWN_MASK;
     public static final int KEY_CODE_EXPORT_TEXT = KeyEvent.VK_T;
     public static final int MODIFIER_EXPORT_TEXT = MENU_SHORTCUT_KEY_MASK;
     public static final int KEY_CODE_SEND_MAIL = KeyEvent.VK_M;
     public static final int MODIFIER_SEND_MAIL = MENU_SHORTCUT_KEY_MASK;
     public static final int KEY_CODE_PRINT_SETUP = KeyEvent.VK_P;
-    public static final int MODIFIER_PRINT_SETUP = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_MASK;
+    public static final int MODIFIER_PRINT_SETUP = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_DOWN_MASK;
     public static final int KEY_CODE_PRINT = KeyEvent.VK_P;
     public static final int MODIFIER_PRINT = MENU_SHORTCUT_KEY_MASK;
     public static final int KEY_CODE_EXIT = KeyEvent.VK_Q;
@@ -53,24 +53,24 @@ public class KeyEventConstants {
     public static final int MODIFIER_DOCUMENT_PROPERTIES = MENU_SHORTCUT_KEY_MASK;
 
     public static final int KEY_CODE_FIT_ACTUAL = KeyEvent.VK_1;
-    public static final int MODIFIER_FIT_ACTUAL = MENU_SHORTCUT_KEY_MASK;
+    public static final int MODIFIER_FIT_ACTUAL = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_DOWN_MASK;
     public static final int KEY_CODE_FIT_PAGE = KeyEvent.VK_2;
-    public static final int MODIFIER_FIT_PAGE = MENU_SHORTCUT_KEY_MASK;
+    public static final int MODIFIER_FIT_PAGE = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_DOWN_MASK;
     public static final int KEY_CODE_FIT_WIDTH = KeyEvent.VK_3;
-    public static final int MODIFIER_FIT_WIDTH = MENU_SHORTCUT_KEY_MASK;
+    public static final int MODIFIER_FIT_WIDTH = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_DOWN_MASK;
 
     public static final int KEY_CODE_FULL_SCREEN = KeyEvent.VK_L;
     public static final int MODIFIER_FULL_SCREEN = MENU_SHORTCUT_KEY_MASK;
 
     public static final int KEY_CODE_ZOOM_IN = KeyEvent.VK_I;
-    public static final int MODIFIER_ZOOM_IN = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_MASK;
+    public static final int MODIFIER_ZOOM_IN = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_DOWN_MASK;
     public static final int KEY_CODE_ZOOM_OUT = KeyEvent.VK_O;
-    public static final int MODIFIER_ZOOM_OUT = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_MASK;
+    public static final int MODIFIER_ZOOM_OUT = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_DOWN_MASK;
 
     public static final int KEY_CODE_ROTATE_LEFT = KeyEvent.VK_L;
-    public static final int MODIFIER_ROTATE_LEFT = MENU_SHORTCUT_KEY_MASK;
+    public static final int MODIFIER_ROTATE_LEFT = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_DOWN_MASK;
     public static final int KEY_CODE_ROTATE_RIGHT = KeyEvent.VK_R;
-    public static final int MODIFIER_ROTATE_RIGHT = MENU_SHORTCUT_KEY_MASK;
+    public static final int MODIFIER_ROTATE_RIGHT = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_DOWN_MASK;
 
     public static final int KEY_CODE_FIRST_PAGE = KeyEvent.VK_UP;
     public static final int MODIFIER_FIRST_PAGE = MENU_SHORTCUT_KEY_MASK;
@@ -83,18 +83,18 @@ public class KeyEventConstants {
 
     public static final int KEY_CODE_SEARCH = KeyEvent.VK_F;
     public static final int MODIFIER_SEARCH = MENU_SHORTCUT_KEY_MASK;
-    public static final int MODIFIER_ADVANCED_SEARCH = MODIFIER_SEARCH | InputEvent.SHIFT_MASK;
+    public static final int MODIFIER_ADVANCED_SEARCH = MODIFIER_SEARCH | InputEvent.SHIFT_DOWN_MASK;
     public static final int KEY_CODE_SEARCH_NEXT = KeyEvent.VK_F3;
     public static final int MODIFIER_SEARCH_NEXT = 0;
     public static final int KEY_CODE_SEARCH_PREVIOUS = KeyEvent.VK_F3;
-    public static final int MODIFIER_SEARCH_PREVIOUS = InputEvent.SHIFT_MASK;
+    public static final int MODIFIER_SEARCH_PREVIOUS = InputEvent.SHIFT_DOWN_MASK;
     public static final int KEY_CODE_GOTO = KeyEvent.VK_N;
     public static final int MODIFIER_GOTO = MENU_SHORTCUT_KEY_MASK;
 
     public static final int KEY_CODE_UNDO = KeyEvent.VK_Z;
     public static final int MODIFIER_UNDO = MENU_SHORTCUT_KEY_MASK;
     public static final int KEY_CODE_REDO = KeyEvent.VK_Z;
-    public static final int MODIFIER_REDO = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_MASK;
+    public static final int MODIFIER_REDO = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_DOWN_MASK;
     public static final int KEY_CODE_COPY = KeyEvent.VK_C;
     public static final int MODIFIER_COPY = MENU_SHORTCUT_KEY_MASK;
     public static final int KEY_CODE_DELETE = KeyEvent.VK_D;
@@ -102,7 +102,7 @@ public class KeyEventConstants {
     public static final int KEY_CODE_SELECT_ALL = KeyEvent.VK_A;
     public static final int MODIFIER_SELECT_ALL = MENU_SHORTCUT_KEY_MASK;
     public static final int KEY_CODE_DESELECT_ALL = KeyEvent.VK_A;
-    public static final int MODIFIER_DESELECT_ALL = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_MASK;
+    public static final int MODIFIER_DESELECT_ALL = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_DOWN_MASK;
     public static final int KEY_CODE_PREFERENCES = KeyEvent.VK_K;
     public static final int MODIFIER_PREFERENCES = MENU_SHORTCUT_KEY_MASK;
 }

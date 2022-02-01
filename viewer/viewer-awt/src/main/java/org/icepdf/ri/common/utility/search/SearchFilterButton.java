@@ -15,6 +15,7 @@ import static org.icepdf.ri.util.ViewerPropertiesManager.*;
 
 public class SearchFilterButton extends DropDownButton {
 
+    private final JCheckBoxMenuItem wholePageCheckbox;
     private final JCheckBoxMenuItem wholeWordCheckbox;
     private final JCheckBoxMenuItem regexCheckbox;
     private final JCheckBoxMenuItem caseSensitiveCheckbox;
@@ -33,6 +34,7 @@ public class SearchFilterButton extends DropDownButton {
                 controller.getPropertiesManager().getPreferences().get(PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE),
                 SwingViewBuilder.buildButtonFont());
         final Preferences preferences = controller.getPropertiesManager().getPreferences();
+        boolean isWholePage = preferences.getBoolean(PROPERTY_SEARCH_PANEL_WHOLE_PAGE_ENABLED, false);
         boolean isRegex = preferences.getBoolean(PROPERTY_SEARCH_PANEL_REGEX_ENABLED, true);
         boolean isWholeWord = preferences.getBoolean(PROPERTY_SEARCH_PANEL_WHOLE_WORDS_ENABLED, false);
         boolean isCaseSensitive = preferences.getBoolean(PROPERTY_SEARCH_PANEL_CASE_SENSITIVE_ENABLED, false);
@@ -45,6 +47,12 @@ public class SearchFilterButton extends DropDownButton {
 
         boolean isShowPages = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SHOW_PAGES_ENABLED, true);
         final ResourceBundle messageBundle = controller.getMessageBundle();
+        wholePageCheckbox = new PersistentJCheckBoxMenuItem(messageBundle.getString(
+                "viewer.utilityPane.search.wholePageCheckbox.label"), isWholePage);
+        wholePageCheckbox.addActionListener(actionEvent -> {
+            component.notifySearchFiltersChanged();
+            preferences.putBoolean(PROPERTY_SEARCH_PANEL_WHOLE_PAGE_ENABLED, isWholePage());
+        });
         wholeWordCheckbox = new PersistentJCheckBoxMenuItem(messageBundle.getString(
                 "viewer.utilityPane.search.wholeWordCheckbox.label"), isWholeWord);
         wholeWordCheckbox.addActionListener(actionEvent -> {
@@ -56,6 +64,8 @@ public class SearchFilterButton extends DropDownButton {
                 "viewer.utilityPane.search.regexCheckbox.label"), isRegex);
         regexCheckbox.addActionListener(actionEvent -> {
             getWholeWordCheckbox().setEnabled(!isRegex());
+            wholePageCheckbox.setEnabled(!isRegex());
+            wholePageCheckbox.setSelected(isWholePage() || isRegex());
             component.notifySearchFiltersChanged();
             preferences.putBoolean(PROPERTY_SEARCH_PANEL_REGEX_ENABLED, isRegex());
         });
@@ -105,6 +115,7 @@ public class SearchFilterButton extends DropDownButton {
             component.notifySearchFiltersChanged();
             preferences.putBoolean(PROPERTY_SEARCH_PANEL_SHOW_PAGES_ENABLED, isShowPages());
         });
+        add(wholePageCheckbox);
         if (titleRes.contains("utilityPane")) {
             add(regexCheckbox);
             add(wholeWordCheckbox);
@@ -122,6 +133,10 @@ public class SearchFilterButton extends DropDownButton {
             add(caseSensitiveCheckbox);
             add(commentsCheckbox);
         }
+    }
+
+    public JCheckBoxMenuItem getWholePageCheckbox() {
+        return wholePageCheckbox;
     }
 
     public JCheckBoxMenuItem getWholeWordCheckbox() {
@@ -158,6 +173,10 @@ public class SearchFilterButton extends DropDownButton {
 
     public JCheckBoxMenuItem getShowPagesCheckbox() {
         return showPagesCheckbox;
+    }
+
+    public boolean isWholePage() {
+        return wholePageCheckbox.isSelected();
     }
 
     public boolean isWholeWord() {
@@ -199,6 +218,7 @@ public class SearchFilterButton extends DropDownButton {
     public SearchTextTask getSearchTask(BaseSearchModel panel, Controller controller, String pattern) {
         SearchTextTask.Builder builder = new SearchTextTask.Builder(controller, pattern);
         return builder.setSearchModel(panel)
+                .setWholePage(isWholePage())
                 .setCaseSensitive(isCaseSensitive())
                 .setWholeWord(isWholeWord())
                 .setCumulative(isCumulative())
@@ -213,6 +233,7 @@ public class SearchFilterButton extends DropDownButton {
     public SimpleSearchHelper getSimpleSearchHelper(Controller controller, String pattern) {
         SimpleSearchHelper.Builder builder = new SimpleSearchHelper.Builder(controller, pattern);
         return builder.setCaseSensitive(isCaseSensitive())
+                .setWholePage(isWholePage())
                 .setWholeWord(isWholeWord())
                 .setComments(isComments()).build();
     }

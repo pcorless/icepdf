@@ -22,6 +22,7 @@ import org.icepdf.core.pobjects.acroform.TextFieldDictionary;
 import org.icepdf.core.pobjects.acroform.VariableTextFieldDictionary;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.FontManager;
+import org.icepdf.core.pobjects.fonts.zfont.Encoding;
 import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
@@ -53,10 +54,11 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
         if (fontFile == null) {
             fontFile = FontManager.getInstance().initialize().getInstance(
                     fieldDictionary.getFontName().toString(), 0);
+            fontFile = fontFile.deriveFont(Encoding.standardEncoding, null);
         }
     }
 
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
 
         // we won't touch password fields, we'll used the original display
         TextFieldDictionary.TextFieldType textFieldType = fieldDictionary.getTextFieldType();

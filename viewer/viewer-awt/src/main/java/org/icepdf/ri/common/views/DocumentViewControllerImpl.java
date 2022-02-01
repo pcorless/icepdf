@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * <p>The DocumentViewControllerImpl is responsible for controlling the four
@@ -52,6 +53,9 @@ public class DocumentViewControllerImpl
 
     private static final Logger logger =
             Logger.getLogger(DocumentViewControllerImpl.class.toString());
+
+    private static final Pattern MULTI_SPACE_PATTERN = Pattern.compile(" +");
+    private static final Pattern DASH_NEWLINE_PATTERN = Pattern.compile("- *\n");
 
     /**
      * Displays a one page at a time view.
@@ -298,6 +302,12 @@ public class DocumentViewControllerImpl
         firePropertyChange(PropertyConstants.TEXT_SELECT_ALL, null, null);
     }
 
+    public String getFlatSelectedText() {
+        final String selectedText = getSelectedText();
+        return MULTI_SPACE_PATTERN.matcher(DASH_NEWLINE_PATTERN.matcher(selectedText).replaceAll("")
+                .replace("\n", " ")).replaceAll(" ");
+    }
+
     public String getSelectedText() {
         StringBuilder selectedText = new StringBuilder();
         try {
@@ -493,7 +503,7 @@ public class DocumentViewControllerImpl
         return documentViewScrollPane;
     }
 
-    public org.icepdf.ri.common.views.Controller getParentController() {
+    public Controller getParentController() {
         return viewerController;
     }
 
@@ -1331,6 +1341,8 @@ public class DocumentViewControllerImpl
 
     public void updateAnnotation(AnnotationComponent annotationComponent) {
         if (documentViewModel != null && annotationComponent != null) {
+            // user initiated change, make sure to store the change
+            annotationComponent.setSynthetic(false);
             if (annotationCallback != null) {
                 annotationCallback.updateAnnotation(annotationComponent);
             }
@@ -1345,6 +1357,8 @@ public class DocumentViewControllerImpl
 
     public void updatedSummaryAnnotation(AnnotationComponent annotationComponent) {
         if (documentViewModel != null && annotationComponent != null) {
+            // user initiated change, make sure to store the change
+            annotationComponent.setSynthetic(false);
             if (annotationCallback != null) {
                 annotationCallback.updateAnnotation(annotationComponent);
             }
