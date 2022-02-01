@@ -97,7 +97,7 @@ public class SearchFilterButton extends DropDownButton {
                 "viewer.utilityPane.search.forms.label"), isText);
         formsCheckbox.addActionListener(actionEvent -> {
             component.notifySearchFiltersChanged();
-            preferences.putBoolean(PROPERTY_SEARCH_PANEL_SEARCH_FORMS_ENABLED, isText());
+            preferences.putBoolean(PROPERTY_SEARCH_PANEL_SEARCH_FORMS_ENABLED, isForms());
         });
         commentsCheckbox = new PersistentJCheckBoxMenuItem(messageBundle.getString(
                 "viewer.utilityPane.search.comments.label"), isComments);
