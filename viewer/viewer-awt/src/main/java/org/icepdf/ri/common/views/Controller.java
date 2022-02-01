@@ -198,6 +198,11 @@ public interface Controller extends PropertyChangeListener {
     void saveFile();
 
     /**
+     * Save the file with a new name
+     */
+    void saveFileAs();
+
+    /**
      * Dispose the controller and all associated resources.
      */
     void dispose();

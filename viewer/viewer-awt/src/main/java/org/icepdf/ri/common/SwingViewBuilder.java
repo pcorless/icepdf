@@ -82,6 +82,7 @@ import java.util.prefs.Preferences;
  * <li>public JMenuItem buildOpenFileMenuItem()</li>
  * <li>public JMenuItem buildOpenURLMenuItem()</li>
  * <li>public JMenuItem buildCloseMenuItem()</li>
+ * <li>public JMenuItem buildSaveFileMenuItem()</li>
  * <li>public JMenuItem buildSaveAsFileMenuItem()</li>
  * <li>public JMenuItem buildExportTextMenuItem()</li>
  * <li>public JMenuItem buildExportSVGMenuItem()</li>
@@ -136,7 +137,7 @@ import java.util.prefs.Preferences;
  * <li>public JToolBar buildUtilityToolBar(boolean embeddableComponent)
  * <ul>
  * <li>public JButton buildOpenFileButton()</li>
- * <li>public JButton buildSaveAsFileButton()</li>
+ * <li>public JButton buildSaveFileButton()</li>
  * <li>public JButton buildPrintButton()</li>
  * <li>public JButton buildSearchButton()</li>
  * <li>public JButton buildShowHideUtilityPaneButton()</li>
@@ -218,7 +219,7 @@ import java.util.prefs.Preferences;
  * <ul>
  * <li>public JToolBar buildUtilityToolBar(boolean embeddableComponent)
  * <ul>
- * <li>public JButton buildSaveAsFileButton()</li>
+ * <li>public JButton buildSaveFileButton()</li>
  * <li>public JButton buildPrintButton()</li>
  * <li>public JButton buildSearchButton()</li>
  * <li>public JButton buildShowHideUtilityPaneButton()</li>
@@ -588,6 +589,7 @@ public class SwingViewBuilder implements ViewBuilder {
         addToMenu(fileMenu, buildRecentFileMenuItem());
         fileMenu.addSeparator();
         addToMenu(fileMenu, buildCloseMenuItem());
+        addToMenu(fileMenu, buildSaveFileMenuItem());
         addToMenu(fileMenu, buildSaveAsFileMenuItem());
         addToMenu(fileMenu, buildExportTextMenuItem());
         addToMenu(fileMenu, buildSendByMailMenuItem());
@@ -655,6 +657,15 @@ public class SwingViewBuilder implements ViewBuilder {
         return mi;
     }
 
+    public JMenuItem buildSaveFileMenuItem() {
+        JMenuItem mi = makeMenuItem(
+                messageBundle.getString("viewer.menu.save.label"), "save",
+                Images.SIZE_SMALL,
+                buildKeyStroke(KeyEventConstants.KEY_CODE_SAVE, KeyEventConstants.MODIFIER_SAVE, false));
+        if (viewerController != null && mi != null)
+            viewerController.setSaveFileMenuItem(mi);
+        return mi;
+    }
     public JMenuItem buildSaveAsFileMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.saveAs.label"), "save",
@@ -1231,8 +1242,9 @@ public class SwingViewBuilder implements ViewBuilder {
         if ((!embeddableComponent) &&
                 (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_UTILITY_OPEN)))
             addToToolBar(toolbar, buildOpenFileButton());
+
         if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_UTILITY_SAVE))
-            addToToolBar(toolbar, buildSaveAsFileButton());
+            addToToolBar(toolbar, buildSaveFileButton());
         if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_UTILITY_PRINT))
             addToToolBar(toolbar, buildPrintButton());
         if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_UTILITY_SEARCH))
@@ -1258,14 +1270,14 @@ public class SwingViewBuilder implements ViewBuilder {
         return btn;
     }
 
-    public JButton buildSaveAsFileButton() {
+    public JButton buildSaveFileButton() {
         JButton btn = makeToolbarButton(
-                messageBundle.getString("viewer.toolbar.saveAs.label"),
-                messageBundle.getString("viewer.toolbar.saveAs.tooltip"),
+                messageBundle.getString("viewer.toolbar.save.label"),
+                messageBundle.getString("viewer.toolbar.save.tooltip"),
                 "save", iconSize,
                 buttonFont);
         if (viewerController != null && btn != null)
-            viewerController.setSaveAsFileButton(btn);
+            viewerController.setSaveFileButton(btn);
         return btn;
     }
 
