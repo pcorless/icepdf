@@ -118,7 +118,7 @@ public interface DocumentSearchController {
      * Search the forms in the given page.
      *
      * @param pageIndex page to search
-     * @return
+     * @return The list of TextWidgetAnnotations matching
      */
     List<TextWidgetAnnotation> searchForms(final int pageIndex);
 
