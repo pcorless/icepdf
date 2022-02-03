@@ -19,7 +19,10 @@ import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.search.SearchTerm;
 
 import java.lang.ref.WeakReference;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**

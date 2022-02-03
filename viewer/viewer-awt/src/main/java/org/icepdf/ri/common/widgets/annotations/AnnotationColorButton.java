@@ -15,10 +15,10 @@
  */
 package org.icepdf.ri.common.widgets.annotations;
 
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.widgets.AbstractColorButton;
 import org.icepdf.ri.common.widgets.ColorButton;
 import org.icepdf.ri.common.widgets.PaintButtonInterface;
-import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;

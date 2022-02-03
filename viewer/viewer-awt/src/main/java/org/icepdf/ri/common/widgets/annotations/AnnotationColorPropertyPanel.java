@@ -15,12 +15,8 @@
  */
 package org.icepdf.ri.common.widgets.annotations;
 
-import org.icepdf.ri.common.widgets.DragDropColorList;
-import org.icepdf.ri.common.widgets.RgbColorChooser;
-import org.icepdf.ri.common.widgets.AbstractColorButton;
-import org.icepdf.ri.common.widgets.ColorChooserButton;
-import org.icepdf.ri.common.widgets.ColorIcon;
 import org.icepdf.ri.common.views.Controller;
+import org.icepdf.ri.common.widgets.*;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;

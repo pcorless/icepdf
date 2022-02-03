@@ -26,7 +26,10 @@ import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.tools.TextAnnotationHandler;
 import org.icepdf.ri.common.utility.annotation.properties.FreeTextAnnotationPanel;
-import org.icepdf.ri.common.views.*;
+import org.icepdf.ri.common.views.AbstractPageViewComponent;
+import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.ResizableBorder;
 import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryBox;
 import org.icepdf.ri.images.Images;
 

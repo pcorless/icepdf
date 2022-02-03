@@ -20,8 +20,6 @@ import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReferenceFactory;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.SystemProperties;
-import org.icepdf.ri.common.widgets.annotations.AnnotationColorToggleButton;
-import org.icepdf.ri.common.widgets.annotations.IconAnnotationColorToggleButton;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.annotation.destinations.DestinationsPanel;
 import org.icepdf.ri.common.utility.annotation.markup.MarkupAnnotationPanel;
@@ -36,6 +34,8 @@ import org.icepdf.ri.common.views.AbstractDocumentView;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.common.views.PageViewDecorator;
+import org.icepdf.ri.common.widgets.annotations.AnnotationColorToggleButton;
+import org.icepdf.ri.common.widgets.annotations.IconAnnotationColorToggleButton;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.MacOSAdapter;
 import org.icepdf.ri.util.ViewerPropertiesManager;
@@ -678,7 +678,8 @@ public class SwingViewBuilder implements ViewBuilder {
 
     public JMenuItem buildExportTextMenuItem() {
         JMenuItem mi = makeMenuItem(
-                messageBundle.getString("viewer.menu.exportText.label"), null, null, null);
+                messageBundle.getString("viewer.menu.exportText.label"), null, null,
+                buildKeyStroke(KeyEventConstants.KEY_CODE_EXPORT_TEXT, KeyEventConstants.MODIFIER_EXPORT_TEXT, false));
         if (viewerController != null && mi != null)
             viewerController.setExportTextMenuItem(mi);
         return mi;

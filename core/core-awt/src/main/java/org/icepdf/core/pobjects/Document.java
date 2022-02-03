@@ -36,7 +36,6 @@ import org.icepdf.core.util.updater.IncrementalUpdater;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;

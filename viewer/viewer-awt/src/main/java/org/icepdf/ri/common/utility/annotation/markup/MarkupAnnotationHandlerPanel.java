@@ -27,7 +27,10 @@ import org.icepdf.ri.common.AbstractWorkerPanel;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.utility.annotation.AnnotationCellRender;
 import org.icepdf.ri.common.utility.annotation.AnnotationTreeNode;
-import org.icepdf.ri.common.views.*;
+import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.Controller;
+import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.PageComponentSelector;
 import org.icepdf.ri.common.views.annotations.*;
 
 import javax.swing.FocusManager;

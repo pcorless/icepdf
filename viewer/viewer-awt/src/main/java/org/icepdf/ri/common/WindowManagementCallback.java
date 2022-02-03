@@ -18,7 +18,6 @@ package org.icepdf.ri.common;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 
-import javax.swing.*;
 import java.awt.*;
 import java.net.URL;
 import java.util.Collection;
