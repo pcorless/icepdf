@@ -18,6 +18,7 @@ package org.icepdf.ri.common.utility.search;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
+import org.icepdf.core.pobjects.annotations.TextWidgetAnnotation;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
@@ -100,6 +101,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     private JTree tree;
     private DefaultMutableTreeNode rootTreeNode;
     private DefaultMutableTreeNode textTreeNode;
+    private DefaultMutableTreeNode formsTreeNode;
     private DefaultMutableTreeNode commentsTreeNode;
     private DefaultMutableTreeNode outlinesTreeNode;
     private DefaultMutableTreeNode destinationsTreeNode;
@@ -137,7 +139,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         setGui();
     }
 
-    public String getSearchPhrase(){
+    public String getSearchPhrase() {
         return searchTextField.getText();
     }
 
@@ -202,7 +204,8 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         // root text node which all entry fall under,  pages or no pages.
         textTreeNode = new DefaultMutableTreeNode(
                 messageBundle.getString("viewer.utilityPane.search.tree.text.title"), true);
-
+        formsTreeNode = new DefaultMutableTreeNode(
+                messageBundle.getString("viewer.utilityPane.search.tree.forms.title"), true);
         commentsTreeNode = new DefaultMutableTreeNode(
                 messageBundle.getString("viewer.utilityPane.search.tree.markup.title"), true);
         outlinesTreeNode = new DefaultMutableTreeNode(
@@ -261,7 +264,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         boolean isOutlines = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SEARCH_OUTLINES_ENABLED, false);
 
         boolean isShowPages = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SHOW_PAGES_ENABLED, true);
-      
+
         // search options check boxes.
         // search option check boxes.
         searchFilterButton = new SearchFilterButton(this, controller, "viewer.utilityPane.markupAnnotation.toolbar.filter.filterButton.tooltip");
@@ -427,6 +430,38 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         }
     }
 
+    public void addFoundFormsEntry(SearchTextTask.FormsResult formsResult, SearchTextTask searchTextTask) {
+        final String title = formsResult.getNodeText();
+        final int pageNumber = formsResult.getCurrentPage();
+        final List<TextWidgetAnnotation> formResults = formsResult.getWidgets();
+        // add the new results entry.
+        if ((formResults != null) && (!formResults.isEmpty())) {
+            final DefaultMutableTreeNode parentNode;
+            // insert parent page number note.
+            if (searchTextTask.isShowPages() && lastTextNodePageIndex != pageNumber) {
+                parentNode = new DefaultMutableTreeNode(
+                        new FindEntry(title, pageNumber, null), true);
+                treeModel.insertNodeInto(parentNode, formsTreeNode, formsTreeNode.getChildCount());
+            } else {
+                parentNode = formsTreeNode;
+            }
+            // add the hit entries.
+            for (final TextWidgetAnnotation textWidgetAnnotation : formResults) {
+                final AnnotationTreeNode annotationTreeNode = new AnnotationTreeNode(textWidgetAnnotation,
+                        messageBundle, searchTextTask.getSearchPattern(), searchTextTask.isCaseSensitive());
+                treeModel.insertNodeInto(annotationTreeNode, parentNode, parentNode.getChildCount());
+            }
+
+            // expand the root node, we only do this once.
+            if (lastTextNodePageIndex == -1) {
+                tree.expandPath(new TreePath(formsTreeNode.getPath()));
+            }
+
+            lastTextNodePageIndex = pageNumber;
+
+        }
+    }
+
     public void addFoundCommentEntry(SearchTextTask.CommentsResult comment, SearchTextTask searchTextTask) {
         if (comment != null) {
             int pageNumber = comment.getCurrentPage();
@@ -534,6 +569,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
 
         // clean up the children
         textTreeNode.removeAllChildren();
+        formsTreeNode.removeAllChildren();
         commentsTreeNode.removeAllChildren();
         outlinesTreeNode.removeAllChildren();
         destinationsTreeNode.removeAllChildren();
@@ -547,6 +583,9 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     private void insertSectionNodes() {
         if (searchFilterButton.isText()) {
             rootTreeNode.insert(textTreeNode, rootTreeNode.getChildCount());
+        }
+        if (searchFilterButton.isForms()) {
+            rootTreeNode.insert(formsTreeNode, rootTreeNode.getChildCount());
         }
         if (searchFilterButton.isComments()) {
             rootTreeNode.insert(commentsTreeNode, rootTreeNode.getChildCount());
@@ -662,6 +701,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
 
     private void showAllNodePages() {
         showNodePages(textTreeNode);
+        showNodePages(formsTreeNode);
         showNodePages(commentsTreeNode);
     }
 
@@ -742,6 +782,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
 
     private void hideAllNodePages() {
         hideNodePages(textTreeNode);
+        hideNodePages(formsTreeNode);
         hideNodePages(commentsTreeNode);
     }
 
