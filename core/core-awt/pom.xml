@@ -27,7 +27,7 @@
     </issueManagement>
 
     <build>
-        <finalName>icepdf-core-${version}</finalName>
+        <finalName>icepdf-core-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -52,6 +52,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
+                <version>3.1.0</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>

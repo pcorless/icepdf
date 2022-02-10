@@ -432,12 +432,12 @@ public class Document {
                     // as sometimes xref 'drift' will still allow the catalog to be parsed but error out later.
                     HashMap entries = catalog.getPageTree().entries;
                     List<Reference> kidsReferences = (List<Reference>) library.getObject(entries, PageTree.KIDS_KEY);
-                    kidsReferences.forEach(item -> {
+                    for (Reference item : kidsReferences) {
                         Object page = library.getObject(item);
                         if (!(page instanceof Page || page instanceof PageTree || page instanceof Reference)) {
                             throw new RuntimeException("Error accessing page tree");
                         }
-                    });
+                    }
                 }
 
                 loaded = true;
@@ -607,7 +607,7 @@ public class Document {
         PTrailer documentTrailer = null;
 
         // Loop through all objects that where parsed from the data stream
-        List<PObject> documentObjects = new ArrayList<>();
+        List<PObject> documentObjects = new ArrayList<PObject>();
         Object pdfObject;
         while (true) {
             // parse all of the objects in the stream,  objects are added

@@ -6,6 +6,7 @@ import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
+import org.icepdf.core.util.InputStreamUtil;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -59,7 +60,7 @@ public class ZFontType1 extends ZSimpleFont {
     }
 
     public ZFontType1(URL url) throws IOException {
-        byte[] fontBytes = url.openStream().readAllBytes();
+        byte[] fontBytes = InputStreamUtil.readAllBytes(url.openStream());
         source = url;
         type1Font = Type1Font.createWithPFB(fontBytes);
     }

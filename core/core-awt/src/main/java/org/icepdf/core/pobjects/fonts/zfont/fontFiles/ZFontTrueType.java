@@ -8,6 +8,7 @@ import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.zfont.GlyphList;
 import org.icepdf.core.pobjects.graphics.TextState;
+import org.icepdf.core.util.InputStreamUtil;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -43,7 +44,7 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
     }
 
     public ZFontTrueType(URL url) throws Exception {
-        this(url.openStream().readAllBytes());
+        this(InputStreamUtil.readAllBytes(url.openStream()));
         source = url;
     }
 

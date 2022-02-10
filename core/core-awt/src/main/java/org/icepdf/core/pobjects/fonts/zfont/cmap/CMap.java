@@ -20,6 +20,7 @@ import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.util.InputStreamUtil;
 import org.icepdf.core.util.Parser;
 import org.icepdf.core.util.Utils;
 
@@ -540,7 +541,7 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
             }
         }
         if (codeSpaceRange != null && codeSpaceRange[0] != null && ch < codeSpaceRange[0].length - 1) {
-            return Character.toString(codeSpaceRange[0][ch]);
+            return Character.toString((char)codeSpaceRange[0][ch]);
         }
         return String.valueOf(ch);
     }
@@ -765,7 +766,7 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
             try (
                     InputStream inputStream = CMap.class.getResourceAsStream(
                             "/org/icepdf/core/pobjects/fonts/cmap/" + fileName.toString())) {
-                return inputStream.readAllBytes();
+                return InputStreamUtil.readAllBytes(inputStream);
             } catch (IOException e) {
                 logger.warning("Failed to read CMap file " + fileName);
             }
