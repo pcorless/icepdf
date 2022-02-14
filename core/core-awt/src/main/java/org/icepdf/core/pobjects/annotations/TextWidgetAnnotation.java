@@ -45,7 +45,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
 
     protected FontFile fontFile;
 
-    private TextFieldDictionary fieldDictionary;
+    private final TextFieldDictionary fieldDictionary;
 
     public TextWidgetAnnotation(Library l, HashMap h) {
         super(l, h);
@@ -69,7 +69,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
             Appearance appearance = appearances.get(currentAppearance);
             AppearanceState appearanceState = appearance.getSelectedAppearanceState();
             Rectangle2D bbox = appearanceState.getBbox();
-            //  putting in identity, as we a trump any cm in the annotation stream.
+            //  putting in identity, as we trump any cm in the annotation stream.
             AffineTransform matrix = new AffineTransform();//appearanceState.getMatrix();
             String currentContentStream = appearanceState.getOriginalContentStream();
             currentContentStream = buildTextWidgetContents(currentContentStream);
@@ -104,7 +104,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
                 } else {
                     // need to find some resources, try adding the parent page.
                     Page page = getPage();
-                    if (page != null &&  page.getResources() != null) {
+                    if (page != null && page.getResources() != null) {
                         appearanceStream.getEntries().put(Form.RESOURCES_KEY, page.getResources().getEntries());
                     }
                 }
@@ -133,8 +133,6 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
             currentContentStream = " /Tx BMC q BT ET Q EMC";
         }
         String contents = (String) fieldDictionary.getFieldValue();
-//        int btStart = currentContentStream.indexOf("BT") + 2;
-//        int etEnd = currentContentStream.lastIndexOf("ET");
         int btStart = currentContentStream.indexOf("BMC") + 3;
         int etEnd = currentContentStream.lastIndexOf("EMC");
 
@@ -146,7 +144,13 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
             preBt = currentContentStream.substring(0, btStart) + " BT ";
             postEt = "ET " + currentContentStream.substring(etEnd);
             // marked content which we will use to try and find some data points.
-            markedContent = currentContentStream.substring(btStart, etEnd);
+            markedContent = currentContentStream.substring(btStart, etEnd).trim();
+            // check for Q/q  as we'll lose textState that might have been collected.
+            // internal stack manipulators are harder to predict behaviour
+            if (markedContent.startsWith("q") && markedContent.endsWith("Q")) {
+                markedContent = markedContent.substring(1, markedContent.length() - 1);
+                markedContent = markedContent.substring(0, markedContent.length() - 2);
+            }
         } else {
             preBt = "/Tx BMC q BT ";
             postEt = " ET Q EMC ";
@@ -154,34 +158,35 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
 
         // check for a bounding box definition
         Rectangle2D.Float bounds = findRectangle(preBt);
-        boolean isfourthQuadrant = false;
-        if (bounds != null && bounds.getHeight() < 0) {
-            isfourthQuadrant = true;
-        }
+        boolean isfourthQuadrant = bounds != null && bounds.getHeight() < 0;
 
-        // finally build out the new content stream
+        // finally, build out the new content stream
         StringBuilder content = new StringBuilder();
-        // calculate line light
-        double lineHeight = getLineHeight(fieldDictionary.getDefaultAppearance());
-
-        // apply the default appearance.
         Page parentPage = getPage();
-        content.append(generateDefaultAppearance(markedContent,
-                parentPage != null?parentPage.getResources():null, fieldDictionary));
-        if (fieldDictionary.getDefaultAppearance() == null) {
-            lineHeight = getFontSize(markedContent);
-        }
+        String derivedAppearance = generateDefaultAppearance(markedContent,
+                parentPage != null ? parentPage.getResources() : null, fieldDictionary);
+        content.append(derivedAppearance);
 
         // apply the text offset, 4 is just a generic padding.
         if (!isfourthQuadrant) {
             double height = getBbox().getHeight();
             double size = fieldDictionary.getSize();
+            double leading = fieldDictionary.getLeading();
+            double lineHeight;
+            if (leading > 0 && leading < height) {
+                lineHeight = leading;
+            } else {
+                lineHeight = size;
+            }
+            // final correction to try and avoid any cropped text
+            if (lineHeight > height ) {
+                lineHeight = height;
+            }
+            double hOffset = Math.round(lineHeight + ((height - lineHeight)));
             content.append(lineHeight).append(" TL ");
-            // todo rework taking into account multi line height.
-            double hOffset = Math.ceil(size + (height - size));
-            content.append(2).append(' ').append(hOffset).append(" Td ");
+            content.append(1).append(' ').append(hOffset).append(" Td ");
         } else {
-            content.append(2).append(' ').append(2).append(" Td ");
+            content.append(1).append(' ').append(3).append(" Td ");
         }
         // encode the text so it can be properly encoded in PDF string format
         // hex encode the text so that we better handle character codes > 127

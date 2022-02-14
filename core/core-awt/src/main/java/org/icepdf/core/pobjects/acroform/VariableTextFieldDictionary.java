@@ -86,6 +86,7 @@ public class VariableTextFieldDictionary extends FieldDictionary {
 
     protected Quadding quadding = Quadding.LEFT_JUSTIFIED;
     protected float size = 12;
+    protected float leading = 0;
     protected Name fontName = new Name("Helv");
     protected Font font = null;
     protected Color color = Color.BLACK;
@@ -188,6 +189,9 @@ public class VariableTextFieldDictionary extends FieldDictionary {
                     // default to basic size, as last resort.
                     size = 10;
                 }
+                if (gs.getTextState().leading > 0) {
+                    leading = gs.getTextState().leading;
+                }
                 // further work is needed here to add font mapping support when CID fonts are detected,
                 // this may also be a fix for our asian font write support problem.
                 if (gs.getTextState().font != null &&
@@ -221,6 +225,10 @@ public class VariableTextFieldDictionary extends FieldDictionary {
 
     public float getSize() {
         return size;
+    }
+
+    public float getLeading() {
+        return leading;
     }
 
     public Font getFont() {
