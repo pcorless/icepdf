@@ -198,34 +198,6 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
         }
     }
 
-    /**
-     * Get the line height as specified by Th or the font size.
-     *
-     * @param defaultAppearance searchable stream
-     * @return line height, or 13.87 if no reasonable approximation can be found.
-     */
-    protected double getLineHeight(String defaultAppearance) {
-        if (defaultAppearance != null && checkAppearance(defaultAppearance)) {
-            String sub = defaultAppearance.substring(0, defaultAppearance.indexOf("Tf"));
-            StringTokenizer toker = new StringTokenizer(sub);
-            while (toker.hasMoreTokens()) {
-                Object obj = toker.nextElement();
-                if (obj instanceof String) {
-                    try {
-                        double tmp = Double.parseDouble((String) obj);
-                        tmp *= 1.15;
-                        if (tmp > 0) {
-                            return tmp;
-                        }
-                    } catch (NumberFormatException e) {
-                        // intentionally blank.
-                    }
-                }
-            }
-        }
-        return 13.87;
-    }
-
     protected double getFontSize(String content) {
         // try and find text size
         double size = 12;
@@ -278,7 +250,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
             char[] chars = line.toCharArray();
             StringBuilder hex = new StringBuilder();
             for (char aChar : chars) {
-                hex.append(Integer.toHexString((int) aChar));
+                hex.append(Integer.toHexString(aChar));
             }
             content.append('<').append(hex).append(">' ");
         }
