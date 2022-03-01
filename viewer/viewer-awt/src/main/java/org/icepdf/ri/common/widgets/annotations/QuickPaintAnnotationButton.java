@@ -16,8 +16,8 @@
 package org.icepdf.ri.common.widgets.annotations;
 
 import org.icepdf.core.util.PropertyConstants;
-import org.icepdf.ri.common.widgets.PaintButtonInterface;
 import org.icepdf.ri.common.views.Controller;
+import org.icepdf.ri.common.widgets.PaintButtonInterface;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 

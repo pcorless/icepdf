@@ -15,8 +15,8 @@
  */
 package org.icepdf.ri.common.widgets;
 
-import org.icepdf.ri.common.widgets.annotations.AnnotationColorPropertyPanel;
 import org.icepdf.ri.common.views.Controller;
+import org.icepdf.ri.common.widgets.annotations.AnnotationColorPropertyPanel;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 

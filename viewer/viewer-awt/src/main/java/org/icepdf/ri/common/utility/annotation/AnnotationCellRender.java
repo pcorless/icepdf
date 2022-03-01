@@ -239,6 +239,9 @@ public class AnnotationCellRender extends DefaultTreeCellRenderer {
             tmp.setColor(annotation.getColor());
             tmp.setColorBound(inkColorOutline);
             setIcon(tmp);
+        } else if (annotation instanceof TextWidgetAnnotation) {
+            ImageIcon tmp = new ImageIcon(Images.get("form_highlight_a_24.png"));
+            setIcon(tmp);
         } else if (annotation != null) {
             setLeafIcon(null);
             setOpenIcon(null);
@@ -248,7 +251,7 @@ public class AnnotationCellRender extends DefaultTreeCellRenderer {
             setClosedIcon(new ImageIcon(Images.get("page.gif")));
             setLeafIcon(new ImageIcon(Images.get("page.gif")));
         }
-        if (PRIVATE_PROPERTY_ENABLED && annotation != null) {
+        if (PRIVATE_PROPERTY_ENABLED && annotation != null && !(annotation instanceof TextWidgetAnnotation)) {
             final ImageIcon privateIcon;
             privateIcon = annotation.getFlagPrivateContents() ?
                     new ImageIcon(Images.get("lock_16.png")) :

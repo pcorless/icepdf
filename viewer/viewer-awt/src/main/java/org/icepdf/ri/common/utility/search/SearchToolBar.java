@@ -211,6 +211,11 @@ public class SearchToolBar extends JToolBar implements ActionListener, BaseSearc
     }
 
     @Override
+    public void addFoundFormsEntry(SearchTextTask.FormsResult outlineResult, SearchTextTask searchTextTask) {
+
+    }
+
+    @Override
     public void addFoundDestinationEntry(SearchTextTask.DestinationsResult outlineResult, SearchTextTask searchTextTask) {
 
     }

@@ -36,7 +36,6 @@ import org.icepdf.core.util.updater.IncrementalUpdater;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -1219,6 +1218,29 @@ public class Document {
         if (pTrailer == null)
             return null;
         return pTrailer.getInfo();
+    }
+
+    /**
+     * Returns the document's information or create and set it if it doesn't exist
+     *
+     * @return The document information
+     */
+    public PInfo createOrGetInfo() {
+        final PInfo info = getInfo();
+        if (info == null) {
+            return createInfo();
+        } else {
+            return info;
+        }
+    }
+
+    private PInfo createInfo() {
+        final PInfo pInfo = new PInfo(library, new HashMap<>());
+        final Reference pInfoReference = stateManager.getNewReferenceNumber();
+        pInfo.setPObjectReference(pInfoReference);
+        library.addObject(pInfo.getEntries(), pInfoReference);
+        pTrailer.entries.put(PTrailer.INFO_KEY, pInfoReference);
+        return pInfo;
     }
 
     /**

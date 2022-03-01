@@ -23,9 +23,9 @@ import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.AbstractTask;
-import org.icepdf.ri.common.widgets.DragDropColorList;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.PageComponentSelector;
+import org.icepdf.ri.common.widgets.DragDropColorList;
 
 import java.awt.*;
 import java.text.MessageFormat;
@@ -150,17 +150,17 @@ public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
                                     // apply any filters
                                     // author
                                     boolean filter = false;
-                                    if (filterAuthor.equals(
-                                            MarkupAnnotationPanel.FilterAuthorColumn.AUTHOR_OTHER)) {
+                                    if (filterAuthor == MarkupAnnotationPanel.FilterAuthorColumn.AUTHOR_OTHER) {
                                         if (markupAnnotation.getTitleText() == null ||
                                                 markupAnnotation.getTitleText().equalsIgnoreCase(userName)) {
-                                            filter = true;
+                                            filter = markupAnnotation.getReplyingAnnotations(true).stream().noneMatch(m ->
+                                                    m.getTitleText() != null && !m.getTitleText().equalsIgnoreCase(userName));
                                         }
-                                    } else if (filterAuthor.equals(
-                                            MarkupAnnotationPanel.FilterAuthorColumn.AUTHOR_CURRENT)) {
+                                    } else if (filterAuthor == MarkupAnnotationPanel.FilterAuthorColumn.AUTHOR_CURRENT) {
                                         if (markupAnnotation.getTitleText() == null ||
                                                 !markupAnnotation.getTitleText().equalsIgnoreCase(userName)) {
-                                            filter = true;
+                                            filter = markupAnnotation.getReplyingAnnotations(true).stream().noneMatch(m ->
+                                                    m.getTitleText() != null && m.getTitleText().equalsIgnoreCase(userName));
                                         }
                                     }
                                     // color
@@ -171,7 +171,7 @@ public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
                                         }
                                     }
                                     // filter by type
-                                    if (!filterType.equals(MarkupAnnotationPanel.FilterSubTypeColumn.ALL)) {
+                                    if (filterType != MarkupAnnotationPanel.FilterSubTypeColumn.ALL) {
                                         if (markupAnnotation.getSubType() != null) {
                                             String subType = markupAnnotation.getSubType().toString();
                                             if (!subType.equalsIgnoreCase(filterType.toString())) {

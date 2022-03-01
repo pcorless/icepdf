@@ -17,6 +17,7 @@ package org.icepdf.ri.common.search;
 
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
+import org.icepdf.core.pobjects.annotations.TextWidgetAnnotation;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
@@ -39,6 +40,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Document search controller used to manage document searches.  This class
@@ -508,6 +510,42 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             }
         }
         return null;
+    }
+
+    @Override
+    public List<TextWidgetAnnotation> searchForms(final int pageIndex) {
+        if (document == null) document = viewerController.getDocument();
+        final Page page = document.getPageTree().getPage(pageIndex);
+        return page.getAnnotations() == null ? Collections.emptyList() : page.getAnnotations().stream()
+                .filter(TextWidgetAnnotation.class::isInstance).map(TextWidgetAnnotation.class::cast)
+                .filter(this::textWidgetAnnotationMatches).collect(Collectors.toList());
+
+    }
+
+    private boolean textWidgetAnnotationMatches(final TextWidgetAnnotation annotation) {
+        final String contents = (String) annotation.getFieldDictionary().getFieldValue();
+        if (contents != null) {
+            final List<SearchTerm> searchTerms = searchModel.getSearchTerms();
+            boolean found = false;
+            for (int i = 0; i < searchTerms.size() && !found; i++) {
+                final SearchTerm searchTerm = searchTerms.get(i);
+                final Pattern pattern = searchTerm.getRegexPattern();
+                final String term = searchTerm.getTerm();
+                if (searchTerm.isRegex() && pattern != null) {
+                    final Matcher matcher = pattern.matcher(contents);
+                    found = matcher.find();
+                } else if (term != null) {
+                    if (searchTerm.isCaseSensitive()) {
+                        found = contents.contains(term);
+                    } else {
+                        found = contents.toLowerCase().contains(term.toLowerCase());
+                    }
+                }
+            }
+            return found;
+        } else {
+            return false;
+        }
     }
 
     @Override

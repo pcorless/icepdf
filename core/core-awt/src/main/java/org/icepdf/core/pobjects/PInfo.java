@@ -19,7 +19,9 @@ import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
-import java.util.HashMap;
+import java.util.*;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * <p>This class represents the data stored in a File trailers optional "info"
@@ -46,8 +48,14 @@ public class PInfo extends Dictionary {
     public static final Name MODDATE_KEY = new Name("ModDate");
     public static final Name TRAPPED_KEY = new Name("Trapped");
 
+    public static final Set<Name> ALL_COMMON_KEYS = new HashSet<>(Arrays.asList(
+            RESOURCES_KEY, TITLE_KEY, AUTHOR_KEY, SUBJECT_KEY, KEYWORDS_KEY, CREATOR_KEY, PRODUCER_KEY,
+            CREATIONDATE_KEY, MODDATE_KEY, TRAPPED_KEY
+    ));
+    private static final Pattern KEYWORD_SPLIT = Pattern.compile("[,;:]\\s?");
+
     // security manager need for decrypting strings.
-    private SecurityManager securityManager;
+    private final SecurityManager securityManager;
 
     /**
      * Create a new instance of a <code>PInfo</code> object.
@@ -55,9 +63,19 @@ public class PInfo extends Dictionary {
      * @param library document library
      * @param entries entries for this object dictionary.
      */
-    public PInfo(Library library, HashMap entries) {
+    public PInfo(final Library library, final HashMap entries) {
         super(library, entries);
         securityManager = library.getSecurityManager();
+    }
+
+    /**
+     * Sets a property to a value given its name
+     *
+     * @param name  The name of the property
+     * @param value The value
+     */
+    public void setProperty(final Name name, final Object value) {
+        entries.put(name, value);
     }
 
     /**
@@ -66,13 +84,41 @@ public class PInfo extends Dictionary {
      * @param name som plug-in extensions name.
      * @return value of the plug-in extension.
      */
-    public Object getCustomExtension(Name name) {
-        Object value = library.getObject(entries, name);
-        if (value != null && value instanceof StringObject) {
-            StringObject text = (StringObject) value;
+    public Object getCustomExtension(final Name name) {
+        final Object value = library.getObject(entries, name);
+        if (value instanceof StringObject) {
+            final StringObject text = (StringObject) value;
             return Utils.convertStringObject(library, text);
         }
         return value;
+    }
+
+    /**
+     * @return All the custom extensions of the document
+     */
+    public Map<Object, Object> getAllCustomExtensions() {
+        return entries.entrySet().stream().filter(e -> !ALL_COMMON_KEYS.contains(e.getKey())).collect(Collectors.toMap(Map.Entry::getKey,
+                Map.Entry::getValue));
+    }
+
+    /**
+     * Sets a custom property to the PDF
+     *
+     * @param key   The name of the property
+     * @param value The unencrypted value
+     */
+    public void setCustomExtension(final Name key, final String value) {
+        setProperty(key, getEncryptedString(value));
+    }
+
+    /**
+     * Sets a custom property to the PDF
+     *
+     * @param key   The name of the property
+     * @param value The unencrypted value
+     */
+    public void setCustomExtension(final String key, final String value) {
+        setCustomExtension(new Name(key), value);
     }
 
     /**
@@ -81,14 +127,16 @@ public class PInfo extends Dictionary {
      * @return the documents title.
      */
     public String getTitle() {
-        Object value = library.getObject(entries, TITLE_KEY);
-        if (value != null && value instanceof StringObject) {
-            StringObject text = (StringObject) value;
-            return Utils.convertStringObject(library, text);
-        } else if (value instanceof String) {
-            return (String) value;
-        }
-        return null;
+        return getString(TITLE_KEY);
+    }
+
+    /**
+     * Sets the title of the PDF
+     *
+     * @param title The title
+     */
+    public void setTitle(final String title) {
+        setProperty(TITLE_KEY, getEncryptedString(title));
     }
 
     /**
@@ -97,14 +145,16 @@ public class PInfo extends Dictionary {
      * @return author name.
      */
     public String getAuthor() {
-        Object value = library.getObject(entries, AUTHOR_KEY);
-        if (value != null && value instanceof StringObject) {
-            StringObject text = (StringObject) value;
-            return Utils.convertStringObject(library, text);
-        } else if (value instanceof String) {
-            return (String) value;
-        }
-        return null;
+        return getString(AUTHOR_KEY);
+    }
+
+    /**
+     * Sets the author of the PDF
+     *
+     * @param author The author
+     */
+    public void setAuthor(final String author) {
+        setProperty(AUTHOR_KEY, getEncryptedString(author));
     }
 
     /**
@@ -113,14 +163,16 @@ public class PInfo extends Dictionary {
      * @return documents subject.
      */
     public String getSubject() {
-        Object value = library.getObject(entries, SUBJECT_KEY);
-        if (value != null && value instanceof StringObject) {
-            StringObject text = (StringObject) value;
-            return Utils.convertStringObject(library, text);
-        } else if (value instanceof String) {
-            return (String) value;
-        }
-        return null;
+        return getString(SUBJECT_KEY);
+    }
+
+    /**
+     * Sets the subject of the PDF
+     *
+     * @param subject The subject
+     */
+    public void setSubject(final String subject) {
+        setProperty(SUBJECT_KEY, getEncryptedString(subject));
     }
 
     /**
@@ -129,14 +181,16 @@ public class PInfo extends Dictionary {
      * @return documents keywords.
      */
     public String getKeywords() {
-        Object value = library.getObject(entries, KEYWORDS_KEY);
-        if (value != null && value instanceof StringObject) {
-            StringObject text = (StringObject) value;
-            return Utils.convertStringObject(library, text);
-        } else if (value instanceof String) {
-            return (String) value;
-        }
-        return null;
+        return getString(KEYWORDS_KEY);
+    }
+
+    /**
+     * Sets the keywords of the pdf
+     *
+     * @param keywords A varargs of keywords. They will be separated by a comma
+     */
+    public void setKeywords(final String... keywords) {
+        setProperty(KEYWORDS_KEY, getEncryptedString(String.join(", ", keywords)));
     }
 
     /**
@@ -146,14 +200,16 @@ public class PInfo extends Dictionary {
      * @return creator name.
      */
     public String getCreator() {
-        Object value = library.getObject(entries, CREATOR_KEY);
-        if (value != null && value instanceof StringObject) {
-            StringObject text = (StringObject) value;
-            return Utils.convertStringObject(library, text);
-        } else if (value instanceof String) {
-            return (String) value;
-        }
-        return null;
+        return getString(CREATOR_KEY);
+    }
+
+    /**
+     * Sets the creator of the PDF
+     *
+     * @param creator the creator
+     */
+    public void setCreator(final String creator) {
+        setProperty(CREATOR_KEY, getEncryptedString(creator));
     }
 
     /**
@@ -163,14 +219,16 @@ public class PInfo extends Dictionary {
      * @return producer name.
      */
     public String getProducer() {
-        Object value = library.getObject(entries, PRODUCER_KEY);
-        if (value != null && value instanceof StringObject) {
-            StringObject text = (StringObject) value;
-            return Utils.convertStringObject(library, text);
-        } else if (value instanceof String) {
-            return (String) value;
-        }
-        return null;
+        return getString(PRODUCER_KEY);
+    }
+
+    /**
+     * Sets the producer of the PDF
+     *
+     * @param producer the producer
+     */
+    public void setProducer(final String producer) {
+        setProperty(PRODUCER_KEY, getEncryptedString(producer));
     }
 
     /**
@@ -179,12 +237,21 @@ public class PInfo extends Dictionary {
      * @return creation date.
      */
     public PDate getCreationDate() {
-        Object value = library.getObject(entries, CREATIONDATE_KEY);
-        if (value != null && value instanceof StringObject) {
-            StringObject text = (StringObject) value;
+        final Object value = library.getObject(entries, CREATIONDATE_KEY);
+        if (value instanceof StringObject) {
+            final StringObject text = (StringObject) value;
             return new PDate(securityManager, text.getDecryptedLiteralString(securityManager));
         }
         return null;
+    }
+
+    /**
+     * Sets the creation date of the PDF
+     *
+     * @param date The creation date
+     */
+    public void setCreationDate(final PDate date) {
+        setProperty(CREATIONDATE_KEY, getEncryptedString(date.toString()));
     }
 
     /**
@@ -193,12 +260,21 @@ public class PInfo extends Dictionary {
      * @return modification date.
      */
     public PDate getModDate() {
-        Object value = library.getObject(entries, MODDATE_KEY);
-        if (value != null && value instanceof StringObject) {
-            StringObject text = (StringObject) value;
+        final Object value = library.getObject(entries, MODDATE_KEY);
+        if (value instanceof StringObject) {
+            final StringObject text = (StringObject) value;
             return new PDate(securityManager, text.getDecryptedLiteralString(securityManager));
         }
         return null;
+    }
+
+    /**
+     * Sets the modification date of the PDF
+     *
+     * @param date The modification date
+     */
+    public void setModDate(final PDate date) {
+        setProperty(MODDATE_KEY, getEncryptedString(date.toString()));
     }
 
     /**
@@ -215,13 +291,141 @@ public class PInfo extends Dictionary {
      * @return trapped name.
      */
     public String getTrappingInformation() {
-        Object value = library.getObject(entries, TRAPPED_KEY);
-        if (value != null && value instanceof StringObject) {
-            StringObject text = (StringObject) value;
+        return getString(TRAPPED_KEY);
+    }
+
+    private String getString(final Name key) {
+        final Object value = library.getObject(entries, key);
+        if (value instanceof StringObject) {
+            final StringObject text = (StringObject) value;
             return Utils.convertStringObject(library, text);
         } else if (value instanceof String) {
             return (String) value;
         }
         return null;
+    }
+
+    /**
+     * Sets the trapping value of the PDF
+     *
+     * @param value The trapping value
+     */
+    public void setTrappingInformation(final String value) {
+        setProperty(TRAPPED_KEY, new LiteralStringObject(value));
+    }
+
+    /**
+     * Updates the info with the given Map
+     *
+     * @param values The new values
+     * @return If a value has changed
+     */
+    public boolean update(final Map<String, String> values) {
+        boolean hasChanged = false;
+        final Map<Object, Object> customProps = getAllCustomExtensions();
+        clearCustomProps();
+        for (final Map.Entry<String, String> entry : values.entrySet()) {
+            final String key = entry.getKey();
+            final String value = entry.getValue();
+            final Name name = new Name(key);
+            if (name.equals(RESOURCES_KEY)) {
+                //TODO
+            } else if (name.equals(TITLE_KEY)) {
+                if (!isEmptyOrNullEqual(value, getTitle())) {
+                    setTitle(value);
+                    hasChanged = true;
+                }
+            } else if (name.equals(AUTHOR_KEY)) {
+                if (!isEmptyOrNullEqual(value, getAuthor())) {
+                    setAuthor(value);
+                    hasChanged = true;
+                }
+            } else if (name.equals(SUBJECT_KEY)) {
+                if (!isEmptyOrNullEqual(value, getSubject())) {
+                    setSubject(value);
+                    hasChanged = true;
+                }
+            } else if (name.equals(KEYWORDS_KEY)) {
+                final String[] keywords = KEYWORD_SPLIT.split(value);
+                if (!isEmptyOrNullEqual(String.join(", ", keywords), getKeywords())) {
+                    setKeywords(keywords);
+                    hasChanged = true;
+                }
+            } else if (name.equals(CREATOR_KEY)) {
+                if (!isEmptyOrNullEqual(value, getCreator())) {
+                    setCreator(value);
+                    hasChanged = true;
+                }
+            } else if (name.equals(PRODUCER_KEY)) {
+                if (!isEmptyOrNullEqual(value, getProducer())) {
+                    setProducer(value);
+                    hasChanged = true;
+                }
+            } else if (name.equals(CREATIONDATE_KEY)) {
+                //TODO
+            } else if (name.equals(MODDATE_KEY)) {
+                //TODO
+            } else if (name.equals(TRAPPED_KEY)) {
+                if (!isEmptyOrNullEqual(value, getTrappingInformation())) {
+                    setTrappingInformation(value);
+                    hasChanged = true;
+                }
+            } else {
+                setCustomExtension(key, value);
+            }
+        }
+        if (!mapEquals(customProps, getAllCustomExtensions())) {
+            hasChanged = true;
+        }
+        return hasChanged;
+    }
+
+    private static boolean mapEquals(final Map<Object, Object> first, final Map<Object, Object> second) {
+        if (first.size() != second.size()) {
+            return false;
+        }
+        for (final Map.Entry<Object, Object> entry : first.entrySet()) {
+            final Object key = entry.getKey();
+            final Object value = entry.getValue();
+            if (!second.containsKey(key)) {
+                return false;
+            } else {
+                final Object secondValue = second.get(key);
+                if (!value.equals(secondValue)) {
+                    if (value instanceof LiteralStringObject && secondValue instanceof LiteralStringObject) {
+                        if (!((LiteralStringObject) value).getLiteralString()
+                                .equals(((LiteralStringObject) secondValue).getLiteralString())) {
+                            return false;
+                        }
+                    } else {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    private static boolean isEmptyOrNullEqual(final String first, final String second) {
+        return (first == null && second == null) ||
+                (first == null && second.isEmpty()) ||
+                (first != null && first.isEmpty() && second == null) ||
+                (Objects.equals(first, second));
+    }
+
+    private void clearCustomProps() {
+        getAllCustomExtensions().keySet().forEach(k -> entries.remove(k));
+    }
+
+    private LiteralStringObject getEncryptedString(final String value) {
+        if (securityManager != null) {
+            try {
+                return new LiteralStringObject(value, getPObjectReference(), securityManager);
+            } catch (final Exception e){
+                return new LiteralStringObject(value);
+            }
+        } else {
+            return new LiteralStringObject(value);
+        }
     }
 }

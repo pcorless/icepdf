@@ -55,7 +55,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
 
     private DefaultMutableTreeNode pageTreeNode;
 
-    private MarkupAnnotationPanel parentMarkupAnnotationPanel;
+    private final MarkupAnnotationPanel parentMarkupAnnotationPanel;
     private final Set<Annotation> annotationSet = new HashSet<>();
     private final Set<String> pageLabels = new HashSet<>();
     private Pattern searchPattern;

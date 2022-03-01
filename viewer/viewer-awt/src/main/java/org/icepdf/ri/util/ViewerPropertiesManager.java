@@ -266,6 +266,7 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_SEARCH_PANEL_SEARCH_COMMENTS_ENABLED = "application.viewer.utility.search.comments.cumulative.enabled";
     public static final String PROPERTY_SEARCH_PANEL_SEARCH_DEST_ENABLED = "application.viewer.utility.search.case.destinations.enabled";
     public static final String PROPERTY_SEARCH_PANEL_SEARCH_TEXT_ENABLED = "application.viewer.utility.search.case.text.enabled";
+    public static final String PROPERTY_SEARCH_PANEL_SEARCH_FORMS_ENABLED = "application.viewer.utility.search.case.forms.enabled";
     public static final String PROPERTY_SEARCH_PANEL_SEARCH_OUTLINES_ENABLED = "application.viewer.utility.search.case.outlines.enabled";
     public static final String PROPERTY_SEARCH_PANEL_SHOW_PAGES_ENABLED = "application.viewer.utility.search.case.pages.enabled";
 

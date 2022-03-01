@@ -57,10 +57,7 @@ import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryFrame;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
 import org.icepdf.ri.common.widgets.AbstractColorButton;
 import org.icepdf.ri.common.widgets.annotations.AnnotationColorToggleButton;
-import org.icepdf.ri.util.BareBonesBrowserLaunch;
-import org.icepdf.ri.util.TextExtractionTask;
-import org.icepdf.ri.util.URLAccess;
-import org.icepdf.ri.util.ViewerPropertiesManager;
+import org.icepdf.ri.util.*;
 import org.icepdf.ri.viewer.WindowManager;
 
 import javax.print.attribute.standard.MediaSizeName;
@@ -88,18 +85,23 @@ import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.icepdf.core.util.PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE;
+import static org.icepdf.ri.common.KeyEventConstants.*;
 import static org.icepdf.ri.util.ViewerPropertiesManager.*;
+
 
 /**
  * Controller is the meat of a PDF viewing application. It is the Controller
@@ -118,7 +120,7 @@ import static org.icepdf.ri.util.ViewerPropertiesManager.*;
 public class SwingController extends ComponentAdapter
         implements org.icepdf.ri.common.views.Controller, ActionListener, FocusListener, ItemListener,
         TreeSelectionListener, WindowListener, DropTargetListener,
-        KeyListener, PropertyChangeListener {
+        PropertyChangeListener {
 
     protected static final Logger logger =
             Logger.getLogger(SwingController.class.toString());
@@ -143,7 +145,9 @@ public class SwingController extends ComponentAdapter
     private JMenu recentFilesSubMenu;
     private JMenuItem openURLMenuItem;
     private JMenuItem closeMenuItem;
+    private JMenuItem saveFileMenuItem;
     private JMenuItem saveAsFileMenuItem;
+    private JMenuItem sendMailMenuItem;
     private JMenuItem exportTextMenuItem;
     private JMenuItem propertiesMenuItem;
     private JMenuItem permissionsMenuItem;
@@ -185,7 +189,7 @@ public class SwingController extends ComponentAdapter
     private List windowListMenuItems;
     private JMenuItem aboutMenuItem;
     private JButton openFileButton;
-    private JButton saveAsFileButton;
+    private JButton saveFileButton;
     private JButton printButton;
     private JButton searchButton;
     private JToggleButton showHideUtilityPaneButton;
@@ -281,6 +285,7 @@ public class SwingController extends ComponentAdapter
     protected static ResourceBundle messageBundle = null;
 
     protected ViewerPropertiesManager propertiesManager;
+    private String saveFilePath = null;
 
     static {
         PrintHelper.preloadServices();
@@ -439,8 +444,28 @@ public class SwingController extends ComponentAdapter
      *
      * @param mi menu item to assign
      */
+    public void setSaveFileMenuItem(JMenuItem mi) {
+        saveFileMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
+     */
     public void setSaveAsFileMenuItem(JMenuItem mi) {
         saveAsFileMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param mi menu item to assign
+     */
+    public void setSendMailMenuItem(JMenuItem mi) {
+        sendMailMenuItem = mi;
         mi.addActionListener(this);
     }
 
@@ -851,8 +876,8 @@ public class SwingController extends ComponentAdapter
      *
      * @param btn button to assign
      */
-    public void setSaveAsFileButton(JButton btn) {
-        saveAsFileButton = btn;
+    public void setSaveFileButton(JButton btn) {
+        saveFileButton = btn;
         btn.addActionListener(this);
     }
 
@@ -955,7 +980,7 @@ public class SwingController extends ComponentAdapter
         currentPageNumberTextField = textField;
         currentPageNumberTextField.addActionListener(this);
         currentPageNumberTextField.addFocusListener(this);
-        currentPageNumberTextField.addKeyListener(this);
+        currentPageNumberTextField.addKeyListener(new NumberTextFieldKeyListener());
     }
 
     /**
@@ -1446,8 +1471,13 @@ public class SwingController extends ComponentAdapter
      */
     public void setIsEmbeddedComponent(boolean embeddableComponent) {
         if (embeddableComponent) {
-            documentViewController.setViewKeyListener(this);
-            documentViewController.getViewContainer().addKeyListener(this);
+            if (documentViewController.getDocumentView() != null) {
+                prepareKeyMap((JComponent) documentViewController.getDocumentView());
+            } else if (documentViewController.getViewContainer() != null) {
+                prepareKeyMap((JComponent) documentViewController.getViewContainer());
+            }
+        } else {
+            prepareKeyMap((JComponent) documentViewController.getViewContainer());
         }
     }
 
@@ -1567,7 +1597,9 @@ public class SwingController extends ComponentAdapter
 
         // menu items.
         setEnabled(closeMenuItem, opened);
+        setEnabled(saveFileMenuItem, opened);
         setEnabled(saveAsFileMenuItem, opened);
+        setEnabled(sendMailMenuItem, opened);
         setEnabled(exportTextMenuItem, opened && canExtract && !pdfCollection);
         setEnabled(propertiesMenuItem, opened);
 
@@ -1625,7 +1657,7 @@ public class SwingController extends ComponentAdapter
         setEnabled(searchPreviousMenuItem, opened && searchPanel != null && !pdfCollection);
         setEnabled(goToPageMenuItem, opened && nPages > 1 && !pdfCollection);
 
-        setEnabled(saveAsFileButton, opened);
+        setEnabled(saveFileButton, opened);
         setEnabled(printButton, opened && canPrint && !pdfCollection);
         setEnabled(searchButton, opened && searchPanel != null && !pdfCollection);
         setEnabled(showHideUtilityPaneButton, opened && utilityTabbedPane != null);
@@ -2467,7 +2499,33 @@ public class SwingController extends ComponentAdapter
 
                 addRecentFileEntry(Paths.get(pathname));
 
-                // load the document
+                saveFilePath = getTempSaveFileName(pathname);
+                if (saveFilePath != null) {
+                    File tmpFile = new File(saveFilePath);
+                    if (tmpFile.exists() && new File(pathname).exists()) {
+                        String[] options = {messageBundle.getString("viewer.button.yes.label"), messageBundle.getString("viewer.button.no.label")};
+                        int ret = JOptionPane.showOptionDialog(viewer, MessageFormat.format(messageBundle.getString("viewer.dialog.restore.label"), new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(tmpFile.lastModified())), messageBundle.getString("viewer.dialog.restore.title"), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+                        if (ret == JOptionPane.YES_OPTION) {
+                            try {
+                                Files.copy(tmpFile.toPath(), new File(pathname).toPath(), StandardCopyOption.REPLACE_EXISTING);
+                            } catch (IOException e) {
+                                org.icepdf.ri.util.Resources.showMessageDialog(
+                                        viewer,
+                                        JOptionPane.INFORMATION_MESSAGE,
+                                        messageBundle,
+                                        "viewer.dialog.restore.exception.title",
+                                        "viewer.dialog.restore.exception.label",
+                                        e.getMessage() != null && !e.getMessage().isEmpty() ? e.getMessage() : e.toString());
+                            }
+                        } else {
+                            try {
+                                Files.delete(tmpFile.toPath());
+                            } catch (IOException e) {
+                                logger.log(Level.FINE, "Couldn't delete file " + tmpFile.getAbsolutePath(), e);
+                            }
+                        }
+                    }
+                }
                 document = new Document();
                 // create default security callback is user has not created one
                 setupSecurityHandler(document, documentViewController.getSecurityCallback());
@@ -2506,6 +2564,24 @@ public class SwingController extends ComponentAdapter
             } finally {
                 setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
             }
+        }
+    }
+
+    private static String getTempSaveFileName(final String originalFilePath) {
+        final String separator = File.separator;
+        final String[] pathSplit = originalFilePath.split(Pattern.quote(separator));
+        final String name = pathSplit[pathSplit.length - 1];
+        final String[] dotSplit = name.split("\\.");
+        final String basename = getBasename(dotSplit);
+        return Arrays.stream(pathSplit).limit(pathSplit.length - 1).collect(Collectors.joining(separator))
+                + separator + '.' + basename + "-tmp.pdf";
+    }
+
+    private static String getBasename(final String[] dotSplit) {
+        if (dotSplit.length == 1) {
+            return dotSplit[0];
+        } else {
+            return Arrays.stream(dotSplit).limit(dotSplit.length - 1).collect(Collectors.joining("."));
         }
     }
 
@@ -3212,6 +3288,7 @@ public class SwingController extends ComponentAdapter
         openURLMenuItem = null;
         closeMenuItem = null;
         saveAsFileMenuItem = null;
+        sendMailMenuItem = null;
         exportTextMenuItem = null;
         permissionsMenuItem = null;
         propertiesMenuItem = null;
@@ -3249,7 +3326,7 @@ public class SwingController extends ComponentAdapter
         aboutMenuItem = null;
 
         openFileButton = null;
-        saveAsFileButton = null;
+        saveFileButton = null;
         printButton = null;
         searchButton = null;
         showHideUtilityPaneButton = null;
@@ -3261,7 +3338,7 @@ public class SwingController extends ComponentAdapter
         if (currentPageNumberTextField != null) {
             currentPageNumberTextField.removeActionListener(this);
             currentPageNumberTextField.removeFocusListener(this);
-            currentPageNumberTextField.removeKeyListener(this);
+            Arrays.stream(currentPageNumberTextField.getKeyListeners()).forEach(currentPageNumberTextField::removeKeyListener);
             currentPageNumberTextField = null;
         }
         numberOfPagesLabel = null;
@@ -3376,32 +3453,45 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
+     * Utility method for saving the current document to the same filename.
+     * As it's not possible to write to the file while the document is open,
+     * a temp file is created and this file will be renamed to the current open file
+     * when the window is closed.
+     */
+    public void saveFile() {
+        if (document.getStateManager().isChange()) {
+            if (saveFilePath != null && !saveFilePath.isEmpty()) {
+                File out = new File(saveFilePath);
+                if (out.getParentFile() != null) {
+                    if (Files.isWritable(out.getParentFile().toPath())) {
+                        try (OutputStream stream = new BufferedOutputStream(new FileOutputStream(out))) {
+                            document.saveToOutputStream(stream);
+                            stream.flush();
+                            document.getStateManager().setChangesSnapshot();
+                        } catch (IOException e) {
+                            logger.log(Level.FINE, "IO Exception ", e);
+                        }
+                    }
+                } else {
+                    //Probably got loaded from an InputStream, can't simply save
+                    saveFileAs();
+                }
+            } else {
+                saveFileAs();
+            }
+        }
+    }
+
+    /**
      * Utility method for saving a copy of the currently opened
      * PDF to a file. This will check all valid permissions and
      * show a file save dialog for the user to select where to
      * save the file to, and what name to give it.
      */
-    public void saveFile() {
-        // See if we can come up with a default file name
-        // We want the bytes from whence, but the file name of origin
-        final String origin = document.getDocumentOrigin();
-        String originalFileName = null;
-        String newFileName = null;
-        if (origin != null) {
-            final int lastSeparator = Math.max(
-                    Math.max(
-                            origin.lastIndexOf('/'),
-                            origin.lastIndexOf('\\')),
-                    origin.lastIndexOf(File.separator) // Might not be / or \
-            );
-            if (lastSeparator >= 0) {
-                originalFileName = origin.substring(lastSeparator + 1);
-                if (!originalFileName.isEmpty()) {
-                    // Set the selected file to a slightly modified name of the original
-                    newFileName = generateNewSaveName(originalFileName);
-                }
-            }
-        }
+    public void saveFileAs() {
+
+        String originalFileName = getOriginalFileName();
+        String newFileName = originalFileName == null || originalFileName.isEmpty() ? null : generateNewSaveName(originalFileName);
 
         // Create and display a file saving dialog
         if (!USE_JFILECHOOSER) {
@@ -3441,6 +3531,24 @@ public class SwingController extends ComponentAdapter
         }
     }
 
+    private String getOriginalFileName() {
+        String origin = document.getDocumentOrigin();
+        String originalFileName = null;
+        String newFileName = null;
+        if (origin != null) {
+            int lastSeparator = Math.max(
+                    Math.max(
+                            origin.lastIndexOf('/'),
+                            origin.lastIndexOf('\\')),
+                    origin.lastIndexOf(File.separator) // Might not be / or \
+            );
+            if (lastSeparator >= 0) {
+                return origin.substring(lastSeparator + 1);
+            }
+        }
+        return null;
+    }
+
     protected void saveFileChecks(String originalFileName, File file) {
         if (file != null) {
             if (Files.isWritable(file.getParentFile().toPath())) {
@@ -3453,7 +3561,7 @@ public class SwingController extends ComponentAdapter
                             messageBundle,
                             "viewer.dialog.saveAs.noExtensionError.title",
                             "viewer.dialog.saveAs.noExtensionError.msg");
-                    saveFile();
+                    saveFileAs();
                 } else if (!extension.equals(FileExtensionUtils.pdf)) {
                     org.icepdf.ri.util.Resources.showMessageDialog(
                             viewer,
@@ -3462,7 +3570,7 @@ public class SwingController extends ComponentAdapter
                             "viewer.dialog.saveAs.extensionError.title",
                             "viewer.dialog.saveAs.extensionError.msg",
                             file.getName());
-                    saveFile();
+                    saveFileAs();
                 } else if (originalFileName != null &&
                         originalFileName.equalsIgnoreCase(file.getName())) {
                     // Ensure a unique filename
@@ -3473,36 +3581,31 @@ public class SwingController extends ComponentAdapter
                             "viewer.dialog.saveAs.noneUniqueName.title",
                             "viewer.dialog.saveAs.noneUniqueName.msg",
                             file.getName());
-                    saveFile();
+                    saveFileAs();
                 } else {
                     // save file stream
-                    try {
-                        // If we don't know where the file came from, it's because we
-                        //  used Document.contentStream() or Document.setByteArray(),
-                        //  or we used setUrl() with disk caching disabled.
-                        //  with no path or URL as the origin.
-                        // Note that we used to detect scenarios where we could access
-                        //  the file directly, or re-download it, to avoid locking our
-                        //  internal data structures for long periods for large PDFs,
-                        //  but that could cause problems with slow network links too,
-                        //  and would complicate the incremental update code, so we're
-                        //  harmonising on this approach.
-                        FileOutputStream fileOutputStream = new FileOutputStream(file);
-                        BufferedOutputStream buf = new BufferedOutputStream(
-                                fileOutputStream, 4096 * 2);
+                    // If we don't know where the file came from, it's because we
+                    //  used Document.contentStream() or Document.setByteArray(),
+                    //  or we used setUrl() with disk caching disabled.
+                    //  with no path or URL as the origin.
+                    // Note that we used to detect scenarios where we could access
+                    //  the file directly, or re-download it, to avoid locking our
+                    //  internal data structures for long periods for large PDFs,
+                    //  but that could cause problems with slow network links too,
+                    //  and would complicate the incremental update code, so we're
+                    //  harmonising on this approach.
+                    try (final FileOutputStream fileOutputStream = new FileOutputStream(file);
+                         final BufferedOutputStream buf = new BufferedOutputStream(fileOutputStream, 4096 * 2)) {
 
                         // We want 'save as' or 'save a copy to always occur
-                        if (document.getStateManager().isNoChange()) {
+                        if (!document.getStateManager().isChange()) {
                             // save as copy
                             document.writeToOutputStream(buf);
                         } else {
                             // save as will append changes.
                             document.saveToOutputStream(buf);
                         }
-                        buf.flush();
-                        fileOutputStream.flush();
-                        buf.close();
-                        fileOutputStream.close();
+                        document.getStateManager().setChangesSnapshot();
                     } catch (MalformedURLException e) {
                         logger.log(Level.FINE, "Malformed URL Exception ", e);
                     } catch (IOException e) {
@@ -3519,7 +3622,7 @@ public class SwingController extends ComponentAdapter
                         "viewer.dialog.saveAs.cantwrite.title",
                         "viewer.dialog.saveAs.cantwrite.msg",
                         file.getParentFile().getName());
-                saveFile();
+                saveFileAs();
             }
         }
     }
@@ -3620,9 +3723,8 @@ public class SwingController extends ComponentAdapter
         // check if document changes have been made, if so ask the user if they
         // want to save the changes.
         if (document != null) {
-            boolean documentChanges = document.getStateManager().isChange();
+            boolean documentChanges = document.getStateManager().hasChangedSinceLastSnapshot();
             if (documentChanges) {
-
                 MessageFormat formatter = new MessageFormat(
                         messageBundle.getString("viewer.dialog.saveOnClose.noUpdates.msg"));
                 String dialogMessage = formatter.format(new Object[]{document.getDocumentOrigin()});
@@ -3633,12 +3735,12 @@ public class SwingController extends ComponentAdapter
                         JOptionPane.YES_NO_CANCEL_OPTION);
                 if (res == JOptionPane.OK_OPTION) {
                     // start save as process.
-                    saveFile();
+                    saveFileAs();
                     // fall though and close window.
                 } else if (res == JOptionPane.NO_OPTION) {
                     // nothing to do, just fall through.
                 } else if (res == JOptionPane.CANCEL_OPTION) {
-                    // supress the close action
+                    // suppress the close action
                     return true;
                 }
             }
@@ -4663,7 +4765,6 @@ public class SwingController extends ComponentAdapter
             }
         }
 
-
         // Fit the GUI frame to the size of the document?
         if (viewerPref != null && viewerPref.hasFitWindow()) {
             if (viewerPref.getFitWindow()) {
@@ -4749,8 +4850,12 @@ public class SwingController extends ComponentAdapter
                 if (!isCanceled) {
                     closeDocument();
                 }
-            } else if (source == saveAsFileMenuItem || source == saveAsFileButton) {
+            } else if (source == saveFileMenuItem || source == saveFileButton) {
                 saveFile();
+            } else if (source == saveAsFileMenuItem) {
+                saveFileAs();
+            } else if (source == sendMailMenuItem) {
+                MailSender.sendMail(this);
             } else if (source == exportTextMenuItem) {
                 exportText();
             } else if (source == exitMenuItem) {
@@ -5229,10 +5334,20 @@ public class SwingController extends ComponentAdapter
 
         // save changes and close window
         boolean cancelled = saveChangesDialog();
+        String origFilePath = document != null ? document.getDocumentOrigin() : null;
         if (!cancelled) {
             // dispose the document and other resources.
             dispose();
-
+            if (saveFilePath != null && !saveFilePath.isEmpty() && origFilePath != null) {
+                try {
+                    File tmpFile = new File(saveFilePath);
+                    if (tmpFile.exists()) {
+                        Files.move(tmpFile.toPath(), new File(origFilePath).toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    }
+                } catch (IOException ex) {
+                    logger.log(Level.FINE, "IO Exception ", e);
+                }
+            }
             if (wc != null) {
                 wc.disposeWindow(this, v, viewerPreferences);
             }
@@ -5377,97 +5492,65 @@ public class SwingController extends ComponentAdapter
     public void dragExit(DropTargetEvent event) {
     }
 
+    protected void prepareKeyMap(JComponent component) {
+        addKeyAction(component, KEY_CODE_SAVE, MODIFIER_SAVE, new BaseAction(this::saveFile));
+        addKeyAction(component, KEY_CODE_SAVE_AS, MODIFIER_SAVE_AS, new BaseAction(this::saveFileAs));
+        addKeyAction(component, KEY_CODE_EXPORT_TEXT, MODIFIER_EXPORT_TEXT, new BaseAction(this::exportText));
+        addKeyAction(component, KEY_CODE_PRINT_SETUP, MODIFIER_PRINT_SETUP, new BaseAction(this::showPrintSetupDialog));
+        addKeyAction(component, KEY_CODE_PRINT, MODIFIER_PRINT, new BaseAction(() -> print(true)));
+        addKeyAction(component, KEY_CODE_FIT_ACTUAL, MODIFIER_FIT_ACTUAL,
+                new BaseAction(() -> setPageFitMode(DocumentViewController.PAGE_FIT_ACTUAL_SIZE, false)));
+        addKeyAction(component, KEY_CODE_FIT_PAGE, MODIFIER_FIT_PAGE,
+                new BaseAction(() -> setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_HEIGHT, false)));
+        addKeyAction(component, KEY_CODE_FIT_WIDTH, MODIFIER_FIT_WIDTH,
+                new BaseAction(() -> setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_WIDTH, false)));
+        addKeyAction(component, KEY_CODE_ZOOM_IN, MODIFIER_ZOOM_IN, new BaseAction(this::zoomIn));
+        addKeyAction(component, KEY_CODE_ZOOM_OUT, MODIFIER_ZOOM_OUT, new BaseAction(this::zoomOut));
+        addKeyAction(component, KEY_CODE_ROTATE_LEFT, MODIFIER_ROTATE_LEFT, new BaseAction(this::rotateLeft));
+        addKeyAction(component, KEY_CODE_ROTATE_RIGHT, MODIFIER_ROTATE_RIGHT, new BaseAction(this::rotateRight));
+        addKeyAction(component, KEY_CODE_FIRST_PAGE, MODIFIER_FIRST_PAGE, new BaseAction(() -> showPage(0)));
+        addKeyAction(component, KEY_CODE_PREVIOUS_PAGE, MODIFIER_PREVIOUS_PAGE,
+                new BaseAction(() -> goToDeltaPage(-(documentViewController.getDocumentView().getPreviousPageIncrement()))));
+        addKeyAction(component, KEY_CODE_NEXT_PAGE, MODIFIER_NEXT_PAGE,
+                new BaseAction(() -> goToDeltaPage(documentViewController.getDocumentView().getNextPageIncrement())));
+        addKeyAction(component, KEY_CODE_LAST_PAGE, MODIFIER_LAST_PAGE,
+                new BaseAction(() -> showPage(getPageTree().getNumberOfPages() - 1)));
+        addKeyAction(component, KEY_CODE_SEARCH, MODIFIER_SEARCH, new BaseAction(this::showSearch));
+        addKeyAction(component, KEY_CODE_SEARCH, MODIFIER_ADVANCED_SEARCH, new BaseAction(this::showSearchPanel));
+        addKeyAction(component, KEY_CODE_SEARCH_PREVIOUS, MODIFIER_SEARCH_PREVIOUS, new BaseAction(this::previousSearchResult));
+        addKeyAction(component, KEY_CODE_SEARCH_NEXT, MODIFIER_SEARCH_NEXT, new BaseAction(this::nextSearchResult));
+        addKeyAction(component, KEY_CODE_GOTO, MODIFIER_GOTO, new BaseAction(this::showPageSelectionDialog));
+        addKeyAction(component, KEY_CODE_PREFERENCES, MODIFIER_PREFERENCES,
+                new BaseAction(this::showViewerPreferences));
+    }
 
-    //
-    // KeyListener interface
-    //
+    protected final void addKeyAction(final JComponent component, final int keyCode, final int modifier, final BaseAction action) {
+        final InputMap inputMap = component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        final ActionMap actionMap = component.getActionMap();
+        final String key = keyCode + "-" + modifier;
+        inputMap.put(KeyStroke.getKeyStroke(keyCode, modifier), key);
+        actionMap.put(key, action);
+    }
 
-    /**
-     * Controller takes AWT/Swing events, and maps them to its own events
-     * related to PDF Document manipulation
-     */
-    public void keyPressed(KeyEvent e) {
-        if (document == null)
-            return;
-        int c = e.getKeyCode();
-        int m = e.getModifiers();
-        if ((c == KeyEventConstants.KEY_CODE_SAVE_AS && m == KeyEventConstants.MODIFIER_SAVE_AS) ||
-                (c == KeyEventConstants.KEY_CODE_PRINT_SETUP && m == KeyEventConstants.MODIFIER_PRINT_SETUP) ||
-                (c == KeyEventConstants.KEY_CODE_PRINT && m == KeyEventConstants.MODIFIER_PRINT) ||
-                (c == KeyEventConstants.KEY_CODE_FIT_ACTUAL && m == KeyEventConstants.MODIFIER_FIT_ACTUAL) ||
-                (c == KeyEventConstants.KEY_CODE_FIT_PAGE && m == KeyEventConstants.MODIFIER_FIT_PAGE) ||
-                (c == KeyEventConstants.KEY_CODE_FIT_WIDTH && m == KeyEventConstants.MODIFIER_FIT_WIDTH) ||
-                (c == KeyEventConstants.KEY_CODE_ZOOM_IN && m == KeyEventConstants.MODIFIER_ZOOM_IN) ||
-                (c == KeyEventConstants.KEY_CODE_ZOOM_OUT && m == KeyEventConstants.MODIFIER_ZOOM_OUT) ||
-                (c == KeyEventConstants.KEY_CODE_ROTATE_LEFT && m == KeyEventConstants.MODIFIER_ROTATE_LEFT) ||
-                (c == KeyEventConstants.KEY_CODE_ROTATE_RIGHT && m == KeyEventConstants.MODIFIER_ROTATE_RIGHT) ||
-                (c == KeyEventConstants.KEY_CODE_FIRST_PAGE && m == KeyEventConstants.MODIFIER_FIRST_PAGE) ||
-                (c == KeyEventConstants.KEY_CODE_PREVIOUS_PAGE && m == KeyEventConstants.MODIFIER_PREVIOUS_PAGE) ||
-                (c == KeyEventConstants.KEY_CODE_NEXT_PAGE && m == KeyEventConstants.MODIFIER_NEXT_PAGE) ||
-                (c == KeyEventConstants.KEY_CODE_LAST_PAGE && m == KeyEventConstants.MODIFIER_LAST_PAGE) ||
-                (c == KeyEventConstants.KEY_CODE_SEARCH && m == KeyEventConstants.MODIFIER_SEARCH) ||
-                (c == KeyEventConstants.KEY_CODE_GOTO && m == KeyEventConstants.MODIFIER_GOTO)) {
-            // get document previous icon
+    @FunctionalInterface
+    protected interface ActionMethod {
+        void doAction();
+    }
+
+    protected class BaseAction extends AbstractAction {
+
+        private final ActionMethod action;
+
+        public BaseAction(ActionMethod action) {
+            this.action = action;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent actionEvent) {
             int documentIcon = getDocumentViewToolMode();
+            setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_WAIT);
             try {
-                // set cursor for document view
-                setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_WAIT);
-
-                if (c == KeyEventConstants.KEY_CODE_SAVE_AS &&
-                        m == KeyEventConstants.MODIFIER_SAVE_AS) {
-                    saveFile();
-                } else if (c == KeyEventConstants.KEY_CODE_PRINT_SETUP &&
-                        m == KeyEventConstants.MODIFIER_PRINT_SETUP) {
-                    showPrintSetupDialog();
-                } else if (c == KeyEventConstants.KEY_CODE_PRINT &&
-                        m == KeyEventConstants.MODIFIER_PRINT) {
-                    print(true);
-                } else if (c == KeyEventConstants.KEY_CODE_FIT_ACTUAL &&
-                        m == KeyEventConstants.MODIFIER_FIT_ACTUAL) {
-                    setPageFitMode(DocumentViewController.PAGE_FIT_ACTUAL_SIZE, false);
-                } else if (c == KeyEventConstants.KEY_CODE_FIT_PAGE &&
-                        m == KeyEventConstants.MODIFIER_FIT_PAGE) {
-                    setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_HEIGHT, false);
-                } else if (c == KeyEventConstants.KEY_CODE_FIT_WIDTH &&
-                        m == KeyEventConstants.MODIFIER_FIT_WIDTH) {
-                    setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_WIDTH, false);
-                } else if (c == KeyEventConstants.KEY_CODE_ZOOM_IN &&
-                        m == KeyEventConstants.MODIFIER_ZOOM_IN) {
-                    zoomIn();
-                } else if (c == KeyEventConstants.KEY_CODE_ZOOM_OUT &&
-                        m == KeyEventConstants.MODIFIER_ZOOM_OUT) {
-                    zoomOut();
-                } else if (c == KeyEventConstants.KEY_CODE_ROTATE_LEFT &&
-                        m == KeyEventConstants.MODIFIER_ROTATE_LEFT) {
-                    rotateLeft();
-                } else if (c == KeyEventConstants.KEY_CODE_ROTATE_RIGHT &&
-                        m == KeyEventConstants.MODIFIER_ROTATE_RIGHT) {
-                    rotateRight();
-                } else if (c == KeyEventConstants.KEY_CODE_FIRST_PAGE &&
-                        m == KeyEventConstants.MODIFIER_FIRST_PAGE) {
-                    showPage(0);
-                } else if (c == KeyEventConstants.KEY_CODE_PREVIOUS_PAGE &&
-                        m == KeyEventConstants.MODIFIER_PREVIOUS_PAGE) {
-                    DocumentView documentView = documentViewController.getDocumentView();
-                    goToDeltaPage(-documentView.getPreviousPageIncrement());
-                } else if (c == KeyEventConstants.KEY_CODE_NEXT_PAGE &&
-                        m == KeyEventConstants.MODIFIER_NEXT_PAGE) {
-                    DocumentView documentView = documentViewController.getDocumentView();
-                    goToDeltaPage(documentView.getNextPageIncrement());
-                } else if (c == KeyEventConstants.KEY_CODE_LAST_PAGE &&
-                        m == KeyEventConstants.MODIFIER_LAST_PAGE) {
-                    showPage(getPageTree().getNumberOfPages() - 1);
-                } else if (c == KeyEventConstants.KEY_CODE_SEARCH &&
-                        m == KeyEventConstants.MODIFIER_SEARCH) {
-                    if (e.isShiftDown()) {
-                        showSearchPanel();
-                    } else {
-                        showSearch();
-                    }
-                } else if (c == KeyEventConstants.KEY_CODE_GOTO &&
-                        m == KeyEventConstants.MODIFIER_GOTO) {
-                    showPageSelectionDialog();
-                }
+                action.doAction();
             } finally {
                 // set view pain back to previous icon
                 setDisplayTool(documentIcon);
@@ -5475,20 +5558,10 @@ public class SwingController extends ComponentAdapter
         }
     }
 
-    /**
-     * Controller takes AWT/Swing events, and maps them to its own events
-     * related to PDF Document manipulation
-     */
-    public void keyReleased(KeyEvent e) {
-    }
-
-    /**
-     * Controller takes AWT/Swing events, and maps them to its own events
-     * related to PDF Document manipulation
-     */
-    public void keyTyped(KeyEvent e) {
-        if (currentPageNumberTextField != null &&
-                e.getSource() == currentPageNumberTextField) {
+    private final class NumberTextFieldKeyListener extends KeyAdapter {
+        @Override
+        public void keyTyped(KeyEvent e) {
+            JTextField currentPageNumberTextField = (JTextField) e.getComponent();
             char c = e.getKeyChar();
             if (c == KeyEvent.VK_ESCAPE) {
                 String fieldValue = currentPageNumberTextField.getText();
