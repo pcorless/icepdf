@@ -15,15 +15,11 @@
  */
 package org.icepdf.core.pobjects.acroform;
 
-import org.icepdf.core.pobjects.Dictionary;
-import org.icepdf.core.pobjects.HexStringObject;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -180,7 +176,7 @@ public class SignatureDictionary extends Dictionary {
      */
     public static final Name CONTACT_INFO_KEY = new Name("ContactInfo");
 
-    public SignatureDictionary(Library library, HashMap entries) {
+    public SignatureDictionary(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 
@@ -257,10 +253,10 @@ public class SignatureDictionary extends Dictionary {
     }
 
     public ArrayList<SignatureReferenceDictionary> getReferences() {
-        List<HashMap> tmp = library.getArray(entries, REFERENCE_KEY);
+        List<DictionaryEntries> tmp = library.getArray(entries, REFERENCE_KEY);
         if (tmp != null && tmp.size() > 0) {
             ArrayList<SignatureReferenceDictionary> references = new ArrayList<>(tmp.size());
-            for (HashMap reference : tmp) {
+            for (DictionaryEntries reference : tmp) {
                 references.add(new SignatureReferenceDictionary(library, reference));
             }
             return references;
@@ -326,7 +322,7 @@ public class SignatureDictionary extends Dictionary {
         return library.getInt(entries, V_KEY);
     }
 
-    public HashMap getBuildDictionary() {
+    public DictionaryEntries getBuildDictionary() {
         return library.getDictionary(entries, PROP_BUILD_KEY);
     }
 

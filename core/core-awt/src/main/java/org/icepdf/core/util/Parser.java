@@ -24,8 +24,6 @@ import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.fonts.FontFactory;
-import org.icepdf.core.pobjects.graphics.TilingPattern;
-import org.icepdf.core.pobjects.graphics.images.ImageStream;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -183,11 +181,11 @@ public class Parser {
                 deepnessCount++;
                 // pop dictionary that defines the stream
                 Object tmp = stack.pop();
-                HashMap streamHash;
+                DictionaryEntries streamHash;
                 if (tmp instanceof Dictionary) {
                     streamHash = ((Dictionary) tmp).getEntries();
                 } else {
-                    streamHash = (HashMap) tmp;
+                    streamHash = (DictionaryEntries) tmp;
                 }
                 // find the length of the stream
                 int streamLength = library.getInt(streamHash, Dictionary.LENGTH_KEY);
@@ -284,56 +282,56 @@ public class Parser {
                     // found a xref stream which is made up it's own entry format
                     // different then an standard xref table, mainly used to
                     // access cross-reference entries but also to compress xref tables.
-                    if (type.equals("XRef")) {
-                        stream = new Stream(library, streamHash, streamInputWrapper);
-                        stream.init();
-                        InputStream in = stream.getDecodedByteArrayInputStream();
-                        CrossReference xrefStream = new CrossReference();
-                        if (in != null) {
-                            try {
-                                xrefStream.addXRefStreamEntries(library, streamHash, in);
-                            } finally {
-                                try {
-                                    in.close();
-                                } catch (Throwable e) {
-                                    logger.log(Level.WARNING, "Error appending stream entries.", e);
-                                }
-                            }
-                        }
-
-                        // XRef dict is both Trailer dict and XRef stream dict.
-                        // PTrailer alters its dict, so copy it to keep everything sane
-                        HashMap trailerHash = (HashMap) streamHash.clone();
-                        trailer = new PTrailer(library, trailerHash, null, xrefStream);
-                    } else if (type.equals("ObjStm")) {
-                        stream = new ObjectStream(library, streamHash, streamInputWrapper);
-                    } else if (type.equals("XObject") && subtype.equals("Image")) {
-                        stream = new ImageStream(library, streamHash, streamInputWrapper);
-                    }
-                    // new Tiling Pattern Object, will have a stream.
-                    else if (type.equals("Pattern")) {
-                        stream = new TilingPattern(library, streamHash, streamInputWrapper);
-                    }
+//                    if (type.equals("XRef")) {
+//                        stream = new Stream(library, streamHash, streamInputWrapper);
+//                        stream.init();
+//                        InputStream in = stream.getDecodedByteArrayInputStream();
+//                        CrossReference xrefStream = new CrossReference();
+//                        if (in != null) {
+//                            try {
+//                                xrefStream.addXRefStreamEntries(library, streamHash, in);
+//                            } finally {
+//                                try {
+//                                    in.close();
+//                                } catch (Throwable e) {
+//                                    logger.log(Level.WARNING, "Error appending stream entries.", e);
+//                                }
+//                            }
+//                        }
+//
+//                        // XRef dict is both Trailer dict and XRef stream dict.
+//                        // PTrailer alters its dict, so copy it to keep everything sane
+//                        DictionaryEntries trailerHash = (DictionaryEntries) streamHash.clone();
+//                        trailer = new PTrailer(library, trailerHash, null, xrefStream);
+//                    } else if (type.equals("ObjStm")) {
+//                        stream = new ObjectStream(library, streamHash, streamInputWrapper);
+//                    } else if (type.equals("XObject") && subtype.equals("Image")) {
+//                        stream = new ImageStream(library, streamHash, streamInputWrapper);
+//                    }
+//                    // new Tiling Pattern Object, will have a stream.
+//                    else if (type.equals("Pattern")) {
+//                        stream = new TilingPattern(library, streamHash, streamInputWrapper);
+//                    }
                 }
                 if (stream == null && subtype != null) {
                     // new form object
-                    if (subtype.equals("Image")) {
-                        stream = new ImageStream(library, streamHash, streamInputWrapper);
-                    } else if (subtype.equals("Form") && !"Pattern".equals(type)) {
-                        stream = new Form(library, streamHash, streamInputWrapper);
-                    } else if (subtype.equals("Form") && "Pattern".equals(type)) {
-                        stream = new TilingPattern(library, streamHash, streamInputWrapper);
-                    }
+//                    if (subtype.equals("Image")) {
+//                        stream = new ImageStream(library, streamHash, streamInputWrapper);
+//                    } else if (subtype.equals("Form") && !"Pattern".equals(type)) {
+//                        stream = new Form(library, streamHash, streamInputWrapper);
+//                    } else if (subtype.equals("Form") && "Pattern".equals(type)) {
+//                        stream = new TilingPattern(library, streamHash, streamInputWrapper);
+//                    }
                 }
                 if (trailer != null) {
                     stack.push(trailer);
                 } else {
                     // finally create a generic stream object which will be parsed
                     // at a later time
-                    if (stream == null) {
-                        stream = new Stream(library, streamHash, streamInputWrapper);
-                    }
-                    stack.push(stream);
+//                    if (stream == null) {
+//                        stream = new Stream(library, streamHash, streamInputWrapper);
+//                    }
+//                    stack.push(stream);
                     // forcing a object return just encase the length is wrong
                     // and we don't get to the endstream.
                     return addPObject(library, objectReference);
@@ -395,14 +393,14 @@ public class Parser {
                 // check for extra >> which we want to ignore
                 if (isTrailer ? deepnessCount > 0 : deepnessCount >= 0) {
                     if (!stack.isEmpty()) {
-                        HashMap<Object, Object> hashMap = new HashMap<>();
+                        DictionaryEntries hashMap = new DictionaryEntries();
                         Object obj = stack.pop();
                         // put all of the dictionary definistion into the
                         // the hashTabl
                         while (!((obj instanceof String)
                                 && (obj.equals("<<"))) && !stack.isEmpty()) {
                             Object key = stack.pop();
-                            hashMap.put(key, obj);
+                            hashMap.put((Name) key, obj);
                             if (!stack.isEmpty()) {
                                 obj = stack.pop();
                             } else {
@@ -484,7 +482,7 @@ public class Parser {
                     xrefTable = (CrossReference) stack.pop();
                 stack.clear();
                 isTrailer = true;
-                HashMap trailerDictionary = (HashMap) getObject(library);
+                DictionaryEntries trailerDictionary = (DictionaryEntries) getObject(library);
                 isTrailer = false;
                 return new PTrailer(library, trailerDictionary, xrefTable, null);
             }

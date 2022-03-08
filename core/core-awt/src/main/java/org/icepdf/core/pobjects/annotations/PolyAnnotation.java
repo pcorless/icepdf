@@ -1,10 +1,14 @@
 package org.icepdf.core.pobjects.annotations;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -79,7 +83,7 @@ public class PolyAnnotation extends MarkupAnnotation {
     public static final Name MEASURE_KEY = new Name("Measure");
 
 
-    public PolyAnnotation(Library l, HashMap h) {
+    public PolyAnnotation(Library l, DictionaryEntries h) {
         super(l, h);
     }
 

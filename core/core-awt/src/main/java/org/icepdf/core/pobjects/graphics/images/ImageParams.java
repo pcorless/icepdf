@@ -15,10 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics.images;
 
-import org.icepdf.core.pobjects.Dictionary;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.Reference;
-import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.DeviceGray;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.PColorSpace;
@@ -26,7 +23,6 @@ import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import static org.icepdf.core.pobjects.graphics.images.FaxDecoder.K_KEY;
@@ -75,7 +71,7 @@ public class ImageParams extends Dictionary {
     private Resources resources;
 
 
-    public ImageParams(Library library, HashMap entries, Resources resources) {
+    public ImageParams(Library library, DictionaryEntries entries, Resources resources) {
         super(library, entries);
         this.resources = resources;
     }
@@ -98,12 +94,12 @@ public class ImageParams extends Dictionary {
         return height;
     }
 
-    public HashMap getDecodeParams() {
+    public DictionaryEntries getDecodeParams() {
         return getDecodeParams(library, entries);
     }
 
-    public static HashMap getDecodeParams(Library library, HashMap entries) {
-        HashMap decodeParams = library.getDictionary(entries, DECODE_PARAM_KEY);
+    public static DictionaryEntries getDecodeParams(Library library, DictionaryEntries entries) {
+        DictionaryEntries decodeParams = library.getDictionary(entries, DECODE_PARAM_KEY);
         if (decodeParams != null &&
                 (decodeParams.containsKey(K_KEY) || decodeParams.size() > 0)) {
             return decodeParams;
@@ -115,8 +111,8 @@ public class ImageParams extends Dictionary {
                 for (Object obj : potential) {
                     if (obj instanceof Reference) {
                         Object found = library.getObject((Reference) obj);
-                        if (found instanceof HashMap) {
-                            return (HashMap) found;
+                        if (found instanceof DictionaryEntries) {
+                            return (DictionaryEntries) found;
                         }
                     }
                 }
@@ -213,23 +209,23 @@ public class ImageParams extends Dictionary {
         return null;
     }
 
-    public HashMap getDictionary(Name key) {
+    public DictionaryEntries getDictionary(Name key) {
         return library.getDictionary(entries, key);
     }
 
-    public Object getObject(HashMap entries, Name key) {
+    public Object getObject(DictionaryEntries entries, Name key) {
         return library.getObject(entries, key);
     }
 
-    public float getFloat(HashMap dictionaryEntries, Name key) {
+    public float getFloat(DictionaryEntries dictionaryEntries, Name key) {
         return library.getFloat(dictionaryEntries, key);
     }
 
-    public int getInt(HashMap dictionaryEntries, Name key) {
+    public int getInt(DictionaryEntries dictionaryEntries, Name key) {
         return library.getInt(dictionaryEntries, key);
     }
 
-    public boolean getBlackIs1(HashMap decodeParmsDictionary) {
+    public boolean getBlackIs1(DictionaryEntries decodeParmsDictionary) {
         Object blackIs1Obj = library.getObject(decodeParmsDictionary, BLACKIS1_KEY);
         if (blackIs1Obj != null) {
             if (blackIs1Obj instanceof Boolean) {

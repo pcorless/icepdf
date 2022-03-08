@@ -27,7 +27,6 @@ import org.icepdf.core.util.Library;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 
@@ -44,7 +43,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
 
     private ChoiceFieldDictionary fieldDictionary;
 
-    public ChoiceWidgetAnnotation(Library l, HashMap h) {
+    public ChoiceWidgetAnnotation(Library l, DictionaryEntries h) {
         super(l, h);
         fieldDictionary = new ChoiceFieldDictionary(library, entries);
     }
@@ -134,7 +133,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
             StateManager stateManager = library.getStateManager();
             stateManager.addChange(new PObject(appearanceStream, appearanceStream.getPObjectReference()));
             // add an AP entry for the
-            HashMap<Object, Object> appearanceRefs = new HashMap<>();
+            DictionaryEntries appearanceRefs = new DictionaryEntries();
             appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, appearanceStream.getPObjectReference());
             entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
             Rectangle2D formBbox = new Rectangle2D.Float(0, 0,

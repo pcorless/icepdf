@@ -15,10 +15,7 @@
  */
 package org.icepdf.core.pobjects.acroform;
 
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.Resources;
-import org.icepdf.core.pobjects.Stream;
-import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.util.Library;
@@ -26,7 +23,6 @@ import org.icepdf.core.util.Utils;
 import org.icepdf.core.util.parser.content.ContentParser;
 
 import java.awt.*;
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -91,7 +87,7 @@ public class VariableTextFieldDictionary extends FieldDictionary {
     protected Font font = null;
     protected Color color = Color.BLACK;
 
-    public VariableTextFieldDictionary(Library library, HashMap entries) {
+    public VariableTextFieldDictionary(Library library, DictionaryEntries entries) {
         super(library, entries);
 
         // parse out quadding

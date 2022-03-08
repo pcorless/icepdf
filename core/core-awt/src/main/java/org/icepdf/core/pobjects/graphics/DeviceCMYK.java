@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
@@ -24,7 +25,6 @@ import java.awt.color.ICC_ColorSpace;
 import java.awt.color.ICC_Profile;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**
@@ -54,7 +54,7 @@ public class DeviceCMYK extends PColorSpace {
         iccCmykColorSpace = getIccCmykColorSpace();
     }
 
-    public DeviceCMYK(Library l, HashMap h) {
+    public DeviceCMYK(Library l, DictionaryEntries h) {
         super(l, h);
     }
 

@@ -130,14 +130,8 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
     private GeneralPath markupPath;
     private ArrayList<Shape> markupBounds;
 
-    /**
-     * Creates a new instance of an TextMarkupAnnotation.
-     *
-     * @param l document library.
-     * @param h dictionary entries.
-     */
-    public TextMarkupAnnotation(Library l, HashMap h) {
-        super(l, h);
+    public TextMarkupAnnotation(Library library, DictionaryEntries dictionaryEntries) {
+        super(library, dictionaryEntries);
     }
 
     @SuppressWarnings("unchecked")
@@ -208,7 +202,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
         StateManager stateManager = library.getStateManager();
 
         // create a new entries to hold the annotation properties
-        HashMap<Name, Object> entries = new HashMap<>();
+        DictionaryEntries entries = new DictionaryEntries();
         // set default link annotation values.
         entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
         entries.put(Dictionary.SUBTYPE_KEY, subType);

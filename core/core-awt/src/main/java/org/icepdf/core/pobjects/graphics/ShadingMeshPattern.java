@@ -1,6 +1,7 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.io.BitStream;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.functions.Function;
@@ -10,7 +11,6 @@ import org.icepdf.core.util.Library;
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**
@@ -52,7 +52,7 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
     // converted decode data to simply process later on, taken from our DecodeRasterOp class.
     protected float[] decode;
 
-    public ShadingMeshPattern(Library l, HashMap h, Stream meshDataStream) {
+    public ShadingMeshPattern(Library l, DictionaryEntries h, Stream meshDataStream) {
         super(l, h);
         this.meshDataStream = meshDataStream;
         shadingDictionary = meshDataStream.getEntries();

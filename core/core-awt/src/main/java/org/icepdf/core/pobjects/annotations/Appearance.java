@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 
 import java.util.HashMap;
@@ -86,7 +87,7 @@ public class Appearance {
      *
      * @param entries parent annotation dictionary to update.
      */
-    protected void updateAppearanceDictionary(HashMap<Object, Object> entries) {
+    protected void updateAppearanceDictionary(DictionaryEntries entries) {
         entries.put(Annotation.APPEARANCE_STATE_KEY, selectedName);
     }
 }

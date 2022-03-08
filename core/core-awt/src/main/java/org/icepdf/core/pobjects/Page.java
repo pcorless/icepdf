@@ -215,9 +215,9 @@ public class Page extends Dictionary {
      * a page entity and all of it child elements that are associated with it.
      *
      * @param l pointer to default library containing all document objects
-     * @param h HashMap containing all of the dictionary entries
+     * @param h DictionaryEntries containing all of the dictionary entries
      */
-    public Page(Library l, HashMap h) {
+    public Page(Library l, DictionaryEntries h) {
         super(l, h);
     }
 
@@ -322,8 +322,8 @@ public class Page extends Dictionary {
                     a = (Annotation) annotObj;
                 }
                 // or build annotations from dictionary.
-                else if (annotObj instanceof HashMap) { // HashMap lacks "Type"->"Annot" entry
-                    a = Annotation.buildAnnotation(library, (HashMap) annotObj);
+                else if (annotObj instanceof DictionaryEntries) { // HashMap lacks "Type"->"Annot" entry
+                    a = Annotation.buildAnnotation(library, (DictionaryEntries) annotObj);
                 } else {
                     a = null;
                 }
@@ -1060,8 +1060,8 @@ public class Page extends Dictionary {
         Object tmp = library.getObject(entries, PARENT_KEY);
         if (tmp instanceof PageTree) {
             return (PageTree) tmp;
-        } else if (tmp instanceof HashMap) {
-            return new PageTree(library, (HashMap) tmp);
+        } else if (tmp instanceof DictionaryEntries) {
+            return new PageTree(library, (DictionaryEntries) tmp);
         } else {
             return null;
         }

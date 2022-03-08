@@ -23,7 +23,6 @@ import org.icepdf.core.util.parser.content.ContentParser;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,7 +46,7 @@ public class AppearanceState extends Dictionary {
     protected String originalContentStream;
     protected Resources resources;
 
-    public AppearanceState(Library library, HashMap entries, Object streamOrDictionary) {
+    public AppearanceState(Library library, DictionaryEntries entries, Object streamOrDictionary) {
         super(library, entries);
         if (streamOrDictionary instanceof Reference) {
             streamOrDictionary = library.getObject((Reference) streamOrDictionary);
@@ -85,13 +84,13 @@ public class AppearanceState extends Dictionary {
         }
     }
 
-    public AppearanceState(Library library, HashMap entries) {
+    public AppearanceState(Library library, DictionaryEntries entries) {
         super(library, entries);
         matrix = new AffineTransform();
         bbox = (Rectangle2D) library.getObject(entries, Annotation.BBOX_VALUE);
         InteractiveForm form = library.getCatalog().getInteractiveForm();
         // assign parent resource if not found in current appearance.
-        if (form != null){
+        if (form != null) {
             resources = form.getResources();
         }
     }

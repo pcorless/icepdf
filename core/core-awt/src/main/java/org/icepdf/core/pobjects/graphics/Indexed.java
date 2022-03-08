@@ -15,14 +15,10 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.Reference;
-import org.icepdf.core.pobjects.Stream;
-import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -53,7 +49,7 @@ public class Indexed extends PColorSpace {
      * @param entries    dictionary entries.
      * @param dictionary indexed colour dictionary.
      */
-    Indexed(Library library, HashMap entries, List dictionary) {
+    Indexed(Library library, DictionaryEntries entries, List dictionary) {
         super(library, entries);
         // get the base colour space
         colorSpace = getColorSpace(library, dictionary.get(1));

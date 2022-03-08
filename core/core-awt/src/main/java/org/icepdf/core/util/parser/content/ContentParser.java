@@ -1,5 +1,7 @@
 package org.icepdf.core.util.parser.content;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.graphics.GlyphOutlineClip;
@@ -975,7 +977,7 @@ public class ContentParser extends AbstractContentParser {
     private void parseInlineImage(Lexer p, Shapes shapes, Page page) throws IOException {
         try {
             Object tok;
-            HashMap<Object, Object> iih = new HashMap<>();
+            DictionaryEntries iih = new DictionaryEntries();
             tok = p.next();
             while (!tok.equals(Operands.ID)) {
                 if (ImageParams.BPC_KEY.equals(tok)) {
@@ -998,7 +1000,7 @@ public class ContentParser extends AbstractContentParser {
                     tok = ImageParams.WIDTH_KEY;
                 }
                 Object tok1 = p.next();
-                iih.put(tok, tok1);
+                iih.put((Name) tok, tok1);
                 tok = p.next();
             }
             // For inline images in content streams, we have to use

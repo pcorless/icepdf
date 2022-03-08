@@ -1,6 +1,7 @@
 package org.icepdf.core.pobjects.fonts.zfont;
 
 import org.apache.fontbox.util.BoundingBox;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.pobjects.fonts.FontManager;
@@ -33,7 +34,7 @@ public abstract class CompositeFont extends SimpleFont {
     protected float[] widths = null;
 
 
-    public CompositeFont(Library library, HashMap entries) {
+    public CompositeFont(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 
@@ -56,9 +57,9 @@ public abstract class CompositeFont extends SimpleFont {
         }
         // Get CIDSystemInfo dictionary so we can get ordering data
         Object obj = library.getObject(entries, CID_SYSTEM_INFO_KEY);
-        if (obj instanceof HashMap) {
-            StringObject orderingObject = (StringObject) ((HashMap) obj).get(new Name("Ordering"));
-            StringObject registryObject = (StringObject) ((HashMap) obj).get(new Name("Registry"));
+        if (obj instanceof DictionaryEntries) {
+            StringObject orderingObject = (StringObject) ((DictionaryEntries) obj).get(new Name("Ordering"));
+            StringObject registryObject = (StringObject) ((DictionaryEntries) obj).get(new Name("Registry"));
             if (orderingObject != null && registryObject != null) {
                 ordering = orderingObject.getDecryptedLiteralString(library.getSecurityManager());
                 String registry = registryObject.getDecryptedLiteralString(library.getSecurityManager());

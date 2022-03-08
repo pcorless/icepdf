@@ -16,13 +16,13 @@
 package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 /**
  * The UR transform method shall be used to detect changes to a document that shall invalidate a usage rightssignature,
@@ -175,7 +175,7 @@ public class UR3TransferParam extends Dictionary implements TransformParams {
 
     public static final Name PERMISSION_KEY = new Name("P");
 
-    public UR3TransferParam(Library library, HashMap entries) {
+    public UR3TransferParam(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 

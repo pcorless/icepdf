@@ -306,7 +306,7 @@ public class FontManager {
                 tokens = new StringTokenizer(fontPreferences.get(name, null), "|");
                 // get family, decoration and path tokens
                 family = tokens.nextToken();
-                decorations = new Integer(tokens.nextToken());
+                decorations = Integer.parseInt(tokens.nextToken());
                 path = tokens.nextToken();
                 if (name != null && family != null && path != null) {
                     // check exclusion list

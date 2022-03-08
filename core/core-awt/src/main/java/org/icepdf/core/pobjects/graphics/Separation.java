@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.functions.Function;
 import org.icepdf.core.util.ColorUtil;
@@ -101,7 +102,7 @@ public class Separation extends PColorSpace {
      * @param alternateSpace name of alternative colour space
      * @param tintTransform  function which defines the tint transform
      */
-    protected Separation(Library l, HashMap h, Object name, Object alternateSpace, Object tintTransform) {
+    protected Separation(Library l, DictionaryEntries h, Object name, Object alternateSpace, Object tintTransform) {
         super(l, h);
         alternate = getColorSpace(l, alternateSpace);
         colorTable1B = new ConcurrentHashMap<>(256);

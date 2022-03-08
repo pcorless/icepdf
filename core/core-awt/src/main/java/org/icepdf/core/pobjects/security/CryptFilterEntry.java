@@ -17,10 +17,9 @@
 package org.icepdf.core.pobjects.security;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
-
-import java.util.HashMap;
 
 /**
  * Individual Crypt filter definition.  A filter is associated with a name
@@ -34,7 +33,7 @@ public class CryptFilterEntry extends Dictionary {
     public static final Name CFM_KEY = new Name("CFM");
     public static final Name LENGTH_KEY = new Name("Length");
 
-    public CryptFilterEntry(Library library, HashMap entries) {
+    public CryptFilterEntry(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 

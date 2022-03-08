@@ -16,12 +16,12 @@
 
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.color.ColorSpace;
-import java.util.HashMap;
 
 /**
  * A CalGray colour space (PDF 1.1) is a special case of a single-component
@@ -47,7 +47,7 @@ public class CalGray extends PColorSpace {
     };
     protected float gamma = 1.0f;
 
-    public CalGray(Library l, HashMap h) {
+    public CalGray(Library l, DictionaryEntries h) {
         super(l, h);
 
         java.util.List m = (java.util.List) h.get(WHITE_POINT_KEY);

@@ -15,13 +15,8 @@
  */
 package org.icepdf.core.pobjects.actions;
 
-import org.icepdf.core.pobjects.Destination;
-import org.icepdf.core.pobjects.FileSpecification;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
-
-import java.util.HashMap;
 
 /**
  * <p>A remote go-to action is similar to an ordinary go-to action but jumps to
@@ -50,15 +45,15 @@ public class GoToRAction extends Action {
      * @param l document library.
      * @param h Action dictionary entries.
      */
-    public GoToRAction(Library l, HashMap h) {
+    public GoToRAction(Library l, DictionaryEntries h) {
         super(l, h);
 
         externalDestination =
                 new Destination(library, library.getObject(entries, Destination.D_KEY));
         Object tmp = library.getObject(entries, F_KEY);
-        if (tmp instanceof HashMap) {
+        if (tmp instanceof DictionaryEntries) {
             fileSpecification =
-                    new FileSpecification(library, (HashMap) tmp);
+                    new FileSpecification(library, (DictionaryEntries) tmp);
         } else if (tmp instanceof StringObject) {
             externalFile =
                     ((StringObject) tmp)

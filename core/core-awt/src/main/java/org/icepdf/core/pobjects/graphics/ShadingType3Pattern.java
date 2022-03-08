@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.functions.Function;
 import org.icepdf.core.pobjects.graphics.batik.ext.awt.MultipleGradientPaint;
 import org.icepdf.core.pobjects.graphics.batik.ext.awt.RadialGradientPaint;
@@ -23,7 +24,6 @@ import org.icepdf.core.util.Library;
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -60,7 +60,7 @@ public class ShadingType3Pattern extends ShadingPattern {
     protected RadialGradientPaint radialGradientPaint;
 
 
-    public ShadingType3Pattern(Library library, HashMap entries) {
+    public ShadingType3Pattern(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 

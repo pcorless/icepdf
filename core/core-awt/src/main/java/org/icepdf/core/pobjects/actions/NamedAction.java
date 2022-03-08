@@ -15,10 +15,9 @@
  */
 package org.icepdf.core.pobjects.actions;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
-
-import java.util.HashMap;
 
 /**
  * Named actions that the conformign reader shall support.  Names can be but not limited too.
@@ -69,7 +68,7 @@ public class NamedAction extends Action {
 
     private Name name;
 
-    public NamedAction(Library library, HashMap entries) {
+    public NamedAction(Library library, DictionaryEntries entries) {
         super(library, entries);
 
         Object tmp = library.getObject(entries, N_KEY);

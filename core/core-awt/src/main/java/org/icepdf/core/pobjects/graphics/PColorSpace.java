@@ -16,12 +16,12 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -43,8 +43,8 @@ public abstract class PColorSpace extends Dictionary {
         return name.substring(index + 1);
     }
 
-    PColorSpace(Library l, HashMap h) {
-        super(l, h);
+    PColorSpace(Library library, DictionaryEntries dictionaryEntries) {
+        super(library, dictionaryEntries);
     }
 
     /**
@@ -86,11 +86,11 @@ public abstract class PColorSpace extends Dictionary {
                         || colorant.equals(Indexed.I_KEY)) {
                     colorSpace = new Indexed(library, null, v);
                 } else if (colorant.equals(CalRGB.CALRGB_KEY)) {
-                    colorSpace = new CalRGB(library, getHashMap(library, v.get(1)));
+                    colorSpace = new CalRGB(library, getDictionaryEntries(library, v.get(1)));
                 } else if (colorant.equals(CalGray.CAL_GRAY_KEY)) {
-                    colorSpace = new CalGray(library, getHashMap(library, v.get(1)));
+                    colorSpace = new CalGray(library, getDictionaryEntries(library, v.get(1)));
                 } else if (colorant.equals(Lab.LAB_KEY)) {
-                    colorSpace = new Lab(library, getHashMap(library, v.get(1)));
+                    colorSpace = new Lab(library, getDictionaryEntries(library, v.get(1)));
                 } else if (colorant.equals(Separation.SEPARATION_KEY)) {
                     colorSpace = new Separation(
                             library,
@@ -125,21 +125,21 @@ public abstract class PColorSpace extends Dictionary {
                             tmp = library.getObject((Reference) v.get(1));
                             if (tmp instanceof PColorSpace) {
                                 patternColour.setPColorSpace((PColorSpace) tmp);
-                            } else if (tmp instanceof HashMap) {
+                            } else if (tmp instanceof DictionaryEntries) {
                                 patternColour.setPColorSpace(
                                         getColorSpace(library, tmp));
                             }
                         } else {
                             patternColour.setPColorSpace(
                                     getColorSpace(library,
-                                            getHashMap(library, v.get(1))));
+                                            getDictionaryEntries(library, v.get(1))));
                         }
 
                     }
                     colorSpace = patternColour;
                 }
-            } else if (o instanceof HashMap) {
-                colorSpace = new PatternColor(library, (HashMap) o);
+            } else if (o instanceof DictionaryEntries) {
+                colorSpace = new PatternColor(library, (DictionaryEntries) o);
             }
             if (colorSpace == null && logger.isLoggable(Level.FINE)) {
                 logger.fine("Unsupported ColorSpace: " + o);
@@ -160,16 +160,16 @@ public abstract class PColorSpace extends Dictionary {
      *
      * @param obj object or Reference from color dictionary.
      * @return a dictionary or null if the object is not of type Reference or
-     *         HashMap.
+     * HashMap.
      */
-    private static HashMap getHashMap(Library library, Object obj) {
-        HashMap entries = null;
-        if (obj instanceof HashMap) {
-            entries = (HashMap) obj;
+    private static DictionaryEntries getDictionaryEntries(Library library, Object obj) {
+        DictionaryEntries entries = null;
+        if (obj instanceof DictionaryEntries) {
+            entries = (DictionaryEntries) obj;
         } else if (obj instanceof Reference) {
             obj = library.getObject((Reference) obj);
-            if (obj instanceof HashMap) {
-                entries = (HashMap) obj;
+            if (obj instanceof DictionaryEntries) {
+                entries = (DictionaryEntries) obj;
             }
         }
         return entries;
@@ -212,8 +212,8 @@ public abstract class PColorSpace extends Dictionary {
             out[i] = (((float) in[i]) / maxval);
     }
 
-    public static float[] reverse(float f[]) {
-        float n[] = new float[f.length];
+    public static float[] reverse(float[] f) {
+        float[] n = new float[f.length];
         //System.out.print("R ");
         for (int i = 0; i < f.length; i++) {
             n[i] = f[f.length - i - 1];

@@ -15,13 +15,9 @@
  */
 package org.icepdf.core.pobjects.acroform;
 
-import org.icepdf.core.pobjects.Dictionary;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.Names;
-import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -179,7 +175,7 @@ public class SeedValueDictionary extends Dictionary {
 
     private int flags;
 
-    public SeedValueDictionary(Library library, HashMap entries) {
+    public SeedValueDictionary(Library library, DictionaryEntries entries) {
         super(library, entries);
 
         flags = library.getInt(entries, Ff_KEY);
@@ -232,8 +228,8 @@ public class SeedValueDictionary extends Dictionary {
      */
     public CertSeedValueDictionary getCert() {
         Object tmp = library.getObject(entries, CERT_KEY);
-        if (tmp instanceof HashMap) {
-            return new CertSeedValueDictionary(library, (HashMap) tmp);
+        if (tmp instanceof DictionaryEntries) {
+            return new CertSeedValueDictionary(library, (DictionaryEntries) tmp);
         } else {
             return null;
         }
@@ -252,20 +248,20 @@ public class SeedValueDictionary extends Dictionary {
     }
 
     // todo consider class for dictionary def.
-    public HashMap getMDP() {
+    public DictionaryEntries getMDP() {
         Object tmp = library.getObject(entries, MDP_KEY);
-        if (tmp instanceof HashMap) {
-            return (HashMap) tmp;
+        if (tmp instanceof DictionaryEntries) {
+            return (DictionaryEntries) tmp;
         } else {
             return null;
         }
     }
 
     // todo consider class for dictionary def.
-    public HashMap getTimeStamp() {
+    public DictionaryEntries getTimeStamp() {
         Object tmp = library.getObject(entries, TIME_STAMP_KEY);
-        if (tmp instanceof HashMap) {
-            return (HashMap) tmp;
+        if (tmp instanceof DictionaryEntries) {
+            return (DictionaryEntries) tmp;
         } else {
             return null;
         }

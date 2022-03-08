@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.fonts;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.zfont.*;
@@ -23,7 +24,6 @@ import org.icepdf.core.util.Library;
 
 import java.io.File;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -76,7 +76,7 @@ public class FontFactory {
     private FontFactory() {
     }
 
-    public Font getFont(Library library, HashMap entries) {
+    public Font getFont(Library library, DictionaryEntries entries) {
 
         Font font = null;
 

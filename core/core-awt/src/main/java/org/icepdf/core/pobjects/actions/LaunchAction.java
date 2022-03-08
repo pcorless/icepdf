@@ -15,13 +15,8 @@
  */
 package org.icepdf.core.pobjects.actions;
 
-import org.icepdf.core.pobjects.FileSpecification;
-import org.icepdf.core.pobjects.LiteralStringObject;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
-
-import java.util.HashMap;
 
 /**
  * <p>The launch action launches an applicaiton or opens or prints a
@@ -65,7 +60,7 @@ public class LaunchAction extends Action {
      * @param l document library.
      * @param h Action dictionary entries.
      */
-    public LaunchAction(Library l, HashMap h) {
+    public LaunchAction(Library l, DictionaryEntries h) {
         super(l, h);
         winLaunchParameters = new WindowsLaunchParameters();
     }
@@ -133,8 +128,8 @@ public class LaunchAction extends Action {
      */
     public FileSpecification getFileSpecification() {
         Object value = getObject(FILE_KEY);
-        if (value instanceof HashMap) {
-            fileSpecification = new FileSpecification(library, (HashMap) value);
+        if (value instanceof DictionaryEntries) {
+            fileSpecification = new FileSpecification(library, (DictionaryEntries) value);
         }
         return fileSpecification;
     }
@@ -173,9 +168,9 @@ public class LaunchAction extends Action {
 
 //            HashMap winLaunch = library.getDictionary(entries, "Win");
             Object value = getObject(FILE_KEY);
-            if (value instanceof HashMap) {
+            if (value instanceof DictionaryEntries) {
                 launchFileSpecification = new FileSpecification(library,
-                        (HashMap) value);
+                        (DictionaryEntries) value);
             } else if (value instanceof StringObject) {
                 launchFile = ((StringObject) value).getDecryptedLiteralString(
                         library.getSecurityManager());

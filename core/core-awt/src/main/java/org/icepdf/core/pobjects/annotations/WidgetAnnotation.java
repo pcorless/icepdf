@@ -16,11 +16,11 @@
 
 package org.icepdf.core.pobjects.annotations;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
-import java.util.HashMap;
 
 /**
  * Interactive forms (see 12.7, "Interactive Forms") use widget annotations (PDF 1.2)
@@ -38,7 +38,7 @@ public class WidgetAnnotation extends AbstractWidgetAnnotation {
     private FieldDictionary fieldDictionary;
 
 
-    public WidgetAnnotation(Library l, HashMap h) {
+    public WidgetAnnotation(Library l, DictionaryEntries h) {
         super(l, h);
         fieldDictionary = new FieldDictionary(library, entries);
     }

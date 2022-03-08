@@ -16,6 +16,7 @@
 
 package org.icepdf.core.pobjects.actions;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.FileSpecification;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
@@ -170,7 +171,7 @@ public class SubmitFormAction extends FormAction {
      */
     public int EMBED_FORM_BIT = 0X0008192;  // bit 14
 
-    public SubmitFormAction(Library l, HashMap h) {
+    public SubmitFormAction(Library l, DictionaryEntries h) {
         super(l, h);
     }
 
@@ -200,8 +201,8 @@ public class SubmitFormAction extends FormAction {
 
     public FileSpecification getFileSpecification() {
         Object tmp = library.getObject(entries, F_KEY);
-        if (tmp instanceof HashMap) {
-            return new FileSpecification(library, (HashMap) tmp);
+        if (tmp instanceof DictionaryEntries) {
+            return new FileSpecification(library, (DictionaryEntries) tmp);
         }
         return null;
     }

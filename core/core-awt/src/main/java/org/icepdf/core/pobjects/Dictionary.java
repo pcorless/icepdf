@@ -17,7 +17,7 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.util.Library;
 
-import java.util.HashMap;
+import java.util.List;
 
 /**
  * <p>This class represents a PDF document's <i>Dictionary</i> object.  A
@@ -53,7 +53,7 @@ public class Dictionary {
     /**
      * Table of associative pairs of objects.
      */
-    protected HashMap<Object, Object> entries;
+    protected DictionaryEntries entries;
 
     /**
      * Indicates if Dictionary has been initiated.
@@ -80,11 +80,11 @@ public class Dictionary {
      * @param entries dictionary entries.
      */
     @SuppressWarnings("unchecked")
-    public Dictionary(Library library, HashMap entries) {
+    public Dictionary(Library library, DictionaryEntries entries) {
         this.library = library;
         this.entries = entries;
         if (this.entries == null) {
-            this.entries = new HashMap<>();
+            this.entries = new DictionaryEntries();
         }
     }
 
@@ -128,7 +128,7 @@ public class Dictionary {
      *
      * @return a copy of the Dictionary's entries.
      */
-    public HashMap<Object, Object> getEntries() {
+    public DictionaryEntries getEntries() {
         return entries;
     }
 
@@ -160,6 +160,14 @@ public class Dictionary {
      */
     public int getInt(Name key) {
         return library.getInt(entries, key);
+    }
+
+    public List getList(Name key) {
+        Object o = getObject(key);
+        if (o instanceof List) {
+            return (List) o;
+        }
+        return null;
     }
 
     /**

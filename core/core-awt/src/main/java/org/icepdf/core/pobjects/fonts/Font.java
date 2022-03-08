@@ -17,11 +17,10 @@ package org.icepdf.core.pobjects.fonts;
 
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.util.Library;
-
-import java.util.HashMap;
 
 /**
  * <p>This class represents a PDF object which has a subtype value equal to "Font".
@@ -241,7 +240,7 @@ public abstract class Font extends Dictionary {
      * @param library Library of all objects in PDF
      * @param entries hash of parsed font attributes
      */
-    public Font(Library library, HashMap entries) {
+    public Font(Library library, DictionaryEntries entries) {
         super(library, entries);
 
         // name of object  "Font"
@@ -292,8 +291,8 @@ public abstract class Font extends Dictionary {
             fontDescriptor = (FontDescriptor) of;
         }
         // encase of missing the type entry so we
-        else if (of instanceof HashMap) {
-            fontDescriptor = new FontDescriptor(library, (HashMap) of);
+        else if (of instanceof DictionaryEntries) {
+            fontDescriptor = new FontDescriptor(library, (DictionaryEntries) of);
         }
         if (fontDescriptor != null) {
             fontDescriptor.init(subtype);

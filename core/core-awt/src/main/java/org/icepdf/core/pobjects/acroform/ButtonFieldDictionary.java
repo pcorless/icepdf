@@ -16,9 +16,8 @@
 
 package org.icepdf.core.pobjects.acroform;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.util.Library;
-
-import java.util.HashMap;
 
 /**
  * The ButtonFieldDictionary contains all the dictionary entries specific to
@@ -61,7 +60,7 @@ public class ButtonFieldDictionary extends VariableTextFieldDictionary {
     protected ButtonFieldType buttonFieldType;
 
     @SuppressWarnings("unchecked")
-    public ButtonFieldDictionary(Library library, HashMap entries) {
+    public ButtonFieldDictionary(Library library, DictionaryEntries entries) {
         super(library, entries);
 
     }

@@ -17,7 +17,6 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.util.Library;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -76,13 +75,13 @@ public class PTrailer extends Dictionary {
     /**
      * Create a new PTrailer object
      *
-     * @param library    document library
-     * @param dictionary trailer dictionary
-     * @param xrefTable  xref table reference
-     * @param xrefStream xref stream reference
+     * @param library           document library
+     * @param dictionaryEntries trailer dictionary
+     * @param xrefTable         xref table reference
+     * @param xrefStream        xref stream reference
      */
-    public PTrailer(Library library, HashMap dictionary, CrossReference xrefTable, CrossReference xrefStream) {
-        super(library, dictionary);
+    public PTrailer(Library library, DictionaryEntries dictionaryEntries, CrossReference xrefTable, CrossReference xrefStream) {
+        super(library, dictionaryEntries);
 
         crossReferenceTable = xrefTable;
         crossReferenceStream = xrefStream;
@@ -181,8 +180,8 @@ public class PTrailer extends Dictionary {
         }
         // there are however a few instances where the dictionary is specified
         // directly
-        else if (tmp instanceof HashMap) {
-            return new Catalog(library, (HashMap<Object, Object>) tmp);
+        else if (tmp instanceof DictionaryEntries) {
+            return new Catalog(library, (DictionaryEntries) tmp);
         }
         // if no root was found we return so that the use will be notified
         // of the problem which is the PDF can not be loaded.
@@ -199,10 +198,10 @@ public class PTrailer extends Dictionary {
      * @return encryption dictionary
      */
     @SuppressWarnings("unchecked")
-    public HashMap<Object, Object> getEncrypt() {
+    public DictionaryEntries getEncrypt() {
         Object encryptParams = library.getObject(entries, ENCRYPT_KEY);
-        if (encryptParams instanceof HashMap) {
-            return (HashMap) encryptParams;
+        if (encryptParams instanceof DictionaryEntries) {
+            return (DictionaryEntries) encryptParams;
         } else {
             return null;
         }
@@ -217,8 +216,8 @@ public class PTrailer extends Dictionary {
      */
     public PInfo getInfo() {
         final Object info = library.getObject(entries, INFO_KEY);
-        if (info instanceof HashMap) {
-            final PInfo pInfo = new PInfo(library, (HashMap) info);
+        if (info instanceof DictionaryEntries) {
+            final PInfo pInfo = new PInfo(library, (DictionaryEntries) info);
             pInfo.setPObjectReference(library.getReference(entries, INFO_KEY));
             return pInfo;
         } else {
@@ -264,10 +263,10 @@ public class PTrailer extends Dictionary {
         nextTrailer.getPrimaryCrossReference().addToEndOfChainOfPreviousXRefs(getPrimaryCrossReference());
 
         // Later key,value pairs take precedence over previous entries
-        HashMap nextDictionary = nextTrailer.getDictionary();
-        HashMap currDictionary = getDictionary();
-        Set currKeys = currDictionary.keySet();
-        for (Object currKey : currKeys) {
+        DictionaryEntries nextDictionary = nextTrailer.getDictionary();
+        DictionaryEntries currDictionary = getDictionary();
+        Set<Name> currKeys = currDictionary.keySet();
+        for (Name currKey : currKeys) {
             if (!nextDictionary.containsKey(currKey)) {
                 Object currValue = currDictionary.get(currKey);
                 nextDictionary.put(currKey, currValue);
@@ -281,10 +280,10 @@ public class PTrailer extends Dictionary {
         getPrimaryCrossReference().addToEndOfChainOfPreviousXRefs(previousTrailer.getPrimaryCrossReference());
 
         // Later key,value pairs take precedence over previous entries
-        HashMap currDictionary = getDictionary();
-        HashMap prevDictionary = previousTrailer.getDictionary();
-        Set prevKeys = prevDictionary.keySet();
-        for (Object prevKey : prevKeys) {
+        DictionaryEntries currDictionary = getDictionary();
+        DictionaryEntries prevDictionary = previousTrailer.getDictionary();
+        Set<Name> prevKeys = prevDictionary.keySet();
+        for (Name prevKey : prevKeys) {
             if (!currDictionary.containsKey(prevKey)) {
                 Object prevValue = prevDictionary.get(prevKey);
                 currDictionary.put(prevKey, prevValue);
@@ -332,7 +331,7 @@ public class PTrailer extends Dictionary {
      *
      * @return dictionary
      */
-    public HashMap getDictionary() {
+    public DictionaryEntries getDictionary() {
         return entries;
     }
 

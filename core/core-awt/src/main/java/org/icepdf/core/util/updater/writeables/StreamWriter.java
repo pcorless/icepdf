@@ -1,7 +1,7 @@
 package org.icepdf.core.util.updater.writeables;
 
 import org.icepdf.core.io.CountingOutputStream;
-import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.security.SecurityManager;
@@ -10,7 +10,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.zip.Deflater;
 
 public class StreamWriter extends BaseWriter {
@@ -36,7 +35,7 @@ public class StreamWriter extends BaseWriter {
             outputData = obj.getRawBytes();
         }
         if (securityManager != null) {
-            HashMap<Name, Object> decodeParams = null;
+            DictionaryEntries decodeParams = null;
             if (obj.getEntries().get(Stream.DECODEPARAM_KEY) != null) {
                 decodeParams = obj.getLibrary().getDictionary(obj.getEntries(), Stream.DECODEPARAM_KEY);
             } else {

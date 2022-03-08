@@ -15,7 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
-import org.icepdf.core.io.SeekableInputConstrainedWrapper;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.Stream;
@@ -31,7 +31,6 @@ import java.awt.geom.GeneralPath;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -188,8 +187,8 @@ public class TilingPattern extends Stream implements Pattern {
         initiParams();
     }
 
-    public TilingPattern(Library l, HashMap h, SeekableInputConstrainedWrapper streamInputWrapper) {
-        super(l, h, streamInputWrapper);
+    public TilingPattern(Library l, DictionaryEntries h, byte[] rawBytes) {
+        super(l, h, rawBytes);
         initiParams();
     }
 

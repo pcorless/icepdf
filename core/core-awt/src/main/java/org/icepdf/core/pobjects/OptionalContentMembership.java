@@ -18,7 +18,6 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.util.Library;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -74,7 +73,7 @@ public class OptionalContentMembership extends Dictionary implements OptionalCon
      */
     private List visibilityExpression;
 
-    public OptionalContentMembership(Library library, HashMap entries) {
+    public OptionalContentMembership(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 

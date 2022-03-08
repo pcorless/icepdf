@@ -1,5 +1,6 @@
 package org.icepdf.core.pobjects.annotations;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
@@ -8,7 +9,6 @@ import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
-import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**
@@ -39,11 +39,11 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
 
     private SignatureValidator signatureValidator;
 
-    public SignatureWidgetAnnotation(Library l, HashMap h) {
+    public SignatureWidgetAnnotation(Library l, DictionaryEntries h) {
         super(l, h);
         fieldDictionary = new SignatureFieldDictionary(library, entries);
 
-        HashMap valueDict = library.getDictionary(entries, FieldDictionary.V_KEY);
+        DictionaryEntries valueDict = library.getDictionary(entries, FieldDictionary.V_KEY);
         signatureDictionary = new SignatureDictionary(library, valueDict);
 
     }

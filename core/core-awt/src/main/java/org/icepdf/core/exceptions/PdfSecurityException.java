@@ -21,13 +21,13 @@ package org.icepdf.core.exceptions;
  * @since 1.0
  */
 @SuppressWarnings("serial")
-public class PDFSecurityException extends Exception {
+public class PdfSecurityException extends Exception {
     /**
      * Constructs an instance of PDFException with the specified detail message.
      *
      * @param msg the detail message
      */
-    public PDFSecurityException(String msg) {
+    public PdfSecurityException(String msg) {
         super(msg);
     }
 }

@@ -1,5 +1,5 @@
 import org.icepdf.core.exceptions.PDFException;
-import org.icepdf.core.exceptions.PDFSecurityException;
+import org.icepdf.core.exceptions.PdfSecurityException;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.util.Library;
@@ -90,7 +90,7 @@ public class PortfolioCapture {
                                 rawFileProperties != null && rawFileProperties instanceof HashMap) {
                             String fileAttachmentName = Utils.convertStringObject(library, (LiteralStringObject) rawFileName);
                             // file specification has the document stream
-                            FileSpecification fileSpecification = new FileSpecification(library, (HashMap) rawFileProperties);
+                            FileSpecification fileSpecification = new FileSpecification(library, (DictionaryEntries) rawFileProperties);
 
                             // create the stream instance from the embedded file streams File entry.
                             EmbeddedFileStream embeddedFileStream = fileSpecification.getEmbeddedFileStream();
@@ -120,7 +120,7 @@ public class PortfolioCapture {
 
         } catch (PDFException ex) {
             System.out.println("Error parsing PDF document " + ex);
-        } catch (PDFSecurityException ex) {
+        } catch (PdfSecurityException ex) {
             System.out.println("Error encryption not supported " + ex);
         } catch (FileNotFoundException ex) {
             System.out.println("Error file not found " + ex);

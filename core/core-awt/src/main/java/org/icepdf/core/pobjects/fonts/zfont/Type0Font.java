@@ -1,11 +1,11 @@
 package org.icepdf.core.pobjects.fonts.zfont;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.fonts.zfont.cmap.CMap;
 import org.icepdf.core.util.Library;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -26,7 +26,7 @@ public class Type0Font extends SimpleFont {
      * @param library Library of all objects in PDF
      * @param entries hash of parsed font attributes
      */
-    public Type0Font(Library library, HashMap entries) {
+    public Type0Font(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 

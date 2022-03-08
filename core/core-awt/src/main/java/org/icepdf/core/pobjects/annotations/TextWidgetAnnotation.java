@@ -27,7 +27,6 @@ import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
-import java.util.HashMap;
 import java.util.logging.Level;
 
 /**
@@ -47,7 +46,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
 
     private final TextFieldDictionary fieldDictionary;
 
-    public TextWidgetAnnotation(Library l, HashMap h) {
+    public TextWidgetAnnotation(Library l, DictionaryEntries h) {
         super(l, h);
         fieldDictionary = new TextFieldDictionary(library, entries);
         fontFile = fieldDictionary.getFont() != null ? fieldDictionary.getFont().getFont() : null;
@@ -90,7 +89,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
                 StateManager stateManager = library.getStateManager();
                 stateManager.addChange(new PObject(appearanceStream, appearanceStream.getPObjectReference()));
                 // add an AP entry for the
-                HashMap<Object, Object> appearanceRefs = new HashMap<>();
+                DictionaryEntries appearanceRefs = new DictionaryEntries();
                 appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, appearanceStream.getPObjectReference());
                 entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
                 Rectangle2D formBbox = new Rectangle2D.Float(

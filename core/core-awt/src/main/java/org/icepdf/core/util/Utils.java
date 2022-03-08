@@ -66,19 +66,17 @@ public class Utils {
     /**
      * Read long with varying bytes length
      *
-     * @param in       InputStream to read from
-     * @param numBytes number of bytes to read to make integral value from [0, 8]
+     * @param byteBuffer byteBuffer to read from
+     * @param numBytes   number of bytes to read to make integral value from [0, 8]
      * @return Integral value, which is composed of numBytes bytes, read using big-endian rules from in
      * @throws IOException error reading input stream.
      */
-    public static long readLongWithVaryingBytesBE(InputStream in, int numBytes) throws IOException {
-        long val = 0;
+    public static int readIntWithVaryingBytesBE(ByteBuffer byteBuffer, int numBytes) throws IOException {
+        int val = 0;
         for (int i = 0; i < numBytes; i++) {
-            int curr = in.read();
-            if (curr < 0)
-                throw new EOFException();
+            int curr = byteBuffer.get();
             val <<= 8;
-            val |= (((long) curr) & ((long) 0xFF));
+            val |= (curr & 0xFF);
         }
         return val;
     }
@@ -86,19 +84,17 @@ public class Utils {
     /**
      * Read long with varying bytes length
      *
-     * @param in       InputStream to read from
+     * @param byteBuffer       byteBuffer to read from
      * @param numBytes number of bytes to read to make integral value from [0, 4]
      * @return Integral value, which is composed of numBytes bytes, read using big-endian rules from in
      * @throws IOException error reading int value
      */
-    public static int readIntWithVaryingBytesBE(InputStream in, int numBytes) throws IOException {
-        int val = 0;
+    public static long readLongWithVaryingBytesBE(ByteBuffer byteBuffer, int numBytes) throws IOException {
+        long val = 0;
         for (int i = 0; i < numBytes; i++) {
-            int curr = in.read();
-            if (curr < 0)
-                throw new EOFException();
+            int curr = byteBuffer.get();
             val <<= 8;
-            val |= (curr & 0xFF);
+            val |= (((long) curr) & ((long) 0xFF));
         }
         return val;
     }
@@ -352,6 +348,7 @@ public class Utils {
         }
         return sb.toString();
     }
+
 
     /**
      * Utility method for decrypting a String object found in a dictionary

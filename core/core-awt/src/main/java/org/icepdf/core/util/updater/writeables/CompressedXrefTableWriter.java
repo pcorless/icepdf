@@ -9,7 +9,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 public class CompressedXrefTableWriter extends BaseTableWriter {
@@ -18,7 +17,7 @@ public class CompressedXrefTableWriter extends BaseTableWriter {
 
     public void writeCompressedXrefTable(PTrailer prevTrailer, SecurityManager securityManager, List<Entry> entries,
                                          long startingPosition, CountingOutputStream output) throws IOException {
-        HashMap<Name, Object> newTrailer = (HashMap) prevTrailer.getDictionary().clone();
+        DictionaryEntries newTrailer = (DictionaryEntries) prevTrailer.getDictionary().clone();
         this.setPreviousTrailer(newTrailer, prevTrailer);
         int newTrailerSize = this.setTrailerSize(newTrailer, prevTrailer, entries);
         long xrefPos = startingPosition + output.getCount();

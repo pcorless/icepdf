@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics.images;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.graphics.DeviceGray;
@@ -28,7 +29,6 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -56,7 +56,7 @@ public class JBig2Decoder extends AbstractImageDecoder {
 
         ImageParams imageParams = imageStream.getImageParams();
         // get the decode params form the stream
-        HashMap decodeParams = imageParams.getDictionary(DECODE_PARMS_KEY);
+        DictionaryEntries decodeParams = imageParams.getDictionary(DECODE_PARMS_KEY);
         Stream globalsStream = null;
         if (decodeParams != null) {
             Object jbigGlobals = imageParams.getObject(decodeParams, JBIG2_GLOBALS_KEY);
@@ -97,7 +97,7 @@ public class JBig2Decoder extends AbstractImageDecoder {
 
     }
 
-    protected BufferedImage decodeJbig2(HashMap decodeParams, Stream globalsStream, ImageInputStream imageInputStream,
+    protected BufferedImage decodeJbig2(DictionaryEntries decodeParams, Stream globalsStream, ImageInputStream imageInputStream,
                                         String[] jbigClasses)
             throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException, IOException {
         // ICEpdf-pro has a commercial license of the levigo library but the OS library can use it to if the project

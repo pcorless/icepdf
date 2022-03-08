@@ -15,15 +15,11 @@
  */
 package org.icepdf.core.pobjects;
 
-import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Parser;
-import org.icepdf.core.util.Utils;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -138,86 +134,86 @@ public class CrossReference {
         }
     }
 
-    /**
-     * Once a XRef stream is found, the decoded streamInput is itereated over
-     * to build out the Xref structure.
-     *
-     * @param library        The Document's Library
-     * @param xrefStreamHash Dictionary for XRef stream
-     * @param streamInput    Decoded stream bytes for XRef stream
-     */
-    @SuppressWarnings("unchecked")
-    public void addXRefStreamEntries(Library library, HashMap xrefStreamHash, InputStream streamInput) {
-        try {
-            // number +1 represented the highest object number.
-            int size = library.getInt(xrefStreamHash, SIZE_KEY);
-            // pair of integers for each subsection in this section. The first
-            // int is the first object number in this section and the second
-            // is the number of entries.
-            List<Number> objNumAndEntriesCountPairs =
-                    (List) library.getObject(xrefStreamHash, INDEX_KEY);
-            if (objNumAndEntriesCountPairs == null) {
-                objNumAndEntriesCountPairs = new ArrayList<Number>(2);
-                objNumAndEntriesCountPairs.add(0);
-                objNumAndEntriesCountPairs.add(size);
-            }
-            // three int's: field values, x,y and z bytes in length.
-            List fieldSizesVec = (List) library.getObject(xrefStreamHash, W_KEY);
-            int[] fieldSizes = null;
-            if (fieldSizesVec != null) {
-                fieldSizes = new int[fieldSizesVec.size()];
-                for (int i = 0; i < fieldSizesVec.size(); i++)
-                    fieldSizes[i] = ((Number) fieldSizesVec.get(i)).intValue();
-            }
-            // not doing anything with PREV.
-
-            int fieldTypeSize = fieldSizes[0];
-            int fieldTwoSize = fieldSizes[1];
-            int fieldThreeSize = fieldSizes[2];
-            // parse out the object data.
-            for (int xrefSubsection = 0; xrefSubsection < objNumAndEntriesCountPairs.size(); xrefSubsection += 2) {
-                int startingObjectNumber = objNumAndEntriesCountPairs.get(xrefSubsection).intValue();
-                int entriesCount = objNumAndEntriesCountPairs.get(xrefSubsection + 1).intValue();
-                int afterObjectNumber = startingObjectNumber + entriesCount;
-                for (int objectNumber = startingObjectNumber; objectNumber < afterObjectNumber; objectNumber++) {
-                    int entryType = Entry.TYPE_USED;    // Default value is 1
-                    if (fieldTypeSize > 0)
-                        entryType = Utils.readIntWithVaryingBytesBE(streamInput, fieldTypeSize);
-                    // used object but not compressed
-                    if (entryType == Entry.TYPE_USED) {
-                        long filePositionOfObject = Utils.readLongWithVaryingBytesBE(
-                                streamInput, fieldTwoSize);
-                        int generationNumber = 0;       // Default value is 0
-                        if (fieldThreeSize > 0) {
-                            generationNumber = Utils.readIntWithVaryingBytesBE(
-                                    streamInput, fieldThreeSize);
-                        }
-                        addUsedEntry(objectNumber, filePositionOfObject, generationNumber);
-                    }
-                    // entries define compress objects.
-                    else if (entryType == Entry.TYPE_COMPRESSED) {
-                        int objectNumberOfContainingObjectStream = Utils.readIntWithVaryingBytesBE(
-                                streamInput, fieldTwoSize);
-                        int indexWithinObjectStream = Utils.readIntWithVaryingBytesBE(
-                                streamInput, fieldThreeSize);
-                        addCompressedEntry(
-                                objectNumber, objectNumberOfContainingObjectStream, indexWithinObjectStream);
-
-                    }
-                    // free objects, no used.
-                    else if (entryType == Entry.TYPE_FREE) {
-                        // we do nothing but we still need to move the cursor.
-                        Utils.readIntWithVaryingBytesBE(
-                                streamInput, fieldTwoSize);
-                        Utils.readIntWithVaryingBytesBE(
-                                streamInput, fieldThreeSize);
-                    }
-                }
-            }
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, "Error parsing xRef stream entries.", e);
-        }
-    }
+//    /**
+//     * Once a XRef stream is found, the decoded streamInput is itereated over
+//     * to build out the Xref structure.
+//     *
+//     * @param library        The Document's Library
+//     * @param xrefStreamHash Dictionary for XRef stream
+//     * @param streamInput    Decoded stream bytes for XRef stream
+//     */
+//    @SuppressWarnings("unchecked")
+//    public void addXRefStreamEntries(Library library, DictionaryEntries xrefStreamHash, InputStream streamInput) {
+//        try {
+//            // number +1 represented the highest object number.
+//            int size = library.getInt(xrefStreamHash, SIZE_KEY);
+//            // pair of integers for each subsection in this section. The first
+//            // int is the first object number in this section and the second
+//            // is the number of entries.
+//            List<Number> objNumAndEntriesCountPairs =
+//                    (List) library.getObject(xrefStreamHash, INDEX_KEY);
+//            if (objNumAndEntriesCountPairs == null) {
+//                objNumAndEntriesCountPairs = new ArrayList<Number>(2);
+//                objNumAndEntriesCountPairs.add(0);
+//                objNumAndEntriesCountPairs.add(size);
+//            }
+//            // three int's: field values, x,y and z bytes in length.
+//            List fieldSizesVec = (List) library.getObject(xrefStreamHash, W_KEY);
+//            int[] fieldSizes = null;
+//            if (fieldSizesVec != null) {
+//                fieldSizes = new int[fieldSizesVec.size()];
+//                for (int i = 0; i < fieldSizesVec.size(); i++)
+//                    fieldSizes[i] = ((Number) fieldSizesVec.get(i)).intValue();
+//            }
+//            // not doing anything with PREV.
+//
+//            int fieldTypeSize = fieldSizes[0];
+//            int fieldTwoSize = fieldSizes[1];
+//            int fieldThreeSize = fieldSizes[2];
+//            // parse out the object data.
+//            for (int xrefSubsection = 0; xrefSubsection < objNumAndEntriesCountPairs.size(); xrefSubsection += 2) {
+//                int startingObjectNumber = objNumAndEntriesCountPairs.get(xrefSubsection).intValue();
+//                int entriesCount = objNumAndEntriesCountPairs.get(xrefSubsection + 1).intValue();
+//                int afterObjectNumber = startingObjectNumber + entriesCount;
+//                for (int objectNumber = startingObjectNumber; objectNumber < afterObjectNumber; objectNumber++) {
+//                    int entryType = Entry.TYPE_USED;    // Default value is 1
+//                    if (fieldTypeSize > 0)
+//                        entryType = Utils.readIntWithVaryingBytesBE(streamInput, fieldTypeSize);
+//                    // used object but not compressed
+//                    if (entryType == Entry.TYPE_USED) {
+//                        long filePositionOfObject = Utils.readLongWithVaryingBytesBE(
+//                                streamInput, fieldTwoSize);
+//                        int generationNumber = 0;       // Default value is 0
+//                        if (fieldThreeSize > 0) {
+//                            generationNumber = Utils.readIntWithVaryingBytesBE(
+//                                    streamInput, fieldThreeSize);
+//                        }
+//                        addUsedEntry(objectNumber, filePositionOfObject, generationNumber);
+//                    }
+//                    // entries define compress objects.
+//                    else if (entryType == Entry.TYPE_COMPRESSED) {
+//                        int objectNumberOfContainingObjectStream = Utils.readIntWithVaryingBytesBE(
+//                                streamInput, fieldTwoSize);
+//                        int indexWithinObjectStream = Utils.readIntWithVaryingBytesBE(
+//                                streamInput, fieldThreeSize);
+//                        addCompressedEntry(
+//                                objectNumber, objectNumberOfContainingObjectStream, indexWithinObjectStream);
+//
+//                    }
+//                    // free objects, no used.
+//                    else if (entryType == Entry.TYPE_FREE) {
+//                        // we do nothing but we still need to move the cursor.
+//                        Utils.readIntWithVaryingBytesBE(
+//                                streamInput, fieldTwoSize);
+//                        Utils.readIntWithVaryingBytesBE(
+//                                streamInput, fieldThreeSize);
+//                    }
+//                }
+//            }
+//        } catch (IOException e) {
+//            logger.log(Level.SEVERE, "Error parsing xRef stream entries.", e);
+//        }
+//    }
 
     public Entry getEntryForObject(Integer objectNumber) {
         Entry entry = hObjectNumber2Entry.get(objectNumber);

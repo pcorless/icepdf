@@ -19,7 +19,6 @@ import org.icepdf.core.util.Library;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -45,7 +44,7 @@ public class NameTree extends Dictionary {
      * @param l document library.
      * @param h NameTree dictionary entries.
      */
-    public NameTree(Library l, HashMap h) {
+    public NameTree(Library l, DictionaryEntries h) {
         super(l, h);
     }
 
@@ -136,7 +135,7 @@ public class NameTree extends Dictionary {
             stateManager.addChange(new PObject(destination, destination.getPObjectReference()));
 
             // create a name node to attach to the kids.
-            HashMap nameNodeEntries = new HashMap();
+            DictionaryEntries nameNodeEntries = new DictionaryEntries();
             ArrayList limits = new ArrayList();
             limits.add(newName);
             limits.add(newName);
@@ -205,8 +204,8 @@ public class NameTree extends Dictionary {
                 Reference reference = ((PObject) found).getReference();
                 Object tmp = library.getObject(reference);
                 NameNode nameNode = null;
-                if (tmp instanceof HashMap) {
-                    nameNode = new NameNode(library, (HashMap) tmp);
+                if (tmp instanceof DictionaryEntries) {
+                    nameNode = new NameNode(library, (DictionaryEntries) tmp);
                 } else if (tmp instanceof NameNode) {
                     nameNode = (NameNode) tmp;
                 }
@@ -224,7 +223,7 @@ public class NameTree extends Dictionary {
                             // we have an indirect reference so we need to update it as well with new destination data.
                             // we assume that this is always an implicit destination and not a named destination
                             if (value instanceof Reference) {
-                                HashMap destMap = destination.getRawDestination();
+                                DictionaryEntries destMap = destination.getRawDestination();
                                 library.getStateManager().addChange(new PObject(destMap, (Reference) value));
                             } else if (value instanceof List) {
                                 List destList = destination.getRawListDestination();
@@ -261,8 +260,8 @@ public class NameTree extends Dictionary {
                 Object tmp = library.getObject(reference);
                 // we'll remove the name from the parent names tree and orphan the destination if indirect.
                 NameNode nameNode = null;
-                if (tmp instanceof HashMap) {
-                    nameNode = new NameNode(library, (HashMap) tmp);
+                if (tmp instanceof DictionaryEntries) {
+                    nameNode = new NameNode(library, (DictionaryEntries) tmp);
                 } else if (tmp instanceof NameNode) {
                     nameNode = (NameNode) tmp;
                 }
@@ -341,8 +340,8 @@ public class NameTree extends Dictionary {
                 Object value = nameValues.get(i + 1);
                 Object tmp = library.getObject(value);
                 // D-> ref -> Destination
-                if (tmp instanceof HashMap) {
-                    HashMap dictionary = (HashMap) tmp;
+                if (tmp instanceof DictionaryEntries) {
+                    DictionaryEntries dictionary = (DictionaryEntries) tmp;
                     Object obj = dictionary.get(Destination.D_KEY);
                     if (obj instanceof List) {
                         Destination dest = new Destination(library, obj);

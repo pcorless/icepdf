@@ -17,11 +17,10 @@
 package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.util.Library;
-
-import java.util.HashMap;
 
 /**
  * An annotation, page object, or (beginning with PDF 1.3) interactive form field may include an entry named AA that
@@ -197,14 +196,14 @@ public class AdditionalActionsDictionary extends Dictionary {
      */
     public static final Name CATALOG_DP_KEY = new Name("DP");
 
-    public AdditionalActionsDictionary(Library library, HashMap entries) {
+    public AdditionalActionsDictionary(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 
     public Action getAction(Name actionNameKey) {
         Object tmp = library.getObject(entries, actionNameKey);
-        if (tmp != null && tmp instanceof HashMap) {
-            return Action.buildAction(library, (HashMap) tmp);
+        if (tmp != null && tmp instanceof DictionaryEntries) {
+            return Action.buildAction(library, (DictionaryEntries) tmp);
         }
         return null;
     }

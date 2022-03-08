@@ -16,11 +16,11 @@
 package org.icepdf.core.pobjects.functions;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.util.Library;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -109,8 +109,8 @@ public abstract class Function {
         // create a dictionary out of the object if possible
         if (o instanceof Dictionary) {
             d = (Dictionary) o;
-        } else if (o instanceof HashMap) {
-            d = new Dictionary(l, (HashMap) o);
+        } else if (o instanceof DictionaryEntries) {
+            d = new Dictionary(l, (DictionaryEntries) o);
         }
 
         if (d != null) {

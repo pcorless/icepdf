@@ -16,10 +16,9 @@
 package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
-
-import java.util.HashMap;
 
 /**
  * The DocMDP transform method shall be used to detect modifications relative to a signature field that is signed by
@@ -69,7 +68,7 @@ public class DocMDPTransferParam extends Dictionary implements TransformParams {
      */
     public static final int PERMISSION_VALUE_ANNOTATION_CRUD = 3;
 
-    public DocMDPTransferParam(Library library, HashMap entries) {
+    public DocMDPTransferParam(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 

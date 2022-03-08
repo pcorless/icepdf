@@ -15,7 +15,7 @@ package org.icepdf.os.examples.search;
  */
 
 import org.icepdf.core.exceptions.PDFException;
-import org.icepdf.core.exceptions.PDFSecurityException;
+import org.icepdf.core.exceptions.PdfSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
@@ -96,7 +96,7 @@ public class SearchControllerHeadless {
 
         } catch (PDFException e) {
             e.printStackTrace();
-        } catch (PDFSecurityException e) {
+        } catch (PdfSecurityException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();

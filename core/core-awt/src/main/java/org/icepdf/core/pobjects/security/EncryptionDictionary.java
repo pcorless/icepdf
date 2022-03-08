@@ -18,7 +18,6 @@ package org.icepdf.core.pobjects.security;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -312,7 +311,7 @@ public class EncryptionDictionary extends Dictionary {
      * @param fileID               Vector containing the two file ID values originally
      *                             parsed from the Trailer reference.
      */
-    public EncryptionDictionary(Library lib, HashMap<Object, Object> encryptionDictionary, List fileID) {
+    public EncryptionDictionary(Library lib, DictionaryEntries encryptionDictionary, List fileID) {
         super(lib, encryptionDictionary);
         this.entries = encryptionDictionary;
         this.fileID = fileID;
@@ -448,7 +447,7 @@ public class EncryptionDictionary extends Dictionary {
      */
     public CryptFilter getCryptFilter() {
         if (cryptFilter == null) {
-            HashMap tmp = (HashMap) library.getObject(entries, CF_KEY);
+            DictionaryEntries tmp = (DictionaryEntries) library.getObject(entries, CF_KEY);
             if (tmp != null) {
                 cryptFilter = new CryptFilter(library, tmp);
                 return cryptFilter;

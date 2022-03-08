@@ -15,7 +15,7 @@ package org.icepdf.os.examples.loadingEvents;
  */
 
 import org.icepdf.core.exceptions.PDFException;
-import org.icepdf.core.exceptions.PDFSecurityException;
+import org.icepdf.core.exceptions.PdfSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
@@ -82,7 +82,7 @@ public class PageLoadingEvents {
             System.out.println("Error parsing PDF document " + e);
         } catch (PDFException ex) {
             System.out.println("Error parsing PDF document " + ex);
-        } catch (PDFSecurityException ex) {
+        } catch (PdfSecurityException ex) {
             System.out.println("Error encryption not supported " + ex);
         } catch (FileNotFoundException ex) {
             System.out.println("Error file not found " + ex);

@@ -16,12 +16,12 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Form;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.functions.Function;
 import org.icepdf.core.util.Library;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -64,7 +64,7 @@ public class SoftMask extends Dictionary {
 
     private Form softMask;
 
-    public SoftMask(Library library, HashMap dictionary) {
+    public SoftMask(Library library, DictionaryEntries dictionary) {
         super(library, dictionary);
     }
 

@@ -7,7 +7,6 @@ import org.icepdf.core.pobjects.security.SecurityManager;
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -136,8 +135,8 @@ public class BaseWriter {
             arrayWriter.write((List) val, output);
         } else if (val instanceof Dictionary) {
             writeDictionary((Dictionary) val, output);
-        } else if (val instanceof HashMap) {
-            dictionaryWriter.write((HashMap) val, output);
+        } else if (val instanceof DictionaryEntries) {
+            dictionaryWriter.write((DictionaryEntries) val, output);
         } else if (val instanceof AffineTransform) {
             affineTransformWriter.write((AffineTransform) val, output);
         } else {

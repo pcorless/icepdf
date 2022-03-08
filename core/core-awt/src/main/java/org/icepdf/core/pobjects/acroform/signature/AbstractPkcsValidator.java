@@ -21,7 +21,6 @@ import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.tsp.TimeStampToken;
-import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
@@ -542,29 +541,29 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         }
         // let digest the data.
         ArrayList<Integer> byteRange = signatureFieldDictionary.getSignatureDictionary().getByteRange();
-        SeekableInput documentInput = signatureFieldDictionary.getLibrary().getDocumentInput();
-        documentInput.beginThreadAccess();
-        try {
-            long totalLength = documentInput.getLength();
-            long digestedLength = byteRange.get(2) + byteRange.get(3);
-            // this doesn't mean the signature has been tampered with just that there are subsequent modification
-            // or signatures added after this signature.
-            if (digestedLength < totalLength) {
-                isDocumentDataModified = true;
-            }
-            documentInput.seekAbsolute(byteRange.get(0));
-            byte[] firstSection = new byte[byteRange.get(1)];
-            documentInput.read(firstSection);
-            messageDigestAlgorithm.update(firstSection);
-            documentInput.seekAbsolute(byteRange.get(2));
-            byte[] secondSection = new byte[byteRange.get(3)];
-            documentInput.read(secondSection);
-            messageDigestAlgorithm.update(secondSection);
-        } catch (IOException e) {
-            throw new SignatureIntegrityException(e);
-        } finally {
-            documentInput.endThreadAccess();
-        }
+//        SeekableInput documentInput = signatureFieldDictionary.getLibrary().getDocumentInput();
+//        documentInput.beginThreadAccess();
+//        try {
+//            long totalLength = documentInput.getLength();
+//            long digestedLength = byteRange.get(2) + byteRange.get(3);
+//            // this doesn't mean the signature has been tampered with just that there are subsequent modification
+//            // or signatures added after this signature.
+//            if (digestedLength < totalLength) {
+//                isDocumentDataModified = true;
+//            }
+//            documentInput.seekAbsolute(byteRange.get(0));
+//            byte[] firstSection = new byte[byteRange.get(1)];
+//            documentInput.read(firstSection);
+//            messageDigestAlgorithm.update(firstSection);
+//            documentInput.seekAbsolute(byteRange.get(2));
+//            byte[] secondSection = new byte[byteRange.get(3)];
+//            documentInput.read(secondSection);
+//            messageDigestAlgorithm.update(secondSection);
+//        } catch (IOException e) {
+//            throw new SignatureIntegrityException(e);
+//        } finally {
+//            documentInput.endThreadAccess();
+//        }
         // setup the compare
         try {
             // RFC3852 - The result of the message digest calculation process depends on whether the signedAttrs field
@@ -662,22 +661,22 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         if (signatureFieldDictionary == null) {
             return false;
         }
-        ArrayList<Integer> byteRange = signatureFieldDictionary.getSignatureDictionary().getByteRange();
-        SeekableInput documentInput = signatureFieldDictionary.getLibrary().getDocumentInput();
-        documentInput.beginThreadAccess();
-        try {
-            long totalLength = documentInput.getLength();
-            long digestedLength = byteRange.get(2) + byteRange.get(3);
-            // this doesn't mean the signature has been tampered with just that there are subsequent modification
-            // or signatures added after this signature.
-            if (digestedLength == totalLength) {
-                return true;
-            }
-        } catch (IOException e) {
-            throw new SignatureIntegrityException(e);
-        } finally {
-            documentInput.endThreadAccess();
-        }
+//        ArrayList<Integer> byteRange = signatureFieldDictionary.getSignatureDictionary().getByteRange();
+//        SeekableInput documentInput = signatureFieldDictionary.getLibrary().getDocumentInput();
+//        documentInput.beginThreadAccess();
+//        try {
+//            long totalLength = documentInput.getLength();
+//            long digestedLength = byteRange.get(2) + byteRange.get(3);
+//            // this doesn't mean the signature has been tampered with just that there are subsequent modification
+//            // or signatures added after this signature.
+//            if (digestedLength == totalLength) {
+//                return true;
+//            }
+//        } catch (IOException e) {
+//            throw new SignatureIntegrityException(e);
+//        } finally {
+//            documentInput.endThreadAccess();
+//        }
         return false;
     }
 

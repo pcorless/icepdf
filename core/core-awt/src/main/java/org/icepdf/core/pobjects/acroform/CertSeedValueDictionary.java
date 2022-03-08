@@ -16,10 +16,10 @@
 package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -157,7 +157,7 @@ public class CertSeedValueDictionary extends Dictionary {
 
     private int flags;
 
-    public CertSeedValueDictionary(Library library, HashMap entries) {
+    public CertSeedValueDictionary(Library library, DictionaryEntries entries) {
         super(library, entries);
 
         flags = library.getInt(entries, Ff_KEY);
@@ -172,7 +172,7 @@ public class CertSeedValueDictionary extends Dictionary {
         }
     }
 
-    public List<HashMap> getSubjectDn() {
+    public List<DictionaryEntries> getSubjectDn() {
         Object tmp = library.getArray(entries, SUBJECT_DN_KEY);
         if (tmp != null) {
             return (List) tmp;

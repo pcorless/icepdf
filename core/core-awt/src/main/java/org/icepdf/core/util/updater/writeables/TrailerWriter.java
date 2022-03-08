@@ -2,18 +2,17 @@ package org.icepdf.core.util.updater.writeables;
 
 import org.icepdf.core.io.CountingOutputStream;
 import org.icepdf.core.pobjects.Dictionary;
-import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.PTrailer;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 
 public class TrailerWriter extends BaseTableWriter {
 
     public void writeTrailer(PTrailer prevTrailer, long xrefPosition, List<Entry> entries, CountingOutputStream output)
             throws IOException {
-        HashMap<Name, Object> newTrailer = (HashMap) prevTrailer.getDictionary().clone();
+        DictionaryEntries newTrailer = (DictionaryEntries) prevTrailer.getDictionary().clone();
         long previousTrailerPosition = this.setPreviousTrailer(newTrailer, prevTrailer);
         this.setTrailerSize(newTrailer, prevTrailer, entries);
         newTrailer.remove(PTrailer.XREFSTM_KEY);

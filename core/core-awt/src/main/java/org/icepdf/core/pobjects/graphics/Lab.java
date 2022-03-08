@@ -15,11 +15,11 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -54,7 +54,7 @@ public class Lab extends PColorSpace {
     private float zBase;
     private float zSpread;
 
-    Lab(Library l, HashMap h) {
+    Lab(Library l, DictionaryEntries h) {
         super(l, h);
         List v = (java.util.List) l.getObject(h, WHITE_POINT_KEY);
         if (v != null) {

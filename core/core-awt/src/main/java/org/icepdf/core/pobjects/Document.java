@@ -18,8 +18,8 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.application.ProductInfo;
 import org.icepdf.core.exceptions.PDFException;
-import org.icepdf.core.exceptions.PDFSecurityException;
-import org.icepdf.core.io.*;
+import org.icepdf.core.exceptions.PdfSecurityException;
+import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
@@ -27,6 +27,9 @@ import org.icepdf.core.pobjects.graphics.WatermarkCallback;
 import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.security.SecurityManager;
+import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
+import org.icepdf.core.pobjects.structure.Header;
+import org.icepdf.core.pobjects.structure.Trailer;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.LazyObjectLoader;
 import org.icepdf.core.util.Library;
@@ -38,8 +41,12 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -115,8 +122,11 @@ public class Document {
     private static int fileCacheMaxSize;
 
     // repository of all PDF object associated with this document.
-    private Library library = null;
-    private SeekableInput documentSeekableInput;
+    private Header header;
+    private Library library;
+    // todo put file channel input library?
+    private FileChannel documentFileChannel;
+    private CrossReferenceRoot crossReferenceRoot;
 
     static {
         // sets if file caching is enabled or disabled.
@@ -134,6 +144,7 @@ public class Document {
      * one PDF document.
      */
     public Document() {
+        library = new Library();
     }
 
     /**
@@ -187,29 +198,37 @@ public class Document {
      *
      * @param filepath path of PDF document.
      * @throws PDFException         if an invalid file encoding.
-     * @throws PDFSecurityException if a security provider cannot be found
+     * @throws PdfSecurityException if a security provider cannot be found
      *                              or there is an error decrypting the file.
      * @throws IOException          if a problem setting up, or parsing the file.
      */
     public void setFile(String filepath)
-            throws PDFException, PDFSecurityException, IOException {
+            throws PDFException, PdfSecurityException, IOException {
         setDocumentOrigin(filepath);
+
         File file = new File(filepath);
-        FileInputStream inputStream = new FileInputStream(file);
-        int fileLength = inputStream.available();
-        if (isFileCachingEnabled && file.length() > 0 && fileLength <= fileCacheMaxSize) {
-            // copy the file contents into byte[], for direct memory mapping.
-            byte[] data = new byte[fileLength];
-            inputStream.read(data);
-            setByteArray(data, 0, fileLength, filepath);
-        } else {
-            RandomAccessFileInputStream rafis =
-                    RandomAccessFileInputStream.build(new File(filepath));
-            setInputStream(rafis);
-        }
-        if (inputStream != null) {
-            inputStream.close();
-        }
+        RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r");
+        documentFileChannel = randomAccessFile.getChannel();
+        ByteBuffer mappedFileByteBuffer = documentFileChannel.map(
+                FileChannel.MapMode.READ_ONLY, 0, documentFileChannel.size());
+        setInputStream(mappedFileByteBuffer);
+
+//        File file = new File(filepath);
+//        FileInputStream inputStream = new FileInputStream(file);
+//        int fileLength = inputStream.available();
+//        if (isFileCachingEnabled && file.length() > 0 && fileLength <= fileCacheMaxSize) {
+//            // copy the file contents into byte[], for direct memory mapping.
+//            byte[] data = new byte[fileLength];
+//            inputStream.read(data);
+//            setByteArray(data, 0, fileLength, filepath);
+//        } else {
+//            RandomAccessFileInputStream rafis =
+//                    RandomAccessFileInputStream.build(new File(filepath));
+//            setInputStream(rafis);
+//        }
+//        if (inputStream != null) {
+//            inputStream.close();
+//        }
     }
 
     /**
@@ -220,12 +239,12 @@ public class Document {
      *
      * @param url location of file.
      * @throws PDFException         an invalid file encoding.
-     * @throws PDFSecurityException if a security provider can not be found
+     * @throws PdfSecurityException if a security provider can not be found
      *                              or there is an error decrypting the file.
      * @throws IOException          if a problem downloading, setting up, or parsing the file.
      */
     public void setUrl(URL url)
-            throws PDFException, PDFSecurityException, IOException {
+            throws PDFException, PdfSecurityException, IOException {
         InputStream in = null;
         try {
             // make a connection
@@ -250,43 +269,21 @@ public class Document {
      * will be cached to a temp file; otherwise, the complete document stream will
      * be stored in memory.
      *
-     * @param in        input stream containing PDF data
-     * @param pathOrURL value assigned to document origin
+     * @param inputStream input stream containing PDF data
+     * @param pathOrURL   value assigned to document origin
      * @throws PDFException         an invalid stream or file encoding
-     * @throws PDFSecurityException if a security provider can not be found
+     * @throws PdfSecurityException if a security provider can not be found
      *                              or there is an error decrypting the file.
      * @throws IOException          if a problem setting up, or parsing the SeekableInput.
      */
-    public void setInputStream(InputStream in, String pathOrURL)
-            throws PDFException, PDFSecurityException, IOException {
+    public void setInputStream(InputStream inputStream, String pathOrURL)
+            throws PDFException, PdfSecurityException, IOException {
         setDocumentOrigin(pathOrURL);
 
         if (!isCachingEnabled) {
-//System.out.println("Started  downloading PDF to memory : " + (new java.util.Date()));
-            // read into memory first
-            ConservativeSizingByteArrayOutputStream byteArrayOutputStream =
-                    new ConservativeSizingByteArrayOutputStream(100 * 1024);
-
-            // write the bytes.
-            byte[] buffer = new byte[4096];
-            int length;
-//                int pdfFileSize = 0;
-            // in.read will block until the end of the file is read.
-            while ((length = in.read(buffer, 0, buffer.length)) > 0) {
-                byteArrayOutputStream.write(buffer, 0, length);
-//                    pdfFileSize += length;
-            }
-            byteArrayOutputStream.flush();
-            byteArrayOutputStream.close();
-            int size = byteArrayOutputStream.size();
-            byteArrayOutputStream.trim();
-            byte[] data = byteArrayOutputStream.relinquishByteArray();
-//System.out.println("Finished downloading PDF to memory : " + (new java.util.Date()) + "  pdfFileSize: " + pdfFileSize);
-
-            // finally read the cached file
-            SeekableByteArrayInputStream byteArrayInputStream =
-                    new SeekableByteArrayInputStream(data, 0, size);
-            setInputStream(byteArrayInputStream);
+            ByteBuffer byteBuffer = ByteBuffer.allocate(inputStream.available());
+            Channels.newChannel(inputStream).read(byteBuffer);
+            setInputStream(byteBuffer);
         }
         // if caching is allowed cache the url to file
         else {
@@ -298,28 +295,15 @@ public class Document {
             // Delete temp file on exit
             tempFile.deleteOnExit();
 
-            // Write the data to the temp file.
-            FileOutputStream fileOutputStream =
-                    new FileOutputStream(tempFile.getAbsolutePath(), true);
-
-            // write the bytes.
-            byte[] buffer = new byte[4096];
-            int length;
-//                int pdfFileSize = 0;
-            while ((length = in.read(buffer, 0, buffer.length)) > 0) {
-                fileOutputStream.write(buffer, 0, length);
-//                    pdfFileSize += length;
-            }
-            fileOutputStream.flush();
-            fileOutputStream.close();
-//System.out.println("Finished downloading PDF to disk : " + (new java.util.Date()) + "  pdfFileSize: " + pdfFileSize);
+            Files.copy(inputStream, tempFile.toPath());
 
             setDocumentCachedFilePath(tempFile.getAbsolutePath());
 
-            // finally read the cached file
-            RandomAccessFileInputStream rafis =
-                    RandomAccessFileInputStream.build(tempFile);
-            setInputStream(rafis);
+            RandomAccessFile randomAccessFile = new RandomAccessFile(tempFile, "r");
+            documentFileChannel = randomAccessFile.getChannel();
+            ByteBuffer mappedFileByteBuffer = documentFileChannel.map(
+                    FileChannel.MapMode.READ_ONLY, 0, documentFileChannel.size());
+            setInputStream(mappedFileByteBuffer);
         }
     }
 
@@ -336,23 +320,19 @@ public class Document {
      * @param length    the number of bytes in the byte array belonging to the PDF data
      * @param pathOrURL value assigned to document origin
      * @throws PDFException         an invalid stream or file encoding
-     * @throws PDFSecurityException if a security provider can not be found
+     * @throws PdfSecurityException if a security provider can not be found
      *                              or there is an error decrypting the file.
      * @throws IOException          if a problem setting up, or parsing the SeekableInput.
      */
     public void setByteArray(byte[] data, int offset, int length, String pathOrURL)
-            throws PDFException, PDFSecurityException, IOException {
+            throws PDFException, PdfSecurityException, IOException {
         setDocumentOrigin(pathOrURL);
 
         if (!isCachingEnabled) {
-            // finally read the cached file
-            SeekableByteArrayInputStream byteArrayInputStream =
-                    new SeekableByteArrayInputStream(data, offset, length);
-            setInputStream(byteArrayInputStream);
+            setInputStream(ByteBuffer.wrap(data, offset, length));
         }
         // if caching is allowed cache the url to file
         else {
-//System.out.println("Started  downloading PDF to disk : " + (new java.util.Date()));
             // create tmp file and write bytes to it.
             File tempFile = File.createTempFile(
                     "ICEpdfTempFile" + getClass().hashCode(),
@@ -360,123 +340,94 @@ public class Document {
             // Delete temp file on exit
             tempFile.deleteOnExit();
 
-            // Write the data to the temp file.
-            FileOutputStream fileOutputStream =
-                    new FileOutputStream(tempFile.getAbsolutePath(), true);
+            Files.copy(new ByteArrayInputStream(data), tempFile.toPath());
 
-            // write the bytes.
-//                int pdfFileSize = 0;
-            fileOutputStream.write(data, offset, length);
-//                pdfFileSize += length;
-            fileOutputStream.flush();
-            fileOutputStream.close();
-//System.out.println("Finished downloading PDF to disk : " + (new java.util.Date()) + "  pdfFileSize: " + pdfFileSize);
+            // Write the data to the temp file.
+//            FileOutputStream fileOutputStream =
+//                    new FileOutputStream(tempFile.getAbsolutePath(), true);
+//
+//            // write the bytes.
+//            try (WritableByteChannel channel = Channels.newChannel(fileOutputStream)) {
+//                channel.write(ByteBuffer.wrap(data, offset, length));
+//            } catch (Throwable e) {
+//                logger.log(Level.FINE, "Error writing PDF output stream.", e);
+//                throw new IOException(e.getMessage());
+//            }
 
             setDocumentCachedFilePath(tempFile.getAbsolutePath());
 
-            // finally read the cached file
-            RandomAccessFileInputStream rafis =
-                    RandomAccessFileInputStream.build(tempFile);
-            setInputStream(rafis);
+            RandomAccessFile randomAccessFile = new RandomAccessFile(tempFile, "r");
+            documentFileChannel = randomAccessFile.getChannel();
+            ByteBuffer mappedFileByteBuffer = documentFileChannel.map(
+                    FileChannel.MapMode.READ_ONLY, 0, documentFileChannel.size());
+            setInputStream(mappedFileByteBuffer);
         }
-    }
-
-    /**
-     * Load a PDF file from the given SeekableInput stream and initiates the
-     * document's Catalog.
-     *
-     * @param in        input stream containing PDF data
-     * @param pathOrURL value assigned to document origin
-     * @throws PDFException         an invalid stream or file encoding
-     * @throws PDFSecurityException if a security provider can not be found
-     *                              or there is an error decrypting the file.
-     * @throws IOException          if a problem setting up, or parsing the SeekableInput.
-     */
-    public void setInputStream(SeekableInput in, String pathOrURL)
-            throws PDFException, PDFSecurityException, IOException {
-        setDocumentOrigin(pathOrURL);
-        setInputStream(in);
     }
 
     /**
      * Sets the input stream of the PDF file to be rendered.
      *
-     * @param in inputStream containing PDF data stream
+     * @param input ByteBuffer containing PDF data stream
      * @throws PDFException         if error occurs
-     * @throws PDFSecurityException security error
+     * @throws PdfSecurityException security error
      * @throws IOException          io error during stream handling
      */
-    private void setInputStream(final SeekableInput in)
-            throws PDFException, PDFSecurityException, IOException {
+    private void setInputStream(ByteBuffer input)
+            throws PDFException, PdfSecurityException, IOException {
         try {
-            documentSeekableInput = in;
+            // load the head
+            header = new Header();
+            input = header.parseHeader(input);
 
-            // create library to hold all document objects
-            library = new Library();
+            library.setDocumentByteBuffer(input);
+            library.setFileVersion(header.getVersion());
 
-            // reference the stream and origin with library so we can handle verification and writing of signatures.
-            library.setDocumentInput(documentSeekableInput);
-
-            // if interactive show visual progress bar
-            //ProgressMonitorInputStream monitor = null;
-
-            boolean loaded = false;
+            // create instance of CrossReferenceRoot as we may need it the trailer can't be correctly decoded.
+            crossReferenceRoot = new CrossReferenceRoot(library);
+            // header created
+            Trailer trailer = new Trailer();
             try {
-                loadDocumentViaXRefs(in);
+                trailer.parseXrefOffset(input);
+            } catch (Throwable e) {
+                trailer.setLazyInitializationFailed(true);
+                logger.log(Level.WARNING, "Trailer loading failed, reindexing file.", e);
+            }
 
-                // initiate the catalog, build the outline for the document
-                // this is the best test to see if everything is in order.
-                if (catalog != null) {
-                    catalog.init();
-                    // check to see if we can locate the first level of pages,  to check offset validity
-                    // as sometimes xref 'drift' will still allow the catalog to be parsed but error out later.
-                    HashMap entries = catalog.getPageTree().entries;
-                    List<Reference> kidsReferences = (List<Reference>) library.getObject(entries, PageTree.KIDS_KEY);
-                    kidsReferences.forEach(item -> {
-                        Object page = library.getObject(item);
-                        if (!(page instanceof Page || page instanceof PageTree || page instanceof Reference)) {
-                            throw new RuntimeException("Error accessing page tree");
-                        }
-                    });
-                }
-
-                loaded = true;
-            } catch (PDFException | PDFSecurityException e) {
-                throw e;
-            } catch (Exception e) {
-                if (logger.isLoggable(Level.WARNING)) {
-                    logger.warning("Cross reference deferred loading failed, will fall back to linear reading.");
+            if (!trailer.isLazyInitializationFailed()) {
+                try {
+                    crossReferenceRoot.setTrailer(trailer);
+                    crossReferenceRoot.initialize(input);
+                    library.setCrossReferenceRoot(crossReferenceRoot);
+                } catch (Throwable e) {
+                    crossReferenceRoot.setLazyInitializationFailed(true);
+                    logger.log(Level.WARNING, "Cross reference loading failed, reindexing file.", e);
                 }
             }
 
-            if (!loaded) {
-                // Cleanup any bits left behind by the failed xref loading
-                if (catalog != null) {
-                    catalog = null;
-                }
-                if (library != null) {
-                    library = null;
-                }
-                library = new Library();
-                pTrailer = null;
+            // linear traversal of file.
+            if (trailer.isLazyInitializationFailed() || crossReferenceRoot.isLazyInitializationFailed()) {
+                crossReferenceRoot = library.rebuildCrossReferenceTable();
+            }
 
-                in.seekAbsolute(0L);
-                loadDocumentViaLinearTraversal(in);
+            DictionaryEntries trailerDictionary = crossReferenceRoot.getTrailerDictionary();
+            catalog = (Catalog) library.getObject(trailerDictionary, PTrailer.ROOT_KEY);
+            catalog.init();
+            library.setCatalog(catalog);
 
-                // initiate the catalog, build the outline for the document
-                if (catalog != null) {
-                    catalog.init();
-                }
+            // finalized security
+            if (library.getSecurityManager() != null) {
+                library.authorizeSecurityManager(this, new SecurityCallback() {
+                    @Override
+                    public String requestPassword(Document document) {
+                        return "";
+                    }
+                });
             }
 
             // create new instance of state manager and add it to the library
             stateManager = new StateManager(pTrailer);
             library.setStateManager(stateManager);
-        } catch (PDFException e) {
-            logger.log(Level.FINE, "Error loading PDF file during linear parse.", e);
-            dispose();
-            throw e;
-        } catch (PDFSecurityException | IOException e) {
+        } catch (PdfSecurityException | IOException e) {
             dispose();
             throw e;
         } catch (Exception e) {
@@ -492,11 +443,11 @@ public class Document {
      * @param in input stream to parse
      * @throws IOException          an i/o problem
      * @throws PDFException         an invalid stream or file encoding
-     * @throws PDFSecurityException if a security provider can not be found
+     * @throws PdfSecurityException if a security provider can not be found
      *                              or there is an error decrypting the file.
      */
     private void loadDocumentViaXRefs(SeekableInput in)
-            throws PDFException, PDFSecurityException, IOException, InterruptedException {
+            throws PDFException, PdfSecurityException, IOException, InterruptedException {
         //if( true ) throw new RuntimeException("Fallback to linear traversal");
         int offset = skipPastAnyPrefixJunk(in);
         long xrefPosition = getInitialCrossReferencePosition(in) + offset;
@@ -589,11 +540,11 @@ public class Document {
      *
      * @param seekableInput stream representing whole pdf document
      * @throws PDFException         an invalid stream or file encoding
-     * @throws PDFSecurityException if a security provider can not be found
+     * @throws PdfSecurityException if a security provider can not be found
      *                              or there is an error decrypting the file.
      */
     private void loadDocumentViaLinearTraversal(SeekableInput seekableInput)
-            throws PDFException, PDFSecurityException, InterruptedException, IOException {
+            throws PDFException, PdfSecurityException, InterruptedException, IOException {
 
         InputStream in = seekableInput.getInputStream();
 //        int objectsOffset = skipPastAnyPrefixJunk(in);
@@ -812,9 +763,9 @@ public class Document {
      *
      * @param documentTrailer document trailer
      * @return Whether or not a SecurityManager was made, and set in the Library
-     * @throws PDFSecurityException if there is an issue finding encryption libraries.
+     * @throws PdfSecurityException if there is an issue finding encryption libraries.
      */
-    private boolean makeSecurityManager(PTrailer documentTrailer) throws PDFSecurityException {
+    private boolean makeSecurityManager(PTrailer documentTrailer) throws PdfSecurityException {
         /*
           Before a security manager can be created or needs to be created
           we need the following
@@ -822,7 +773,7 @@ public class Document {
                2.  The trailer object must have an ID entry
          */
         boolean madeSecurityManager = false;
-        HashMap<Object, Object> encryptDictionary = documentTrailer.getEncrypt();
+        DictionaryEntries encryptDictionary = documentTrailer.getEncrypt();
         List fileID = documentTrailer.getID();
         // check for a missing file ID.
         if (fileID == null) {
@@ -867,9 +818,9 @@ public class Document {
      * following method is used with the SecurityCallback to prompt a user for
      * a password if needed.
      *
-     * @throws PDFSecurityException error during authorization manager setup
+     * @throws PdfSecurityException error during authorization manager setup
      */
-    private void attemptAuthorizeSecurityManager() throws PDFSecurityException {
+    private void attemptAuthorizeSecurityManager() throws PdfSecurityException {
         // check if pdf is password protected, by passing in black
         // password
         if (!library.getSecurityManager().isAuthorized("")) {
@@ -886,10 +837,10 @@ public class Document {
                 if (securityCallback != null) {
                     password = securityCallback.requestPassword(this);
                     if (password == null) {
-                        throw new PDFSecurityException("Encryption error");
+                        throw new PdfSecurityException("Encryption error");
                     }
                 } else {
-                    throw new PDFSecurityException("Encryption error");
+                    throw new PdfSecurityException("Encryption error");
                 }
 
                 // Verify new password,  proceed if authorized,
@@ -900,7 +851,7 @@ public class Document {
                 count++;
                 // after 3 tries throw the the error.
                 if (count > 3) {
-                    throw new PDFSecurityException("Encryption error");
+                    throw new PdfSecurityException("Encryption error");
                 }
             }
         }
@@ -1033,13 +984,13 @@ public class Document {
      */
     public void dispose() {
 
-        if (documentSeekableInput != null) {
+        if (documentFileChannel != null) {
             try {
-                documentSeekableInput.close();
+                documentFileChannel.close();
             } catch (IOException e) {
                 logger.log(Level.FINE, "Error closing document input stream.", e);
             }
-            documentSeekableInput = null;
+            documentFileChannel = null;
         }
 
         String fileToDelete = getDocumentCachedFilePath();
@@ -1063,28 +1014,22 @@ public class Document {
      * @throws IOException if there is some problem reading or writing the PDF data
      */
     public long writeToOutputStream(OutputStream out) throws IOException {
-        long documentLength = documentSeekableInput.getLength();
-        SeekableInputConstrainedWrapper wrapper = new SeekableInputConstrainedWrapper(
-                documentSeekableInput, 0L, documentLength);
-        try {
-
-
-            byte[] buffer = new byte[4096];
-            int length;
-            while ((length = wrapper.read(buffer, 0, buffer.length)) > 0) {
-                out.write(buffer, 0, length);
+        if (documentFileChannel != null) {
+            synchronized (library.getMappedFileByteBufferLock()) {
+                ByteBuffer documentByteBuffer = library.getMappedFileByteBuffer();
+                documentByteBuffer.position(0);
+                int documentLength = documentByteBuffer.remaining();
+                try (WritableByteChannel channel = Channels.newChannel(out)) {
+                    channel.write(documentByteBuffer);
+                } catch (Throwable e) {
+                    logger.log(Level.FINE, "Error writing PDF output stream.", e);
+                    throw new IOException(e.getMessage());
+                }
+                return documentLength;
             }
-        } catch (Throwable e) {
-            logger.log(Level.FINE, "Error writing PDF output stream.", e);
-            throw new IOException(e.getMessage());
-        } finally {
-            try {
-                wrapper.close();
-            } catch (IOException e) {
-                // forget about it.
-            }
+        } else {
+            return 0;
         }
-        return documentLength;
     }
 
     /**
@@ -1235,7 +1180,7 @@ public class Document {
     }
 
     private PInfo createInfo() {
-        final PInfo pInfo = new PInfo(library, new HashMap<>());
+        final PInfo pInfo = new PInfo(library, new DictionaryEntries());
         final Reference pInfoReference = stateManager.getNewReferenceNumber();
         pInfo.setPObjectReference(pInfoReference);
         library.addObject(pInfo.getEntries(), pInfoReference);

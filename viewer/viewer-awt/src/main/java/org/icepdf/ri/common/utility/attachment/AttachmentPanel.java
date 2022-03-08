@@ -142,7 +142,7 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
                         if (rawFileName != null && rawFileName instanceof LiteralStringObject &&
                                 rawFileProperties != null && rawFileProperties instanceof HashMap) {
                             String fileName = Utils.convertStringObject(library, (LiteralStringObject) rawFileName);
-                            files.put(fileName, new FileSpecification(library, (HashMap) rawFileProperties));
+                            files.put(fileName, new FileSpecification(library, (DictionaryEntries) rawFileProperties));
                         }
                     }
                     buildUI();

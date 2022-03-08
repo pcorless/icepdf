@@ -16,10 +16,9 @@
 
 package org.icepdf.core.pobjects.acroform;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
-
-import java.util.HashMap;
 
 /**
  * Text field (field type Tx) is a box or space for text fill-in data typically
@@ -124,7 +123,7 @@ public class TextFieldDictionary extends VariableTextFieldDictionary {
     protected TextFieldType textFieldType;
     protected int maxLength = 0;
 
-    public TextFieldDictionary(Library library, HashMap entries) {
+    public TextFieldDictionary(Library library, DictionaryEntries entries) {
         super(library, entries);
         // parse out max length.
         Object value = library.getObject(entries, MAX_LENGTH_KEY);

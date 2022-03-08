@@ -16,13 +16,13 @@
 package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -136,13 +136,7 @@ public class BorderStyle extends Dictionary {
     // dash array
     private float[] dashArray = DEFAULT_DASH_ARRAY;
 
-    /**
-     * Creates a new instance of a BorderStyle.
-     *
-     * @param l document library.
-     * @param h dictionary entries.
-     */
-    public BorderStyle(Library l, HashMap h) {
+    public BorderStyle(Library l, DictionaryEntries h) {
         super(l, h);
         // parse out stroke width
         Number value = (Number) getObject(BORDER_WIDTH_KEY);

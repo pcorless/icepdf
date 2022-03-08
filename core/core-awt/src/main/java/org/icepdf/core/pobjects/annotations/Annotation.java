@@ -557,12 +557,9 @@ public abstract class Annotation extends Dictionary {
 
     /**
      * Creates a new instance of an Annotation.
-     *
-     * @param l document library.
-     * @param h dictionary entries.
      */
-    public Annotation(Library l, HashMap h) {
-        super(l, h);
+    public Annotation(Library library, DictionaryEntries entries) {
+        super(library, entries);
     }
 
     /**
@@ -570,60 +567,60 @@ public abstract class Annotation extends Dictionary {
      * creating a new annotation.
      *
      * @param library document library
-     * @param hashMap annotation properties.
+     * @param entries annotation properties.
      * @return annotation instance.
      */
     @SuppressWarnings("unchecked")
-    public static Annotation buildAnnotation(Library library, HashMap hashMap) {
+    public static Annotation buildAnnotation(Library library, DictionaryEntries entries) {
         Annotation annot = null;
-        Name subType = (Name) hashMap.get(SUBTYPE_KEY);
+        Name subType = (Name) entries.get(SUBTYPE_KEY);
         if (subType != null) {
             if (subType.equals(Annotation.SUBTYPE_LINK)) {
-                annot = new LinkAnnotation(library, hashMap);
+                annot = new LinkAnnotation(library, entries);
             }
             // highlight version of a TextMarkup annotation.
             else if (TextMarkupAnnotation.isTextMarkupAnnotation(subType)) {
-                annot = new TextMarkupAnnotation(library, hashMap);
+                annot = new TextMarkupAnnotation(library, entries);
             } else if (subType.equals(Annotation.SUBTYPE_LINE)) {
-                annot = new LineAnnotation(library, hashMap);
+                annot = new LineAnnotation(library, entries);
             } else if (subType.equals(Annotation.SUBTYPE_SQUARE)) {
-                annot = new SquareAnnotation(library, hashMap);
+                annot = new SquareAnnotation(library, entries);
             } else if (subType.equals(Annotation.SUBTYPE_CIRCLE)) {
-                annot = new CircleAnnotation(library, hashMap);
+                annot = new CircleAnnotation(library, entries);
             } else if (subType.equals(Annotation.SUBTYPE_INK)) {
-                annot = new InkAnnotation(library, hashMap);
+                annot = new InkAnnotation(library, entries);
             } else if (subType.equals(Annotation.SUBTYPE_FREE_TEXT)) {
-                annot = new FreeTextAnnotation(library, hashMap);
+                annot = new FreeTextAnnotation(library, entries);
             } else if (subType.equals(Annotation.SUBTYPE_TEXT)) {
-                annot = new TextAnnotation(library, hashMap);
+                annot = new TextAnnotation(library, entries);
             } else if (subType.equals(Annotation.SUBTYPE_POPUP)) {
-                annot = new PopupAnnotation(library, hashMap);
+                annot = new PopupAnnotation(library, entries);
             } else if (PolyAnnotation.isPolyAnnotation(subType)) {
-                annot = new PolyAnnotation(library, hashMap);
+                annot = new PolyAnnotation(library, entries);
             } else if (subType.equals(Annotation.SUBTYPE_WIDGET)) {
-                Name fieldType = library.getName(hashMap, FieldDictionary.FT_KEY);
+                Name fieldType = library.getName(entries, FieldDictionary.FT_KEY);
                 if (fieldType == null) {
                     // get type from parent object if we the widget and field dictionary aren't combined.
-                    Object tmp = library.getObject(hashMap, FieldDictionary.PARENT_KEY);
-                    if (tmp instanceof HashMap) {
-                        fieldType = library.getName((HashMap) tmp, FieldDictionary.FT_KEY);
+                    Object tmp = library.getObject(entries, FieldDictionary.PARENT_KEY);
+                    if (tmp instanceof DictionaryEntries) {
+                        fieldType = library.getName((DictionaryEntries) tmp, FieldDictionary.FT_KEY);
                     }
                 }
                 if (FieldDictionaryFactory.TYPE_BUTTON.equals(fieldType)) {
-                    annot = new ButtonWidgetAnnotation(library, hashMap);
+                    annot = new ButtonWidgetAnnotation(library, entries);
                 } else if (FieldDictionaryFactory.TYPE_CHOICE.equals(fieldType)) {
-                    annot = new ChoiceWidgetAnnotation(library, hashMap);
+                    annot = new ChoiceWidgetAnnotation(library, entries);
                 } else if (FieldDictionaryFactory.TYPE_TEXT.equals(fieldType)) {
-                    annot = new TextWidgetAnnotation(library, hashMap);
+                    annot = new TextWidgetAnnotation(library, entries);
                 } else if (FieldDictionaryFactory.TYPE_SIGNATURE.equals(fieldType)) {
-                    annot = new SignatureWidgetAnnotation(library, hashMap);
+                    annot = new SignatureWidgetAnnotation(library, entries);
                 } else {
-                    annot = new WidgetAnnotation(library, hashMap);
+                    annot = new WidgetAnnotation(library, entries);
                 }
             }
         }
         if (annot == null) {
-            annot = new GenericAnnotation(library, hashMap);
+            annot = new GenericAnnotation(library, entries);
         }
 //        annot.init();
         return annot;
@@ -656,8 +653,8 @@ public abstract class Annotation extends Dictionary {
         // parse out border style if available
         Object BS = getObject(BORDER_STYLE_KEY);
         if (BS != null) {
-            if (BS instanceof HashMap) {
-                borderStyle = new BorderStyle(library, (HashMap) BS);
+            if (BS instanceof DictionaryEntries) {
+                borderStyle = new BorderStyle(library, (DictionaryEntries) BS);
             } else if (BS instanceof BorderStyle) {
                 borderStyle = (BorderStyle) BS;
             }
@@ -665,7 +662,7 @@ public abstract class Annotation extends Dictionary {
         // else build out a border style from the old B entry or create
         // a default invisible border.
         else {
-            HashMap<Name, Object> borderMap = new HashMap<>();
+            DictionaryEntries borderMap = new DictionaryEntries();
             // get old school border
             Object borderObject = getObject(BORDER_KEY);
             if (borderObject != null && borderObject instanceof List) {
@@ -693,7 +690,7 @@ public abstract class Annotation extends Dictionary {
 
         // if no creation date check for M or modified.
         Object value = library.getObject(entries, M_KEY);
-        if (value != null && value instanceof StringObject) {
+        if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
             modifiedDate = new PDate(securityManager,
                     text.getDecryptedLiteralString(securityManager));
@@ -701,7 +698,7 @@ public abstract class Annotation extends Dictionary {
 
         // process the streams if available.
         Object AP = getObject(APPEARANCE_STREAM_KEY);
-        if (AP instanceof HashMap) {
+        if (AP instanceof DictionaryEntries) {
             // assign the default AS key as the default appearance
             currentAppearance = APPEARANCE_STREAM_NORMAL_KEY;
             Name appearanceState = (Name) getObject(APPEARANCE_STATE_KEY);
@@ -710,7 +707,7 @@ public abstract class Annotation extends Dictionary {
             }
             // The annotations normal appearance.
             Object appearance = library.getObject(
-                    (HashMap) AP, APPEARANCE_STREAM_NORMAL_KEY);
+                    (DictionaryEntries) AP, APPEARANCE_STREAM_NORMAL_KEY);
             if (appearance != null) {
                 try {
                     appearances.put(APPEARANCE_STREAM_NORMAL_KEY,
@@ -730,7 +727,7 @@ public abstract class Annotation extends Dictionary {
             // (Optional) The annotation’s rollover appearance.
             // Default value: the value of the N entry.
             appearance = library.getObject(
-                    (HashMap) AP, APPEARANCE_STREAM_ROLLOVER_KEY);
+                    (DictionaryEntries) AP, APPEARANCE_STREAM_ROLLOVER_KEY);
             if (appearance != null) {
                 try {
                     appearances.put(APPEARANCE_STREAM_ROLLOVER_KEY,
@@ -743,7 +740,7 @@ public abstract class Annotation extends Dictionary {
             // (Optional) The annotation’s down appearance.
             // Default value: the value of the N entry.
             appearance = library.getObject(
-                    (HashMap) AP, APPEARANCE_STREAM_DOWN_KEY);
+                    (DictionaryEntries) AP, APPEARANCE_STREAM_DOWN_KEY);
             if (appearance != null) {
                 try {
                     appearances.put(APPEARANCE_STREAM_DOWN_KEY,
@@ -761,7 +758,7 @@ public abstract class Annotation extends Dictionary {
 
     private void createNewAppearance() {
         Appearance newAppearance = new Appearance();
-        HashMap appearanceDictionary = new HashMap();
+        DictionaryEntries appearanceDictionary = new DictionaryEntries();
         Rectangle2D rect = getUserSpaceRectangle();
         if (rect == null) {
             // we need a rect in order to render correctly, bail if not found.
@@ -789,8 +786,8 @@ public abstract class Annotation extends Dictionary {
 
         // iterate over all of the keys so we can index the various annotation
         // state names.
-        if (streamOrDictionary instanceof HashMap) {
-            HashMap dictionary = (HashMap) streamOrDictionary;
+        if (streamOrDictionary instanceof DictionaryEntries) {
+            DictionaryEntries dictionary = (DictionaryEntries) streamOrDictionary;
             Set keys = dictionary.keySet();
             Object value;
             for (Object key : keys) {
@@ -924,7 +921,7 @@ public abstract class Annotation extends Dictionary {
         // that we are parsing an action that has no type specification and
         // thus we can't use the parser to create the new action.
         if (tmp != null) {
-            Action action = Action.buildAction(library, (HashMap) tmp);
+            Action action = Action.buildAction(library, (DictionaryEntries) tmp);
             // assign reference if applicable
             if (action != null &&
                     library.isReference(entries, ACTION_KEY)) {
@@ -1121,8 +1118,8 @@ public abstract class Annotation extends Dictionary {
             ob = library.getObject((Reference) ob);
         if (ob instanceof Annotation)
             parent = (Annotation) ob;
-        else if (ob instanceof HashMap)
-            return FieldDictionaryFactory.buildField(library, (HashMap) ob);
+        else if (ob instanceof DictionaryEntries)
+            return FieldDictionaryFactory.buildField(library, (DictionaryEntries) ob);
 
         return parent;
     }
@@ -1804,13 +1801,13 @@ public abstract class Annotation extends Dictionary {
      */
     public Stream getAppearanceStream() {
         Object AP = getObject(APPEARANCE_STREAM_KEY);
-        if (AP instanceof HashMap) {
+        if (AP instanceof DictionaryEntries) {
             Object N = library.getObject(
-                    (HashMap) AP, APPEARANCE_STREAM_NORMAL_KEY);
-            if (N instanceof HashMap) {
+                    (DictionaryEntries) AP, APPEARANCE_STREAM_NORMAL_KEY);
+            if (N instanceof DictionaryEntries) {
                 Object AS = getObject(APPEARANCE_STATE_KEY);
-                if (AS != null && AS instanceof Name)
-                    N = library.getObject((HashMap) N, (Name) AS);
+                if (AS instanceof Name)
+                    N = library.getObject((DictionaryEntries) N, (Name) AS);
             }
             // n should be a Form but we have a few cases of Stream
             if (N instanceof Stream) {
@@ -1849,7 +1846,7 @@ public abstract class Annotation extends Dictionary {
         }// else a stream, we won't support this for annotations.
         else {
             // create a new xobject/form object
-            HashMap<Name, Object> formEntries = new HashMap<>();
+            DictionaryEntries formEntries = new DictionaryEntries();
             formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
             formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
             form = new Form(library, formEntries, null);
@@ -1879,7 +1876,7 @@ public abstract class Annotation extends Dictionary {
             // else a stream, we won't support this for annotations.
         } else {
             // create a new xobject/form object
-            HashMap<Object, Object> formEntries = new HashMap<>();
+            DictionaryEntries formEntries = new DictionaryEntries();
             formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
             formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
             form = new Form(library, formEntries, null);
@@ -1895,7 +1892,7 @@ public abstract class Annotation extends Dictionary {
             stateManager.addChange(new PObject(form, form.getPObjectReference()));
             // update the AP's stream bytes so contents can be written out
             form.setRawBytes(rawBytes);
-            HashMap<Object, Object> appearanceRefs = new HashMap<>();
+            DictionaryEntries appearanceRefs = new DictionaryEntries();
             appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
             entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
 

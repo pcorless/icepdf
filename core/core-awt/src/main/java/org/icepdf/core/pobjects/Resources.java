@@ -21,7 +21,6 @@ import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -52,15 +51,15 @@ public class Resources extends Dictionary {
     private static final Logger logger =
             Logger.getLogger(Resources.class.toString());
 
-    HashMap fonts;
-    HashMap xobjects;
-    HashMap colorspaces;
-    HashMap patterns;
-    HashMap shading;
-    HashMap extGStates;
-    HashMap properties;
+    DictionaryEntries fonts;
+    DictionaryEntries xobjects;
+    DictionaryEntries colorspaces;
+    DictionaryEntries patterns;
+    DictionaryEntries shading;
+    DictionaryEntries extGStates;
+    DictionaryEntries properties;
 
-    public Resources(Library l, HashMap h) {
+    public Resources(Library l, DictionaryEntries h) {
         super(l, h);
         colorspaces = library.getDictionary(entries, COLORSPACE_KEY);
         fonts = library.getDictionary(entries, FONT_KEY);
@@ -71,7 +70,7 @@ public class Resources extends Dictionary {
         properties = library.getDictionary(entries, PROPERTIES_KEY);
     }
 
-    public HashMap getFonts() {
+    public DictionaryEntries getFonts() {
         return fonts;
     }
 
@@ -105,9 +104,7 @@ public class Resources extends Dictionary {
             // if its not in color spaces or pattern then its a plain old
             // named colour space.
             PColorSpace cs = PColorSpace.getColorSpace(library, o);
-            if (cs != null) {
-                cs.init();
-            }
+            cs.init();
             return cs;
         } catch (InterruptedException e) {
             logger.fine("Colorspace parsing was interrupted");
@@ -125,8 +122,8 @@ public class Resources extends Dictionary {
                 font = (org.icepdf.core.pobjects.fonts.Font) ob;
             }
             // corner case where font is just a inline dictionary.
-            else if (ob instanceof HashMap) {
-                font = FontFactory.getInstance().getFont(library, (HashMap) ob);
+            else if (ob instanceof DictionaryEntries) {
+                font = FontFactory.getInstance().getFont(library, (DictionaryEntries) ob);
             }
             // the default value is most likely Reference
             else if (ob instanceof Reference) {
@@ -135,7 +132,7 @@ public class Resources extends Dictionary {
                 if (ob instanceof org.icepdf.core.pobjects.fonts.Font) {
                     font = (org.icepdf.core.pobjects.fonts.Font) ob;
                 } else {
-                    font = FontFactory.getInstance().getFont(library, (HashMap) ob);
+                    font = FontFactory.getInstance().getFont(library, (DictionaryEntries) ob);
                 }
                 // cache the font for later use.
                 if (font != null) {
@@ -275,15 +272,15 @@ public class Resources extends Dictionary {
 
             Object attribute = library.getObject(patterns, name);
             // An instance of TilingPattern will always have a stream
-            if (attribute != null && attribute instanceof TilingPattern) {
+            if (attribute instanceof TilingPattern) {
                 return (TilingPattern) attribute;
-            } else if (attribute != null && attribute instanceof Stream) {
+            } else if (attribute instanceof Stream) {
                 return new TilingPattern((Stream) attribute);
             }
             // ShaddingPatterns will not have a stream but still need to parsed
-            else if (attribute != null && attribute instanceof HashMap) {
+            else if (attribute instanceof DictionaryEntries) {
                 return ShadingPattern.getShadingPattern(library,
-                        (HashMap) attribute);
+                        (DictionaryEntries) attribute);
             }
         }
         return null;
@@ -300,11 +297,10 @@ public class Resources extends Dictionary {
         // look for pattern name in the shading dictionary, used by 'sh' tokens
         if (shading != null) {
             Object shadingDictionary = library.getObject(shading, name);
-            if (shadingDictionary != null && shadingDictionary instanceof HashMap) {
+            if (shadingDictionary instanceof DictionaryEntries) {
                 return ShadingPattern.getShadingPattern(library, entries,
-                        (HashMap) shadingDictionary);
-            }
-            else if (shadingDictionary != null && shadingDictionary instanceof Stream) {
+                        (DictionaryEntries) shadingDictionary);
+            } else if (shadingDictionary instanceof Stream) {
                 return ShadingPattern.getShadingPattern(library, null,
                         (Stream) shadingDictionary);
             }
@@ -323,11 +319,11 @@ public class Resources extends Dictionary {
         ExtGState gsState = null;
         if (extGStates != null) {
             Object attribute = library.getObject(extGStates, namedReference);
-            if (attribute instanceof HashMap) {
-                gsState = new ExtGState(library, (HashMap) attribute);
+            if (attribute instanceof DictionaryEntries) {
+                gsState = new ExtGState(library, (DictionaryEntries) attribute);
             } else if (attribute instanceof Reference) {
                 gsState = new ExtGState(library,
-                        (HashMap) library.getObject(
+                        (DictionaryEntries) library.getObject(
                                 (Reference) attribute));
             }
         }

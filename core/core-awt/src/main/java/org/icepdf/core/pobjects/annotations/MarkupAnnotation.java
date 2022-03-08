@@ -19,7 +19,6 @@ import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.util.Library;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -169,8 +168,8 @@ public abstract class MarkupAnnotation extends Annotation {
     protected Name intent;
     // exData not implemented
 
-    public MarkupAnnotation(Library l, HashMap h) {
-        super(l, h);
+    public MarkupAnnotation(Library library, DictionaryEntries dictionaryEntries) {
+        super(library, dictionaryEntries);
     }
 
     public synchronized void init() throws InterruptedException {
@@ -237,8 +236,8 @@ public abstract class MarkupAnnotation extends Annotation {
         // add the transparency graphic context settings.
         if (form != null) {
             Resources resources = form.getResources();
-            HashMap<Object, Object> graphicsProperties = new HashMap<>(2);
-            HashMap<Object, Object> graphicsState = new HashMap<>(1);
+            DictionaryEntries graphicsProperties = new DictionaryEntries(2);
+            DictionaryEntries graphicsState = new DictionaryEntries(1);
             graphicsProperties.put(GraphicsState.CA_STROKING_KEY, opacity);
             graphicsProperties.put(GraphicsState.CA_NON_STROKING_KEY, opacity);
             graphicsState.put(EXT_GSTATE_NAME, graphicsProperties);

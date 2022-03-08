@@ -16,12 +16,12 @@
 package org.icepdf.core.pobjects.graphics.images;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.graphics.Indexed;
 import org.icepdf.core.pobjects.graphics.PColorSpace;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -34,7 +34,7 @@ public class ColorKeyMask extends Dictionary {
     private int[] maskMinRGB, maskMaxRGB;
 
 
-    public ColorKeyMask(Library library, HashMap entries, ImageParams imageParams) {
+    public ColorKeyMask(Library library, DictionaryEntries entries, ImageParams imageParams) {
         super(library, entries);
         Object maskObj = library.getObject(entries, ImageParams.MASK_KEY);
         if (maskObj instanceof List) {

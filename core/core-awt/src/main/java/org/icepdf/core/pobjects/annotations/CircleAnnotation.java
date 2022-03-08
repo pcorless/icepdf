@@ -26,7 +26,6 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**
@@ -66,8 +65,8 @@ public class CircleAnnotation extends MarkupAnnotation {
     private boolean isFillColor;
     private Rectangle rectangle;
 
-    public CircleAnnotation(Library l, HashMap h) {
-        super(l, h);
+    public CircleAnnotation(Library library, DictionaryEntries dictionaryEntries) {
+        super(library, dictionaryEntries);
     }
 
     public synchronized void init() throws InterruptedException {
@@ -103,7 +102,7 @@ public class CircleAnnotation extends MarkupAnnotation {
         StateManager stateManager = library.getStateManager();
 
         // create a new entries to hold the annotation properties
-        HashMap<Name, Object> entries = new HashMap<>();
+        DictionaryEntries entries = new DictionaryEntries();
         // set default link annotation values.
         entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
         entries.put(Dictionary.SUBTYPE_KEY, Annotation.SUBTYPE_CIRCLE);

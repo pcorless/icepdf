@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects.filters;
 
 import org.icepdf.core.io.BitStream;
 import org.icepdf.core.io.ZeroPaddedInputStream;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.graphics.images.ImageParams;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
@@ -32,7 +33,6 @@ import java.awt.image.renderable.ParameterBlock;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -555,7 +555,7 @@ public class CCITTFax {
     }
 
     public static BufferedImage attemptDeriveBufferedImageFromBytes(
-            ImageStream stream, Library library, HashMap streamDictionary, Color fill) throws InvocationTargetException, IllegalAccessException {
+            ImageStream stream, Library library, DictionaryEntries streamDictionary, Color fill) throws InvocationTargetException, IllegalAccessException {
         if (!USE_JAI_IMAGE_LIBRARY)
             return null;
 
@@ -563,7 +563,7 @@ public class CCITTFax {
         boolean imageMask = stream.getImageParams().isImageMask();
         float[] decodeArray = imageParams.getDecode();
         // get decode parameters from stream properties
-        HashMap decodeParmsDictionary = imageParams.getDecodeParams();
+        DictionaryEntries decodeParmsDictionary = imageParams.getDecodeParams();
         boolean blackIs1 = imageParams.getBlackIs1(decodeParmsDictionary);
         // double check for blackIs1 in the main dictionary.
 

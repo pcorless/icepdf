@@ -21,7 +21,6 @@ import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.HashMap;
 
 /**
  * A PDF document may contain thumbnail images representing the contents of its
@@ -47,7 +46,7 @@ public class Thumbnail extends Dictionary {
     // dimensions
     private Dimension dimension;
 
-    public Thumbnail(Library library, HashMap entries) {
+    public Thumbnail(Library library, DictionaryEntries entries) {
         super(library, entries);
         Object thumb = library.getObject(entries, THUMB_KEY);
         if (thumb != null) {

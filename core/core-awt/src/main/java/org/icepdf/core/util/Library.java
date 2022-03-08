@@ -16,7 +16,8 @@
  */
 package org.icepdf.core.util;
 
-import org.icepdf.core.io.SeekableInput;
+import org.icepdf.core.SecurityCallback;
+import org.icepdf.core.exceptions.PdfSecurityException;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.acroform.SignatureHandler;
@@ -25,10 +26,16 @@ import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.graphics.ICCBased;
 import org.icepdf.core.pobjects.graphics.images.references.ImagePool;
 import org.icepdf.core.pobjects.security.SecurityManager;
+import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
+import org.icepdf.core.pobjects.structure.Indexer;
+import org.icepdf.core.pobjects.structure.exceptions.CrossReferenceStateException;
+import org.icepdf.core.pobjects.structure.exceptions.ObjectStateException;
+import org.icepdf.core.util.parser.object.ObjectLoader;
 
 import java.awt.geom.Rectangle2D;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.util.HashMap;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
@@ -85,10 +92,22 @@ public class Library {
 
     // new incremental file loader class.
     private LazyObjectLoader lazyObjectLoader;
-    private ConcurrentHashMap<Reference, WeakReference<Object>> refs =
+    // todo shoudl this be a SoftReference
+    private ConcurrentHashMap<Reference, WeakReference<Object>> objectStore =
             new ConcurrentHashMap<>(1024);
     private ConcurrentHashMap<Reference, WeakReference<ICCBased>> lookupReference2ICCBased =
             new ConcurrentHashMap<>(256);
+
+    private double fileVersion = 1.0;
+    private String fileOrigin;
+
+    private ByteBuffer mappedFileByteBuffer;
+    private final Object mappedFileByteBufferLock = new Object();
+
+    private CrossReferenceRoot crossReferenceRoot;
+
+    private ObjectLoader objectLoader;
+
     // Instead of keeping Names names, Dictionary dests, we keep
     //   a reference to the Catalog, which actually owns them
     private Catalog catalog;
@@ -101,9 +120,6 @@ public class Library {
     // signature permissions
     private Permissions permissions;
 
-    private SeekableInput documentInput;
-
-
     // state manager reference needed by most classes to properly managed state
     // changes and new object creation
     public StateManager stateManager;
@@ -111,6 +127,17 @@ public class Library {
     private boolean isEncrypted;
     private boolean isLinearTraversal;
     private ImagePool imagePool;
+
+
+    /**
+     * Creates a new instance of a Library.
+     */
+    public Library() {
+        objectLoader = new ObjectLoader(this);
+        // set Catalog memory Manager and cache manager.
+        imagePool = new ImagePool();
+        signatureHandler = new SignatureHandler();
+    }
 
     /**
      * Sets a document loader for the library.
@@ -141,33 +168,145 @@ public class Library {
      * object reference can not be found.
      */
     public Object getObject(Reference reference) {
-        Object ob;
+        return getObject(reference, null);
+    }
+
+    public Object getObject(Reference reference, Name hint) {
+        Object obj;
+        // todo I hat these, remove or use another construct
         while (true) {
-            WeakReference<Object> obRef = refs.get(reference);
+            WeakReference<Object> obRef = objectStore.get(reference);
             // check stateManager first to allow for annotations to be injected
             // from a separate file.
             if (stateManager != null) {
                 if (stateManager.contains(reference)) {
-                    ob = stateManager.getChange(reference);
-                    if (ob instanceof PObject) {
-                        return ((PObject) ob).getObject();
+                    obj = stateManager.getChange(reference);
+                    if (obj instanceof PObject) {
+                        return ((PObject) obj).getObject();
                     }
-                    return ob;
+                    return obj;
                 }
             }
-            ob = obRef != null ? obRef.get() : null;
-            if (ob == null && lazyObjectLoader != null) {
-                ob = lazyObjectLoader.loadObject(reference);
+            obj = obRef != null ? obRef.get() : null;
+            if (obj == null && crossReferenceRoot != null) {
+                try {
+                    obj = crossReferenceRoot.loadObject(objectLoader, reference, hint);
+                } catch (ObjectStateException | CrossReferenceStateException | IOException e) {
+                    // a null object is ok in this case we are looking at likely an incorrectly indexed file.
+                    log.warning("Cross reference indexing failed, reindexing file. " + getFileOrigin());
+                    try {
+                        rebuildCrossReferenceTable();
+                        return getObject(reference);
+                    } catch (IOException | CrossReferenceStateException | ObjectStateException e1) {
+                        log.warning("Linear traversal of file failed, can not load file.");
+                    }
+                } catch (ClassCastException e) {
+                    log.warning("Failed to load object, likely malformed. " + reference + " " + getFileOrigin());
+                    return null;
+                }
+                objectStore.put(reference, new WeakReference<>(obj));
             }
-            if (ob instanceof PObject) {
-                return ((PObject) ob).getObject();
-            } else if (ob instanceof Reference) {
-                reference = (Reference) ob;
+            if (obj instanceof PObject) {
+                return ((PObject) obj).getObject();
+            } else if (obj instanceof Reference) {
+                reference = (Reference) obj;
             } else {
                 break;
             }
         }
-        return ob;
+        return obj;
+    }
+
+    public CrossReferenceRoot rebuildCrossReferenceTable()
+            throws IOException, CrossReferenceStateException, ObjectStateException {
+        Indexer indexer = new Indexer(this);
+        synchronized (mappedFileByteBufferLock) {
+            crossReferenceRoot = indexer.indexObjects(mappedFileByteBuffer);
+            setCrossReferenceRoot(crossReferenceRoot);
+        }
+        return crossReferenceRoot;
+    }
+
+    public String getFileOrigin() {
+        return fileOrigin;
+    }
+
+    public void setCrossReferenceRoot(CrossReferenceRoot crossReferenceRoot) throws ObjectStateException {
+        this.crossReferenceRoot = crossReferenceRoot;
+        DictionaryEntries trailerDictionary = crossReferenceRoot.getTrailerDictionary();
+        DictionaryEntries encryptDictionary = getDictionary(trailerDictionary, org.icepdf.core.pobjects.structure.CrossReference.ENCRYPTION_KEY);
+        if (encryptDictionary != null && encryptDictionary.size() > 0) {
+            try {
+                List fileId = getArray(trailerDictionary, org.icepdf.core.pobjects.structure.CrossReference.ID_KEY);
+                securityManager = new SecurityManager(this, encryptDictionary, fileId);
+            } catch (PdfSecurityException e) {
+                throw new ObjectStateException("Security Manager could not be initialized.");
+            }
+        }
+    }
+
+    public void authorizeSecurityManager(Document document, SecurityCallback securityCallback) throws PdfSecurityException {
+        // check if pdf is password protected, by passing in black
+        // password
+        if (!securityManager.isAuthorized("")) {
+            // count password tries
+            int count = 1;
+            // store temporary password
+            String password;
+
+            // Give user 3 chances to type the correct password
+            // before throwing security exceptions
+            while (true) {
+                // Display password dialog
+                // make sure a callback has been set.
+                if (securityCallback != null) {
+                    password = securityCallback.requestPassword(null);
+                    if (password == null) {
+                        throw new PdfSecurityException("Encryption error");
+                    }
+                } else {
+                    throw new PdfSecurityException("Encryption error");
+                }
+
+                // Verify new password,  proceed if authorized,
+                //    fatal exception otherwise.
+                if (securityManager.isAuthorized(password)) {
+                    break;
+                }
+                count++;
+                // after 3 tries throw the the error.
+                if (count > 3) {
+                    throw new PdfSecurityException("Encryption error");
+                }
+            }
+        }
+
+        // set the encryption flag on catalog
+//        library.setEncrypted(true);
+    }
+
+    public ByteBuffer getMappedFileByteBuffer() {
+        return mappedFileByteBuffer;
+    }
+
+    public void setDocumentByteBuffer(ByteBuffer mappedFileByteBuffer) {
+        this.mappedFileByteBuffer = mappedFileByteBuffer;
+    }
+
+    public void setFileOrigin(String fileOrigin) {
+        this.fileOrigin = fileOrigin;
+    }
+
+    public Object getMappedFileByteBufferLock() {
+        return mappedFileByteBufferLock;
+    }
+
+    public double getFileVersion() {
+        return fileVersion;
+    }
+
+    public void setFileVersion(double fileVersion) {
+        this.fileVersion = fileVersion;
     }
 
     /**
@@ -197,9 +336,8 @@ public class Library {
      * @param dictionaryEntries the dictionary entries to look up the key in.
      * @param key               string value representing the dictionary key.
      * @return PDF object that the key references.
-     * @see #getObjectReference(java.util.HashMap, Name)
      */
-    public Object getObject(HashMap dictionaryEntries, Name key) {
+    public Object getObject(DictionaryEntries dictionaryEntries, Name key) {
         if (dictionaryEntries == null) {
             return null;
         }
@@ -227,7 +365,7 @@ public class Library {
      * @return true if the key value exists and is a reference, false if the
      * dictionaryEntries are null or the key references an inline dictionary
      */
-    public boolean isReference(HashMap dictionaryEntries, Name key) {
+    public boolean isReference(DictionaryEntries dictionaryEntries, Name key) {
         return dictionaryEntries != null &&
                 dictionaryEntries.get(key) instanceof Reference;
 
@@ -243,7 +381,7 @@ public class Library {
      * @return reference of the object that key points if any.  Null if the key
      * points to an inline dictionary and not a reference.
      */
-    public Reference getReference(HashMap dictionaryEntries, Name key) {
+    public Reference getReference(DictionaryEntries dictionaryEntries, Name key) {
         Object ref = dictionaryEntries.get(key);
         if (ref instanceof Reference) {
             return (Reference) ref;
@@ -295,7 +433,7 @@ public class Library {
      * @param key               dictionary key
      * @return true, if the key's value is non-null PDF object; false, otherwise.
      */
-    public boolean isValidEntry(HashMap dictionaryEntries, Name key) {
+    public boolean isValidEntry(DictionaryEntries dictionaryEntries, Name key) {
         if (dictionaryEntries == null) {
             return false;
         }
@@ -310,7 +448,7 @@ public class Library {
      * @return true, if a cross-reference entry exists for this reference; false, otherwise.
      */
     public boolean isValidEntry(Reference reference) {
-        WeakReference<Object> ob = refs.get(reference);
+        WeakReference<Object> ob = objectStore.get(reference);
         return (ob != null && ob.get() != null) ||
                 lazyObjectLoader != null &&
                         lazyObjectLoader.haveEntry(reference);
@@ -326,7 +464,7 @@ public class Library {
      * @return Number object if a valid key;  null, if the key does not point
      * to Number or is invalid.
      */
-    public Number getNumber(HashMap dictionaryEntries, Name key) {
+    public Number getNumber(DictionaryEntries dictionaryEntries, Name key) {
         Object o = getObject(dictionaryEntries, key);
         if (o instanceof Number)
             return (Number) o;
@@ -343,7 +481,7 @@ public class Library {
      * @return Number object if a valid key;  null, if the key does not point
      * to Number or is invalid.
      */
-    public Boolean getBoolean(HashMap dictionaryEntries, Name key) {
+    public Boolean getBoolean(DictionaryEntries dictionaryEntries, Name key) {
         Object o = getObject(dictionaryEntries, key);
         if (o instanceof String)
             return Boolean.valueOf((String) o);
@@ -360,7 +498,7 @@ public class Library {
      * @return float value if a valid key;  null, if the key does not point
      * to a float or is invalid.
      */
-    public float getFloat(HashMap dictionaryEntries, Name key) {
+    public float getFloat(DictionaryEntries dictionaryEntries, Name key) {
         Number n = getNumber(dictionaryEntries, key);
         return (n != null) ? n.floatValue() : 0.0f;
     }
@@ -375,7 +513,7 @@ public class Library {
      * @return int value if a valid key,  null if the key does not point
      * to an int or is invalid.
      */
-    public int getInt(HashMap dictionaryEntries, Name key) {
+    public int getInt(DictionaryEntries dictionaryEntries, Name key) {
         Number n = getNumber(dictionaryEntries, key);
         return (n != null) ? n.intValue() : 0;
     }
@@ -390,7 +528,7 @@ public class Library {
      * @return float value if a valid key;  null, if the key does not point
      * to a float or is invalid.
      */
-    public long getLong(HashMap dictionaryEntries, Name key) {
+    public long getLong(DictionaryEntries dictionaryEntries, Name key) {
         Number n = getNumber(dictionaryEntries, key);
         return (n != null) ? n.longValue() : 0L;
     }
@@ -405,7 +543,7 @@ public class Library {
      * @return Name object if a valid key;  null, if the key does not point
      * to Name or is invalid.
      */
-    public Name getName(HashMap dictionaryEntries, Name key) {
+    public Name getName(DictionaryEntries dictionaryEntries, Name key) {
         Object o = getObject(dictionaryEntries, key);
         if (o != null) {
             if (o instanceof Name) {
@@ -425,7 +563,7 @@ public class Library {
      * @return string object if a valid key;  null, if the key does not point
      * to Name or is invalid.
      */
-    public String getString(HashMap dictionaryEntries, Name key) {
+    public String getString(DictionaryEntries dictionaryEntries, Name key) {
         Object o = getObject(dictionaryEntries, key);
         if (o != null) {
             if (o instanceof String) {
@@ -450,16 +588,16 @@ public class Library {
      * to dictionary or is invalid.
      */
     @SuppressWarnings("unchecked")
-    public HashMap getDictionary(HashMap dictionaryEntries, Name key) {
+    public DictionaryEntries getDictionary(DictionaryEntries dictionaryEntries, Name key) {
         Object o = getObject(dictionaryEntries, key);
-        if (o instanceof HashMap) {
-            return (HashMap) o;
+        if (o instanceof DictionaryEntries) {
+            return (DictionaryEntries) o;
         } else if (o instanceof List) {
             List v = (List) o;
-            HashMap h1 = new HashMap();
+            DictionaryEntries h1 = new DictionaryEntries();
             for (Object o1 : v) {
-                if (o1 instanceof HashMap) {
-                    h1.putAll((HashMap) o1);
+                if (o1 instanceof DictionaryEntries) {
+                    h1.putAll((DictionaryEntries) o1);
                 }
             }
             return h1;
@@ -467,7 +605,7 @@ public class Library {
         return null;
     }
 
-    public List getArray(HashMap dictionaryEntries, Name key) {
+    public List getArray(DictionaryEntries dictionaryEntries, Name key) {
         Object o = getObject(dictionaryEntries, key);
         if (o instanceof List) {
             return (List) o;
@@ -483,7 +621,7 @@ public class Library {
      * @param key               string value representing the dictionary key.
      * @return rectangle in Java2D coordinate system.
      */
-    public Rectangle2D.Float getRectangle(HashMap dictionaryEntries, Name key) {
+    public Rectangle2D.Float getRectangle(DictionaryEntries dictionaryEntries, Name key) {
         List v = (List) getObject(dictionaryEntries, key);
         if (v != null) {
             // s by default contains data in the Cartesian plain.
@@ -530,7 +668,7 @@ public class Library {
     }
 
     @SuppressWarnings("unchecked")
-    public Resources getResources(HashMap dictionaryEntries, Name key) {
+    public Resources getResources(DictionaryEntries dictionaryEntries, Name key) {
         if (dictionaryEntries == null)
             return null;
         Object ob = dictionaryEntries.get(key);
@@ -541,8 +679,8 @@ public class Library {
         else if (ob instanceof Reference) {
             Reference reference = (Reference) ob;
             return getResources(reference);
-        } else if (ob instanceof HashMap) {
-            HashMap ht = (HashMap) ob;
+        } else if (ob instanceof DictionaryEntries) {
+            DictionaryEntries ht = (DictionaryEntries) ob;
             Resources resources = new Resources(this, ht);
             dictionaryEntries.put(key, resources);
             return resources;
@@ -554,14 +692,14 @@ public class Library {
         Object object = getObject(reference);
         if (object instanceof Resources) {
             return (Resources) object;
-        } else if (object instanceof HashMap) {
-            HashMap ht = (HashMap) object;
+        } else if (object instanceof DictionaryEntries) {
+            DictionaryEntries ht = (DictionaryEntries) object;
             Resources resources = new Resources(this, ht);
             addObject(resources, reference);
             return resources;
         } else if (object instanceof Dictionary) {
             // corner case: object is of an unexpected type,  grab the dictionary and try to continue.
-            HashMap ht = ((Dictionary) object).getEntries();
+            DictionaryEntries ht = ((Dictionary) object).getEntries();
             Resources resources = new Resources(this, ht);
             addObject(resources, reference);
             return resources;
@@ -576,7 +714,7 @@ public class Library {
      * @param objectReference PDF object reference object.
      */
     public void addObject(Object object, Reference objectReference) {
-        refs.put(objectReference, new WeakReference<>(object));
+        objectStore.put(objectReference, new WeakReference<>(object));
     }
 
     /**
@@ -586,17 +724,8 @@ public class Library {
      */
     public void removeObject(Reference objetReference) {
         if (objetReference != null) {
-            refs.remove(objetReference);
+            objectStore.remove(objetReference);
         }
-    }
-
-    /**
-     * Creates a new instance of a Library.
-     */
-    public Library() {
-        // set Catalog memory Manager and cache manager.
-        imagePool = new ImagePool();
-        signatureHandler = new SignatureHandler();
     }
 
     /**
@@ -604,18 +733,18 @@ public class Library {
      *
      * @param documentInput seekable inputstream.
      */
-    public void setDocumentInput(SeekableInput documentInput) {
-        this.documentInput = documentInput;
-    }
+//    public void setDocumentInput(SeekableInput documentInput) {
+//        this.documentInput = documentInput;
+//    }
 
     /**
      * Gets the SeekableInput of the document underlying bytes.
      *
      * @return document bytes.
      */
-    public SeekableInput getDocumentInput() {
-        return documentInput;
-    }
+//    public SeekableInput getDocumentInput() {
+//        return documentInput;
+//    }
 
     /**
      * Gets the PDF object specified by the <code>key</code> in the dictionary
@@ -625,9 +754,8 @@ public class Library {
      * @param key               string value representing the dictionary key.
      * @return the Reference specified by the PDF key.  If the key is invalid
      * or does not reference a Reference object, null is returned.
-     * @see #getObject(java.util.HashMap, Name)
      */
-    public Reference getObjectReference(HashMap dictionaryEntries,
+    public Reference getObjectReference(DictionaryEntries dictionaryEntries,
                                         Name key) {
         if (dictionaryEntries == null) {
             return null;
@@ -755,12 +883,12 @@ public class Library {
      * when needed again.
      */
     public void disposeFontResources() {
-        Set<Reference> test = refs.keySet();
+        Set<Reference> test = objectStore.keySet();
         for (Reference ref : test) {
-            WeakReference<Object> reference = refs.get(ref);
+            WeakReference<Object> reference = objectStore.get(ref);
             Object tmp = reference != null ? reference.get() : null;
             if (tmp instanceof Font || tmp instanceof FontDescriptor) {
-                refs.remove(ref);
+                objectStore.remove(ref);
             }
         }
     }
@@ -787,7 +915,7 @@ public class Library {
             });
         }
 
-        log.fine("Starting ICEpdf image proxy Pool: " + imageThreadPool + " threads.");
+        log.fine("Starting ICEpdf image proxy Pool: " + imagePoolThreads + " threads.");
         if (imageThreadPool == null || imageThreadPool.isShutdown()) {
             imageThreadPool = new ThreadPoolExecutor(
                     imagePoolThreads, imagePoolThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,

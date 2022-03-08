@@ -15,12 +15,12 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
-import java.util.HashMap;
 
 /**
  * <p>Pattern colour implements PColorSpace but is more of a parser placeholder
@@ -48,7 +48,7 @@ public class PatternColor extends PColorSpace {
      * @param library document library.
      * @param entries dictionary entries.
      */
-    public PatternColor(Library library, HashMap entries) {
+    public PatternColor(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 

@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.fonts.ofont;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Stream;
@@ -181,7 +182,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                     "ZapfDingbats", "Dingbats", "Dingbats"}
             };
 
-    public Font(Library library, HashMap entries) {
+    public Font(Library library, DictionaryEntries entries) {
         super(library, entries);
 
         // initialize cMap array with base characters
@@ -266,8 +267,8 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         // Find any special encoding information, not used very often
         Object o = library.getObject(entries, ENCODING_KEY);
         if (o != null) {
-            if (o instanceof HashMap) {
-                HashMap encoding = (HashMap) o;
+            if (o instanceof DictionaryEntries) {
+                DictionaryEntries encoding = (DictionaryEntries) o;
                 setBaseEncoding(library.getName(encoding, BASE_ENCODING_KEY));
                 List differences = (List) library.getObject(encoding, DIFFERENCES_KEY);
                 if (differences != null) {

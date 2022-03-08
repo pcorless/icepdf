@@ -15,12 +15,12 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.functions.Function;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -51,13 +51,13 @@ public class DeviceN extends PColorSpace {
     private PColorSpace alternate;
     private Function tintTransform;
     // for debugging purposes, not currently used.
-    private HashMap attributesDictionary;
-    private HashMap processDictionary;
+    private DictionaryEntries attributesDictionary;
+    private DictionaryEntries processDictionary;
 
     private boolean foundCMYKColorants;
 
     @SuppressWarnings("unchecked")
-    DeviceN(Library l, HashMap h, Object names, Object alternativeSpace, Object tintTransform, Object attributes) {
+    DeviceN(Library l, DictionaryEntries h, Object names, Object alternativeSpace, Object tintTransform, Object attributes) {
         super(l, h);
         this.names = (java.util.List) names;
         alternate = getColorSpace(l, alternativeSpace);
@@ -77,9 +77,9 @@ public class DeviceN extends PColorSpace {
 
         // attributes are required for defining NChannel
         if (attributes != null) {
-            attributesDictionary = (HashMap) library.getObject(attributes);
+            attributesDictionary = (DictionaryEntries) library.getObject(attributes);
             // setup process
-            processDictionary = (HashMap) library.getObject(attributesDictionary, PROCESS_KEY);
+            processDictionary = (DictionaryEntries) library.getObject(attributesDictionary, PROCESS_KEY);
         }
     }
 

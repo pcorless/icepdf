@@ -16,6 +16,7 @@
 
 package org.icepdf.core.pobjects.annotations;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
@@ -27,7 +28,6 @@ import org.icepdf.core.util.Library;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
-import java.util.HashMap;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -86,7 +86,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
 
     protected Name highlightMode;
 
-    public AbstractWidgetAnnotation(Library l, HashMap h) {
+    public AbstractWidgetAnnotation(Library l, DictionaryEntries h) {
         super(l, h);
         Object possibleName = getObject(LinkAnnotation.HIGHLIGHT_MODE_KEY);
         if (possibleName instanceof Name) {

@@ -1,9 +1,6 @@
 package org.icepdf.core.pobjects.fonts.zfont.fontFiles;
 
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.PRectangle;
-import org.icepdf.core.pobjects.Resources;
-import org.icepdf.core.pobjects.Stream;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
@@ -36,7 +33,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
     public static final Name RESOURCES_KEY = new Name("Resources");
 
     private final Library library;
-    protected HashMap entries;
+    protected DictionaryEntries entries;
     private HashMap charProcedures;
     private HashMap<Name, SoftReference<Shapes>> charShapesCache;
     private HashMap<Name, PRectangle> charBBoxes;
@@ -48,7 +45,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
 
     private Resources parentResource;
 
-    public ZFontType3(Library library, HashMap properties) {
+    public ZFontType3(Library library, DictionaryEntries properties) {
         this.library = library;
         entries = properties;
 
@@ -83,8 +80,8 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
 
         // CharProcs resources, contains glyph name/stream pairs.
         o = library.getObject(properties, CHAR_PROCS_KEY);
-        if (o instanceof HashMap) {
-            charProcedures = (HashMap) o;
+        if (o instanceof DictionaryEntries) {
+            charProcedures = (DictionaryEntries) o;
             int length = charProcedures.size();
             charShapesCache = new HashMap<>(length);
             charBBoxes = new HashMap<>(length);

@@ -16,10 +16,10 @@
 package org.icepdf.core.pobjects.actions;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
-import java.util.HashMap;
 
 
 /**
@@ -71,12 +71,12 @@ public class Action extends Dictionary {
      * @param l document library.
      * @param h Action dictionary entries.
      */
-    public Action(Library l, HashMap h) {
+    public Action(Library l, DictionaryEntries h) {
         super(l, h);
         type = getObject(ACTION_TYPE_KEY).toString();
     }
 
-    public static Action buildAction(Library library, HashMap hashMap) {
+    public static Action buildAction(Library library, DictionaryEntries hashMap) {
         Name actionType = (Name) hashMap.get(Action.ACTION_TYPE_KEY);
         if (actionType != null) {
             if (actionType.equals(Action.ACTION_TYPE_GOTO)) {

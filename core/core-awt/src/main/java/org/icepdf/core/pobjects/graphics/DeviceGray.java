@@ -15,12 +15,12 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.color.ColorSpace;
-import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -34,7 +34,7 @@ public class DeviceGray extends PColorSpace {
 
     private static ConcurrentHashMap<Float, Color> colorHashMap = new ConcurrentHashMap<>(255);
 
-    public DeviceGray(Library l, HashMap h) {
+    public DeviceGray(Library l, DictionaryEntries h) {
         super(l, h);
     }
 

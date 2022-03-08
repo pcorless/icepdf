@@ -18,7 +18,6 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.util.Library;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -45,7 +44,7 @@ public class NameNode extends Dictionary {
     private String upperLimit;
 
     @SuppressWarnings("unchecked")
-    public NameNode(Library l, HashMap h) {
+    public NameNode(Library l, DictionaryEntries h) {
         super(l, h);
         // root node can either be a Kids or Names
         Object o = library.getObject(entries, KIDS_KEY);
@@ -181,8 +180,8 @@ public class NameNode extends Dictionary {
             for (Object ref : kidsReferences) {
                 if (ref instanceof Reference) {
                     Object o = library.getObject((Reference) ref);
-                    if (o instanceof HashMap) {
-                        NameNode node = new NameNode(library, (HashMap) o);
+                    if (o instanceof DictionaryEntries) {
+                        NameNode node = new NameNode(library, (DictionaryEntries) o);
                         node.setPObjectReference((Reference) ref);
                         kidsNodes.add(node);
                     } else if (o instanceof NameNode) {
@@ -420,8 +419,8 @@ public class NameNode extends Dictionary {
         NameNode node = null;
         if (ref != null) {
             Object obj = library.getObject(ref);
-            if (obj instanceof HashMap) {
-                node = new NameNode(library, (HashMap) obj);
+            if (obj instanceof DictionaryEntries) {
+                node = new NameNode(library, (DictionaryEntries) obj);
                 node.setPObjectReference(ref);
             } else if (obj instanceof NameNode) {
                 node = (NameNode) obj;

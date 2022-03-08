@@ -17,7 +17,6 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.io.BitStream;
 import org.icepdf.core.io.ConservativeSizingByteArrayOutputStream;
-import org.icepdf.core.io.SeekableInputConstrainedWrapper;
 import org.icepdf.core.pobjects.filters.*;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.Library;
@@ -25,8 +24,8 @@ import org.icepdf.core.util.Library;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -60,33 +59,17 @@ public class Stream extends Dictionary {
     // original byte stream that has not been decoded
     protected byte[] rawBytes;
 
-    protected HashMap decodeParams;
+    protected DictionaryEntries decodeParams;
 
     // default compression state for a file loaded stream,  for re-saving
     // of form data we want to avoid re-compressing the data.
     protected boolean compressed = true;
 
-    /**
-     * Create a new instance of a Stream.
-     *
-     * @param l                  library containing a hash of all document objects
-     * @param h                  HashMap of parameters specific to the Stream object.
-     * @param streamInputWrapper Accessor to stream byte data
-     */
-    public Stream(Library l, HashMap h, SeekableInputConstrainedWrapper streamInputWrapper) {
-        super(l, h);
-        // capture raw bytes for later processing.
-        if (streamInputWrapper != null) {
-            this.rawBytes = getRawStreamBytes(streamInputWrapper);
-        }
-        decodeParams = library.getDictionary(entries, DECODEPARAM_KEY);
-    }
-
-    public Stream(Library l, HashMap h, byte[] rawBytes) {
-        super(l, h);
+    public Stream(Library library, DictionaryEntries dictionaryEntries, byte[] rawBytes) {
+        super(library, dictionaryEntries);
+        decodeParams = this.library.getDictionary(entries, DECODEPARAM_KEY);
         this.rawBytes = rawBytes;
     }
-
 
     public byte[] getRawBytes() {
         return rawBytes;
@@ -104,18 +87,6 @@ public class Stream extends Dictionary {
     protected boolean isImageSubtype() {
         Object subtype = library.getObject(entries, SUBTYPE_KEY);
         return subtype != null && subtype.equals("Image");
-    }
-
-    private byte[] getRawStreamBytes(SeekableInputConstrainedWrapper streamInputWrapper) {
-        // copy the raw bytes out to internal storage for later decoding.
-        int length = (int) streamInputWrapper.getLength();
-        byte[] rawBytes = new byte[length];
-        try {
-            streamInputWrapper.read(rawBytes, 0, length);
-        } catch (IOException e) {
-            logger.warning("IO Error getting stream bytes");
-        }
-        return rawBytes;
     }
 
     /**
@@ -156,6 +127,7 @@ public class Stream extends Dictionary {
                 }
                 ConservativeSizingByteArrayOutputStream out = new
                         ConservativeSizingByteArrayOutputStream(outLength);
+                // todo buffer allocation size seem broken?
                 byte[] buffer = new byte[(outLength > 4096) ? 4096 : 8192];
                 while (true) {
                     int read = input.read(buffer);
@@ -178,6 +150,18 @@ public class Stream extends Dictionary {
             return rawBytes;
         }
         return null;
+    }
+
+    public ByteBuffer getDecodedStreamByteBuffer() {
+        return getDecodedStreamByteBuffer(8192);
+    }
+
+    public ByteBuffer getDecodedStreamByteBuffer(int presiz) {
+        byte[] decodeBytes = getDecodedStreamBytes(presiz);
+        ByteBuffer decodedByteBuffer = ByteBuffer.allocateDirect(decodeBytes.length);
+        decodedByteBuffer.put(decodeBytes);
+        decodedByteBuffer.position(0);
+        return decodedByteBuffer;
     }
 
     /**

@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics.images;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.filters.CCITTFax;
 import org.icepdf.core.pobjects.filters.CCITTFaxDecoder;
@@ -30,7 +31,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -61,7 +61,7 @@ public class FaxDecoder extends AbstractImageDecoder {
         BufferedImage decodedImage = null;
 
         ImageParams imageParams = imageStream.getImageParams();
-        HashMap decodeParms = imageParams.getDecodeParams();
+        DictionaryEntries decodeParms = imageParams.getDecodeParams();
 
         if (decodeParms == null) {
             logger.warning("CCITTFax decode params could not be found. ");
@@ -186,7 +186,7 @@ public class FaxDecoder extends AbstractImageDecoder {
         return decodedStreamData;
     }
 
-    public static byte[] applyBlackIsOne(byte[] decodedStreamData, ImageParams imageParams, HashMap decodeParms) {
+    public static byte[] applyBlackIsOne(byte[] decodedStreamData, ImageParams imageParams, DictionaryEntries decodeParms) {
         boolean blackIs1 = imageParams.getBlackIs1(decodeParms);
         // double check for blackIs1 in the main dictionary.
         if (!blackIs1 && CHECK_PARENT_BLACK_IS_1) {
@@ -201,7 +201,7 @@ public class FaxDecoder extends AbstractImageDecoder {
         return decodedStreamData;
     }
 
-    public BufferedImage ccittFaxDecodeJAI(ImageStream stream, Library library, HashMap streamDictionary, Color fill) {
+    public BufferedImage ccittFaxDecodeJAI(ImageStream stream, Library library, DictionaryEntries streamDictionary, Color fill) {
         try {
             return CCITTFax.attemptDeriveBufferedImageFromBytes(
                     stream, library, streamDictionary, fill);

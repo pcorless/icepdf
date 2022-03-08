@@ -358,13 +358,13 @@ public class Destination extends Dictionary {
         init();
     }
 
-    public HashMap getRawDestination() {
+    public DictionaryEntries getRawDestination() {
         if (object instanceof List) {
-            HashMap map = new HashMap();
+            DictionaryEntries map = new DictionaryEntries();
             map.put(D_KEY, object);
             return map;
-        } else if (object instanceof HashMap) {
-            return (HashMap) object;
+        } else if (object instanceof DictionaryEntries) {
+            return (DictionaryEntries) object;
         }
         return null;
     }

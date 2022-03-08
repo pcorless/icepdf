@@ -1,9 +1,9 @@
 package org.icepdf.core.pobjects.fonts.zfont;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType0;
 import org.icepdf.core.util.Library;
 
-import java.util.HashMap;
 import java.util.logging.Logger;
 
 public class TypeCidType0Font extends CompositeFont {
@@ -11,7 +11,7 @@ public class TypeCidType0Font extends CompositeFont {
     private static final Logger logger =
             Logger.getLogger(TypeCidType0Font.class.toString());
 
-    public TypeCidType0Font(Library library, HashMap entries) {
+    public TypeCidType0Font(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 

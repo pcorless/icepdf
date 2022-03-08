@@ -1,6 +1,6 @@
 package org.icepdf.os.examples.capture;
 import org.icepdf.core.exceptions.PDFException;
-import org.icepdf.core.exceptions.PDFSecurityException;
+import org.icepdf.core.exceptions.PdfSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
@@ -145,7 +145,7 @@ public class DocumentCapture {
             } catch (PDFException ex) {
                 System.out.println("Error parsing PDF document " + ex);
                 ex.printStackTrace();
-            } catch (PDFSecurityException ex) {
+            } catch (PdfSecurityException ex) {
                 System.out.println("Error encryption not supported " + ex);
                 ex.printStackTrace();
             } catch (FileNotFoundException ex) {

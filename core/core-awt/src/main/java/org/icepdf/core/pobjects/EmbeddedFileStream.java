@@ -5,7 +5,6 @@ import org.icepdf.core.util.Library;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 
 /**
  * If a PDF file contains file specifications that refer to an external file and the PDF file is archived or
@@ -100,7 +99,7 @@ public class EmbeddedFileStream extends Dictionary {
      *
      * @return the raw dictionary.
      */
-    public HashMap getParams() {
+    public DictionaryEntries getParams() {
         return library.getDictionary(entries, PARAMS_KEY);
     }
 
@@ -170,7 +169,7 @@ public class EmbeddedFileStream extends Dictionary {
      *
      * @return mac sub dictionary, or null if not set.
      */
-    public HashMap getMacDictionary() {
+    public DictionaryEntries getMacDictionary() {
         return library.getDictionary(getParams(), PARAMS_MAC_KEY);
     }
 

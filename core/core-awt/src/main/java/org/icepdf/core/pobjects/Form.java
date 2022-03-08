@@ -15,7 +15,6 @@
  */
 package org.icepdf.core.pobjects;
 
-import org.icepdf.core.io.SeekableInputConstrainedWrapper;
 import org.icepdf.core.pobjects.graphics.ExtGState;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.Shapes;
@@ -24,7 +23,6 @@ import org.icepdf.core.util.parser.content.ContentParser;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -66,19 +64,12 @@ public class Form extends Stream {
     private boolean shading;
     private boolean inited = false;
 
-    /**
-     * Creates a new instance of the xObject.
-     *
-     * @param l                  document library
-     * @param h                  xObject dictionary entries.
-     * @param streamInputWrapper content stream of image or post script commands.
-     */
-    public Form(Library l, HashMap h, SeekableInputConstrainedWrapper streamInputWrapper) {
-        super(l, h, streamInputWrapper);
+    public Form(Library l, DictionaryEntries h, byte[] rawBytes) {
+        super(l, h, rawBytes);
 
         // check for grouping flags so we can do special handling during the
         // xform content stream parsing.
-        HashMap group = library.getDictionary(entries, GROUP_KEY);
+        DictionaryEntries group = library.getDictionary(entries, GROUP_KEY);
         if (group != null) {
             transparencyGroup = true;
             isolated = library.getBoolean(group, I_KEY);
@@ -86,7 +77,7 @@ public class Form extends Stream {
         }
     }
 
-    public HashMap getGroup() {
+    public DictionaryEntries getGroup() {
         return library.getDictionary(entries, GROUP_KEY);
     }
 
@@ -212,7 +203,7 @@ public class Form extends Stream {
     public Resources getResources() {
         Resources leafResources = library.getResources(entries, RESOURCES_KEY);
         if (leafResources == null) {
-            leafResources = new Resources(library, new HashMap());
+            leafResources = new Resources(library, new DictionaryEntries());
         }
         return leafResources;
     }

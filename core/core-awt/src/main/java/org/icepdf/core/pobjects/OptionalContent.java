@@ -103,7 +103,7 @@ public class OptionalContent extends Dictionary {
     // properties may no longer be valid.
     private boolean emptyDefinition;
 
-    public OptionalContent(Library l, HashMap h) {
+    public OptionalContent(Library l, DictionaryEntries h) {
         super(l, h);
         groups = new HashMap<Reference, OptionalContentGroup>();
     }
@@ -140,8 +140,8 @@ public class OptionalContent extends Dictionary {
 
         // The default viewing optional content configuration dictionary.
         Object dObj = library.getObject(entries, D_KEY);
-        if (dObj instanceof HashMap) {
-            HashMap configurationDictionary = (HashMap) dObj;
+        if (dObj instanceof DictionaryEntries) {
+            DictionaryEntries configurationDictionary = (DictionaryEntries) dObj;
 
             // apply the base state ON|OFF|Unchanged
             Object tmp = library.getName(configurationDictionary, BASE_STATE_KEY);

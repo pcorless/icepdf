@@ -17,7 +17,7 @@ package org.icepdf.ri.common;
 
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.exceptions.PDFException;
-import org.icepdf.core.exceptions.PDFSecurityException;
+import org.icepdf.core.exceptions.PdfSecurityException;
 import org.icepdf.core.io.SizeInputStream;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.actions.Action;
@@ -2469,10 +2469,10 @@ public class SwingController extends ComponentAdapter
      * @param document         document to set securityCallback on .
      * @param securityCallback security callback for prompting users or owner passwords.
      * @throws PDFException         general PDF parsing error.
-     * @throws PDFSecurityException security exception likely incorrect user or owner password.
+     * @throws PdfSecurityException security exception likely incorrect user or owner password.
      */
     protected void setupSecurityHandler(Document document, SecurityCallback securityCallback) throws
-            PDFException, PDFSecurityException {
+            PDFException, PdfSecurityException {
         // create default security callback is user has not created one
         if (securityCallback == null) {
             document.setSecurityCallback(
@@ -2541,7 +2541,7 @@ public class SwingController extends ComponentAdapter
                         pathname);
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
-            } catch (PDFSecurityException e) {
+            } catch (PdfSecurityException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
                         viewer,
                         JOptionPane.INFORMATION_MESSAGE,
@@ -2703,7 +2703,7 @@ public class SwingController extends ComponentAdapter
                                     location);
                             document = null;
                             logger.log(Level.FINE, "Error opening document.", e);
-                        } catch (PDFSecurityException e) {
+                        } catch (PdfSecurityException e) {
                             org.icepdf.ri.util.Resources.showMessageDialog(
                                     viewer,
                                     JOptionPane.INFORMATION_MESSAGE,
@@ -2801,7 +2801,7 @@ public class SwingController extends ComponentAdapter
                         description);
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
-            } catch (PDFSecurityException e) {
+            } catch (PdfSecurityException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
                         viewer,
                         JOptionPane.INFORMATION_MESSAGE,
@@ -2903,7 +2903,7 @@ public class SwingController extends ComponentAdapter
                         description);
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
-            } catch (PDFSecurityException e) {
+            } catch (PdfSecurityException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
                         viewer,
                         JOptionPane.INFORMATION_MESSAGE,
@@ -4108,7 +4108,7 @@ public class SwingController extends ComponentAdapter
                             ((URIAction) action).getURI());
                 } else {
                     Library library = action.getLibrary();
-                    HashMap entries = action.getEntries();
+                    DictionaryEntries entries = action.getEntries();
                     dest = new Destination(library, library.getObject(entries, Destination.D_KEY));
                 }
             } else if (dest.getNamedDestination() != null) {

@@ -16,7 +16,7 @@
 package org.icepdf.core.pobjects.graphics.images;
 
 
-import org.icepdf.core.io.SeekableInputConstrainedWrapper;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.Stream;
@@ -25,7 +25,6 @@ import org.icepdf.core.pobjects.graphics.PColorSpace;
 import org.icepdf.core.util.Library;
 
 import java.awt.image.BufferedImage;
-import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**
@@ -43,19 +42,7 @@ public class ImageStream extends Stream {
 
     private ImageParams imageParams;
 
-    /**
-     * Create a new instance of a Stream.
-     *
-     * @param l                  library containing a hash of all document objects
-     * @param h                  HashMap of parameters specific to the Stream object.
-     * @param streamInputWrapper Accessor to stream byte data
-     */
-    public ImageStream(Library l, HashMap h, SeekableInputConstrainedWrapper streamInputWrapper) {
-        super(l, h, streamInputWrapper);
-        imageParams = new ImageParams(library, entries, null);
-    }
-
-    public ImageStream(Library l, HashMap h, byte[] rawBytes) {
+    public ImageStream(Library l, DictionaryEntries h, byte[] rawBytes) {
         super(l, h, rawBytes);
         imageParams = new ImageParams(library, entries, null);
     }

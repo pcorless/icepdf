@@ -15,11 +15,11 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -55,7 +55,7 @@ public class CalRGB extends PColorSpace {
     };
 
 
-    CalRGB(Library l, HashMap h) {
+    CalRGB(Library l, DictionaryEntries h) {
         super(l, h);
         List m = (List) h.get(WHITE_POINT_KEY);
         if (m != null) {

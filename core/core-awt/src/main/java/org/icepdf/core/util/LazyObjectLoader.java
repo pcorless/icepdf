@@ -108,7 +108,7 @@ public class LazyObjectLoader {
 
                 if (objectStream != null) {
                     synchronized (streamLock) {
-                        return objectStream.loadObject(library, objectIndex);
+                        return objectStream.decompressObject(objectIndex);
                     }
                 }
             } catch (Exception e) {

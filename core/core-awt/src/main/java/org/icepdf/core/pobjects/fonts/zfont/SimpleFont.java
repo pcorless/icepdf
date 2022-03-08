@@ -1,5 +1,6 @@
 package org.icepdf.core.pobjects.fonts.zfont;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.AFM;
@@ -10,7 +11,6 @@ import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -51,7 +51,7 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
      * @param library library of all objects in PDF
      * @param entries hash of parsed font attributes
      */
-    public SimpleFont(Library library, HashMap entries) {
+    public SimpleFont(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 
@@ -83,8 +83,8 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
     protected void parseEncoding() {
         // Find any special encoding information, not used very often
         Object encodingValue = library.getObject(entries, ENCODING_KEY);
-        if (encodingValue instanceof HashMap) {
-            HashMap encodingDictionary = (HashMap) encodingValue;
+        if (encodingValue instanceof DictionaryEntries) {
+            DictionaryEntries encodingDictionary = (DictionaryEntries) encodingValue;
             Name baseEncoding = library.getName(encodingDictionary, BASE_ENCODING_KEY);
             setBaseEncoding(baseEncoding);
 

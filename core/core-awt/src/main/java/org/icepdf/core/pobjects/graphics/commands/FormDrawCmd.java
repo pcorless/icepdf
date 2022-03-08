@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics.commands;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Form;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
@@ -26,7 +27,6 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.util.HashMap;
 
 
 /**
@@ -239,7 +239,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 && !new Name("Normal").equals(xForm.getExtGState().getBlendingMode())
                 ) {
             if (xForm.getGroup() != null) {
-                HashMap tmp = xForm.getGroup();
+                DictionaryEntries tmp = xForm.getGroup();
                 Object cs = xForm.getLibrary().getObject(tmp, new Name("CS"));
                 // looking for additive colour spaces, if so we paint an background.
                 if (cs == null || cs instanceof ICCBased || cs instanceof Name &&

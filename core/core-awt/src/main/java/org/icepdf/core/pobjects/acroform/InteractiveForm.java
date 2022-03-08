@@ -22,7 +22,6 @@ import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -142,7 +141,7 @@ public class InteractiveForm extends Dictionary {
     // todo XFA entry stream or array processing.
     // important to test for data import reasons.
 
-    public InteractiveForm(Library library, HashMap entries) {
+    public InteractiveForm(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 
@@ -154,19 +153,19 @@ public class InteractiveForm extends Dictionary {
 
         // sig flags.
         Object tmp = library.getObject(entries, SIG_FLAGS_KEY);
-        if (tmp instanceof HashMap) {
+        if (tmp instanceof DictionaryEntries) {
             sigFlags = library.getInt(entries, SIG_FLAGS_KEY);
         }
 
         // load the resources
         tmp = library.getObject(entries, DR_KEY);
-        if (tmp instanceof HashMap) {
+        if (tmp instanceof DictionaryEntries) {
             resources = library.getResources(entries, DR_KEY);
         }
 
         // load the resources,  useful for rebuilding form elements.
         tmp = library.getObject(entries, SIG_FLAGS_KEY);
-        if (tmp instanceof HashMap) {
+        if (tmp instanceof DictionaryEntries) {
             resources = library.getResources(entries, DR_KEY);
         }
 
@@ -197,8 +196,8 @@ public class InteractiveForm extends Dictionary {
                 if (fieldRef instanceof Reference) {
                     // add them all as we find them.
                     annotObj = library.getObject((Reference) fieldRef);
-                    if (annotObj instanceof HashMap) {
-                        annotObj = FieldDictionaryFactory.buildField(library, (HashMap) annotObj);
+                    if (annotObj instanceof DictionaryEntries) {
+                        annotObj = FieldDictionaryFactory.buildField(library, (DictionaryEntries) annotObj);
                     }
                     if (annotObj != null) {
                         fields.add(annotObj);
