@@ -37,7 +37,8 @@ public class Lexer {
             TOKEN_DICTIONARY = 7,
             TOKEN_ARRAY = 8,
             TOKEN_BOOLEAN = 9,
-            TOKEN_REFERENCE = 10;
+            TOKEN_REFERENCE = 10,
+            TOKEN_NULL = 11;
 
     public Lexer(Library library) {
         this.library = library;
@@ -141,6 +142,8 @@ public class Lexer {
                 return startBoolean();
             case TOKEN_REFERENCE:
                 return startReference();
+            case TOKEN_NULL:
+                return startNull();
             case TOKEN_COMMENT:
                 return startComment();
             default:
@@ -384,6 +387,26 @@ public class Lexer {
         }
     }
 
+    private String startNull() throws IOException {
+        startTokenPos = pos;
+        while (streamBytes.hasRemaining()) {
+            // look for a natural break
+            if (isDelimiter(streamBytes.get(pos)) || isTextDelimiter(streamBytes.get(pos))) {
+                break;
+            }
+            pos++;
+        }
+        if (pos <= streamBytes.limit()) {
+            // return the name object
+            byte[] booleanBytes = new byte[pos - startTokenPos];
+            streamBytes.position(startTokenPos);
+            streamBytes.get(booleanBytes);
+            return "null";
+        } else {
+            return null;
+        }
+    }
+
     private Object startComment() throws IOException {
         do {
             pos++;
@@ -589,6 +612,21 @@ public class Lexer {
                         switch (c2) {
                             case 'a':
                                 tokenType = TOKEN_BOOLEAN;
+                                break;
+                            default:
+                                tokenType = TOKEN_OPERAND;
+                                break;
+                        }
+                    } else {
+                        tokenType = TOKEN_OPERAND;
+                    }
+                    break;
+                case 'n':
+                    if (pos + 1 < streamBytes.limit()) {
+                        c2 = streamBytes.get(pos + 1);
+                        switch (c2) {
+                            case 'u':
+                                tokenType = TOKEN_NULL;
                                 break;
                             default:
                                 tokenType = TOKEN_OPERAND;

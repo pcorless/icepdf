@@ -39,6 +39,10 @@ public class PObject {
     public PObject(Object object, Number objectNumber, Number objectGeneration) {
         this.object = object;
         objectReference = new Reference(objectNumber, objectGeneration);
+        if (object instanceof Dictionary) {
+            Dictionary tmp = (Dictionary) object;
+            tmp.setPObjectReference(objectReference);
+        }
     }
 
     /**

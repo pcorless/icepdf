@@ -67,6 +67,7 @@ public class Parser {
             // copy the bytes to a new buffer so we can work on the bytes without thread position issues.
             streamByteBuffer = ByteBuffer.allocateDirect(objectOffsetEnd - objectOffsetStart);
             byteBuffer.position(objectOffsetStart);
+            // todo probably a faster way to do this in one operation
             while (streamByteBuffer.hasRemaining()) {
                 streamByteBuffer.put(byteBuffer.get());
             }
