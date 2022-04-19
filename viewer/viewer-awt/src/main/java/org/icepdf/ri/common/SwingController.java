@@ -131,6 +131,8 @@ public class SwingController extends ComponentAdapter
         USE_JFILECHOOSER = Defs.booleanProperty("org.icepdf.ri.viewer.jfilechooser", false);
     }
 
+    private static final boolean IS_READONLY = Defs.booleanProperty("org.icepdf.ri.viewer.readonly", false);
+
     public static final int CURSOR_OPEN_HAND = 1;
     public static final int CURSOR_CLOSE_HAND = 2;
     public static final int CURSOR_ZOOM_IN = 3;
@@ -1597,8 +1599,8 @@ public class SwingController extends ComponentAdapter
 
         // menu items.
         setEnabled(closeMenuItem, opened);
-        setEnabled(saveFileMenuItem, opened);
-        setEnabled(saveAsFileMenuItem, opened);
+        setEnabled(saveFileMenuItem, opened && !IS_READONLY);
+        setEnabled(saveAsFileMenuItem, opened && !IS_READONLY);
         setEnabled(sendMailMenuItem, opened);
         setEnabled(exportTextMenuItem, opened && canExtract && !pdfCollection);
         setEnabled(propertiesMenuItem, opened);
@@ -1657,7 +1659,7 @@ public class SwingController extends ComponentAdapter
         setEnabled(searchPreviousMenuItem, opened && searchPanel != null && !pdfCollection);
         setEnabled(goToPageMenuItem, opened && nPages > 1 && !pdfCollection);
 
-        setEnabled(saveFileButton, opened);
+        setEnabled(saveFileButton, opened && !IS_READONLY);
         setEnabled(printButton, opened && canPrint && !pdfCollection);
         setEnabled(searchButton, opened && searchPanel != null && !pdfCollection);
         setEnabled(showHideUtilityPaneButton, opened && utilityTabbedPane != null);
@@ -1689,32 +1691,32 @@ public class SwingController extends ComponentAdapter
         setEnabled(zoomDynamicToolButton, opened && !pdfCollection);
         setEnabled(textSelectToolButton, opened && canExtract && !pdfCollection);
         setEnabled(selectToolButton, opened && canModify && !pdfCollection);
-        setEnabled(highlightAnnotationToolButton, opened && canModify && !pdfCollection);
-        setEnabled(strikeOutAnnotationToolButton, opened && canModify && !pdfCollection);
-        setEnabled(underlineAnnotationToolButton, opened && canModify && !pdfCollection);
-        setEnabled(lineAnnotationToolButton, opened && canModify && !pdfCollection);
-        setEnabled(linkAnnotationToolButton, opened && canModify && !pdfCollection);
-        setEnabled(lineArrowAnnotationToolButton, opened && canModify && !pdfCollection);
-        setEnabled(squareAnnotationToolButton, opened && canModify && !pdfCollection);
-        setEnabled(circleAnnotationToolButton, opened && canModify && !pdfCollection);
-        setEnabled(inkAnnotationToolButton, opened && canModify && !pdfCollection);
-        setEnabled(freeTextAnnotationToolButton, opened && canModify && !pdfCollection);
-        setEnabled(textAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(highlightAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(strikeOutAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(underlineAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(lineAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(linkAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(lineArrowAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(squareAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(circleAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(inkAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(freeTextAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(textAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(annotationSummaryButton, opened && canModify && !pdfCollection);
         setEnabled(annotationPreviewMenuItem, opened && canModify && !pdfCollection);
-        setEnabled(annotationEditingModeButton, opened && !pdfCollection);
-        setEnabled(linkAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
-        setEnabled(highlightAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
-        setEnabled(strikeOutAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
-        setEnabled(underlineAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
-        setEnabled(lineAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
-        setEnabled(lineArrowAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
-        setEnabled(squareAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
-        setEnabled(circleAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
-        setEnabled(inkAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
-        setEnabled(freeTextAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
-        setEnabled(annotationPrivacyComboBox, opened && !pdfCollection);
-        setEnabled(textAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
+        setEnabled(annotationEditingModeButton, opened && !pdfCollection && !IS_READONLY);
+        setEnabled(linkAnnotationPropertiesToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(highlightAnnotationPropertiesToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(strikeOutAnnotationPropertiesToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(underlineAnnotationPropertiesToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(lineAnnotationPropertiesToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(lineArrowAnnotationPropertiesToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(squareAnnotationPropertiesToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(circleAnnotationPropertiesToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(inkAnnotationPropertiesToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(freeTextAnnotationPropertiesToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(annotationPrivacyComboBox, opened && !pdfCollection && !IS_READONLY);
+        setEnabled(textAnnotationPropertiesToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(formHighlightButton, opened && !pdfCollection && hasForms());
         setEnabled(quickSearchToolBar, opened && !pdfCollection);
         setEnabled(facingPageViewContinuousButton, opened && !pdfCollection);
@@ -3459,7 +3461,7 @@ public class SwingController extends ComponentAdapter
      * when the window is closed.
      */
     public void saveFile() {
-        if (document.getStateManager().isChange()) {
+        if (document.getStateManager().isChange() && !IS_READONLY) {
             if (saveFilePath != null && !saveFilePath.isEmpty()) {
                 File out = new File(saveFilePath);
                 if (out.getParentFile() != null) {
@@ -3490,43 +3492,45 @@ public class SwingController extends ComponentAdapter
      */
     public void saveFileAs() {
 
-        String originalFileName = getOriginalFileName();
-        String newFileName = originalFileName == null || originalFileName.isEmpty() ? null : generateNewSaveName(originalFileName);
+        if (!IS_READONLY) {
+            String originalFileName = getOriginalFileName();
+            String newFileName = originalFileName == null || originalFileName.isEmpty() ? null : generateNewSaveName(originalFileName);
 
-        // Create and display a file saving dialog
-        if (!USE_JFILECHOOSER) {
-            final FileDialog fileDialog = new FileDialog(getViewerFrame());
-            fileDialog.setTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
-            fileDialog.setMultipleMode(false);
-            fileDialog.setMode(FileDialog.SAVE);
-            fileDialog.setFilenameFilter((file, s) -> s.endsWith(FileExtensionUtils.pdf));
-            if (ViewModel.getDefaultFile() != null) {
-                fileDialog.setDirectory(ViewModel.getDefaultFile().getParentFile().getAbsolutePath());
-            }
-            if (newFileName != null) {
-                fileDialog.setFile(newFileName);
-            }
-            // show the dialog
-            fileDialog.setVisible(true);
-            final String filePath = fileDialog.getFile();
-            final String dirPath = fileDialog.getDirectory();
-            if (filePath != null && dirPath != null) {
-                saveFileChecks(originalFileName, new File(dirPath + filePath));
-            }
-        } else {
-            final JFileChooser fileChooser = new JFileChooser();
-            fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
-            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            fileChooser.addChoosableFileFilter(FileExtensionUtils.getPDFFileFilter());
-            if (ViewModel.getDefaultFile() != null) {
-                fileChooser.setCurrentDirectory(ViewModel.getDefaultFile());
-            }
-            if (newFileName != null) {
-                fileChooser.setSelectedFile(new File(newFileName));
-            }
-            // show the dialog
-            if (fileChooser.showSaveDialog(viewer) == JFileChooser.APPROVE_OPTION) {
-                saveFileChecks(originalFileName, fileChooser.getSelectedFile());
+            // Create and display a file saving dialog
+            if (!USE_JFILECHOOSER) {
+                final FileDialog fileDialog = new FileDialog(getViewerFrame());
+                fileDialog.setTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
+                fileDialog.setMultipleMode(false);
+                fileDialog.setMode(FileDialog.SAVE);
+                fileDialog.setFilenameFilter((file, s) -> s.endsWith(FileExtensionUtils.pdf));
+                if (ViewModel.getDefaultFile() != null) {
+                    fileDialog.setDirectory(ViewModel.getDefaultFile().getParentFile().getAbsolutePath());
+                }
+                if (newFileName != null) {
+                    fileDialog.setFile(newFileName);
+                }
+                // show the dialog
+                fileDialog.setVisible(true);
+                final String filePath = fileDialog.getFile();
+                final String dirPath = fileDialog.getDirectory();
+                if (filePath != null && dirPath != null) {
+                    saveFileChecks(originalFileName, new File(dirPath + filePath));
+                }
+            } else {
+                final JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
+                fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+                fileChooser.addChoosableFileFilter(FileExtensionUtils.getPDFFileFilter());
+                if (ViewModel.getDefaultFile() != null) {
+                    fileChooser.setCurrentDirectory(ViewModel.getDefaultFile());
+                }
+                if (newFileName != null) {
+                    fileChooser.setSelectedFile(new File(newFileName));
+                }
+                // show the dialog
+                if (fileChooser.showSaveDialog(viewer) == JFileChooser.APPROVE_OPTION) {
+                    saveFileChecks(originalFileName, fileChooser.getSelectedFile());
+                }
             }
         }
     }
@@ -3722,7 +3726,7 @@ public class SwingController extends ComponentAdapter
     public boolean saveChangesDialog() {
         // check if document changes have been made, if so ask the user if they
         // want to save the changes.
-        if (document != null) {
+        if (document != null && !IS_READONLY) {
             boolean documentChanges = document.getStateManager().hasChangedSinceLastSnapshot();
             if (documentChanges) {
                 MessageFormat formatter = new MessageFormat(
