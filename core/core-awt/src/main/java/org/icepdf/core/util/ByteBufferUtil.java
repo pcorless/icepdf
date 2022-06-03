@@ -7,6 +7,18 @@ import java.nio.ByteBuffer;
  */
 public class ByteBufferUtil {
 
+    public static ByteBuffer copyObjectStreamSlice(ByteBuffer objectByteBuffer, int objectOffsetStart, int objectOffsetEnd) {
+        int streamLength = objectOffsetEnd - objectOffsetStart;
+        int oldLimit = objectByteBuffer.limit();
+        ByteBuffer streamByteBuffer = ByteBuffer.allocateDirect(streamLength);
+        objectByteBuffer.position(objectOffsetStart);
+        objectByteBuffer.limit(objectOffsetStart + streamLength);
+        streamByteBuffer.put(objectByteBuffer);
+        objectByteBuffer.limit(oldLimit);
+        streamByteBuffer.flip();
+        return streamByteBuffer;
+    }
+
     public static int findReverseString(ByteBuffer byteBuffer, int limit, final byte[] stingBytes) {
         return findReverseString(byteBuffer, limit, 0, stingBytes);
     }

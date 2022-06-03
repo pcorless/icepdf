@@ -26,6 +26,7 @@ public class ObjectFactory {
         if (streamData != null) {
             DictionaryEntries entries = (DictionaryEntries) objectData;
             Name type = (Name) entries.get(Dictionary.TYPE_KEY);
+            Name subType = (Name) entries.get(Dictionary.SUBTYPE_KEY);
             // todo come back an eval if we want byteBuffers or not as there is shit ton of refactoring work otherwise.
             byte[] bufferBytes = new byte[streamData.remaining()];
             streamData.get(bufferBytes);
@@ -33,14 +34,13 @@ public class ObjectFactory {
                 return new PObject(new CrossReferenceStream(library, entries, bufferBytes), objectNumber, generationNumber);
             } else if (ObjectStream.TYPE.equals(type)) {
                 return new PObject(new ObjectStream(library, entries, bufferBytes), objectNumber, generationNumber);
-            } else if (Form.TYPE_VALUE.equals(type)) {
+            } else if (Form.TYPE_VALUE.equals(type) && ImageStream.TYPE_VALUE.equals(subType)) {
                 return new PObject(new ImageStream(library, entries, bufferBytes), objectNumber, generationNumber);
+            } else if (Form.TYPE_VALUE.equals(type)) {
+                return new PObject(new Form(library, entries, bufferBytes), objectNumber, generationNumber);
             } else if (Pattern.TYPE_VALUE.equals(type)) {
                 return new PObject(new TilingPattern(library, entries, bufferBytes), objectNumber, generationNumber);
-            }
-
-            Name subType = (Name) entries.get(Dictionary.SUBTYPE_KEY);
-            if (ImageStream.TYPE_VALUE.equals(subType)) {
+            } else if (ImageStream.TYPE_VALUE.equals(subType)) {
                 return new PObject(new ImageStream(library, entries, bufferBytes), objectNumber, generationNumber);
             } else if (Form.SUB_TYPE_VALUE.equals(subType) && !TilingPattern.TYPE_VALUE.equals(type)) {
                 return new PObject(new Form(library, entries, bufferBytes), objectNumber, generationNumber);

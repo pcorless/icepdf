@@ -65,13 +65,7 @@ public class Parser {
             }
             // scan looking for the stream object end
             // copy the bytes to a new buffer so we can work on the bytes without thread position issues.
-            streamByteBuffer = ByteBuffer.allocateDirect(objectOffsetEnd - objectOffsetStart);
-            byteBuffer.position(objectOffsetStart);
-            // todo probably a faster way to do this in one operation
-            while (streamByteBuffer.hasRemaining()) {
-                streamByteBuffer.put(byteBuffer.get());
-            }
-            streamByteBuffer.flip();
+            streamByteBuffer = ByteBufferUtil.copyObjectStreamSlice(byteBuffer, objectOffsetStart, objectOffsetEnd);
         }
         // grab the pieces of the object
         Lexer lexer = new Lexer(library);
@@ -193,12 +187,7 @@ public class Parser {
     private CrossReference parseCrossReferenceTable(DictionaryEntries dictionaryEntries, Lexer objectLexer, ByteBuffer byteBuffer,
                                                     int start, int end) throws IOException {
         // allocate to a new buffer as the data is well defined.
-        ByteBuffer xrefTableBuffer = ByteBuffer.allocateDirect(end - start);
-        byteBuffer.position(start);
-        while (xrefTableBuffer.hasRemaining()) {
-            xrefTableBuffer.put(byteBuffer.get());
-        }
-        xrefTableBuffer.flip();
+        ByteBuffer xrefTableBuffer = ByteBufferUtil.copyObjectStreamSlice(byteBuffer, start, end);
         CrossReferenceTable crossReferenceTable = new CrossReferenceTable(library, dictionaryEntries);
         objectLexer.setByteBuffer(xrefTableBuffer);
         int startObjectNumber = (Integer) objectLexer.nextToken();

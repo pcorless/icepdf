@@ -26,7 +26,7 @@ public class ObjectLoader {
         this.library = library;
     }
 
-    public PObject loadObject(CrossReference crossReference, Reference reference, Name hint)
+    public synchronized PObject loadObject(CrossReference crossReference, Reference reference, Name hint)
             throws ObjectStateException, CrossReferenceStateException, IOException {
 
         CrossReferenceEntry entry = crossReference.getEntry(reference);
