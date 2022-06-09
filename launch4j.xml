@@ -2,8 +2,8 @@
 <launch4jConfig>
   <dontWrapJar>false</dontWrapJar>
   <headerType>gui</headerType>
-  <jar>C:\development\icepdf\viewer\viewer-awt\target\icepdf-viewer-7.0.0-SNAPSHOT-jar-with-dependencies.jar</jar>
-  <outfile>C:\development\icepdf\viewer\viewer-awt\target\icepdf-7.0.0.exe</outfile>
+  <jar>viewer\viewer-awt\target\icepdf-viewer-7.0.0-SNAPSHOT-jar-with-dependencies.jar</jar>
+  <outfile>viewer\viewer-awt\target\icepdf-7.0.0.exe</outfile>
   <errTitle></errTitle>
   <cmdLine></cmdLine>
   <chdir>.</chdir>
