@@ -11,7 +11,7 @@
     <modules>
         <module>core</module>
         <module>viewer</module>
-        <!--        <module>examples</module>-->
+        <module>examples</module>
     </modules>
 
     <properties>

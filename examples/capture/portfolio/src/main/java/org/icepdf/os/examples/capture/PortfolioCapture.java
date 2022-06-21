@@ -1,3 +1,5 @@
+package org.icepdf.os.examples.capture;
+
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.*;
@@ -99,7 +101,7 @@ public class PortfolioCapture {
                             String fileName = fileSpecification.getUnicodeFileSpecification() != null ?
                                     fileSpecification.getUnicodeFileSpecification() :
                                     fileSpecification.getFileSpecification() != null ?
-                                    fileSpecification.getFileSpecification() : "";
+                                            fileSpecification.getFileSpecification() : "";
 
                             // queue the embedded document for page capture
                             System.out.println("Loading embedded file "+ fileAttachmentName + " : " + fileName);
