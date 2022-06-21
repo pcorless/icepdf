@@ -19,29 +19,11 @@
         <!--<module>viewer-fx</module>-->
     </modules>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.github.pcorless.icepdf</groupId>
-            <artifactId>icepdf-core</artifactId>
-            <version>${project.version}</version>
-            <!--<exclusions>-->
-                <!--<exclusion>-->
-                    <!--<artifactId>com.sun.media</artifactId>-->
-                    <!--<groupId>jai_imageio</groupId>-->
-                <!--</exclusion>-->
-                <!--<exclusion>-->
-                    <!--<groupId>javax.media</groupId>-->
-                    <!--<artifactId>jai_core</artifactId>-->
-                <!--</exclusion>-->
-            <!--</exclusions>-->
-        </dependency>
-    </dependencies>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>icepdf-viewer</artifactId>
+                <groupId>com.github.pcorless.icepdf</groupId>
+                <artifactId>icepdf-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>
