@@ -10,5 +10,5 @@ dependencies {
 
 description 'java print services example'
 
-mainClassName = "org.icepdf.os.examples.print.PrintServices"
+mainClassName = "org.icepdf.examples.print.PrintServices"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]

@@ -10,5 +10,5 @@ dependencies {
 
 description 'signature validation example'
 
-mainClassName = "org.icepdf.os.examples.signatures.SignatureVerification"
+mainClassName = "org.icepdf.examples.signatures.SignatureVerification"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]

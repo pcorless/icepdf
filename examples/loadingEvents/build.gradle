@@ -2,7 +2,7 @@ apply plugin: 'application'
 
 description 'page loading event example'
 
-mainClassName = "org.icepdf.os.examples.loadingEvents.PageLoadingEvents"
+mainClassName = "org.icepdf.examples.loadingEvents.PageLoadingEvents"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
 
 dependencies {

@@ -5,7 +5,7 @@ plugins {
 
 description 'pdf to tiff image example'
 
-mainClassName = "org.icepdf.os.examples.capture.MultipleCapture"
+mainClassName = "org.icepdf.examples.capture.MultipleCapture"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
 
 repositories {

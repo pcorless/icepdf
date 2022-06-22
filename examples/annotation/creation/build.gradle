@@ -13,6 +13,6 @@ repositories {
     mavenCentral()
 }
 
-mainClassName = "org.icepdf.os.examples.annotation.creation.NewAnnotationPrePageLoad"
+mainClassName = "org.icepdf.examples.annotation.creation.NewAnnotationPrePageLoad"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
 

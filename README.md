@@ -66,7 +66,7 @@ Build the distribution zip and tar archives
 # examples module, -am insures dependencies are build 
 ~$ mvn -pl :png-capture -am package
 # or with full group id. 
-~$ mvn -pl org.icepdf.os.examples:png-capture -am package
+~$ mvn -pl org.icepdf.examples:png-capture -am package
 
 # Whole project hierarchy can be built with or with full group id. 
 ~$ mvn package
