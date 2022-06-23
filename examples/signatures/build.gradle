@@ -7,7 +7,6 @@ dependencies {
     implementation project(':core:core-awt'), project(':viewer:viewer-awt')
 }
 
-
 description 'signature validation example'
 
 mainClassName = "org.icepdf.examples.signatures.SignatureVerification"
