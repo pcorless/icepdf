@@ -8,7 +8,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>folder-capture</artifactId>
     <packaging>jar</packaging>
-    <name>ICEpdf OS :: Examples :: Capture :: Listener</name>
+    <name>ICEpdf :: Examples :: Capture :: Listener</name>
 
     <build>
         <plugins>

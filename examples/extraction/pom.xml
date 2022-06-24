@@ -9,7 +9,7 @@
     <groupId>org.icepdf.examples</groupId>
     <artifactId>extraction</artifactId>
     <packaging>pom</packaging>
-    <name>ICEpdf OS :: Examples :: Extraction</name>
+    <name>ICEpdf :: Examples :: Extraction</name>
     <description>
         The ICEpdf OS extraction examples
     </description>

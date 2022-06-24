@@ -9,7 +9,7 @@
     <groupId>org.icepdf.examples</groupId>
     <artifactId>annotation</artifactId>
     <packaging>pom</packaging>
-    <name>ICEpdf OS :: Examples :: Annotation</name>
+    <name>ICEpdf :: Examples :: Annotation</name>
     <description>
         The ICEpdf OS annotation examples
     </description>

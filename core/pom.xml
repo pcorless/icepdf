@@ -9,7 +9,7 @@
     </parent>
     <artifactId>core</artifactId>
     <packaging>pom</packaging>
-    <name>ICEpdf OS :: Core</name>
+    <name>ICEpdf :: Core</name>
     <description>
         The ICEpdf common rendering core library.
     </description>

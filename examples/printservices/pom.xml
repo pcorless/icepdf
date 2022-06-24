@@ -8,7 +8,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>print-services</artifactId>
     <packaging>jar</packaging>
-    <name>ICEpdf OS :: Examples :: Print Services</name>
+    <name>ICEpdf :: Examples :: Print Services</name>
 
     <build>
         <plugins>

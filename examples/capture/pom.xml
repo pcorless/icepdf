@@ -9,7 +9,7 @@
     <groupId>org.icepdf.examples</groupId>
     <artifactId>capture</artifactId>
     <packaging>pom</packaging>
-    <name>ICEpdf OS :: Examples :: Capture</name>
+    <name>ICEpdf :: Examples :: Capture</name>
     <description>
         The ICEpdf OS capture examples
     </description>

@@ -9,7 +9,7 @@
     <groupId>org.icepdf.examples</groupId>
     <artifactId>search</artifactId>
     <packaging>pom</packaging>
-    <name>ICEpdf OS :: Examples :: Search</name>
+    <name>ICEpdf :: Examples :: Search</name>
     <description>
         The ICEpdf OS search examples
     </description>

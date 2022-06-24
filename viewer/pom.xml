@@ -8,7 +8,7 @@
     </parent>
     <artifactId>viewer</artifactId>
     <packaging>pom</packaging>
-    <name>ICEpdf OS :: Viewer</name>
+    <name>ICEpdf :: Viewer</name>
     <description>
         The ICEpdf common viewer reference library.
     </description>

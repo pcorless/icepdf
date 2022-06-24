@@ -8,7 +8,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>javafx</artifactId>
     <packaging>jar</packaging>
-    <name>ICEpdf OS :: Examples :: JavaFx</name>
+    <name>ICEpdf :: Examples :: JavaFx</name>
 
     <dependencies>
         <dependency>

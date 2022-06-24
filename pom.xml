@@ -6,7 +6,7 @@
     <artifactId>icepdf</artifactId>
     <version>7.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>ICEpdf OS</name>
+    <name>ICEpdf</name>
 
     <modules>
         <module>core</module>

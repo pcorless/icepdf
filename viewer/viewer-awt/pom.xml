@@ -8,7 +8,7 @@
     </parent>
     <artifactId>icepdf-viewer</artifactId>
     <packaging>jar</packaging>
-    <name>ICEpdf OS :: Viewer : Swing/AWT Viewer RI</name>
+    <name>ICEpdf :: Viewer : Swing/AWT Viewer RI</name>
     <description>
         ICEpdf Java Swing/AWT reference implementation.
     </description>
@@ -46,7 +46,6 @@
     </dependencies>
 
     <build>
-        <finalName>icepdf-viewer-${version}</finalName>
         <plugins>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
