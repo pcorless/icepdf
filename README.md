@@ -18,6 +18,21 @@ ICEpdf is an open source project and is always looking for more contributors.  T
  [Wiki](https://github.com/pcorless/icepdf/wiki) pages.  Create a pull requests and use the issue tracker, the more 
  help and feedback we get the better we an make the project. 
  
+ ### Getting the jars, javadoc and source from maven central 
+ **Comming Very Soon!**
+ ```xml
+ <dependency>
+     <groupId>com.github.pcorless.icepdf</groupId>
+     <artifactId>icepdf-core</artifactId>
+     <version>7.0.0</version>
+ </dependency>
+ <dependency>
+     <groupId>com.github.pcorless.icepdf</groupId>
+     <artifactId>icepdf-viewer</artifactId>
+     <version>7.0.0</version>
+ </dependency>
+ ```
+ 
  ## Getting the Code
  To get a local copy of the current code, clone it using git:
  ```
