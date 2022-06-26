@@ -45,8 +45,29 @@ $ cd icepdf
  component you'll also need to build the Viewer library.  The project can be built with Gradle or Maven, we have 
  no preference,  pick which ever one makes you more happy. 
  
- Builds as they are currently written work best with Java 8 but they can also be easily configured to work with JDK 11+. 
- 
+ Builds as they are currently configured fpr JDK 11.
+
+#### Building With Maven
+```
+# core module
+~$ mvn -pl :icepdf-core package
+
+# viewer module, -am insures dependencies are build 
+~$ mvn -pl :icepdf-viewer -am package
+
+# Viewer jar with all dependences in one self executing jar
+~$ mvn -pl :icepdf-viewer -am package -P assembly 
+
+# examples module, -am insures dependencies are build 
+~$ mvn -pl :png-capture -am package
+# or with full group id. 
+~$ mvn -pl org.icepdf.examples:png-capture -am package
+~$ java -jar icepdf-viewer-7.0.0-SNAPSHOT-jar-with-dependencies.jar
+
+# Whole project hierarchy can be built with or with full group id. 
+~$ mvn package
+
+ ```
 #### Building With Gradle
 
 Build the core jar using the following Gradle command
@@ -69,24 +90,6 @@ Build the distribution zip and tar archives
 # or one can use the full task list 
 ~$ gradle projectReport, sourcesJar, genPomFileForCoreJarPub, genPomFileForViewerJarPub, osDistZip, osDistTar
 ```
-
-#### Building With Maven
-```
-# core module
-~$ mvn -pl :icepdf-core package
-
-# viewer module, -am insures dependencies are build 
-~$ mvn -pl :icepdf-viewer -am package
-
-# examples module, -am insures dependencies are build 
-~$ mvn -pl :png-capture -am package
-# or with full group id. 
-~$ mvn -pl org.icepdf.examples:png-capture -am package
-
-# Whole project hierarchy can be built with or with full group id. 
-~$ mvn package
-
- ```
 
  ## Using ICEpdf Viewer Component
  The `org.icepdf.core.ri.common.SwingController` class provides convenience methods for the most common UI actions, 
