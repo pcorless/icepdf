@@ -9,5 +9,5 @@ dependencies {
 
 description 'headless search highlight example'
 
-mainClassName = "org.icepdf.os.examples.search.SearchControllerHeadless"
+mainClassName = "org.icepdf.examples.search.SearchControllerHeadless"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]

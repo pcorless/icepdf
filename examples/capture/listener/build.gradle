@@ -9,5 +9,5 @@ dependencies {
 
 description 'directory listener for auto image capture'
 
-mainClassName = "org.icepdf.os.examples.capture.DocumentCapture"
+mainClassName = "org.icepdf.examples.capture.DocumentCapture"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]

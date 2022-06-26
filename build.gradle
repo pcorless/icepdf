@@ -8,6 +8,10 @@ allprojects {
         options.addStringOption('Xdoclint:none', '-quiet')
     }
 
+    repositories {
+        mavenCentral()
+    }
+
     // show api deprecation
 //    gradle.projectsEvaluated {
 //        tasks.withType(JavaCompile) {
