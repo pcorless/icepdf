@@ -45,7 +45,7 @@ $ cd icepdf
  component you'll also need to build the Viewer library.  The project can be built with Gradle or Maven, we have 
  no preference,  pick which ever one makes you more happy. 
  
- Builds as they are currently configured fpr JDK 11.
+ Builds as they are currently configured target Java 11.
 
 #### Building With Maven
 ```
