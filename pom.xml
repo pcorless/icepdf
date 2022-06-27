@@ -26,6 +26,36 @@
         <commons-logging.version>1.2</commons-logging.version>
     </properties>
 
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <issueManagement>
+        <system>github</system>
+        <url>https://github.com/pcorless/icepdf/issues</url>
+    </issueManagement>
+
+    <scm>
+        <connection>scm:git:https://github.com/pcorless/icepdf</connection>
+        <url>https://github.com/pcorless/icepdf/</url>
+    </scm>
+
+    <developers>
+        <developer>
+            <name>ICEpdf Community</name>
+            <organization>ICEpdf Community</organization>
+            <organizationUrl>https://github.com/pcorless/icepdf</organizationUrl>
+        </developer>
+        <developer>
+            <name>Patrick Corless</name>
+            <organizationUrl>https://github.com/pcorless</organizationUrl>
+        </developer>
+    </developers>
+
     <distributionManagement>
         <snapshotRepository>
             <id>ossrh</id>
