@@ -4,9 +4,13 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.pcorless.icepdf</groupId>
     <artifactId>icepdf</artifactId>
-    <version>7.0.0</version>
+    <version>7.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>ICEpdf</name>
+    <description>
+        ICEpdf is a PDF document rendering and viewing library
+    </description>
+    <url>https://github.com/pcorless/icepdf/</url>
 
     <modules>
         <module>core</module>
