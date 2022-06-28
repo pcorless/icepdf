@@ -19,7 +19,6 @@ ICEpdf is an open source project and is always looking for more contributors.  T
  help and feedback we get the better we an make the project. 
  
  ### Getting the jars, javadoc and source from maven central 
- **Coming Very Soon!**
  ```xml
  <dependency>
      <groupId>com.github.pcorless.icepdf</groupId>
