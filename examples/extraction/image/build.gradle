@@ -9,6 +9,6 @@ dependencies {
 
 description 'document image extraction example'
 
-mainClassName = "org.icepdf.os.examples.extraction.PageImageExtraction"
+mainClassName = "org.icepdf.examples.extraction.PageImageExtraction"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
 

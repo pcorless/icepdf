@@ -9,5 +9,5 @@ dependencies {
 
 description 'search highlight example'
 
-mainClassName = "org.icepdf.os.examples.search.SearchController"
+mainClassName = "org.icepdf.examples.search.SearchController"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]

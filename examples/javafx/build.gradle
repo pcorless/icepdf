@@ -5,7 +5,7 @@ plugins {
 
 description 'javafx SwingNode example'
 
-mainClassName = "org.icepdf.os.examples.javafx.PdfFXViewer"
+mainClassName = "org.icepdf.examples.javafx.PdfFXViewer"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
 
 javafx {

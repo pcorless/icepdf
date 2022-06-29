@@ -19,5 +19,5 @@ dependencies {
 }
 description 'pdf to svg example'
 
-mainClassName = "org.icepdf.os.examples.capture.SvgCapture"
+mainClassName = "org.icepdf.examples.capture.SvgCapture"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]

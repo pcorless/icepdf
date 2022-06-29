@@ -9,5 +9,5 @@ dependencies {
 
 description 'viewer component example'
 
-mainClassName = "org.icepdf.os.examples.component.ViewerComponentExample"
+mainClassName = "org.icepdf.examples.component.ViewerComponentExample"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]

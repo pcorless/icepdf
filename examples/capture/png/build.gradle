@@ -9,5 +9,5 @@ dependencies {
 
 description 'pdf to png image example'
 
-mainClassName = "org.icepdf.os.examples.capture.PageCapture"
+mainClassName = "org.icepdf.examples.capture.PageCapture"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
