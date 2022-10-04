@@ -14,5 +14,5 @@ dependencies {
 
 description 'pdf barcode data extraction example'
 
-mainClassName = "org.icepdf.os.examples.barcode.BarcodeStamper"
+mainClassName = "org.icepdf.examples.barcode.BarcodeStamper"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
