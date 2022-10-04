@@ -3459,26 +3459,27 @@ public class SwingController extends ComponentAdapter
      * when the window is closed.
      */
     public void saveFile() {
-        if (document.getStateManager().isChange()) {
-            if (saveFilePath != null && !saveFilePath.isEmpty()) {
-                File out = new File(saveFilePath);
-                if (out.getParentFile() != null) {
-                    if (Files.isWritable(out.getParentFile().toPath())) {
-                        try (OutputStream stream = new BufferedOutputStream(new FileOutputStream(out))) {
-                            document.saveToOutputStream(stream);
-                            stream.flush();
-                            document.getStateManager().setChangesSnapshot();
-                        } catch (IOException e) {
-                            logger.log(Level.FINE, "IO Exception ", e);
-                        }
+        if (document.getStateManager().isChange() &&
+                saveFilePath != null &&
+                !saveFilePath.isEmpty()) {
+            File out = new File(saveFilePath);
+            if (out.getParentFile() != null) {
+                if (Files.isWritable(out.getParentFile().toPath())) {
+                    try (OutputStream stream = new BufferedOutputStream(new FileOutputStream(out))) {
+                        document.saveToOutputStream(stream);
+                        stream.flush();
+                        document.getStateManager().setChangesSnapshot();
+                    } catch (IOException e) {
+                        logger.log(Level.FINE, "IO Exception ", e);
                     }
-                } else {
-                    //Probably got loaded from an InputStream, can't simply save
-                    saveFileAs();
                 }
             } else {
+                //Probably got loaded from an InputStream, can't simply save
                 saveFileAs();
             }
+        } else {
+            // show saveAs dialog as this was legacy behaviour for the save button on the toolbar
+            saveFileAs();
         }
     }
 
