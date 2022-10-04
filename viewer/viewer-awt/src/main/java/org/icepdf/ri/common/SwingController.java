@@ -3461,7 +3461,7 @@ public class SwingController extends ComponentAdapter
      * when the window is closed.
      */
     public void saveFile() {
-        if (!IS_READONLY) return;
+        if (IS_READONLY) return;
         if (document.getStateManager().isChange() &&
                 saveFilePath != null &&
                 !saveFilePath.isEmpty()) {
