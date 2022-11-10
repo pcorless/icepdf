@@ -714,16 +714,17 @@ public class Lexer {
                 c == '>';
     }
 
-    private int parseNumber() {
+    private Number parseNumber() {
         int digit = 0;
         float divisor = 10;
+        float decimal = 0;
         boolean isDigit;
         boolean isDecimal = false;
-        boolean singed = streamBytes.get(startTokenPos) == '-' ||
+        boolean signed = streamBytes.get(startTokenPos) == '-' ||
                 streamBytes.get(startTokenPos) == '+';
-        startTokenPos = singed ? startTokenPos + 1 : startTokenPos;
+        startTokenPos = signed ? startTokenPos + 1 : startTokenPos;
         // check for  double sign, thanks oracle forms!
-        if (singed && streamBytes.get(startTokenPos) == '-') {
+        if (signed && streamBytes.get(startTokenPos) == '-') {
             startTokenPos++;
         }
         int current;
@@ -733,7 +734,7 @@ public class Lexer {
             if (!isDecimal && isDigit) {
                 digit = (digit * 10) + current;
             } else if (isDecimal && isDigit) {
-                digit += (current / divisor);
+                decimal += (current / divisor);
                 divisor *= 10;
             } else if (streamBytes.get(i) == 46) {
                 isDecimal = true;
@@ -746,10 +747,18 @@ public class Lexer {
             }
         }
         streamBytes.position(pos);
-        if (singed) {
-            return -digit;
+        if (signed) {
+            if (isDecimal) {
+                return -(digit + decimal);
+            } else {
+                return -digit;
+            }
         } else {
-            return digit;
+            if (isDecimal) {
+                return digit + decimal;
+            } else {
+                return digit;
+            }
         }
     }
 }
