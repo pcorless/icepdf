@@ -123,7 +123,7 @@ public class Parser {
             streamByteBuffer.limit(streamOffsetEnd);
             streamByteBuffer = streamByteBuffer.compact();
             streamByteBuffer.position(0);
-            streamByteBuffer.limit(streamOffsetEnd);
+            streamByteBuffer.limit(streamOffsetEnd - streamOffsetStart);
         } else {
             streamByteBuffer = null;
         }
