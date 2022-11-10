@@ -1,6 +1,9 @@
 package org.icepdf.core.util;
 
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  *
@@ -72,6 +75,15 @@ public class ByteBufferUtil {
             }
         }
         return matchPosition == matchLength;
+    }
+
+    public static String stringFromBuffer(ByteBuffer buf, Charset charset) {
+        CharBuffer cb = charset.decode(buf.duplicate());
+        return (cb.toString());
+    }
+    public static String stringFromBuffer(ByteBuffer buf) {
+        Charset charset = StandardCharsets.UTF_8;
+        return (stringFromBuffer(buf, charset));
     }
 }
 
