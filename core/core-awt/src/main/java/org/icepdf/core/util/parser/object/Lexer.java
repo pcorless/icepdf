@@ -135,7 +135,7 @@ public class Lexer {
             case TOKEN_NAME:
                 return startName();
             case TOKEN_ARRAY:
-                return startArray();
+                return startArray(reference);
             case TOKEN_DICTIONARY:
                 return startDictionary();
             case TOKEN_BOOLEAN:
@@ -172,7 +172,9 @@ public class Lexer {
         streamBytes.position(endTokenPos);
         pos = endTokenPos;
 
-        return new HexStringObject(new String(hexData));
+        HexStringObject hexStringObject = new HexStringObject(new String(hexData));
+        hexStringObject.setReference(reference);
+        return hexStringObject;
     }
 
     /**
@@ -340,7 +342,9 @@ public class Lexer {
             }
         }
         streamBytes.position(pos);
-        return new LiteralStringObject(captured, true);
+        LiteralStringObject literalStringObject =  new LiteralStringObject(captured, true);
+        literalStringObject.setReference(reference);
+        return literalStringObject;
     }
 
     /**
@@ -456,7 +460,7 @@ public class Lexer {
         return entries;
     }
 
-    private List startArray() throws IOException {
+    private List startArray(Reference reference) throws IOException {
         startTokenPos = pos;
 
         List<Object> array = new ArrayList<Object>();
@@ -469,7 +473,7 @@ public class Lexer {
         Object token;
         while (streamBytes.get(pos) != ']' && pos < streamBytes.limit()) {
             // add the tokens as we get them.
-            token = nextToken();
+            token = nextToken(reference);
             if (token != null) {
                 array.add(token);
             } else {
