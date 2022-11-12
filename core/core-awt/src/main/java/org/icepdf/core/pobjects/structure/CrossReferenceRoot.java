@@ -72,12 +72,10 @@ public class CrossReferenceRoot {
 
     public PObject loadObject(ObjectLoader objectLoader, Reference reference, Name hint)
             throws ObjectStateException, CrossReferenceStateException, IOException {
-        if (crossReferences != null) {
-            PObject tmp;
-            for (CrossReference crossReference : crossReferences) {
-                tmp = crossReference.loadObject(objectLoader, reference, hint);
-                if (tmp != null) return tmp;
-            }
+        PObject tmp;
+        for (CrossReference crossReference : crossReferences) {
+            tmp = crossReference.loadObject(objectLoader, reference, hint);
+            if (tmp != null) return tmp;
         }
         return null;
     }

@@ -186,20 +186,27 @@ public class Parser {
 
     private CrossReference parseCrossReferenceTable(DictionaryEntries dictionaryEntries, Lexer objectLexer, ByteBuffer byteBuffer,
                                                     int start, int end) throws IOException {
-        // allocate to a new buffer as the data is well defined.
+        // allocate to a new buffer as the data is well-defined.
         ByteBuffer xrefTableBuffer = ByteBufferUtil.copyObjectStreamSlice(byteBuffer, start, end);
         CrossReferenceTable crossReferenceTable = new CrossReferenceTable(library, dictionaryEntries);
         objectLexer.setByteBuffer(xrefTableBuffer);
-        int startObjectNumber = (Integer) objectLexer.nextToken();
-        int numberOfObjects = (Integer) objectLexer.nextToken();
-        for (int i = 0; i < numberOfObjects; i++) {
-            int offset = (Integer) objectLexer.nextToken();
-            int generation = (Integer) objectLexer.nextToken();
-            int state = (Integer) objectLexer.nextToken();
-            if (state == OperandNames.OP_n) {
-                crossReferenceTable.addEntry(new CrossReferenceUsedEntry(startObjectNumber + i, generation, offset));
+        // parse the sub groupings
+        while (true) {
+            Integer startObjectNumber = (Integer) objectLexer.nextToken();
+            // buffer end will result in a null token
+            if (startObjectNumber == null) break;
+            int numberOfObjects = (Integer) objectLexer.nextToken();
+            for (int i = 0; i < numberOfObjects; i++) {
+                int offset = (Integer) objectLexer.nextToken();
+                int generation = (Integer) objectLexer.nextToken();
+                int state = (Integer) objectLexer.nextToken();
+                if (state == OperandNames.OP_n) {
+                    crossReferenceTable.addEntry(
+                            new CrossReferenceUsedEntry(startObjectNumber + i, generation, offset));
+                }
             }
         }
+
         return crossReferenceTable;
     }
 
