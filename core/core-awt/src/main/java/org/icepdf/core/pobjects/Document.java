@@ -1184,7 +1184,9 @@ public class Document {
         final Reference pInfoReference = stateManager.getNewReferenceNumber();
         pInfo.setPObjectReference(pInfoReference);
         library.addObject(pInfo.getEntries(), pInfoReference);
-        pTrailer.entries.put(PTrailer.INFO_KEY, pInfoReference);
+        if (pTrailer != null) {
+            pTrailer.entries.put(PTrailer.INFO_KEY, pInfoReference);
+        }
         return pInfo;
     }
 
