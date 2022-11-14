@@ -137,7 +137,7 @@ public class Lexer {
             case TOKEN_ARRAY:
                 return startArray(reference);
             case TOKEN_DICTIONARY:
-                return startDictionary();
+                return startDictionary(reference);
             case TOKEN_BOOLEAN:
                 return startBoolean();
             case TOKEN_REFERENCE:
@@ -205,7 +205,9 @@ public class Lexer {
                 }
                 pos++;
                 streamBytes.position(pos);
-                return new LiteralStringObject(captured, true);
+                LiteralStringObject literalStringObject =  new LiteralStringObject(captured, true);
+                literalStringObject.setReference(reference);
+                return literalStringObject;
             }
         }
 
@@ -422,7 +424,7 @@ public class Lexer {
         return nextToken();
     }
 
-    private DictionaryEntries startDictionary() throws IOException {
+    private DictionaryEntries startDictionary(Reference reference) throws IOException {
         startTokenPos = pos;
 
         DictionaryEntries entries = new DictionaryEntries();
@@ -435,10 +437,10 @@ public class Lexer {
         int count = 1;
         while (!(streamBytes.get(pos) == '>' && streamBytes.get(pos + 1) == '>')) {
             if (count == 1) {
-                key = nextToken();
+                key = nextToken(reference);
                 count++;
             } else if (count == 2) {
-                value = nextToken();
+                value = nextToken(reference);
                 if (!(key instanceof Name)) {
                     break;
                 }
