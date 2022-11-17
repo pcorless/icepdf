@@ -1,13 +1,9 @@
 package org.icepdf.core.util.parser.content;
 
-import org.icepdf.core.pobjects.HexStringObject;
-import org.icepdf.core.pobjects.LiteralStringObject;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -370,10 +366,10 @@ public class Lexer {
         return Operands.OP;
     }
 
-    private HashMap startDictionary() throws IOException {
+    private DictionaryEntries startDictionary() throws IOException {
         startTokenPos = pos;
 
-        HashMap<Object, Object> h = new HashMap<Object, Object>();
+        DictionaryEntries dictionaryEntries = new DictionaryEntries();
 
         // skip past the starting <<
         pos += 2;
@@ -389,12 +385,12 @@ public class Lexer {
                 // double check we don't have an empty dictionary << >>
                 if (key instanceof Integer &&
                         ((Integer) key) == Operands.OP) {
-                    return h;
+                    return dictionaryEntries;
                 }
                 count++;
             } else if (count == 2) {
                 value = next();
-                h.put(key, value);
+                dictionaryEntries.put((Name)key, value);
                 count = 1;
             }
 
@@ -412,7 +408,7 @@ public class Lexer {
         }
         // skip the trailing >>
         pos += 2;
-        return h;
+        return dictionaryEntries;
     }
 
     private void checkLength() {
