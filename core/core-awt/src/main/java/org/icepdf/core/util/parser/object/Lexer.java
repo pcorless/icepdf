@@ -61,9 +61,7 @@ public class Lexer {
         if (streamByte == 13) {
             pos++;
             streamByte = streamBytes.get(pos);
-            if (streamByte != 10) {
-                pos--;
-            } else {
+            if (streamByte == 10) {
                 pos++;
             }
         } else if (streamByte == 10) {
