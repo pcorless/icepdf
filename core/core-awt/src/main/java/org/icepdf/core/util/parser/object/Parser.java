@@ -196,14 +196,25 @@ public class Parser {
             // buffer end will result in a null token
             if (startObjectNumber == null) break;
             int numberOfObjects = (Integer) objectLexer.nextToken();
+            int currentNumber = startObjectNumber;
             for (int i = 0; i < numberOfObjects; i++) {
                 int offset = (Integer) objectLexer.nextToken();
                 int generation = (Integer) objectLexer.nextToken();
                 int state = (Integer) objectLexer.nextToken();
                 if (state == OperandNames.OP_n) {
                     crossReferenceTable.addEntry(
-                            new CrossReferenceUsedEntry(startObjectNumber + i, generation, offset));
+                            new CrossReferenceUsedEntry(currentNumber, generation, offset));
+                }else if (state == OperandNames.OP_f) {    // Free
+                    // check for the first entry 0000000000 65535 f  and
+                    // an object range where the first entry isn't zero.  The
+                    // code below will treat the first entry as zero and then
+                    // start counting.
+                    if (i == 0 && startObjectNumber > 0 && generation == 65535) {
+                        // offset the count, so we start counting after the zeroed entry
+                        currentNumber--;
+                    }
                 }
+                currentNumber++;
             }
         }
 
