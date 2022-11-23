@@ -500,10 +500,6 @@ public class Lexer {
         }
         if (pos <= numRead && pos > startTokenPos) {
             int[] tmp = Operands.parseOperand(streamBytes, startTokenPos, pos - startTokenPos);
-            // check for 'null' token which maybe picked up as an operator.
-            if (tmp == null) {
-                return null;
-            }
             // adjust for any potential parsing compensation.
             if (tmp[1] > 0) {
                 pos -= tmp[1];
