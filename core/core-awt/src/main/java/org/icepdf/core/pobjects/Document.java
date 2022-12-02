@@ -400,13 +400,14 @@ public class Document {
                     library.setCrossReferenceRoot(crossReferenceRoot);
                 } catch (Throwable e) {
                     crossReferenceRoot.setLazyInitializationFailed(true);
-                    logger.log(Level.WARNING, "Cross reference loading failed, reindexing file.", e);
+                    logger.log(Level.WARNING, "Cross reference loading failed, reindexing file.");
                 }
             }
 
             // linear traversal of file.
             if (trailer.isLazyInitializationFailed() || crossReferenceRoot.isLazyInitializationFailed()) {
                 crossReferenceRoot = library.rebuildCrossReferenceTable();
+                library.setCrossReferenceRoot(crossReferenceRoot);
             }
 
             DictionaryEntries trailerDictionary = crossReferenceRoot.getTrailerDictionary();

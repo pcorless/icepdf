@@ -52,42 +52,44 @@ public class ObjectFactory {
 
         } else if (objectData instanceof DictionaryEntries) {
             DictionaryEntries entries = (DictionaryEntries) objectData;
-            Name type = library.getName(entries, Dictionary.TYPE_KEY);
-            if (type != null) {
-                if (Catalog.TYPE.equals(type)) {
-                    return new PObject(new Catalog(library, entries), objectNumber, generationNumber);
-                } else if (PageTree.TYPE.equals(type)) {
-                    return new PObject(new PageTree(library, entries), objectNumber, generationNumber);
-                } else if (Page.TYPE.equals(type)) {
-                    return new PObject(new Page(library, entries), objectNumber, generationNumber);
-                } else if (Font.TYPE.equals(type)) {
-                    // do a quick check to make sure we don't have a fontDescriptor
-                    // FontFile is specific to font descriptors.
-                    boolean fontDescriptor = entries.get(FontDescriptor.FONT_FILE) != null ||
-                            entries.get(FontDescriptor.FONT_FILE_2) != null ||
-                            entries.get(FontDescriptor.FONT_FILE_3) != null;
-                    if (fontDescriptor) {
-                        return new PObject(new FontDescriptor(library, entries), objectNumber, generationNumber);
-                    } else {
-                        return new PObject(
-                                FontFactory.getInstance().getFont(library, entries), objectNumber, generationNumber);
-                    }
-                } else if (FontDescriptor.TYPE.equals(type)) {
-                    return new PObject(new FontDescriptor(library, entries), objectNumber, generationNumber);
-                } else if (Annotation.TYPE.equals(type)) {
-                    return new PObject(Annotation.buildAnnotation(library, entries), objectNumber, generationNumber);
-                } else if (CMap.TYPE.equals(type)) {
-                    return new PObject(entries, objectNumber, generationNumber);
-                } else if (OptionalContentGroup.TYPE.equals(type)) {
-                    return new PObject(new OptionalContentGroup(library, entries), objectNumber, generationNumber);
-                } else if (OptionalContentMembership.TYPE.equals(type)) {
-                    return new PObject(new OptionalContentMembership(library, entries), objectNumber, generationNumber);
-                } else {
-                    return new PObject(entries, objectNumber, generationNumber);
-                }
-
-            }
+            Object object = getInstance(library, entries);
+            return new PObject(object, objectNumber, generationNumber);
         }
         return new PObject(objectData, objectNumber, generationNumber);
+    }
+
+    public static Object getInstance(Library library, DictionaryEntries entries) {
+        Name type = library.getName(entries, Dictionary.TYPE_KEY);
+        if (type != null) {
+            if (Catalog.TYPE.equals(type)) {
+                return new Catalog(library, entries);
+            } else if (PageTree.TYPE.equals(type)) {
+                return new PageTree(library, entries);
+            } else if (Page.TYPE.equals(type)) {
+                return new Page(library, entries);
+            } else if (Font.TYPE.equals(type)) {
+                // do a quick check to make sure we don't have a fontDescriptor
+                // FontFile is specific to font descriptors.
+                boolean fontDescriptor = entries.get(FontDescriptor.FONT_FILE) != null ||
+                        entries.get(FontDescriptor.FONT_FILE_2) != null ||
+                        entries.get(FontDescriptor.FONT_FILE_3) != null;
+                if (fontDescriptor) {
+                    return new FontDescriptor(library, entries);
+                } else {
+                    return FontFactory.getInstance().getFont(library, entries);
+                }
+            } else if (FontDescriptor.TYPE.equals(type)) {
+                return new FontDescriptor(library, entries);
+            } else if (Annotation.TYPE.equals(type)) {
+                return Annotation.buildAnnotation(library, entries);
+            } else if (CMap.TYPE.equals(type)) {
+                return new Dictionary(library, entries);
+            } else if (OptionalContentGroup.TYPE.equals(type)) {
+                return new OptionalContentGroup(library, entries);
+            } else if (OptionalContentMembership.TYPE.equals(type)) {
+                return new OptionalContentMembership(library, entries);
+            }
+        }
+        return entries;
     }
 }

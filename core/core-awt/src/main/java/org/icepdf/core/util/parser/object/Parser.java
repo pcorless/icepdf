@@ -104,8 +104,12 @@ public class Parser {
             lexer.skipWhiteSpace();
             // stream offset
             streamOffsetStart = streamByteBuffer.position();
-            int offset = library.getInt((DictionaryEntries) objectData, Dictionary.LENGTH_KEY);
-            streamOffsetEnd = streamOffsetStart + offset;
+            int streamLength = library.getInt((DictionaryEntries) objectData, Dictionary.LENGTH_KEY);
+            // doublc check a streamLength = zero, some encoders are lazy and there is actually data.
+            if (streamLength == 0 && streamByteBuffer.limit() - streamOffsetStart > 0) {
+                streamLength = streamByteBuffer.limit() - streamOffsetStart;
+            }
+            streamOffsetEnd = streamOffsetStart + streamLength;
 
             if (streamOffsetEnd <= 0 || streamOffsetEnd > streamByteBuffer.limit()) {
                 // work backwards to find end stream location

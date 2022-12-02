@@ -422,7 +422,7 @@ public class Lexer {
         return nextToken();
     }
 
-    private DictionaryEntries startDictionary(Reference reference) throws IOException {
+    private Object startDictionary(Reference reference) throws IOException {
         startTokenPos = pos;
 
         DictionaryEntries entries = new DictionaryEntries();
@@ -457,7 +457,7 @@ public class Lexer {
         // skip the trailing >>
         pos += 2;
         streamBytes.position(pos);
-        return entries;
+        return ObjectFactory.getInstance(library, entries);
     }
 
     private List startArray(Reference reference) throws IOException {
