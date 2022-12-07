@@ -16,7 +16,6 @@
 package org.icepdf.core.pobjects.graphics.text;
 
 import java.awt.geom.AffineTransform;
-import java.awt.geom.GeneralPath;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.util.logging.Logger;
@@ -62,7 +61,7 @@ public class GlyphText extends AbstractText {
      */
     public void normalizeToUserSpace(AffineTransform af, AffineTransform af1) {
         // map the coordinates from glyph space to user space.
-        Path2D.Float generalPath = new Path2D.Float(bounds, af);
+        Path2D.Double generalPath = new Path2D.Double(bounds, af);
         bounds = (Rectangle2D.Double) generalPath.getBounds2D();
         // we have some portrait type layouts where the text is actually
         // running on the y-axis.  The reason for this is Tm that specifies
@@ -70,13 +69,11 @@ public class GlyphText extends AbstractText {
         // our left to right top down text extraction logic (PDF-854).
         if (af1 != null && af1.getShearX() < -1) {
             // adjust of the rotation, move the text back to a normal layout.
-            generalPath = new GeneralPath(bounds);
-            generalPath.transform(new AffineTransform(0, -1, 1, 0, 0, 0));
+            generalPath = new Path2D.Double(bounds, new AffineTransform(0, -1, 1, 0, 0, 0));
             textExtractionBounds = (Rectangle2D.Double) generalPath.getBounds2D();
         } else if (af1 != null && af1.getShearY() < -1) {
             // adjust of the rotation, move the text back to a normal layout.
-            generalPath = new GeneralPath(bounds);
-            generalPath.transform(new AffineTransform(0, 1, -1, 0, 0, 0));
+            generalPath = new Path2D.Double(bounds, new AffineTransform(0, 1, -1, 0, 0, 0));
             textExtractionBounds = (Rectangle2D.Double) generalPath.getBounds2D();
         } else {
             // 99% of the time we just use the bounds.
