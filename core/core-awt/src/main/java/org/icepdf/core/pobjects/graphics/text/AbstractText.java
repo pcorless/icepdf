@@ -36,13 +36,13 @@ import java.awt.geom.Rectangle2D;
 public abstract class AbstractText implements Text {
 
     // Bounds of text converted to page space.
-    protected Rectangle2D.Float bounds;
+    protected Rectangle2D.Double bounds;
 
     // original bounds as plotted by the PDF,  can be used for space and
     // line break detection.  Once normalized to page space (bounds instance var)
     // it may not be possible to make the formatting detection.  However normalized
     // bounds are used for text selection.
-    protected Rectangle2D.Float textExtractionBounds;
+    protected Rectangle2D.Double textExtractionBounds;
 
     // selected states
     protected boolean selected;
@@ -64,7 +64,7 @@ public abstract class AbstractText implements Text {
      *
      * @return bounds of text object.
      */
-    public abstract Rectangle2D.Float getBounds();
+    public abstract Rectangle2D.Double getBounds();
 
     public void clearBounds() {
         bounds = null;
@@ -220,7 +220,7 @@ public abstract class AbstractText implements Text {
      *
      * @return text bounds.
      */
-    public Rectangle2D.Float getTextExtractionBounds() {
+    public Rectangle2D.Double getTextExtractionBounds() {
         return textExtractionBounds;
     }
 }

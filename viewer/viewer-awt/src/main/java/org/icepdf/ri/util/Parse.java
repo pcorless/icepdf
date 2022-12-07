@@ -33,7 +33,7 @@ final class Parse {
     public static Integer parseInteger(String s, ResourceBundle messageBundle) {
         s = s.trim();
         try {
-            return new Integer(s);
+            return Integer.parseInt(s);
         } catch (NumberFormatException ex) {
             if (messageBundle != null) {
                 Resources.showMessageDialog(null,
@@ -49,7 +49,7 @@ final class Parse {
     public static Long parseLong(String s, ResourceBundle messageBundle) {
         s = s.trim();
         try {
-            return new Long(s);
+            return Long.parseLong(s);
         } catch (NumberFormatException ex) {
             if (messageBundle != null) {
                 Resources.showMessageDialog(null,
@@ -65,7 +65,7 @@ final class Parse {
     public static Float parseFloat(String s, ResourceBundle messageBundle) {
         s = s.trim();
         try {
-            return new Float(s);
+            return Float.parseFloat(s);
         } catch (NumberFormatException ex) {
             if (messageBundle != null) {
                 Resources.showMessageDialog(null,
@@ -88,7 +88,7 @@ final class Parse {
     public static Double parseDouble(String s, ResourceBundle messageBundle) {
         s = s.trim();
         try {
-            return new Double(s);
+            return Double.parseDouble(s);
         } catch (NumberFormatException ex) {
             if (messageBundle != null) {
                 Resources.showMessageDialog(null,

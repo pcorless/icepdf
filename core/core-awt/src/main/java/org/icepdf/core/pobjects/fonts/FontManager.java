@@ -23,7 +23,6 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.security.AccessControlException;
 import java.util.List;
 import java.util.*;
 import java.util.logging.Level;
@@ -306,7 +305,7 @@ public class FontManager {
                 tokens = new StringTokenizer(fontPreferences.get(name, null), "|");
                 // get family, decoration and path tokens
                 family = tokens.nextToken();
-                decorations = new Integer(tokens.nextToken());
+                decorations = Integer.parseInt(tokens.nextToken());
                 path = tokens.nextToken();
                 if (name != null && family != null && path != null) {
                     // check exclusion list
@@ -438,7 +437,7 @@ public class FontManager {
                     evaluateFontForInsertion(directory.getAbsolutePath());
                 }
             }
-        } catch (AccessControlException e) {
+        } catch (SecurityException e) {
             logger.log(Level.WARNING, "SecurityException: failed to load fonts from directory: ", e);
         } catch (Throwable e) {
             logger.log(Level.FINE, "Failed to load fonts from directory: ", e);
