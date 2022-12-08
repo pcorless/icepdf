@@ -10,15 +10,14 @@ repositories {
 
 dependencies {
     // signature validation.
-    implementation 'org.bouncycastle:bcprov-jdk15on:' + "${BOUNCY_VERSION}"
     implementation 'org.bouncycastle:bcprov-ext-jdk15on:' + "${BOUNCY_VERSION}"
     implementation 'org.bouncycastle:bcpkix-jdk15on:' + "${BOUNCY_VERSION}"
     // tiff, jpeg2000 and jbig decoding
     implementation 'com.twelvemonkeys.imageio:imageio-tiff:'  + "${MONKEY_VERSION}"
-    implementation 'com.github.jai-imageio:jai-imageio-jpeg2000:' + "${JAI_VERSION}"
     implementation 'org.apache.pdfbox:jbig2-imageio:' + "${JBIG2_VERSION}"
     implementation 'org.apache.pdfbox:fontbox:' + "${FONT_BOX_VERSION}"
     implementation 'commons-logging:commons-logging:1.2'
+    runtimeOnly 'com.github.jai-imageio:jai-imageio-jpeg2000:' + "${JAI_VERSION}"
 }
 
 // generatePomFileForCoreJarPublication
