@@ -1233,7 +1233,7 @@ public abstract class Annotation extends Dictionary {
     public boolean isBorder() {
         boolean borderWidth = false;
         Object border = getObject(BORDER_KEY);
-        if (border != null && border instanceof List) {
+        if (border instanceof List) {
             List borderProps = (List) border;
             if (borderProps.size() == 3) {
                 borderWidth = ((Number) borderProps.get(2)).floatValue() > 0;
@@ -1250,8 +1250,9 @@ public abstract class Annotation extends Dictionary {
             return;
         if (renderHintType == GraphicsRenderingHints.SCREEN && !allowScreenNormalMode())
             return;
-        if (renderHintType == GraphicsRenderingHints.PRINT && !allowPrintNormalMode())
-            return;
+        // need an override on this as popups aren't usually printed.
+//        if (renderHintType == GraphicsRenderingHints.PRINT && !allowPrintNormalMode())
+//            return;
 
 //System.out.println("render(-)  " + this);
         Rectangle2D.Float rect = getUserSpaceRectangle();

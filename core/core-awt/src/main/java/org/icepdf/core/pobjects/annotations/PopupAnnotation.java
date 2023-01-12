@@ -21,8 +21,11 @@ import org.icepdf.core.pobjects.PRectangle;
 import org.icepdf.core.pobjects.StateManager;
 import org.icepdf.core.util.Library;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
+import java.time.format.FormatStyle;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
@@ -64,6 +67,9 @@ public class PopupAnnotation extends Annotation {
     public static final Name OPEN_KEY = new Name("Open");
 
     protected MarkupAnnotation parent;
+
+    private boolean resetPopupPaintables = true;
+    private JPanel popupPaintablesPanel;
 
     public PopupAnnotation(Library l, HashMap h) {
         super(l, h);
@@ -120,6 +126,80 @@ public class PopupAnnotation extends Annotation {
     }
 
     @Override
+    protected void renderAppearanceStream(Graphics2D g2d) {
+        GraphicsConfiguration graphicsConfiguration = g2d.getDeviceConfiguration();
+        if (graphicsConfiguration.getDevice().getType() == GraphicsDevice.TYPE_PRINTER) {
+            // make sure we have parent content print.
+            String contents = getParent() != null ? getParent().getContents() : "";
+            if (contents != null && resetPopupPaintables) {
+                buildPopupPaintables();
+            }
+            // todo likely also test for minimized to be useful?
+            if (contents != null){
+                paintPopupPaintables(g2d);
+            }
+        }
+    }
+
+    private void paintPopupPaintables(Graphics2D g2d) {
+        Rectangle2D.Float origRect = getUserSpaceRectangle();
+        Rectangle2D rect = new Rectangle2D.Double(0, 0, origRect.width, origRect.height);
+
+        AffineTransform oldTransform = g2d.getTransform();
+        g2d.scale(1,-1);
+        g2d.translate(0, -rect.getBounds().getSize().height);
+
+        // build out a basic representation of the panel
+        popupPaintablesPanel = new JPanel();
+        Color color = getParent().getColor();
+        popupPaintablesPanel.setBackground(color);
+        popupPaintablesPanel.setBounds(rect.getBounds());
+        popupPaintablesPanel.setSize(rect.getBounds().getSize());
+        popupPaintablesPanel.setPreferredSize(rect.getBounds().getSize());
+
+        MarkupAnnotation markupAnnotation = getParent();
+        // user
+        String title = markupAnnotation.getFormattedTitleText();
+        JLabel titleLabel = new JLabel(title);
+        popupPaintablesPanel.add(titleLabel);
+
+        // creation date
+        JLabel creationLabel = new JLabel();
+        creationLabel.setText(markupAnnotation.getFormattedCreationDate(FormatStyle.MEDIUM));
+        popupPaintablesPanel.add(creationLabel);
+
+        // text area
+        String contents = markupAnnotation.getFormattedTitleText();
+        JTextArea textArea = new JTextArea(contents);
+        textArea.setFont(new JLabel().getFont());
+        textArea.setWrapStyleWord(true);
+        textArea.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(color),
+                BorderFactory.createEmptyBorder(2, 2, 2, 2)));
+        popupPaintablesPanel.add(textArea);
+
+        Component[] components = popupPaintablesPanel.getComponents();
+        for (Component comp : components) {
+            Dimension size = comp.getPreferredSize();
+            comp.setSize(size);
+            comp.setPreferredSize(size);
+        }
+        popupPaintablesPanel.invalidate();
+        popupPaintablesPanel.revalidate();
+        popupPaintablesPanel.print(g2d);
+
+        g2d.setTransform(oldTransform);
+    }
+
+    private void buildPopupPaintables() {
+        resetPopupPaintables = false;
+    }
+
+    public void setContents(String content) {
+        super.setString(CONTENTS_KEY, content);
+        resetPopupPaintables = true;
+    }
+
+    @Override
     public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
 
     }
@@ -135,7 +215,7 @@ public class PopupAnnotation extends Annotation {
     public MarkupAnnotation getParent() {
         Object tmp = library.getObject(entries, PARENT_KEY);
         // should normally be a text annotation type.
-        if (tmp != null && tmp instanceof MarkupAnnotation) {
+        if (tmp instanceof MarkupAnnotation) {
             parent = (MarkupAnnotation) tmp;
         }
         return parent;

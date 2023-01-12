@@ -19,8 +19,12 @@ import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.util.Library;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -300,6 +304,25 @@ public abstract class MarkupAnnotation extends Annotation {
             creationDate = getModifiedDate();
         }
         return creationDate;
+    }
+
+    /**
+     * Format the creation date using the given FormatStyle
+     * @param formatStyle date output style used by DateTimeFormatter
+     * @return formatted creation date if available, empty String otherwise
+     */
+    public String getFormattedCreationDate(FormatStyle formatStyle) {
+        LocalDateTime creationDate = getCreationDate().asLocalDateTime();
+        if (creationDate == null) return "";
+        DateTimeFormatter formatter = DateTimeFormatter
+                .ofLocalizedDateTime(formatStyle)
+                .withLocale(Locale.getDefault());
+        return creationDate.format(formatter);
+    }
+
+    public String getFormattedTitleText() {
+        String titleText = getTitleText();
+        return titleText != null ? titleText : "";
     }
 
     public boolean isInReplyTo() {
