@@ -84,6 +84,14 @@ public abstract class ZSimpleFont implements FontFile {
         this.gsTransform = new AffineTransform(gsTransform);
         this.fontMatrix = new AffineTransform(font.fontMatrix);
         this.fontTransform = new AffineTransform(font.fontTransform);
+        Rectangle2D maxCharBounds = font.maxCharBounds;
+        if (maxCharBounds != null) {
+            this.maxCharBounds = new Rectangle2D.Double(
+                    maxCharBounds.getX(), maxCharBounds.getY(), maxCharBounds.getWidth(), maxCharBounds.getHeight());
+        } else {
+            // preload the max char points
+            this.maxCharBounds = getMaxCharBounds();
+        }
     }
 
     @Override
@@ -187,10 +195,20 @@ public abstract class ZSimpleFont implements FontFile {
 
     @Override
     public Rectangle2D getMaxCharBounds() {
-        AffineTransform af = new AffineTransform();
-        af.scale(size, -size);
-        af.concatenate(fontMatrix);
-        return af.createTransformedShape(bbox).getBounds2D();
+        double[] bboxPrimitives = new double[]{
+                bbox.getX() * size, bbox.getY() * size, bbox.getWidth() * size, bbox.getHeight() * size};
+        // transform x,y coord, so we get the correct offset for painting
+        fontMatrix.deltaTransform(bboxPrimitives, 0, bboxPrimitives, 0, 2);
+        // try and detect inverted layout, not a fan of this workaround.
+        if (bboxPrimitives[3] < 0.0) {
+            bboxPrimitives[1] = -bboxPrimitives[1];
+            bboxPrimitives[3] = -bboxPrimitives[3];
+        }
+        return new Rectangle2D.Double(
+                bboxPrimitives[0],
+                -bboxPrimitives[3],
+                bboxPrimitives[2] - bboxPrimitives[0],
+                bboxPrimitives[3] - bboxPrimitives[1]);
     }
 
     @Override
@@ -326,6 +344,7 @@ public abstract class ZSimpleFont implements FontFile {
         fontTransform = new AffineTransform(fontMatrix);
         fontTransform.concatenate(at);
         fontTransform.scale(size, -size);
+        maxCharBounds = getMaxCharBounds();
     }
 
     protected void setPointSize(float pointSize) {
@@ -333,7 +352,7 @@ public abstract class ZSimpleFont implements FontFile {
         fontTransform.concatenate(gsTransform);
         fontTransform.scale(pointSize, -pointSize);
         size = pointSize;
-        maxCharBounds = null;
+        maxCharBounds = getMaxCharBounds();
     }
 
     protected char getCharDiff(char character) {
