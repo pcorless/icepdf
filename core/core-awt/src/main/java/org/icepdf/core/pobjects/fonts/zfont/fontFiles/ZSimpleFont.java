@@ -195,15 +195,17 @@ public abstract class ZSimpleFont implements FontFile {
 
     @Override
     public Rectangle2D getMaxCharBounds() {
+        // bbox isn't a proper rectangle but p1x, p1y, p2x, p2y
         double[] bboxPrimitives = new double[]{
                 bbox.getX() * size, bbox.getY() * size, bbox.getWidth() * size, bbox.getHeight() * size};
-        // transform x,y coord, so we get the correct offset for painting
+        // transform the two points to the correct space
         fontMatrix.deltaTransform(bboxPrimitives, 0, bboxPrimitives, 0, 2);
-        // try and detect inverted layout, not a fan of this workaround.
+        // flip if needed
         if (bboxPrimitives[3] < 0.0) {
             bboxPrimitives[1] = -bboxPrimitives[1];
             bboxPrimitives[3] = -bboxPrimitives[3];
         }
+        // convert ot a proper java2d rectangle
         return new Rectangle2D.Double(
                 bboxPrimitives[0],
                 -bboxPrimitives[3],
