@@ -430,6 +430,7 @@ public abstract class AbstractContentParser {
             af2.concatenate(graphicState.getTextState().tmatrix);
             graphicState.set(af2);
             graphicState.scale(1, -1);
+
             // update the textBlockBase as the tm was specified in the BT block
             // and we still need to keep the offset. Only reset the block on a simple translation
             if (af2.getScaleX() == 1.0 && af2.getScaleY() == 1.0) {
@@ -486,7 +487,8 @@ public abstract class AbstractContentParser {
     protected static GraphicsState consume_Do(GraphicsState graphicState, Stack<Object> stack,
                                               Shapes shapes, Resources resources,
                                               boolean viewParse, // events
-                                              AtomicInteger imageIndex, Page page) throws InterruptedException {
+                                              AtomicInteger imageIndex, Page page,
+                                              boolean inTextBlock) throws InterruptedException {
         Name xobjectName = (Name) stack.pop();
         if (resources == null) return graphicState;
         // Form XObject
@@ -625,7 +627,12 @@ public abstract class AbstractContentParser {
 
                 AffineTransform af =
                         new AffineTransform(graphicState.getCTM());
-                graphicState.scale(1, -1);
+                // GH-243,  there is a weird duality between cm and Do inside text blocks that this adjusts for.
+                // Not ideal but solves the inverted rendering problem for now, another sample might give more info
+                // into the actual problem and a better solution.
+                if (!inTextBlock) {
+                    graphicState.scale(1, -1);
+                }
                 graphicState.translate(0, -1);
                 setAlpha(shapes, graphicState, AlphaPaintType.ALPHA_FILL);
                 shapes.add(new ImageDrawCmd(imageReference));

@@ -770,7 +770,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     public void showWord(int pageIndex, WordText word) {
         viewerController.showPage(pageIndex);
         // navigate to the location
-        Rectangle2D.Float bounds = word.getBounds();
+        Rectangle2D.Double bounds = word.getBounds();
 
         viewerController.getDocumentViewController().setDestinationTarget(
                 new Destination(viewerController.getDocument().getPageTree().getPage(pageIndex),
@@ -1025,7 +1025,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * @param text      The text of the component
      * @param bounds    The bounds of the component
      */
-    protected void addComponent(final int pageIndex, final String text, final Rectangle2D.Float bounds) {
+    protected void addComponent(final int pageIndex, final String text, final Rectangle2D.Double bounds) {
         final Set<SearchHitComponent> components = pageToComponents.getOrDefault(pageIndex, new HashSet<>());
         final SearchHitComponent component = componentFactory.createComponent(text, bounds, document.getPageTree().getPage(pageIndex), viewerController);
         if (!components.contains(component)) {

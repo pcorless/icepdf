@@ -10,7 +10,7 @@ import java.awt.geom.Rectangle2D;
 public class SearchHitComponentFactoryImpl implements SearchHitComponentFactory {
 
     @Override
-    public SearchHitComponent createComponent(String text, Rectangle2D.Float bounds, Page page, Controller controller) {
+    public SearchHitComponent createComponent(String text, Rectangle2D.Double bounds, Page page, Controller controller) {
         return null;
     }
 

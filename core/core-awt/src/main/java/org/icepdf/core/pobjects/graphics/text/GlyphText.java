@@ -16,7 +16,7 @@
 package org.icepdf.core.pobjects.graphics.text;
 
 import java.awt.geom.AffineTransform;
-import java.awt.geom.GeneralPath;
+import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.util.logging.Logger;
 
@@ -42,12 +42,12 @@ public class GlyphText extends AbstractText {
     // represented by one or more characters.
     private String unicode;
 
-    public GlyphText(float x, float y, Rectangle2D.Float bounds,
+    public GlyphText(float x, float y, Rectangle2D.Double bounds,
                      String cid, String unicode) {
         this.x = x;
         this.y = y;
         this.bounds = bounds;
-        this.textExtractionBounds = new Rectangle2D.Float(bounds.x, bounds.y, bounds.width, bounds.height);
+        this.textExtractionBounds = new Rectangle2D.Double(bounds.x, bounds.y, bounds.width, bounds.height);
         this.cid = cid;
         this.unicode = unicode;
     }
@@ -61,23 +61,20 @@ public class GlyphText extends AbstractText {
      */
     public void normalizeToUserSpace(AffineTransform af, AffineTransform af1) {
         // map the coordinates from glyph space to user space.
-        GeneralPath generalPath = new GeneralPath(bounds);
-        generalPath.transform(af);
-        bounds = (Rectangle2D.Float) generalPath.getBounds2D();
+        Path2D.Double generalPath = new Path2D.Double(bounds, af);
+        bounds = (Rectangle2D.Double) generalPath.getBounds2D();
         // we have some portrait type layouts where the text is actually
         // running on the y-axis.  The reason for this is Tm that specifies
         // a -1 shear which is basically a 90 degree rotation.  Which breaks
         // our left to right top down text extraction logic (PDF-854).
         if (af1 != null && af1.getShearX() < -1) {
             // adjust of the rotation, move the text back to a normal layout.
-            generalPath = new GeneralPath(bounds);
-            generalPath.transform(new AffineTransform(0, -1, 1, 0, 0, 0));
-            textExtractionBounds = (Rectangle2D.Float) generalPath.getBounds2D();
+            generalPath = new Path2D.Double(bounds, new AffineTransform(0, -1, 1, 0, 0, 0));
+            textExtractionBounds = (Rectangle2D.Double) generalPath.getBounds2D();
         } else if (af1 != null && af1.getShearY() < -1) {
             // adjust of the rotation, move the text back to a normal layout.
-            generalPath = new GeneralPath(bounds);
-            generalPath.transform(new AffineTransform(0, 1, -1, 0, 0, 0));
-            textExtractionBounds = (Rectangle2D.Float) generalPath.getBounds2D();
+            generalPath = new Path2D.Double(bounds, new AffineTransform(0, 1, -1, 0, 0, 0));
+            textExtractionBounds = (Rectangle2D.Double) generalPath.getBounds2D();
         } else {
             // 99% of the time we just use the bounds.
             textExtractionBounds = bounds;
@@ -101,7 +98,7 @@ public class GlyphText extends AbstractText {
         return y;
     }
 
-    public Rectangle2D.Float getBounds() {
+    public Rectangle2D.Double getBounds() {
         return bounds;
     }
 }

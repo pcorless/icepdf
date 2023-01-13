@@ -707,8 +707,8 @@ class GlyphLocation {
                 // get the next line last word.
                 int lineIndex = lastGlyphEndLine;
                 for (int lineMax = pageLines.size(); lineIndex < lineMax - 1; lineIndex++) {
-                    float y1 = pageLines.get(lineIndex).getBounds().y;
-                    float y2 = pageLines.get(lineIndex + 1).getBounds().y;
+                    double y1 = pageLines.get(lineIndex).getBounds().y;
+                    double y2 = pageLines.get(lineIndex + 1).getBounds().y;
                     if (cursorLocation.y < y1 && cursorLocation.y >= y2) {
                         LineText lineText = pageLines.get(lineIndex + 1);
                         if (isLineTextIncluded(lineText, topMarginExclusion, bottomMarginExclusion)) {
@@ -720,7 +720,7 @@ class GlyphLocation {
                 if (lastGlyphEndLocation != null) {
                     for (int i = lastGlyphEndLine; i < pageLines.size(); i++) {
                         LineText lineText = pageLines.get(i);
-                        float lineTextLocation = lineText.getBounds().y;
+                        double lineTextLocation = lineText.getBounds().y;
                         if (cursorLocation.y < lineTextLocation) {
                             if (isLineTextIncluded(lineText, topMarginExclusion, bottomMarginExclusion)) {
                                 // return last line
@@ -750,8 +750,8 @@ class GlyphLocation {
                 }
                 // find left most world.
                 for (; lastGlyphEndLine > 0; lastGlyphEndLine--) {
-                    float y1 = pageLines.get(lastGlyphEndLine).getBounds().y;
-                    float y2 = pageLines.get(lastGlyphEndLine - 1).getBounds().y;
+                    double y1 = pageLines.get(lastGlyphEndLine).getBounds().y;
+                    double y2 = pageLines.get(lastGlyphEndLine - 1).getBounds().y;
                     if (cursorLocation.y > y1 && cursorLocation.y < y2) {
                         LineText lineText = pageLines.get(lastGlyphEndLine - 1);
                         if (isLineTextIncluded(lineText, topMarginExclusion, bottomMarginExclusion)) {
@@ -763,7 +763,7 @@ class GlyphLocation {
                 if (lastGlyphEndLocation != null) {
                     for (int i = lastGlyphEndLine; i >= 0; i--) {
                         LineText lineText = pageLines.get(i);
-                        float lineTextLocation = lineText.getBounds().y;
+                        double lineTextLocation = lineText.getBounds().y;
                         if (cursorLocation.y > lineTextLocation) {
                             if (isLineTextIncluded(lineText, topMarginExclusion, bottomMarginExclusion)) {
                                 return new GlyphLocation(i, 0, 0);

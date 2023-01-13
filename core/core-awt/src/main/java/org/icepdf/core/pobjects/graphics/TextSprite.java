@@ -128,14 +128,14 @@ public class TextSprite {
         w = Math.abs(w);
         // this is still terrible, should be applying the fontTransform but this little hack is fast until I can
         // figure out the geometry for the corner cases.
-        Rectangle2D.Float glyphBounds;
+        Rectangle2D.Double glyphBounds;
         // negative layout
         if (width < 0.0f || font.getSize() < 0) {
-            glyphBounds = new Rectangle2D.Float(x + width, y - descent, w, h);
+            glyphBounds = new Rectangle2D.Double(x + width, y - descent, w, h);
         }
         // standard layout.
         else {
-            glyphBounds = new Rectangle2D.Float(x, y - ascent, w, h);
+            glyphBounds = new Rectangle2D.Double(x, y - ascent, w, h);
         }
 
         // add bounds to total text bounds.

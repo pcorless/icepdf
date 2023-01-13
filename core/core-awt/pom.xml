@@ -36,11 +36,6 @@
         <!-- Bouncy castle is need for building the core bundles as well as digital signature support -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-ext-jdk15on</artifactId>
         </dependency>
 
@@ -72,6 +67,7 @@
         <dependency>
             <groupId>com.github.jai-imageio</groupId>
             <artifactId>jai-imageio-jpeg2000</artifactId>
+            <scope>provided</scope>
         </dependency>
 
     </dependencies>
