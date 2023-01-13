@@ -88,9 +88,6 @@ public abstract class ZSimpleFont implements FontFile {
         if (maxCharBounds != null) {
             this.maxCharBounds = new Rectangle2D.Double(
                     maxCharBounds.getX(), maxCharBounds.getY(), maxCharBounds.getWidth(), maxCharBounds.getHeight());
-        } else {
-            // preload the max char points
-            this.maxCharBounds = getMaxCharBounds();
         }
     }
 
