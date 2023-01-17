@@ -106,8 +106,8 @@ public class Parser {
             streamOffsetStart = streamByteBuffer.position();
             int streamLength = library.getInt((DictionaryEntries) objectData, Dictionary.LENGTH_KEY);
             // doublc check a streamLength = zero, some encoders are lazy and there is actually data.
-            if (streamLength == 0 && streamByteBuffer.limit() - streamOffsetStart > 0) {
-                streamLength = streamByteBuffer.limit() - streamOffsetStart;
+            if (streamLength == 0 && (streamByteBuffer.limit() - END_STREAM_MARKER.length) - streamOffsetStart > 0) {
+                streamLength = (streamByteBuffer.limit() - END_STREAM_MARKER.length) - streamOffsetStart;
             }
             streamOffsetEnd = streamOffsetStart + streamLength;
 
@@ -208,7 +208,7 @@ public class Parser {
                 if (state == OperandNames.OP_n) {
                     crossReferenceTable.addEntry(
                             new CrossReferenceUsedEntry(currentNumber, generation, offset));
-                }else if (state == OperandNames.OP_f) {    // Free
+                } else if (state == OperandNames.OP_f) {    // Free
                     // check for the first entry 0000000000 65535 f  and
                     // an object range where the first entry isn't zero.  The
                     // code below will treat the first entry as zero and then

@@ -69,9 +69,6 @@ public class JBig2Decoder extends AbstractImageDecoder {
         try {
             byte[] data = imageStream.getDecodedStreamBytes(imageParams.getDataLength());
             imageInputStream = ImageIO.createImageInputStream(new ByteArrayInputStream(data));
-
-            // ICEpdf-pro has a commercial license of the levigo library but the OS library can use it to if the project
-            // can comply with levigo's open source licence.
             tmpImage = decodeJbig2(decodeParams, globalsStream, imageInputStream, JBIG2_PDF_BOX);
         } catch (IOException | InstantiationException | InvocationTargetException | NoSuchMethodException |
                 IllegalAccessException | ClassNotFoundException e) {
@@ -100,22 +97,21 @@ public class JBig2Decoder extends AbstractImageDecoder {
     protected BufferedImage decodeJbig2(DictionaryEntries decodeParams, Stream globalsStream, ImageInputStream imageInputStream,
                                         String[] jbigClasses)
             throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException, IOException {
-        // ICEpdf-pro has a commercial license of the levigo library but the OS library can use it to if the project
-        // can comply with levigo's open source licence.
+        // jbig2 is an optional jar, so we try and load it reflectively
         Class<?> jbig2ImageReaderClass = Class.forName(jbigClasses[0]);
         Class<?> jbig2ImageReaderSpiClass = Class.forName(jbigClasses[1]);
         Class<?> jbig2GlobalsClass = Class.forName(jbigClasses[2]);
         Object jbig2ImageReaderSpi = jbig2ImageReaderSpiClass.newInstance();
         Constructor levigoJbig2DecoderClassConstructor =
                 jbig2ImageReaderClass.getDeclaredConstructor(javax.imageio.spi.ImageReaderSpi.class);
-        Object levigoJbig2Reader = levigoJbig2DecoderClassConstructor.newInstance(jbig2ImageReaderSpi);
+        Object jbig2Reader = levigoJbig2DecoderClassConstructor.newInstance(jbig2ImageReaderSpi);
         // set the input
         Class partypes[] = new Class[1];
         partypes[0] = Object.class;
         Object arglist[] = new Object[1];
         arglist[0] = imageInputStream;
         Method setInput = jbig2ImageReaderClass.getMethod("setInput", partypes);
-        setInput.invoke(levigoJbig2Reader, arglist);
+        setInput.invoke(jbig2Reader, arglist);
         // apply decode params if any.
         if (decodeParams != null) {
             if (globalsStream != null) {
@@ -127,7 +123,7 @@ public class JBig2Decoder extends AbstractImageDecoder {
                     arglist[0] = ImageIO.createImageInputStream(new ByteArrayInputStream(globals));
                     Method processGlobals =
                             jbig2ImageReaderClass.getMethod("processGlobals", partypes);
-                    Object globalSegments = processGlobals.invoke(levigoJbig2Reader, arglist);
+                    Object globalSegments = processGlobals.invoke(jbig2Reader, arglist);
                     if (globalSegments != null) {
                         // invoked encoder.setGlobalData(globals);
                         partypes = new Class[1];
@@ -137,7 +133,7 @@ public class JBig2Decoder extends AbstractImageDecoder {
                         // pass the segment data back into the decoder.
                         Method setGlobalData =
                                 jbig2ImageReaderClass.getMethod("setGlobals", partypes);
-                        setGlobalData.invoke(levigoJbig2Reader, arglist);
+                        setGlobalData.invoke(jbig2Reader, arglist);
                     }
                 }
             }
@@ -147,10 +143,10 @@ public class JBig2Decoder extends AbstractImageDecoder {
         arglist = new Object[1];
         arglist[0] = 0;
         Method read = jbig2ImageReaderClass.getMethod("read", partypes);
-        BufferedImage tmpImage = (BufferedImage) read.invoke(levigoJbig2Reader, arglist);
+        BufferedImage tmpImage = (BufferedImage) read.invoke(jbig2Reader, arglist);
         // call dispose on the reader
         Method dispose = jbig2ImageReaderClass.getMethod("dispose");
-        dispose.invoke(levigoJbig2Reader);
+        dispose.invoke(jbig2Reader);
         return tmpImage;
     }
 }
