@@ -191,7 +191,9 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
         // go with the PDF define bounds if we have width
         if (widths != null && widths.length > 0) {
             font.widths = widths;
-            font.bbox = bbox;
+            if (bbox != null) {
+                font.bbox = bbox;
+            }
         }
         font.cMap = diff;
         font.maxCharBounds = null;
