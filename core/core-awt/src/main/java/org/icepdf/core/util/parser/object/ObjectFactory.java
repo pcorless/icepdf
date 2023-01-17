@@ -60,6 +60,7 @@ public class ObjectFactory {
 
     public static Object getInstance(Library library, DictionaryEntries entries) {
         Name type = library.getName(entries, Dictionary.TYPE_KEY);
+        Name subType = library.getName(entries, Dictionary.SUBTYPE_KEY);
         if (type != null) {
             if (Catalog.TYPE.equals(type)) {
                 return new Catalog(library, entries);
@@ -67,7 +68,9 @@ public class ObjectFactory {
                 return new PageTree(library, entries);
             } else if (Page.TYPE.equals(type)) {
                 return new Page(library, entries);
-            } else if (Font.TYPE.equals(type)) {
+            } else if (Font.TYPE.equals(type) && subType != null) {
+                // subType is checked as some stream can have /type/font but aren't actually fonts just font data
+
                 // do a quick check to make sure we don't have a fontDescriptor
                 // FontFile is specific to font descriptors.
                 boolean fontDescriptor = entries.get(FontDescriptor.FONT_FILE) != null ||
