@@ -15,7 +15,7 @@ public class TrailerWriter extends BaseTableWriter {
         DictionaryEntries newTrailer = (DictionaryEntries) prevTrailer.getDictionary().clone();
         long previousTrailerPosition = this.setPreviousTrailer(newTrailer, prevTrailer);
         this.setTrailerSize(newTrailer, prevTrailer, entries);
-        newTrailer.remove(PTrailer.XREFSTM_KEY);
+        newTrailer.remove(PTrailer.XREF_STRM_KEY);
 
         if (previousTrailerPosition == 0) {
             throw new IllegalStateException("Cannot write trailer to an PDF with an invalid object offset");

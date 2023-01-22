@@ -1,6 +1,8 @@
 package org.icepdf.core.pobjects.structure;
 
 import org.icepdf.core.pobjects.DictionaryEntries;
+import org.icepdf.core.pobjects.PTrailer;
+import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.structure.exceptions.CrossReferenceStateException;
 import org.icepdf.core.pobjects.structure.exceptions.ObjectStateException;
 import org.icepdf.core.util.ByteBufferUtil;
@@ -26,8 +28,8 @@ public class Indexer {
         this.library = library;
     }
 
-    public CrossReferenceRoot indexObjects(ByteBuffer byteBuffer) throws IOException, CrossReferenceStateException {
-        // reset the cross reference store
+    public CrossReferenceRoot indexObjects(ByteBuffer byteBuffer) throws IOException, CrossReferenceStateException, ObjectStateException {
+        // reset the cross-reference store
         CrossReferenceRoot crossReferenceRoot = new CrossReferenceRoot(library);
         CrossReferenceTable crossReference = null;
 
@@ -52,9 +54,9 @@ public class Indexer {
                     if (object instanceof DictionaryEntries) {
                         xRefDictionary = (DictionaryEntries) object;
                         // check for a /xref key,  just on the long shot that it's valid.
-                        if (xRefDictionary.containsKey(CrossReference.XREF_STRM_KEY)) {
+                        if (xRefDictionary.containsKey(PTrailer.XREF_STRM_KEY)) {
                             CrossReferenceStream crossReferenceStream;
-                            int offset = library.getInt(xRefDictionary, CrossReference.XREF_STRM_KEY);
+                            int offset = library.getInt(xRefDictionary, PTrailer.XREF_STRM_KEY);
                             Parser parser = new Parser(library);
                             try {
                                 crossReferenceStream = (CrossReferenceStream) parser.getCrossReference(byteBuffer, offset);
@@ -97,8 +99,14 @@ public class Indexer {
                     int generation = ByteBufferUtil.findReverseNexNumber(byteBuffer);
                     int objectNumber = ByteBufferUtil.findReverseNexNumber(byteBuffer);
                     if (crossReference != null) {
-                        crossReference.addEntry(
-                                new CrossReferenceUsedEntry(objectNumber, generation, byteBuffer.position() + 1));
+                        // check if the object is already present,  were ready from the back of the file so object
+                        // added first is likely the most resnet incremental update and should be overridden
+                        if (crossReference.getEntry(new Reference(objectNumber, generation)) == null) {
+                            crossReference.addEntry(
+                                    new CrossReferenceUsedEntry(objectNumber, generation, byteBuffer.position() + 1));
+                        } else {
+                            logger.fine("Not inserting " + objectNumber + " already present in file.");
+                        }
                     }
                 }
                 pos = objectStart;

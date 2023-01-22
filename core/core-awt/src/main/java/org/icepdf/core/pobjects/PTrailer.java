@@ -57,8 +57,12 @@ public class PTrailer extends Dictionary {
     public static final Name ENCRYPT_KEY = new Name("Encrypt");
     public static final Name INFO_KEY = new Name("Info");
     public static final Name ID_KEY = new Name("ID");
-    public static final Name XREFSTM_KEY = new Name("XRefStm");
+    public static final Name XREF_STRM_KEY = new Name("XRefStm");
     public static final Name TYPE_KEY = new Name("Type");
+
+    // Stream specific
+    public static final Name INDEX_KEY = new Name("Index");
+    public static final Name W_KEY = new Name("W");
 
     // Position in the file. The LazyObjectLoader typically keeps this info
     // for all PDF objects, but the bootstrapping PTrialer is an exception,
@@ -71,6 +75,17 @@ public class PTrailer extends Dictionary {
 
     // documents cross reference stream.
     private CrossReference crossReferenceStream;
+
+
+    /**
+     * Create a new PTrailer object
+     *
+     * @param library           document library
+     * @param dictionaryEntries trailer dictionary
+     */
+    public PTrailer(Library library, DictionaryEntries dictionaryEntries) {
+        super(library, dictionaryEntries);
+    }
 
     /**
      * Create a new PTrailer object
@@ -174,7 +189,7 @@ public class PTrailer extends Dictionary {
     @SuppressWarnings("unchecked")
     public Catalog getRootCatalog() {
         Object tmp = library.getObject(entries, ROOT_KEY);
-        // specification states the the root entry must be a indirect
+        // specification states the root entry must be a indirect
         if (tmp instanceof Catalog) {
             return (Catalog) tmp;
         }
@@ -233,7 +248,7 @@ public class PTrailer extends Dictionary {
      * @return vector containing constituting file identifier
      */
     public List getID() {
-        return (List) library.getObject(entries, ID_KEY);
+        return library.getArray(entries, ID_KEY);
     }
 
     /**
@@ -304,7 +319,7 @@ public class PTrailer extends Dictionary {
 
     protected void loadXRefStmIfApplicable() {
         if (crossReferenceStream == null) {
-            long xrefStreamPosition = library.getLong(entries, XREFSTM_KEY);
+            long xrefStreamPosition = library.getLong(entries, XREF_STRM_KEY);
             if (xrefStreamPosition > 0L) {
                 // OK, this is a little weird, but basically, any XRef stream
                 //  dictionary is also a Trailer dictionary, so our Parser

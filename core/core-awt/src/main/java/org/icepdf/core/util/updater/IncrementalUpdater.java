@@ -28,7 +28,7 @@ public class IncrementalUpdater {
             throws IOException {
 
         StateManager stateManager = document.getStateManager();
-        PTrailer trailer = stateManager.getTrailer();
+        PTrailer trailer = stateManager.getCrossReferenceRoot().getTrailerDictionary();
 
         if (stateManager.isNoChange()) {
             return 0L;

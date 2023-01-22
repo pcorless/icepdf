@@ -1,9 +1,6 @@
 package org.icepdf.core.pobjects.structure;
 
-import org.icepdf.core.pobjects.DictionaryEntries;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.PObject;
-import org.icepdf.core.pobjects.Reference;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.structure.exceptions.CrossReferenceStateException;
 import org.icepdf.core.pobjects.structure.exceptions.ObjectStateException;
 import org.icepdf.core.util.Library;
@@ -13,15 +10,20 @@ import org.icepdf.core.util.parser.object.Parser;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.logging.Logger;
 
 /**
- * Can be < 1.5 uncompressed or > 1.5 compressed format.
+ * Specifies the root cross-reference entry for the PDF file.  The class takes into account the possible
+ * cross-reference formats, table, compressed and hybrid.   Use this class to find the byte offset of an object in
+ * the pdf document.
  */
 public class CrossReferenceRoot {
 
-    private final Library library;
+    private static final Logger log = Logger.getLogger(CrossReferenceRoot.class.toString());
 
+    private final Library library;
     private Trailer trailer;
+    private PTrailer pTrailer;
 
     private final ArrayList<CrossReference> crossReferences;
 
@@ -56,18 +58,35 @@ public class CrossReferenceRoot {
         // check for a hybrid entry
         if (crossReference instanceof CrossReferenceTable) {
             CrossReferenceTable crossReferenceTable = (CrossReferenceTable) crossReference;
-            int offset = crossReferenceTable.getInt(CrossReference.XREF_STRM_KEY);
+            int offset = library.getInt(crossReferenceTable.getDictionaryEntries(), PTrailer.XREF_STRM_KEY);
             if (offset > 0) {
                 CrossReferenceStream xrefStream = (CrossReferenceStream) parser.getCrossReference(byteBuffer, offset);
                 crossReferences.add(xrefStream);
             }
         }
-        // setup the Ptrailer so we can
-//        new PTrailer(library, crossReference.getDictionaryEntries());
+        // PTrailer dictionary wrapper to aid in getting the trailer dictionary values.
+        pTrailer = new PTrailer(library, crossReference.getDictionaryEntries());
     }
 
-    public DictionaryEntries getTrailerDictionary() {
-        return crossReferences.get(0).getDictionaryEntries();
+    public PTrailer getTrailerDictionary() {
+        return pTrailer;
+    }
+
+    public int getNextAvailableReferenceNumber() {
+        // to be sure we have the max number we need initialize all crossReferences and one easy way to do this
+        // is to look for a fictional object.
+        int maxSize = 0;
+        for (CrossReference crossReference : crossReferences) {
+            DictionaryEntries entries = crossReference.getDictionaryEntries();
+            int size = library.getInt(entries, PTrailer.SIZE_KEY);
+            maxSize = Math.max(maxSize, size);
+        }
+        Object shouldNotExist = library.getObject(new Reference(maxSize, 0));
+        if (shouldNotExist != null) {
+            log.warning("Cross reference size specifies an object that already exists.");
+            maxSize += 1000;
+        }
+        return maxSize;
     }
 
     public PObject loadObject(ObjectLoader objectLoader, Reference reference, Name hint)
@@ -86,10 +105,6 @@ public class CrossReferenceRoot {
 
     public boolean isLazyInitializationFailed() {
         return lazyInitializationFailed;
-    }
-
-    public ArrayList<CrossReference> getCrossReferences() {
-        return crossReferences;
     }
 
     public void addCrossReference(CrossReference crossReferenceTable) {

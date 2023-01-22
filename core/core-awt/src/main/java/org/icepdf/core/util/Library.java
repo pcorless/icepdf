@@ -91,6 +91,7 @@ public class Library {
     }
 
     // new incremental file loader class.
+    // todo remove LazyObjectLoader
     private LazyObjectLoader lazyObjectLoader;
     // todo shoudl this be a SoftReference
     private ConcurrentHashMap<Reference, WeakReference<Object>> objectStore =
@@ -233,11 +234,11 @@ public class Library {
 
     public void setCrossReferenceRoot(CrossReferenceRoot crossReferenceRoot) throws ObjectStateException {
         this.crossReferenceRoot = crossReferenceRoot;
-        DictionaryEntries trailerDictionary = crossReferenceRoot.getTrailerDictionary();
-        DictionaryEntries encryptDictionary = getDictionary(trailerDictionary, org.icepdf.core.pobjects.structure.CrossReference.ENCRYPTION_KEY);
+        PTrailer pTrailer = crossReferenceRoot.getTrailerDictionary();
+        DictionaryEntries encryptDictionary = pTrailer.getEncrypt();
         if (encryptDictionary != null && encryptDictionary.size() > 0) {
             try {
-                List fileId = getArray(trailerDictionary, org.icepdf.core.pobjects.structure.CrossReference.ID_KEY);
+                List fileId = pTrailer.getID();
                 securityManager = new SecurityManager(this, encryptDictionary, fileId);
             } catch (PdfSecurityException e) {
                 throw new ObjectStateException("Security Manager could not be initialized.");
@@ -609,6 +610,8 @@ public class Library {
         Object o = getObject(dictionaryEntries, key);
         if (o instanceof List) {
             return (List) o;
+        } else {
+            log.warning("Failed to get Array for key: " + key + " in " + dictionaryEntries.toString());
         }
         return null;
     }

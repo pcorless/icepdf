@@ -17,13 +17,14 @@ public class Lexer {
     private static final Logger logger =
             Logger.getLogger(Lexer.class.toString());
 
-    private Library library;
+    private final Library library;
 
     // stream reader pointers.
     private ByteBuffer streamBytes;
 
     // stream pointers
-    private int pos, startTokenPos, endTokenPos;
+    private int pos;
+    private int startTokenPos;
 
     // lexer states
     private static final int
@@ -58,14 +59,12 @@ public class Lexer {
         // just a carriage return as it is a valid stream byte
 
         byte streamByte = streamBytes.get(pos);
+        // eat the character
         if (streamByte == 13) {
             pos++;
             streamByte = streamBytes.get(pos);
-            if (streamByte == 10) {
-                pos++;
-            }
-        } else if (streamByte == 10) {
-            // eat the character
+        }
+        if (streamByte == 10) {
             pos++;
         }
         streamBytes.position(pos);
@@ -162,7 +161,7 @@ public class Lexer {
                 break;
             }
         }
-        endTokenPos = streamBytes.position();
+        int endTokenPos = streamBytes.position();
         // return the name object
         byte[] hexData = new byte[endTokenPos - startTokenPos - 1];
         streamBytes.position(startTokenPos);
@@ -216,11 +215,11 @@ public class Lexer {
             if (current != '\\' && current != ')' && current != '(') {
                 captured.append((char) current);
                 pos++;
-            } else if (current != '\\' && current == ')' && parenthesisCount > 1) {
+            } else if (current == ')' && parenthesisCount > 1) {
                 captured.append((char) current);
                 pos++;
                 parenthesisCount--;
-            } else if (current != '\\' && current == '(') {
+            } else if (current == '(') {
                 captured.append((char) current);
                 pos++;
                 parenthesisCount++;
@@ -234,19 +233,19 @@ public class Lexer {
                     break;
                 }
             } else {
-                /**
-                 * The escape sequences can be as follows:
-                 *   \n  - line feed (LF)
-                 *   \r  - Carriage return (CR)
-                 *   \t  - Horizontal tab  (HT)
-                 *   \b  - backspace (BS)
-                 *   \f  - form feed (FF)
-                 *   \(  - left parenthesis
-                 *   \)  - right parenthesis
-                 *   \\  - backslash
-                 *   \ddd - character code ddd (octal)
-                 *
-                 * Note: (\0053) denotes a string containing two characters,
+                /*
+                  The escape sequences can be as follows:
+                    \n  - line feed (LF)
+                    \r  - Carriage return (CR)
+                    \t  - Horizontal tab  (HT)
+                    \b  - backspace (BS)
+                    \f  - form feed (FF)
+                    \(  - left parenthesis
+                    \)  - right parenthesis
+                    \\  - backslash
+                    \ddd - character code ddd (octal)
+
+                  Note: (\0053) denotes a string containing two characters,
                  */
                 lookAhead = streamBytes.get(pos + 1) & 0xff;
                 // capture the horizontal tab (HT), tab character is hard
@@ -460,7 +459,7 @@ public class Lexer {
         return ObjectFactory.getInstance(library, entries);
     }
 
-    private List startArray(Reference reference) throws IOException {
+    private List<Object> startArray(Reference reference) throws IOException {
         startTokenPos = pos;
 
         List<Object> array = new ArrayList<Object>();
@@ -545,10 +544,6 @@ public class Lexer {
         streamBytes.position(pos);
         if (pos <= streamBytes.limit() && pos > startTokenPos) {
             int[] tmp = OperatorFactory.getOperator(streamBytes, startTokenPos, pos - startTokenPos);
-            // check for 'null' token which maybe picked up as an operator.
-            if (tmp == null) {
-                return null;
-            }
             // adjust for any potential parsing compensation.
             if (tmp[1] > 0) {
                 pos -= tmp[1];
@@ -569,7 +564,7 @@ public class Lexer {
         // skip the white space
         while (pos < streamBytes.limit()) {
             // find the next space
-            if (pos < streamBytes.limit() && streamBytes.get(pos) > 32) {//!isDelimiter(
+            if (streamBytes.get(pos) > 32) {//!isDelimiter(
                 break;
             }
             pos++;
@@ -592,18 +587,13 @@ public class Lexer {
                     break;
                 case '<':
                     byte c2 = streamBytes.get(pos + 1);
-                    switch (c2) {
-                        case '<':
-                            tokenType = TOKEN_DICTIONARY;
-                            break;
-                        default:
-                            tokenType = TOKEN_HEX_STRING;
-                            break;
+                    if (c2 == '<') {
+                        tokenType = TOKEN_DICTIONARY;
+                    } else {
+                        tokenType = TOKEN_HEX_STRING;
                     }
                     break;
                 case '-':
-                    tokenType = TOKEN_NUMBER;
-                    break;
                 case '+':
                     tokenType = TOKEN_NUMBER;
                     break;
@@ -613,13 +603,10 @@ public class Lexer {
                 case 'f':
                     if (pos + 1 < streamBytes.limit()) {
                         c2 = streamBytes.get(pos + 1);
-                        switch (c2) {
-                            case 'a':
-                                tokenType = TOKEN_BOOLEAN;
-                                break;
-                            default:
-                                tokenType = TOKEN_OPERAND;
-                                break;
+                        if (c2 == 'a') {
+                            tokenType = TOKEN_BOOLEAN;
+                        } else {
+                            tokenType = TOKEN_OPERAND;
                         }
                     } else {
                         tokenType = TOKEN_OPERAND;
@@ -628,13 +615,10 @@ public class Lexer {
                 case 'n':
                     if (pos + 1 < streamBytes.limit()) {
                         c2 = streamBytes.get(pos + 1);
-                        switch (c2) {
-                            case 'u':
-                                tokenType = TOKEN_NULL;
-                                break;
-                            default:
-                                tokenType = TOKEN_OPERAND;
-                                break;
+                        if (c2 == 'u') {
+                            tokenType = TOKEN_NULL;
+                        } else {
+                            tokenType = TOKEN_OPERAND;
                         }
                     } else {
                         tokenType = TOKEN_OPERAND;
@@ -647,26 +631,24 @@ public class Lexer {
                     if (c <= '9' && c >= '-') {
                         int startTokenPos = pos;
                         tokenType = TOKEN_NUMBER;
-                        // look a head two spaces to try and find R
-                        int count = 0;
-                        byte next;
-                        while (pos + 1 < streamBytes.limit()) {
-                            next = streamBytes.get(pos);
-                            if (next <= 32) {
-                                count++;
+                        startNumber();
+                        int nextState = parseNextState();
+                        if (nextState == TOKEN_NUMBER) {
+                            startNumber();
+                            // clean any extra spaces
+                            while (pos < streamBytes.limit()) {
+                                // find the next space
+                                int next = streamBytes.get(pos);
+                                if (next > 32) {
+                                    break;
+                                }
+                                pos++;
                             }
-                            if (isTextDelimiter(next)) {
-                                break;
-                            }
-                            pos++;
-                            if (count == 2) {
-                                next = streamBytes.get(pos);
+                            // look for a reference
+                            if (pos < streamBytes.limit()) {
+                                int next = streamBytes.get(pos);
                                 if (next == 'R') {
                                     tokenType = TOKEN_REFERENCE;
-                                    break;
-                                } else {
-                                    tokenType = TOKEN_NUMBER;
-                                    break;
                                 }
                             }
                         }

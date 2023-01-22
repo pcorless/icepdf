@@ -5,10 +5,7 @@ import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.Reference;
-import org.icepdf.core.pobjects.structure.CrossReference;
-import org.icepdf.core.pobjects.structure.CrossReferenceStream;
-import org.icepdf.core.pobjects.structure.CrossReferenceTable;
-import org.icepdf.core.pobjects.structure.CrossReferenceUsedEntry;
+import org.icepdf.core.pobjects.structure.*;
 import org.icepdf.core.pobjects.structure.exceptions.CrossReferenceStateException;
 import org.icepdf.core.pobjects.structure.exceptions.ObjectStateException;
 import org.icepdf.core.util.ByteBufferUtil;
@@ -188,8 +185,8 @@ public class Parser {
         }
     }
 
-    private CrossReference parseCrossReferenceTable(DictionaryEntries dictionaryEntries, Lexer objectLexer, ByteBuffer byteBuffer,
-                                                    int start, int end) throws IOException {
+    private CrossReferenceBase parseCrossReferenceTable(DictionaryEntries dictionaryEntries, Lexer objectLexer, ByteBuffer byteBuffer,
+                                                        int start, int end) throws IOException {
         // allocate to a new buffer as the data is well-defined.
         ByteBuffer xrefTableBuffer = ByteBufferUtil.copyObjectStreamSlice(byteBuffer, start, end);
         CrossReferenceTable crossReferenceTable = new CrossReferenceTable(library, dictionaryEntries);
@@ -225,7 +222,7 @@ public class Parser {
         return crossReferenceTable;
     }
 
-    private CrossReference parseCrossReferenceStream(Lexer objectLexer, ByteBuffer byteBuffer, int offset)
+    private CrossReferenceBase parseCrossReferenceStream(Lexer objectLexer, ByteBuffer byteBuffer, int offset)
             throws IOException, ObjectStateException {
         // use parser to get xref stream object.
         CrossReferenceStream crossReferenceStream = (CrossReferenceStream) getPObject(byteBuffer, offset).getObject();

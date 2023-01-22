@@ -26,13 +26,13 @@ public class CompressedXrefTableWriter extends BaseTableWriter {
 
         this.closeTableEntries(entries);
 
-        newTrailer.put(CrossReference.W_KEY, WIDTHS);
+        newTrailer.put(PTrailer.W_KEY, WIDTHS);
 
         ArrayList<Integer> index = new ArrayList<>();
         for (int i = 0; i < entries.size(); ) {
             i += createIndexArray(entries, i, index);
         }
-        newTrailer.put(CrossReference.INDEX_KEY, index);
+        newTrailer.put(PTrailer.INDEX_KEY, index);
 
         Stream crossReferenceStream = new Stream(null, newTrailer, new byte[0]);
         crossReferenceStream.setPObjectReference(new Reference(newTrailerSize, 0));

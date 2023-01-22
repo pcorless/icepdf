@@ -1,24 +1,22 @@
 package org.icepdf.core.pobjects.structure;
 
-import org.icepdf.core.pobjects.*;
-import org.icepdf.core.pobjects.structure.exceptions.CrossReferenceStateException;
-import org.icepdf.core.pobjects.structure.exceptions.ObjectStateException;
+import org.icepdf.core.pobjects.DictionaryEntries;
+import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Reference;
+import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
-import org.icepdf.core.util.parser.object.ObjectLoader;
-import org.icepdf.core.util.parser.object.Parser;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 /**
  *
  */
-public class CrossReferenceStream extends Stream implements CrossReference {
+public class CrossReferenceStream extends CrossReferenceBase<Stream> implements CrossReference{
 
     private static final Logger logger =
             Logger.getLogger(CrossReferenceStream.class.toString());
@@ -28,38 +26,20 @@ public class CrossReferenceStream extends Stream implements CrossReference {
     public static final Name INDEX_KEY = new Name("Index");
     public static final Name W_KEY = new Name("W");
 
-    private ConcurrentHashMap<Reference, CrossReferenceEntry> indirectObjectReferences;
-    private CrossReference prefCrossReference;
-
     public CrossReferenceStream(Library library, DictionaryEntries dictionaryEntries, byte[] rawBytes) {
-        super(library, dictionaryEntries, rawBytes);
-        indirectObjectReferences = new ConcurrentHashMap<>(1024);
-    }
-
-    @Override
-    public DictionaryEntries getDictionaryEntries() {
-        return entries;
-    }
-
-    @Override
-    public PObject loadObject(ObjectLoader objectLoader, Reference reference, Name hint)
-            throws ObjectStateException, CrossReferenceStateException, IOException {
-        if (reference != null) {
-            return objectLoader.loadObject(this, reference, hint);
-        }
-        return null;
+        super(new Stream(library, dictionaryEntries, rawBytes));
     }
 
     public void initialize() {
-        int size = getInt(SIZE_KEY);
-        List<Number> objNumAndEntriesCountPairs = getList(INDEX_KEY);
+        int size = crossReferenceBase.getInt(SIZE_KEY);
+        List<Number> objNumAndEntriesCountPairs = crossReferenceBase.getList(INDEX_KEY);
         if (objNumAndEntriesCountPairs == null) {
             objNumAndEntriesCountPairs = new ArrayList<Number>(2);
             objNumAndEntriesCountPairs.add(0);
             objNumAndEntriesCountPairs.add(size);
         }
         // three int's: field values, x,y and z bytes in length.
-        List fieldSizesVec = getList(W_KEY);
+        List fieldSizesVec = crossReferenceBase.getList(W_KEY);
         int[] fieldSizes = null;
         if (fieldSizesVec != null) {
             fieldSizes = new int[fieldSizesVec.size()];
@@ -68,7 +48,7 @@ public class CrossReferenceStream extends Stream implements CrossReference {
         }
 
         // not doing anything with PREV.
-        ByteBuffer byteBuffer = getDecodedStreamByteBuffer();
+        ByteBuffer byteBuffer = crossReferenceBase.getDecodedStreamByteBuffer();
         byteBuffer.position(0);
 
         int fieldTypeSize = fieldSizes[0];
@@ -101,7 +81,7 @@ public class CrossReferenceStream extends Stream implements CrossReference {
                     }
                     // free objects, no used.
                     else if (entryType == CrossReferenceEntry.TYPE_FREE) {
-                        // we do nothing but we still need to move the cursor.
+                        // we do nothing, but we still need to move the cursor.
                         Utils.readIntWithVaryingBytesBE(byteBuffer, fieldTwoSize);
                         Utils.readIntWithVaryingBytesBE(byteBuffer, fieldThreeSize);
                     }
@@ -120,31 +100,6 @@ public class CrossReferenceStream extends Stream implements CrossReference {
     private void addCompressedEntry(int objectNumber, int objectNumberOfContainingObjectStream, int indexWithinObjectStream) {
         CrossReferenceCompressedEntry entry = new CrossReferenceCompressedEntry(objectNumber, objectNumberOfContainingObjectStream, indexWithinObjectStream);
         indirectObjectReferences.put(new Reference(objectNumber, 0), entry);
-    }
-
-    @Override
-    public CrossReferenceEntry getEntry(Reference reference) throws ObjectStateException, CrossReferenceStateException, IOException {
-        CrossReferenceEntry crossReferenceEntry = indirectObjectReferences.get(reference);
-        if (crossReferenceEntry == null && entries.get(PREV_KEY) != null) {
-            if (prefCrossReference != null) {
-                return prefCrossReference.getEntry(reference);
-            } else {
-                // try finding the entry in the previous table
-                Parser parser = new Parser(library);
-                CrossReference crossReference = parser.getCrossReference(
-                        library.getMappedFileByteBuffer(), getInt(PREV_KEY));
-                if (crossReference != null) {
-                    prefCrossReference = crossReference;
-                    return prefCrossReference.getEntry(reference);
-                }
-            }
-        }
-        return crossReferenceEntry;
-    }
-
-    @Override
-    public ConcurrentHashMap<Reference, CrossReferenceEntry> getAllEntries() {
-        return indirectObjectReferences;
     }
 
 }

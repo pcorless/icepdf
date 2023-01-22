@@ -241,7 +241,7 @@ public class Page extends Dictionary {
             List conts = (List) pageContent;
             int sz = conts.size();
             contents = new ArrayList<>(Math.max(sz, 1));
-            // pull all of the page content references from the library
+            // pull all the page content references from the library
             for (Object cont : conts) {
                 if (Thread.currentThread().isInterrupted()) {
                     throw new InterruptedException("Page Content initialization thread interrupted");
@@ -250,7 +250,7 @@ public class Page extends Dictionary {
                 if (tmp instanceof Stream) {
                     Stream tmpStream = (Stream) tmp;
                     // prune any zero length streams,
-                    if (tmpStream != null && tmpStream.getRawBytes().length > 0) {
+                    if (tmpStream.getRawBytes().length > 0) {
                         tmpStream.setPObjectReference((Reference) cont);
                         contents.add(tmpStream);
                     }
