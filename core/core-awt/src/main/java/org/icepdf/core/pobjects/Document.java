@@ -383,132 +383,31 @@ public class Document {
             }
 
             PTrailer trailerDictionary = crossReferenceRoot.getTrailerDictionary();
+
+            // finalized security
+            boolean madeSecurityManager = library.makeSecurityManager(trailerDictionary);
+            if (madeSecurityManager) {
+                library.attemptAuthorizeSecurityManager(this, securityCallback);
+            }
+            // set up a signature permission dictionary
+            library.configurePermissions();
+
             catalog = trailerDictionary.getRootCatalog();
             catalog.init();
             library.setCatalog(catalog);
-
-            // finalized security
-            boolean madeSecurityManager = makeSecurityManager(trailerDictionary);
-            if (madeSecurityManager) {
-                attemptAuthorizeSecurityManager();
-            }
-            // set up a signature permission dictionary
-            configurePermissions();
 
             // create new instance of state manager and add it to the library
             stateManager = new StateManager(crossReferenceRoot);
             library.setStateManager(stateManager);
         } catch (PdfSecurityException | IOException e) {
             dispose();
+            logger.log(Level.SEVERE, "Error loading PDF Document.", e);
             throw e;
         } catch (Exception e) {
             dispose();
             logger.log(Level.SEVERE, "Error loading PDF Document.", e);
             throw new IOException(e.getMessage());
         }
-    }
-
-    /**
-     * Utility method for building the SecurityManager if the document
-     * contains a crypt entry in the PTrailer.
-     *
-     * @param documentTrailer document trailer
-     * @return true if created, false otherwise
-     * @throws PdfSecurityException if there is an issue finding encryption libraries.
-     */
-    private boolean makeSecurityManager(PTrailer documentTrailer) throws PdfSecurityException {
-        /*
-          Before a security manager can be created or needs to be created
-          we need the following
-               1.  The trailer object must have an encrypt entry
-               2.  The trailer object must have an ID entry
-         */
-        boolean madeSecurityManager = false;
-        DictionaryEntries encryptDictionary = documentTrailer.getEncrypt();
-        List fileID = documentTrailer.getID();
-        // check for a missing file ID.
-        if (fileID == null) {
-            // we have a couple malformed documents that don't specify a FILE ID.
-            // but proving two empty string allows the document to be decrypted.
-            fileID = new ArrayList(2);
-            fileID.add(new LiteralStringObject(""));
-            fileID.add(new LiteralStringObject(""));
-        }
-
-        if (encryptDictionary != null && fileID != null) {
-            // create new security manager
-            library.setSecurityManager(new SecurityManager(
-                    library, encryptDictionary, fileID));
-            madeSecurityManager = true;
-        }
-        return madeSecurityManager;
-    }
-
-    /**
-     * Initializes permission object as it is uses with encrypt permission to define
-     * document characteristics at load time.
-     *
-     * @return true if permissions where found, false otherwise.
-     */
-    private boolean configurePermissions() {
-        if (catalog != null) {
-            Permissions permissions = catalog.getPermissions();
-            if (permissions != null) {
-                library.setPermissions(permissions);
-                if (logger.isLoggable(Level.FINER)) {
-                    logger.finer("Document perms dictionary found and configured. ");
-                }
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * If the document has a SecurityManager it is encrypted and as a result the
-     * following method is used with the SecurityCallback to prompt a user for
-     * a password if needed.
-     *
-     * @throws PdfSecurityException error during authorization manager setup
-     */
-    private void attemptAuthorizeSecurityManager() throws PdfSecurityException {
-        // check if pdf is password protected, by passing in black
-        // password
-        if (!library.getSecurityManager().isAuthorized("")) {
-            // count password tries
-            int count = 1;
-            // store temporary password
-            String password;
-
-            // Give user 3 chances to type the correct password
-            // before throwing security exceptions
-            while (true) {
-                // Display password dialog
-                // make sure a callback has been set.
-                if (securityCallback != null) {
-                    password = securityCallback.requestPassword(this);
-                    if (password == null) {
-                        throw new PdfSecurityException("Encryption error");
-                    }
-                } else {
-                    throw new PdfSecurityException("Encryption error");
-                }
-
-                // Verify new password,  proceed if authorized,
-                //    fatal exception otherwise.
-                if (library.getSecurityManager().isAuthorized(password)) {
-                    break;
-                }
-                count++;
-                // after 3 tries throw the the error.
-                if (count > 3) {
-                    throw new PdfSecurityException("Encryption error");
-                }
-            }
-        }
-
-        // set the encryption flag on catalog
-        library.setEncrypted(true);
     }
 
     /**

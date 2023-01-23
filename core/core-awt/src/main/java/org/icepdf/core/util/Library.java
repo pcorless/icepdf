@@ -36,9 +36,11 @@ import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -52,7 +54,7 @@ import java.util.logging.Logger;
  */
 public class Library {
 
-    private static final Logger log =
+    private static final Logger logger =
             Logger.getLogger(Library.class.toString());
 
     protected static ThreadPoolExecutor commonThreadPool;
@@ -70,7 +72,7 @@ public class Library {
                 commonPoolThreads = 2;
             }
         } catch (NumberFormatException e) {
-            log.warning("Error reading buffered scale factor");
+            logger.warning("Error reading buffered scale factor");
         }
 
         try {
@@ -81,7 +83,7 @@ public class Library {
                 imagePoolThreads = 2;
             }
         } catch (NumberFormatException e) {
-            log.warning("Error reading buffered scale factor");
+            logger.warning("Error reading buffered scale factor");
         }
 
 //        log.fine("Starting ICEpdf Thread Pools: " +
@@ -194,15 +196,15 @@ public class Library {
                     obj = crossReferenceRoot.loadObject(objectLoader, reference, hint);
                 } catch (ObjectStateException | CrossReferenceStateException | IOException e) {
                     // a null object is ok in this case we are looking at likely an incorrectly indexed file.
-                    log.warning("Cross reference indexing failed, reindexing file. " + getFileOrigin());
+                    logger.warning("Cross reference indexing failed, reindexing file. " + getFileOrigin());
                     try {
                         rebuildCrossReferenceTable();
                         return getObject(reference);
                     } catch (IOException | CrossReferenceStateException | ObjectStateException e1) {
-                        log.warning("Linear traversal of file failed, can not load file.");
+                        logger.warning("Linear traversal of file failed, can not load file.");
                     }
                 } catch (ClassCastException e) {
-                    log.warning("Failed to load object, likely malformed. " + reference + " " + getFileOrigin());
+                    logger.warning("Failed to load object, likely malformed. " + reference + " " + getFileOrigin());
                     return null;
                 }
                 objectStore.put(reference, new WeakReference<>(obj));
@@ -234,19 +236,71 @@ public class Library {
 
     public void setCrossReferenceRoot(CrossReferenceRoot crossReferenceRoot) throws ObjectStateException {
         this.crossReferenceRoot = crossReferenceRoot;
-        PTrailer pTrailer = crossReferenceRoot.getTrailerDictionary();
-        DictionaryEntries encryptDictionary = pTrailer.getEncrypt();
-        if (encryptDictionary != null && encryptDictionary.size() > 0) {
-            try {
-                List fileId = pTrailer.getID();
-                securityManager = new SecurityManager(this, encryptDictionary, fileId);
-            } catch (PdfSecurityException e) {
-                throw new ObjectStateException("Security Manager could not be initialized.");
-            }
-        }
     }
 
-    public void authorizeSecurityManager(Document document, SecurityCallback securityCallback) throws PdfSecurityException {
+    /**
+     * Utility method for building the SecurityManager if the document
+     * contains a crypt entry in the PTrailer.
+     *
+     * @param documentTrailer document trailer
+     * @return true if created, false otherwise
+     * @throws PdfSecurityException if there is an issue finding encryption libraries.
+     */
+    public boolean makeSecurityManager(PTrailer documentTrailer) throws PdfSecurityException {
+        /*
+          Before a security manager can be created or needs to be created
+          we need the following
+               1.  The trailer object must have an encrypt entry
+               2.  The trailer object must have an ID entry
+         */
+        boolean madeSecurityManager = false;
+        DictionaryEntries encryptDictionary = documentTrailer.getEncrypt();
+        List fileID = documentTrailer.getID();
+        // check for a missing file ID.
+        if (fileID == null) {
+            // we have a couple malformed documents that don't specify a FILE ID.
+            // but proving two empty string allows the document to be decrypted.
+            fileID = new ArrayList(2);
+            fileID.add(new LiteralStringObject(""));
+            fileID.add(new LiteralStringObject(""));
+        }
+
+        if (encryptDictionary != null && fileID != null) {
+            // create new security manager
+            securityManager = new SecurityManager(this, encryptDictionary, fileID);
+            madeSecurityManager = true;
+        }
+        return madeSecurityManager;
+    }
+
+    /**
+     * Initializes permission object as it is uses with encrypt permission to define
+     * document characteristics at load time.
+     *
+     * @return true if permissions where found, false otherwise.
+     */
+    public boolean configurePermissions() {
+        if (catalog != null) {
+            Permissions permissions = catalog.getPermissions();
+            if (permissions != null) {
+                this.permissions = permissions;
+                if (logger.isLoggable(Level.FINER)) {
+                    logger.finer("Document perms dictionary found and configured. ");
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * If the document has a SecurityManager it is encrypted and as a result the
+     * following method is used with the SecurityCallback to prompt a user for
+     * a password if needed.
+     *
+     * @throws PdfSecurityException error during authorization manager setup
+     */
+    public void attemptAuthorizeSecurityManager(Document document, SecurityCallback securityCallback) throws PdfSecurityException {
         // check if pdf is password protected, by passing in black
         // password
         if (!securityManager.isAuthorized("")) {
@@ -261,7 +315,7 @@ public class Library {
                 // Display password dialog
                 // make sure a callback has been set.
                 if (securityCallback != null) {
-                    password = securityCallback.requestPassword(null);
+                    password = securityCallback.requestPassword(document);
                     if (password == null) {
                         throw new PdfSecurityException("Encryption error");
                     }
@@ -275,7 +329,7 @@ public class Library {
                     break;
                 }
                 count++;
-                // after 3 tries throw the the error.
+                // after 3 tries throw an error.
                 if (count > 3) {
                     throw new PdfSecurityException("Encryption error");
                 }
@@ -283,7 +337,7 @@ public class Library {
         }
 
         // set the encryption flag on catalog
-//        library.setEncrypted(true);
+        setEncrypted(true);
     }
 
     public ByteBuffer getMappedFileByteBuffer() {
@@ -317,15 +371,15 @@ public class Library {
      */
     private void printObjectDebug(Object ob) {
         if (ob == null) {
-            log.finer("null object found");
+            logger.finer("null object found");
         } else if (ob instanceof PObject) {
             PObject tmp = (PObject) ob;
-            log.finer(tmp.getReference() + " " + tmp.toString());
+            logger.finer(tmp.getReference() + " " + tmp);
         } else if (ob instanceof Dictionary) {
             Dictionary tmp = (Dictionary) ob;
-            log.finer(tmp.getPObjectReference() + " " + tmp.toString());
+            logger.finer(tmp.getPObjectReference() + " " + tmp);
         } else {
-            log.finer(ob.getClass() + " " + ob.toString());
+            logger.finer(ob.getClass() + " " + ob);
         }
     }
 
@@ -611,7 +665,7 @@ public class Library {
         if (o instanceof List) {
             return (List) o;
         } else {
-            log.warning("Failed to get Array for key: " + key + " in " + dictionaryEntries.toString());
+            logger.warning("Failed to get Array for key: " + key + " in " + dictionaryEntries.toString());
         }
         return null;
     }
@@ -902,7 +956,7 @@ public class Library {
 
     public static void initializeThreadPool() {
 
-        log.fine("Starting ICEpdf Thread Pool: " + commonPoolThreads + " threads.");
+        logger.fine("Starting ICEpdf Thread Pool: " + commonPoolThreads + " threads.");
 
         if (commonThreadPool == null || commonThreadPool.isShutdown()) {
             commonThreadPool = new ThreadPoolExecutor(
@@ -918,7 +972,7 @@ public class Library {
             });
         }
 
-        log.fine("Starting ICEpdf image proxy Pool: " + imagePoolThreads + " threads.");
+        logger.fine("Starting ICEpdf image proxy Pool: " + imagePoolThreads + " threads.");
         if (imageThreadPool == null || imageThreadPool.isShutdown()) {
             imageThreadPool = new ThreadPoolExecutor(
                     imagePoolThreads, imagePoolThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
@@ -949,7 +1003,7 @@ public class Library {
             }
             commonThreadPool.execute(runnable);
         } catch (RejectedExecutionException e) {
-            log.severe("ICEpdf Common Thread Pool was shutdown!");
+            logger.severe("ICEpdf Common Thread Pool was shutdown!");
         }
     }
 
@@ -960,7 +1014,7 @@ public class Library {
             }
             imageThreadPool.execute(callable);
         } catch (RejectedExecutionException e) {
-            log.severe("ICEpdf Common Thread Pool was shutdown!");
+            logger.severe("ICEpdf Common Thread Pool was shutdown!");
         }
     }
 }

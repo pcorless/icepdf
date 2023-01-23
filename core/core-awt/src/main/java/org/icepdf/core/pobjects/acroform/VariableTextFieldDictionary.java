@@ -154,10 +154,10 @@ public class VariableTextFieldDictionary extends FieldDictionary {
 
     /**
      * If the DA key is present the appearance stream is generated as is,  however if not then the content
-     * is passed and we try to pull the color, size, font, and font name.
+     * is passed, and we try to pull the color, size, font, and font name.
      *
-     * @param content content to parse for general appearance values.
-     * @param resources  parent resource dictionary.
+     * @param content   content to parse for general appearance values.
+     * @param resources parent resource dictionary.
      * @return base postscript encoded default appearance values.
      */
     public String generateDefaultAppearance(String content, Resources resources) {
@@ -174,8 +174,8 @@ public class VariableTextFieldDictionary extends FieldDictionary {
                 resources = library.getCatalog().getInteractiveForm().getResources();
             }
             ContentParser cp = new ContentParser(library, resources);
-            // use full parser so we parse the font color.
-            cp.parse(new byte[][]{possibleContent.getBytes()}, null);
+            // usefull parser so we parse the font color.
+            cp.parse(new byte[][]{possibleContent.getBytes()}, new Reference[]{this.getPObjectReference()}, null);
             GraphicsState gs = cp.getGraphicsState();
             if (gs != null) {
                 if (gs.getFillColor() != null) color = gs.getFillColor();

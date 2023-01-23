@@ -15,10 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
-import org.icepdf.core.pobjects.DictionaryEntries;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.Resources;
-import org.icepdf.core.pobjects.Stream;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.commands.ColorDrawCmd;
 import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.util.Defs;
@@ -288,7 +285,10 @@ public class TilingPattern extends Stream implements Pattern {
         ContentParser cp = new ContentParser(library, resources);
         cp.setGraphicsState(parentGraphicState);
         try {
-            shapes = cp.parse(new byte[][]{getDecodedStreamBytes()}, null).getShapes();
+            shapes = cp.parse(
+                    new byte[][]{getDecodedStreamBytes()},
+                    new Reference[]{this.getPObjectReference()},
+                    null).getShapes();
         } catch (Throwable e) {
             logger.log(Level.FINE, "Error processing tiling pattern.", e);
         }

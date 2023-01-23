@@ -1,9 +1,6 @@
 package org.icepdf.core.util.parser.content;
 
-import org.icepdf.core.pobjects.DictionaryEntries;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.GlyphOutlineClip;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.Shapes;
@@ -39,7 +36,7 @@ public class ContentParser extends AbstractContentParser {
         super(l, r);
     }
 
-    public ContentParser parse(byte[][] streamBytes, Page page)
+    public ContentParser parse(byte[][] streamBytes, Reference[] references, Page page)
             throws InterruptedException, IOException {
         if (shapes == null) {
             shapes = new Shapes();
@@ -68,11 +65,13 @@ public class ContentParser extends AbstractContentParser {
 
         if (logger.isLoggable(Level.FINER)) {
             logger.finer("Page content streams: " + streamBytes.length);
+            int i = 0;
             for (byte[] streamByte : streamBytes) {
                 if (streamByte != null) {
                     String tmp = new String(streamByte, StandardCharsets.ISO_8859_1);
-                    logger.finer("Content = " + tmp);
+                    logger.finer("Content " + references[i].toString() + " = " + tmp);
                 }
+                i++;
             }
         }
         int count = 0;

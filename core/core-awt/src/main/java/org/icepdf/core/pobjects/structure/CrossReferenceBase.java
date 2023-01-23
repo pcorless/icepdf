@@ -16,13 +16,13 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class CrossReferenceBase<T extends Dictionary> implements CrossReference{
 
-    public T crossReferenceBase;
+    public T crossReference;
 
     protected final ConcurrentHashMap<Reference, CrossReferenceEntry> indirectObjectReferences;
     protected CrossReference prefCrossReference;
 
-    public CrossReferenceBase(T crossReferenceBase) {
-        this.crossReferenceBase = crossReferenceBase;
+    public CrossReferenceBase(T crossReference) {
+        this.crossReference = crossReference;
         indirectObjectReferences = new ConcurrentHashMap<>(1024);
     }
 
@@ -36,8 +36,8 @@ public abstract class CrossReferenceBase<T extends Dictionary> implements CrossR
 
     public CrossReferenceEntry getEntry(Reference reference) throws ObjectStateException, CrossReferenceStateException, IOException {
         CrossReferenceEntry crossReferenceEntry = indirectObjectReferences.get(reference);
-        DictionaryEntries entries = crossReferenceBase.getEntries();
-        Library library = crossReferenceBase.getLibrary();
+        DictionaryEntries entries = crossReference.getEntries();
+        Library library = crossReference.getLibrary();
         if (crossReferenceEntry == null && entries.get(PTrailer.PREV_KEY) != null) {
             if (prefCrossReference != null) {
                 return prefCrossReference.getEntry(reference);
@@ -45,7 +45,7 @@ public abstract class CrossReferenceBase<T extends Dictionary> implements CrossR
                 // try finding the entry in the previous table
                 Parser parser = new Parser(library);
                 CrossReference crossReference = parser.getCrossReference(
-                        library.getMappedFileByteBuffer(), crossReferenceBase.getInt(PTrailer.PREV_KEY));
+                        library.getMappedFileByteBuffer(), this.crossReference.getInt(PTrailer.PREV_KEY));
                 if (crossReference != null) {
                     prefCrossReference = crossReference;
                     return prefCrossReference.getEntry(reference);
@@ -56,7 +56,7 @@ public abstract class CrossReferenceBase<T extends Dictionary> implements CrossR
     }
 
     public DictionaryEntries getDictionaryEntries(){
-        return crossReferenceBase.getEntries();
+        return crossReference.getEntries();
     }
 
 }

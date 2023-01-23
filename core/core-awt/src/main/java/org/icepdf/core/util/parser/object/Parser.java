@@ -1,10 +1,8 @@
 package org.icepdf.core.util.parser.object;
 
 
-import org.icepdf.core.pobjects.Dictionary;
-import org.icepdf.core.pobjects.DictionaryEntries;
-import org.icepdf.core.pobjects.PObject;
-import org.icepdf.core.pobjects.Reference;
+import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.structure.CrossReference;
 import org.icepdf.core.pobjects.structure.*;
 import org.icepdf.core.pobjects.structure.exceptions.CrossReferenceStateException;
 import org.icepdf.core.pobjects.structure.exceptions.ObjectStateException;
@@ -105,6 +103,10 @@ public class Parser {
             // doublc check a streamLength = zero, some encoders are lazy and there is actually data.
             if (streamLength == 0 && (streamByteBuffer.limit() - END_STREAM_MARKER.length) - streamOffsetStart > 0) {
                 streamLength = (streamByteBuffer.limit() - END_STREAM_MARKER.length) - streamOffsetStart;
+                // sometimes there is just garbage too.  If there is no filter assume so.
+                if (streamLength < 10 && library.getName((DictionaryEntries) objectData, Stream.FILTER_KEY) == null) {
+                    streamLength = 0;
+                }
             }
             streamOffsetEnd = streamOffsetStart + streamLength;
 
@@ -139,7 +141,7 @@ public class Parser {
         Lexer lexer = new Lexer(library);
         lexer.setByteBuffer(streamObjectByteBuffer);
         // dictionary or single value
-        Object objectData = lexer.nextToken(new Reference(objectNumber, 0));
+        Object objectData = lexer.nextToken(null);
         // push dictionary through factory to build correct instance.
         return ObjectFactory.getInstance(library, objectNumber, 0, objectData, null);
     }

@@ -5,7 +5,7 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.ObjectStream;
 import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.Reference;
-import org.icepdf.core.pobjects.structure.CrossReferenceBase;
+import org.icepdf.core.pobjects.structure.CrossReference;
 import org.icepdf.core.pobjects.structure.CrossReferenceCompressedEntry;
 import org.icepdf.core.pobjects.structure.CrossReferenceEntry;
 import org.icepdf.core.pobjects.structure.CrossReferenceUsedEntry;
@@ -20,13 +20,13 @@ import java.io.IOException;
  */
 public class ObjectLoader {
 
-    private Library library;
+    private final Library library;
 
     public ObjectLoader(Library library) {
         this.library = library;
     }
 
-    public synchronized PObject loadObject(CrossReferenceBase crossReference, Reference reference, Name hint)
+    public synchronized PObject loadObject(CrossReference crossReference, Reference reference, Name hint)
             throws ObjectStateException, CrossReferenceStateException, IOException {
 
         CrossReferenceEntry entry = crossReference.getEntry(reference);

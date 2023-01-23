@@ -182,7 +182,7 @@ public abstract class AbstractContentParser {
      * @throws InterruptedException if current parse thread is interrupted.
      * @throws java.io.IOException  unexpected end of content stream.
      */
-    public abstract ContentParser parse(byte[][] streamBytes, Page page)
+    public abstract ContentParser parse(byte[][] streamBytes, Reference[] references, Page page)
             throws InterruptedException, IOException;
 
     /**

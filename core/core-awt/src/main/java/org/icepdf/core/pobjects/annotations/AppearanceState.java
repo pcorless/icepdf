@@ -76,7 +76,10 @@ public class AppearanceState extends Dictionary {
             originalContentStream = new String(stream.getDecodedStreamBytes());
             try {
                 ContentParser cp = new ContentParser(library, resources);
-                shapes = cp.parse(new byte[][]{stream.getDecodedStreamBytes()}, null).getShapes();
+                shapes = cp.parse(
+                        new byte[][]{stream.getDecodedStreamBytes()},
+                        new Reference[]{this.getPObjectReference()},
+                        null).getShapes();
             } catch (Exception e) {
                 shapes = new Shapes();
                 logger.log(Level.FINE, "Error initializing Page.", e);
@@ -134,10 +137,13 @@ public class AppearanceState extends Dictionary {
         return originalContentStream;
     }
 
-    public void setContentStream(byte[] contentBytes){
+    public void setContentStream(byte[] contentBytes) {
         try {
             ContentParser cp = new ContentParser(library, resources);
-            shapes = cp.parse(new byte[][]{contentBytes}, null).getShapes();
+            shapes = cp.parse(
+                    new byte[][]{contentBytes},
+                    new Reference[]{this.getPObjectReference()},
+                    null).getShapes();
         } catch (Exception e) {
             shapes = new Shapes();
             logger.log(Level.FINE, "Error initializing Page.", e);

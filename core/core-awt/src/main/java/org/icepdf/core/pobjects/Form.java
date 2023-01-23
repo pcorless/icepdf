@@ -37,8 +37,7 @@ import java.util.logging.Logger;
  */
 public class Form extends Stream {
 
-    private static final Logger logger =
-            Logger.getLogger(Form.class.toString());
+    private static final Logger logger = Logger.getLogger(Form.class.toString());
 
     public static final Name TYPE_VALUE = new Name("XObject");
     public static final Name SUB_TYPE_VALUE = new Name("Form");
@@ -174,7 +173,7 @@ public class Form extends Stream {
             leafResources = parentResource;
         }
         // Build a new content parser for the content streams and apply the
-        // content stream of the calling content stream. 
+        // content stream of the calling content stream.
         ContentParser cp = new ContentParser(library, leafResources);
         cp.setGraphicsState(graphicsState);
         byte[] in = getDecodedStreamBytes();
@@ -183,7 +182,7 @@ public class Form extends Stream {
                 if (logger.isLoggable(Level.FINER)) {
                     logger.finer("Parsing form " + getPObjectReference());
                 }
-                shapes = cp.parse(new byte[][]{in}, null).getShapes();
+                shapes = cp.parse(new byte[][]{in}, new Reference[]{this.getPObjectReference()}, null).getShapes();
                 inited = true;
             } catch (InterruptedException e) {
                 // the initialization was interrupted so we need to make sure we bubble up the exception

@@ -424,10 +424,12 @@ public class Page extends Dictionary {
                     ContentParser cp = new ContentParser(library, resources);
                     byte[][] streams = new byte[contents.size()][];
                     byte[] stream;
+                    Reference[] references = new Reference[contents.size()];
                     for (int i = 0, max = contents.size(); i < max; i++) {
                         stream = contents.get(i).getDecodedStreamBytes();
                         if (stream != null) {
                             streams[i] = stream;
+                            references[i] = contents.get(i).pObjectReference;
                         }
                     }
                     // get any optional groups from the catalog, which control
@@ -440,7 +442,7 @@ public class Page extends Dictionary {
 
                     // pass in option group references into parse.
                     if (streams.length > 0) {
-                        shapes = cp.parse(streams, this).getShapes();
+                        shapes = cp.parse(streams, references, this).getShapes();
                     }
                     // set the initiated flag, first as there are couple corner
                     // cases where the content parsing can call page.init() again

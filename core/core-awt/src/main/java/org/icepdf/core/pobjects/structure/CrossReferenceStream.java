@@ -31,15 +31,15 @@ public class CrossReferenceStream extends CrossReferenceBase<Stream> implements 
     }
 
     public void initialize() {
-        int size = crossReferenceBase.getInt(SIZE_KEY);
-        List<Number> objNumAndEntriesCountPairs = crossReferenceBase.getList(INDEX_KEY);
+        int size = crossReference.getInt(SIZE_KEY);
+        List<Number> objNumAndEntriesCountPairs = crossReference.getList(INDEX_KEY);
         if (objNumAndEntriesCountPairs == null) {
             objNumAndEntriesCountPairs = new ArrayList<Number>(2);
             objNumAndEntriesCountPairs.add(0);
             objNumAndEntriesCountPairs.add(size);
         }
         // three int's: field values, x,y and z bytes in length.
-        List fieldSizesVec = crossReferenceBase.getList(W_KEY);
+        List fieldSizesVec = crossReference.getList(W_KEY);
         int[] fieldSizes = null;
         if (fieldSizesVec != null) {
             fieldSizes = new int[fieldSizesVec.size()];
@@ -48,7 +48,7 @@ public class CrossReferenceStream extends CrossReferenceBase<Stream> implements 
         }
 
         // not doing anything with PREV.
-        ByteBuffer byteBuffer = crossReferenceBase.getDecodedStreamByteBuffer();
+        ByteBuffer byteBuffer = crossReference.getDecodedStreamByteBuffer();
         byteBuffer.position(0);
 
         int fieldTypeSize = fieldSizes[0];
