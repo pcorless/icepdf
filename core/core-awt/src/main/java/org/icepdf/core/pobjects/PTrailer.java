@@ -18,7 +18,6 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.util.Library;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * <P>The trailer of a PDF file enables an application reading the file to quickly
@@ -64,17 +63,10 @@ public class PTrailer extends Dictionary {
     public static final Name INDEX_KEY = new Name("Index");
     public static final Name W_KEY = new Name("W");
 
-    // Position in the file. The LazyObjectLoader typically keeps this info
-    // for all PDF objects, but the bootstrapping PTrialer is an exception,
-    // and we need its location for writing incremental updates, so for
+    // Position in the file. We need its location for writing incremental updates, so for
     // consistency we'll have all PTrailers maintain their position.
+    // todo update to store directly in the cross reference
     private long position;
-
-    // documents cross reference table
-    private CrossReference crossReferenceTable;
-
-    // documents cross reference stream.
-    private CrossReference crossReferenceStream;
 
 
     /**
@@ -85,25 +77,6 @@ public class PTrailer extends Dictionary {
      */
     public PTrailer(Library library, DictionaryEntries dictionaryEntries) {
         super(library, dictionaryEntries);
-    }
-
-    /**
-     * Create a new PTrailer object
-     *
-     * @param library           document library
-     * @param dictionaryEntries trailer dictionary
-     * @param xrefTable         xref table reference
-     * @param xrefStream        xref stream reference
-     */
-    public PTrailer(Library library, DictionaryEntries dictionaryEntries, CrossReference xrefTable, CrossReference xrefStream) {
-        super(library, dictionaryEntries);
-
-        crossReferenceTable = xrefTable;
-        crossReferenceStream = xrefStream;
-        if (crossReferenceTable != null)
-            crossReferenceTable.setTrailer(this);
-        if (crossReferenceStream != null)
-            crossReferenceStream.setTrailer(this);
     }
 
     /**
@@ -135,39 +108,7 @@ public class PTrailer extends Dictionary {
      * previous cross-reference section
      */
     public long getPrev() {
-        return library.getLong(entries, PREV_KEY);
-    }
-
-    /**
-     * Depending on if the PDF file is version 1.4 or before, or 1.5 or after,
-     * it may have a cross reference table, or cross reference stream, or both.
-     * If there are both, then the cross reference table has precedence.
-     *
-     * @return the cross reference object with the highest precedence, for this trailer
-     */
-    public CrossReference getPrimaryCrossReference() {
-        if (crossReferenceTable != null)
-            return crossReferenceTable;
-        loadXRefStmIfApplicable();
-        return crossReferenceStream;
-    }
-
-    /**
-     * Gets the cross reference table.
-     *
-     * @return cross reference table object; null, if one does not exist.
-     */
-    protected CrossReference getCrossReferenceTable() {
-        return crossReferenceTable;
-    }
-
-    /**
-     * Gets the cross reference stream.
-     *
-     * @return cross reference stream object; null, if one does not exist.
-     */
-    protected CrossReference getCrossReferenceStream() {
-        return crossReferenceStream;
+        return library.getInt(entries, PREV_KEY);
     }
 
     /**
@@ -186,7 +127,6 @@ public class PTrailer extends Dictionary {
      *
      * @return Catalog entry.
      */
-    @SuppressWarnings("unchecked")
     public Catalog getRootCatalog() {
         Object tmp = library.getObject(entries, ROOT_KEY);
         // specification states the root entry must be a indirect
@@ -212,7 +152,6 @@ public class PTrailer extends Dictionary {
      *
      * @return encryption dictionary
      */
-    @SuppressWarnings("unchecked")
     public DictionaryEntries getEncrypt() {
         Object encryptParams = library.getObject(entries, ENCRYPT_KEY);
         if (encryptParams instanceof DictionaryEntries) {
@@ -269,72 +208,6 @@ public class PTrailer extends Dictionary {
     }
 
     /**
-     * Add the trailer dictionary to the current trailer object's dictionary.
-     *
-     * @param nextTrailer document trailer object
-     */
-    @SuppressWarnings("unchecked")
-    protected void addNextTrailer(PTrailer nextTrailer) {
-        nextTrailer.getPrimaryCrossReference().addToEndOfChainOfPreviousXRefs(getPrimaryCrossReference());
-
-        // Later key,value pairs take precedence over previous entries
-        DictionaryEntries nextDictionary = nextTrailer.getDictionary();
-        DictionaryEntries currDictionary = getDictionary();
-        Set<Name> currKeys = currDictionary.keySet();
-        for (Name currKey : currKeys) {
-            if (!nextDictionary.containsKey(currKey)) {
-                Object currValue = currDictionary.get(currKey);
-                nextDictionary.put(currKey, currValue);
-            }
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    protected void addPreviousTrailer(PTrailer previousTrailer) {
-//System.out.println("PTrailer.addPreviousTrailer()");
-        getPrimaryCrossReference().addToEndOfChainOfPreviousXRefs(previousTrailer.getPrimaryCrossReference());
-
-        // Later key,value pairs take precedence over previous entries
-        DictionaryEntries currDictionary = getDictionary();
-        DictionaryEntries prevDictionary = previousTrailer.getDictionary();
-        Set<Name> prevKeys = prevDictionary.keySet();
-        for (Name prevKey : prevKeys) {
-            if (!currDictionary.containsKey(prevKey)) {
-                Object prevValue = prevDictionary.get(prevKey);
-                currDictionary.put(prevKey, prevValue);
-            }
-        }
-    }
-
-    protected void onDemandLoadAndSetupPreviousTrailer() {
-//System.out.println("PTrailer.onDemandLoadAndSetupPreviousTrailer() : " + this);
-//try { throw new RuntimeException(); } catch(Exception e) { e.printStackTrace(); }
-        long position = getPrev();
-        if (position > 0L) {
-            PTrailer prevTrailer = library.getTrailerByFilePosition(position);
-            if (prevTrailer != null)
-                addPreviousTrailer(prevTrailer);
-        }
-    }
-
-    protected void loadXRefStmIfApplicable() {
-        if (crossReferenceStream == null) {
-            long xrefStreamPosition = library.getLong(entries, XREF_STRM_KEY);
-            if (xrefStreamPosition > 0L) {
-                // OK, this is a little weird, but basically, any XRef stream
-                //  dictionary is also a Trailer dictionary, so our Parser
-                //  makes both of the objects.
-                // Now, we don't actually want to chain the trailer as our
-                //  previous, but only want its CrossReferenceStream to make
-                //  our own
-                PTrailer trailer = library.getTrailerByFilePosition(xrefStreamPosition);
-                if (trailer != null)
-                    crossReferenceStream = trailer.getCrossReferenceStream();
-            }
-        }
-    }
-
-    /**
      * @return true if the trailer is a compressed trailer, false if it's compressed
      */
     public boolean isCompressedXref() {
@@ -356,6 +229,6 @@ public class PTrailer extends Dictionary {
      * @return dictionary values.
      */
     public String toString() {
-        return "PTRAILER= " + entries.toString() + " xref table=" + crossReferenceTable + "  xref stream=" + crossReferenceStream;
+        return "PTRAILER= " + entries.toString();
     }
 }

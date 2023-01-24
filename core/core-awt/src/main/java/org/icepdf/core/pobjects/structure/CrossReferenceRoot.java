@@ -72,6 +72,10 @@ public class CrossReferenceRoot {
         return pTrailer;
     }
 
+    public ArrayList<CrossReference> getCrossReferences() {
+        return crossReferences;
+    }
+
     public int getNextAvailableReferenceNumber() {
         // to be sure we have the max number we need initialize all crossReferences and one easy way to do this
         // is to look for a fictional object.

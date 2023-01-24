@@ -48,6 +48,7 @@ public class Indexer {
                 int trailerPosition = pos = ByteBufferUtil.findReverseString(byteBuffer, byteBuffer.limit(), end, Parser.TRAILER_MARKER);
                 // look for a trailer first.
                 if (trailerPosition != byteBuffer.limit()) {
+                    int xrefStartPos = trailerPosition;
                     byteBuffer.position(trailerPosition + Parser.TRAILER_MARKER.length);
                     lexer.setByteBuffer(byteBuffer);
                     Object object = lexer.nextToken();
@@ -66,13 +67,13 @@ public class Indexer {
                             }
                         }
                         // fall back indexing file.
-                        crossReference = new CrossReferenceTable(library, xRefDictionary);
+                        crossReference = new CrossReferenceTable(library, xRefDictionary, xrefStartPos);
                         crossReferenceRoot.addCrossReference(crossReference);
                         // move position to search for object from the end
                         pos = byteBuffer.limit();
                     }
                 }
-                // otherwise have a compressed cross reference so find /XRef and find first << position
+                // otherwise have a compressed cross-reference so find /XRef and find first << position
                 else {
                     pos = byteBuffer.position();
                     end = pos > 1024 ? 1024 : pos;

@@ -71,6 +71,11 @@ public class Stream extends Dictionary {
         this.rawBytes = rawBytes;
     }
 
+    public Stream(DictionaryEntries dictionaryEntries, byte[] rawBytes) {
+        super(null, dictionaryEntries);
+        this.rawBytes = rawBytes;
+    }
+
     public byte[] getRawBytes() {
         return rawBytes;
     }

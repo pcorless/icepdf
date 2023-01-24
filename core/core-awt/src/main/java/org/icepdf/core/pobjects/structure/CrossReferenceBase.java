@@ -21,8 +21,11 @@ public abstract class CrossReferenceBase<T extends Dictionary> implements CrossR
     protected final ConcurrentHashMap<Reference, CrossReferenceEntry> indirectObjectReferences;
     protected CrossReference prefCrossReference;
 
-    public CrossReferenceBase(T crossReference) {
+    protected int xrefStartPos;
+
+    public CrossReferenceBase(T crossReference, int xrefStartPos) {
         this.crossReference = crossReference;
+        this.xrefStartPos = xrefStartPos;
         indirectObjectReferences = new ConcurrentHashMap<>(1024);
     }
 
@@ -53,6 +56,14 @@ public abstract class CrossReferenceBase<T extends Dictionary> implements CrossR
             }
         }
         return crossReferenceEntry;
+    }
+
+    public int getXrefStartPos() {
+        return xrefStartPos;
+    }
+
+    public void setXrefStartPos(int xrefStartPos) {
+        this.xrefStartPos = xrefStartPos;
     }
 
     public DictionaryEntries getDictionaryEntries(){

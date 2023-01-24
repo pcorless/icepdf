@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -27,10 +28,10 @@ public class CrossReferenceStream extends CrossReferenceBase<Stream> implements 
     public static final Name W_KEY = new Name("W");
 
     public CrossReferenceStream(Library library, DictionaryEntries dictionaryEntries, byte[] rawBytes) {
-        super(new Stream(library, dictionaryEntries, rawBytes));
+        super(new Stream(library, dictionaryEntries, rawBytes), 0);
     }
 
-    public void initialize() {
+    public void initialize() throws IOException {
         int size = crossReference.getInt(SIZE_KEY);
         List<Number> objNumAndEntriesCountPairs = crossReference.getList(INDEX_KEY);
         if (objNumAndEntriesCountPairs == null) {
@@ -88,7 +89,9 @@ public class CrossReferenceStream extends CrossReferenceBase<Stream> implements 
                 }
             }
         } catch (IOException e) {
-            logger.warning("Failed to initialized object stream: " + toString());
+            // trigger a reindexing of the file.
+            logger.log(Level.WARNING, "Failed to initialized object stream: ", e );
+            throw e;
         }
     }
 

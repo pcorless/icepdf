@@ -13,8 +13,8 @@ import java.io.IOException;
  */
 public class CrossReferenceTable extends CrossReferenceBase<Dictionary> {
 
-    public CrossReferenceTable(Library library, DictionaryEntries dictionaryEntries) {
-        super(new Dictionary(library, dictionaryEntries));
+    public CrossReferenceTable(Library library, DictionaryEntries dictionaryEntries, int xrefStartPos) {
+        super(new Dictionary(library, dictionaryEntries), xrefStartPos);
     }
 
     @Override

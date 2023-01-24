@@ -470,22 +470,6 @@ public class Parser {
                     return hashMap;
                 }
             }
-            // found traditional XrefTable found in all documents.
-            else if (nextToken.equals("xref")) {
-                // parse out hte traditional
-                CrossReference xrefTable = new CrossReference();
-                xrefTable.addXRefTableEntries(this);
-                stack.push(xrefTable);
-            } else if (nextToken.equals("trailer")) {
-                CrossReference xrefTable = null;
-                if (stack.peek() instanceof CrossReference)
-                    xrefTable = (CrossReference) stack.pop();
-                stack.clear();
-                isTrailer = true;
-                DictionaryEntries trailerDictionary = (DictionaryEntries) getObject(library);
-                isTrailer = false;
-                return new PTrailer(library, trailerDictionary, xrefTable, null);
-            }
             // comments
             else if (nextToken instanceof String &&
                     ((String) nextToken).startsWith("%")) {

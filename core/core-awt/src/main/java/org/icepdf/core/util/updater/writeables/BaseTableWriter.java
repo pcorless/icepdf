@@ -1,7 +1,9 @@
 package org.icepdf.core.util.updater.writeables;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.PTrailer;
+import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 
 import java.util.HashMap;
 import java.util.List;
@@ -49,10 +51,10 @@ public class BaseTableWriter extends BaseWriter {
         return newSize;
     }
 
-    public long setPreviousTrailer(HashMap<Name, Object> newTrailer, PTrailer prevTrailer) {
-        long trailerPosition = prevTrailer.getPosition();
-        newTrailer.put(PTrailer.PREV_KEY, trailerPosition);
-        return trailerPosition;
+    public long setPreviousTrailer(DictionaryEntries newTrailer, CrossReferenceRoot crossReferenceRoot) {
+        long xrefPrevPosition = crossReferenceRoot.getCrossReferences().get(0).getXrefStartPos();
+        newTrailer.put(PTrailer.PREV_KEY, xrefPrevPosition);
+        return xrefPrevPosition;
     }
 
 }

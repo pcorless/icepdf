@@ -158,9 +158,10 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
      * Type, CMapName and CIDSystemInfo which are also repeated in the CMap
      * file itself. If the CMap file was created from a Font object then they
      * previously mentioned keys values must be parsed from the CMap file.
+     * <p>
+     * with this object.  The HashMap will be empty if this object
+     * was created via a Font objects ToUnicode key.
      *
-     *                   with this object.  The HashMap will be empty if this object
-     *                   was created via a Font objects ToUnicode key.
      * @param cMapStream stream containing CMap data.
      */
     public CMap(Stream cMapStream) {
@@ -377,7 +378,7 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
                     if (stringToken.equalsIgnoreCase("beginbfchar")) {
                         // before beginbfchar, the number of ranges is defined
                         int numberOfbfChar = (int) Float.parseFloat(previousToken.toString());
-                        // there can be multiple char maps so we don't want to override previous values. 
+                        // there can be multiple char maps so we don't want to override previous values.
                         if (bfChars == null) {
                             bfChars = new HashMap<>(numberOfbfChar);
                         }
@@ -663,7 +664,7 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
          *
          * @param value value to check for containment
          * @return true if the cmap falls inside one of the bfranges, false
-         *         otherwise.
+         * otherwise.
          */
         public boolean inRange(int value) {
             return (value >= startRange && value <= endRange);
@@ -676,7 +677,7 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
          *
          * @param value value to find corresponding CMap for
          * @return the mapped CMap value for <code>value</code>, -1 if the
-         *         <code>value</code> can not be mapped.
+         * <code>value</code> can not be mapped.
          */
         public char[] getCMapValue(int value) {
 

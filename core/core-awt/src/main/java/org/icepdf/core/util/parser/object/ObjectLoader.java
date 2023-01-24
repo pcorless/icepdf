@@ -48,5 +48,22 @@ public class ObjectLoader {
         return null;
     }
 
-
+//    public synchronized int getObjectOffset(CrossReference crossReference, Reference reference)
+//            throws ObjectStateException, CrossReferenceStateException, IOException {
+//
+//        CrossReferenceEntry entry = crossReference.getEntry(reference);
+//
+//        if (entry instanceof CrossReferenceUsedEntry) {
+//            CrossReferenceUsedEntry crossReferenceEntry = (CrossReferenceUsedEntry) entry;
+//            // parse the object
+//            int offset = crossReferenceEntry.getFilePositionOfObject();
+//            return offset;
+//        } else if (entry instanceof CrossReferenceCompressedEntry) {
+//            CrossReferenceCompressedEntry compressedEntry = (CrossReferenceCompressedEntry) entry;
+//            Reference objectStreamRef = compressedEntry.getObjectNumberOfContainingObjectStream();
+//            ObjectStream objectStream = (ObjectStream) library.getObject(objectStreamRef);
+//            return getObjectOffset(objectStreamRef);
+//        }
+//        return null;
+//    }
 }

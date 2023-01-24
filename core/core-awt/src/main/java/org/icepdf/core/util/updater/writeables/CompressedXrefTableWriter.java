@@ -1,8 +1,13 @@
 package org.icepdf.core.util.updater.writeables;
 
 import org.icepdf.core.io.CountingOutputStream;
-import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.DictionaryEntries;
+import org.icepdf.core.pobjects.PTrailer;
+import org.icepdf.core.pobjects.Reference;
+import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.security.SecurityManager;
+import org.icepdf.core.pobjects.structure.CrossReferenceEntry;
+import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 import org.icepdf.core.util.Utils;
 
 import java.io.ByteArrayOutputStream;
@@ -15,10 +20,11 @@ public class CompressedXrefTableWriter extends BaseTableWriter {
 
     private static final List<Integer> WIDTHS = Arrays.asList(4, 8, 4);
 
-    public void writeCompressedXrefTable(PTrailer prevTrailer, SecurityManager securityManager, List<Entry> entries,
+    public void writeCompressedXrefTable(CrossReferenceRoot crossReferenceRoot, SecurityManager securityManager, List<Entry> entries,
                                          long startingPosition, CountingOutputStream output) throws IOException {
+        PTrailer prevTrailer = crossReferenceRoot.getTrailerDictionary();
         DictionaryEntries newTrailer = (DictionaryEntries) prevTrailer.getDictionary().clone();
-        this.setPreviousTrailer(newTrailer, prevTrailer);
+        this.setPreviousTrailer(newTrailer, crossReferenceRoot);
         int newTrailerSize = this.setTrailerSize(newTrailer, prevTrailer, entries);
         long xrefPos = startingPosition + output.getCount();
         newTrailer.remove(Stream.DECODEPARAM_KEY);
@@ -34,7 +40,7 @@ public class CompressedXrefTableWriter extends BaseTableWriter {
         }
         newTrailer.put(PTrailer.INDEX_KEY, index);
 
-        Stream crossReferenceStream = new Stream(null, newTrailer, new byte[0]);
+        Stream crossReferenceStream = new Stream(newTrailer, new byte[0]);
         crossReferenceStream.setPObjectReference(new Reference(newTrailerSize, 0));
         byte[] outputData = createXrefDataStream(entries);
 
@@ -49,7 +55,7 @@ public class CompressedXrefTableWriter extends BaseTableWriter {
     private byte[] createXrefDataStream(List<Entry> entries) throws IOException {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         for (Entry entry : entries) {
-            Utils.writeInteger(output, CrossReference.Entry.TYPE_USED);
+            Utils.writeInteger(output, CrossReferenceEntry.TYPE_USED);
             Utils.writeLong(output, entry.getPosition());
             Utils.writeInteger(output, 0);
         }

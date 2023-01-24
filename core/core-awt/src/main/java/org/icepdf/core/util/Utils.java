@@ -430,4 +430,23 @@ public class Utils {
             return literalString;
         }
     }
+
+    /**
+     * White space characters defined by ' ', '\t', '\r', '\n', '\f'
+     *
+     * @param c true if character is white space
+     * @return true if char is whitespace, false otherwise.
+     */
+    public static boolean isWhitespace(char c) {
+        return ((c == ' ') || (c == '\t') || (c == '\r') ||
+                (c == '\n') || (c == '\f') || (c == 0));
+    }
+
+    public static boolean isDelimiter(char c) {
+        return ((c == '[') || (c == ']') ||
+                (c == '(') || (c == ')') ||
+                (c == '<') || (c == '>') ||
+                (c == '{') || (c == '}') ||
+                (c == '/') || (c == '%'));
+    }
 }

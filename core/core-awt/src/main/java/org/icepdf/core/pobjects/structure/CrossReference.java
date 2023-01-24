@@ -18,5 +18,7 @@ public interface CrossReference {
     CrossReferenceEntry getEntry(Reference reference)
             throws ObjectStateException, CrossReferenceStateException, IOException;
 
-    public DictionaryEntries getDictionaryEntries();
+    int getXrefStartPos();
+
+    DictionaryEntries getDictionaryEntries();
 }

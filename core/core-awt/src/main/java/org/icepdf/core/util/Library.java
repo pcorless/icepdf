@@ -85,17 +85,8 @@ public class Library {
         } catch (NumberFormatException e) {
             logger.warning("Error reading buffered scale factor");
         }
-
-//        log.fine("Starting ICEpdf Thread Pools: " +
-//                (commonPoolThreads + imagePoolThreads) +
-//                " threads.");
-//        initializeThreadPool();
     }
 
-    // new incremental file loader class.
-    // todo remove LazyObjectLoader
-    private LazyObjectLoader lazyObjectLoader;
-    // todo shoudl this be a SoftReference
     private ConcurrentHashMap<Reference, WeakReference<Object>> objectStore =
             new ConcurrentHashMap<>(1024);
     private ConcurrentHashMap<Reference, WeakReference<ICCBased>> lookupReference2ICCBased =
@@ -109,16 +100,14 @@ public class Library {
 
     private CrossReferenceRoot crossReferenceRoot;
 
-    private ObjectLoader objectLoader;
+    private final ObjectLoader objectLoader;
 
-    // Instead of keeping Names names, Dictionary dests, we keep
-    //   a reference to the Catalog, which actually owns them
     private Catalog catalog;
 
     private SecurityManager securityManager;
 
     // handles signature validation and signing.
-    private SignatureHandler signatureHandler;
+    private final SignatureHandler signatureHandler;
 
     // signature permissions
     private Permissions permissions;
@@ -140,27 +129,6 @@ public class Library {
         // set Catalog memory Manager and cache manager.
         imagePool = new ImagePool();
         signatureHandler = new SignatureHandler();
-    }
-
-    /**
-     * Sets a document loader for the library.
-     *
-     * @param lol loader object.
-     */
-    public void setLazyObjectLoader(LazyObjectLoader lol) {
-        lazyObjectLoader = lol;
-    }
-
-    /**
-     * Gets the document's trailer.
-     *
-     * @param position byte offset of the trailer in the PDF file.
-     * @return trailer dictionary
-     */
-    public PTrailer getTrailerByFilePosition(long position) {
-        if (lazyObjectLoader == null)
-            return null;
-        return lazyObjectLoader.loadTrailer(position);
     }
 
     /**
@@ -236,6 +204,10 @@ public class Library {
 
     public void setCrossReferenceRoot(CrossReferenceRoot crossReferenceRoot) throws ObjectStateException {
         this.crossReferenceRoot = crossReferenceRoot;
+    }
+
+    public CrossReferenceRoot getCrossReferenceRoot() {
+        return crossReferenceRoot;
     }
 
     /**
@@ -503,10 +475,13 @@ public class Library {
      * @return true, if a cross-reference entry exists for this reference; false, otherwise.
      */
     public boolean isValidEntry(Reference reference) {
-        WeakReference<Object> ob = objectStore.get(reference);
-        return (ob != null && ob.get() != null) ||
-                lazyObjectLoader != null &&
-                        lazyObjectLoader.haveEntry(reference);
+        try {
+            WeakReference<Object> ob = objectStore.get(reference);
+            return (ob != null && ob.get() != null) ||
+                            crossReferenceRoot.loadObject(objectLoader, reference, null) != null;
+        } catch (ObjectStateException | CrossReferenceStateException | IOException e) {
+            return false;
+        }
     }
 
     /**

@@ -6,6 +6,7 @@ import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.PTrailer;
 import org.icepdf.core.pobjects.StateManager;
 import org.icepdf.core.pobjects.security.SecurityManager;
+import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 import org.icepdf.core.util.updater.writeables.BaseWriter;
 
 import java.io.IOException;
@@ -28,8 +29,7 @@ public class IncrementalUpdater {
             throws IOException {
 
         StateManager stateManager = document.getStateManager();
-        PTrailer trailer = stateManager.getCrossReferenceRoot().getTrailerDictionary();
-
+        CrossReferenceRoot crossReferenceRoot = stateManager.getCrossReferenceRoot();
         if (stateManager.isNoChange()) {
             return 0L;
         }
@@ -37,7 +37,7 @@ public class IncrementalUpdater {
         SecurityManager securityManager = document.getSecurityManager();
         CountingOutputStream output = new CountingOutputStream(outputStream);
 
-        BaseWriter writer = new BaseWriter(trailer, securityManager, output, documentLength);
+        BaseWriter writer = new BaseWriter(crossReferenceRoot, securityManager, output, documentLength);
         writer.initializeWriters();
         writer.writeNewLine();
         Iterator<StateManager.Change> changes = stateManager.iteratorSortedByObjectNumber();
@@ -46,12 +46,15 @@ public class IncrementalUpdater {
             writer.writePObject(pobject);
         }
 
+        // todo may need updating as I don't think it handles hybrid mode
+        PTrailer trailer = crossReferenceRoot.getTrailerDictionary();
         if (trailer.isCompressedXref()) {
             writer.writeCompressedXrefTable();
         } else {
             writer.writeXRefTable();
             writer.writeTrailer();
         }
+        output.close();
 
         return writer.getBytesWritten();
     }

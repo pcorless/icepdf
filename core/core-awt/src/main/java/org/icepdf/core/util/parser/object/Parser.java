@@ -3,7 +3,9 @@ package org.icepdf.core.util.parser.object;
 
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.structure.CrossReference;
-import org.icepdf.core.pobjects.structure.*;
+import org.icepdf.core.pobjects.structure.CrossReferenceStream;
+import org.icepdf.core.pobjects.structure.CrossReferenceTable;
+import org.icepdf.core.pobjects.structure.CrossReferenceUsedEntry;
 import org.icepdf.core.pobjects.structure.exceptions.CrossReferenceStateException;
 import org.icepdf.core.pobjects.structure.exceptions.ObjectStateException;
 import org.icepdf.core.util.ByteBufferUtil;
@@ -19,7 +21,7 @@ public class Parser {
 
     // legacy xref markers.
     //                                              x    r    e    f
-    public static final byte[] XREF_MARKER = new byte[]{114, 101, 102}; // 120
+    public static final byte[] XREF_MARKER = new byte[]{120, 114, 101, 102};
     //                                                       t    r    a    i   l    e    r
     public static final byte[] TRAILER_MARKER = new byte[]{116, 114, 97, 105, 108, 101, 114};
 
@@ -35,7 +37,7 @@ public class Parser {
     //                                                         e    n    d    s    t    r    e    a   m
     public static final byte[] END_STREAM_MARKER = new byte[]{101, 110, 100, 115, 116, 114, 101, 97, 109};
 
-    private Library library;
+    private final Library library;
 
     public Parser(Library library) {
         this.library = library;
@@ -154,7 +156,7 @@ public class Parser {
             byteBuffer.position(starXref);
             // make sure we have an xref declaration
             int bytesLeft = byteBuffer.limit() - starXref;
-            lookAheadBuffer = ByteBuffer.allocateDirect(bytesLeft < 48 ? bytesLeft : 48);
+            lookAheadBuffer = ByteBuffer.allocateDirect(Math.min(bytesLeft, 48));
             while (lookAheadBuffer.hasRemaining()) {
                 lookAheadBuffer.put(byteBuffer.get());
             }
@@ -179,19 +181,23 @@ public class Parser {
                 Object token = objectLexer.nextToken();
                 if (token instanceof DictionaryEntries) {
                     DictionaryEntries xrefDictionary = (DictionaryEntries) token;
-                    return parseCrossReferenceTable(xrefDictionary, objectLexer, byteBuffer, starXref + XREF_MARKER.length, startTrailer);
+                    return parseCrossReferenceTable(xrefDictionary, objectLexer, byteBuffer, starXref, startTrailer);
                 }
             }
             // if there is an entry we can ignore parsing the table as it's redundant and just parse the strmObject
-            return parseCrossReferenceStream(objectLexer, byteBuffer, starXref);
+            return parseCrossReferenceStream(byteBuffer, starXref);
         }
     }
 
-    private CrossReferenceBase parseCrossReferenceTable(DictionaryEntries dictionaryEntries, Lexer objectLexer, ByteBuffer byteBuffer,
+    private CrossReference parseCrossReferenceTable(DictionaryEntries dictionaryEntries, Lexer objectLexer, ByteBuffer byteBuffer,
                                                         int start, int end) throws IOException {
+        // mark the xref start, so it can be used to write future /prev entries.
+        int xrefStartPos = start;
+        // push past the xref marker to start parsing object offsets
+        start += XREF_MARKER.length;
         // allocate to a new buffer as the data is well-defined.
         ByteBuffer xrefTableBuffer = ByteBufferUtil.copyObjectStreamSlice(byteBuffer, start, end);
-        CrossReferenceTable crossReferenceTable = new CrossReferenceTable(library, dictionaryEntries);
+        CrossReferenceTable crossReferenceTable = new CrossReferenceTable(library, dictionaryEntries, xrefStartPos);
         objectLexer.setByteBuffer(xrefTableBuffer);
         // parse the sub groupings
         while (true) {
@@ -224,11 +230,12 @@ public class Parser {
         return crossReferenceTable;
     }
 
-    private CrossReferenceBase parseCrossReferenceStream(Lexer objectLexer, ByteBuffer byteBuffer, int offset)
+    private CrossReference parseCrossReferenceStream(ByteBuffer byteBuffer, int offset)
             throws IOException, ObjectStateException {
         // use parser to get xref stream object.
         CrossReferenceStream crossReferenceStream = (CrossReferenceStream) getPObject(byteBuffer, offset).getObject();
         crossReferenceStream.initialize();
+        crossReferenceStream.setXrefStartPos(offset);
         return crossReferenceStream;
     }
 }

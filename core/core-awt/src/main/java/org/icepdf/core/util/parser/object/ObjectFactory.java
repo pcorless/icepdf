@@ -28,9 +28,11 @@ public class ObjectFactory {
             Name type = (Name) entries.get(Dictionary.TYPE_KEY);
             Name subType = (Name) entries.get(Dictionary.SUBTYPE_KEY);
             // todo come back an eval if we want byteBuffers or not as there is shit ton of refactoring work otherwise.
+            // this copy is expense...
             byte[] bufferBytes = new byte[streamData.remaining()];
             streamData.get(bufferBytes);
             if (CrossReferenceStream.TYPE.equals(type)) {
+//                library.getObject()
                 return new PObject(new CrossReferenceStream(library, entries, bufferBytes), objectNumber, generationNumber);
             } else if (ObjectStream.TYPE.equals(type)) {
                 return new PObject(new ObjectStream(library, entries, bufferBytes), objectNumber, generationNumber);

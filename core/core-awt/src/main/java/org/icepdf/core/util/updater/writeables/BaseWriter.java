@@ -3,6 +3,7 @@ package org.icepdf.core.util.updater.writeables;
 import org.icepdf.core.io.CountingOutputStream;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.security.SecurityManager;
+import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
@@ -40,7 +41,7 @@ public class BaseWriter {
 
     private CountingOutputStream output;
     private SecurityManager securityManager;
-    private PTrailer trailer;
+    private CrossReferenceRoot crossReferenceRoot;
     private long startingPosition;
     private List<Entry> entries;
     private long xrefPosition;
@@ -49,10 +50,10 @@ public class BaseWriter {
 
     }
 
-    public BaseWriter(PTrailer trailer, SecurityManager securityManager, CountingOutputStream output,
+    public BaseWriter(CrossReferenceRoot crossReferenceRoot, SecurityManager securityManager, CountingOutputStream output,
                       long startingPosition) {
         this.output = output;
-        this.trailer = trailer;
+        this.crossReferenceRoot = crossReferenceRoot;
         this.securityManager = securityManager;
         this.startingPosition = startingPosition;
         entries = new ArrayList<>(256);
@@ -99,11 +100,11 @@ public class BaseWriter {
     }
 
     public void writeTrailer() throws IOException {
-        trailerWriter.writeTrailer(trailer, xrefPosition, entries, output);
+        trailerWriter.writeTrailer(crossReferenceRoot, xrefPosition, entries, output);
     }
 
     public void writeCompressedXrefTable() throws IOException {
-        compressedXrefTableWriter.writeCompressedXrefTable(trailer, securityManager, entries, startingPosition, output);
+        compressedXrefTableWriter.writeCompressedXrefTable(crossReferenceRoot, securityManager, entries, startingPosition, output);
     }
 
     public void writeNewLine() throws IOException {

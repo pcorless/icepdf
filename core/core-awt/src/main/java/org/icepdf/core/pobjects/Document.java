@@ -569,13 +569,19 @@ public class Document {
                 ByteBuffer documentByteBuffer = library.getMappedFileByteBuffer();
                 documentByteBuffer.position(0);
                 int documentLength = documentByteBuffer.remaining();
+                long appendedLength = 0;
                 try (WritableByteChannel channel = Channels.newChannel(out)) {
                     channel.write(documentByteBuffer);
+                    // works but not great,  nice to use the channel to write the bytes.
+                    appendedLength = new IncrementalUpdater().appendIncrementalUpdate(
+                            this,
+                            new BufferedOutputStream(out),
+                            documentLength);
                 } catch (Throwable e) {
                     logger.log(Level.FINE, "Error writing PDF output stream.", e);
                     throw new IOException(e.getMessage());
                 }
-                return documentLength;
+                return documentLength + appendedLength;
             }
         } else {
             return 0;
@@ -593,8 +599,7 @@ public class Document {
      */
     public long saveToOutputStream(OutputStream out) throws IOException {
         long documentLength = writeToOutputStream(out);
-        long appendedLength = new IncrementalUpdater().appendIncrementalUpdate(this, out, documentLength);
-        return documentLength + appendedLength;
+        return documentLength;
     }
 
     /**
