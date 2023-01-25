@@ -567,10 +567,9 @@ public class Document {
                 long appendedLength = 0;
                 try (WritableByteChannel channel = Channels.newChannel(out)) {
                     channel.write(documentByteBuffer);
-                    // works but not great,  nice to use the channel to write the bytes.
                     appendedLength = new IncrementalUpdater().appendIncrementalUpdate(
                             this,
-                            new BufferedOutputStream(out),
+                            out,
                             documentLength);
                 } catch (IOException e) {
                     logger.log(Level.FINE, "Error writing PDF output stream.", e);
