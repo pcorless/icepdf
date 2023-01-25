@@ -23,7 +23,7 @@ public class BaseWriter {
     protected static final byte[] REFERENCE = "R".getBytes();
 
     protected static final byte[] BEGIN_OBJECT = "obj\r\n".getBytes();
-    protected static final byte[] END_OBJECT = "\r\nendobj\r\n".getBytes();
+    protected static final byte[] END_OBJECT = "endobj\r\n".getBytes();
 
     private static NameWriter nameWriter;
     private static DictionaryWriter dictionaryWriter;

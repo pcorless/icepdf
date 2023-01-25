@@ -12,8 +12,8 @@ public class BaseTableWriter extends BaseWriter {
 
     protected static final byte[] XREF = "xref\r\n".getBytes();
     protected static final byte[] TRAILER = "trailer\r\n".getBytes();
-    protected static final byte[] STARTXREF = "\r\n\r\nstartxref\r\n".getBytes();
-    protected static final byte[] COMMENT_EOF = "\r\n%%EOF\r\n".getBytes();
+    protected static final byte[] STARTXREF = "startxref\r\n".getBytes();
+    protected static final byte[] COMMENT_EOF = "%%EOF\r\n".getBytes();
 
     protected int subSectionCount(int beginIndex, List<Entry> entries) {
         int beginObjNum = entries.get(beginIndex).getReference().getObjectNumber();
