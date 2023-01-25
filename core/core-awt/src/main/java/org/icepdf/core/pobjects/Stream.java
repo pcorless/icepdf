@@ -119,7 +119,6 @@ public class Stream extends Dictionary {
         // decompress the stream
         if (compressed) {
             try {
-                // todo, could nio all a little speed up here.
                 ByteArrayInputStream streamInput = new ByteArrayInputStream(rawBytes);
                 long rawStreamLength = rawBytes.length;
                 InputStream input = getDecodedInputStream(streamInput, rawStreamLength);
@@ -128,12 +127,11 @@ public class Stream extends Dictionary {
                 if (presize > 0) {
                     outLength = presize;
                 } else {
-                    outLength = Math.max(4096, (int) rawStreamLength);
+                    outLength = Math.max(8192, (int) rawStreamLength);
                 }
                 ConservativeSizingByteArrayOutputStream out = new
                         ConservativeSizingByteArrayOutputStream(outLength);
-                // todo buffer allocation size seem broken?
-                byte[] buffer = new byte[(outLength > 4096) ? 4096 : 8192];
+                byte[] buffer = new byte[Math.min(outLength, 8192)];
                 while (true) {
                     int read = input.read(buffer);
                     if (read <= 0)

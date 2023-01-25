@@ -63,12 +63,6 @@ public class PTrailer extends Dictionary {
     public static final Name INDEX_KEY = new Name("Index");
     public static final Name W_KEY = new Name("W");
 
-    // Position in the file. We need its location for writing incremental updates, so for
-    // consistency we'll have all PTrailers maintain their position.
-    // todo update to store directly in the cross reference
-    private long position;
-
-
     /**
      * Create a new PTrailer object
      *
@@ -188,23 +182,6 @@ public class PTrailer extends Dictionary {
      */
     public List getID() {
         return library.getArray(entries, ID_KEY);
-    }
-
-    /**
-     * @return The position in te file where this trailer is located
-     */
-    public long getPosition() {
-        return position;
-    }
-
-    /**
-     * After this PTrailer is parsed, we store it's location within the PDF
-     * here, for future use.
-     *
-     * @param pos position in file of trailer.
-     */
-    public void setPosition(long pos) {
-        position = pos;
     }
 
     /**

@@ -27,12 +27,10 @@ public class ObjectFactory {
             DictionaryEntries entries = (DictionaryEntries) objectData;
             Name type = (Name) entries.get(Dictionary.TYPE_KEY);
             Name subType = (Name) entries.get(Dictionary.SUBTYPE_KEY);
-            // todo come back an eval if we want byteBuffers or not as there is shit ton of refactoring work otherwise.
-            // this copy is expense...
+            // bulk copy as all our filters expect byte[], this may be expensive in some instances.
             byte[] bufferBytes = new byte[streamData.remaining()];
             streamData.get(bufferBytes);
             if (CrossReferenceStream.TYPE.equals(type)) {
-//                library.getObject()
                 return new PObject(new CrossReferenceStream(library, entries, bufferBytes), objectNumber, generationNumber);
             } else if (ObjectStream.TYPE.equals(type)) {
                 return new PObject(new ObjectStream(library, entries, bufferBytes), objectNumber, generationNumber);
@@ -49,9 +47,7 @@ public class ObjectFactory {
             } else if (TilingPattern.TYPE_VALUE.equals(subType) && TilingPattern.TYPE_VALUE.equals(type)) {
                 return new PObject(new TilingPattern(library, entries, bufferBytes), objectNumber, generationNumber);
             }
-
             return new PObject(new Stream(library, entries, bufferBytes), objectNumber, generationNumber);
-
         } else if (objectData instanceof DictionaryEntries) {
             DictionaryEntries entries = (DictionaryEntries) objectData;
             Object object = getInstance(library, entries);
@@ -72,7 +68,6 @@ public class ObjectFactory {
                 return new Page(library, entries);
             } else if (Font.TYPE.equals(type) && subType != null) {
                 // subType is checked as some stream can have /type/font but aren't actually fonts just font data
-
                 // do a quick check to make sure we don't have a fontDescriptor
                 // FontFile is specific to font descriptors.
                 boolean fontDescriptor = entries.get(FontDescriptor.FONT_FILE) != null ||

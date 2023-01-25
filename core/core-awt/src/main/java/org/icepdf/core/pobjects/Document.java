@@ -106,8 +106,7 @@ public class Document {
     // callback for password dialogs, or command line access.
     private SecurityCallback securityCallback;
 
-    // disable/enable file caching, overrides fileCachingSize.
-    // todo pretty sure we don't need this anymore.
+    // disable/enable file caching when downloading url data streams
     private static boolean isCachingEnabled;
 
     // repository of all PDF object associated with this document.

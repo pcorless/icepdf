@@ -3559,7 +3559,7 @@ public class SwingController extends ComponentAdapter
                     //  and would complicate the incremental update code, so we're
                     //  harmonising on this approach.
                     try (final FileOutputStream fileOutputStream = new FileOutputStream(file);
-                         final BufferedOutputStream buf = new BufferedOutputStream(fileOutputStream, 4096 * 2)) {
+                         final BufferedOutputStream buf = new BufferedOutputStream(fileOutputStream, 8192)) {
 
                         // We want 'save as' or 'save a copy to always occur
                         if (!document.getStateManager().isChange()) {
