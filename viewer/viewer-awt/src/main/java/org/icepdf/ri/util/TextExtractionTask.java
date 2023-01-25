@@ -164,8 +164,8 @@ public class TextExtractionTask extends SwingWorker<Void, StringBuilder> {
             current = 0;
             fileOutputStream.flush();
             fileOutputStream.close();
-        } catch (Throwable e) {
-            logger.log(Level.FINE, "Malformed URL Exception ", e);
+        } catch (Exception e) {
+            logger.log(Level.FINE, "Error extraction page text to file ", e);
         }
         return null;
     }

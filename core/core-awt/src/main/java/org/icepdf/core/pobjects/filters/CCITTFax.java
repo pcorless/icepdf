@@ -786,7 +786,7 @@ public class CCITTFax {
                     img = (BufferedImage) roGetAsBufferedImage.invoke(javax_media_jai_RenderedOp_op);
                 }
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             // catch and return a null image so we can try again using a different compression method.
             logger.finer("Decoding TIFF: " + TIFF_COMPRESSION_NAMES[compression] + " failed trying alternative");
         } finally {
@@ -817,9 +817,9 @@ public class CCITTFax {
             // From empirically testing 6 of the 9 possible combinations of
             //  BlackIs1 {true, false, not given} and Decode {[0 1], [1 0], not given}
             //  this is the rule. Unknown combinations:
-            //    BlackIs1=false, Decode=[0 1] 
-            //    BlackIs1=false, Decode=[1 0] 
-            //    BlackIs1=true,  Decode=[0 1] 
+            //    BlackIs1=false, Decode=[0 1]
+            //    BlackIs1=false, Decode=[1 0]
+            //    BlackIs1=true,  Decode=[0 1]
             boolean flag = ((blackIs1 == null) && (!defaultDecode)) ||
                     ((blackIs1 != null) && blackIs1 && (decode == null));
             if (imageMask) {

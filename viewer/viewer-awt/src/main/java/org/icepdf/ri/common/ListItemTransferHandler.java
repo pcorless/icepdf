@@ -19,6 +19,9 @@ import javax.swing.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Great little implementation that does the lifting to allow for drag and drop rows in using a list.  This is
@@ -27,6 +30,8 @@ import java.awt.datatransfer.UnsupportedFlavorException;
  * @since 6.3
  */
 public class ListItemTransferHandler extends TransferHandler {
+
+    private static final Logger logger = Logger.getLogger(ListItemTransferHandler.class.toString());
 
     private static DataFlavor dataFlavor;
 
@@ -89,8 +94,8 @@ public class ListItemTransferHandler extends TransferHandler {
                 target.addSelectionInterval(idx, idx);
             }
             return true;
-        } catch (Throwable e) {
-            e.printStackTrace();
+        } catch (IOException | UnsupportedFlavorException e) {
+            logger.log(Level.WARNING, "Requested data flavor is not supported or unavailable.", e);
         }
 
         return false;

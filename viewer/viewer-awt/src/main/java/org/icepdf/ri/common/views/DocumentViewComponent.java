@@ -29,6 +29,8 @@ import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
 import java.lang.ref.SoftReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Each document in the collection will be represented by a DocumentViewComponent.
@@ -38,9 +40,10 @@ import java.lang.ref.SoftReference;
  * @since 5.1.0
  */
 public class DocumentViewComponent extends JComponent implements MouseListener, Runnable {
+    private static final Logger logger = Logger.getLogger(DocumentViewComponent.class.toString());
 
     private static final long serialVersionUID = -8881023489246309889L;
-   
+
     private Library parentLibrary;
     private Reference fileReference;
     private String fileName;
@@ -112,7 +115,8 @@ public class DocumentViewComponent extends JComponent implements MouseListener, 
             // close the document.
             embeddedDocument.dispose();
 
-        } catch (Throwable ex) {
+        } catch (Exception ex) {
+            logger.log(Level.WARNING, "Failed to load embedded PDF and build thumbnail", ex);
             isPdfDocument = false;
         }
     }
@@ -144,8 +148,8 @@ public class DocumentViewComponent extends JComponent implements MouseListener, 
                 Document embeddedDocument = new Document();
                 embeddedDocument.setInputStream(fileInputStream, fileName);
                 WindowManager.getInstance().newWindow(embeddedDocument, fileName);
-            } catch (Throwable ex) {
-                ex.printStackTrace();
+            } catch (Exception ex) {
+                logger.log(Level.WARNING, "Failed to launch embedded PDF", ex);
             }
         }
     }

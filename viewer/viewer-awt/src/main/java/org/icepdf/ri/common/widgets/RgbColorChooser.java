@@ -57,7 +57,7 @@ public class RgbColorChooser {
             if (defaultLF.contains("GTK")) {
                 UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.warning("Could not set metal look and feel.");
         }
 
@@ -92,7 +92,7 @@ public class RgbColorChooser {
         try {
             String defaultLF = UIManager.getSystemLookAndFeelClassName();
             UIManager.setLookAndFeel(defaultLF);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.warning("Could not set " + UIManager.getSystemLookAndFeelClassName());
         }
 

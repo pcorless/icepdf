@@ -35,12 +35,17 @@ import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * CertificatePropertiesDialog takes a certificate chain and displays each certificate in a summery view. Certificates
  * can be easily viewed and selected via a jTree component hierarchy.
  */
 public class CertificatePropertiesDialog extends EscapeJDialog {
+
+    private static final Logger logger =
+            Logger.getLogger(CertificatePropertiesDialog.class.toString());
 
     protected static ResourceBundle messageBundle;
     private Collection<? extends Certificate> certs;
@@ -280,8 +285,8 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
             md5 = formatter.format(new Object[]{getCertFingerPrint("MD5", cert)});
             formatter.applyPattern(messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.sha1.value"));
             sha1 = formatter.format(new Object[]{getCertFingerPrint("SHA1", cert)});
-        } catch (Throwable e) {
-            // eat any errors.
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Failed to get cert fingerprint", e);
         }
         Object[][] data = {
                 {messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.version.label"), certVersion},

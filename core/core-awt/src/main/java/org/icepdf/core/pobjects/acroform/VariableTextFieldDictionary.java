@@ -144,7 +144,7 @@ public class VariableTextFieldDictionary extends FieldDictionary {
                             fontName = gs.getTextState().fontName;
                         }
                     }
-                } catch (Throwable e) {
+                } catch (Exception e) {
                     logger.warning("Could not validate default appearance, defaulting.");
                 }
             }
@@ -196,7 +196,7 @@ public class VariableTextFieldDictionary extends FieldDictionary {
                     if (gs.getTextState().fontName != null) fontName = gs.getTextState().fontName;
                 }
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.warning("Could not generate default appearance stream.");
             if (logger.isLoggable(Level.FINEST)) {
                 logger.log(Level.FINEST, "Error parsing text feld content stream", e);

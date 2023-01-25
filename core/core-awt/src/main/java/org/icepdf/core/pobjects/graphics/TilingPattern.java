@@ -289,7 +289,7 @@ public class TilingPattern extends Stream implements Pattern {
                     new byte[][]{getDecodedStreamBytes()},
                     new Reference[]{this.getPObjectReference()},
                     null).getShapes();
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.log(Level.FINE, "Error processing tiling pattern.", e);
         }
 

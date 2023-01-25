@@ -103,7 +103,7 @@ public class FontFactory {
             font = new TypeCidType2Font(library, entries);
         }
         if (font == null) {
-            // create OFont implementation. 
+            // create OFont implementation.
             font = new org.icepdf.core.pobjects.fonts.ofont.Font(library, entries);
         }
         return font;
@@ -127,7 +127,7 @@ public class FontFactory {
             } else if (FONT_CID_TYPE_2 == fontType) {
                 fontFile = new ZFontType2(fontStream);
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.log(Level.WARNING, "Error reading font file type " + FONT_OPEN_TYPE, e);
         }
         return fontFile;
@@ -136,7 +136,7 @@ public class FontFactory {
     public FontFile createFontFile(File file, int fontType, String fontSubType) {
         try {
             return createFontFile(file.toURI().toURL(), fontType, fontSubType);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.log(Level.FINE, "Could not create instance of font file " + fontType, e);
         }
         return null;
@@ -150,7 +150,7 @@ public class FontFactory {
             } else if (FONT_TYPE_1 == fontType) {
                 fontFile = new ZFontType1(url);
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.log(Level.FINE, "Could not create instance of font file " + fontType, e);
         }
         return fontFile;

@@ -162,13 +162,13 @@ public class ImageCompareTask extends AbstractTestTask {
         // have valid classes.
         try {
             getTestInstance(captureSetA);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new ConfigurationException("Capture set A classpath does not contain ICEpdf or is invalid.");
         }
         try {
             getTestInstance(captureSetB);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             throw new ConfigurationException("Capture set B classpath does not contain ICEpdf or is invalid.");
         }
 
@@ -267,8 +267,6 @@ public class ImageCompareTask extends AbstractTestTask {
             }
             e.printStackTrace();
         } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (Throwable e) {
             e.printStackTrace();
         }
     }
@@ -498,8 +496,6 @@ public class ImageCompareTask extends AbstractTestTask {
                 // silently move on if the page wasn't created.
             } catch (IOException e) {
                 e.printStackTrace();
-            } catch (Throwable e) {
-                e.printStackTrace();
             }
             return null;
         }
@@ -524,15 +520,8 @@ public class ImageCompareTask extends AbstractTestTask {
                 Method disposeMethod = pageCaptureClass.getMethod(PAGE_CAPTURE_DISPOSE_METHOD);
                 disposeMethod.invoke(pageCaptureTest);
 
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                e.printStackTrace();
-            } catch (NoSuchMethodException e) {
-                e.printStackTrace();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            } catch (Throwable e) {
+            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException |
+                     ClassNotFoundException e) {
                 e.printStackTrace();
             }
             return null;

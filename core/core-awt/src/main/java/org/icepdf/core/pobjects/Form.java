@@ -190,11 +190,11 @@ public class Form extends Stream {
                 shapes = new Shapes();
                 logger.log(Level.FINE, "Parsing form interrupted parsing Form content stream.", e);
                 throw new InterruptedException(e.getMessage());
-            } catch (Throwable e) {
-                // some parsing or other wise unrecoverable problem, we'll try to render the page none the less.
+            } catch (Exception e) {
+                // some parsing or otherwise unrecoverable problem, we'll try to render the page nonetheless.
                 // but not this form object.
                 shapes = new Shapes();
-                logger.log(Level.FINE, "Error parsing Form content stream.", e);
+                logger.log(Level.WARNING, "Error parsing Form content stream.", e);
             }
         }
     }

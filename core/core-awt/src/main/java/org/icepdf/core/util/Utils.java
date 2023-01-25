@@ -201,10 +201,8 @@ public class Utils {
                 content = Utils.convertByteArrayToHexString(data, true);
             else
                 content = new String(data);
-        } catch (IOException ioe) {
-            logger.log(Level.FINE, "Problem getting debug string", ioe);
-        } catch (Throwable e) {
-            logger.log(Level.FINE, "Problem getting content stream, skipping");
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Problem extracting content stream");
         }
         return content;
     }

@@ -155,7 +155,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
                     MessageDigest tmp = AlgorithmIdentifier.getDigestInstance(objectId, null);
                     logger.finest("DigestAlgorithmIdentifiers: " + digestAlgorithmName + " " + objectId);
                     logger.finest(tmp.toString());
-                } catch (Throwable ex) {
+                } catch (Exception ex) {
                     logger.log(Level.WARNING, "Error finding iod: " + objectId, ex);
                 }
             }
@@ -270,7 +270,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
                 try {
                     new TimeStampToken(contentInfo);
                     isEmbeddedTimeStamp = true;
-                } catch (Throwable e1) {
+                } catch (Exception e1) {
                     throw new SignatureIntegrityException("Valid TimeStamp could now be created");
                 }
             }
@@ -651,7 +651,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         } catch (CertificateException e) {
             logger.log(Level.FINEST, "Certificate exception.", e);
             isCertificateChainTrusted = false;
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.log(Level.FINEST, "Error validation certificate chain.", e);
             isCertificateChainTrusted = false;
         }

@@ -13,14 +13,9 @@ package org.icepdf.examples.extraction;
  * governing permissions and limitations under the License.
  */
 
-import org.icepdf.core.exceptions.PDFException;
-import org.icepdf.core.exceptions.PdfSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PInfo;
 import org.icepdf.ri.util.FontPropertiesManager;
-
-import java.io.FileNotFoundException;
-import java.io.IOException;
 
 /**
  * The <code>PageMetaDataExtraction</code> class is an example of how to extract
@@ -42,16 +37,9 @@ public class PageMetaDataExtraction {
         Document document = new Document();
         try {
             document.setFile(filePath);
-        } catch (PDFException ex) {
-            System.out.println("Error parsing PDF document " + ex);
-        } catch (PdfSecurityException ex) {
-            System.out.println("Error encryption not supported " + ex);
-        } catch (FileNotFoundException ex) {
-            System.out.println("Error file not found " + ex);
-        } catch (IOException ex) {
-            System.out.println("Error handling PDF document " + ex);
+        } catch (Exception ex) {
+           ex.printStackTrace();
         }
-
         // data to collect from document information entry
         String title = "";
         String author = "";

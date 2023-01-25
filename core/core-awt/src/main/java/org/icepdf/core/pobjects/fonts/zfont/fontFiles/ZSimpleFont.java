@@ -368,7 +368,7 @@ public abstract class ZSimpleFont implements FontFile {
             return new AffineTransform(matrix.get(0).floatValue(), matrix.get(1).floatValue(),
                     -matrix.get(2).floatValue(), matrix.get(3).floatValue(),
                     matrix.get(4).floatValue(), matrix.get(5).floatValue());
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.log(Level.WARNING, "Could not convert font matrix ", e);
         }
         return new AffineTransform(0.001f, 0, 0, -0.001f, 0, 0);

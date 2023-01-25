@@ -1,5 +1,6 @@
 package org.icepdf.ri.common.utility.attachment;
 
+import org.icepdf.core.exceptions.PdfSecurityException;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
@@ -174,9 +175,9 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
         }
     }
 
-    public void mouseClicked(MouseEvent e) {
+    public void mouseClicked(MouseEvent mouseEvent) {
         // try and do double click file opening of PDF documents.
-        if (e.getClickCount() == 2 && e.getButton() == MouseEvent.BUTTON1) {
+        if (mouseEvent.getClickCount() == 2 && mouseEvent.getButton() == MouseEvent.BUTTON1) {
             int selectedRow = fileTable.getSelectedRow();
             Object value = fileTableModel.getValueAt(selectedRow, DATA_COLUMN);
             if (value != null && value instanceof FileSpecification) {
@@ -190,17 +191,19 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
                         Document embeddedDocument = new Document();
                         embeddedDocument.setInputStream(fileInputStream, fileName);
                         WindowManager.getInstance().newWindow(embeddedDocument, fileName);
-                    } catch (Throwable e1) {
-                        logger.log(Level.WARNING, "Error opening PDF " + fileName, e);
+                    } catch (IOException e) {
+                        logger.log(Level.WARNING, "Error opening PDF file stream " + fileName, e);
+                    } catch( PdfSecurityException e) {
+                        logger.log(Level.WARNING, "Error opening PDF security exception " + fileName, e);
                     }
                 }
             }
         }
-        if (e.getButton() == MouseEvent.BUTTON3 || e.getButton() == MouseEvent.BUTTON2) {
-            int row = fileTable.rowAtPoint(e.getPoint());
+        if (mouseEvent.getButton() == MouseEvent.BUTTON3 || mouseEvent.getButton() == MouseEvent.BUTTON2) {
+            int row = fileTable.rowAtPoint(mouseEvent.getPoint());
             // if pointer is over a selected row, show popup
             if (fileTable.isRowSelected(row)) {
-                contextMenu.show(e.getComponent(), e.getX(), e.getY());
+                contextMenu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
             }
         }
     }

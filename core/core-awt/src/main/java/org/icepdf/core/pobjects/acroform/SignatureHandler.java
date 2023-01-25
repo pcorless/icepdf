@@ -80,7 +80,7 @@ public class SignatureHandler {
                 return signatureValidator;
             } catch (SignatureIntegrityException e) {
                 logger.log(Level.WARNING, "Signature certificate could not be initialized.", e);
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 logger.log(Level.WARNING, "Signature validation was unsuccessful.", e);
             }
         }

@@ -157,7 +157,7 @@ public class SmoothScaledImageReference extends CachedImageReference {
                     }
                 }
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.warning("Error loading image: " + imageStream.getPObjectReference() +
                     " " + imageStream.toString());
         }

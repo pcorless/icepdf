@@ -64,8 +64,8 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
                 extractMetricsTable();
                 extractHeadTable();
             }
-        } catch (Throwable e) {
-            logger.log(Level.FINE, "Error reading font file with", e);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error reading font file with", e);
             throw new Exception(e);
         }
     }
@@ -344,8 +344,8 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
                     }
                 }
             }
-        } catch (Throwable e) {
-            logger.log(Level.FINE, "Error deriving codeToGID", e);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error deriving codeToGID", e);
         }
 
         return gid;

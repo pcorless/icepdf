@@ -1,5 +1,5 @@
-import org.icepdf.core.exceptions.PDFException;
-import org.icepdf.core.exceptions.PdfSecurityException;
+package org.icepdf.examples.capture;
+
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.util.Library;
@@ -10,14 +10,11 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -118,18 +115,8 @@ public class PortfolioCapture {
             executorService.invokeAll(callables);
             executorService.submit(new DocumentCloser(document)).get();
 
-        } catch (PDFException ex) {
-            System.out.println("Error parsing PDF document " + ex);
-        } catch (PdfSecurityException ex) {
-            System.out.println("Error encryption not supported " + ex);
-        } catch (FileNotFoundException ex) {
-            System.out.println("Error file not found " + ex);
-        } catch (IOException ex) {
-            System.out.println("Error handling PDF document " + ex);
-        } catch (InterruptedException e) {
-            System.out.println("Error parsing PDF document " + e);
-        } catch (ExecutionException e) {
-            System.out.println("Error parsing PDF document " + e);
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
         executorService.shutdown();
     }
@@ -181,7 +168,7 @@ public class PortfolioCapture {
                     image.flush();
                 }
                 document.dispose();
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
             return null;

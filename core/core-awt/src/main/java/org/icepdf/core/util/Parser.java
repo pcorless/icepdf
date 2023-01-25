@@ -15,7 +15,6 @@
  */
 package org.icepdf.core.util;
 
-import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.io.*;
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.*;
@@ -86,9 +85,8 @@ public class Parser {
      * @return the next object in the DataInputStream.  Null is returned
      * if there are no more objects left in the DataInputStream or
      * a I/O error is encountered.
-     * @throws PDFException error getting object from library
      */
-    public Object getObject(Library library) throws PDFException, InterruptedException, IOException {
+    public Object getObject(Library library) throws InterruptedException, IOException {
         int deepnessCount = 0;
         boolean inObject = false; // currently parsing tokens in an object
         boolean complete = false; // flag used for do loop.

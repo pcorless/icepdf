@@ -440,7 +440,7 @@ public abstract class AbstractPageViewComponent
                 logger.finer("Interrupted page capture task: " + e.getMessage() + " " + pageIndex);
                 // flush the buffer if this is our first paint.
                 if (isFirstProgressivePaint) pageBufferStore.setImageReference(null);
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 logger.log(Level.WARNING, "Error during page capture task: " + e.getMessage() + " " + pageIndex, e);
                 // avoid a repaint as we'll likely get caught in an infinite loop.
             } finally {

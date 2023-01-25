@@ -191,7 +191,7 @@ public class DeviceCMYK extends PColorSpace {
             try {
                 f = iccCmykColorSpace.toRGB(f);
                 return new Color(f[0], f[1], f[2]);
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 logger.warning("Error using iccCmykColorSpace in DeviceCMYK.");
             }
         }

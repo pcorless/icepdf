@@ -12,7 +12,7 @@ public class OperatorFactory {
         // get the operator int value.
         try {
             return OperandNames.getType(ch, offset, length);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             return new int[]{OperandNames.NO_OP, 0};
         }
     }

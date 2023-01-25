@@ -14,8 +14,6 @@ package org.icepdf.examples.capture;
  * governing permissions and limitations under the License.
  */
 
-import org.icepdf.core.exceptions.PDFException;
-import org.icepdf.core.exceptions.PdfSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
@@ -32,7 +30,6 @@ import javax.media.jai.operator.ErrorDiffusionDescriptor;
 import java.awt.*;
 import java.awt.image.*;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Iterator;
 
@@ -90,14 +87,8 @@ public class MultiPageCapture {
         Document document = new Document();
         try {
             document.setFile(filePath);
-        } catch (PDFException ex) {
-            System.out.println("Error parsing PDF document " + ex);
-        } catch (PdfSecurityException ex) {
-            System.out.println("Error encryption not supported " + ex);
-        } catch (FileNotFoundException ex) {
-            System.out.println("Error file not found " + ex);
-        } catch (IOException ex) {
-            System.out.println("Error handling PDF document " + ex);
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
 
         try {

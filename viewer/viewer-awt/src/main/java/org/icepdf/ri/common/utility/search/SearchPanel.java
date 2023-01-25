@@ -374,7 +374,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                                 searchController.setCurrentSearchHit(pageIndex, wordText);
                             }
                         }
-                    } catch (Throwable e1) {
+                    } catch (InterruptedException e1) {
                         logger.finer("Page text retrieval interrupted.");
                     }
                 }

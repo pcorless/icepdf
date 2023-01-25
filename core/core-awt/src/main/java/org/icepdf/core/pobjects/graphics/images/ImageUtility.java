@@ -90,7 +90,7 @@ public class ImageUtility {
         try {
             configuration = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
                     .getDefaultConfiguration();
-        } catch (Throwable e) {
+        } catch (Exception e) {
             // intentionally left blank
         }
 

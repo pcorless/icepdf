@@ -54,8 +54,8 @@ public class ZFontType1 extends ZSimpleFont {
             }
             fontBoxFont = type1Font;
             calculateFontBbox();
-        } catch (Throwable e) {
-            logger.log(Level.FINE, "Error reading font file with ", e);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error reading font file with ", e);
             throw new Exception(e);
         }
     }

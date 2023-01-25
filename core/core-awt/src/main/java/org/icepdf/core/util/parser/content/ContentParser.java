@@ -569,7 +569,7 @@ public class ContentParser extends AbstractContentParser {
         } catch (InterruptedException e) {
             logger.log(Level.FINE, "ContentParser thread interrupted");
             throw new InterruptedException("ContentParser thread interrupted");
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.log(Level.WARNING, "Error parsing content stream. ", e);
         }
         return this;

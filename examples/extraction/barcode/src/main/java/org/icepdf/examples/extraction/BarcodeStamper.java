@@ -20,7 +20,6 @@ import com.google.zxing.client.result.ResultParser;
 import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.multi.GenericMultipleBarcodeReader;
 import com.google.zxing.multi.MultipleBarcodeReader;
-import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PdfSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
@@ -92,12 +91,12 @@ public class BarcodeStamper {
         try {
             BarcodeStamper barcodeStamper = new BarcodeStamper();
             barcodeStamper.findBarcodes(filePath);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void findBarcodes(String filePath) throws IOException, PDFException, PdfSecurityException,
+    public void findBarcodes(String filePath) throws IOException, PdfSecurityException,
             InterruptedException, NotFoundException {
 
         // open the document.

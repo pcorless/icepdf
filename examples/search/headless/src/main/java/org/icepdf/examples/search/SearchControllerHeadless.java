@@ -14,8 +14,6 @@ package org.icepdf.examples.search;
  * governing permissions and limitations under the License.
  */
 
-import org.icepdf.core.exceptions.PDFException;
-import org.icepdf.core.exceptions.PdfSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
@@ -27,7 +25,6 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 
 /**
  * The <code>SearchControllerHeadless</code> class is an example of how to
@@ -94,13 +91,7 @@ public class SearchControllerHeadless {
             // clean up resources
             document.dispose();
 
-        } catch (PDFException e) {
-            e.printStackTrace();
-        } catch (PdfSecurityException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

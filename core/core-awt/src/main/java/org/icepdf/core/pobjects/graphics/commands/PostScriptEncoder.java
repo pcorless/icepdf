@@ -241,7 +241,7 @@ public class PostScriptEncoder {
                     }
                 }
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.log(Level.WARNING, "Error encoding PostScript notation ", e);
         }
         if (logger.isLoggable(Level.FINER)) {

@@ -318,7 +318,7 @@ public class FontManager {
                 }
             }
             sortFontListByName();
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.log(Level.FINE, "Error setting font properties ", e);
             throw new IllegalArgumentException(errorString);
         }
@@ -439,8 +439,8 @@ public class FontManager {
             }
         } catch (SecurityException e) {
             logger.log(Level.WARNING, "SecurityException: failed to load fonts from directory: ", e);
-        } catch (Throwable e) {
-            logger.log(Level.FINE, "Failed to load fonts from directory: ", e);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Failed to load fonts from directory: ", e);
         }
     }
 
@@ -855,7 +855,8 @@ public class FontManager {
                 }
                 font = buildFont(file);
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
+            // there are a lot of system font that don't ready correctly, so don't get to noisy
             logger.log(Level.FINE, "Error reading font program.", e);
         }
         return font;
@@ -905,7 +906,7 @@ public class FontManager {
                     (fontPath.endsWith(".otc") || fontPath.endsWith(".OTC"))) {
                 font = fontFactory.createFontFile(fontUri, FontFactory.FONT_OPEN_TYPE, null);
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.log(Level.FINE, "Error reading font program.", e);
         }
         return font;

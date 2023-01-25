@@ -15,7 +15,6 @@
  */
 package org.icepdf.core.search;
 
-import org.icepdf.core.pobjects.Form;
 import org.icepdf.core.pobjects.OutlineItem;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextWidgetAnnotation;

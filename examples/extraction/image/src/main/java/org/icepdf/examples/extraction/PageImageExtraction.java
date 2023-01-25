@@ -14,8 +14,6 @@ package org.icepdf.examples.extraction;
  * governing permissions and limitations under the License.
  */
 
-import org.icepdf.core.exceptions.PDFException;
-import org.icepdf.core.exceptions.PdfSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.ri.util.FontPropertiesManager;
@@ -25,12 +23,10 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -72,18 +68,8 @@ public class PageImageExtraction {
             executorService.invokeAll(callables);
 
             executorService.submit(new DocumentCloser(document)).get();
-        } catch (InterruptedException e) {
-            System.out.println("Error parsing PDF document " + e);
-        } catch (ExecutionException e) {
-            System.out.println("Error parsing PDF document " + e);
-        } catch (PDFException ex) {
-            System.out.println("Error parsing PDF document " + ex);
-        } catch (PdfSecurityException ex) {
-            System.out.println("Error encryption not supported " + ex);
-        } catch (FileNotFoundException ex) {
-            System.out.println("Error file not found " + ex);
-        } catch (IOException ex) {
-            System.out.println("Error handling PDF document " + ex);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         executorService.shutdown();
     }

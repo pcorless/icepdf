@@ -184,8 +184,8 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
             try {
                 toUnicodeCMap = new CMap(cMapStream);
                 toUnicodeCMap.init();
-            } catch (Throwable e) {
-                logger.log(Level.SEVERE, "Error reading CMap file.", e);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Error reading CMap file.", e);
             }
         }
         else if (objectUnicode instanceof Name) {

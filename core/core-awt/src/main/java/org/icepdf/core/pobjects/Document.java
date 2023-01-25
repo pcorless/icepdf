@@ -17,7 +17,6 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.application.ProductInfo;
-import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PdfSecurityException;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
@@ -183,13 +182,12 @@ public class Document {
      * Load a PDF file from the given path and initiates the document's Catalog.
      *
      * @param filepath path of PDF document.
-     * @throws PDFException         if an invalid file encoding.
      * @throws PdfSecurityException if a security provider cannot be found
      *                              or there is an error decrypting the file.
      * @throws IOException          if a problem setting up, or parsing the file.
      */
     public void setFile(String filepath)
-            throws PDFException, PdfSecurityException, IOException {
+            throws PdfSecurityException, IOException {
         setDocumentOrigin(filepath);
 
         File file = new File(filepath);
@@ -198,7 +196,7 @@ public class Document {
             ByteBuffer mappedFileByteBuffer = documentFileChannel.map(
                     FileChannel.MapMode.READ_ONLY, 0, documentFileChannel.size());
             setInputStream(mappedFileByteBuffer);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.log(Level.SEVERE, "Failed to set document file path", e);
         }
     }
@@ -210,13 +208,12 @@ public class Document {
      * be stored in memory.
      *
      * @param url location of file.
-     * @throws PDFException         an invalid file encoding.
      * @throws PdfSecurityException if a security provider can not be found
      *                              or there is an error decrypting the file.
      * @throws IOException          if a problem downloading, setting up, or parsing the file.
      */
     public void setUrl(URL url)
-            throws PDFException, PdfSecurityException, IOException {
+            throws PdfSecurityException, IOException {
         InputStream in = null;
         try {
             // make a connection
@@ -243,13 +240,12 @@ public class Document {
      *
      * @param inputStream input stream containing PDF data
      * @param pathOrURL   value assigned to document origin
-     * @throws PDFException         an invalid stream or file encoding
      * @throws PdfSecurityException if a security provider can not be found
      *                              or there is an error decrypting the file.
      * @throws IOException          if a problem setting up, or parsing the SeekableInput.
      */
     public void setInputStream(InputStream inputStream, String pathOrURL)
-            throws PDFException, PdfSecurityException, IOException {
+            throws PdfSecurityException, IOException {
         setDocumentOrigin(pathOrURL);
 
         if (!isCachingEnabled) {
@@ -259,7 +255,6 @@ public class Document {
         }
         // if caching is allowed cache the url to file
         else {
-//System.out.println("Started  downloading PDF to disk : " + (new java.util.Date()));
             // create tmp file and write bytes to it.
             File tempFile = File.createTempFile(
                     "ICEpdfTempFile" + getClass().hashCode(),
@@ -276,8 +271,9 @@ public class Document {
                 ByteBuffer mappedFileByteBuffer = documentFileChannel.map(
                         FileChannel.MapMode.READ_ONLY, 0, documentFileChannel.size());
                 setInputStream(mappedFileByteBuffer);
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 logger.log(Level.SEVERE, "Failed to set document input stream", e);
+                throw e;
             }
         }
     }
@@ -294,13 +290,12 @@ public class Document {
      * @param offset    the index into the byte array where the PDF data begins
      * @param length    the number of bytes in the byte array belonging to the PDF data
      * @param pathOrURL value assigned to document origin
-     * @throws PDFException         an invalid stream or file encoding
      * @throws PdfSecurityException if a security provider can not be found
      *                              or there is an error decrypting the file.
      * @throws IOException          if a problem setting up, or parsing the SeekableInput.
      */
     public void setByteArray(byte[] data, int offset, int length, String pathOrURL)
-            throws PDFException, PdfSecurityException, IOException {
+            throws PdfSecurityException, IOException {
         setDocumentOrigin(pathOrURL);
 
         if (!isCachingEnabled) {
@@ -318,9 +313,9 @@ public class Document {
             // Write the data to the temp file.
             try {
                 Files.copy(new ByteArrayInputStream(data), tempFile.toPath());
-            } catch (Throwable e) {
+            } catch (IOException e) {
                 logger.log(Level.FINE, "Error writing PDF output stream.", e);
-                throw new IOException(e.getMessage());
+                throw e;
             }
 
             setDocumentCachedFilePath(tempFile.getAbsolutePath());
@@ -330,8 +325,9 @@ public class Document {
                 ByteBuffer mappedFileByteBuffer = documentFileChannel.map(
                         FileChannel.MapMode.READ_ONLY, 0, documentFileChannel.size());
                 setInputStream(mappedFileByteBuffer);
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 logger.log(Level.SEVERE, "Failed to set document input stream", e);
+                throw e;
             }
         }
     }
@@ -340,12 +336,11 @@ public class Document {
      * Sets the input stream of the PDF file to be rendered.
      *
      * @param input ByteBuffer containing PDF data stream
-     * @throws PDFException         if error occurs
      * @throws PdfSecurityException security error
      * @throws IOException          io error during stream handling
      */
     private void setInputStream(ByteBuffer input)
-            throws PDFException, PdfSecurityException, IOException {
+            throws PdfSecurityException, IOException {
         try {
             // load the head
             header = new Header();
@@ -360,7 +355,7 @@ public class Document {
             Trailer trailer = new Trailer();
             try {
                 trailer.parseXrefOffset(input);
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 trailer.setLazyInitializationFailed(true);
                 logger.log(Level.WARNING, "Trailer loading failed, reindexing file.", e);
             }
@@ -370,7 +365,7 @@ public class Document {
                     crossReferenceRoot.setTrailer(trailer);
                     crossReferenceRoot.initialize(input);
                     library.setCrossReferenceRoot(crossReferenceRoot);
-                } catch (Throwable e) {
+                } catch (Exception e) {
                     crossReferenceRoot.setLazyInitializationFailed(true);
                     logger.log(Level.WARNING, "Cross reference loading failed, reindexing file.");
                 }
@@ -401,7 +396,7 @@ public class Document {
             library.setStateManager(stateManager);
         } catch (PdfSecurityException | IOException e) {
             dispose();
-            logger.log(Level.SEVERE, "Error loading PDF Document.", e);
+            logger.log(Level.SEVERE, "Failed to load PDF Document.", e);
             throw e;
         } catch (Exception e) {
             dispose();
@@ -577,9 +572,9 @@ public class Document {
                             this,
                             new BufferedOutputStream(out),
                             documentLength);
-                } catch (Throwable e) {
+                } catch (IOException e) {
                     logger.log(Level.FINE, "Error writing PDF output stream.", e);
-                    throw new IOException(e.getMessage());
+                    throw e;
                 }
                 return documentLength + appendedLength;
             }

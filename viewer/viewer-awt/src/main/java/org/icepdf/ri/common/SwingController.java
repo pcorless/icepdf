@@ -16,7 +16,6 @@
 package org.icepdf.ri.common;
 
 import org.icepdf.core.SecurityCallback;
-import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PdfSecurityException;
 import org.icepdf.core.io.SizeInputStream;
 import org.icepdf.core.pobjects.*;
@@ -2470,11 +2469,10 @@ public class SwingController extends ComponentAdapter
      *
      * @param document         document to set securityCallback on .
      * @param securityCallback security callback for prompting users or owner passwords.
-     * @throws PDFException         general PDF parsing error.
      * @throws PdfSecurityException security exception likely incorrect user or owner password.
      */
     protected void setupSecurityHandler(Document document, SecurityCallback securityCallback) throws
-            PDFException, PdfSecurityException {
+            PdfSecurityException {
         // create default security callback is user has not created one
         if (securityCallback == null) {
             document.setSecurityCallback(
@@ -2533,16 +2531,6 @@ public class SwingController extends ComponentAdapter
                 setupSecurityHandler(document, documentViewController.getSecurityCallback());
                 document.setFile(pathname);
                 commonNewDocumentHandling(pathname);
-            } catch (PDFException e) {
-                org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
-                        JOptionPane.INFORMATION_MESSAGE,
-                        messageBundle,
-                        "viewer.dialog.openDocument.pdfException.title",
-                        "viewer.dialog.openDocument.pdfException.msg",
-                        pathname);
-                document = null;
-                logger.log(Level.FINE, "Error opening document.", e);
             } catch (PdfSecurityException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
                         viewer,
@@ -2695,16 +2683,6 @@ public class SwingController extends ComponentAdapter
                             }
                             closeDocument();
                             document = null;
-                        } catch (PDFException e) {
-                            org.icepdf.ri.util.Resources.showMessageDialog(
-                                    viewer,
-                                    JOptionPane.INFORMATION_MESSAGE,
-                                    messageBundle,
-                                    "viewer.dialog.openDocument.pdfException.title",
-                                    "viewer.dialog.openDocument.pdfException.msg",
-                                    location);
-                            document = null;
-                            logger.log(Level.FINE, "Error opening document.", e);
                         } catch (PdfSecurityException e) {
                             org.icepdf.ri.util.Resources.showMessageDialog(
                                     viewer,
@@ -2793,16 +2771,6 @@ public class SwingController extends ComponentAdapter
                 document.setInputStream(inputStream, pathOrURL);
 
                 commonNewDocumentHandling(description);
-            } catch (PDFException e) {
-                org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
-                        JOptionPane.INFORMATION_MESSAGE,
-                        messageBundle,
-                        "viewer.dialog.openDocument.pdfException.title",
-                        "viewer.dialog.openDocument.pdfException.msg",
-                        description);
-                document = null;
-                logger.log(Level.FINE, "Error opening document.", e);
             } catch (PdfSecurityException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
                         viewer,
@@ -2895,16 +2863,6 @@ public class SwingController extends ComponentAdapter
                 document.setByteArray(data, offset, length, pathOrURL);
 
                 commonNewDocumentHandling(description);
-            } catch (PDFException e) {
-                org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
-                        JOptionPane.INFORMATION_MESSAGE,
-                        messageBundle,
-                        "viewer.dialog.openDocument.pdfException.title",
-                        "viewer.dialog.openDocument.pdfException.msg",
-                        description);
-                document = null;
-                logger.log(Level.FINE, "Error opening document.", e);
             } catch (PdfSecurityException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
                         viewer,
@@ -3220,7 +3178,7 @@ public class SwingController extends ComponentAdapter
             annotationSummaryFrame.dispose();
         }
 
-        // set the default cursor.  
+        // set the default cursor.
         documentViewController.closeDocument();
 
         // clear search controller caches.
@@ -3613,9 +3571,11 @@ public class SwingController extends ComponentAdapter
                         }
                         document.getStateManager().setChangesSnapshot();
                     } catch (MalformedURLException e) {
-                        logger.log(Level.FINE, "Malformed URL Exception ", e);
+                        logger.log(Level.WARNING, "Malformed URL Exception ", e);
                     } catch (IOException e) {
-                        logger.log(Level.FINE, "IO Exception ", e);
+                        logger.log(Level.WARNING, "IO Exception ", e);
+                    } catch (Exception e) {
+                        logger.log(Level.WARNING, "Failed to append document changes", e);
                     }
                     // save the default directory
                     ViewModel.setDefaultFile(file);

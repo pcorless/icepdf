@@ -176,7 +176,7 @@ public class NewAnnotationPrePageLoad {
                     // document.
                 }
             });
-        } catch (Throwable e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

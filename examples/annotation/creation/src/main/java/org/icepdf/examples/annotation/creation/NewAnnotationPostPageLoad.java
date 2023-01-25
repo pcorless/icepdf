@@ -196,7 +196,7 @@ public class NewAnnotationPostPageLoad {
                     }
                 }
             });
-        } catch (Throwable e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 

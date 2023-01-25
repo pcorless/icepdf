@@ -41,8 +41,8 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
                 isDamaged = true;
                 logger.warning("Found CFF/OTF but expected embedded TTF font " + trueTypeFont.getName());
             }
-        } catch (Throwable e) {
-            logger.log(Level.SEVERE, "Could not initialize type2 font", e);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Could not initialize type2 font", e);
             throw new Exception(e);
         }
     }

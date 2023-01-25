@@ -789,14 +789,10 @@ public abstract class AbstractContentParser {
         // one so the document can be rendered in some shape or form.
         if (graphicState.getTextState().font == null ||
                 graphicState.getTextState().font.getFont() == null) {
-            // turn on the old awt font engine, as we have a null font
-            // todo revisit with GH-80
-//            FontFactory fontFactory = FontFactory.getInstance();
-//            boolean awtState = fontFactory.isAwtFontSubstitution();
-//            fontFactory.setAwtFontSubstitution(true);
             try {
                 // this should almost never happen but of course we have a few corner cases:
                 // get the first pages resources, no need to lock the page, already locked.
+                // todo lock assumption doesn't sound right.
                 Page page = resources.getLibrary().getCatalog().getPageTree().getPage(0);
                 page.initPageResources();
                 Resources res = page.getResources();
@@ -816,14 +812,10 @@ public abstract class AbstractContentParser {
                         graphicState.getTextState().font.init();
                     }
                 }
-            } catch (Throwable throwable) {
-                // keep block protected as we don't want to accidentally turn off
-                // the font engine.
+            } catch (Exception throwable) {
+                // keep block protected as we don't want to accidentally fail parsing the reset of the stream
                 logger.warning("Warning could not find font by named resource " + name2);
             }
-            // return factory to original state.
-//            fontFactory.setAwtFontSubstitution(awtState);
-            // if no fonts found then we just bail and accept the null pointer
         }
         if (graphicState.getTextState().font != null) {
             FontFile font = graphicState.getTextState().font.getFont();

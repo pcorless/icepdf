@@ -91,7 +91,7 @@ public class Function_4 extends Function {
         // parse/evaluate the type 4 functions with the input value(s) x.
         try {
             lex.parse(x);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.log(Level.FINER, "Error Processing Type 4 definition", e);
         }
 

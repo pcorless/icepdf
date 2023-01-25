@@ -92,7 +92,7 @@ public class BlurredImageReference extends CachedImageReference {
                 image = new SmoothScaledImageReference(
                         imageStream, graphicsState, resources, imageIndex, parentPage).call();
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.log(Level.WARNING, "Error loading image: " + imageStream.getPObjectReference() +
                     " " + imageStream.toString(), e);
         }

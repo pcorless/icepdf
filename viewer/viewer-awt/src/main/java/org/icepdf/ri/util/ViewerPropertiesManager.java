@@ -640,7 +640,7 @@ public final class ViewerPropertiesManager {
             for (String key : keys) {
                 preferences.remove(key);
             }
-        } catch (Throwable ex) {
+        } catch (Exception ex) {
             // log the error
             if (logger.isLoggable(Level.WARNING)) {
                 logger.log(Level.WARNING, "Error clearing preferences cache", ex);
@@ -661,7 +661,7 @@ public final class ViewerPropertiesManager {
                 defaultProps.load(in);
                 // we only set the default preferences on first load.
                 if (preferences.get(PROPERTY_DEFAULT_FILE_PATH, null) == null) {
-                    Enumeration keys = defaultProps.keys();
+                    Enumeration<Object> keys = defaultProps.keys();
                     while (keys.hasMoreElements()) {
                         String key = (String) keys.nextElement();
                         preferences.put(key, defaultProps.getProperty(key));
@@ -670,7 +670,7 @@ public final class ViewerPropertiesManager {
             } else if (logger.isLoggable(Level.FINER)) {
                 logger.finer("Default properties file could not be found on the class path. ");
             }
-        } catch (Throwable ex) {
+        } catch (IOException ex) {
             // log the error
             if (logger.isLoggable(Level.WARNING)) {
                 logger.log(Level.WARNING, "Error loading default properties cache", ex);

@@ -86,15 +86,15 @@ public class FaxDecoder extends AbstractImageDecoder {
         try {
             // try and load the image via twelve monkeys
             decodedStreamData = ccittFaxDecodeTwelveMonkeys(data, k, encodedByteAlign, columns, rows, size);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             try {
                 // on a failure then fall back on our implementation.
                 logger.warning("Error during decode falling back on alternative fax decode.");
                 data = imageStream.getDecodedStreamBytes(imageParams.getDataLength());
                 decodedStreamData = ccittFaxDecodeCCITTFaxDecoder(data, k, encodedByteAlign, columns, rows, size);
-            } catch (Throwable f) {
+            } catch (Exception f) {
                 // on a failure then fall back to JAI
-                logger.warning("Error during decode falling back on JAI decode.");
+                logger.log(Level.WARNING, "Error during decode falling back on JAI decode, executing fallback code.", e);
                 decodedImage = ccittFaxDecodeJAI(imageStream, imageStream.getLibrary(),
                         imageStream.getEntries(), graphicsState.getFillColor());
             }
@@ -205,8 +205,8 @@ public class FaxDecoder extends AbstractImageDecoder {
         try {
             return CCITTFax.attemptDeriveBufferedImageFromBytes(
                     stream, library, streamDictionary, fill);
-        } catch (Throwable e) {
-            logger.warning("Error decoding using JAI CCITTFax decode.");
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error decoding using JAI CCITTFax decode.", e);
         }
         return null;
     }

@@ -72,7 +72,7 @@ public class ImageStreamReference extends CachedImageReference {
         long start = System.nanoTime();
         try {
             image = imageStream.getImage(graphicsState, resources);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.log(Level.WARNING, "Error loading image: " + imageStream.getPObjectReference() +
                     " " + imageStream.toString(), e);
         }

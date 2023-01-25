@@ -130,7 +130,7 @@ public class ScaledImageReference extends CachedImageReference {
                     image = scaled;
                 }
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.warning("Error loading image: " + imageStream.getPObjectReference() +
                     " " + imageStream.toString());
         }
