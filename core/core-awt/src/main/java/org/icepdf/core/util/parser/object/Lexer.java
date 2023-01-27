@@ -632,23 +632,34 @@ public class Lexer {
                         int startTokenPos = pos;
                         tokenType = TOKEN_NUMBER;
                         startNumber();
-                        int nextState = parseNextState();
-                        if (nextState == TOKEN_NUMBER) {
-                            startNumber();
-                            // clean any extra spaces
-                            while (pos < streamBytes.limit()) {
-                                // find the next space
-                                int next = streamBytes.get(pos);
-                                if (next > 32) {
-                                    break;
-                                }
-                                pos++;
+                        // skip the white space
+                        while (pos < streamBytes.limit()) {
+                            // find the next space
+                            if (streamBytes.get(pos) > 32) {
+                                break;
                             }
-                            // look for a reference
-                            if (pos < streamBytes.limit()) {
-                                int next = streamBytes.get(pos);
-                                if (next == 'R') {
-                                    tokenType = TOKEN_REFERENCE;
+                            pos++;
+                        }
+                        if (pos < streamBytes.limit()){
+                            streamBytes.position(pos);
+                            c2 = streamBytes.get(pos);;
+                            if (c2 <= '9' && c2 >= '-') {
+                                startNumber();
+                                // clean any extra spaces
+                                while (pos < streamBytes.limit()) {
+                                    // find the next space
+                                    int next = streamBytes.get(pos);
+                                    if (next > 32) {
+                                        break;
+                                    }
+                                    pos++;
+                                }
+                                // look for a reference
+                                if (pos < streamBytes.limit()) {
+                                    int next = streamBytes.get(pos);
+                                    if (next == 'R') {
+                                        tokenType = TOKEN_REFERENCE;
+                                    }
                                 }
                             }
                         }
