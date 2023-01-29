@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.github.pcorless.icepdf</groupId>
         <artifactId>viewer</artifactId>
-        <version>7.1.0-SNAPSHOT</version>
+        <version>7.0.1</version>
     </parent>
     <artifactId>icepdf-viewer</artifactId>
     <packaging>jar</packaging>
@@ -36,11 +36,6 @@
                             <descriptorRefs>
                                 <descriptorRef>jar-with-dependencies</descriptorRef>
                             </descriptorRefs>
-                            <archive>
-                                <manifest>
-                                    <mainClass>org.icepdf.ri.viewer.Launcher</mainClass>
-                                </manifest>
-                            </archive>
                         </configuration>
                         <executions>
                             <execution>
