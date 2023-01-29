@@ -702,13 +702,12 @@ public class Lexer {
      * @return true if c is a delimiter otherwise, false.
      */
     private static boolean isTextDelimiter(byte c) {
-        return c == '(' ||
+        return (c >= '(' && c <= ')') ||
                 c == '<' ||
-                c == '[' ||
+                c == '>' ||
                 c == '/' ||
-                c == ']' ||
-                c == ')' ||
-                c == '>';
+                c == '[' ||
+                c == ']';
     }
 
     private Number parseNumber() {

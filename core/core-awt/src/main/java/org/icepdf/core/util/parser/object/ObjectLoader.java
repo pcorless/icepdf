@@ -21,9 +21,11 @@ import java.io.IOException;
 public class ObjectLoader {
 
     private final Library library;
+    private Parser parser;
 
     public ObjectLoader(Library library) {
         this.library = library;
+        parser = new Parser(library);
     }
 
     public synchronized PObject loadObject(CrossReference crossReference, Reference reference, Name hint)
@@ -36,34 +38,14 @@ public class ObjectLoader {
             // parse the object
             int offset = crossReferenceEntry.getFilePositionOfObject();
             if (offset > 0) {
-                Parser parser = new Parser(library);
                 return parser.getPObject(library.getMappedFileByteBuffer(), offset);
             }
         } else if (entry instanceof CrossReferenceCompressedEntry) {
             CrossReferenceCompressedEntry compressedEntry = (CrossReferenceCompressedEntry) entry;
             Reference objectStreamRef = compressedEntry.getObjectNumberOfContainingObjectStream();
             ObjectStream objectStream = (ObjectStream) library.getObject(objectStreamRef);
-            return objectStream.decompressObject(compressedEntry.getIndexWithinObjectStream());
+            return objectStream.decompressObject(parser, compressedEntry.getIndexWithinObjectStream());
         }
         return null;
     }
-
-//    public synchronized int getObjectOffset(CrossReference crossReference, Reference reference)
-//            throws ObjectStateException, CrossReferenceStateException, IOException {
-//
-//        CrossReferenceEntry entry = crossReference.getEntry(reference);
-//
-//        if (entry instanceof CrossReferenceUsedEntry) {
-//            CrossReferenceUsedEntry crossReferenceEntry = (CrossReferenceUsedEntry) entry;
-//            // parse the object
-//            int offset = crossReferenceEntry.getFilePositionOfObject();
-//            return offset;
-//        } else if (entry instanceof CrossReferenceCompressedEntry) {
-//            CrossReferenceCompressedEntry compressedEntry = (CrossReferenceCompressedEntry) entry;
-//            Reference objectStreamRef = compressedEntry.getObjectNumberOfContainingObjectStream();
-//            ObjectStream objectStream = (ObjectStream) library.getObject(objectStreamRef);
-//            return getObjectOffset(objectStreamRef);
-//        }
-//        return null;
-//    }
 }

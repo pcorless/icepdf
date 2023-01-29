@@ -71,7 +71,7 @@ public class ObjectStream extends Stream {
         inited = true;
     }
 
-    public PObject decompressObject(int objectIndex) throws IOException, ObjectStateException {
+    public PObject decompressObject(Parser parser, int objectIndex) throws IOException, ObjectStateException {
         initialize();
         if (objectNumbers == null || objectOffset == null || objectNumbers.length != objectOffset.length ||
                 objectIndex < 0 || objectIndex >= objectNumbers.length) {
@@ -83,6 +83,6 @@ public class ObjectStream extends Stream {
 
         decodedByteBufer.position(position);
 
-        return new Parser(library).getCompressedObject(decodedByteBufer, objectNumber, position);
+        return parser.getCompressedObject(decodedByteBufer, objectNumber, position);
     }
 }

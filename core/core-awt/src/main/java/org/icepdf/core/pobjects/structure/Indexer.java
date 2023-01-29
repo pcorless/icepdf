@@ -42,6 +42,7 @@ public class Indexer {
         int pos = byteBuffer.limit();
         DictionaryEntries xRefDictionary = null;
         Lexer lexer = new Lexer(library);
+        Parser parser = new Parser(library);
         while (pos > 0) {
             if (xRefDictionary == null) {
                 int end = 0;
@@ -58,7 +59,6 @@ public class Indexer {
                         if (xRefDictionary.containsKey(PTrailer.XREF_STRM_KEY)) {
                             CrossReferenceStream crossReferenceStream;
                             int offset = library.getInt(xRefDictionary, PTrailer.XREF_STRM_KEY);
-                            Parser parser = new Parser(library);
                             try {
                                 crossReferenceStream = (CrossReferenceStream) parser.getCrossReference(byteBuffer, offset);
                                 crossReferenceRoot.addCrossReference(crossReferenceStream);
@@ -79,7 +79,6 @@ public class Indexer {
                     end = pos > 1024 ? 1024 : pos;
                     int xRefPosition = ByteBufferUtil.findReverseString(byteBuffer, pos, end, Parser.XREF_MARKER);
                     // we don't haven an examples of this at this time, will make one.
-                    Parser parser = new Parser(library);
                     try {
                         CrossReferenceStream crossReferenceStream =
                                 (CrossReferenceStream) parser.getCrossReference(byteBuffer, xRefPosition);

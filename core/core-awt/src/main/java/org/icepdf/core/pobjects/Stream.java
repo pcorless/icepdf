@@ -131,7 +131,7 @@ public class Stream extends Dictionary {
                 }
                 ConservativeSizingByteArrayOutputStream out = new
                         ConservativeSizingByteArrayOutputStream(outLength);
-                byte[] buffer = new byte[Math.min(outLength, 8192)];
+                byte[] buffer = new byte[Math.min(outLength, 8 * 1024)];
                 while (true) {
                     int read = input.read(buffer);
                     if (read <= 0)
@@ -187,7 +187,7 @@ public class Stream extends Dictionary {
 
         InputStream input = streamInput;
 
-        int bufferSize = Math.min(Math.max((int) streamLength, 64), 16 * 1024);
+        int bufferSize = Math.min((int)streamLength, 8 * 1024);
         input = new java.io.BufferedInputStream(input, bufferSize);
 
         // Search for crypt dictionary entry and decode params so that
