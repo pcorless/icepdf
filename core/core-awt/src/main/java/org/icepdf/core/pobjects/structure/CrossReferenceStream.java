@@ -97,7 +97,7 @@ public class CrossReferenceStream extends CrossReferenceBase<Stream> implements 
 
     private void addUsedEntry(int objectNumber, int generationNumber, int filePositionOfObject) {
         CrossReferenceUsedEntry entry = new CrossReferenceUsedEntry(objectNumber, generationNumber, filePositionOfObject);
-        indirectObjectReferences.put(new Reference(objectNumber, 0), entry);
+        indirectObjectReferences.put(new Reference(objectNumber, generationNumber), entry);
     }
 
     private void addCompressedEntry(int objectNumber, int objectNumberOfContainingObjectStream, int indexWithinObjectStream) {
