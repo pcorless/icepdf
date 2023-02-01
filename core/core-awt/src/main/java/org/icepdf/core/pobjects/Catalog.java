@@ -338,7 +338,7 @@ public class Catalog extends Dictionary {
     }
 
     /**
-     * Gets the the optional content properties dictionary if present.
+     * Gets the optional content properties dictionary if present.
      *
      * @return OptionalContent dictionary, null if none exists.
      */

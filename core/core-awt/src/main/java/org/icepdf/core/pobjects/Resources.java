@@ -41,7 +41,7 @@ public class Resources extends Dictionary {
     public static final Name EXTGSTATE_KEY = new Name("ExtGState");
     public static final Name PROPERTIES_KEY = new Name("Properties");
 
-    // shared resource counter. 
+    // shared resource counter.
     private static int uniqueCounter = 0;
 
     private static synchronized int getUniqueId() {
@@ -339,9 +339,19 @@ public class Resources extends Dictionary {
      */
     public OptionalContents getPropertyEntry(Name key) {
         if (properties != null) {
-            Object object = library.getObject(properties.get(key));
-            if (object instanceof OptionalContents) {
-                return (OptionalContents) library.getObject(properties.get(key));
+            OptionalContent optionalContent = library.getCatalog().getOptionalContent();
+            Reference propertyKey = (Reference) properties.get(key);
+            OptionalContentGroup optionalContentGroup = optionalContent.getOCGs(propertyKey);
+            // first check to make sure the group hasn't already been created
+            // as the groups need to be the same object reference as in the layers panel, otherwise
+            // the toggles can be unpredictable.
+            if (optionalContentGroup != null) {
+                return optionalContentGroup;
+            } else {
+                Object object = library.getObject(properties.get(key));
+                if (object instanceof OptionalContents) {
+                    return (OptionalContents)object;
+                }
             }
         }
         return null;

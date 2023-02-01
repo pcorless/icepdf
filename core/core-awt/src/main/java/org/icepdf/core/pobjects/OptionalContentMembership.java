@@ -83,15 +83,21 @@ public class OptionalContentMembership extends Dictionary implements OptionalCon
             return;
         }
         // build out the OCG entries.
+        OptionalContent optionalContent = library.getCatalog().getOptionalContent();
         Object ocgObj = library.getObject(entries, OCGs_KEY);
         if (ocgObj instanceof OptionalContentGroup) {
-            ocgs.add((OptionalContentGroup) ocgObj);
+            // make sure we get the same reference as in the optional content dictionary.
+            Reference ocgReference = library.getReference(entries, OCGs_KEY);
+            OptionalContentGroup optionalContentGroup = optionalContent.getOCGs(ocgReference);
+            if (optionalContentGroup != null) {
+                ocgs.add(optionalContentGroup);
+            }
         } else if (ocgObj instanceof List) {
-            List ocgList = (List) ocgObj;
-            for (Object object : ocgList) {
-                Object ocg = library.getObject(object);
-                if (ocg instanceof OptionalContentGroup) {
-                    ocgs.add((OptionalContentGroup) ocg);
+            List<Reference> ocgList = (List) ocgObj;
+            for (Reference reference : ocgList) {
+                OptionalContentGroup optionalContentGroup = optionalContent.getOCGs(reference);
+                if (optionalContentGroup != null) {
+                    ocgs.add(optionalContentGroup);
                 }
             }
 

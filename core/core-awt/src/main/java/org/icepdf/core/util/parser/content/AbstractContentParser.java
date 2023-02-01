@@ -1085,8 +1085,7 @@ public abstract class AbstractContentParser {
         // try and process the Optional content.
         if (tag.equals(OptionalContent.OC_KEY)) {
             if (properties instanceof Name) {
-                optionalContents =
-                        resources.getPropertyEntry((Name) properties);
+                optionalContents = resources.getPropertyEntry((Name) properties);
                 // make sure the reference is valid, no point
                 // jumping through all the hopes if we don't have too.
                 if (optionalContents != null) {
@@ -1130,8 +1129,7 @@ public abstract class AbstractContentParser {
         Object properties = stack.pop();// properties
         // try and process the Optional content.
         if (properties instanceof Name && resources != null) {
-            OptionalContents optionalContents =
-                    resources.getPropertyEntry((Name) properties);
+            OptionalContents optionalContents = resources.getPropertyEntry((Name) properties);
             // make sure the reference is valid, no point
             // jumping through all the hopes if we don't have too.
             if (optionalContents != null) {

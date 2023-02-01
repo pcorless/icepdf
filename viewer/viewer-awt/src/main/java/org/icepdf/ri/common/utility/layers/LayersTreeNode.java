@@ -81,8 +81,7 @@ public class LayersTreeNode extends DefaultMutableTreeNode {
 
         // if the node is a branch (has children), propagate the selection
         // in to the child notes.
-        if ((selectionMode == SINGLE_SELECTION)
-                && (children != null)) {
+        if ((selectionMode == SINGLE_SELECTION) && (children != null)) {
             LayersTreeNode layerNode;
             for (Object child : children) {
                 layerNode = (LayersTreeNode) child;
