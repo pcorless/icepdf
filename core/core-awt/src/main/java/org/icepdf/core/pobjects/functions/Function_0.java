@@ -182,7 +182,7 @@ public class Function_0 extends Function {
                 }
             }
         } catch (Exception e) {
-            logger.log(Level.FINER, "Error calculating function 0 values", e);
+            logger.log(Level.WARNING, "Error calculating function 0 values", e);
         }
         return y;
     }

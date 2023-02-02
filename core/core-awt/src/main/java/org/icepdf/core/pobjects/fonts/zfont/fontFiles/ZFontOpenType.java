@@ -39,7 +39,7 @@ public class ZFontOpenType extends ZFontTrueType {
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, "Error reading font file with", e);
-            throw new Exception(e);
+            throw e;
         }
     }
 

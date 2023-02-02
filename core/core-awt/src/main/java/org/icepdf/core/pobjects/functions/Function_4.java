@@ -92,7 +92,7 @@ public class Function_4 extends Function {
         try {
             lex.parse(x);
         } catch (Exception e) {
-            logger.log(Level.FINER, "Error Processing Type 4 definition", e);
+            logger.log(Level.WARNING, "Error Processing Type 4 definition", e);
         }
 
         // get the remaining number on the stack which are the return values.

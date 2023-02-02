@@ -25,6 +25,7 @@ import java.awt.*;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -135,7 +136,7 @@ public class ShadingType1Pattern extends ShadingType2Pattern {
                     matrix);
             inited = true;
         } catch (Exception e) {
-            logger.finer("Failed ot initialize gradient paint type 1.");
+            logger.log(Level.WARNING, "Failed ot initialize gradient paint type 1.", e);
         }
     }
 

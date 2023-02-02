@@ -66,7 +66,7 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, "Error reading font file with", e);
-            throw new Exception(e);
+            throw e;
         }
     }
 

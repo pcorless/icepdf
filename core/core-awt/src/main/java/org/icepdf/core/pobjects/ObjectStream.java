@@ -47,7 +47,7 @@ public class ObjectStream extends Stream {
         super(library, dictionaryEntries, rawBytes);
     }
 
-    public void initialize() {
+    public void initialize() throws IOException {
         if (inited) {
             return;
         }
@@ -64,9 +64,10 @@ public class ObjectStream extends Stream {
                 objectNumbers[i] = (Integer) lexer.nextToken();
                 objectOffset[i] = ((Integer) lexer.nextToken()) + firstObjectsOffset;
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             logger.log(Level.WARNING,
                     "Error loading object stream instance: " + this.toString(), e);
+            throw e;
         }
         inited = true;
     }

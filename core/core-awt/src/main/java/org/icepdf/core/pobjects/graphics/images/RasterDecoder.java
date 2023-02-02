@@ -39,7 +39,7 @@ public class RasterDecoder extends AbstractImageDecoder {
             try {
                 decodedImage = ImageUtility.makeImageWithRasterFromBytes(decodedStreamData, graphicsState, imageParams);
             } catch (Exception e) {
-                logger.log(Level.FINE, "Error building image raster.", e);
+                logger.log(Level.WARNING, "Error building image raster.", e);
             }
         }
         return decodedImage;

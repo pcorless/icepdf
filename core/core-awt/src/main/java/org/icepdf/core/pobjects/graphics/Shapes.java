@@ -164,7 +164,7 @@ public class Shapes {
         catch (InterruptedException e){
             throw new InterruptedException(e.getMessage());
         } catch (Exception e) {
-            logger.log(Level.FINE, "Error painting shapes.", e);
+            logger.log(Level.WARNING, "Error painting shapes.", e);
         }
     }
 

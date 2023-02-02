@@ -25,6 +25,7 @@ import java.awt.*;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -56,7 +57,7 @@ public class ShadingType3Pattern extends ShadingPattern {
     // beyond the starting and ending points of the axis, Default [false, false].
     protected List<Boolean> extend;
 
-    // radial gradient paint that is used by java for paint. 
+    // radial gradient paint that is used by java for paint.
     protected RadialGradientPaint radialGradientPaint;
 
 
@@ -137,7 +138,7 @@ public class ShadingType3Pattern extends ShadingPattern {
         float radius2 = ((Number) coords.get(5)).floatValue();
 
         // approximation, as we don't full support radial point via the paint
-        // class. 
+        // class.
         if (radius2 > radius) {
             radius = radius2;
         }
@@ -168,7 +169,7 @@ public class ShadingType3Pattern extends ShadingPattern {
             // get type 3 specific data.
             inited = true;
         } catch (Exception e) {
-            logger.finer("Failed ot initialize gradient paint type 3.");
+            logger.log(Level.WARNING, "Failed ot initialize gradient paint type 3.", e);
         }
     }
 
@@ -177,7 +178,7 @@ public class ShadingType3Pattern extends ShadingPattern {
 
         // find colour at point 1
         float t = parametrixValue(s, t0, t1, extend);
-        // find colour at point 
+        // find colour at point
         float[] input = new float[1];
         input[0] = t;
         if (function != null) {

@@ -23,7 +23,6 @@ import org.icepdf.core.util.Utils;
 import org.icepdf.core.util.parser.content.ContentParser;
 
 import java.awt.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.icepdf.core.pobjects.acroform.InteractiveForm.DR_KEY;
@@ -128,7 +127,7 @@ public class VariableTextFieldDictionary extends FieldDictionary {
         if (tmp instanceof StringObject) {
             defaultAppearance = Utils.convertStringObject(library, (StringObject) tmp);
             Resources resources = library.getResources(entries, DR_KEY);
-            // use the DA and DR dictionary to get a valid graphics state and thus the
+            // use the DA and DR dictionary to get a valid graphics state and thus
             // the font and colour information we need to generate a new content stream
             if (resources != null) {
                 try {
@@ -198,9 +197,6 @@ public class VariableTextFieldDictionary extends FieldDictionary {
             }
         } catch (Exception e) {
             logger.warning("Could not generate default appearance stream.");
-            if (logger.isLoggable(Level.FINEST)) {
-                logger.log(Level.FINEST, "Error parsing text feld content stream", e);
-            }
         }
         return color.getRed() / 255.0f + " " + color.getGreen() / 255.0f + " " + color.getBlue() / 255.0f + " rg " +
                 "/" + fontName + " " +

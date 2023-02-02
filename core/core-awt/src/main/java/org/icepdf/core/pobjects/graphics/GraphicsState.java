@@ -579,7 +579,7 @@ public class GraphicsState {
             try {
                 afInverse = af.createInverse();
             } catch (Exception e) {
-                logger.log(Level.FINER, "Error generating clip inverse.", e);
+                logger.log(Level.WARNING, "Error generating clip inverse.", e);
             }
 
             // transform the clip.
@@ -650,7 +650,7 @@ public class GraphicsState {
         // Automatic Stroke Adjustment
         if (lineWidth <= Float.MIN_VALUE || lineWidth >= Float.MAX_VALUE ||
                 lineWidth == 0) {
-            // set line width to a very small none zero number. 
+            // set line width to a very small none zero number.
             this.lineWidth = 0.001f;
         } else {
             this.lineWidth = lineWidth;

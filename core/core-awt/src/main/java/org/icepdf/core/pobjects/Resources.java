@@ -174,11 +174,7 @@ public class Resources extends Dictionary {
                 font.setParentResource(this);
                 font.init();
             } catch (Exception e) {
-                if (logger.isLoggable(Level.WARNING)) {
-                    logger.log(Level.WARNING, "Error initializing font, falling back to font substitution.", e);
-                } else {
-                    logger.log(Level.FINER, "Error initializing font, falling back to font substitution. " + font, e);
-                }
+                logger.log(Level.WARNING, "Error initializing font, falling back to font substitution. " + font, e);
             }
         }
         return font;
@@ -200,7 +196,7 @@ public class Resources extends Dictionary {
         try {
             image = st.getImage(graphicsState, this);
         } catch (Exception e) {
-            logger.log(Level.FINE, "Error getting image by name: " + s, e);
+            logger.log(Level.WARNING, "Error getting image by name: " + s, e);
         }
         return image;
     }

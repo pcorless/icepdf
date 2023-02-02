@@ -1621,7 +1621,7 @@ public class Page extends Dictionary {
                     }
                 }
             } catch (Exception e) {
-                logger.log(Level.FINE, "Error getting page text.", e);
+                logger.log(Level.WARNING, "Error getting page text.", e);
             }
         }
         if (textBlockShapes.getPageText() != null) {

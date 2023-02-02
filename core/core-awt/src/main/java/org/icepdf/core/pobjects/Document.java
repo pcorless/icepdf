@@ -197,6 +197,7 @@ public class Document {
             setInputStream(mappedFileByteBuffer);
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Failed to set document file path", e);
+            throw e;
         }
     }
 
@@ -294,7 +295,7 @@ public class Document {
      * @throws IOException          if a problem setting up, or parsing the SeekableInput.
      */
     public void setByteArray(byte[] data, int offset, int length, String pathOrURL)
-            throws PdfSecurityException, IOException {
+            throws PdfSecurityException, IOException {   // security, state, io?
         setDocumentOrigin(pathOrURL);
 
         if (!isCachingEnabled) {
@@ -339,7 +340,7 @@ public class Document {
      * @throws IOException          io error during stream handling
      */
     private void setInputStream(ByteBuffer input)
-            throws PdfSecurityException, IOException {
+            throws PdfSecurityException, IOException, IllegalStateException {
         try {
             // load the head
             header = new Header();
@@ -400,7 +401,7 @@ public class Document {
         } catch (Exception e) {
             dispose();
             logger.log(Level.SEVERE, "Error loading PDF Document.", e);
-            throw new IOException(e.getMessage());
+            throw new IllegalStateException(e.getMessage());
         }
     }
 
@@ -490,8 +491,8 @@ public class Document {
             return catalog.getPageTree().getNumberOfPages();
         } catch (Exception e) {
             logger.log(Level.FINE, "Error getting number of pages.", e);
+            throw e;
         }
-        return 0;
     }
 
     /**

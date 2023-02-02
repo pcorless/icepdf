@@ -283,7 +283,7 @@ public class TextAnnotation extends MarkupAnnotation {
                     null).getShapes();
         } catch (Exception e) {
             shapes = new Shapes();
-            logger.log(Level.FINEST, "Error building named icon.", e);
+            logger.log(Level.WARNING, "Error building named icon.", e);
         }
 
         // update the appearance stream

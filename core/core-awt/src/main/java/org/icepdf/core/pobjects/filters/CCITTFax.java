@@ -550,7 +550,7 @@ public class CCITTFax {
             // out.flush(); // need this for further proccessing
             out.close();
         } catch (Exception e) {
-            logger.log(Level.FINE, "Error decoding group4 CITTFax", e);
+            logger.log(Level.WARNING, "Error decoding group4 CITTFax", e);
         }
     }
 

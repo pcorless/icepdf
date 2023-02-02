@@ -43,7 +43,7 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, "Could not initialize type2 font", e);
-            throw new Exception(e);
+            throw e;
         }
     }
 

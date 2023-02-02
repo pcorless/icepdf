@@ -82,7 +82,7 @@ public class AppearanceState extends Dictionary {
                         null).getShapes();
             } catch (Exception e) {
                 shapes = new Shapes();
-                logger.log(Level.FINE, "Error initializing Page.", e);
+                logger.log(Level.WARNING, "Error initializing AppearanceState.", e);
             }
         }
     }
@@ -146,7 +146,7 @@ public class AppearanceState extends Dictionary {
                     null).getShapes();
         } catch (Exception e) {
             shapes = new Shapes();
-            logger.log(Level.FINE, "Error initializing Page.", e);
+            logger.log(Level.WARNING, "Error initializing AppearanceState.", e);
         }
     }
 
