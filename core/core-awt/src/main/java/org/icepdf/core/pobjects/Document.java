@@ -17,7 +17,7 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.application.ProductInfo;
-import org.icepdf.core.exceptions.PdfSecurityException;
+import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
@@ -181,12 +181,12 @@ public class Document {
      * Load a PDF file from the given path and initiates the document's Catalog.
      *
      * @param filepath path of PDF document.
-     * @throws PdfSecurityException if a security provider cannot be found
+     * @throws PDFSecurityException if a security provider cannot be found
      *                              or there is an error decrypting the file.
      * @throws IOException          if a problem setting up, or parsing the file.
      */
     public void setFile(String filepath)
-            throws PdfSecurityException, IOException {
+            throws PDFSecurityException, IOException {
         setDocumentOrigin(filepath);
 
         File file = new File(filepath);
@@ -208,12 +208,12 @@ public class Document {
      * be stored in memory.
      *
      * @param url location of file.
-     * @throws PdfSecurityException if a security provider can not be found
+     * @throws PDFSecurityException if a security provider can not be found
      *                              or there is an error decrypting the file.
      * @throws IOException          if a problem downloading, setting up, or parsing the file.
      */
     public void setUrl(URL url)
-            throws PdfSecurityException, IOException {
+            throws PDFSecurityException, IOException {
         InputStream in = null;
         try {
             // make a connection
@@ -240,12 +240,12 @@ public class Document {
      *
      * @param inputStream input stream containing PDF data
      * @param pathOrURL   value assigned to document origin
-     * @throws PdfSecurityException if a security provider can not be found
+     * @throws PDFSecurityException if a security provider can not be found
      *                              or there is an error decrypting the file.
      * @throws IOException          if a problem setting up, or parsing the SeekableInput.
      */
     public void setInputStream(InputStream inputStream, String pathOrURL)
-            throws PdfSecurityException, IOException {
+            throws PDFSecurityException, IOException {
         setDocumentOrigin(pathOrURL);
 
         if (!isCachingEnabled) {
@@ -290,12 +290,12 @@ public class Document {
      * @param offset    the index into the byte array where the PDF data begins
      * @param length    the number of bytes in the byte array belonging to the PDF data
      * @param pathOrURL value assigned to document origin
-     * @throws PdfSecurityException if a security provider can not be found
+     * @throws PDFSecurityException if a security provider can not be found
      *                              or there is an error decrypting the file.
      * @throws IOException          if a problem setting up, or parsing the SeekableInput.
      */
     public void setByteArray(byte[] data, int offset, int length, String pathOrURL)
-            throws PdfSecurityException, IOException {   // security, state, io?
+            throws PDFSecurityException, IOException {   // security, state, io?
         setDocumentOrigin(pathOrURL);
 
         if (!isCachingEnabled) {
@@ -336,11 +336,11 @@ public class Document {
      * Sets the input stream of the PDF file to be rendered.
      *
      * @param input ByteBuffer containing PDF data stream
-     * @throws PdfSecurityException security error
+     * @throws PDFSecurityException security error
      * @throws IOException          io error during stream handling
      */
     private void setInputStream(ByteBuffer input)
-            throws PdfSecurityException, IOException, IllegalStateException {
+            throws PDFSecurityException, IOException, IllegalStateException {
         try {
             // load the head
             header = new Header();
@@ -394,7 +394,7 @@ public class Document {
             // create new instance of state manager and add it to the library
             stateManager = new StateManager(crossReferenceRoot);
             library.setStateManager(stateManager);
-        } catch (PdfSecurityException | IOException e) {
+        } catch (PDFSecurityException | IOException e) {
             dispose();
             logger.log(Level.SEVERE, "Failed to load PDF Document.", e);
             throw e;

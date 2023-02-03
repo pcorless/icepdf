@@ -17,7 +17,7 @@
 package org.icepdf.core.util;
 
 import org.icepdf.core.SecurityCallback;
-import org.icepdf.core.exceptions.PdfSecurityException;
+import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.acroform.SignatureHandler;
@@ -216,9 +216,9 @@ public class Library {
      *
      * @param documentTrailer document trailer
      * @return true if created, false otherwise
-     * @throws PdfSecurityException if there is an issue finding encryption libraries.
+     * @throws PDFSecurityException if there is an issue finding encryption libraries.
      */
-    public boolean makeSecurityManager(PTrailer documentTrailer) throws PdfSecurityException {
+    public boolean makeSecurityManager(PTrailer documentTrailer) throws PDFSecurityException {
         /*
           Before a security manager can be created or needs to be created
           we need the following
@@ -270,9 +270,9 @@ public class Library {
      * following method is used with the SecurityCallback to prompt a user for
      * a password if needed.
      *
-     * @throws PdfSecurityException error during authorization manager setup
+     * @throws PDFSecurityException error during authorization manager setup
      */
-    public void attemptAuthorizeSecurityManager(Document document, SecurityCallback securityCallback) throws PdfSecurityException {
+    public void attemptAuthorizeSecurityManager(Document document, SecurityCallback securityCallback) throws PDFSecurityException {
         // check if pdf is password protected, by passing in black
         // password
         if (!securityManager.isAuthorized("")) {
@@ -289,10 +289,10 @@ public class Library {
                 if (securityCallback != null) {
                     password = securityCallback.requestPassword(document);
                     if (password == null) {
-                        throw new PdfSecurityException("Encryption error");
+                        throw new PDFSecurityException("Encryption error");
                     }
                 } else {
-                    throw new PdfSecurityException("Encryption error");
+                    throw new PDFSecurityException("Encryption error");
                 }
 
                 // Verify new password,  proceed if authorized,
@@ -303,7 +303,7 @@ public class Library {
                 count++;
                 // after 3 tries throw an error.
                 if (count > 3) {
-                    throw new PdfSecurityException("Encryption error");
+                    throw new PDFSecurityException("Encryption error");
                 }
             }
         }

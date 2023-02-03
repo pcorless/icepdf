@@ -15,7 +15,7 @@
  */
 package org.icepdf.core.pobjects.security;
 
-import org.icepdf.core.exceptions.PdfSecurityException;
+import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.util.Defs;
@@ -120,17 +120,17 @@ public class SecurityManager {
      * @param library              library of documents PDF objects
      * @param encryptionDictionary encryption dictionary key values
      * @param fileID               fileID of PDF document
-     * @throws PdfSecurityException if the security provider could not be found
+     * @throws PDFSecurityException if the security provider could not be found
      */
     public SecurityManager(Library library, DictionaryEntries encryptionDictionary,
                            List fileID)
-            throws PdfSecurityException {
+            throws PDFSecurityException {
 
         // Check to make sure that if run under JDK 1.3 that the JCE libraries
         // are installed as extra packages
         if (!foundJCE) {
             logger.log(Level.SEVERE, "Sun JCE support was not found on classpath");
-            throw new PdfSecurityException("Sun JCE Support Not Found");
+            throw new PDFSecurityException("Sun JCE Support Not Found");
         }
 
         // create dictionary for document
@@ -144,7 +144,7 @@ public class SecurityManager {
             // initiate the handler
             securityHandler.init();
         } else {
-            throw new PdfSecurityException("Security Provider Not Found.");
+            throw new PDFSecurityException("Security Provider Not Found.");
         }
     }
 

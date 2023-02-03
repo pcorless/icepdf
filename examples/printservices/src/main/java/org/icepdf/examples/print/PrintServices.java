@@ -14,7 +14,7 @@ package org.icepdf.examples.print;
  * governing permissions and limitations under the License.
  */
 
-import org.icepdf.core.exceptions.PdfSecurityException;
+import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.print.PrintHelper;
@@ -181,7 +181,7 @@ public class PrintServices {
             logger.log(Level.WARNING, "PDF file not found.", e);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Error loading PDF file", e);
-        } catch (PdfSecurityException e) {
+        } catch (PDFSecurityException e) {
             logger.log(Level.WARNING,
                     "PDF security exception, unspported encryption type.", e);
         } catch (PrintException e) {

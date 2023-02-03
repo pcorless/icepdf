@@ -20,7 +20,7 @@ import com.google.zxing.client.result.ResultParser;
 import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.multi.GenericMultipleBarcodeReader;
 import com.google.zxing.multi.MultipleBarcodeReader;
-import org.icepdf.core.exceptions.PdfSecurityException;
+import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.util.GraphicsRenderingHints;
@@ -88,7 +88,7 @@ public class BarcodeReader {
         }
     }
 
-    public void findBarcodes(String filePath) throws IOException, PdfSecurityException,
+    public void findBarcodes(String filePath) throws IOException, PDFSecurityException,
             InterruptedException, NotFoundException {
 
         // open the document.

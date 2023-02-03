@@ -1,6 +1,6 @@
 package org.icepdf.ri.common.utility.attachment;
 
-import org.icepdf.core.exceptions.PdfSecurityException;
+import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
@@ -193,7 +193,7 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
                         WindowManager.getInstance().newWindow(embeddedDocument, fileName);
                     } catch (IOException e) {
                         logger.log(Level.WARNING, "Error opening PDF file stream " + fileName, e);
-                    } catch( PdfSecurityException e) {
+                    } catch( PDFSecurityException e) {
                         logger.log(Level.WARNING, "Error opening PDF security exception " + fileName, e);
                     }
                 }

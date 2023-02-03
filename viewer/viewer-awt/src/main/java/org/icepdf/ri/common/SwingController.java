@@ -16,7 +16,7 @@
 package org.icepdf.ri.common;
 
 import org.icepdf.core.SecurityCallback;
-import org.icepdf.core.exceptions.PdfSecurityException;
+import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.io.SizeInputStream;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.actions.Action;
@@ -2469,10 +2469,10 @@ public class SwingController extends ComponentAdapter
      *
      * @param document         document to set securityCallback on .
      * @param securityCallback security callback for prompting users or owner passwords.
-     * @throws PdfSecurityException security exception likely incorrect user or owner password.
+     * @throws PDFSecurityException security exception likely incorrect user or owner password.
      */
     protected void setupSecurityHandler(Document document, SecurityCallback securityCallback) throws
-            PdfSecurityException {
+            PDFSecurityException {
         // create default security callback is user has not created one
         if (securityCallback == null) {
             document.setSecurityCallback(
@@ -2531,7 +2531,7 @@ public class SwingController extends ComponentAdapter
                 setupSecurityHandler(document, documentViewController.getSecurityCallback());
                 document.setFile(pathname);
                 commonNewDocumentHandling(pathname);
-            } catch (PdfSecurityException e) {
+            } catch (PDFSecurityException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
                         viewer,
                         JOptionPane.INFORMATION_MESSAGE,
@@ -2683,7 +2683,7 @@ public class SwingController extends ComponentAdapter
                             }
                             closeDocument();
                             document = null;
-                        } catch (PdfSecurityException e) {
+                        } catch (PDFSecurityException e) {
                             org.icepdf.ri.util.Resources.showMessageDialog(
                                     viewer,
                                     JOptionPane.INFORMATION_MESSAGE,
@@ -2771,7 +2771,7 @@ public class SwingController extends ComponentAdapter
                 document.setInputStream(inputStream, pathOrURL);
 
                 commonNewDocumentHandling(description);
-            } catch (PdfSecurityException e) {
+            } catch (PDFSecurityException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
                         viewer,
                         JOptionPane.INFORMATION_MESSAGE,
@@ -2863,7 +2863,7 @@ public class SwingController extends ComponentAdapter
                 document.setByteArray(data, offset, length, pathOrURL);
 
                 commonNewDocumentHandling(description);
-            } catch (PdfSecurityException e) {
+            } catch (PDFSecurityException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
                         viewer,
                         JOptionPane.INFORMATION_MESSAGE,

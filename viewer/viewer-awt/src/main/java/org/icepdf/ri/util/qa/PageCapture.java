@@ -15,7 +15,7 @@
  */
 package org.icepdf.ri.util.qa;
 
-import org.icepdf.core.exceptions.PdfSecurityException;
+import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.ri.util.FontPropertiesManager;
 
@@ -37,7 +37,7 @@ public class PageCapture implements CaptureTest<BufferedImage> {
             document = new Document();
             document.setFile(filePath.toAbsolutePath().toString());
             return document.getNumberOfPages();
-        } catch (PdfSecurityException | IOException e) {
+        } catch (PDFSecurityException | IOException e) {
             e.printStackTrace();
         }
         return 0;
