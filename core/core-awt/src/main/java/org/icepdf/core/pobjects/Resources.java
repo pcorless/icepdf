@@ -174,7 +174,9 @@ public class Resources extends Dictionary {
                 font.setParentResource(this);
                 font.init();
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Error initializing font, falling back to font substitution. " + font, e);
+                org.icepdf.core.pobjects.fonts.Font finalFont = font;
+                logger.log(Level.WARNING, e,
+                        () -> "Error initializing font, falling back to font substitution. " + finalFont);
             }
         }
         return font;
@@ -196,7 +198,7 @@ public class Resources extends Dictionary {
         try {
             image = st.getImage(graphicsState, this);
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error getting image by name: " + s, e);
+            logger.log(Level.WARNING, e, () -> "Error getting image by name: " + s);
         }
         return image;
     }
@@ -346,7 +348,7 @@ public class Resources extends Dictionary {
             } else {
                 Object object = library.getObject(properties.get(key));
                 if (object instanceof OptionalContents) {
-                    return (OptionalContents)object;
+                    return (OptionalContents) object;
                 }
             }
         }

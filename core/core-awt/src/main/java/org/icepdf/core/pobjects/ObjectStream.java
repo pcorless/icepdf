@@ -65,8 +65,8 @@ public class ObjectStream extends Stream {
                 objectOffset[i] = ((Integer) lexer.nextToken()) + firstObjectsOffset;
             }
         } catch (IOException e) {
-            logger.log(Level.WARNING,
-                    "Error loading object stream instance: " + this.toString(), e);
+            logger.log(Level.WARNING, e, () ->
+                    "Error loading object stream instance: " + this.toString());
             throw e;
         }
         inited = true;

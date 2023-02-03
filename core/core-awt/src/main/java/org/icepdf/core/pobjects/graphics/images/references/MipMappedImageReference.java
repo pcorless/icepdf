@@ -69,8 +69,8 @@ class MipMappedImageReference extends ImageReference {
                 images.add(imageReference);
             }
         } catch (InterruptedException e) {
-            logger.log(Level.FINER, "Error loading image: " + imageStream.getPObjectReference() +
-                    " " + imageStream.toString(), e);
+            logger.log(Level.FINER, e, () -> "Error loading image: " + imageStream.getPObjectReference() +
+                    " " + imageStream.toString());
         }
     }
 

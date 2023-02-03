@@ -156,7 +156,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
                     logger.finest("DigestAlgorithmIdentifiers: " + digestAlgorithmName + " " + objectId);
                     logger.finest(tmp.toString());
                 } catch (Exception ex) {
-                    logger.log(Level.WARNING, "Error finding iod: " + objectId, ex);
+                    logger.log(Level.WARNING, ex, () -> "Error finding iod: " + objectId);
                 }
             }
         }

@@ -78,8 +78,8 @@ public class InlineImageStreamReference extends ImageReference {
         try {
             image = imageStream.getImage(graphicsState, resources);
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error loading image: " + imageStream.getPObjectReference() +
-                    " " + imageStream.toString(), e);
+            logger.log(Level.WARNING, e, () -> "Error loading image: " + imageStream.getPObjectReference() +
+                    " " + imageStream.toString());
         }
         long end = System.nanoTime();
         notifyImagePageEvents((end - start));

@@ -137,7 +137,7 @@ public class FontFactory {
         try {
             return createFontFile(file.toURI().toURL(), fontType, fontSubType);
         } catch (Exception e) {
-            logger.log(Level.FINE, "Could not create instance of font file " + fontType, e);
+            logger.log(Level.FINE, e, () -> "Could not create instance of font file " + fontType);
         }
         return null;
     }
@@ -151,7 +151,7 @@ public class FontFactory {
                 fontFile = new ZFontType1(url);
             }
         } catch (Exception e) {
-            logger.log(Level.FINE, "Could not create instance of font file " + fontType, e);
+            logger.log(Level.FINE, e, () -> "Could not create instance of font file " + fontType);
         }
         return fontFile;
     }

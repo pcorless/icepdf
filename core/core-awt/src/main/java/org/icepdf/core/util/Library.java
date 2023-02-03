@@ -478,7 +478,7 @@ public class Library {
         try {
             WeakReference<Object> ob = objectStore.get(reference);
             return (ob != null && ob.get() != null) ||
-                            crossReferenceRoot.loadObject(objectLoader, reference, null) != null;
+                    crossReferenceRoot.loadObject(objectLoader, reference, null) != null;
         } catch (ObjectStateException | CrossReferenceStateException | IOException e) {
             return false;
         }
@@ -579,6 +579,8 @@ public class Library {
             if (o instanceof Name) {
                 return (Name) o;
             }
+        } else {
+            logger.log(Level.WARNING, () -> "Failed to get name for key: " + key + " in " + dictionaryEntries.toString());
         }
         return null;
     }
@@ -603,6 +605,8 @@ public class Library {
             } else if (o instanceof Name) {
                 return ((Name) o).getName();
             }
+        } else {
+            logger.log(Level.WARNING, () -> "Failed to get string for key: " + key + " in " + dictionaryEntries.toString());
         }
         return null;
     }
@@ -631,6 +635,8 @@ public class Library {
                 }
             }
             return h1;
+        } else {
+            logger.log(Level.WARNING, () -> "Failed to get Dictionary for key: " + key + " in " + dictionaryEntries.toString());
         }
         return null;
     }
@@ -640,7 +646,7 @@ public class Library {
         if (o instanceof List) {
             return (List) o;
         } else {
-            logger.warning("Failed to get Array for key: " + key + " in " + dictionaryEntries.toString());
+            logger.log(Level.WARNING, () -> "Failed to get Array for key: " + key + " in " + dictionaryEntries.toString());
         }
         return null;
     }
@@ -667,6 +673,8 @@ public class Library {
                 v.set(3, getObject(v.get(3)));
                 return new PRectangle(v).toJava2dCoordinates();
             }
+        } else {
+            logger.log(Level.WARNING, () -> "Failed to get regtangle for key: " + key + " in " + dictionaryEntries.toString());
         }
         return null;
     }
@@ -716,6 +724,8 @@ public class Library {
             Resources resources = new Resources(this, ht);
             dictionaryEntries.put(key, resources);
             return resources;
+        } else {
+            logger.log(Level.WARNING, () -> "Failed to get resource for key: " + key + " in " + dictionaryEntries.toString());
         }
         return null;
     }
