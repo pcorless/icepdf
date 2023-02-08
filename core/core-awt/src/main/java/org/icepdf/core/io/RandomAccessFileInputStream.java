@@ -70,9 +70,7 @@ public class RandomAccessFileInputStream extends InputStream implements Seekable
         try {
             return (int) (m_RandomAccessFile.getFilePointer());
         } catch (IOException e) {
-            if (logger.isLoggable(Level.FINE)) {
-                logger.log(Level.WARNING, "Error calling available", e);
-            }
+            logger.log(Level.WARNING, "Error calling available", e);
         }
         return 0;
     }

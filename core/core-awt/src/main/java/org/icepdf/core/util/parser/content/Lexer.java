@@ -444,7 +444,7 @@ public class Lexer {
             }
         }
         Object token;
-        while (streamBytes[pos] != ']' && pos < numRead) {
+        while (pos < numRead && streamBytes[pos] != ']') {
             // add the tokens as we get them.
             token = next();
             if (token instanceof Integer) {

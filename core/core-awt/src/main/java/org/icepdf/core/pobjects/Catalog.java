@@ -82,9 +82,7 @@ public class Catalog extends Dictionary {
 
     // Announce ICEpdf Core
     static {
-        if (logger.isLoggable(Level.INFO)) {
-            logger.info("ICEpdf Core " + Document.getLibraryVersion());
-        }
+        logger.log(Level.INFO, () -> "ICEpdf Core " + Document.getLibraryVersion());
     }
 
     public Catalog(Library library, DictionaryEntries dictionaryEntries) {
@@ -160,15 +158,13 @@ public class Catalog extends Dictionary {
      * {@link OutlineItem}
      */
     public Outlines getOutlines() {
-        if (!outlinesInited) {
-            synchronized (this) {
-                if (!outlinesInited) {
-                    Object o = library.getObject(entries, OUTLINES_KEY);
-                    if (o != null) {
-                        outlines = new Outlines(library, (DictionaryEntries) o);
-                    }
-                    outlinesInited = true;
+        synchronized (this) {
+            if (!outlinesInited) {
+                Object o = library.getObject(entries, OUTLINES_KEY);
+                if (o != null) {
+                    outlines = new Outlines(library, (DictionaryEntries) o);
                 }
+                outlinesInited = true;
             }
         }
         return outlines;
@@ -294,15 +290,13 @@ public class Catalog extends Dictionary {
      */
     @SuppressWarnings("unchecked")
     public NamedDestinations getDestinations() {
-        if (!destsInited) {
-            synchronized (this) {
-                if (!destsInited) {
-                    Object o = library.getObject(entries, DESTS_KEY);
-                    if (o instanceof DictionaryEntries) {
-                        dests = new NamedDestinations(library, (DictionaryEntries) o);
-                    }
-                    destsInited = true;
+        synchronized (this) {
+            if (!destsInited) {
+                Object o = library.getObject(entries, DESTS_KEY);
+                if (o instanceof DictionaryEntries) {
+                    dests = new NamedDestinations(library, (DictionaryEntries) o);
                 }
+                destsInited = true;
             }
         }
         return dests;
@@ -316,22 +310,20 @@ public class Catalog extends Dictionary {
      * @return the constructed ViewerPreferences object
      */
     public ViewerPreferences getViewerPreferences() {
-        if (!viewerPrefInited) {
-            synchronized (this) {
-                if (!viewerPrefInited) {
-                    Object o = library.getObject(entries, VIEWERPREFERENCES_KEY);
-                    if (o != null) {
-                        if (o instanceof DictionaryEntries) {
-                            viewerPref = new ViewerPreferences(library, (DictionaryEntries) o);
-                            viewerPref.init();
-                        } // strange corner case where there is a incorrect reference.
-                        else if (o instanceof Catalog) {
-                            viewerPref = new ViewerPreferences(library, ((Catalog) o).getEntries());
-                            viewerPref.init();
-                        }
+        synchronized (this) {
+            if (!viewerPrefInited) {
+                Object o = library.getObject(entries, VIEWERPREFERENCES_KEY);
+                if (o != null) {
+                    if (o instanceof DictionaryEntries) {
+                        viewerPref = new ViewerPreferences(library, (DictionaryEntries) o);
+                        viewerPref.init();
+                    } // strange corner case where there is a incorrect reference.
+                    else if (o instanceof Catalog) {
+                        viewerPref = new ViewerPreferences(library, ((Catalog) o).getEntries());
+                        viewerPref.init();
                     }
-                    viewerPrefInited = true;
                 }
+                viewerPrefInited = true;
             }
         }
         return viewerPref;
@@ -343,19 +335,17 @@ public class Catalog extends Dictionary {
      * @return OptionalContent dictionary, null if none exists.
      */
     public OptionalContent getOptionalContent() {
-        if (!optionalContentInited) {
-            synchronized (this) {
-                if (!optionalContentInited) {
-                    Object o = library.getObject(entries, OCPROPERTIES_KEY);
-                    if (o instanceof DictionaryEntries) {
-                        optionalContent = new OptionalContent(library, (DictionaryEntries) o);
-                        optionalContent.init();
-                    } else {
-                        optionalContent = new OptionalContent(library, new DictionaryEntries());
-                        optionalContent.init();
-                    }
-                    optionalContentInited = true;
+        synchronized (this) {
+            if (!optionalContentInited) {
+                Object o = library.getObject(entries, OCPROPERTIES_KEY);
+                if (o instanceof DictionaryEntries) {
+                    optionalContent = new OptionalContent(library, (DictionaryEntries) o);
+                    optionalContent.init();
+                } else {
+                    optionalContent = new OptionalContent(library, new DictionaryEntries());
+                    optionalContent.init();
                 }
+                optionalContentInited = true;
             }
         }
         return optionalContent;

@@ -30,12 +30,14 @@ import org.icepdf.core.pobjects.acroform.signature.exceptions.RevocationVerifica
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SelfSignedVerificationException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.Library;
 import org.icepdf.core.util.SystemProperties;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.*;
@@ -101,9 +103,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
 
     public AbstractPkcsValidator(SignatureFieldDictionary signatureFieldDictionary) throws SignatureIntegrityException {
         this.signatureFieldDictionary = signatureFieldDictionary;
-        if (!initialized) {
-            init();
-        }
+        init();
     }
 
     /**
@@ -114,14 +114,12 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
     public abstract void validate() throws SignatureIntegrityException;
 
     protected void announceSignatureType(SignatureDictionary signatureDictionary) {
-        if (logger.isLoggable(Level.FINE)) {
+        if (logger.isLoggable(Level.FINER)) {
             Name preferredHandler = signatureDictionary.getFilter();
             Name encoding = signatureDictionary.getSubFilter();
-            if (logger.isLoggable(Level.FINER)) {
-                logger.finer("Signature Handler: " + preferredHandler);
-                logger.finer("         Encoding: " + encoding);
-                logger.finer("Starting Validation");
-            }
+            logger.finer("Signature Handler: " + preferredHandler);
+            logger.finer("         Encoding: " + encoding);
+            logger.finer("Starting Validation");
         }
     }
 
@@ -143,7 +141,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
      */
     protected void parseSignerData(ASN1Sequence signedData, byte[] cmsData) throws SignatureIntegrityException {
         // digest algorithms ID, not currently using them but useful for debug.
-        if (logger.isLoggable(Level.FINER)) {
+        if (logger.isLoggable(Level.FINEST)) {
             // should always be 1.
             int cmsVersion = ((ASN1Integer) signedData.getObjectAt(0)).getValue().intValue();
             logger.finest("CMS version: " + cmsVersion);
@@ -153,8 +151,10 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
                 try {
                     String digestAlgorithmName = AlgorithmIdentifier.getDigestAlgorithmName(objectId);
                     MessageDigest tmp = AlgorithmIdentifier.getDigestInstance(objectId, null);
-                    logger.finest("DigestAlgorithmIdentifiers: " + digestAlgorithmName + " " + objectId);
-                    logger.finest(tmp.toString());
+                    if (logger.isLoggable(Level.FINEST)) {
+                        logger.finest("DigestAlgorithmIdentifiers: " + digestAlgorithmName + " " + objectId);
+                        logger.finest(tmp.toString());
+                    }
                 } catch (Exception ex) {
                     logger.log(Level.WARNING, ex, () -> "Error finding iod: " + objectId);
                 }
@@ -184,13 +184,13 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
             // shows up in pkcs7.sha1 only
             encapsulatedContentInfoData = eContent.getOctets();
             if (logger.isLoggable(Level.FINER)) {
-                logger.finest("EncapsulatedContentInfo Data " + eContent.toString());
+                logger.finer("EncapsulatedContentInfo Data " + eContent.toString());
             }
         } else if (encapsulatedContentInfo.size() == 1) {
             if (logger.isLoggable(Level.FINER)) {
                 ASN1ObjectIdentifier eObjectIdentifier = (ASN1ObjectIdentifier) encapsulatedContentInfo.getObjectAt(0);
                 String eObjectIdentifierId = eObjectIdentifier.getId();
-                logger.finest("EncapsulatedContentInfo size is 1: " + eObjectIdentifierId + " " +
+                logger.finer("EncapsulatedContentInfo size is 1: " + eObjectIdentifierId + " " +
                         Pkcs7Validator.getObjectIdName(eObjectIdentifierId));
             }
         }
@@ -401,8 +401,10 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
             logger.warning("ANSI object id is not a valid PKCS7 identifier " + objectIdentifier);
             throw new SignatureIntegrityException("ANSI object id is not a valid PKCS7 identifier");
         } else {
-            logger.finest("Object identifier: " + objectIdentifier.getId() + " " +
-                    Pkcs7Validator.getObjectIdName(objectIdentifier.getId()));
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.finest("Object identifier: " + objectIdentifier.getId() + " " +
+                        Pkcs7Validator.getObjectIdName(objectIdentifier.getId()));
+            }
         }
 
         if (!ID_SIGNED_DATA_OBJECT_IDENTIFIER.equals(objectIdentifier.getId())) {
@@ -467,11 +469,11 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
 
             if (pkcs instanceof ASN1Sequence) {
                 if (logger.isLoggable(Level.FINER)) {
-                    logger.finest("ASN1Sequence found starting sequence processing.  ");
+                    logger.finer("ASN1Sequence found starting sequence processing.  ");
                 }
                 return (ASN1Sequence) pkcs;
             } else if (logger.isLoggable(Level.FINER)) {
-                logger.finest("ASN1Sequence was not found backing out.  ");
+                logger.finer("ASN1Sequence was not found backing out.  ");
             }
 
         } catch (IOException e) {
@@ -526,8 +528,8 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
 
             PublicKey publicKey = signerCertificate.getPublicKey();
             if (logger.isLoggable(Level.FINER)) {
-                logger.finest("Certificate: \n" + signerCertificate.toString());
-                logger.finest("Public Key:  \n" + publicKey);
+                logger.finer("Certificate: \n" + signerCertificate.toString());
+                logger.finer("Public Key:  \n" + publicKey);
             }
         } catch (NoSuchProviderException e1) {
             logger.log(Level.WARNING, "No such provider found ", e1);
@@ -541,29 +543,27 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         }
         // let digest the data.
         ArrayList<Integer> byteRange = signatureFieldDictionary.getSignatureDictionary().getByteRange();
-//        SeekableInput documentInput = signatureFieldDictionary.getLibrary().getDocumentInput();
-//        documentInput.beginThreadAccess();
-//        try {
-//            long totalLength = documentInput.getLength();
-//            long digestedLength = byteRange.get(2) + byteRange.get(3);
-//            // this doesn't mean the signature has been tampered with just that there are subsequent modification
-//            // or signatures added after this signature.
-//            if (digestedLength < totalLength) {
-//                isDocumentDataModified = true;
-//            }
-//            documentInput.seekAbsolute(byteRange.get(0));
-//            byte[] firstSection = new byte[byteRange.get(1)];
-//            documentInput.read(firstSection);
-//            messageDigestAlgorithm.update(firstSection);
-//            documentInput.seekAbsolute(byteRange.get(2));
-//            byte[] secondSection = new byte[byteRange.get(3)];
-//            documentInput.read(secondSection);
-//            messageDigestAlgorithm.update(secondSection);
-//        } catch (IOException e) {
-//            throw new SignatureIntegrityException(e);
-//        } finally {
-//            documentInput.endThreadAccess();
-//        }
+        Library library = signatureFieldDictionary.getLibrary();
+
+        synchronized (library.getMappedFileByteBufferLock()) {
+            ByteBuffer documentByteBuffer = library.getMappedFileByteBuffer();
+            documentByteBuffer.position(0);
+            int totalLength = documentByteBuffer.remaining();
+            long digestedLength = byteRange.get(2) + byteRange.get(3);
+            // this doesn't mean the signature has been tampered with just that there are subsequent modification
+            // or signatures added after this signature.
+            if (digestedLength < totalLength) {
+                isDocumentDataModified = true;
+            }
+            documentByteBuffer.position(byteRange.get(0));
+            byte[] firstSection = new byte[byteRange.get(1)];
+            documentByteBuffer.get(firstSection);
+            messageDigestAlgorithm.update(firstSection);
+            documentByteBuffer.position(byteRange.get(2));
+            byte[] secondSection = new byte[byteRange.get(3)];
+            documentByteBuffer.get(secondSection);
+            messageDigestAlgorithm.update(secondSection);
+        }
         // setup the compare
         try {
             // RFC3852 - The result of the message digest calculation process depends on whether the signedAttrs field
@@ -613,14 +613,8 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
 
         try {
             KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-            java.io.FileInputStream fis = null;
-            try {
-                fis = new java.io.FileInputStream(caCertLocation);
+            try (java.io.FileInputStream fis = new java.io.FileInputStream(caCertLocation)) {
                 trustStore.load(fis, null);
-            } finally {
-                if (fis != null) {
-                    fis.close();
-                }
             }
             // cert validation
             X509Certificate[] cers = certificateChain.toArray(new X509Certificate[0]);
@@ -661,22 +655,21 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         if (signatureFieldDictionary == null) {
             return false;
         }
-//        ArrayList<Integer> byteRange = signatureFieldDictionary.getSignatureDictionary().getByteRange();
-//        SeekableInput documentInput = signatureFieldDictionary.getLibrary().getDocumentInput();
-//        documentInput.beginThreadAccess();
-//        try {
-//            long totalLength = documentInput.getLength();
-//            long digestedLength = byteRange.get(2) + byteRange.get(3);
-//            // this doesn't mean the signature has been tampered with just that there are subsequent modification
-//            // or signatures added after this signature.
-//            if (digestedLength == totalLength) {
-//                return true;
-//            }
-//        } catch (IOException e) {
-//            throw new SignatureIntegrityException(e);
-//        } finally {
-//            documentInput.endThreadAccess();
-//        }
+        ArrayList<Integer> byteRange = signatureFieldDictionary.getSignatureDictionary().getByteRange();
+        Library library = signatureFieldDictionary.getLibrary();
+
+        synchronized (library.getMappedFileByteBufferLock()) {
+            ByteBuffer documentByteBuffer = library.getMappedFileByteBuffer();
+            documentByteBuffer.position(0);
+
+            int totalLength = documentByteBuffer.remaining();
+            long digestedLength = byteRange.get(2) + byteRange.get(3);
+            // this doesn't mean the signature has been tampered with just that there are subsequent modification
+            // or signatures added after this signature.
+            if (digestedLength == totalLength) {
+                return true;
+            }
+        }
         return false;
     }
 

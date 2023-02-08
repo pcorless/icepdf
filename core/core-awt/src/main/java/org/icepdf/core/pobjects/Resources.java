@@ -117,16 +117,8 @@ public class Resources extends Dictionary {
         org.icepdf.core.pobjects.fonts.Font font = null;
         if (fonts != null) {
             Object ob = fonts.get(s);
-            // check to make sure the library contains a font
-            if (ob instanceof org.icepdf.core.pobjects.fonts.Font) {
-                font = (org.icepdf.core.pobjects.fonts.Font) ob;
-            }
-            // corner case where font is just a inline dictionary.
-            else if (ob instanceof DictionaryEntries) {
-                font = FontFactory.getInstance().getFont(library, (DictionaryEntries) ob);
-            }
             // the default value is most likely Reference
-            else if (ob instanceof Reference) {
+            if (ob instanceof Reference) {
                 Reference ref = (Reference) ob;
                 ob = library.getObject((Reference) ob);
                 if (ob instanceof org.icepdf.core.pobjects.fonts.Font) {
@@ -139,6 +131,14 @@ public class Resources extends Dictionary {
                     library.addObject(font, ref);
                     font.setPObjectReference(ref);
                 }
+            }
+            // check to make sure the library contains a font
+            else if (ob instanceof org.icepdf.core.pobjects.fonts.Font) {
+                font = (org.icepdf.core.pobjects.fonts.Font) ob;
+            }
+            // corner case where font is just a inline dictionary.
+            else if (ob instanceof DictionaryEntries) {
+                font = FontFactory.getInstance().getFont(library, (DictionaryEntries) ob);
             }
             // if still null do a deeper search checking the base font name of
             // each font for a match to the needed font name.  We have a few

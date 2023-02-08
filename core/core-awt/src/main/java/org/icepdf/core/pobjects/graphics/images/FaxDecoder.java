@@ -89,7 +89,7 @@ public class FaxDecoder extends AbstractImageDecoder {
         } catch (Exception e) {
             try {
                 // on a failure then fall back on our implementation.
-                logger.warning("Error during decode falling back on alternative fax decode.");
+                logger.fine("Error during decode falling back on alternative fax decode.");
                 data = imageStream.getDecodedStreamBytes(imageParams.getDataLength());
                 decodedStreamData = ccittFaxDecodeCCITTFaxDecoder(data, k, encodedByteAlign, columns, rows, size);
             } catch (Exception f) {

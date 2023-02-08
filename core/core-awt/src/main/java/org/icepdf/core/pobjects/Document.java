@@ -150,7 +150,7 @@ public class Document {
      */
     private void setDocumentOrigin(String o) {
         origin = o;
-        if (logger.isLoggable(Level.CONFIG)) {
+        if (logger.isLoggable(Level.FINE)) {
             logger.config(
                     "MEMFREE: " + Runtime.getRuntime().freeMemory() + " of " +
                             Runtime.getRuntime().totalMemory());
@@ -542,8 +542,8 @@ public class Document {
         if (fileToDelete != null) {
             File file = new File(fileToDelete);
             boolean success = file.delete();
-            if (!success && logger.isLoggable(Level.WARNING)) {
-                logger.warning("Error deleting URL cached to file " + fileToDelete);
+            if (!success) {
+                logger.log(Level.WARNING, () -> "Error deleting URL cached to file " + fileToDelete);
             }
         }
     }

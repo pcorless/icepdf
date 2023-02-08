@@ -24,6 +24,7 @@ import org.icepdf.core.pobjects.acroform.SignatureHandler;
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.graphics.ICCBased;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.graphics.images.references.ImagePool;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
@@ -34,6 +35,7 @@ import org.icepdf.core.util.parser.object.ObjectLoader;
 
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
+import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -67,7 +69,7 @@ public class Library {
     static {
         try {
             commonPoolThreads =
-                    Defs.intProperty("org.icepdf.core.library.threadPoolSize", 4);
+                    Defs.intProperty("org.icepdf.core.library.threadPoolSize", 6);
             if (commonPoolThreads < 1) {
                 commonPoolThreads = 2;
             }
@@ -87,9 +89,9 @@ public class Library {
         }
     }
 
-    private ConcurrentHashMap<Reference, WeakReference<Object>> objectStore =
+    private final ConcurrentHashMap<Reference, java.lang.ref.Reference<Object>> objectStore =
             new ConcurrentHashMap<>(1024);
-    private ConcurrentHashMap<Reference, WeakReference<ICCBased>> lookupReference2ICCBased =
+    private final ConcurrentHashMap<Reference, WeakReference<ICCBased>> lookupReference2ICCBased =
             new ConcurrentHashMap<>(256);
 
     private double fileVersion = 1.0;
@@ -142,50 +144,76 @@ public class Library {
         return getObject(reference, null);
     }
 
-    public Object getObject(Reference reference, Name hint) {
+    private Object getObject(Reference reference, Name hint) {
         Object obj;
-        // todo I hat these, remove or use another construct
-        while (true) {
-            WeakReference<Object> obRef = objectStore.get(reference);
-            // check stateManager first to allow for annotations to be injected
-            // from a separate file.
-            if (stateManager != null) {
-                if (stateManager.contains(reference)) {
-                    obj = stateManager.getChange(reference);
-                    if (obj instanceof PObject) {
-                        return ((PObject) obj).getObject();
-                    }
-                    return obj;
+        java.lang.ref.Reference<Object> obRef = objectStore.get(reference);
+        // check stateManager first to allow for annotations to be injected
+        // from a separate file.
+        if (stateManager != null) {
+            if (stateManager.contains(reference)) {
+                obj = stateManager.getChange(reference);
+                if (obj instanceof PObject) {
+                    return ((PObject) obj).getObject();
                 }
-            }
-            obj = obRef != null ? obRef.get() : null;
-            if (obj == null && crossReferenceRoot != null) {
-                try {
-                    obj = crossReferenceRoot.loadObject(objectLoader, reference, hint);
-                } catch (ObjectStateException | CrossReferenceStateException | IOException e) {
-                    // a null object is ok in this case we are looking at likely an incorrectly indexed file.
-                    logger.warning("Cross reference indexing failed, reindexing file. " + getFileOrigin());
-                    try {
-                        rebuildCrossReferenceTable();
-                        return getObject(reference);
-                    } catch (IOException | CrossReferenceStateException | ObjectStateException e1) {
-                        logger.warning("Linear traversal of file failed, can not load file.");
-                    }
-                } catch (ClassCastException e) {
-                    logger.warning("Failed to load object, likely malformed. " + reference + " " + getFileOrigin());
-                    return null;
-                }
-                objectStore.put(reference, new WeakReference<>(obj));
-            }
-            if (obj instanceof PObject) {
-                return ((PObject) obj).getObject();
-            } else if (obj instanceof Reference) {
-                reference = (Reference) obj;
-            } else {
-                break;
+                return obj;
             }
         }
+        obj = obRef != null ? obRef.get() : null;
+        if (obj == null && crossReferenceRoot != null) {
+            try {
+                obj = crossReferenceRoot.loadObject(objectLoader, reference, hint);
+            } catch (ObjectStateException | CrossReferenceStateException | IOException e) {
+                // a null object is ok in this case we are looking at likely an incorrectly indexed file.
+                logger.log(Level.WARNING, e,
+                        () -> "Cross reference indexing failed, reindexing file. " + getFileOrigin());
+                try {
+                    rebuildCrossReferenceTable();
+                    return getObject(reference);
+                } catch (IOException | CrossReferenceStateException | ObjectStateException e1) {
+                    logger.log(Level.WARNING, "Linear traversal of file failed, can not load file.", e);
+                    return null;
+                }
+            } catch (ClassCastException e) {
+                Reference finalReference = reference;
+                logger.log(Level.WARNING, e,
+                        () -> "Failed to load object, likely malformed. " + finalReference + " " + getFileOrigin());
+                return null;
+            }
+            if (obj == null) return null;
+            // keep expensive like fonts, images, page tree
+            Object object = ((PObject) obj).getObject();
+            if (isSoftReferenceAble(object)) {
+                objectStore.put(reference, new SoftReference<>(obj));
+            } else {
+                objectStore.put(reference, new WeakReference<>(obj));
+            }
+            return object;
+        }
+        if (obj instanceof PObject) {
+            return ((PObject) obj).getObject();
+        } else if (obj instanceof Reference) {
+            Reference secondReference = (Reference) obj;
+            logger.log(Level.WARNING,  () -> "Found a reference to a reference: " + secondReference);
+            return getObject(secondReference);
+        }
         return obj;
+    }
+
+    private boolean isSoftReferenceAble(Object object) {
+        if (object instanceof Dictionary) {
+            DictionaryEntries entries = ((Dictionary)object).getEntries();
+            Name type = getName(entries, Dictionary.TYPE_KEY);
+            if (type != null) {
+                return type.equals(Font.TYPE) ||
+                        type.equals(PageTree.TYPE) ||
+                        type.equals(Font.TYPE) ||
+                        type.equals(ImageStream.TYPE_VALUE);
+            } else {
+                return false;
+            }
+
+        }
+        return false;
     }
 
     public CrossReferenceRoot rebuildCrossReferenceTable()
@@ -476,7 +504,7 @@ public class Library {
      */
     public boolean isValidEntry(Reference reference) {
         try {
-            WeakReference<Object> ob = objectStore.get(reference);
+            java.lang.ref.Reference ob = objectStore.get(reference);
             return (ob != null && ob.get() != null) ||
                     crossReferenceRoot.loadObject(objectLoader, reference, null) != null;
         } catch (ObjectStateException | CrossReferenceStateException | IOException e) {
@@ -579,8 +607,6 @@ public class Library {
             if (o instanceof Name) {
                 return (Name) o;
             }
-        } else {
-            logger.log(Level.WARNING, () -> "Failed to get name for key: " + key + " in " + dictionaryEntries.toString());
         }
         return null;
     }
@@ -605,8 +631,6 @@ public class Library {
             } else if (o instanceof Name) {
                 return ((Name) o).getName();
             }
-        } else {
-            logger.log(Level.WARNING, () -> "Failed to get string for key: " + key + " in " + dictionaryEntries.toString());
         }
         return null;
     }
@@ -635,8 +659,6 @@ public class Library {
                 }
             }
             return h1;
-        } else {
-            logger.log(Level.WARNING, () -> "Failed to get Dictionary for key: " + key + " in " + dictionaryEntries.toString());
         }
         return null;
     }
@@ -645,8 +667,6 @@ public class Library {
         Object o = getObject(dictionaryEntries, key);
         if (o instanceof List) {
             return (List) o;
-        } else {
-            logger.log(Level.WARNING, () -> "Failed to get Array for key: " + key + " in " + dictionaryEntries.toString());
         }
         return null;
     }
@@ -673,8 +693,6 @@ public class Library {
                 v.set(3, getObject(v.get(3)));
                 return new PRectangle(v).toJava2dCoordinates();
             }
-        } else {
-            logger.log(Level.WARNING, () -> "Failed to get regtangle for key: " + key + " in " + dictionaryEntries.toString());
         }
         return null;
     }
@@ -927,7 +945,7 @@ public class Library {
     public void disposeFontResources() {
         Set<Reference> test = objectStore.keySet();
         for (Reference ref : test) {
-            WeakReference<Object> reference = objectStore.get(ref);
+            java.lang.ref.Reference reference = objectStore.get(ref);
             Object tmp = reference != null ? reference.get() : null;
             if (tmp instanceof Font || tmp instanceof FontDescriptor) {
                 objectStore.remove(ref);
@@ -941,7 +959,7 @@ public class Library {
 
     public static void initializeThreadPool() {
 
-        logger.fine("Starting ICEpdf Thread Pool: " + commonPoolThreads + " threads.");
+        logger.log(Level.FINE, () -> "Starting ICEpdf Thread Pool: " + commonPoolThreads + " threads.");
 
         if (commonThreadPool == null || commonThreadPool.isShutdown()) {
             commonThreadPool = new ThreadPoolExecutor(
@@ -957,7 +975,7 @@ public class Library {
             });
         }
 
-        logger.fine("Starting ICEpdf image proxy Pool: " + imagePoolThreads + " threads.");
+        logger.log(Level.FINE, () -> "Starting ICEpdf image proxy Pool: " + imagePoolThreads + " threads.");
         if (imageThreadPool == null || imageThreadPool.isShutdown()) {
             imageThreadPool = new ThreadPoolExecutor(
                     imagePoolThreads, imagePoolThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,

@@ -141,9 +141,8 @@ public class HexStringObject implements StringObject {
             unsignedInt = Integer.parseInt(
                     stringData.substring(start, start + offset), 16);
         } catch (NumberFormatException e) {
-            if (logger.isLoggable(Level.FINER)) {
-                logger.finer("Number Format Exception " + unsignedInt + " " + stringData.substring(start, start + offset));
-            }
+            int finalUnsignedInt = unsignedInt;
+            logger.log(Level.FINER, () -> "Number Format Exception " + finalUnsignedInt + " " + stringData.substring(start, start + offset));
         }
         return unsignedInt;
     }
@@ -153,9 +152,8 @@ public class HexStringObject implements StringObject {
         try {
             unsignedInt = Integer.parseInt(data, 16);
         } catch (NumberFormatException e) {
-            if (logger.isLoggable(Level.FINER)) {
-                logger.finer("Number Format Exception " + unsignedInt);
-            }
+            int finalUnsignedInt = unsignedInt;
+            logger.log(Level.FINER, () -> "Number Format Exception " + finalUnsignedInt);
         }
         return unsignedInt;
     }
@@ -239,7 +237,7 @@ public class HexStringObject implements StringObject {
                 // 0 cid is valid, so we have ot be careful we don't exclude the
                 // cid 00 = 0 or 0000 = 0, not 0000 = 00.
                 // removed font check as it was causing problems with a lot of Latin based hex strings
-                // may need to revisit in the future when getting back to multibyte encodings. 
+                // may need to revisit in the future when getting back to multibyte encodings.
                 if (!(offset < length && charValue == 0)) {
                     tmp.append((char) charValue);
                     lastIndex = 0;

@@ -179,9 +179,7 @@ public class Form extends Stream {
         byte[] in = getDecodedStreamBytes();
         if (in != null) {
             try {
-                if (logger.isLoggable(Level.FINER)) {
-                    logger.finer("Parsing form " + getPObjectReference());
-                }
+                logger.log(Level.FINER, () -> "Parsing form " + getPObjectReference());
                 shapes = cp.parse(new byte[][]{in}, new Reference[]{this.getPObjectReference()}, null).getShapes();
                 inited = true;
             } catch (InterruptedException e) {

@@ -204,9 +204,7 @@ public class Destination extends Dictionary {
                         else if (ob instanceof HashMap) {
                             parse((List) (((HashMap) ob).get(D_KEY)));
                         } else {
-                            if (logger.isLoggable(Level.FINE)) {
-                                logger.warning("Destination type missed=" + ob);
-                            }
+                            logger.log(Level.FINE, () -> "Destination type missed=" + ob);
                         }
                     }
                 }
