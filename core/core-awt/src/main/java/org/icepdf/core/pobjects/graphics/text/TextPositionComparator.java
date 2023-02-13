@@ -29,10 +29,10 @@ public class TextPositionComparator implements
         Comparator<AbstractText> {
 
     public int compare(AbstractText lt1, AbstractText lt2) {
-        float y1 = lt1.bounds.y;
-        float y2 = lt2.bounds.y;
-        float x1 = lt1.bounds.x;
-        float x2 = lt2.bounds.x;
-        return y1 != y2 ? Float.compare(y2, y1) : Float.compare(x1, x2);
+        double y1 = lt1.bounds.y;
+        double y2 = lt2.bounds.y;
+        double x1 = lt1.bounds.x;
+        double x2 = lt2.bounds.x;
+        return y1 != y2 ? Double.compare(y2, y1) : Double.compare(x1, x2);
     }
 }

@@ -35,13 +35,13 @@ public class LineText extends AbstractText implements TextSelect {
         words = new ArrayList<>(16);
     }
 
-    public Rectangle2D.Float getBounds() {
+    public Rectangle2D.Double getBounds() {
         // lazy load the bounds as the calculation is very expensive
         if (bounds == null) {
             // word bounds build from child word bounds.
             for (WordText word : words) {
                 if (bounds == null) {
-                    bounds = new Rectangle2D.Float();
+                    bounds = new Rectangle2D.Double();
                     bounds.setRect(word.getBounds());
                 } else {
                     bounds.add(word.getBounds());
@@ -49,7 +49,7 @@ public class LineText extends AbstractText implements TextSelect {
             }
             // empty line text check, return empty bound.
             if (bounds == null) {
-                bounds = new Rectangle2D.Float();
+                bounds = new Rectangle2D.Double();
             }
         }
         return bounds;
@@ -128,7 +128,7 @@ public class LineText extends AbstractText implements TextSelect {
         // add the word, text or white space.
         this.words.add(wordText);
 
-        // word test 
+        // word test
         currentWord = wordText;
 
     }

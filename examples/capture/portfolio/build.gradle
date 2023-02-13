@@ -9,5 +9,5 @@ dependencies {
 
 description 'portfolio pdf to png image example'
 
-mainClassName = "org.icepdf.os.examples.capture.PortfolioCapture"
+mainClassName = "org.icepdf.examples.capture.PortfolioCapture"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]

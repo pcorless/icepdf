@@ -278,7 +278,7 @@ public class AFM {
                 fontBBox[2] = Integer.parseInt(st.nextToken());
                 fontBBox[3] = Integer.parseInt(st.nextToken());
             } else if (s1.equalsIgnoreCase("ItalicAngle")) {
-                italicAngle = new Float(st.nextToken());
+                italicAngle = Float.parseFloat(st.nextToken());
             }
             // font width data
             else if (s1.equalsIgnoreCase("C")) {

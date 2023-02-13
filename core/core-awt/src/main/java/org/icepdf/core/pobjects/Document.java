@@ -1063,28 +1063,29 @@ public class Document {
      * @throws IOException if there is some problem reading or writing the PDF data
      */
     public long writeToOutputStream(OutputStream out) throws IOException {
-        long documentLength = documentSeekableInput.getLength();
-        SeekableInputConstrainedWrapper wrapper = new SeekableInputConstrainedWrapper(
-                documentSeekableInput, 0L, documentLength);
+        documentSeekableInput.beginThreadAccess();
         try {
-
-
-            byte[] buffer = new byte[4096];
-            int length;
-            while ((length = wrapper.read(buffer, 0, buffer.length)) > 0) {
-                out.write(buffer, 0, length);
+            long documentLength = documentSeekableInput.getLength();
+            try (SeekableInputConstrainedWrapper wrapper = new SeekableInputConstrainedWrapper(
+                    documentSeekableInput, 0L, documentLength)) {
+                long written = 0;
+                byte[] buffer = new byte[4096];
+                int length;
+                while ((length = wrapper.read(buffer, 0, buffer.length)) > 0) {
+                    written += length;
+                    out.write(buffer, 0, length);
+                }
+                if (written != documentLength) {
+                    logger.severe("Written bytes " + written + " != document length " + documentLength);
+                }
+                return written;
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.log(Level.FINE, "Error writing PDF output stream.", e);
-            throw new IOException(e.getMessage());
+            throw new IOException(e);
         } finally {
-            try {
-                wrapper.close();
-            } catch (IOException e) {
-                // forget about it.
-            }
+            documentSeekableInput.endThreadAccess();
         }
-        return documentLength;
     }
 
     /**
@@ -1239,7 +1240,9 @@ public class Document {
         final Reference pInfoReference = stateManager.getNewReferenceNumber();
         pInfo.setPObjectReference(pInfoReference);
         library.addObject(pInfo.getEntries(), pInfoReference);
-        pTrailer.entries.put(PTrailer.INFO_KEY, pInfoReference);
+        if (pTrailer != null) {
+            pTrailer.entries.put(PTrailer.INFO_KEY, pInfoReference);
+        }
         return pInfo;
     }
 

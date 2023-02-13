@@ -25,7 +25,7 @@ import java.awt.geom.Rectangle2D;
  */
 public interface Text {
 
-    Rectangle2D.Float getBounds();
+    Rectangle2D getBounds();
 
     boolean isHighlighted();
 

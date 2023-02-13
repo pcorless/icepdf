@@ -9,5 +9,5 @@ dependencies {
 
 description 'document metadata extraction example'
 
-mainClassName = "org.icepdf.os.examples.extraction.PageMetaDataExtraction"
+mainClassName = "org.icepdf.examples.extraction.PageMetaDataExtraction"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]

@@ -50,7 +50,7 @@ public class LinePositionComparator implements
 //        }
 //        return comp;
 
-        return Float.compare(lt2.getBounds().y, lt1.getBounds().y);
+        return Double.compare(lt2.getBounds().y, lt1.getBounds().y);
 
     }
 }

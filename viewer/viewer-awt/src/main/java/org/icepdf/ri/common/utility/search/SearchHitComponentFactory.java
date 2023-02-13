@@ -20,7 +20,7 @@ public interface SearchHitComponentFactory {
      * @param controller The document controller
      * @return The created component
      */
-    SearchHitComponent createComponent(String text, Rectangle2D.Float bounds, Page page, Controller controller);
+    SearchHitComponent createComponent(String text, Rectangle2D.Double bounds, Page page, Controller controller);
 
     /**
      * Creates a component with the given parameters

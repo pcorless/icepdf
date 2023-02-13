@@ -631,7 +631,7 @@ public class SwingViewBuilder implements ViewBuilder {
 
 
     public JMenuItem buildSendByMailMenuItem() {
-        final JMenuItem mi = makeMenuItem(messageBundle.getString("viewer.menu.sendMail.label"), "sendmail", iconSize,
+        final JMenuItem mi = makeMenuItem(messageBundle.getString("viewer.menu.sendMail.label"), null, iconSize,
                 buildKeyStroke(KeyEventConstants.KEY_CODE_SEND_MAIL, KeyEventConstants.MODIFIER_SEND_MAIL));
         if (viewerController!=null && mi!=null){
             viewerController.setSendMailMenuItem(mi);

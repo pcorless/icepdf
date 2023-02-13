@@ -9,5 +9,5 @@ dependencies {
 
 description 'pdf to png image with watermark example'
 
-mainClassName = "org.icepdf.os.examples.capture.WatermarkPageCapture"
+mainClassName = "org.icepdf.examples.capture.WatermarkPageCapture"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]

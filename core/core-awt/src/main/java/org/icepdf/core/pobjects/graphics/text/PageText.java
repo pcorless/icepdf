@@ -18,11 +18,9 @@ package org.icepdf.core.pobjects.graphics.text;
 import org.icepdf.core.pobjects.OptionalContents;
 import org.icepdf.core.util.Defs;
 
-import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Rectangle2D;
-import java.util.List;
 import java.util.*;
 
 /**
@@ -92,7 +90,7 @@ public class PageText implements TextSelect {
     }
 
     public void newLine() {
-        // make sure we don't insert a new line if the previous has no words. 
+        // make sure we don't insert a new line if the previous has no words.
         if (currentLine != null &&
                 currentLine.getWords().size() == 0) {
             return;
@@ -477,13 +475,13 @@ public class PageText implements TextSelect {
         ArrayList<LineText> optionalPageLines = getVisiblePageLines(true);
         if (optionalPageLines != null) {
             for (LineText optionalPageLine : optionalPageLines) {
-                float yOptional = optionalPageLine.getBounds().y;
+                double yOptional = optionalPageLine.getBounds().y;
                 boolean found = false;
                 for (LineText sortedPageLine : sortedPageLines) {
-                    Rectangle sortedBounds = sortedPageLine.getBounds().getBounds();
-                    float height = sortedBounds.height;
-                    float y = sortedBounds.y;
-                    float diff = Math.abs(yOptional - y);
+                    Rectangle2D.Double sortedBounds = sortedPageLine.getBounds();
+                    double height = sortedBounds.height;
+                    double y = sortedBounds.y;
+                    double diff = Math.abs(yOptional - y);
                     // corner case inclusion of a word and a space which is out of order from the
                     // rest of the text in the document.
                     if (diff < height) {
@@ -564,12 +562,12 @@ public class PageText implements TextSelect {
             List<WordText> words = lineText.getWords();
             if (words.size() > 0) {
                 WordText wordTex;
-                Rectangle2D.Float currentWord, nextWord;
+                Rectangle2D.Double currentWord, nextWord;
                 for (int i = 0, max = words.size() - 2; i < max; i++) {
                     nextWord = words.get(i + 1).getBounds();
                     currentWord = words.get(i).getBounds();
                     // use regular rectangle so get a little rounding.
-                    float diff = nextWord.x - (currentWord.x + currentWord.width);
+                    double diff = nextWord.x - (currentWord.x + currentWord.width);
                     if (diff > 0) {
                         currentWord.setRect(currentWord.x, currentWord.y,
                                 currentWord.width + diff, currentWord.height);

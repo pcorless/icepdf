@@ -1,6 +1,7 @@
 package org.icepdf.core.pobjects.fonts.zfont.fontFiles;
 
 import org.apache.fontbox.type1.Type1Font;
+import org.apache.fontbox.util.BoundingBox;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.CMap;
@@ -52,6 +53,7 @@ public class ZFontType1 extends ZSimpleFont {
                 }
             }
             fontBoxFont = type1Font;
+            calculateFontBbox();
         } catch (Throwable e) {
             logger.log(Level.FINE, "Error reading font file with ", e);
             throw new Exception(e);
@@ -62,6 +64,7 @@ public class ZFontType1 extends ZSimpleFont {
         byte[] fontBytes = url.openStream().readAllBytes();
         source = url;
         type1Font = Type1Font.createWithPFB(fontBytes);
+        calculateFontBbox();
     }
 
     private ZFontType1(ZFontType1 font) {
@@ -129,7 +132,9 @@ public class ZFontType1 extends ZSimpleFont {
             font.widths = widths;
         }
         font.cMap = diff != null ? diff : font.cMap;
-        font.bbox = bbox;
+        if (font.bbox == null) {
+            font.bbox = bbox;
+        }
         return font;
     }
 
@@ -164,6 +169,15 @@ public class ZFontType1 extends ZSimpleFont {
     @Override
     public String getName() {
         return type1Font.getName();
+    }
+
+    private void calculateFontBbox() {
+        BoundingBox fontBBox = type1Font.getFontBBox();
+        if (fontBBox.getWidth() > 0 && fontBBox.getHeight() > 0) {
+            bbox = new Rectangle2D.Double(
+                    fontBBox.getLowerLeftX(), fontBBox.getLowerLeftY(),
+                    fontBBox.getUpperRightX(), fontBBox.getUpperRightY());
+        }
     }
 
     /**

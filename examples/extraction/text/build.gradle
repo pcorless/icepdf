@@ -9,5 +9,5 @@ dependencies {
 
 description 'document text extraction example'
 
-mainClassName = "org.icepdf.os.examples.extraction.PageTextExtraction"
+mainClassName = "org.icepdf.examples.extraction.PageTextExtraction"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
