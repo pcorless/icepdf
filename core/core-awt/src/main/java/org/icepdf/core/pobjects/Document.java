@@ -367,7 +367,7 @@ public class Document {
                     library.setCrossReferenceRoot(crossReferenceRoot);
                 } catch (Exception e) {
                     crossReferenceRoot.setLazyInitializationFailed(true);
-                    logger.log(Level.WARNING, "Cross reference loading failed, reindexing file.");
+                    logger.log(Level.WARNING, "Cross reference loading failed, reindexing file.", e);
                 }
             }
 

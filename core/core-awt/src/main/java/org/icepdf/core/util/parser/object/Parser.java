@@ -152,10 +152,13 @@ public class Parser {
             throws CrossReferenceStateException, ObjectStateException, IOException {
         // mark our position
         ByteBuffer lookAheadBuffer;
+        int xrefPositionStart = 0;
         synchronized (library.getMappedFileByteBufferLock()) {
-            byteBuffer.position(starXref);
-            // make sure we have an xref declaration
-            int bytesLeft = byteBuffer.limit() - starXref;
+            // sometimes the offset is off just by a few bytes
+            byteBuffer.position(starXref - 10);
+            xrefPositionStart = byteBuffer.position();
+            // make sure we have a xref declaration
+            int bytesLeft = byteBuffer.limit() - byteBuffer.position();
             lookAheadBuffer = ByteBuffer.allocateDirect(Math.min(bytesLeft, 48));
             while (lookAheadBuffer.hasRemaining()) {
                 lookAheadBuffer.put(byteBuffer.get());
@@ -168,9 +171,9 @@ public class Parser {
             // see if we found xref marking and thus an < 1.5 formatted xref table.
             if (foundXrefMarker) {
                 // update the xref position as we will have removed any white space.
-                starXref += lookAheadBuffer.position() - XREF_MARKER.length;
+                starXref = xrefPositionStart + lookAheadBuffer.position();
                 // scan ahead to find the trailer position
-                byteBuffer.position(starXref + XREF_MARKER.length);
+                byteBuffer.position(starXref);
                 boolean foundTrailerMarker = ByteBufferUtil.findString(byteBuffer, TRAILER_MARKER);
                 if (!foundTrailerMarker || byteBuffer.position() == byteBuffer.limit()) {
                     throw new CrossReferenceStateException();
@@ -193,8 +196,6 @@ public class Parser {
                                                         int start, int end) throws IOException {
         // mark the xref start, so it can be used to write future /prev entries.
         int xrefStartPos = start;
-        // push past the xref marker to start parsing object offsets
-        start += XREF_MARKER.length;
         // allocate to a new buffer as the data is well-defined.
         ByteBuffer xrefTableBuffer = ByteBufferUtil.copyObjectStreamSlice(byteBuffer, start, end);
         CrossReferenceTable crossReferenceTable = new CrossReferenceTable(library, dictionaryEntries, xrefStartPos);

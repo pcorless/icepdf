@@ -101,7 +101,7 @@ public class Indexer {
                     if (crossReference != null) {
                         // check if the object is already present,  were ready from the back of the file so object
                         // added first is likely the most resnet incremental update and should be overridden
-                        if (crossReference.getEntry(new Reference(objectNumber, generation)) == null) {
+                        if (crossReference.getEntryNoDescendents(new Reference(objectNumber, generation)) == null) {
                             crossReference.addEntry(
                                     new CrossReferenceUsedEntry(objectNumber, generation, byteBuffer.position() + 1));
                         } else {

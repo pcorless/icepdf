@@ -12,6 +12,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+import static org.icepdf.core.pobjects.PTrailer.ROOT_KEY;
+
 /**
  * Specifies the root cross-reference entry for the PDF file.  The class takes into account the possible
  * cross-reference formats, table, compressed and hybrid.   Use this class to find the byte offset of an object in
@@ -69,6 +71,16 @@ public class CrossReferenceRoot {
     }
 
     public PTrailer getTrailerDictionary() {
+        if (pTrailer == null ){
+            // find the trailer dictionary, this should only happen if the file needed to reindex the file.
+            for (CrossReference crossReference : crossReferences) {
+                if (crossReference.getDictionaryEntries() != null &&
+                        crossReference.getDictionaryEntries().get(ROOT_KEY) != null){
+                    pTrailer = new PTrailer(library, crossReference.getDictionaryEntries());
+                    return pTrailer;
+                }
+            }
+        }
         return pTrailer;
     }
 

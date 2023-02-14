@@ -168,15 +168,15 @@ public class Library {
                         () -> "Cross reference indexing failed, reindexing file. " + getFileOrigin());
                 try {
                     rebuildCrossReferenceTable();
-                    return getObject(reference);
+                    // try one more time
+                    obj = crossReferenceRoot.loadObject(objectLoader, reference, hint);
                 } catch (IOException | CrossReferenceStateException | ObjectStateException e1) {
                     logger.log(Level.WARNING, "Linear traversal of file failed, can not load file.", e);
                     return null;
                 }
             } catch (ClassCastException e) {
-                Reference finalReference = reference;
                 logger.log(Level.WARNING, e,
-                        () -> "Failed to load object, likely malformed. " + finalReference + " " + getFileOrigin());
+                        () -> "Failed to load object, likely malformed. " + reference + " " + getFileOrigin());
                 return null;
             }
             if (obj == null) return null;
