@@ -236,7 +236,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
 
     /**
      * Refreshes the components bounds for the current page transformation.
-     * Bounds have are already in user space.
+     * Bounds are already in user space.
      */
     public void refreshDirtyBounds() {
         Page currentPage = pageViewComponent.getPage();
