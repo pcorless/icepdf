@@ -21,6 +21,7 @@ import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.acroform.SignatureHandler;
+import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.graphics.ICCBased;
@@ -207,7 +208,9 @@ public class Library {
                 return type.equals(Font.TYPE) ||
                         type.equals(PageTree.TYPE) ||
                         type.equals(Font.TYPE) ||
-                        type.equals(ImageStream.TYPE_VALUE);
+                        type.equals(Annotation.TYPE) ||
+                        type.equals(ImageStream.TYPE_VALUE) ||
+                        type.equals(Catalog.TYPE);
             } else {
                 return false;
             }

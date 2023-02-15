@@ -1342,7 +1342,7 @@ public class Page extends Dictionary {
      * @return annotation associated with page; null, if there are no annotations.
      */
     public List<Annotation> getAnnotations() {
-        if (!inited) {
+        if (annotations == null) {
             try {
                 initPageAnnotations();
             } catch (InterruptedException e) {
