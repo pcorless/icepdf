@@ -70,7 +70,7 @@ public class Library {
     static {
         try {
             commonPoolThreads =
-                    Defs.intProperty("org.icepdf.core.library.threadPoolSize", 6);
+                    Defs.intProperty("org.icepdf.core.library.threadPoolSize", 4);
             if (commonPoolThreads < 1) {
                 commonPoolThreads = 2;
             }
