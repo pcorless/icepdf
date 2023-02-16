@@ -42,6 +42,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -249,8 +250,7 @@ public class Document {
         setDocumentOrigin(pathOrURL);
 
         if (!isCachingEnabled) {
-            ByteBuffer byteBuffer = ByteBuffer.allocate(inputStream.available());
-            Channels.newChannel(inputStream).read(byteBuffer);
+            ByteBuffer byteBuffer = ByteBuffer.wrap(inputStream.readAllBytes());
             setInputStream(byteBuffer);
         }
         // if caching is allowed cache the url to file
@@ -262,7 +262,7 @@ public class Document {
             // Delete temp file on exit
             tempFile.deleteOnExit();
 
-            Files.copy(inputStream, tempFile.toPath());
+            Files.copy(inputStream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
             setDocumentCachedFilePath(tempFile.getAbsolutePath());
 
