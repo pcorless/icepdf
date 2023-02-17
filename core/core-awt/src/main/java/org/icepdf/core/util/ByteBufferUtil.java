@@ -10,15 +10,15 @@ import java.nio.charset.StandardCharsets;
  */
 public class ByteBufferUtil {
 
-    public static ByteBuffer copyObjectStreamSlice(ByteBuffer objectByteBuffer, int objectOffsetStart, int objectOffsetEnd) {
+    public static ByteBuffer sliceObjectStream(ByteBuffer objectByteBuffer, int objectOffsetStart, int objectOffsetEnd) {
         int streamLength = objectOffsetEnd - objectOffsetStart;
         int oldLimit = objectByteBuffer.limit();
-        ByteBuffer streamByteBuffer = ByteBuffer.allocateDirect(streamLength);
+        int boundLimit = Math.min(objectOffsetStart + streamLength, objectByteBuffer.capacity());
+
         objectByteBuffer.position(objectOffsetStart);
-        objectByteBuffer.limit(objectOffsetStart + streamLength);
-        streamByteBuffer.put(objectByteBuffer);
+        objectByteBuffer.limit(boundLimit);
+        ByteBuffer streamByteBuffer = objectByteBuffer.slice();
         objectByteBuffer.limit(oldLimit);
-        streamByteBuffer.flip();
         return streamByteBuffer;
     }
 

@@ -21,11 +21,10 @@ public class Header {
     private double version;
 
     public ByteBuffer parseHeader(ByteBuffer byteBuffer) {
-        ByteBuffer headerBuffer = ByteBuffer.allocateDirect(Math.min(byteBuffer.limit(), 8 * 1024));
-        while (headerBuffer.hasRemaining()) {
-            headerBuffer.put(byteBuffer.get());
-        }
-        headerBuffer.flip();
+        byteBuffer.limit(Math.min(byteBuffer.limit(), 8 * 1024));
+        ByteBuffer headerBuffer = byteBuffer.slice();
+        byteBuffer.limit(byteBuffer.capacity());
+
         int matchPosition = 0;
         int matchLength = PDF_VERSION_MARKER.length - 1;
         while (headerBuffer.hasRemaining()) {

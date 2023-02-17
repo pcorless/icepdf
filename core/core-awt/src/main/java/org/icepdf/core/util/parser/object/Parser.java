@@ -46,7 +46,7 @@ public class Parser {
     public PObject getPObject(ByteBuffer byteBuffer, int objectOffsetStart)
             throws IOException, ObjectStateException {
 
-        int objectOffsetEnd = 0;
+        int objectOffsetEnd;
         int streamOffsetStart;
         int streamOffsetEnd;
         ByteBuffer streamByteBuffer;
@@ -61,9 +61,11 @@ public class Parser {
                 objectOffsetEnd = byteBuffer.position() - XREF_MARKER.length;
             }
             // scan looking for the stream object end
-            // copy the bytes to a new buffer so we can work on the bytes without thread position issues.
-            streamByteBuffer = ByteBufferUtil.copyObjectStreamSlice(byteBuffer, objectOffsetStart, objectOffsetEnd);
+            // copy the bytes to a new buffer, so we can work on the bytes without thread position issues.
+            streamByteBuffer = ByteBufferUtil.sliceObjectStream(byteBuffer, objectOffsetStart, objectOffsetEnd);
         }
+        // todo mark the stream position, no need for a buffer yet, already have one
+
         // grab the pieces of the object
         Lexer lexer = new Lexer(library);
         lexer.setByteBuffer(streamByteBuffer);
@@ -99,9 +101,17 @@ public class Parser {
         Object streamOrEndObj = lexer.nextToken();
         if (streamOrEndObj instanceof Integer && ((Integer) streamOrEndObj) == OperandNames.OP_stream) {
             lexer.skipWhiteSpace();
+
+            // create a new buffer to encapsulate the stream data using the length
+
+            // look for garbage as before
+
+            // check if we have an end_stream marker as expected, correct offset if needed.
+
             // stream offset
             streamOffsetStart = streamByteBuffer.position();
             int streamLength = library.getInt((DictionaryEntries) objectData, Dictionary.LENGTH_KEY);
+
             // doublc check a streamLength = zero, some encoders are lazy and there is actually data.
             if (streamLength == 0 && (streamByteBuffer.limit() - END_STREAM_MARKER.length) - streamOffsetStart > 0) {
                 streamLength = (streamByteBuffer.limit() - END_STREAM_MARKER.length) - streamOffsetStart;
@@ -126,9 +136,7 @@ public class Parser {
             // trim the buffer to the stream start end.
             streamByteBuffer.position(streamOffsetStart);
             streamByteBuffer.limit(streamOffsetEnd);
-            streamByteBuffer = streamByteBuffer.compact();
-            streamByteBuffer.position(0);
-            streamByteBuffer.limit(streamOffsetEnd - streamOffsetStart);
+            streamByteBuffer = streamByteBuffer.slice();
         } else {
             streamByteBuffer = null;
         }
@@ -157,17 +165,16 @@ public class Parser {
             // sometimes the offset is off just by a few bytes
             byteBuffer.position(starXref - 10);
             xrefPositionStart = byteBuffer.position();
+
             // make sure we have a xref declaration
-            int bytesLeft = byteBuffer.limit() - byteBuffer.position();
-            lookAheadBuffer = ByteBuffer.allocateDirect(Math.min(bytesLeft, 48));
-            while (lookAheadBuffer.hasRemaining()) {
-                lookAheadBuffer.put(byteBuffer.get());
-            }
-        }
-        lookAheadBuffer.flip();
-        boolean foundXrefMarker = ByteBufferUtil.findString(lookAheadBuffer, XREF_MARKER);
-        Lexer objectLexer = new Lexer(library);
-        synchronized (library.getMappedFileByteBufferLock()) {
+            int bytesLeft = Math.min(byteBuffer.limit() - byteBuffer.position(), 48);
+            byteBuffer.limit(byteBuffer.position() + bytesLeft);
+            lookAheadBuffer = byteBuffer.slice();
+            byteBuffer.limit(byteBuffer.capacity());
+
+            boolean foundXrefMarker = ByteBufferUtil.findString(lookAheadBuffer, XREF_MARKER);
+            Lexer objectLexer = new Lexer(library);
+
             // see if we found xref marking and thus an < 1.5 formatted xref table.
             if (foundXrefMarker) {
                 // update the xref position as we will have removed any white space.
@@ -197,7 +204,7 @@ public class Parser {
         // mark the xref start, so it can be used to write future /prev entries.
         int xrefStartPos = start;
         // allocate to a new buffer as the data is well-defined.
-        ByteBuffer xrefTableBuffer = ByteBufferUtil.copyObjectStreamSlice(byteBuffer, start, end);
+        ByteBuffer xrefTableBuffer = ByteBufferUtil.sliceObjectStream(byteBuffer, start, end);
         CrossReferenceTable crossReferenceTable = new CrossReferenceTable(library, dictionaryEntries, xrefStartPos);
         objectLexer.setByteBuffer(xrefTableBuffer);
         // parse the sub groupings

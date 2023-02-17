@@ -2903,7 +2903,7 @@ public class SwingController extends ComponentAdapter
         // values are SinglePage, OnceColumn, TwoColumnLeft, TwoColumnRight,
         // TwoPageLeft, TwoPageRight.
         Object tmp = catalog.getObject(Catalog.PAGELAYOUT_KEY);
-        if (tmp != null && tmp instanceof Name) {
+        if (tmp instanceof Name) {
             String pageLayout = ((Name) tmp).getName();
             int viewType = DocumentViewControllerImpl.ONE_PAGE_VIEW;
             if (pageLayout.equalsIgnoreCase("OneColumn")) {

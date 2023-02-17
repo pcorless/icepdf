@@ -56,12 +56,11 @@ public class Trailer {
 
     private void parseXrefOffset(ByteBuffer byteBuffer, int bufferSize) throws CrossReferenceStateException {
         // find xref offset.
-        ByteBuffer footerBuffer = ByteBuffer.allocateDirect(bufferSize);
-        byteBuffer.position(byteBuffer.limit() - footerBuffer.limit());
-        while (footerBuffer.hasRemaining()) {
-            footerBuffer.put(byteBuffer.get());
-        }
-        footerBuffer.flip();
+        byteBuffer.position(byteBuffer.limit() - bufferSize);
+        byteBuffer.limit(byteBuffer.capacity());
+        ByteBuffer footerBuffer = byteBuffer.slice();
+        byteBuffer.limit(byteBuffer.capacity());
+
         // find end of file marker and startxref so we can parse the xref offset.
         int offsetEnd = ByteBufferUtil.findReverseString(footerBuffer, footerBuffer.limit(), PDF_EOF_MARKER);
         if (offsetEnd == footerBuffer.limit()) {

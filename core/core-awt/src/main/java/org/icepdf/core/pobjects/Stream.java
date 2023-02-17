@@ -161,10 +161,7 @@ public class Stream extends Dictionary {
 
     public ByteBuffer getDecodedStreamByteBuffer(int presiz) {
         byte[] decodeBytes = getDecodedStreamBytes(presiz);
-        ByteBuffer decodedByteBuffer = ByteBuffer.allocateDirect(decodeBytes.length);
-        decodedByteBuffer.put(decodeBytes);
-        decodedByteBuffer.position(0);
-        return decodedByteBuffer;
+        return ByteBuffer.wrap(decodeBytes);
     }
 
     /**
