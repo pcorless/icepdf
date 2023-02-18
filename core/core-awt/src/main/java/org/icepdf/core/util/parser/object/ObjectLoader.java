@@ -15,9 +15,6 @@ import org.icepdf.core.util.Library;
 
 import java.io.IOException;
 
-/**
- * Created by patri on 4/25/2017.
- */
 public class ObjectLoader {
 
     private final Library library;
