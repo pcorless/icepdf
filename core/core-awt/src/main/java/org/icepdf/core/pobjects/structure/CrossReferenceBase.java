@@ -47,11 +47,13 @@ public abstract class CrossReferenceBase<T extends Dictionary> implements CrossR
             } else {
                 // try finding the entry in the previous table
                 Parser parser = new Parser(library);
-                CrossReference crossReference = parser.getCrossReference(
-                        library.getMappedFileByteBuffer(), this.crossReference.getInt(PTrailer.PREV_KEY));
-                if (crossReference != null) {
-                    prefCrossReference = crossReference;
-                    return prefCrossReference.getEntry(reference);
+                synchronized (library.getMappedFileByteBufferLock()) {
+                    CrossReference crossReference = parser.getCrossReference(
+                            library.getMappedFileByteBuffer(), this.crossReference.getInt(PTrailer.PREV_KEY));
+                    if (crossReference != null) {
+                        prefCrossReference = crossReference;
+                        return prefCrossReference.getEntry(reference);
+                    }
                 }
             }
         }

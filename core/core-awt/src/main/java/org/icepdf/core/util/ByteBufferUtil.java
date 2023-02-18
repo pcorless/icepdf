@@ -42,11 +42,11 @@ public class ByteBufferUtil {
         return Integer.parseInt(new String(number));
     }
 
-    public static int findReverseString(ByteBuffer byteBuffer, int limit, int end, final byte[] stingBytes) {
+    public static int findReverseString(ByteBuffer byteBuffer, int start, int end, final byte[] stingBytes) {
         int matchLength = stingBytes.length - 1;
         int matchPosition = matchLength;
-        byteBuffer.position(limit);
-        for (int i = limit - 1; i >= end; i--) {
+        byteBuffer.position(start);
+        for (int i = start - 1; i >= end; i--) {
             if (byteBuffer.get(i) == stingBytes[matchPosition]) {
                 if (matchPosition == 0) {
                     byteBuffer.position(i);

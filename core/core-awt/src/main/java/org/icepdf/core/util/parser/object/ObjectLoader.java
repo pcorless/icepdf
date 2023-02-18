@@ -38,7 +38,9 @@ public class ObjectLoader {
             // parse the object
             int offset = crossReferenceEntry.getFilePositionOfObject();
             if (offset > 0) {
-                return parser.getPObject(library.getMappedFileByteBuffer(), offset);
+                synchronized (library.getMappedFileByteBufferLock()) {
+                    return parser.getPObject(library.getMappedFileByteBuffer(), offset);
+                }
             }
         } else if (entry instanceof CrossReferenceCompressedEntry) {
             CrossReferenceCompressedEntry compressedEntry = (CrossReferenceCompressedEntry) entry;
