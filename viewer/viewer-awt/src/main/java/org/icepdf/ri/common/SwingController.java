@@ -2923,7 +2923,7 @@ public class SwingController extends ComponentAdapter
         // as we don't want to use it for a none attachments PDF file.
         if (documentViewController.getViewMode() ==
                 DocumentViewControllerImpl.USE_ATTACHMENTS_VIEW) {
-            documentViewController.revertViewType();
+            documentViewController.setViewType(DocumentViewControllerImpl.ONE_COLUMN_VIEW);
         }
         // check to see if we have collection
         if (isPdfCollection()) {
