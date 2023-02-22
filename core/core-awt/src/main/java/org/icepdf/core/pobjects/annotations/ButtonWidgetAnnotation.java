@@ -34,7 +34,7 @@ import java.awt.geom.AffineTransform;
  */
 public class ButtonWidgetAnnotation extends AbstractWidgetAnnotation<ButtonFieldDictionary> {
 
-    private ButtonFieldDictionary fieldDictionary;
+    private final ButtonFieldDictionary fieldDictionary;
 
     protected Name originalAppearance;
 

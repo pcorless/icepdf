@@ -58,7 +58,7 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
     // need to make the stroke cap, thickness configurable. Or potentially
     // static from the lineAnnotationHandle so it would look like the last
     // settings where remembered.
-    protected static BasicStroke stroke = new BasicStroke(1.0f,
+    protected static final BasicStroke stroke = new BasicStroke(1.0f,
             BasicStroke.CAP_BUTT,
             BasicStroke.JOIN_MITER,
             1.0f);
@@ -88,7 +88,7 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
     // start and end point
     protected GeneralPath inkPath;
 
-    protected BorderStyle borderStyle = new BorderStyle();
+    protected final BorderStyle borderStyle = new BorderStyle();
 
     /**
      * New Text selection handler.  Make sure to correctly and and remove

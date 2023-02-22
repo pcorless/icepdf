@@ -46,8 +46,8 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
     private static final Logger logger =
             Logger.getLogger(SignatureComponent.class.toString());
 
-    protected JPopupMenu contextMenu;
-    protected Controller controller;
+    protected final JPopupMenu contextMenu;
+    protected final Controller controller;
 
     public SignatureComponent(SignatureWidgetAnnotation annotation, DocumentViewController documentViewController,
                               AbstractPageViewComponent pageViewComponent) {

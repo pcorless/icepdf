@@ -50,12 +50,12 @@ public class Function_0 extends Function {
 
     // An array of m positive integers specifying the number of samples in each
     // input dimension of the sample table.
-    private int size[];
+    private final int[] size;
 
     // The number of bits used to represent each sample. If the function has
     // multiple output values, each one occupies BitsPerSample bits.  Valid
     // values are 1,2,4,8,12,16,24, and 32.
-    private int bitsPerSample;
+    private final int bitsPerSample;
 
     // The order of interpolation between samples.  Valid values are 1 and 3,
     // specifying linear and cubic spline interpolation, respectively.  Default 1
@@ -64,12 +64,12 @@ public class Function_0 extends Function {
     // An array of 2 x m numbers specifying the linear mapping of input values
     // into the domain of the function's sample table.  Default value:
     // [0 (size<sub>0</sub>-1) 0 size<sub>1</sub> ...].
-    private float encode[];
+    private final float[] encode;
 
     // An array of 2 x n numbers specifying the linear mapping of sample values
     // into the range the range appropriate for the function's output values.
     // Default same as Range.
-    private float[] decode;
+    private final float[] decode;
 
     private int[][] samples;
 

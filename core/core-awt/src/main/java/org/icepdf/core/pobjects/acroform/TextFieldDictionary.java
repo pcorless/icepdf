@@ -120,7 +120,7 @@ public class TextFieldDictionary extends VariableTextFieldDictionary {
      * of the field dictionary (Table 222) shall specify the rich text string.
      */
     public static final int RICH_TEXT_BIT_FLAG = 0x2000000;
-    protected TextFieldType textFieldType;
+    protected final TextFieldType textFieldType;
     protected int maxLength = 0;
 
     public TextFieldDictionary(Library library, DictionaryEntries entries) {

@@ -31,7 +31,7 @@ import java.io.InputStream;
  */
 
 public class ZeroPaddedInputStream extends InputStream {
-    private InputStream in;
+    private final InputStream in;
 
     public ZeroPaddedInputStream(InputStream in) {
         this.in = in;

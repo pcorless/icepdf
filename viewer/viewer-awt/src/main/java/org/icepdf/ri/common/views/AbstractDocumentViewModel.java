@@ -45,7 +45,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
             Logger.getLogger(AbstractDocumentViewModel.class.toString());
 
     // document that model is associated.
-    protected Document currentDocument;
+    protected final Document currentDocument;
 
     // Pages that have selected text.
     private HashMap<Integer, AbstractPageViewComponent> selectedPageText;
@@ -55,7 +55,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     // scroll pane used to contain the view
     protected JScrollPane documentViewScrollPane;
     // annotation memento caretaker
-    protected UndoCaretaker undoCaretaker;
+    protected final UndoCaretaker undoCaretaker;
     // currently selected annotation
     protected AnnotationComponent currentAnnotation;
     // page view settings

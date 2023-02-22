@@ -25,7 +25,7 @@ public class Mediator {
     public static final String TITLE_TEXT = "ICEpdf QA";
     public static final String STATUS_TEXT = "Status: ";
 
-    private Stage primaryStage;
+    private final Stage primaryStage;
 
     // menu items we need to disable.
     private MenuItem newCaptureSet;

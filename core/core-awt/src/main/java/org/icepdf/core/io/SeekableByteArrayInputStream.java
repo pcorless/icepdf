@@ -29,7 +29,7 @@ public class SeekableByteArrayInputStream extends ByteArrayInputStream implement
     private static final Logger log =
             Logger.getLogger(SeekableByteArrayInputStream.class.toString());
 
-    private int m_iBeginningOffset;
+    private final int m_iBeginningOffset;
 
     private final ReentrantLock lock = new ReentrantLock();
 

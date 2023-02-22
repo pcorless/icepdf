@@ -17,11 +17,11 @@ public class ConvolveFilter extends AbstractBufferedImageOp {
     static final long serialVersionUID = 2239251672685254626L;
 
     public static int ZERO_EDGES = 0;
-    public static int CLAMP_EDGES = 1;
-    public static int WRAP_EDGES = 2;
+    public static final int CLAMP_EDGES = 1;
+    public static final int WRAP_EDGES = 2;
 
     protected Kernel kernel = null;
-    public boolean alpha = true;
+    public final boolean alpha = true;
     private int edgeAction = CLAMP_EDGES;
 
     /**

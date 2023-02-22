@@ -116,7 +116,7 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
         CHOICE_LIST_SINGLE_SELECT, CHOICE_LIST_MULTIPLE_SELECT
     }
 
-    protected ChoiceFieldType choiceFieldType;
+    protected final ChoiceFieldType choiceFieldType;
     protected ArrayList<ChoiceOption> options;
     protected int topIndex;
     protected ArrayList<Integer> indexes;

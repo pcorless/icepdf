@@ -90,10 +90,10 @@ public class PageCapture {
      * Captures images found in a page  parse to file.
      */
     public static class CapturePage implements Callable<Void> {
-        private Document document;
-        private int pageNumber;
-        private float scale = 1f;
-        private float rotation = 0f;
+        private final Document document;
+        private final int pageNumber;
+        private final float scale = 1f;
+        private final float rotation = 0f;
 
         private CapturePage(Document document, int pageNumber) {
             this.document = document;
@@ -137,7 +137,7 @@ public class PageCapture {
      * Disposes the document.
      */
     public static class DocumentCloser implements Callable<Void> {
-        private Document document;
+        private final Document document;
 
         private DocumentCloser(Document document) {
             this.document = document;

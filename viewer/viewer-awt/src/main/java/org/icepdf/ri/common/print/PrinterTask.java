@@ -37,8 +37,8 @@ public class PrinterTask implements Runnable {
             Logger.getLogger(PrinterTask.class.toString());
 
     // PrinterJob to print
-    private PrintHelper printHelper;
-    private SwingController controller;
+    private final PrintHelper printHelper;
+    private final SwingController controller;
     private CancelablePrintJob cancelablePrintJob;
 
     /**

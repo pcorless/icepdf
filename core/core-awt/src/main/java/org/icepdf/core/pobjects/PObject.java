@@ -24,7 +24,7 @@ package org.icepdf.core.pobjects;
  * @since 1.0
  */
 public class PObject {
-    private Object object;
+    private final Object object;
     private Reference objectReference = null;
     private int linearTraversalOffset;
 

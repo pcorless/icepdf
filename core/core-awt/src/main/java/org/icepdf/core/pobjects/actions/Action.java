@@ -60,7 +60,7 @@ public class Action extends Dictionary {
     public static final Name ACTION_TYPE_JAVA_SCRIPT = new Name("JavaScript");
 
     // type of annotation
-    private String type;
+    private final String type;
 
     // todo implement next
     // private Object Next

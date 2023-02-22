@@ -105,17 +105,17 @@ public class DocumentViewControllerImpl
     protected DocumentViewModel documentViewModel;
     protected DocumentView documentView;
 
-    protected JScrollPane documentViewScrollPane;
+    protected final JScrollPane documentViewScrollPane;
 
     protected int viewType, oldViewType;
     protected int viewportFitMode;
     protected int cursorType;
 
-    protected SwingController viewerController;
+    protected final SwingController viewerController;
     protected AnnotationCallback annotationCallback;
     protected SecurityCallback securityCallback;
 
-    protected PropertyChangeSupport changes = new PropertyChangeSupport(this);
+    protected final PropertyChangeSupport changes = new PropertyChangeSupport(this);
 
     public DocumentViewControllerImpl(final SwingController viewerController) {
 

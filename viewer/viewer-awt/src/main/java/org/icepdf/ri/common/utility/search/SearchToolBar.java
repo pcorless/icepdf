@@ -19,16 +19,16 @@ public class SearchToolBar extends JToolBar implements ActionListener, BaseSearc
 
     private JLabel searchLabel;
     private JTextField searchTextField;
-    private JButton nextSearchResult;
-    private JButton previousSearchButton;
+    private final JButton nextSearchResult;
+    private final JButton previousSearchButton;
 
     private SearchFilterButton searchFilterButton;
     private JMenuItem advancedSearchMenuItem;
 
     private SimpleSearchHelper simpleSearchHelper;
     private SearchTextTask searchTextTask;
-    private SwingController controller;
-    private ResourceBundle messageBundle;
+    private final SwingController controller;
+    private final ResourceBundle messageBundle;
 
     private String lastSearchPhrase;
 

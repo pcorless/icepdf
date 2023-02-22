@@ -30,7 +30,7 @@ import static org.icepdf.core.pobjects.graphics.images.FaxDecoder.K_KEY;
 public class ImageParams extends Dictionary {
 
     // paper size for rare corner case when ccittfax is missing a dimension.
-    private static double pageRatio;
+    private static final double pageRatio;
 
     static {
         //  PDF-458 corner case/one off for trying to guess the width or height

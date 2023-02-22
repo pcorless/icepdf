@@ -46,11 +46,11 @@ public class Parser {
     // DO NOT close this, since we have two cases: read everything up front, and progressive reads
 //    private BufferedMarkedInputStream reader;
 
-    private InputStream reader;
+    private final InputStream reader;
     boolean lastTokenHString = false;
-    private Stack<Object> stack = new Stack<>();
-    private Stack<Integer> offSetStack = new Stack<>();
-    private int parseMode;
+    private final Stack<Object> stack = new Stack<>();
+    private final Stack<Integer> offSetStack = new Stack<>();
+    private final int parseMode;
     private boolean isTrailer;
     private int linearTraversalOffset;
 

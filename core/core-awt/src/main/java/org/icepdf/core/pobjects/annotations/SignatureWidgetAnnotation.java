@@ -32,7 +32,7 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
             Logger.getLogger(SignatureWidgetAnnotation.class.toString());
 
     // signature field dictionary,
-    private SignatureFieldDictionary fieldDictionary;
+    private final SignatureFieldDictionary fieldDictionary;
 
     // signatures value holds all the signature info for signing.
     private SignatureDictionary signatureDictionary;

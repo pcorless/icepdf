@@ -32,7 +32,7 @@ public class Lexer {
 
     // stream reader pointers.
     private Reader reader;
-    private char[] buf = new char[2056];
+    private final char[] buf = new char[2056];
     private int pos = 0, numRead = 0, startTokenPos = 0;
     private int tokenType = 0;
     // expression depth count used to properly differ if and elseif operands.
@@ -46,7 +46,7 @@ public class Lexer {
             TOKEN_BOOLEAN = 5;
 
     // procedure isa any {expression...}
-    private Procedure procedures;
+    private final Procedure procedures;
     private Procedure currentProcedure;
 
     public Lexer() {

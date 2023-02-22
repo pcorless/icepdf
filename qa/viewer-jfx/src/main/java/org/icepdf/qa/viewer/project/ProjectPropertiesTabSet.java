@@ -13,9 +13,9 @@ import java.util.List;
  */
 public class ProjectPropertiesTabSet extends TabPane {
 
-    private ProjectTab projectTabSet;
-    private ResultsTab resultsTabSet;
-    private MetaDataTab metaDataTabSet;
+    private final ProjectTab projectTabSet;
+    private final ResultsTab resultsTabSet;
+    private final MetaDataTab metaDataTabSet;
 
     public ProjectPropertiesTabSet(Mediator mediator) {
         super();

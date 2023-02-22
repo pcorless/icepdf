@@ -82,7 +82,7 @@ public class OutlineItem extends Dictionary {
 
     private boolean loadedSubItems;
 
-    private List<OutlineItem> subItems;
+    private final List<OutlineItem> subItems;
 
     public OutlineItem(Library l, DictionaryEntries h) {
         super(l, h);
@@ -281,7 +281,7 @@ public class OutlineItem extends Dictionary {
             OutlineItem outLineItem;
             DictionaryEntries dictionary;
             Object tmp;
-            // iterate through children and see if then have children. 
+            // iterate through children and see if then have children.
             while (nextReference != null) {
                 // result the outline dictionary
                 tmp = library.getObject(nextReference);

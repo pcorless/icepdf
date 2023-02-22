@@ -342,7 +342,7 @@ final class RadialGradientPaintContext extends MultipleGradientPaintContext {
     /**
      * Square root lookup table
      */
-    private int[] sqrtLutFixed = new int[MAX_PRECISION];
+    private final int[] sqrtLutFixed = new int[MAX_PRECISION];
 
     /**
      * Build square root lookup table

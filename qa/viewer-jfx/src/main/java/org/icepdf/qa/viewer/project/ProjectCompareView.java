@@ -18,7 +18,7 @@ public class ProjectCompareView extends SplitPane {
 
     private TextArea consoleTextArea;
     private PrintStream printStream;
-    private Mediator mediator;
+    private final Mediator mediator;
 
     public ProjectCompareView(Mediator mediator) {
         super();

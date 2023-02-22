@@ -38,8 +38,8 @@ import java.util.ResourceBundle;
  */
 public class NameTreeEditDialog extends EscapeJDialog implements ActionListener {
 
-    private org.icepdf.ri.common.views.Controller controller;
-    private ResourceBundle messageBundle;
+    private final org.icepdf.ri.common.views.Controller controller;
+    private final ResourceBundle messageBundle;
 
     private NameTreeNode nameTreeNode;
     private String name;

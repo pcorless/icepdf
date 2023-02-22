@@ -51,7 +51,7 @@ public class OFont implements FontFile {
     private Rectangle2D maxCharBounds = new Rectangle2D.Double(0.0, 0.0, 1.0, 1.0);
 
     // text layout map, very expensive to create, so we'll cache them.
-    private HashMap<String, Point2D.Float> echarAdvanceCache;
+    private final HashMap<String, Point2D.Float> echarAdvanceCache;
 
     protected float[] widths;
     protected Map<Integer, Float> cidWidths;

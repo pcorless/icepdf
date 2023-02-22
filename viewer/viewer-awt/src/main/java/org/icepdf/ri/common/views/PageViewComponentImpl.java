@@ -38,7 +38,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
 
     // we always keep around a page selection tool, it's only called from the parent view
     // component, this allows for multiple page selection.
-    protected TextSelectionPageHandler textSelectionPageHandler;
+    protected final TextSelectionPageHandler textSelectionPageHandler;
 
     // annotations component for this pageViewComp.
     protected ArrayList<AbstractAnnotationComponent> annotationComponents;

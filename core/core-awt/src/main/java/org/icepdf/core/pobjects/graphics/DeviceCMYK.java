@@ -42,7 +42,7 @@ public class DeviceCMYK extends PColorSpace {
 
     private static final DeviceGray DEVICE_GRAY = new DeviceGray(null, null);
     // CMYK ICC color profile.
-    private static ICC_ColorSpace iccCmykColorSpace;
+    private static final ICC_ColorSpace iccCmykColorSpace;
 
     // disable icc color profile lookups as they can be slow. n
     private static boolean disableICCCmykColorSpace;

@@ -47,9 +47,9 @@ public class PrintHelperImpl extends PrintHelper implements Printable {
     private static final Logger logger =
             Logger.getLogger(PrintHelperImpl.class.toString());
 
-    private PageTree pageTree;
-    private Container container;
-    private float userRotation;
+    private final PageTree pageTree;
+    private final Container container;
+    private final float userRotation;
 
 
     /**

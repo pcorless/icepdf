@@ -80,7 +80,6 @@ public class Form extends Stream {
         return library.getDictionary(entries, GROUP_KEY);
     }
 
-    @SuppressWarnings("unchecked")
     public void setAppearance(Shapes shapes, AffineTransform matrix, Rectangle2D bbox) {
         inited = false;
         this.shapes = shapes;
@@ -205,7 +204,6 @@ public class Form extends Stream {
         return leafResources;
     }
 
-    @SuppressWarnings("unchecked")
     public void setResources(Resources resources) {
         entries.put(RESOURCES_KEY, resources.getEntries());
     }

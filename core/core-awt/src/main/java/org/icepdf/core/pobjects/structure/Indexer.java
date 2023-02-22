@@ -22,7 +22,7 @@ public class Indexer {
     private static final Logger logger =
             Logger.getLogger(Indexer.class.toString());
 
-    private Library library;
+    private final Library library;
 
     public Indexer(Library library) {
         this.library = library;

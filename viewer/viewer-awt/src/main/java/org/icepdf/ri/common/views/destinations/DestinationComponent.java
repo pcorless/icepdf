@@ -45,21 +45,21 @@ public class DestinationComponent extends JComponent implements FocusListener, M
     protected static final Logger logger =
             Logger.getLogger(DestinationComponent.class.toString());
 
-    private static int WIDTH = 18;
-    private static int HEIGHT = 24;
-    private static int OFFSET = 1;
+    private static final int WIDTH = 18;
+    private static final int HEIGHT = 24;
+    private static final int OFFSET = 1;
 
     protected float currentZoom;
     protected float currentRotation;
 
     // reusable border
     public static final int resizeBoxSize = 4;
-    protected static ResizableBorder resizableBorder =
+    protected static final ResizableBorder resizableBorder =
             new ResizableBorder(resizeBoxSize);
 
     protected Destination destination;
-    protected DocumentViewController documentViewController;
-    protected AbstractPageViewComponent pageViewComponent;
+    protected final DocumentViewController documentViewController;
+    protected final AbstractPageViewComponent pageViewComponent;
 
     protected boolean isSelected;
     protected boolean isMousePressed;
@@ -78,9 +78,9 @@ public class DestinationComponent extends JComponent implements FocusListener, M
     protected Point startOfMousePress;
     protected Point endOfMousePress;
 
-    private JPopupMenu contextMenu;
-    private JMenuItem deleteNameTreeNode;
-    private JMenuItem editNameTreeNode;
+    private final JPopupMenu contextMenu;
+    private final JMenuItem deleteNameTreeNode;
+    private final JMenuItem editNameTreeNode;
 
     public DestinationComponent(Destination destination, DocumentViewController documentViewController,
                                 AbstractPageViewComponent pageViewComponent) {

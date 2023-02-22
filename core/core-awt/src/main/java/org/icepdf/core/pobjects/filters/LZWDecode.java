@@ -165,8 +165,8 @@ public class LZWDecode extends ChunkingInputStream {
      * Utility class for decode methods.
      */
     private static class Code {
-        Code prefix;
-        byte c;
+        final Code prefix;
+        final byte c;
 
         Code(Code p, byte cc) {
             prefix = p;

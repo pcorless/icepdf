@@ -35,12 +35,12 @@ import java.awt.*;
 @SuppressWarnings("serial")
 public class TwoPageView extends AbstractDocumentView {
 
-    protected int viewAlignment;
+    protected final int viewAlignment;
 
     // specialized listeners for different gui operations
-    protected Object pageChangerListener;
-    protected KeyListenerPageChanger keyListenerPageChanger;
-    protected CurrentPageChanger currentPageChanger;
+    protected final Object pageChangerListener;
+    protected final KeyListenerPageChanger keyListenerPageChanger;
+    protected final CurrentPageChanger currentPageChanger;
 
     public TwoPageView(DocumentViewController documentDocumentViewController,
                        JScrollPane documentScrollpane,
@@ -205,7 +205,7 @@ public class TwoPageView extends AbstractDocumentView {
         pageViewHeight = Math.abs(pageViewHeight / currentZoom);
 
         // two pages wide, generalization, pages are usually the same size we
-        // don't bother to look at the second pages size for the time being. 
+        // don't bother to look at the second pages size for the time being.
         pageViewWidth *= 2;
 
         // add any horizontal padding from layout manager

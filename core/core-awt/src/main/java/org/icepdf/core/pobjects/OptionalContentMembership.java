@@ -65,7 +65,7 @@ public class OptionalContentMembership extends Dictionary implements OptionalCon
      * null or deleted objects, the membership dictionary shall have no effect
      * on the visibility of any content.
      */
-    private List<OptionalContentGroup> ocgs = new ArrayList<OptionalContentGroup>();
+    private final List<OptionalContentGroup> ocgs = new ArrayList<OptionalContentGroup>();
 
     /**
      * An array specifying a visibility expression, used to compute visibility

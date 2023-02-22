@@ -33,7 +33,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
     public static final Name RESOURCES_KEY = new Name("Resources");
 
     private final Library library;
-    protected DictionaryEntries entries;
+    protected final DictionaryEntries entries;
     private HashMap charProcedures;
     private HashMap<Name, SoftReference<Shapes>> charShapesCache;
     private HashMap<Name, PRectangle> charBBoxes;

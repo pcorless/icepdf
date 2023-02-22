@@ -42,9 +42,9 @@ import java.util.ResourceBundle;
 public class PreferencesDialog extends EscapeJDialog {
 
     // layouts constraint
-    private GridBagConstraints constraints;
+    private final GridBagConstraints constraints;
 
-    private JTabbedPane propertiesTabbedPane;
+    private final JTabbedPane propertiesTabbedPane;
 
     public PreferencesDialog(Frame frame, SwingController controller,
                              ResourceBundle messageBundle) {

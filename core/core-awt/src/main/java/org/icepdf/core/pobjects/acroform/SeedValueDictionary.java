@@ -173,7 +173,7 @@ public class SeedValueDictionary extends Dictionary {
     public static final Name ADD_REV_INFO_KEY = new Name("AddRevInfo");
 
 
-    private int flags;
+    private final int flags;
 
     public SeedValueDictionary(Library library, DictionaryEntries entries) {
         super(library, entries);

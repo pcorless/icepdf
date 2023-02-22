@@ -33,7 +33,7 @@ import java.util.Vector;
 public class ScalableJComboBox extends JComboBox<ChoiceFieldDictionary.ChoiceOption> implements ScalableField {
 
     private static final long serialVersionUID = -353525405737762626L;
-    private DocumentViewModel documentViewModel;
+    private final DocumentViewModel documentViewModel;
     private boolean active;
 
     public ScalableJComboBox(Vector<ChoiceFieldDictionary.ChoiceOption> items, final DocumentViewModel documentViewModel) {

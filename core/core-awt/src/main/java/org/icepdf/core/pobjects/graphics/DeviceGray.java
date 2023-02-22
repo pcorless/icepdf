@@ -32,7 +32,7 @@ public class DeviceGray extends PColorSpace {
     public static final Name G_KEY = new Name("G");
     private static final ColorSpace RGB_COLOR_SPACE = ColorSpace.getInstance(ColorSpace.CS_sRGB);
 
-    private static ConcurrentHashMap<Float, Color> colorHashMap = new ConcurrentHashMap<>(255);
+    private static final ConcurrentHashMap<Float, Color> colorHashMap = new ConcurrentHashMap<>(255);
 
     public DeviceGray(Library l, DictionaryEntries h) {
         super(l, h);

@@ -35,7 +35,7 @@ import java.awt.geom.AffineTransform;
 public class WidgetAnnotation extends AbstractWidgetAnnotation {
 
 
-    private FieldDictionary fieldDictionary;
+    private final FieldDictionary fieldDictionary;
 
 
     public WidgetAnnotation(Library l, DictionaryEntries h) {

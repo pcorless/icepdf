@@ -35,9 +35,9 @@ public class ByteDoubleArrayInputStream extends InputStream {
      * stream;  element <code>buf[pos]</code> is
      * the next byte to be read.
      */
-    protected byte buf[][];
+    protected final byte[][] buf;
 
-    protected int bufOffset[];
+    protected final int[] bufOffset;
 
     /**
      * The index of the next character to read from the input stream buffer.

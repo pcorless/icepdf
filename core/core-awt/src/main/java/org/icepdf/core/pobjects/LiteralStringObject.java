@@ -30,9 +30,9 @@ import org.icepdf.core.util.Utils;
 public class LiteralStringObject implements StringObject {
 
     // core data used to represent the literal string information
-    private StringBuilder stringData;
+    private final StringBuilder stringData;
 
-    private static char[] hexChar = {'0', '1', '2', '3', '4', '5', '6',
+    private static final char[] hexChar = {'0', '1', '2', '3', '4', '5', '6',
             '7', '8', '9', 'a', 'b', 'c', 'd',
             'e', 'f'};
     // Reference is need for standard encryption

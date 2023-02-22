@@ -59,7 +59,6 @@ public class ButtonFieldDictionary extends VariableTextFieldDictionary {
 
     protected ButtonFieldType buttonFieldType;
 
-    @SuppressWarnings("unchecked")
     public ButtonFieldDictionary(Library library, DictionaryEntries entries) {
         super(library, entries);
 

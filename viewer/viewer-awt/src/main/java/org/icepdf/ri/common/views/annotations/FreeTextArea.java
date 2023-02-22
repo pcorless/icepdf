@@ -38,7 +38,7 @@ public class FreeTextArea extends JTextArea {
         float getZoom();
     }
 
-    private ZoomProvider zoomProvider;
+    private final ZoomProvider zoomProvider;
     private boolean active;
     public FreeTextArea(final ZoomProvider zoomProvider) {
         super();

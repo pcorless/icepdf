@@ -9,8 +9,8 @@ import org.icepdf.core.pobjects.Reference;
  */
 public class CrossReferenceCompressedEntry extends CrossReferenceEntry {
 
-    private Reference objectNumberOfContainingObjectStream;
-    private int indexWithinObjectStream;
+    private final Reference objectNumberOfContainingObjectStream;
+    private final int indexWithinObjectStream;
 
     public CrossReferenceCompressedEntry(int objectNumber, int objectNumberOfContainingObjectStream, int indexWithinObjectStream) {
         super(TYPE_COMPRESSED, objectNumber);

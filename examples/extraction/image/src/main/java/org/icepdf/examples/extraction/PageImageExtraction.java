@@ -78,8 +78,8 @@ public class PageImageExtraction {
      * Captures images found in a page  parse to file.
      */
     public static class CapturePageImages implements Callable<Void> {
-        private Document document;
-        private int pageNumber;
+        private final Document document;
+        private final int pageNumber;
 
         private CapturePageImages(Document document, int pageNumber) {
             this.document = document;
@@ -115,7 +115,7 @@ public class PageImageExtraction {
      * Disposes the document.
      */
     public static class DocumentCloser implements Callable<Void> {
-        private Document document;
+        private final Document document;
 
         private DocumentCloser(Document document) {
             this.document = document;

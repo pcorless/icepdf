@@ -35,12 +35,12 @@ import java.awt.event.MouseEvent;
 @SuppressWarnings("serial")
 public class TwoColumnPageView extends AbstractDocumentView {
 
-    protected int viewAlignment;
+    protected final int viewAlignment;
 
     // specialized listeners for different gui operations
-    protected CurrentPageChanger currentPageChanger;
+    protected final CurrentPageChanger currentPageChanger;
 
-    protected KeyListenerPageColumnChanger keyListenerPageChanger;
+    protected final KeyListenerPageColumnChanger keyListenerPageChanger;
 
     public TwoColumnPageView(DocumentViewController documentDocumentViewController,
                              JScrollPane documentScrollpane,

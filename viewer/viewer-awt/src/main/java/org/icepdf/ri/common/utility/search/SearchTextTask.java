@@ -42,7 +42,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
 
     private static final int WORD_PADDING = 6;
     // total length of task (total page count), used for progress bar
-    private int lengthOfTask;
+    private final int lengthOfTask;
     // current progress, used for the progress bar
     private int current;
     // message displayed on progress bar
@@ -56,23 +56,23 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
     // String to search for and parameters from gui
     private String pattern = "";
     private Pattern searchPattern;
-    private boolean wholeWord;
-    private boolean caseSensitive;
-    private boolean cumulative;
-    private boolean showPages;
-    private boolean regex;
-    private boolean r2L;
-    private boolean text;
-    private boolean forms;
-    private boolean comments;
-    private boolean outlines;
-    private boolean destinations;
-    private SearchMode searchMode;
+    private final boolean wholeWord;
+    private final boolean caseSensitive;
+    private final boolean cumulative;
+    private final boolean showPages;
+    private final boolean regex;
+    private final boolean r2L;
+    private final boolean text;
+    private final boolean forms;
+    private final boolean comments;
+    private final boolean outlines;
+    private final boolean destinations;
+    private final SearchMode searchMode;
     // parent swing controller
-    private Controller controller;
+    private final Controller controller;
     // append nodes for found text.
-    private BaseSearchModel searchModel;
-    private Container viewContainer;
+    private final BaseSearchModel searchModel;
+    private final Container viewContainer;
 
     /**
      * Creates a new instance of the SearchTextTask.

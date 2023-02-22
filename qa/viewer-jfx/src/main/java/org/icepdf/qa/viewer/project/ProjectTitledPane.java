@@ -16,7 +16,7 @@ public class ProjectTitledPane extends TitledPane {
 
     private Project project;
 
-    private TextField projectNameTextField;
+    private final TextField projectNameTextField;
 
     public ProjectTitledPane(String name) {
         super(name, null);

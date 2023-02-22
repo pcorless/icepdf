@@ -51,13 +51,13 @@ public class Resources extends Dictionary {
     private static final Logger logger =
             Logger.getLogger(Resources.class.toString());
 
-    DictionaryEntries fonts;
-    DictionaryEntries xobjects;
-    DictionaryEntries colorspaces;
-    DictionaryEntries patterns;
-    DictionaryEntries shading;
-    DictionaryEntries extGStates;
-    DictionaryEntries properties;
+    final DictionaryEntries fonts;
+    final DictionaryEntries xobjects;
+    final DictionaryEntries colorspaces;
+    final DictionaryEntries patterns;
+    final DictionaryEntries shading;
+    final DictionaryEntries extGStates;
+    final DictionaryEntries properties;
 
     public Resources(Library l, DictionaryEntries h) {
         super(l, h);

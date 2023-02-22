@@ -44,9 +44,9 @@ public class FindFontsTask extends AbstractTask<Void, Font> {
     private static final Logger logger = Logger.getLogger(FindFontsTask.class.toString());
 
     // canned internationalized messages.
-    private MessageFormat searchingMessageForm;
+    private final MessageFormat searchingMessageForm;
     // append nodes for found fonts.
-    private Container viewContainer;
+    private final Container viewContainer;
 
     /**
      * Creates a new instance of the SearchTextTask.

@@ -42,7 +42,7 @@ import java.util.*;
 public class BarcodeReader {
 
     // barcode reader hints
-    private static Map<DecodeHintType, Object> hints;
+    private static final Map<DecodeHintType, Object> hints;
 
     static {
         // formats to scan for; shorter list will make a shorter scan time.

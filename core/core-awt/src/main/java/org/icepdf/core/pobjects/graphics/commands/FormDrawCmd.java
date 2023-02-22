@@ -43,7 +43,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
     private BufferedImage xFormBuffer;
     private int x, y;
 
-    private static boolean disableXObjectSMask;
+    private static final boolean disableXObjectSMask;
 
     // Used to use Max_value but we have a few corner cases where the dimension is +-5 of Short.MAX_VALUE, but
     // realistically we seldom have enough memory to load anything bigger then 8000px.  4k+ image are big!

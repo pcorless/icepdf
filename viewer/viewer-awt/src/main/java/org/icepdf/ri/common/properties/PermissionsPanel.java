@@ -34,7 +34,7 @@ import java.util.ResourceBundle;
 public class PermissionsPanel extends JPanel {
 
     // layouts constraint
-    private GridBagConstraints constraints;
+    private final GridBagConstraints constraints;
 
     public PermissionsPanel(Document document, ResourceBundle messageBundle) {
 

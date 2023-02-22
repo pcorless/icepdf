@@ -56,10 +56,10 @@ public class FontManager {
     private static List<Object[]> fontJarList;
 
     // flags for detecting font decorations
-    private static int PLAIN = 0xF0000001;
-    private static int BOLD = 0xF0000010;
-    private static int ITALIC = 0xF0000100;
-    private static int BOLD_ITALIC = 0xF0001000;
+    private static final int PLAIN = 0xF0000001;
+    private static final int BOLD = 0xF0000010;
+    private static final int ITALIC = 0xF0000100;
+    private static final int BOLD_ITALIC = 0xF0001000;
 
     // Differences for type1 fonts which match adobe core14 metrics
     private static final String TYPE1_FONT_DIFFS[][] =
@@ -134,12 +134,12 @@ public class FontManager {
      * Java base font class, generally ${java.home}\lib\fonts.  This is the base font directory that is used
      * for searching for system fonts.  If all else fails this should be the fall back directory.
      */
-    public static String JAVA_FONT_PATH = SystemProperties.JAVA_HOME + "/lib/fonts";
+    public static final String JAVA_FONT_PATH = SystemProperties.JAVA_HOME + "/lib/fonts";
 
     /**
      * Default search path for fonts on windows systems.
      */
-    public static List<String> WINDOWS_FONT_PATHS = Arrays.asList(
+    public static final List<String> WINDOWS_FONT_PATHS = Arrays.asList(
             // windir works for winNT and older 9X system, same as "systemroot"
             JAVA_FONT_PATH,
             System.getenv("WINDIR") + "\\Fonts");
@@ -147,7 +147,7 @@ public class FontManager {
     /**
      * Default search path for fonts on Apple systems.
      */
-    public static List<String> MAC_FONT_PATHS = Arrays.asList(
+    public static final List<String> MAC_FONT_PATHS = Arrays.asList(
             Defs.sysProperty("user.home") + "/Library/Fonts/",
             "/Library/Fonts/",
             JAVA_FONT_PATH,
@@ -159,7 +159,7 @@ public class FontManager {
     /**
      * Default search path for fonts on Linux/Unix systems.
      */
-    public static List<String> LINUX_FONT_PATHS = Arrays.asList(
+    public static final List<String> LINUX_FONT_PATHS = Arrays.asList(
             "/usr/share/fonts/",
             JAVA_FONT_PATH,
             "/usr/X11R6/lib/X11/fonts/",
@@ -177,7 +177,7 @@ public class FontManager {
     /**
      * Mutable list of font names that are excluded from font font substitution.
      */
-    public static List<String> BASE_NAME_EXCLUSION_LIST = Arrays.asList(
+    public static final List<String> BASE_NAME_EXCLUSION_LIST = Arrays.asList(
             "opensymbol",
             "starsymbol",
             "symbolmt",
@@ -194,7 +194,7 @@ public class FontManager {
      * Mutable list of font file names that are excluded from font font substitution. Font names must also
      * include the file extension.
      */
-    public static List<String> FONT_FILE_NAME_EXCLUSION_LIST = Arrays.asList(
+    public static final List<String> FONT_FILE_NAME_EXCLUSION_LIST = Arrays.asList(
 //        "HEB____.TTF"
     );
 
@@ -204,7 +204,7 @@ public class FontManager {
      * Dialog,  DialogInput, Monospaced, Serif, SansSerif.  The closest logical
      * name that match LucidaSans is SansSerif.
      */
-    private static String baseFontName;
+    private static final String baseFontName;
 
     static {
         baseFontName = Defs.property("org.icepdf.core.font.basefont", "lucidasans");

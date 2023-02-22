@@ -71,7 +71,7 @@ public abstract class AbstractPageViewComponent
 
     // flags for painting annotations and text highlights.
     protected boolean paintAnnotations = true;
-    protected boolean paintSearchHighlight = false;
+    protected final boolean paintSearchHighlight = false;
 
     // view mvc parents
     protected DocumentView parentDocumentView;
@@ -382,11 +382,11 @@ public abstract class AbstractPageViewComponent
      */
     public class PageImageCaptureTask implements Callable<Object>, PaintPageListener {
 
-        private float zoom;
-        private float rotation;
-        private Rectangle imageLocation;
-        private Rectangle imageClipLocation;
-        private JComponent parent;
+        private final float zoom;
+        private final float rotation;
+        private final Rectangle imageLocation;
+        private final Rectangle imageClipLocation;
+        private final JComponent parent;
 
         public PageImageCaptureTask(JComponent parent, Rectangle imageLocation, Rectangle imageClipLocation,
                                     float zoom, float rotation) {

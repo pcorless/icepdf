@@ -33,9 +33,9 @@ import java.awt.*;
 @SuppressWarnings("serial")
 public class OnePageView extends AbstractDocumentView {
 
-    protected Object pageChangerListener;
+    protected final Object pageChangerListener;
 
-    protected KeyListenerPageChanger keyListenerPageChanger;
+    protected final KeyListenerPageChanger keyListenerPageChanger;
 
 
     public OnePageView(DocumentViewController documentDocumentViewController,
@@ -168,7 +168,7 @@ public class OnePageView extends AbstractDocumentView {
                 }
             }
         }
-        // normalize the dimensions to a zoom level of zero. 
+        // normalize the dimensions to a zoom level of zero.
         float currentZoom = documentViewController.getDocumentViewModel().getViewZoom();
         pageViewWidth = Math.abs(pageViewWidth / currentZoom);
         pageViewHeight = Math.abs(pageViewHeight / currentZoom);

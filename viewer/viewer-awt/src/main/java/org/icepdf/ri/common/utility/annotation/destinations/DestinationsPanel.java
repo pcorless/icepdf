@@ -64,19 +64,19 @@ public class DestinationsPanel extends JPanel
             Logger.getLogger(DestinationsPanel.class.toString());
 
     // layouts constraint
-    protected GridBagConstraints constraints;
+    protected final GridBagConstraints constraints;
 
-    private ViewerPropertiesManager propertiesManager;
-    private Preferences preferences;
-    private org.icepdf.ri.common.views.Controller controller;
-    private ResourceBundle messageBundle;
+    private final ViewerPropertiesManager propertiesManager;
+    private final Preferences preferences;
+    private final org.icepdf.ri.common.views.Controller controller;
+    private final ResourceBundle messageBundle;
 
     private AnnotationPanel parentPanel;
-    private NameJTree nameJTree;
+    private final NameJTree nameJTree;
 
-    private JPopupMenu contextMenu;
-    private JMenuItem deleteNameTreeNode;
-    private JMenuItem editNameTreeNode;
+    private final JPopupMenu contextMenu;
+    private final JMenuItem deleteNameTreeNode;
+    private final JMenuItem editNameTreeNode;
 
     public DestinationsPanel(SwingController controller, ViewerPropertiesManager propertiesManager) {
         messageBundle = controller.getMessageBundle();

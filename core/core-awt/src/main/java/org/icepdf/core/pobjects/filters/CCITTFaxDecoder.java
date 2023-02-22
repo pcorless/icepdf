@@ -67,7 +67,7 @@ package org.icepdf.core.pobjects.filters;
 
 
 public class CCITTFaxDecoder {
-    static int[] table1 = {0x00, // 0 bits are left in first byte - SHOULD
+    static final int[] table1 = {0x00, // 0 bits are left in first byte - SHOULD
             // NOT HAPPEN
             0x01, // 1 bits are left in first byte
             0x03, // 2 bits are left in first byte
@@ -79,7 +79,7 @@ public class CCITTFaxDecoder {
             0xff // 8 bits are left in first byte
     };
 
-    static int[] table2 = {0x00, // 0
+    static final int[] table2 = {0x00, // 0
             0x80, // 1
             0xc0, // 2
             0xe0, // 3
@@ -91,7 +91,7 @@ public class CCITTFaxDecoder {
     };
 
     // Table to be used when fillOrder = 2, for flipping bytes.
-    static byte[] flipTable = {0, -128, 64, -64, 32, -96, 96, -32, 16, -112,
+    static final byte[] flipTable = {0, -128, 64, -64, 32, -96, 96, -32, 16, -112,
             80, -48, 48, -80, 112, -16, 8, -120, 72, -56, 40, -88, 104, -24,
             24, -104, 88, -40, 56, -72, 120, -8, 4, -124, 68, -60, 36, -92,
             100, -28, 20, -108, 84, -44, 52, -76, 116, -12, 12, -116, 76, -52,
@@ -112,7 +112,7 @@ public class CCITTFaxDecoder {
             -97, 95, -33, 63, -65, 127, -1,};
 
     // The main 10 bit white runs lookup table
-    static short white[] = {
+    static final short[] white = {
             // 0 - 7
             6430, 6400, 6400, 6400, 3225, 3225, 3225, 3225,
             // 8 - 15
@@ -371,22 +371,22 @@ public class CCITTFaxDecoder {
             232, 232, 232, 232, 232, 232, 232, 232,};
 
     // Additional make up codes for both White and Black runs
-    static short[] additionalMakeup = {28679, 28679, 31752, (short) 32777,
+    static final short[] additionalMakeup = {28679, 28679, 31752, (short) 32777,
             (short) 33801, (short) 34825, (short) 35849, (short) 36873,
             (short) 29703, (short) 29703, (short) 30727, (short) 30727,
             (short) 37897, (short) 38921, (short) 39945, (short) 40969};
 
     // Initial black run look up table, uses the first 4 bits of a code
-    static short[] initBlack = {
+    static final short[] initBlack = {
             // 0 - 7
             3226, 6412, 200, 168, 38, 38, 134, 134, // 8 - 15
             100, 100, 100, 100, 68, 68, 68, 68};
 
     //
-    static short[] twoBitBlack = {292, 260, 226, 226}; // 0 - 3
+    static final short[] twoBitBlack = {292, 260, 226, 226}; // 0 - 3
 
     // Main black run table, using the last 9 bits of possible 13 bit code
-    static short black[] = {
+    static final short[] black = {
             // 0 - 7
             62, 62, 30, 30, 0, 0, 0, 0,
             // 8 - 15
@@ -516,7 +516,7 @@ public class CCITTFaxDecoder {
             // 504 - 511
             390, 390, 390, 390, 390, 390, 390, 390,};
 
-    static byte[] twoDCodes = {
+    static final byte[] twoDCodes = {
             // 0 - 7
             80, 88, 23, 71, 30, 30, 62, 62, // 8 - 15
             4, 4, 4, 4, 4, 4, 4, 4, // 16 - 23
@@ -541,11 +541,11 @@ public class CCITTFaxDecoder {
 
     private byte[] data;
 
-    private int w;
+    private final int w;
 
     private boolean align = false;
 
-    private int fillOrder;
+    private final int fillOrder;
 
     // Data structures needed to store changing elements for the previous
     // and the current scanline

@@ -40,7 +40,7 @@ public class FullScreenDocumentView extends OnePageView implements WindowListene
 
     private GraphicsDevice defaultScreenDevice;
 
-    private DocumentViewController controller;
+    private final DocumentViewController controller;
     private JFrame frame;
 
     public FullScreenDocumentView(DocumentViewController controller) {

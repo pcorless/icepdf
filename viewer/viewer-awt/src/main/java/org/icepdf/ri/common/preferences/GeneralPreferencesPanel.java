@@ -45,17 +45,17 @@ public class GeneralPreferencesPanel extends JPanel implements PropertyChangeLis
     // layouts constraint
     private GridBagConstraints constraints;
 
-    private Preferences preferences;
+    private final Preferences preferences;
 
-    private ColorChooserButton highlightColorChooserButton;
-    private ColorChooserButton selectionColorChooserButton;
+    private final ColorChooserButton highlightColorChooserButton;
+    private final ColorChooserButton selectionColorChooserButton;
 
-    private ColorChooserButton paperShadowColorChooserButton;
-    private ColorChooserButton paperColorChooserButton;
-    private ColorChooserButton paperBorderColorChooserButton;
-    private ColorChooserButton viewBackgroundColorChooserButton;
+    private final ColorChooserButton paperShadowColorChooserButton;
+    private final ColorChooserButton paperColorChooserButton;
+    private final ColorChooserButton paperBorderColorChooserButton;
+    private final ColorChooserButton viewBackgroundColorChooserButton;
 
-    private JComboBox<ValueLabelItem> iconSizeComboBox;
+    private final JComboBox<ValueLabelItem> iconSizeComboBox;
 
     public GeneralPreferencesPanel(SwingController controller, ViewerPropertiesManager propertiesManager,
                                    ResourceBundle messageBundle) {

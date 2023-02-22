@@ -58,7 +58,7 @@ public class TilingPattern extends Stream implements Pattern {
     public static final Name RESOURCES_KEY = new Name("Resources");
 
     // change the the interpolation and anti-aliasing settings.
-    private static RenderingHints renderingHints;
+    private static final RenderingHints renderingHints;
 
     static {
         Object antiAliasing = RenderingHints.VALUE_ANTIALIAS_OFF;

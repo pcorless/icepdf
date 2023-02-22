@@ -288,7 +288,6 @@ public class Catalog extends Dictionary {
      *
      * @return A Dictionary of Destinations; if none, null is returned.
      */
-    @SuppressWarnings("unchecked")
     public NamedDestinations getDestinations() {
         synchronized (this) {
             if (!destsInited) {

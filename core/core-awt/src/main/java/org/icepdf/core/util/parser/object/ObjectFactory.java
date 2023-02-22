@@ -19,7 +19,6 @@ import java.nio.ByteBuffer;
  *
  */
 public class ObjectFactory {
-    @SuppressWarnings("unchecked")
     public static PObject getInstance(Library library, int objectNumber, int generationNumber,
                                       Object objectData, ByteBuffer streamData) {
         // if we have as a byteBuffer then we have a stream.

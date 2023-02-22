@@ -35,7 +35,7 @@ import java.awt.*;
 @SuppressWarnings("serial")
 public class AnnotationPanel extends AnnotationPanelAdapter {
 
-    private ViewerPropertiesManager propertiesManager;
+    private final ViewerPropertiesManager propertiesManager;
 
     private JPanel annotationPanel;
     private AnnotationPanelAdapter annotationPropertyPanel;

@@ -99,7 +99,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
     public static final int resizeBoxSize = 4;
 
     // reusable border
-    protected static ResizableBorder resizableBorder =
+    protected static final ResizableBorder resizableBorder =
             new ResizableBorder(resizeBoxSize);
 
     protected PageViewComponentImpl pageViewComponent;

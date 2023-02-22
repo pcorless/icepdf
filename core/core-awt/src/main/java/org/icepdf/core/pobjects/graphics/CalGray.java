@@ -40,9 +40,9 @@ public class CalGray extends PColorSpace {
     public static final Name MATRIX_KEY = new Name("Matrix");
     public static final Name CAL_GRAY_KEY = new Name("CalGray");
 
-    private static ColorSpace grayCS = ColorSpace.getInstance(ColorSpace.CS_GRAY);
+    private static final ColorSpace grayCS = ColorSpace.getInstance(ColorSpace.CS_GRAY);
 
-    protected float[] whitepoint = {
+    protected final float[] whitepoint = {
             1, 1, 1
     };
     protected float gamma = 1.0f;

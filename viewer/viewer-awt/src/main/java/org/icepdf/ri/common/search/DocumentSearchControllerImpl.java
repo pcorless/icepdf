@@ -71,7 +71,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     private SwingController viewerController;
     // assigned document for headless searching.
     protected Document document;
-    public static SearchHitComponentFactory componentFactory = new SearchHitComponentFactoryImpl();
+    public static final SearchHitComponentFactory componentFactory = new SearchHitComponentFactoryImpl();
 
     //Search mode is per-word or whole page
     private SearchMode searchMode = SearchMode.WORD;

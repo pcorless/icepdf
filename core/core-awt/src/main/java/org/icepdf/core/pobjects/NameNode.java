@@ -31,9 +31,9 @@ public class NameNode extends Dictionary {
     public static final Name NAMES_KEY = new Name("Names");
     public static final Name LIMITS_KEY = new Name("Limits");
 
-    public static Object NOT_FOUND = new Object();
-    public static Object NOT_FOUND_IS_LESSER = new Object();
-    public static Object NOT_FOUND_IS_GREATER = new Object();
+    public static final Object NOT_FOUND = new Object();
+    public static final Object NOT_FOUND_IS_LESSER = new Object();
+    public static final Object NOT_FOUND_IS_GREATER = new Object();
 
     private boolean namesAreDecrypted;
     // flat tree, names and values only.

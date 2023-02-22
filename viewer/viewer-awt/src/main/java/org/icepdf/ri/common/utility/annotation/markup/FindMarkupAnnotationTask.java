@@ -49,15 +49,15 @@ public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
     private static ArrayList<DragDropColorList.ColorLabel> colorLabels;
 
     // status summary labels
-    private MessageFormat loadingMessage;
-    private MessageFormat completeMessage;
-    private MessageFormat completeFilteredMessage;
+    private final MessageFormat loadingMessage;
+    private final MessageFormat completeMessage;
+    private final MessageFormat completeFilteredMessage;
 
     // sort/grouping labels
-    private MessageFormat pageLabelFormat;
-    private MessageFormat authorLabelFormat;
-    private MessageFormat dateLabelFormat;
-    private MessageFormat colorLabelFormat;
+    private final MessageFormat pageLabelFormat;
+    private final MessageFormat authorLabelFormat;
+    private final MessageFormat dateLabelFormat;
+    private final MessageFormat colorLabelFormat;
 
     private Pattern searchPattern;
     private MarkupAnnotationPanel.SortColumn sortType;
@@ -330,7 +330,7 @@ public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
 
     class AnnotationComparator implements Comparator<MarkupAnnotation> {
 
-        private MarkupAnnotationPanel.SortColumn sortColumn;
+        private final MarkupAnnotationPanel.SortColumn sortColumn;
 
         AnnotationComparator(MarkupAnnotationPanel.SortColumn sortColumn) {
             this.sortColumn = sortColumn;
@@ -381,8 +381,8 @@ public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
 
         // required model setup
         private final Controller controller;
-        ResourceBundle messageBundle;
-        private MarkupAnnotationHandlerPanel markupAnnotationHandlerPanel;
+        final ResourceBundle messageBundle;
+        private final MarkupAnnotationHandlerPanel markupAnnotationHandlerPanel;
 
         // parent search panel
         private Pattern searchPattern;

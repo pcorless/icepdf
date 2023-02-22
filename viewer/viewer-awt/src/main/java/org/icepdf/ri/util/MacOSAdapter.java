@@ -30,9 +30,9 @@ public class MacOSAdapter implements InvocationHandler {
     private static final Logger logger =
             Logger.getLogger(MacOSAdapter.class.toString());
 
-    protected Object targetObject;
-    protected Method targetMethod;
-    protected String proxySignature;
+    protected final Object targetObject;
+    protected final Method targetMethod;
+    protected final String proxySignature;
 
     protected static Object macOSXApplication;
 

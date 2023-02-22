@@ -49,10 +49,10 @@ public class LaunchAction extends Action {
     private Boolean isNewWindow;
 
     // launch parameters specific to Windows.
-    private WindowsLaunchParameters winLaunchParameters;
+    private final WindowsLaunchParameters winLaunchParameters;
 
     // mac and unix are not defined by the specification and thus not here
-    // either. 
+    // either.
 
     /**
      * Creates a new instance of a Action.

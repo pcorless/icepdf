@@ -39,10 +39,10 @@ public abstract class CommonToolHandler {
             Logger.getLogger(CommonToolHandler.class.toString());
 
     // parent page component
-    protected AbstractPageViewComponent pageViewComponent;
+    protected final AbstractPageViewComponent pageViewComponent;
     protected DocumentViewController documentViewController;
 
-    protected Preferences preferences;
+    protected final Preferences preferences;
 
     /**
      * Create a new common tool handler.  The tool handle can operate on a view or at the page level.  If the

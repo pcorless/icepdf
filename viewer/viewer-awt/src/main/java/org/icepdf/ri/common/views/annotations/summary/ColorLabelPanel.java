@@ -33,9 +33,9 @@ import java.util.List;
  */
 public class ColorLabelPanel extends JPanel implements PropertyChangeListener {
 
-    private Controller controller;
-    private DragDropColorList.ColorLabel colorLabel;
-    private DraggableAnnotationPanel draggableAnnotationPanel;
+    private final Controller controller;
+    private final DragDropColorList.ColorLabel colorLabel;
+    private final DraggableAnnotationPanel draggableAnnotationPanel;
 
     public ColorLabelPanel(Frame frame, Controller controller, DragDropColorList.ColorLabel colorLabel) {
         super();

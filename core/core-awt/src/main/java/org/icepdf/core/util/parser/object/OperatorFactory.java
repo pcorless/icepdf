@@ -6,7 +6,6 @@ import java.nio.ByteBuffer;
  *
  */
 public class OperatorFactory {
-    @SuppressWarnings(value = "unchecked")
     public static int[] getOperator(ByteBuffer ch, int offset, int length) {
 
         // get the operator int value.

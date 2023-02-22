@@ -44,13 +44,13 @@ public class SignatureValidationStatus {
     private String emailAddress;
     private String organization;
     private String commonName;
-    private URL validityIconPath;
+    private final URL validityIconPath;
 
-    private String dictionaryName;
-    private String dictionaryLocation;
-    private String dictionaryReason;
-    private String dictionaryContact;
-    private String dictionaryDate;
+    private final String dictionaryName;
+    private final String dictionaryLocation;
+    private final String dictionaryReason;
+    private final String dictionaryContact;
+    private final String dictionaryDate;
 
     public SignatureValidationStatus(ResourceBundle messageBundle,
                                      SignatureWidgetAnnotation signatureWidgetAnnotation, SignatureValidator signatureValidator) {

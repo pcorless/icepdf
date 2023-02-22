@@ -31,8 +31,8 @@ import java.util.ResourceBundle;
  */
 public class MyGUISecurityCallback implements SecurityCallback {
 
-    private Frame parentFrame;
-    private ResourceBundle messageBundle;
+    private final Frame parentFrame;
+    private final ResourceBundle messageBundle;
 
     /**
      * Create a new instance of a SecurityCallback.  This class displays a
@@ -70,10 +70,10 @@ public class MyGUISecurityCallback implements SecurityCallback {
     class PasswordDialog extends EscapeJDialog implements WindowListener {
 
         // layouts constraint
-        private GridBagConstraints constraints;
+        private final GridBagConstraints constraints;
 
         // capture password information
-        private JPasswordField passwordField;
+        private final JPasswordField passwordField;
 
         // dialog was canceled
         private boolean isCanceled = false;

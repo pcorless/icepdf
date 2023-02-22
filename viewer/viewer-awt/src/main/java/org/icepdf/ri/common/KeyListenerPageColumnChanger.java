@@ -26,10 +26,10 @@ import java.awt.event.KeyAdapter;
  * they qualify to initiate a page change request for the Controller.
  */
 public class KeyListenerPageColumnChanger extends KeyAdapter {
-    private org.icepdf.ri.common.views.Controller controller;
-    private JScrollPane scroll;
-    private AbstractDocumentView documentView;
-    private CurrentPageChanger currentPageChanger;
+    private final org.icepdf.ri.common.views.Controller controller;
+    private final JScrollPane scroll;
+    private final AbstractDocumentView documentView;
+    private final CurrentPageChanger currentPageChanger;
 
     /**
      * KeyEvents can queue up, if the user holds down a key,

@@ -80,11 +80,12 @@ public class ImageUtility {
             0xFFFFFFFF
     };
 
-    private static boolean scaleQuality;
-    private static int scaleWidth, scaleHeight;
+    private static final boolean scaleQuality;
+    private static final int scaleWidth;
+    private static final int scaleHeight;
 
     private static GraphicsConfiguration configuration;
-    private static int compatibleImageType;
+    private static final int compatibleImageType;
 
     static {
         try {

@@ -48,7 +48,7 @@ public class Dictionary {
      * Pointer to the documents <code>Library</code> object which
      * acts a central repository for the access of PDF object in the document.
      */
-    protected Library library;
+    protected final Library library;
 
     /**
      * Table of associative pairs of objects.
@@ -79,7 +79,6 @@ public class Dictionary {
      * @param library document library.
      * @param entries dictionary entries.
      */
-    @SuppressWarnings("unchecked")
     public Dictionary(Library library, DictionaryEntries entries) {
         this.library = library;
         this.entries = entries;

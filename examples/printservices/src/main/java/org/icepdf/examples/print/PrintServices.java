@@ -75,7 +75,7 @@ public class PrintServices {
         Defs.setProperty("org.icepdf.core.print.stroke", "VALUE_STROKE_PURE");
     }
 
-    public static PrintHelperFactory printHelperFactory = PrintHelperFactoryImpl.getInstance();
+    public static final PrintHelperFactory printHelperFactory = PrintHelperFactoryImpl.getInstance();
 
     /**
      * Attempts to Print PDF documents which are specified as application

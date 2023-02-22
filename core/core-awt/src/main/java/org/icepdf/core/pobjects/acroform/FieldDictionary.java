@@ -162,7 +162,6 @@ public class FieldDictionary extends Dictionary {
     protected Object defaultFieldValue;
     protected AdditionalActionsDictionary additionalActionsDictionary;
 
-    @SuppressWarnings("unchecked")
     public FieldDictionary(Library library, DictionaryEntries entries) {
         super(library, entries);
 

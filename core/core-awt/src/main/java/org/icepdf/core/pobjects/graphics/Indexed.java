@@ -29,8 +29,8 @@ public class Indexed extends PColorSpace {
     public static final Name INDEXED_KEY = new Name("Indexed");
     public static final Name I_KEY = new Name("I");
 
-    private PColorSpace colorSpace;
-    private int hival;
+    private final PColorSpace colorSpace;
+    private final int hival;
     byte[] colors = {
             -1, -1, -1, 0, 0, 0
     };

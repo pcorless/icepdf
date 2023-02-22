@@ -52,7 +52,7 @@ public class ResetFormAction extends FormAction {
      * exclude from resetting; that is, all fields in the document’s interactive
      * form shall be reset except those listed in the Fields array.
      */
-    public int INCLUDE_EXCLUDE_BIT = 0X0000001;
+    public final int INCLUDE_EXCLUDE_BIT = 0X0000001;
 
     public ResetFormAction(Library l, DictionaryEntries h) {
         super(l, h);

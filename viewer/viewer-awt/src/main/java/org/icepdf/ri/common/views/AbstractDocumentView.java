@@ -77,9 +77,9 @@ public abstract class AbstractDocumentView
     private Point lastMouseLocation;
 
     // general layout of page component spacing.
-    public static int verticalSpace = 2;
-    public static int horizontalSpace = 1;
-    public static int layoutInserts = 0;
+    public static final int verticalSpace = 2;
+    public static final int horizontalSpace = 1;
+    public static final int layoutInserts = 0;
 
     protected DocumentViewController documentViewController;
     protected DocumentViewModel documentViewModel;

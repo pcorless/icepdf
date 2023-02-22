@@ -46,10 +46,10 @@ public class DeviceN extends PColorSpace {
     public static final Name DEVICEN_SUB_TYPE_KEY = new Name("DeviceN");
     public static final Name NCHANNEL_SUB_TYPE_KEY = new Name("NChannel");
 
-    private static DeviceCMYK deviceCMYK = new DeviceCMYK(null, null);
-    private List<Name> names;
-    private PColorSpace alternate;
-    private Function tintTransform;
+    private static final DeviceCMYK deviceCMYK = new DeviceCMYK(null, null);
+    private final List<Name> names;
+    private final PColorSpace alternate;
+    private final Function tintTransform;
     // for debugging purposes, not currently used.
     private DictionaryEntries attributesDictionary;
     private DictionaryEntries processDictionary;

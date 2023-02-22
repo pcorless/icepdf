@@ -125,11 +125,11 @@ public class PortfolioCapture {
      * Captures images found in a page  parse to file.
      */
     public class CaptureDocument implements Callable<Void> {
-        private Document document;
-        private String fileName;
-        private int fileIndex;
-        private float scale = 1f;
-        private float rotation = 0f;
+        private final Document document;
+        private final String fileName;
+        private final int fileIndex;
+        private final float scale = 1f;
+        private final float rotation = 0f;
 
         private CaptureDocument(Document document, int fileIndex, String fileName) {
             this.document = document;
@@ -179,7 +179,7 @@ public class PortfolioCapture {
      * Disposes the document.
      */
     public class DocumentCloser implements Callable<Void> {
-        private Document document;
+        private final Document document;
 
         private DocumentCloser(Document document) {
             this.document = document;

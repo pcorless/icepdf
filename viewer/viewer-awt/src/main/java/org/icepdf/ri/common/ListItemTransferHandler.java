@@ -129,7 +129,7 @@ public class ListItemTransferHandler extends TransferHandler {
 
     class ObjectSelection implements Transferable {
 
-        private Object[] data;
+        private final Object[] data;
 
         ObjectSelection(Object[] data) {
             this.data = data;

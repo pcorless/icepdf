@@ -72,7 +72,7 @@ public abstract class Function {
      * An array of 2 x m numbers, where m is the number of input values.  Input
      * values outside the declared domain are clipped to the nearest boundary value.
      */
-    protected float[] domain;
+    protected final float[] domain;
 
     /**
      * An array of 2 x n numbers, where n is the number of output values.  Output

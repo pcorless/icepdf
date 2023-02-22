@@ -30,7 +30,7 @@ public class RandomAccessFileInputStream extends InputStream implements Seekable
             Logger.getLogger(RandomAccessFileInputStream.class.toString());
 
     private long m_lMarkPosition;
-    private RandomAccessFile m_RandomAccessFile;
+    private final RandomAccessFile m_RandomAccessFile;
 
     private final ReentrantLock lock = new ReentrantLock();
 

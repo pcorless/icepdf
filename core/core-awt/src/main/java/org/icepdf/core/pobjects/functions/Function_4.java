@@ -49,7 +49,7 @@ public class Function_4 extends Function {
     private byte[] functionContent;
 
     // cache for calculated colour values
-    private ConcurrentHashMap<Integer, float[]> resultCache;
+    private final ConcurrentHashMap<Integer, float[]> resultCache;
 
     public Function_4(Dictionary d) {
         super(d);

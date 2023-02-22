@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class OperatorFactory {
 
-    private static ConcurrentHashMap<Integer, Operator> operatorCache =
+    private static final ConcurrentHashMap<Integer, Operator> operatorCache =
             new ConcurrentHashMap<>();
 
     @SuppressWarnings(value = "unchecked")

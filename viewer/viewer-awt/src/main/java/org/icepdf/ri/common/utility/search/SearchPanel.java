@@ -77,7 +77,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     private static final Logger logger =
             Logger.getLogger(SearchPanel.class.toString());
 
-    private static int maxPagesForLiveSearch;
+    private static final int maxPagesForLiveSearch;
 
     static {
         maxPagesForLiveSearch = Defs.intProperty(
@@ -964,10 +964,10 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     class FindEntry extends DefaultMutableTreeNode {
 
         // The text to be displayed on the screen for this item.
-        String title;
+        final String title;
 
         // The destination to be displayed when this item is activated
-        int pageNumber;
+        final int pageNumber;
 
         WordText wordText;
 

@@ -59,16 +59,16 @@ public class Shapes {
     private boolean interrupted;
 
     // Graphics stack for a page's content.
-    protected ArrayList<DrawCmd> shapes = new ArrayList<>(shapesInitialCapacity);
+    protected final ArrayList<DrawCmd> shapes = new ArrayList<>(shapesInitialCapacity);
 
     // stores the state of the currently visible optional content.
-    protected OptionalContentState optionalContentState = new OptionalContentState();
+    protected final OptionalContentState optionalContentState = new OptionalContentState();
 
     // the collection of objects listening for page paint events
     private Page parentPage;
 
     // text extraction data structure
-    private PageText pageText = new PageText();
+    private final PageText pageText = new PageText();
 
     public PageText getPageText() {
         return pageText;

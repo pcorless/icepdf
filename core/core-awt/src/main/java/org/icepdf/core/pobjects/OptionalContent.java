@@ -33,7 +33,7 @@ import java.util.*;
  */
 public class OptionalContent extends Dictionary {
 
-    private Map<Reference, OptionalContentGroup> groups;
+    private final Map<Reference, OptionalContentGroup> groups;
 
     public static final Name OCGs_KEY = new Name("OCGs");
     public static final Name OC_KEY = new Name("OC");

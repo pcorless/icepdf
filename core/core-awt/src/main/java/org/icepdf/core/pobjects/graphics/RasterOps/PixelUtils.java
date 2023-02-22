@@ -31,7 +31,7 @@ public class PixelUtils {
     public final static int ALPHA = 19;
     public final static int ALPHA_TO_GRAY = 20;
 
-    private static Random randomGenerator = new Random();
+    private static final Random randomGenerator = new Random();
 
     /**
      * Clamp a value to the range 0..255

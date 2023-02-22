@@ -33,11 +33,11 @@ import java.awt.geom.AffineTransform;
 public class ImageDrawCmd extends AbstractDrawCmd {
 
     // enable disable scaled paint.
-    private static boolean isScaledPaint;
+    private static final boolean isScaledPaint;
 
     // narrow image scaling max dimension size to kick of the use of the lookup
     // table
-    public static int MIN_DIMENSION;
+    public static final int MIN_DIMENSION;
 
     static {
         isScaledPaint = Defs.booleanProperty("org.icepdf.core.imageDrawCmd.scale.enabled", false);

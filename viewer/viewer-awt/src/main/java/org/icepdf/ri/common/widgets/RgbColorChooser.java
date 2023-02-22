@@ -100,7 +100,7 @@ public class RgbColorChooser {
     }
 
     private static class ColorTracker implements ActionListener, Serializable {
-        private JColorChooser chooser;
+        private final JColorChooser chooser;
         private Color color;
 
         ColorTracker(JColorChooser c) {

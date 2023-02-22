@@ -34,7 +34,7 @@ import java.awt.event.MouseEvent;
 public class ScalableTextArea extends JTextArea implements ScalableField {
 
     private static final long serialVersionUID = 409696785049691125L;
-    private DocumentViewModel documentViewModel;
+    private final DocumentViewModel documentViewModel;
     private boolean active;
 
     public ScalableTextArea(final DocumentViewModel documentViewModel) {

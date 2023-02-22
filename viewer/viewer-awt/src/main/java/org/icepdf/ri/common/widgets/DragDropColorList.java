@@ -38,9 +38,9 @@ import static org.icepdf.ri.util.ViewerPropertiesManager.PROPERTY_ANNOTATION_REC
  */
 public class DragDropColorList extends JList<DragDropColorList.ColorLabel> {
 
-    private DefaultListModel<ColorLabel> model;
+    private final DefaultListModel<ColorLabel> model;
 
-    private Preferences preferences;
+    private final Preferences preferences;
 
     public DragDropColorList(Controller controller, Preferences preferences) {
         super(new DefaultListModel<>());
@@ -169,8 +169,8 @@ public class DragDropColorList extends JList<DragDropColorList.ColorLabel> {
     }
 
     public static class ColorLabel implements Serializable {
-        private Color color;
-        private String label;
+        private final Color color;
+        private final String label;
 
         ColorLabel(Color color, String label) {
             this.color = color;

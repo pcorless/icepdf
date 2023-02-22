@@ -156,8 +156,7 @@ public class Utils {
             int currValue = 0;
             currValue |= (0xff & ((int) buffer[index]));
             String s = Integer.toHexString(currValue);
-            for (int i = s.length(); i < 2; i++)
-                sb.append('0');
+            sb.append("0".repeat(2 - s.length()));
             sb.append(s);
             if (addSpaceSeparator)
                 sb.append(' ');

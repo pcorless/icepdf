@@ -6,8 +6,8 @@ public class CrossReferenceEntry {
     public static final int TYPE_USED = 1;
     public static final int TYPE_COMPRESSED = 2;
 
-    protected int type;
-    protected int objectNumber;
+    protected final int type;
+    protected final int objectNumber;
 
     public CrossReferenceEntry(int type, int objectNumber) {
         this.type = type;

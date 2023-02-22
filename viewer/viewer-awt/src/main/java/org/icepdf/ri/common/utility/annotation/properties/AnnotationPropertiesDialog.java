@@ -29,11 +29,11 @@ import java.util.ResourceBundle;
 public class AnnotationPropertiesDialog extends EscapeJDialog implements AnnotationProperties {
 
     // layouts constraint
-    private GridBagConstraints constraints;
+    private final GridBagConstraints constraints;
 
-    private JTabbedPane propertiesTabbedPane;
-    private Controller controller;
-    private ResourceBundle messageBundle;
+    private final JTabbedPane propertiesTabbedPane;
+    private final Controller controller;
+    private final ResourceBundle messageBundle;
 
     public AnnotationPropertiesDialog(Frame frame, SwingController controller,
                                       ResourceBundle messageBundle) {

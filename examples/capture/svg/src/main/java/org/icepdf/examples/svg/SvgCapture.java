@@ -25,7 +25,7 @@ import java.io.Writer;
 public class SvgCapture {
 
     // Enable SVG CSS style attribute
-    private static boolean SVG_CSS = true;
+    private static final boolean SVG_CSS = true;
 
     public static void main(String[] args) {
 

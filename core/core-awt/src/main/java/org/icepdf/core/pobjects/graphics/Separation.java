@@ -68,12 +68,12 @@ public class Separation extends PColorSpace {
 
     // named colour reference if valid conversion took place
     protected Color namedColor;
-    protected HashMap<Float, Color> namedColorCache = new HashMap<>();
+    protected final HashMap<Float, Color> namedColorCache = new HashMap<>();
     protected final Object cacheLock = new Object();
     // alternative colour space, named colour can not be resolved.
-    protected PColorSpace alternate;
+    protected final PColorSpace alternate;
     // transform for colour tint, named function type
-    protected Function tintTransform;
+    protected final Function tintTransform;
     // The special colorant name All shall refer collectively to all colorants
     // available on an output device, including those for the standard process
     // colorants. When a Separation space with this colorant name is the current
@@ -88,9 +88,9 @@ public class Separation extends PColorSpace {
     public static final String COLORANT_NONE = "none";
     private float tint = 1.0f;
     // basic cache to speed up the lookup.
-    private ConcurrentHashMap<Integer, Color> colorTable1B;
-    private ConcurrentHashMap<Integer, Color> colorTable3B;
-    private ConcurrentHashMap<Integer, Color> colorTable4B;
+    private final ConcurrentHashMap<Integer, Color> colorTable1B;
+    private final ConcurrentHashMap<Integer, Color> colorTable3B;
+    private final ConcurrentHashMap<Integer, Color> colorTable4B;
 
     /**
      * Create a new Seperation colour space.  Separation is specified using

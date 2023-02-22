@@ -55,17 +55,17 @@ abstract class MultipleGradientPaintContext implements PaintContext {
     /**
      * Color model used if gradient colors are all opaque
      */
-    private static ColorModel lrgbmodel_NA = new DirectColorModel
+    private static final ColorModel lrgbmodel_NA = new DirectColorModel
             (ColorSpace.getInstance(ColorSpace.CS_LINEAR_RGB),
                     24, 0xff0000, 0xFF00, 0xFF, 0x0,
                     false, DataBuffer.TYPE_INT);
 
-    private static ColorModel srgbmodel_NA = new DirectColorModel
+    private static final ColorModel srgbmodel_NA = new DirectColorModel
             (ColorSpace.getInstance(ColorSpace.CS_sRGB),
                     24, 0xff0000, 0xFF00, 0xFF, 0x0,
                     false, DataBuffer.TYPE_INT);
 
-    private static ColorModel graybmodel_NA =
+    private static final ColorModel graybmodel_NA =
             new ComponentColorModel(ColorSpace.getInstance(
                     ColorSpace.CS_GRAY), new int[]{1}, false, false,
                     ColorModel.OPAQUE, DataBuffer.TYPE_INT);
@@ -73,17 +73,17 @@ abstract class MultipleGradientPaintContext implements PaintContext {
     /**
      * Color model used if some gradient colors are transparent
      */
-    private static ColorModel lrgbmodel_A = new DirectColorModel
+    private static final ColorModel lrgbmodel_A = new DirectColorModel
             (ColorSpace.getInstance(ColorSpace.CS_LINEAR_RGB),
                     32, 0xff0000, 0xFF00, 0xFF, 0xFF000000,
                     false, DataBuffer.TYPE_INT);
 
-    private static ColorModel srgbmodel_A = new DirectColorModel
+    private static final ColorModel srgbmodel_A = new DirectColorModel
             (ColorSpace.getInstance(ColorSpace.CS_sRGB),
                     32, 0xff0000, 0xFF00, 0xFF, 0xFF000000,
                     false, DataBuffer.TYPE_INT);
 
-    private static ColorModel graybmodel_A =
+    private static final ColorModel graybmodel_A =
             new ComponentColorModel(ColorSpace.getInstance(
                     ColorSpace.CS_GRAY), new int[]{1, 1}, true, false,
                     ColorModel.TRANSLUCENT, DataBuffer.TYPE_INT);

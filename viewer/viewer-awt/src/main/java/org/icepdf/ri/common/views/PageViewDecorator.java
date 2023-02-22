@@ -53,7 +53,7 @@ public class PageViewDecorator extends JComponent {
 
     protected static final int SHADOW_SIZE = 3;
 
-    protected Dimension preferredSize = new Dimension();
+    protected final Dimension preferredSize = new Dimension();
 
     public static Color pageBorderColor;
     public static Color pageShadowColor;

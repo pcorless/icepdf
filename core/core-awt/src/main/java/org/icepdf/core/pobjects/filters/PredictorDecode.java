@@ -65,7 +65,7 @@ public class PredictorDecode extends ChunkingInputStream {
     protected static final Name BITS_PER_COMPONENT_VALUE = new Name("BitsPerComponent");
     protected static final Name EARLY_CHANGE_VALUE = new Name("EarlyChange");
     // default values for non image streams.
-    protected int predictor;
+    protected final int predictor;
     protected int numComponents = 1;
     protected int bitsPerComponent = 8;
     protected int width = 1;

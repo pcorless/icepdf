@@ -123,7 +123,7 @@ public abstract class Font extends Dictionary {
     public static final int FONT_FLAG_FORCE_BOLD = 0x40000;   // bit 19
 
     // Object name always "Font"
-    protected Name name;
+    protected final Name name;
 
     // The name of the object, Font
     protected String basefont;

@@ -18,7 +18,7 @@ import java.io.IOException;
 public class ObjectLoader {
 
     private final Library library;
-    private Parser parser;
+    private final Parser parser;
 
     public ObjectLoader(Library library) {
         this.library = library;

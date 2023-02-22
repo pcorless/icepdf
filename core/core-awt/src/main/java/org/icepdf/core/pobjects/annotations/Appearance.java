@@ -30,7 +30,7 @@ import java.util.HashMap;
  */
 public class Appearance {
 
-    private HashMap<Name, AppearanceState> appearance;
+    private final HashMap<Name, AppearanceState> appearance;
 
     private Name selectedName = Annotation.APPEARANCE_STREAM_NORMAL_KEY;
     private Name offName = new Name("Off");

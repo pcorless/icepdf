@@ -155,7 +155,7 @@ public class CertSeedValueDictionary extends Dictionary {
      */
     public static final Name URL_TYPE_KEY = new Name("URLType");
 
-    private int flags;
+    private final int flags;
 
     public CertSeedValueDictionary(Library library, DictionaryEntries entries) {
         super(library, entries);

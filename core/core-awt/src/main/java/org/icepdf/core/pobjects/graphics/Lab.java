@@ -31,28 +31,28 @@ public class Lab extends PColorSpace {
     public static final Name WHITE_POINT_KEY = new Name("WhitePoint");
     public static final Name RANGE_KEY = new Name("Range");
 
-    private float[] whitePoint = {
+    private final float[] whitePoint = {
             0.95047f, 1.0f, 1.08883f
     };
-    private float[] blackPoint = {
+    private final float[] blackPoint = {
             0f, 0f, 0f
     };
-    private float[] range = {
+    private final float[] range = {
             -100, 100, -100, 100
     };
-    private float lBase;
-    private float lSpread;
-    private float aBase;
-    private float aSpread;
-    private float bBase;
-    private float bSpread;
+    private final float lBase;
+    private final float lSpread;
+    private final float aBase;
+    private final float aSpread;
+    private final float bBase;
+    private final float bSpread;
 
-    private float xBase;
-    private float xSpread;
-    private float yBase;
-    private float ySpread;
-    private float zBase;
-    private float zSpread;
+    private final float xBase;
+    private final float xSpread;
+    private final float yBase;
+    private final float ySpread;
+    private final float zBase;
+    private final float zSpread;
 
     Lab(Library l, DictionaryEntries h) {
         super(l, h);

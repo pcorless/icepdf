@@ -35,7 +35,7 @@ import java.util.zip.InflaterInputStream;
 public class FlateDecode extends ChunkingInputStream {
 
 
-    private static int DEFAULT_BUFFER_SIZE;
+    private static final int DEFAULT_BUFFER_SIZE;
 
     static {
         DEFAULT_BUFFER_SIZE = Defs.sysPropertyInt("org.icepdf.core.flateDecode.bufferSize",

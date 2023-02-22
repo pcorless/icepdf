@@ -9,7 +9,7 @@ import org.icepdf.qa.viewer.common.Mediator;
  */
 public class CreateProjectCommand implements EventHandler<ActionEvent>, Command {
 
-    private Mediator mediator;
+    private final Mediator mediator;
 
     public CreateProjectCommand(Mediator mediator) {
         this.mediator = mediator;

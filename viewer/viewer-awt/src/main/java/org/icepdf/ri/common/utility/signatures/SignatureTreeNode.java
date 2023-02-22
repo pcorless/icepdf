@@ -43,8 +43,8 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
     private static final Logger logger =
             Logger.getLogger(SignatureTreeNode.class.toString());
 
-    private ResourceBundle messageBundle;
-    private SignatureWidgetAnnotation signatureWidgetAnnotation;
+    private final ResourceBundle messageBundle;
+    private final SignatureWidgetAnnotation signatureWidgetAnnotation;
     private SignatureValidator signatureValidator;
     // flag that validation process is taking place.
     private boolean verifyingSignature;

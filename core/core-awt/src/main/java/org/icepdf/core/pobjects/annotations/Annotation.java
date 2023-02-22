@@ -525,7 +525,7 @@ public abstract class Annotation extends Dictionary {
      * human file reading.
      */
     protected static boolean compressAppearanceStream = true;
-    protected HashMap<Name, Appearance> appearances = new HashMap<>(3);
+    protected final HashMap<Name, Appearance> appearances = new HashMap<>(3);
     protected Name currentAppearance;
 
     // page index
@@ -570,7 +570,6 @@ public abstract class Annotation extends Dictionary {
      * @param entries annotation properties.
      * @return annotation instance.
      */
-    @SuppressWarnings("unchecked")
     public static Annotation buildAnnotation(Library library, DictionaryEntries entries) {
         Annotation annot = null;
         Name subType = (Name) entries.get(SUBTYPE_KEY);
@@ -630,7 +629,6 @@ public abstract class Annotation extends Dictionary {
         Annotation.compressAppearanceStream = compressAppearanceStream;
     }
 
-    @SuppressWarnings("unchecked")
     public synchronized void init() throws InterruptedException {
         super.init();
         // type of Annotation

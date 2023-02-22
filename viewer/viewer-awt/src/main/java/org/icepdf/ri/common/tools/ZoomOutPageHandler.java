@@ -36,9 +36,9 @@ public class ZoomOutPageHandler implements ToolHandler {
     private static final Logger logger =
             Logger.getLogger(ZoomOutPageHandler.class.toString());
 
-    private AbstractPageViewComponent pageViewComponent;
-    private DocumentViewController documentViewController;
-    private DocumentViewModel documentViewModel;
+    private final AbstractPageViewComponent pageViewComponent;
+    private final DocumentViewController documentViewController;
+    private final DocumentViewModel documentViewModel;
 
     public ZoomOutPageHandler(DocumentViewController documentViewController,
                               AbstractPageViewComponent pageViewComponent,

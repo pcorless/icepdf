@@ -17,10 +17,10 @@ import java.io.PrintStream;
  */
 public class ProjectUtilityPane extends TabPane {
 
-    private Tab consoleTab;
+    private final Tab consoleTab;
 
-    private TextArea consoleTextArea;
-    private PrintStream printStream;
+    private final TextArea consoleTextArea;
+    private final PrintStream printStream;
     private int count;
 
     public ProjectUtilityPane(Mediator mediator) {
@@ -47,7 +47,7 @@ public class ProjectUtilityPane extends TabPane {
     }
 
     public class Console extends OutputStream {
-        private TextArea console;
+        private final TextArea console;
 
         public Console(TextArea console) {
             this.console = console;

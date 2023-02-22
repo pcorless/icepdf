@@ -41,13 +41,13 @@ import java.util.ResourceBundle;
 public class AnnotationSummaryPanel extends JPanel implements MutableDocument, PropertyChangeListener,
         MouseListener, ComponentListener, ItemListener {
 
-    protected Frame frame;
-    protected Controller controller;
-    protected ResourceBundle messageBundle;
+    protected final Frame frame;
+    protected final Controller controller;
+    protected final ResourceBundle messageBundle;
 
     protected MarkupAnnotation lastSelectedMarkupAnnotation;
 
-    protected GridBagConstraints constraints;
+    protected final GridBagConstraints constraints;
     protected JPanel annotationsPanel;
 
     // font configuration

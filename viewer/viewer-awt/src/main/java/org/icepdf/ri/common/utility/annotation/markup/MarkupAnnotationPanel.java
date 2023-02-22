@@ -83,8 +83,8 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
     protected GridBagConstraints constraints;
 
     private Preferences preferences;
-    private Controller controller;
-    protected ResourceBundle messageBundle;
+    private final Controller controller;
+    protected final ResourceBundle messageBundle;
 
     private AnnotationPanel parentPanel;
     private JPanel markupAnnotationPanel;
@@ -96,13 +96,13 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
     private DropDownButton filterDropDownButton;
     private JMenu colorFilterMenuItem;
 
-    private ArrayList<Action> sortActions;
+    private final ArrayList<Action> sortActions;
     private Action sortAction;
-    private ArrayList<Action> filterAuthorActions;
+    private final ArrayList<Action> filterAuthorActions;
     private Action filterAuthorAction;
-    private ArrayList<Action> filterVisibilityActions;
+    private final ArrayList<Action> filterVisibilityActions;
     private Action filterVisibilityAction;
-    private ArrayList<Action> filterTypeActions;
+    private final ArrayList<Action> filterTypeActions;
     private Action filterTypeAction;
     private Action filterColorAction;
 

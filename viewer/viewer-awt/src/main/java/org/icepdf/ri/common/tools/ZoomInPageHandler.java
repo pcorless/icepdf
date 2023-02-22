@@ -36,7 +36,7 @@ public class ZoomInPageHandler extends SelectionBoxHandler implements ToolHandle
     private static final Logger logger =
             Logger.getLogger(ZoomInPageHandler.class.toString());
 
-    private Point initialPoint = new Point();
+    private final Point initialPoint = new Point();
 
     public ZoomInPageHandler(DocumentViewController documentViewController,
                              AbstractPageViewComponent pageViewComponent) {

@@ -34,10 +34,10 @@ public class GoToRAction extends Action {
     private FileSpecification fileSpecification;
 
     // location in document that should be loaded.
-    private Destination externalDestination;
+    private final Destination externalDestination;
 
     // new window?
-    private Boolean isNewWindow;
+    private final Boolean isNewWindow;
 
     /**
      * Creates a new instance of a Action.

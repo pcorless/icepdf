@@ -48,8 +48,8 @@ public class LayersTree extends JTree {
 @SuppressWarnings("serial")
 class CheckBoxRenderer extends JPanel implements TreeCellRenderer {
 
-    protected JCheckBox checkBox;
-    protected TreeLabel treeLabel;
+    protected final JCheckBox checkBox;
+    protected final TreeLabel treeLabel;
 
     public CheckBoxRenderer() {
         setLayout(null);

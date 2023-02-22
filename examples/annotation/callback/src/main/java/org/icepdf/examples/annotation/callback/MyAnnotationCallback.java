@@ -48,12 +48,12 @@ public class MyAnnotationCallback implements AnnotationCallback {
     private static final Logger logger =
             Logger.getLogger(MyAnnotationCallback.class.toString());
 
-    private DocumentViewController documentViewController;
+    private final DocumentViewController documentViewController;
 
     // annotation History map similar to browser link history.  This is weak
     // hash map to avoid any potential memory issue for a large document.  As
     // this class lives for as long as the document is open.
-    private WeakHashMap<String, AnnotationState> annotationHistory;
+    private final WeakHashMap<String, AnnotationState> annotationHistory;
 
     private static final Color ANNOTATION = Color.red;
     private static final Color ANNOTATION_VISITED = Color.blue;

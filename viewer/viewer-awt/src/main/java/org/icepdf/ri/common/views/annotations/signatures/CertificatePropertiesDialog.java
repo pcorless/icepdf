@@ -48,7 +48,7 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
             Logger.getLogger(CertificatePropertiesDialog.class.toString());
 
     protected static ResourceBundle messageBundle;
-    private Collection<? extends Certificate> certs;
+    private final Collection<? extends Certificate> certs;
 
     public CertificatePropertiesDialog(Frame parent, ResourceBundle messageBundle, Collection<? extends Certificate> certs) {
         super(parent, true);
@@ -317,8 +317,8 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
 }
 
 class CertificateInfo {
-    private X509Certificate cert;
-    private ResourceBundle messageBundle;
+    private final X509Certificate cert;
+    private final ResourceBundle messageBundle;
 
     CertificateInfo(X509Certificate cert, ResourceBundle messageBundle) {
         this.cert = cert;

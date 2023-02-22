@@ -53,7 +53,7 @@ public class Function_2 extends Function {
     // given by:
     // y<sub>j</sub> = CO<sub>j</sub> + x<sup>N</sup> x (C1<sub>j</sub> - C0<sub>j</sub>)
     // for 0 <= j < n
-    private float N;
+    private final float N;
 
     // An array of n numbers defining the function result when x = 0.0.  Default
     // value is [0.0]

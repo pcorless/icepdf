@@ -648,7 +648,6 @@ public class Library {
      * @return dictionary object if a valid key;  null, if the key does not point
      * to dictionary or is invalid.
      */
-    @SuppressWarnings("unchecked")
     public DictionaryEntries getDictionary(DictionaryEntries dictionaryEntries, Name key) {
         Object o = getObject(dictionaryEntries, key);
         if (o instanceof DictionaryEntries) {
@@ -728,7 +727,6 @@ public class Library {
         return cs;
     }
 
-    @SuppressWarnings("unchecked")
     public Resources getResources(DictionaryEntries dictionaryEntries, Name key) {
         if (dictionaryEntries == null)
             return null;

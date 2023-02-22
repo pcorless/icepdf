@@ -45,8 +45,8 @@ import java.util.*;
  */
 public class PageText implements TextSelect {
 
-    private static boolean checkForDuplicates;
-    private static boolean preserveColumns;
+    private static final boolean checkForDuplicates;
+    private static final boolean preserveColumns;
 
     static {
         checkForDuplicates = Defs.booleanProperty(

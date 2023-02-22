@@ -57,7 +57,7 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
     protected static final Logger logger =
             Logger.getLogger(MarkupAnnotationComponent.class.toString());
 
-    protected static boolean isInteractivePopupAnnotationsEnabled;
+    protected static final boolean isInteractivePopupAnnotationsEnabled;
 
     static {
         isInteractivePopupAnnotationsEnabled =

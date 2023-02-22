@@ -112,15 +112,15 @@ public abstract class AbstractContentParser {
     // the text base affine transform must be accessible outside the parsTtext method
     protected AffineTransform textBlockBase;
 
-    // when parsing a type3 font we need to keep track of the the scale factor
+    // when parsing a type3 font we need to keep track of the scale factor
     // of the device space ctm.
     protected float glyph2UserSpaceScale = 1.0f;
 
     // xObject image count;
-    protected AtomicInteger imageIndex = new AtomicInteger(1);
+    protected final AtomicInteger imageIndex = new AtomicInteger(1);
 
     // stack to help with the parse
-    protected Stack<Object> stack = new Stack<>();
+    protected final Stack<Object> stack = new Stack<>();
 
     /**
      * @param l PDF library master object.
@@ -262,7 +262,7 @@ public abstract class AbstractContentParser {
         Object tmp = stack.pop();
         if (tmp instanceof Name) {
             // Fill Color ColorSpace, resources call uses factory call to PColorSpace.getColorSpace
-            // which returns an colour space including a pattern
+            // which returns a colour space including a pattern
             graphicState.setStrokeColorSpace(resources.getColorSpace(tmp));
         }
     }
@@ -270,7 +270,7 @@ public abstract class AbstractContentParser {
     protected static void consume_cs(GraphicsState graphicState, Stack<Object> stack, Resources resources) {
         Name n = (Name) stack.pop();
         // Fill Color ColorSpace, resources call uses factory call to PColorSpace.getColorSpace
-        // which returns an colour space including a pattern
+        // which returns a colour space including a pattern
         graphicState.setFillColorSpace(resources.getColorSpace(n));
     }
 
@@ -309,7 +309,7 @@ public abstract class AbstractContentParser {
                     // parsing is of the form 'C1...Cn name scn'
                     // first find out colour space specified by name
                     int compLength = graphicState.getStrokeColorSpace().getNumComponents();
-                    // next calculate the colour based ont he space and c1..Cn
+                    // next calculate the colour based ont he space and c1...Cn
                     float[] colour = popFloatInOrder(stack, compLength);
                     Color color = graphicState.getStrokeColorSpace().getColor(colour, isTint);
                     graphicState.setStrokeColor(color);
@@ -320,7 +320,7 @@ public abstract class AbstractContentParser {
 
             // some pdfs encoding do not explicitly change the default colour
             // space from the default DeviceGrey.  The following code checks
-            // how many n values are available and if different then current
+            // how many n values are available and if different than current
             // graphicState.strokeColorSpace it is changed as needed
 
             // first get assumed number of components
@@ -375,7 +375,7 @@ public abstract class AbstractContentParser {
         } else if (o instanceof Number) {
             // some PDFs encoding do not explicitly change the default colour
             // space from the default DeviceGrey.  The following code checks
-            // how many n values are available and if different then current
+            // how many n values are available and if different than current
             // graphicState.fillColorSpace it is changed as needed
 
             // first get assumed number of components

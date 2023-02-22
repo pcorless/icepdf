@@ -66,7 +66,6 @@ public class ImageStream extends Stream {
      * @return new image object
      * @throws InterruptedException thread interrupted.
      */
-    @SuppressWarnings("unchecked")
     public BufferedImage getImage(GraphicsState graphicsState, Resources resources) throws InterruptedException {
         // check the pool encase we already parse this image.
         imageParams = new ImageParams(library, entries, resources);

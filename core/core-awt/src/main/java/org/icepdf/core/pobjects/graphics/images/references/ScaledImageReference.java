@@ -40,8 +40,8 @@ public class ScaledImageReference extends CachedImageReference {
             Logger.getLogger(ScaledImageReference.class.toString());
 
     // scaled image size.
-    private int width;
-    private int height;
+    private final int width;
+    private final int height;
 
     protected ScaledImageReference(ImageStream imageStream, GraphicsState graphicsState,
                                    Resources resources, int imageIndex, Page page) {

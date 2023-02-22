@@ -30,7 +30,7 @@ import java.util.ArrayList;
 public class UndoCaretaker {
 
     // max number of object to store in undo list.
-    private static int maxHistorySize;
+    private static final int maxHistorySize;
 
     static {
         // enables interactive annotation support.

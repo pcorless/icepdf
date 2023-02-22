@@ -38,17 +38,17 @@ import java.util.ResourceBundle;
 public class AnnotationPopup<T extends AnnotationComponent> extends JPopupMenu implements ActionListener {
 
     // properties dialog command
-    protected JMenuItem propertiesMenuItem;
-    protected JMenuItem deleteMenuItem;
-    protected JMenuItem destinationsMenuItem;
+    protected final JMenuItem propertiesMenuItem;
+    protected final JMenuItem deleteMenuItem;
+    protected final JMenuItem destinationsMenuItem;
 
     protected int x, y;
 
     protected T annotationComponent;
 
     protected PageViewComponentImpl pageViewComponent;
-    protected Controller controller;
-    protected ResourceBundle messageBundle;
+    protected final Controller controller;
+    protected final ResourceBundle messageBundle;
 
     public AnnotationPopup(T annotationComponent, Controller controller,
                            AbstractPageViewComponent pageViewComponent) {

@@ -62,8 +62,8 @@ public class EmbeddedFileStream extends Dictionary {
      */
     public static final Name PARAMS_CHECK_SUM_KEY = new Name("CheckSum");
 
-    protected Stream fileStream;
-    private SecurityManager securityManager;
+    protected final Stream fileStream;
+    private final SecurityManager securityManager;
 
     public EmbeddedFileStream(Library library, Stream fileStream) {
         super(library, fileStream.getEntries());

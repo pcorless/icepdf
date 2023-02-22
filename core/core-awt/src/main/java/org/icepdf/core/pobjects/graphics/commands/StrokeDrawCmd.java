@@ -30,7 +30,7 @@ import java.awt.geom.AffineTransform;
  */
 public class StrokeDrawCmd extends AbstractDrawCmd {
 
-    private Stroke stroke;
+    private final Stroke stroke;
 
     public StrokeDrawCmd(Stroke stroke) {
         this.stroke = stroke;

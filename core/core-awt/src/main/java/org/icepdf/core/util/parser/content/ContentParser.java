@@ -29,7 +29,7 @@ public class ContentParser extends AbstractContentParser {
      * Inline image cache,  for heavily tiled background images.  Can be cleared
      * between document parses if needed.
      */
-    public static Map<String, ImageReference> inlineImageCache =
+    public static final Map<String, ImageReference> inlineImageCache =
             Collections.synchronizedMap(new WeakHashMap<>());
 
     public ContentParser(Library l, Resources r) {

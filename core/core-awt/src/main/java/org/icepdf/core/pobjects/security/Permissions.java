@@ -166,7 +166,7 @@ public class Permissions {
 
 
     // Permission values, indexes are mapped to constant values
-    private boolean[] permissions = new boolean[10];
+    private final boolean[] permissions = new boolean[10];
     // original permission integer from encrypt dictionary
     // not permission bits and revered bits. 11111111111111111111000011000000
     private int permissionFlags = 0xFFFFF0C0;
@@ -299,7 +299,7 @@ public class Permissions {
         if (!isInit) {
             init();
         }
-        // return false if the permission index is out of bounds. 
+        // return false if the permission index is out of bounds.
         return !(permissionIndex < 0 || permissionIndex > permissions.length)
                 && permissions[permissionIndex];
     }

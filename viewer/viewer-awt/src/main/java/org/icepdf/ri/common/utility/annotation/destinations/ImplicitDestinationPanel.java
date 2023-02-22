@@ -46,8 +46,8 @@ import java.util.ResourceBundle;
  */
 public class ImplicitDestinationPanel extends JPanel implements ItemListener, AnnotationProperties {
 
-    private Controller controller;
-    private ResourceBundle messageBundle;
+    private final Controller controller;
+    private final ResourceBundle messageBundle;
     private AnnotationComponent currentAnnotation;
 
     private JComboBox implicitDestTypeComboBox;

@@ -201,7 +201,7 @@ public class DraggableAnnotationPanel extends JPanel {
 
         public int padding = 10;
 
-        private ArrayList<Component> children;
+        private final ArrayList<Component> children;
 
         public ColumnLayoutManager(int padding) {
             this();

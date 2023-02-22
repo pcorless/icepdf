@@ -41,15 +41,15 @@ public class ICCBased extends PColorSpace {
     public static final Name ICCBASED_KEY = new Name("ICCBased");
     public static final Name N_KEY = new Name("N");
 
-    private int numcomp;
+    private final int numcomp;
     private PColorSpace alternate;
-    private Stream stream;
+    private final Stream stream;
     private ColorSpace colorSpace;
 
     // basic cache to speed up the lookup, can't be static as we handle
     // 3 and 4 band colours.
-    private ConcurrentHashMap<Integer, Color> iccColorCache3B;
-    private ConcurrentHashMap<Integer, Color> iccColorCache4B;
+    private final ConcurrentHashMap<Integer, Color> iccColorCache3B;
+    private final ConcurrentHashMap<Integer, Color> iccColorCache4B;
 
     // setting up an ICC colour look up is expensive, so if we get a failure
     // we just fallback to the alternative space to safe cpu time.

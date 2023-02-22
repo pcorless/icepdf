@@ -45,26 +45,26 @@ public class TextExtractionTask extends SwingWorker<Void, StringBuilder> {
             Logger.getLogger(TextExtractionTask.class.toString());
 
     // total length of task (total page count), used for progress bar
-    private int lengthOfTask;
+    private final int lengthOfTask;
 
     // current progress, used for the progress bar
     private int current;
 
     // message displayed on progress bar
-    private MessageFormat messageDialogFormat;
-    private MessageFormat messageTextFormat;
+    private final MessageFormat messageDialogFormat;
+    private final MessageFormat messageTextFormat;
     private String dialogMessage;
 
     // internationalization
-    private ResourceBundle messageBundle;
+    private final ResourceBundle messageBundle;
 
     // PDF document pointer
-    private Document document;
+    private final Document document;
 
     // File used for text export
-    private File file;
+    private final File file;
 
-    private ProgressMonitor progressMonitor;
+    private final ProgressMonitor progressMonitor;
 
     private static final double[] fileLimits = {0, 1, 2};
 

@@ -367,8 +367,8 @@ public class NameTree extends Dictionary {
     }
 
     class Pair implements Comparable<Pair> {
-        String name;
-        Object value;
+        final String name;
+        final Object value;
 
         Pair(String name, Object value) {
             this.name = name;

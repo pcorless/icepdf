@@ -29,7 +29,7 @@ import java.util.ResourceBundle;
  */
 public class SignerInfoPanel extends JPanel {
     // layouts constraint
-    private GridBagConstraints constraints;
+    private final GridBagConstraints constraints;
 
 
     public SignerInfoPanel(SignatureValidationStatus signatureValidationStatus, ResourceBundle messageBundle,

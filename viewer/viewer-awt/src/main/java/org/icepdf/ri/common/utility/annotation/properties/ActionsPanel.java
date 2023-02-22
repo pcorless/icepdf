@@ -57,10 +57,10 @@ public class ActionsPanel extends AnnotationPanelAdapter
     private JButton removeAction;
 
     // action type descriptions
-    private String destinationLabel;
-    private String uriActionLabel;
-    private String goToActionLabel;
-    private String launchActionLabel;
+    private final String destinationLabel;
+    private final String uriActionLabel;
+    private final String goToActionLabel;
+    private final String launchActionLabel;
 
     // Goto action dialog
     private GoToActionDialog goToActionDialog;
@@ -103,7 +103,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
         if (annotation.getAnnotation() != null &&
                 annotation.getAnnotation().getAction() != null) {
             addActionToList(annotation.getAnnotation().getAction());
-            // select first item in list. 
+            // select first item in list.
             if (actionListModel.size() > 0) {
                 actionList.setSelectedIndex(0);
             }
@@ -126,7 +126,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
         }
 
         if (source == addAction) {
-            // does all dialog work for adding new action. 
+            // does all dialog work for adding new action.
             addAction();
         } else if (source == editAction) {
             // show the correct panel for the selected annotation
@@ -162,7 +162,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
                 editAction.setEnabled(false);
                 removeAction.setEnabled(false);
             } else {
-                // we only can add one action to an annotation for now. 
+                // we only can add one action to an annotation for now.
                 refreshActionCrud();
             }
         }
@@ -465,7 +465,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
     class ActionEntry {
 
         // The text to be displayed on the screen for this item.
-        String title;
+        final String title;
 
         // The destination to be displayed when this item is activated
         org.icepdf.core.pobjects.actions.Action action;
@@ -501,10 +501,10 @@ public class ActionsPanel extends AnnotationPanelAdapter
     class ActionChoice {
 
         // The text to be displayed on the screen for this item.
-        String title;
+        final String title;
 
         // The destination to be displayed when this item is activated
-        int actionType;
+        final int actionType;
 
 
         ActionChoice(String title, int actionType) {

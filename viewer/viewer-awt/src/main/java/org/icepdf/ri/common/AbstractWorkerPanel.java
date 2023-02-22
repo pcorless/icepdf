@@ -38,8 +38,8 @@ import java.util.ResourceBundle;
  */
 public abstract class AbstractWorkerPanel extends JPanel implements MutableDocument {
 
-    protected Controller controller;
-    protected ResourceBundle messageBundle;
+    protected final Controller controller;
+    protected final ResourceBundle messageBundle;
 
     // main tree of annotation hierarchy
     protected JTree tree;

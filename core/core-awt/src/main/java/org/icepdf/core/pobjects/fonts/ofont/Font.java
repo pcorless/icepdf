@@ -76,7 +76,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
     private HashMap<Integer, Float> cidWidths;
 
     // Base character mapping of 256 chars
-    private char[] cMap;
+    private final char[] cMap;
 
     // ToUnicode CMap object stores any mapping information
     private CMap toUnicodeCMap;
@@ -85,7 +85,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
     protected AFM afm;
 
     // awt font style reference, ITALIC or BOLD|ITALIC
-    protected int style;
+    protected final int style;
 
     // get list of all available fonts.
     private static final java.awt.Font[] fonts =

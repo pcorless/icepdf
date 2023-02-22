@@ -58,7 +58,7 @@ public class TextSelection extends SelectionBoxHandler {
     private GlyphLocation lastGlyphEndLocation;
 
     // todo configurable system property to switch to rightToLeft.
-    private boolean leftToRight = true;
+    private final boolean leftToRight = true;
 
     // todo make configurable
     protected int topMargin = 75;
@@ -612,7 +612,9 @@ public class TextSelection extends SelectionBoxHandler {
 
 class GlyphLocation {
 
-    private int line, word, glyph;
+    private final int line;
+    private final int word;
+    private final int glyph;
 
     public GlyphLocation(int line, int word, int glyph) {
         this.line = line;

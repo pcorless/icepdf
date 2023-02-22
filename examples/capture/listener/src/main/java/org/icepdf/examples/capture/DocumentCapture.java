@@ -72,9 +72,9 @@ public class DocumentCapture {
     }
 
     public static class CapturePages implements Runnable {
-        private Path path;
+        private final Path path;
         private float scale = 1f;
-        private float rotation = 0f;
+        private final float rotation = 0f;
 
         public CapturePages(Path path) {
             this.path = path;

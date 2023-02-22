@@ -32,7 +32,7 @@ import java.awt.event.MouseEvent;
 public class ScalableTextField extends JTextField implements ScalableField {
 
     private static final long serialVersionUID = 1155416379916442539L;
-    private DocumentViewModel documentViewModel;
+    private final DocumentViewModel documentViewModel;
     private boolean active;
 
     public ScalableTextField(final DocumentViewModel documentViewModel) {

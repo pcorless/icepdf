@@ -37,7 +37,7 @@ public class MetricsPageLoadingListener implements PageLoadingListener {
     public static final DecimalFormat formatter = new DecimalFormat("#.###");
     public static final DecimalFormat percentFormatter = new DecimalFormat("#");
     private int pageIndex;
-    private int pageCount;
+    private final int pageCount;
 
     private long startLoading;
     private long endLoading;

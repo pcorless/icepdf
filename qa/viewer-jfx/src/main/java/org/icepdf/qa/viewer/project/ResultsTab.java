@@ -23,11 +23,11 @@ import java.util.List;
  */
 public class ResultsTab extends Tab {
 
-    private TextField filterTextField;
+    private final TextField filterTextField;
 
-    private ContextMenu openFileContextMenu;
-    private TableView<Result> resultsTable;
-    private ObservableList<Result> data;
+    private final ContextMenu openFileContextMenu;
+    private final TableView<Result> resultsTable;
+    private final ObservableList<Result> data;
 
     public ResultsTab(String title, Mediator mediator) {
         super(title);

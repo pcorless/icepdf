@@ -36,14 +36,14 @@ import java.util.prefs.Preferences;
 public class AdvancedPreferencesPanel extends JPanel {
 
     // layouts constraint
-    private GridBagConstraints constraints;
+    private final GridBagConstraints constraints;
 
-    private Preferences preferences;
+    private final Preferences preferences;
 
-    private JComboBox<BooleanItem> enableImageProxyComboBox;
+    private final JComboBox<BooleanItem> enableImageProxyComboBox;
     private JTextField imageProxyThreadCountField;
 
-    private JTextField commonThreadCountField;
+    private final JTextField commonThreadCountField;
 
     public AdvancedPreferencesPanel(Controller controller, ViewerPropertiesManager propertiesManager,
                                     ResourceBundle messageBundle) {

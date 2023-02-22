@@ -91,12 +91,17 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
         return -1;
     }
 
-    static private HashMap<String, Integer> h;
-    static private char se[], mre[], wae[], pde[], sym[], zap[];
+    static private final HashMap<String, Integer> h;
+    static private final char[] se;
+    static private final char[] mre;
+    static private final char[] wae;
+    static private final char[] pde;
+    static private final char[] sym;
+    static private final char[] zap;
 
     // common symbol alaises,  displayable, followed by aliases
-    // More symbols should be added here as mappings are needed.  
-    public static int[][] symbolAlaises = {{183, 61623, 8226}, // bullets
+    // More symbols should be added here as mappings are needed.
+    public static final int[][] symbolAlaises = {{183, 61623, 8226}, // bullets
             {169, 61667, 61651, 63721, 63193}, // copy rights
             {174, 61650, 61666, 61614}, // registered
             {80, 8364}  // euro
@@ -2187,7 +2192,7 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
         wae[255] = (char) h.get("ydieresis").intValue();
         pde[255] = (char) h.get("ydieresis").intValue();
 
-        // addition of white space mappings.        
+        // addition of white space mappings.
         // Line feed
         se[10] = (char) h.get("space").intValue();
         mre[10] = (char) h.get("space").intValue();

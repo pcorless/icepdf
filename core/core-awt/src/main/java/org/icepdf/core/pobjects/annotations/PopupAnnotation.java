@@ -65,10 +65,6 @@ public class PopupAnnotation extends Annotation {
         super(library, dictionaryEntries);
     }
 
-    public synchronized void init() throws InterruptedException {
-        super.init();
-    }
-
     /**
      * Gets an instance of a PopupAnnotation that has valid Object Reference.
      *

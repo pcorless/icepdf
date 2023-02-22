@@ -87,7 +87,7 @@ public class PDate {
     private static final String DATE_PREFIX = "D:";
 
     // Month Names, 1 indexed based
-    private static String[] monthNames = {"",
+    private static final String[] monthNames = {"",
             "January",
             "February",
             "March",

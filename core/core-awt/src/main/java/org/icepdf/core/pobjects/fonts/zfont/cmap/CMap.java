@@ -61,7 +61,7 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
     public static final CMap IDENTITY_H = new CMapIdentityH();
     public static final CMap IDENTITY_V = new CMapIdentityV();
 
-    private static HashMap<Name, CMap> cMapCache = new HashMap<>();
+    private static final HashMap<Name, CMap> cMapCache = new HashMap<>();
 
     /**
      * Dictionary containing entries that define the character collection  for

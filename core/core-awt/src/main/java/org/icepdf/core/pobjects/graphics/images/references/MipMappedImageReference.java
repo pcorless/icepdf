@@ -41,7 +41,7 @@ class MipMappedImageReference extends ImageReference {
     private static final Logger logger =
             Logger.getLogger(MipMappedImageReference.class.toString());
 
-    private ArrayList<ImageReference> images;
+    private final ArrayList<ImageReference> images;
 
     protected MipMappedImageReference(ImageStream imageStream, GraphicsState graphicsState,
                                       Resources resources, int imageIndex,

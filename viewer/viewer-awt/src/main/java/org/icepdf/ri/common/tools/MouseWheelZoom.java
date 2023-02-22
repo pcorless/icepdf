@@ -31,8 +31,8 @@ import java.awt.event.MouseWheelListener;
  */
 public class MouseWheelZoom implements MouseWheelListener {
 
-    protected DocumentViewController documentViewController;
-    protected JScrollPane documentScrollPane;
+    protected final DocumentViewController documentViewController;
+    protected final JScrollPane documentScrollPane;
 
     public MouseWheelZoom(DocumentViewController documentViewController,
                           JScrollPane documentScrollPane) {

@@ -25,7 +25,7 @@ import java.util.Stack;
  */
 public abstract class Operator {
 
-    protected int type;
+    protected final int type;
 
     protected Operator(int type) {
         this.type = type;

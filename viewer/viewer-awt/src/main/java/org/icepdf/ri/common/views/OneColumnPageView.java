@@ -36,9 +36,9 @@ import java.util.List;
 public class OneColumnPageView extends AbstractDocumentView {
 
     // specialized listeners for different gui operations
-    protected CurrentPageChanger currentPageChanger;
+    protected final CurrentPageChanger currentPageChanger;
 
-    protected KeyListenerPageColumnChanger keyListenerPageChanger;
+    protected final KeyListenerPageColumnChanger keyListenerPageChanger;
 
     public OneColumnPageView(DocumentViewController documentDocumentViewController,
                              JScrollPane documentScrollpane,

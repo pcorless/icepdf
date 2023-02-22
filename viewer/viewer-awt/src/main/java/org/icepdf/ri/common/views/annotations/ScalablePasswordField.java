@@ -31,7 +31,7 @@ public class ScalablePasswordField extends JPasswordField implements ScalableFie
 
 
     private static final long serialVersionUID = 3832310978215996618L;
-    private DocumentViewModel documentViewModel;
+    private final DocumentViewModel documentViewModel;
     private boolean active;
 
     public ScalablePasswordField(final DocumentViewModel documentViewModel) {

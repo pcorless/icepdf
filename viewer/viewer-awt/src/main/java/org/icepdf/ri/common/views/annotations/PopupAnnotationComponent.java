@@ -83,11 +83,11 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         implements TreeSelectionListener, ActionListener, DocumentListener, PropertyChangeListener, MouseWheelListener,
         DropTargetListener {
 
-    public static int DEFAULT_WIDTH = 215;
-    public static int DEFAULT_HEIGHT = 150;
-    public static Color backgroundColor = new Color(252, 253, 227);
-    public static Color borderColor = new Color(153, 153, 153);
-    public static Dimension BUTTON_SIZE = new Dimension(22, 22);
+    public static final int DEFAULT_WIDTH = 215;
+    public static final int DEFAULT_HEIGHT = 150;
+    public static final Color backgroundColor = new Color(252, 253, 227);
+    public static final Color borderColor = new Color(153, 153, 153);
+    public static final Dimension BUTTON_SIZE = new Dimension(22, 22);
 
     // layouts constraint
     private GridBagConstraints constraints;
@@ -106,7 +106,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     protected JScrollPane commentTreeScrollPane;
     protected MarkupAnnotation selectedMarkupAnnotation;
 
-    protected boolean disableSpellCheck;
+    protected final boolean disableSpellCheck;
     protected boolean adjustBounds = true;
 
     private final String userName = SystemProperties.USER_NAME;
@@ -258,11 +258,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     public void mouseEntered(MouseEvent e) {
         super.mouseEntered(e);
         setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-    }
-
-    @Override
-    public org.icepdf.core.pobjects.Document getDocument() {
-        return super.getDocument();
     }
 
     private void buildGUI() {

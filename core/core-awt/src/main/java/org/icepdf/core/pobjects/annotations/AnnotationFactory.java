@@ -36,7 +36,7 @@ public class AnnotationFactory {
     /**
      * Creates a new Annotation object using properties from the annotationState
      * paramater.  If no annotaitonState is provided a LinkAnnotation is returned
-     * with with a black border.  The rect specifies where the annotation should
+     * with a black border.  The rect specifies where the annotation should
      * be located in user space.
      * <br>
      * This call adds the new Annotation object to the document library as well

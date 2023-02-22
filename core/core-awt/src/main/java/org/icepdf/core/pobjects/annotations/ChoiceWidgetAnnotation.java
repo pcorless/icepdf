@@ -41,7 +41,7 @@ import static org.icepdf.core.pobjects.acroform.ChoiceFieldDictionary.ChoiceFiel
  */
 public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceFieldDictionary> {
 
-    private ChoiceFieldDictionary fieldDictionary;
+    private final ChoiceFieldDictionary fieldDictionary;
 
     public ChoiceWidgetAnnotation(Library l, DictionaryEntries h) {
         super(l, h);

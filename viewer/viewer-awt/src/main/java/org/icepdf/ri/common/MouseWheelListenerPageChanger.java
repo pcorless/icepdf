@@ -32,9 +32,9 @@ import java.awt.event.MouseWheelListener;
  * @since 2.0
  */
 public class MouseWheelListenerPageChanger implements MouseWheelListener {
-    private org.icepdf.ri.common.views.Controller controller;
-    private JScrollPane scrollpane;
-    private AbstractDocumentView documentView;
+    private final org.icepdf.ri.common.views.Controller controller;
+    private final JScrollPane scrollpane;
+    private final AbstractDocumentView documentView;
 
     /**
      * KeyEvents can queue up, if the user holds down a key,

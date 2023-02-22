@@ -42,17 +42,17 @@ import java.util.Optional;
  */
 public class CaptureSetPropertyPane extends TitledPane implements EventHandler<ActionEvent> {
 
-    private Mediator mediator;
+    private final Mediator mediator;
     private Project currentProject;
     private CaptureSet captureSet;
 
-    private TextField captureCountTextField;
-    private TextField captureSetNameTextField;
-    private ChoiceBox<CaptureSet.Type> captureSetTypes;
-    private TextField classPathTextField;
-    private ListView<String> contentList;
+    private final TextField captureCountTextField;
+    private final TextField captureSetNameTextField;
+    private final ChoiceBox<CaptureSet.Type> captureSetTypes;
+    private final TextField classPathTextField;
+    private final ListView<String> contentList;
 
-    private Button addButton;
+    private final Button addButton;
     private Button editButton;
     private Button removeButton;
 

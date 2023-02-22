@@ -46,7 +46,7 @@ public class ImageCompareTask extends AbstractTestTask {
     public static final String PAGE_CAPTURE_METHOD = "capture";
     public static final String PAGE_CAPTURE_DISPOSE_METHOD = "dispose";
 
-    private Mediator mediator;
+    private final Mediator mediator;
 
     private Project project;
     private CaptureSet captureSetA;
@@ -394,14 +394,14 @@ public class ImageCompareTask extends AbstractTestTask {
     }
 
     public class CapturePage implements Callable<Void> {
-        private Object pageCaptureTest;
-        private int pageNumber;
-        private float scale = 1f;
-        private float rotation = 0f;
-        private String fileName;
-        private int numberOfPage;
+        private final Object pageCaptureTest;
+        private final int pageNumber;
+        private final float scale = 1f;
+        private final float rotation = 0f;
+        private final String fileName;
+        private final int numberOfPage;
 
-        private CaptureSet captureSet;
+        private final CaptureSet captureSet;
 
         private CapturePage(Object pageCaptureTest, CaptureSet captureSet, Path filePath, int pageNumber, int numberOfPage) {
             this.pageCaptureTest = pageCaptureTest;
@@ -456,9 +456,9 @@ public class ImageCompareTask extends AbstractTestTask {
      */
     public class DocumentImageCompare implements Callable<Result> {
 
-        private Path fileName;
-        private int pageNumber;
-        private CaptureSet[] captureSets;
+        private final Path fileName;
+        private final int pageNumber;
+        private final CaptureSet[] captureSets;
 
         private DocumentImageCompare(Path filePath, int pageNumber, CaptureSet... captureSets) {
             this.captureSets = captureSets;
@@ -505,8 +505,8 @@ public class ImageCompareTask extends AbstractTestTask {
      * Disposes the pageCaptureTest.
      */
     public class DocumentCloser implements Callable<Void> {
-        private Object pageCaptureTest;
-        private CaptureSet captureSet;
+        private final Object pageCaptureTest;
+        private final CaptureSet captureSet;
 
         private DocumentCloser(CaptureSet captureSet, Object pageCaptureTest) {
             this.pageCaptureTest = pageCaptureTest;

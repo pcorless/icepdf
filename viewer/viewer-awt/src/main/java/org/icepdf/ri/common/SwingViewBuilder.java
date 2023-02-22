@@ -306,7 +306,7 @@ public class SwingViewBuilder implements ViewBuilder {
     protected ResourceBundle messageBundle;
     protected static ViewerPropertiesManager propertiesManager;
 
-    protected static boolean isMacOs;
+    protected static final boolean isMacOs;
 
     static {
         isMacOs = SystemProperties.OS_NAME.contains("OS X");

@@ -40,10 +40,10 @@ public class FontPanel extends JPanel implements ActionListener, WindowListener 
     // clear and rescan system for fonts and rewrite file.
     private JButton resetFontCacheButton;
     // panel that does the font lookup.
-    private FontHandlerPanel fontHandlerPanel;
+    private final FontHandlerPanel fontHandlerPanel;
 
     // message bundle for internationalization
-    private ResourceBundle messageBundle;
+    private final ResourceBundle messageBundle;
 
     // layouts constraint
     private GridBagConstraints constraints;

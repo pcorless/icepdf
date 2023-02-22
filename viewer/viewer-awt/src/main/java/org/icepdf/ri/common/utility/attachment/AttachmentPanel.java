@@ -42,7 +42,7 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
 
     private static final String PDF_EXTENSION = ".pdf";
 
-    private org.icepdf.ri.common.views.Controller controller;
+    private final org.icepdf.ri.common.views.Controller controller;
 
     private JTable fileTable;
     private FileTableModel fileTableModel;
@@ -51,7 +51,7 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
     private HashMap<String, FileSpecification> files;
 
     // message bundle for internationalization
-    private ResourceBundle messageBundle;
+    private final ResourceBundle messageBundle;
 
     public AttachmentPanel(SwingController controller) {
         this.controller = controller;

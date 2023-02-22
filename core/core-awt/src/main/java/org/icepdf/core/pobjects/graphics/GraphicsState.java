@@ -215,7 +215,7 @@ public class GraphicsState {
 
     // allow over paint support for fill and stroke.  Still experimental
     // enabled buy default but can be turned off if required.
-    private static boolean enabledOverpaint;
+    private static final boolean enabledOverpaint;
 
     static {
         enabledOverpaint =
@@ -227,8 +227,8 @@ public class GraphicsState {
     // Current transformation matrix.
     private AffineTransform CTM;
 
-    private static ClipDrawCmd clipDrawCmd = new ClipDrawCmd();
-    private static NoClipDrawCmd noClipDrawCmd = new NoClipDrawCmd();
+    private static final ClipDrawCmd clipDrawCmd = new ClipDrawCmd();
+    private static final NoClipDrawCmd noClipDrawCmd = new NoClipDrawCmd();
 
     // Specifies the shape of the endpoint for any open path.
     private int lineCap;

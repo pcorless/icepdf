@@ -46,7 +46,7 @@ public class TextSelectionViewHandler extends TextSelection
     protected static final Logger logger =
             Logger.getLogger(TextSelectionViewHandler.class.toString());
 
-    protected JComponent parentComponent;
+    protected final JComponent parentComponent;
 
     protected boolean isDragging;
     protected boolean isSelecting;
@@ -284,11 +284,6 @@ public class TextSelectionViewHandler extends TextSelection
 
     public void paintTool(Graphics g) {
 //        paintSelectionBox(g, rectToDraw);
-    }
-
-    @Override
-    public void setSelectionRectangle(Point cursorLocation, Rectangle selection) {
-
     }
 
     public void installTool() {

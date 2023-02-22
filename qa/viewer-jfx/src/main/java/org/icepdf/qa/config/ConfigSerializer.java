@@ -20,7 +20,7 @@ import java.util.List;
  */
 public class ConfigSerializer {
 
-    private static ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     static {
         mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);

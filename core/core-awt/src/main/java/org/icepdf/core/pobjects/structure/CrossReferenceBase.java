@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class CrossReferenceBase<T extends Dictionary> implements CrossReference{
 
-    public T crossReference;
+    public final T crossReference;
 
     protected final ConcurrentHashMap<Reference, CrossReferenceEntry> indirectObjectReferences;
     protected CrossReference prefCrossReference;

@@ -23,9 +23,9 @@ import java.io.InputStream;
  * @since 2.0
  */
 public class SeekableInputConstrainedWrapper extends InputStream {
-    private SeekableInput streamDataInput;
-    private long filePositionOfStreamData;
-    private long lengthOfStreamData;
+    private final SeekableInput streamDataInput;
+    private final long filePositionOfStreamData;
+    private final long lengthOfStreamData;
     private long filePositionBeforeUse;
     private boolean usedYet;
 

@@ -31,7 +31,7 @@ public class HexDumper {
     private int currentLineLength;
     private int currentByte;
     private int offset;
-    private byte[] thisLine = new byte[BYTE_PER_ROW];
+    private final byte[] thisLine = new byte[BYTE_PER_ROW];
 
     /**
      * Dump the hex bytes for the given input.

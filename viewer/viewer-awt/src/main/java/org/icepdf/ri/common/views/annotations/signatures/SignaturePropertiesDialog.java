@@ -35,9 +35,9 @@ public class SignaturePropertiesDialog extends EscapeJDialog {
     // layouts constraint
     private GridBagConstraints constraints;
 
-    private SignatureValidator signatureValidator;
+    private final SignatureValidator signatureValidator;
     protected static ResourceBundle messageBundle;
-    protected SignatureWidgetAnnotation signatureWidgetAnnotation;
+    protected final SignatureWidgetAnnotation signatureWidgetAnnotation;
 
     public SignaturePropertiesDialog(Dialog parent, ResourceBundle messageBundle,
                                      SignatureWidgetAnnotation signatureWidgetAnnotation) {

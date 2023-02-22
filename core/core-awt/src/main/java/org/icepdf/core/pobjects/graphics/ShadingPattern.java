@@ -63,10 +63,10 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
     public static final int SHADING_PATTERN_TYPE_7 = 7;
 
     // type of PObject, should always be "Pattern"
-    protected Name type;
+    protected final Name type;
 
     // A code identifying the type of pattern that this dictionary describes
-    protected int patternType;
+    protected final int patternType;
 
     // shadingDictionary dictionary, entries vary depending on shading type.
     protected DictionaryEntries shadingDictionary;

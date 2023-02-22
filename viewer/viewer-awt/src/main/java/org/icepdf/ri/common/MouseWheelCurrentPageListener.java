@@ -23,8 +23,8 @@ import java.awt.event.MouseWheelListener;
  *
  */
 public class MouseWheelCurrentPageListener implements MouseWheelListener {
-    private JScrollPane scrollpane;
-    private CurrentPageChanger currentPageChanger;
+    private final JScrollPane scrollpane;
+    private final CurrentPageChanger currentPageChanger;
 
     /**
      * KeyEvents can queue up, if the user holds down a key,

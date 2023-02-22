@@ -39,7 +39,9 @@ public class BlurredImageReference extends CachedImageReference {
     private static final Logger logger =
             Logger.getLogger(ImageStreamReference.class.toString());
 
-    private static int dimension, minWidth, minHeight;
+    private static final int dimension;
+    private static final int minWidth;
+    private static final int minHeight;
 
     static {
         dimension = Defs.intProperty("org.icepdf.core.imageReference.blurred.dimension", 3);
@@ -47,7 +49,7 @@ public class BlurredImageReference extends CachedImageReference {
         minHeight = Defs.intProperty("org.icepdf.core.imageReference.blurred.minheight", 2200);
     }
 
-    private static float[] matrix;
+    private static final float[] matrix;
 
     static {
         float size = dimension * dimension;

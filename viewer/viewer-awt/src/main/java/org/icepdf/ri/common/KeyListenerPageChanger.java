@@ -30,9 +30,9 @@ import java.awt.event.KeyEvent;
  * @since 2.0
  */
 public class KeyListenerPageChanger extends KeyAdapter {
-    private Controller controller;
-    private JScrollPane scroll;
-    private AbstractDocumentView documentView;
+    private final Controller controller;
+    private final JScrollPane scroll;
+    private final AbstractDocumentView documentView;
 
     /**
      * KeyEvents can queue up, if the user holds down a key,

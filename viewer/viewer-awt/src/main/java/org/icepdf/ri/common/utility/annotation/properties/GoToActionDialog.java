@@ -48,10 +48,10 @@ public class GoToActionDialog extends AnnotationDialogAdapter
 
     public static final String EMPTY_DESTINATION = "      ";
 
-    private org.icepdf.ri.common.views.Controller controller;
-    private ResourceBundle messageBundle;
+    private final org.icepdf.ri.common.views.Controller controller;
+    private final ResourceBundle messageBundle;
     private AnnotationComponent currentAnnotation;
-    private ActionsPanel actionsPanel;
+    private final ActionsPanel actionsPanel;
 
     // state full ui elements.
     private GridBagConstraints constraints;
