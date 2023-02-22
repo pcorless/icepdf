@@ -201,16 +201,15 @@ public class AdditionalActionsDictionary extends Dictionary {
     }
 
     public Action getAction(Name actionNameKey) {
-        Object tmp = library.getObject(entries, actionNameKey);
-        if (tmp != null && tmp instanceof DictionaryEntries) {
-            return Action.buildAction(library, (DictionaryEntries) tmp);
+        DictionaryEntries tmp = library.getDictionary(entries, actionNameKey);
+        if (tmp != null) {
+            return Action.buildAction(library, tmp);
         }
         return null;
     }
 
     public boolean isAnnotationValue(Name actionKey) {
         return library.isValidEntry(entries, actionKey);
-//        return library.getObject(entries, actionKey) != null;
     }
 
     /**

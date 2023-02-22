@@ -462,7 +462,7 @@ public class Lexer {
     private List<Object> startArray(Reference reference) throws IOException {
         startTokenPos = pos;
 
-        List<Object> array = new ArrayList<Object>();
+        List<Object> array = new ArrayList<>();
 
         // skip past the starting [
         pos += 1;

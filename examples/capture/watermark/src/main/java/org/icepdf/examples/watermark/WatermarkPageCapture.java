@@ -71,7 +71,7 @@ public class WatermarkPageCapture {
 
             // create a list of callables.
             int pages = document.getNumberOfPages();
-            java.util.List<Callable<Void>> callables = new ArrayList<Callable<Void>>(pages);
+            java.util.List<Callable<Void>> callables = new ArrayList<>(pages);
             for (int i = 0; i <= pages; i++) {
                 callables.add(new CapturePage(document, i));
             }
@@ -87,7 +87,7 @@ public class WatermarkPageCapture {
     /**
      * Sample watermark call that writes some text on each page.
      */
-    public class MyWatermarkCallback implements WatermarkCallback {
+    public static class MyWatermarkCallback implements WatermarkCallback {
         // to avoid memory leaks be careful not to save an instance of page in
         // your implementation
         public void paintWatermark(Graphics g, Page page, int renderHintType,
@@ -123,7 +123,7 @@ public class WatermarkPageCapture {
     /**
      * Captures images found in a page  parse to file.
      */
-    public class CapturePage implements Callable<Void> {
+    public static class CapturePage implements Callable<Void> {
         private Document document;
         private int pageNumber;
         private float scale = 1f;
@@ -168,7 +168,7 @@ public class WatermarkPageCapture {
     /**
      * Disposes the document.
      */
-    public class DocumentCloser implements Callable<Void> {
+    public static class DocumentCloser implements Callable<Void> {
         private Document document;
 
         private DocumentCloser(Document document) {

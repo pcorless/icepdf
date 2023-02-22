@@ -52,8 +52,7 @@ public class BarcodeStamper {
 
     static {
         // formats to scan for; shorter list will make a shorter scan time.
-        List<BarcodeFormat> formats = new ArrayList<BarcodeFormat>();
-        formats.addAll(Arrays.asList(
+        List<BarcodeFormat> formats = new ArrayList<>(Arrays.asList(
                 BarcodeFormat.UPC_A,
                 BarcodeFormat.UPC_E,
                 BarcodeFormat.EAN_13,
@@ -117,7 +116,7 @@ public class BarcodeStamper {
             RGBLuminanceSource source = new RGBLuminanceSource(image.getWidth(), image.getHeight(), pixels);
             BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
 
-            // setup a the reader.
+            // set up the reader.
             System.out.println("Scanning Page: " + i);
             MultiFormatReader multiFormatReader = new MultiFormatReader();
             MultipleBarcodeReader reader = new GenericMultipleBarcodeReader(multiFormatReader);

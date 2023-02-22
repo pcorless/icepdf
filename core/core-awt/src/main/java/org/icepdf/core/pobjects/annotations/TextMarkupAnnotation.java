@@ -15,7 +15,6 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
-import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.commands.*;
@@ -27,8 +26,10 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
-import java.util.*;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -51,8 +52,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
     public static final Name SUBTYPE_SQUIGGLY = new Name("Squiggly");
     public static final Name SUBTYPE_STRIKE_OUT = new Name("StrikeOut");
 
-    public static final Set<Name> ALL_SUBTYPES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(SUBTYPE_HIGHLIGHT,
-            SUBTYPE_UNDERLINE, SUBTYPE_SQUIGGLY, SUBTYPE_STRIKE_OUT)));
+    public static final Set<Name> ALL_SUBTYPES = Set.of(SUBTYPE_HIGHLIGHT, SUBTYPE_UNDERLINE, SUBTYPE_SQUIGGLY, SUBTYPE_STRIKE_OUT);
 
     private static Color highlightColor;
     private static Color strikeOutColor;

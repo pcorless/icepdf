@@ -24,6 +24,7 @@ import org.icepdf.core.util.Library;
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -154,6 +155,6 @@ public class ShadingType1Pattern extends ShadingType2Pattern {
         return super.toString() +
                 "\n                    domain: " + domain +
                 "\n                    matrix: " + matrix +
-                "\n                 function: " + function;
+                "\n                 function: " + Arrays.toString(function);
     }
 }

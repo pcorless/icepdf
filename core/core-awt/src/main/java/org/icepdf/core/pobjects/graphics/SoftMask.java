@@ -142,7 +142,7 @@ public class SoftMask extends Dictionary {
      * it shall be forced to the nearest valid value. The name Identitymay be
      * specified in place of a function object to designate the identity
      * function. Default value: Identity.
-     *
+     * <p>
      * Type: function or name.
      * @return TR function objec.t
      */

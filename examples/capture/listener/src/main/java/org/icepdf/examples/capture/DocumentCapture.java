@@ -63,9 +63,7 @@ public class DocumentCapture {
                 running = watchKey.reset();
 
             } while (running);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
         // shutdown the pool
@@ -73,7 +71,7 @@ public class DocumentCapture {
 
     }
 
-    public class CapturePages implements Runnable {
+    public static class CapturePages implements Runnable {
         private Path path;
         private float scale = 1f;
         private float rotation = 0f;

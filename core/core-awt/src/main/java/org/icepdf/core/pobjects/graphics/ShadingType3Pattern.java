@@ -24,6 +24,7 @@ import org.icepdf.core.util.Library;
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -219,6 +220,6 @@ public class ShadingType3Pattern extends ShadingPattern {
                 "\n                    domain: " + domain +
                 "\n                    coords: " + coords +
                 "\n                    extend: " + extend +
-                "\n                 function: " + function;
+                "\n                 function: " + Arrays.toString(function);
     }
 }

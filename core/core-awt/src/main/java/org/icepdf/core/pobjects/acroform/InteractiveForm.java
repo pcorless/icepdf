@@ -210,7 +210,7 @@ public class InteractiveForm extends Dictionary {
     /**
      * Gets the fields associated with this form.
      *
-     * @return array of fields.
+     * @return ArrayList of fields.
      */
     public ArrayList<Object> getFields() {
         return fields;

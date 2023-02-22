@@ -32,7 +32,7 @@ import java.util.*;
 
 /**
  * The <code>BarcodeReader</code> class is an example how to find and decode barcodes contained in a PDF file. This
- * example use the https://github.com/zxing/zxing library to decode the barcode values and needs to be downloaded.
+ * example uses the <a href="https://github.com/zxing/zxing">zxing</a> library to decode the barcode values and needs to be downloaded.
  * <br>
  * A file specified at the command line is opened and every page in the PDF is scanned for barcodes.  Any barcode
  * data that is found is is written to the console.
@@ -43,10 +43,10 @@ public class BarcodeReader {
 
     // barcode reader hints
     private static Map<DecodeHintType, Object> hints;
+
     static {
         // formats to scan for; shorter list will make a shorter scan time.
-        List<BarcodeFormat> formats = new ArrayList<BarcodeFormat>();
-        formats.addAll(Arrays.asList(
+        List<BarcodeFormat> formats = new ArrayList<>(Arrays.asList(
                 BarcodeFormat.UPC_A,
                 BarcodeFormat.UPC_E,
                 BarcodeFormat.EAN_13,
@@ -109,7 +109,7 @@ public class BarcodeReader {
             RGBLuminanceSource source = new RGBLuminanceSource(image.getWidth(), image.getHeight(), pixels);
             BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
 
-            // setup a the reader.
+            // set up a reader.
             System.out.println("Scanning Page: " + i);
             MultiFormatReader multiFormatReader = new MultiFormatReader();
             MultipleBarcodeReader reader = new GenericMultipleBarcodeReader(multiFormatReader);
@@ -129,7 +129,7 @@ public class BarcodeReader {
             }
             image.flush();
         }
-        System.out.println("Scan complete found " + found +" codes.");
+        System.out.println("Scan complete found " + found + " codes.");
         document.dispose();
     }
 }

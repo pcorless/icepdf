@@ -137,13 +137,6 @@ public class SeekableInputConstrainedWrapper extends InputStream {
         streamDataInput.seekAbsolute(filePositionOfStreamData + lengthOfStreamData);
     }
 
-    public long getAbsolutePosition() throws IOException {
-        ensureReadyOnFirstUse();
-        long absolutePosition = getAbsolutePosition();
-        absolutePosition -= filePositionOfStreamData;
-        return absolutePosition;
-    }
-
     public long getLength() {
         return lengthOfStreamData;
     }

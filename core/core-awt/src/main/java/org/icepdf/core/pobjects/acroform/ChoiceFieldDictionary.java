@@ -294,7 +294,7 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
         this.options = options;
     }
 
-    public class ChoiceOption {
+    public static class ChoiceOption {
         private String label;
         private String value;
         private boolean isSelected;

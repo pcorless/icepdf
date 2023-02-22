@@ -327,12 +327,12 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
             for (int i = 0; i < annotationComponents.size(); i++) {
                 annotation = annotationComponents.get(i);
                 if (annotation != null && ((Component) annotation).isVisible() &&
-                        !(annotation.getAnnotation() instanceof FreeTextAnnotation
-                                && ((AbstractAnnotationComponent) annotation).isActive()) &&
+                        !((annotation.getAnnotation() instanceof FreeTextAnnotation)
+                                && annotation.isActive()) &&
                         !(annotation.getAnnotation() instanceof TextWidgetAnnotation
-                                && ((AbstractAnnotationComponent) annotation).isActive()) &&
+                                && annotation.isActive()) &&
                         !(annotation.getAnnotation() instanceof ChoiceWidgetAnnotation
-                                && ((AbstractAnnotationComponent) annotation).isActive())) {
+                                && annotation.isActive())) {
                     annotation.getAnnotation().render(gg2,
                             GraphicsRenderingHints.SCREEN,
                             documentViewModel.getViewRotation(),
@@ -528,7 +528,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         }
         if (annotations != null && !annotations.isEmpty()) {
             // we don't want to re-initialize the component as we'll
-            // get duplicates if the page has be gc'd
+            // get duplicates if the page has been gc'd
             if (annotationComponents == null) {
                 annotationComponents = new ArrayList<>(annotations.size());
                 annotationToComponent = new HashMap<>(annotations.size());

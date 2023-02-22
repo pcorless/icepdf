@@ -63,7 +63,7 @@ public class OptionalContent extends Dictionary {
      * shall indicate the set of all intents, including those not yet defined.
      * Default value: View. The value shall be View for the document’s default configuration.
      */
-    private List<Name> intent = Arrays.asList(VIEW_VALUE);
+    private List<Name> intent = Collections.singletonList(VIEW_VALUE);
 
 
     /**
@@ -105,7 +105,7 @@ public class OptionalContent extends Dictionary {
 
     public OptionalContent(Library l, DictionaryEntries h) {
         super(l, h);
-        groups = new HashMap<Reference, OptionalContentGroup>();
+        groups = new HashMap<>();
     }
 
     @Override
@@ -179,7 +179,7 @@ public class OptionalContent extends Dictionary {
             Object tmp = library.getObject(configurationDictionary, INTENT_KEY);
             if (tmp != null) {
                 if (tmp instanceof Name) {
-                    intent = Arrays.asList((Name) tmp);
+                    intent = List.of((Name) tmp);
                 } else if (tmp instanceof List) {
                     intent = (List) tmp;
                 }
@@ -200,7 +200,7 @@ public class OptionalContent extends Dictionary {
             if (tmp instanceof List) {
                 List orderedOCs = (List) tmp;
                 if (orderedOCs.size() > 0) {
-                    order = new ArrayList<Object>(orderedOCs.size());
+                    order = new ArrayList<>(orderedOCs.size());
                     order = parseOrderArray(orderedOCs, null);
                 }
             }
@@ -210,7 +210,7 @@ public class OptionalContent extends Dictionary {
             if (tmp instanceof List) {
                 List orderedOCs = (List) tmp;
                 if (orderedOCs.size() > 0) {
-                    rbGroups = new ArrayList<Object>(orderedOCs.size());
+                    rbGroups = new ArrayList<>(orderedOCs.size());
                     rbGroups = parseOrderArray(orderedOCs, null);
                 }
             }
@@ -222,7 +222,7 @@ public class OptionalContent extends Dictionary {
 
     @SuppressWarnings("unchecked")
     private List<Object> parseOrderArray(List<Object> rawOrder, OptionalContentGroup parent) {
-        List<Object> order = new ArrayList<Object>(5);
+        List<Object> order = new ArrayList<>(5);
         OptionalContentGroup group = null;
         for (Object obj : rawOrder) {
             if (obj instanceof Reference) {

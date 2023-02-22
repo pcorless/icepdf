@@ -41,8 +41,9 @@ public class ScalableTextField extends JTextField implements ScalableField {
         // enable more precise painting of glyphs.
         getDocument().putProperty("i18n", Boolean.TRUE.toString());
         putClientProperty("i18n", Boolean.TRUE.toString());
-        LayerUI<JComponent> layerUI = new LayerUI<JComponent>() {
+        LayerUI<JComponent> layerUI = new LayerUI<>() {
             private static final long serialVersionUID = 1155416372916442539L;
+
             @SuppressWarnings("unchecked")
             @Override
             public void installUI(JComponent c) {

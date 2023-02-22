@@ -49,7 +49,7 @@ public abstract class Pair<L, R> implements Map.Entry<L, R> {
      * @return a pair formed from the two parameters, not null
      */
     public static <L, R> Pair<L, R> of(final L left, final R right) {
-        return new ImmutablePair<L, R>(left, right);
+        return new ImmutablePair<>(left, right);
     }
 
     //-----------------------------------------------------------------------

@@ -408,8 +408,8 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
                             bfRange = new ArrayList<>(numberOfbfRanges);
                         }
                         StringObject hexToken;
-                        Integer startRange;
-                        Integer endRange;
+                        int startRange;
+                        int endRange;
                         // work through each range
                         for (int i = 0; i < numberOfbfRanges; i++) {
                             // look for start range.
@@ -439,7 +439,7 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
                                         (List) token));
                             } else {
                                 hexToken = (StringObject) token;
-                                Integer offset = hexToken.getUnsignedInt(0, hexToken.getLength());
+                                int offset = hexToken.getUnsignedInt(0, hexToken.getLength());
                                 bfRange.add(new CMapBfRange(startRange,
                                         endRange,
                                         offset));
@@ -464,8 +464,8 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
                             cIdRange = new ArrayList<>(numberOfbfRanges);
                         }
                         StringObject hexToken;
-                        Integer startRange;
-                        Integer endRange;
+                        int startRange;
+                        int endRange;
                         // work through each range
                         for (int i = 0; i < numberOfbfRanges; i++) {
                             // look for start range.
@@ -694,7 +694,7 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
         }
     }
 
-    class CMapCidRange implements CMapRange {
+    static class CMapCidRange implements CMapRange {
 
         // start value for a bfrange
         int startRange = 0;

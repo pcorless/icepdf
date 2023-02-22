@@ -61,7 +61,7 @@ public class PageImageExtraction {
             document.setFile(filePath);
             // create a list of callables.
             int pages = document.getNumberOfPages();
-            List<Callable<Void>> callables = new ArrayList<Callable<Void>>(pages);
+            List<Callable<Void>> callables = new ArrayList<>(pages);
             for (int i = 0; i <= pages; i++) {
                 callables.add(new CapturePageImages(document, i));
             }
@@ -77,7 +77,7 @@ public class PageImageExtraction {
     /**
      * Captures images found in a page  parse to file.
      */
-    public class CapturePageImages implements Callable<Void> {
+    public static class CapturePageImages implements Callable<Void> {
         private Document document;
         private int pageNumber;
 
@@ -104,9 +104,7 @@ public class PageImageExtraction {
                 }
                 // clears most resource.
                 images.clear();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
+            } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
             return null;
@@ -116,7 +114,7 @@ public class PageImageExtraction {
     /**
      * Disposes the document.
      */
-    public class DocumentCloser implements Callable<Void> {
+    public static class DocumentCloser implements Callable<Void> {
         private Document document;
 
         private DocumentCloser(Document document) {

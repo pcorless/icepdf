@@ -92,7 +92,7 @@ public class Shapes {
     }
 
     public void add(ArrayList<DrawCmd> shapes) {
-        shapes.addAll(shapes);
+        this.shapes.addAll(shapes);
     }
 
     public void setPageParent(Page parent) {

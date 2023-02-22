@@ -46,7 +46,7 @@ public class FreeTextArea extends JTextArea {
         // enable more precise painting of glyphs.
         getDocument().putProperty("i18n", Boolean.TRUE.toString());
         putClientProperty("i18n", Boolean.TRUE.toString());
-        LayerUI<JComponent> layerUI = new LayerUI<JComponent>() {
+        LayerUI<JComponent> layerUI = new LayerUI<>() {
             @SuppressWarnings("unchecked")
             @Override
             public void installUI(JComponent c) {

@@ -145,7 +145,7 @@ public abstract class SelectionBoxHandler extends CommonToolHandler {
 
         //Make the width and height positive, if necessary.
         if (width < 0) {
-            width = 0 - width;
+            width = -width;
             x = x - width + 1;
             if (x < 0) {
                 width += x;
@@ -153,7 +153,7 @@ public abstract class SelectionBoxHandler extends CommonToolHandler {
             }
         }
         if (height < 0) {
-            height = 0 - height;
+            height = -height;
             y = y - height + 1;
             if (y < 0) {
                 height += y;

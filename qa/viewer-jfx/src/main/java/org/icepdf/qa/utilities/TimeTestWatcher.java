@@ -19,7 +19,7 @@ public class TimeTestWatcher {
     public double finished() {
         end = new Duration(System.currentTimeMillis());
         double elapsed = end.subtract(start).toMinutes();
-        System.out.println(String.format("%nTest %s took %.2f min.", testName, elapsed));
+        System.out.printf("%nTest %s took %.2f min.%n", testName, elapsed);
         return elapsed;
     }
 };

@@ -67,16 +67,14 @@ public class PageCapture {
             document.setFile(filePath);
             // create a list of callables.
             int pages = document.getNumberOfPages();
-            java.util.List<Callable<Void>> callables = new ArrayList<Callable<Void>>(pages);
+            java.util.List<Callable<Void>> callables = new ArrayList<>(pages);
             for (int i = 0; i < pages; i++) {
                 callables.add(new CapturePage(document, i));
             }
             executorService.invokeAll(callables);
             executorService.submit(new DocumentCloser(document)).get();
 
-        } catch (InterruptedException e) {
-            System.out.println("Error parsing PDF document " + e);
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             System.out.println("Error parsing PDF document " + e);
         } catch (PDFSecurityException ex) {
             System.out.println("Error encryption not supported " + ex);
@@ -91,7 +89,7 @@ public class PageCapture {
     /**
      * Captures images found in a page  parse to file.
      */
-    public class CapturePage implements Callable<Void> {
+    public static class CapturePage implements Callable<Void> {
         private Document document;
         private int pageNumber;
         private float scale = 1f;
@@ -138,7 +136,7 @@ public class PageCapture {
     /**
      * Disposes the document.
      */
-    public class DocumentCloser implements Callable<Void> {
+    public static class DocumentCloser implements Callable<Void> {
         private Document document;
 
         private DocumentCloser(Document document) {

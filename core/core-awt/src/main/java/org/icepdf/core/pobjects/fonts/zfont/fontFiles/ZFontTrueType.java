@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ZFontTrueType extends ZSimpleFont implements Cloneable {
+public class ZFontTrueType extends ZSimpleFont {
 
     private static final Logger logger =
             Logger.getLogger(ZFontTrueType.class.toString());

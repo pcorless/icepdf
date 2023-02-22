@@ -91,7 +91,7 @@ public class FieldMDPTransferParam extends Dictionary implements TransformParams
     /**
      * (Required if Action is Include or Exclude) An array of text strings containing field names.
      *
-     * @return array of text string,  null if not set.
+     * @return ArrayList of text strings,  null if not set.
      */
     public ArrayList<Name> getFields() {
         return (ArrayList) library.getArray(entries, FIELDS_KEY);

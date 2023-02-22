@@ -236,7 +236,7 @@ public class SeedValueDictionary extends Dictionary {
     }
 
     /**
-     * @return an array of text strings the specify possible reasons for singing.
+     * @return a list of text strings that specify possible reasons for singing.
      * @see #REASONS_KEY
      */
     public List<StringObject> getReasons() {
@@ -268,7 +268,7 @@ public class SeedValueDictionary extends Dictionary {
     }
 
     /**
-     * @return an array of text strings the specify possible legal attestations.
+     * @return a list of text strings that specify possible legal attestations.
      * @see #LEGAL_ATTESTATION_KEY
      */
     public List<StringObject> getLegalAttestation() {

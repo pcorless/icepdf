@@ -113,7 +113,7 @@ public class ImagingPreferencesPanel extends JPanel {
         layout.add(component, constraints);
     }
 
-    class ImageReferenceItem {
+    static class ImageReferenceItem {
         String label;
         ImageReferenceFactory.ImageReference value;
 

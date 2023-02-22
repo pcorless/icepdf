@@ -1,4 +1,4 @@
-package org.icepdf.os.examples.svg;
+package org.icepdf.examples.svg;
 
 import org.apache.batik.dom.GenericDOMImplementation;
 import org.apache.batik.svggen.SVGGraphics2D;

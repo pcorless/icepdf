@@ -35,7 +35,7 @@ public class CrossReferenceStream extends CrossReferenceBase<Stream> implements 
         int size = crossReference.getInt(SIZE_KEY);
         List<Number> objNumAndEntriesCountPairs = crossReference.getList(INDEX_KEY);
         if (objNumAndEntriesCountPairs == null) {
-            objNumAndEntriesCountPairs = new ArrayList<Number>(2);
+            objNumAndEntriesCountPairs = new ArrayList<>(2);
             objNumAndEntriesCountPairs.add(0);
             objNumAndEntriesCountPairs.add(size);
         }

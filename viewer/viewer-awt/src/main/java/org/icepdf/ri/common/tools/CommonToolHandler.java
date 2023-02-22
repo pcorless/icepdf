@@ -134,7 +134,7 @@ public abstract class CommonToolHandler {
      * Converts the given point from g2d space to page space.
      *
      * @param points points to convert.
-     * @return list of converted points with Point2D precision.
+     * @return array of converted points with Point2D precision.
      */
     protected Point2D[] convertToPageSpace(Point... points) {
         if (points != null) {

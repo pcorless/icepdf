@@ -101,10 +101,10 @@ public class LinkAnnotationComponent extends AbstractAnnotationComponent<LinkAnn
             GeneralPath generalPath = new GeneralPath();
             generalPath.moveTo(0, 0);
             generalPath.lineTo(width - indent, 0);
-            generalPath.lineTo(width, height / 2);
+            generalPath.lineTo(width, height >> 1);
             generalPath.lineTo(width - indent, height);
             generalPath.lineTo(0, height);
-            generalPath.lineTo(indent, height / 2);
+            generalPath.lineTo(indent, height >> 1);
             generalPath.closePath();
 
             DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();

@@ -1,6 +1,5 @@
 package org.icepdf.qa.config;
 
-import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,7 +15,7 @@ import java.io.IOException;
  */
 public class ConfigWriteTests {
 
-    public static void main(String[] args) throws JsonGenerationException, JsonMappingException, IOException {
+    public static void main(String[] args) throws JsonMappingException, IOException {
 
         // jackson object mapper.
         ObjectMapper mapper = new ObjectMapper();

@@ -62,7 +62,7 @@ public class ImagePool {
 
 
     public ImagePool() {
-        fCache = Collections.synchronizedMap(new WeakHashMap<Reference, BufferedImage>(50));
+        fCache = Collections.synchronizedMap(new WeakHashMap<>(50));
     }
 
     public void put(Reference ref, BufferedImage image) {
