@@ -62,8 +62,8 @@ public class SmoothScaledImageReference extends CachedImageReference {
     }
 
     // scaled image size.
-    private int width;
-    private int height;
+    private final int width;
+    private final int height;
 
     protected SmoothScaledImageReference(ImageStream imageStream, GraphicsState graphicsState,
                                          Resources resources, int imageIndex,

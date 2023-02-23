@@ -57,11 +57,11 @@ public class Function_2 extends Function {
 
     // An array of n numbers defining the function result when x = 0.0.  Default
     // value is [0.0]
-    private float C0[] = {0.0f};
+    private float[] C0 = {0.0f};
 
     // An array of n number defining the function result when x = 1.0. Default
     // value is [1.0]
-    private float C1[] = {1.0f};
+    private float[] C1 = {1.0f};
 
     /**
      * Creates a new instance of a type 2 function.
@@ -120,7 +120,7 @@ public class Function_2 extends Function {
      */
     public float[] calculate(float[] x) {
         // create output array
-        float y[] = new float[x.length * C0.length];
+        float[] y = new float[x.length * C0.length];
         float yValue;
         // for each y value, apply exponential interpolation function
         for (int i = 0; i < x.length; i++) {

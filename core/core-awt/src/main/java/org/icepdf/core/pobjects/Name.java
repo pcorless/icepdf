@@ -99,7 +99,7 @@ public class Name {
         if (obj instanceof Name) {
             return equals((Name) obj);
         } else {
-            return obj != null && name.equals(obj);
+            return name.equals(obj);
         }
     }
 
@@ -122,7 +122,7 @@ public class Name {
      *         false, otherwise.
      */
     public boolean equals(String obj) {
-        return obj != null && name.equals(obj);
+        return name.equals(obj);
     }
 
     /**

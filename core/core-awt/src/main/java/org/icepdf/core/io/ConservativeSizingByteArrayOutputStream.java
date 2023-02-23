@@ -15,7 +15,6 @@
  */
 package org.icepdf.core.io;
 
-import java.io.IOException;
 import java.io.OutputStream;
 
 /**
@@ -23,7 +22,7 @@ import java.io.OutputStream;
  * @since 2.0
  */
 public class ConservativeSizingByteArrayOutputStream extends OutputStream {
-    protected byte buf[];
+    protected byte[] buf;
     protected int count;
 
     /**
@@ -57,7 +56,7 @@ public class ConservativeSizingByteArrayOutputStream extends OutputStream {
         count = 0;
     }
 
-    public synchronized void write(int b) throws IOException {
+    public synchronized void write(int b) {
         int newCount = count + 1;
         if (newCount > buf.length)
             resizeArrayToFit(newCount);
@@ -65,7 +64,7 @@ public class ConservativeSizingByteArrayOutputStream extends OutputStream {
         count = newCount;
     }
 
-    public synchronized void write(byte b[], int off, int len) throws IOException {
+    public synchronized void write(byte[] b, int off, int len) {
         if ((off < 0) || (off >= b.length) || (len < 0) ||
                 ((off + len) > b.length) || ((off + len) < 0)) {
             throw new IndexOutOfBoundsException();
@@ -91,7 +90,7 @@ public class ConservativeSizingByteArrayOutputStream extends OutputStream {
      * @return The current contents of this output stream, as a byte array.
      */
     public synchronized byte[] toByteArray() {
-        byte newBuf[] = allocateByteArray(count);
+        byte[] newBuf = allocateByteArray(count);
         System.arraycopy(buf, 0, newBuf, 0, count);
         return newBuf;
     }
@@ -129,7 +128,7 @@ public class ConservativeSizingByteArrayOutputStream extends OutputStream {
         if (count == buf.length)
             return true;
 
-        byte newBuf[] = allocateByteArray(count);
+        byte[] newBuf = allocateByteArray(count);
         if (newBuf == null)
             return false;
         System.arraycopy(buf, 0, newBuf, 0, count);
@@ -161,7 +160,7 @@ public class ConservativeSizingByteArrayOutputStream extends OutputStream {
         }
 
         int newBufSize = Math.max(steppedSize, newCount);
-        byte newBuf[] = allocateByteArray(newBufSize);
+        byte[] newBuf = allocateByteArray(newBufSize);
         System.arraycopy(buf, 0, newBuf, 0, count);
         buf = newBuf;
     }

@@ -151,7 +151,7 @@ public class ZFontType1C extends ZSimpleFont {
         }
 
         @Override
-        public byte[] getBytes() throws IOException {
+        public byte[] getBytes() {
             return fontStream.getDecodedStreamBytes();
         }
     }

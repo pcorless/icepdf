@@ -16,9 +16,7 @@ public class Type0Font extends SimpleFont {
 
     public static final Name DESCENDANT_FONTS_KEY = new Name("DescendantFonts");
 
-    private CompositeFont descendantFont;
     private CMap cMap;
-    private boolean isCMapPredefined;
 
     /**
      * Creates a new instance of a PDF Font.
@@ -52,7 +50,7 @@ public class Type0Font extends SimpleFont {
             font = font.deriveFont(encoding, toUnicodeCMap);
         }
         if (cMap != null) {
-            isCMapPredefined = true;
+            boolean isCMapPredefined = true;
         }
     }
 
@@ -61,7 +59,7 @@ public class Type0Font extends SimpleFont {
             Object descendant = library.getObject(entries, DESCENDANT_FONTS_KEY);
             if (descendant instanceof List) {
                 List descendantFonts = (List) descendant;
-                descendantFont = null;
+                CompositeFont descendantFont = null;
                 Object descendantFontObject = descendantFonts.get(0);
                 if (descendantFontObject instanceof Reference) {
                     Reference descendantFontReference = (Reference) descendantFontObject;

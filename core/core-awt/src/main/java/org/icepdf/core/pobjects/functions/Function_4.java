@@ -101,7 +101,7 @@ public class Function_4 extends Function {
         // length of output array
         int n = range.length / 2;
         // ready output array
-        float y[] = new float[n];
+        float[] y = new float[n];
 
         // pop remaining items off the stack and apply the range bounds.
         for (int i = 0; i < n; i++) {

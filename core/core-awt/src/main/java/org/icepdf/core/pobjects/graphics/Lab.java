@@ -31,15 +31,6 @@ public class Lab extends PColorSpace {
     public static final Name WHITE_POINT_KEY = new Name("WhitePoint");
     public static final Name RANGE_KEY = new Name("Range");
 
-    private final float[] whitePoint = {
-            0.95047f, 1.0f, 1.08883f
-    };
-    private final float[] blackPoint = {
-            0f, 0f, 0f
-    };
-    private final float[] range = {
-            -100, 100, -100, 100
-    };
     private final float lBase;
     private final float lSpread;
     private final float aBase;
@@ -57,12 +48,18 @@ public class Lab extends PColorSpace {
     Lab(Library l, DictionaryEntries h) {
         super(l, h);
         List v = (java.util.List) l.getObject(h, WHITE_POINT_KEY);
+        float[] whitePoint = {
+                0.95047f, 1.0f, 1.08883f
+        };
         if (v != null) {
             whitePoint[0] = ((Number) v.get(0)).floatValue();
             whitePoint[1] = ((Number) v.get(1)).floatValue();
             whitePoint[2] = ((Number) v.get(2)).floatValue();
         }
         v = (List) l.getObject(h, RANGE_KEY);
+        float[] range = {
+                -100, 100, -100, 100
+        };
         if (v != null) {
             range[0] = ((Number) v.get(0)).floatValue();
             range[1] = ((Number) v.get(1)).floatValue();
@@ -77,6 +74,9 @@ public class Lab extends PColorSpace {
         bBase = range[2];
         bSpread = range[3] - bBase;
 
+        float[] blackPoint = {
+                0f, 0f, 0f
+        };
         xBase = blackPoint[0];
         xSpread = whitePoint[0] - xBase;
         yBase = blackPoint[1];

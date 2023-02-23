@@ -364,7 +364,7 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
             case PropertyConstants.ANNOTATION_SELECTED:
             case PropertyConstants.ANNOTATION_FOCUS_GAINED:
                 if (newValue instanceof MarkupAnnotationComponent) {
-                    lastSelectedMarkupAnnotation = (MarkupAnnotation) ((MarkupAnnotationComponent) newValue).getAnnotation();
+                    lastSelectedMarkupAnnotation = (MarkupAnnotation) ((MarkupAnnotationComponent<?>) newValue).getAnnotation();
                 }
                 break;
 

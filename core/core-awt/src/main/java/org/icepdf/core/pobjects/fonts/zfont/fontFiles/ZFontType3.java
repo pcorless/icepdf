@@ -15,7 +15,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.List;
@@ -348,12 +347,10 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
                     TextState textState = cp.getGraphicsState().getTextState();
                     setBBox(charName, textState.getType3BBox());
                     setHorDisplacement(charName, textState.getType3HorizontalDisplacement());
-                    charShapesCache.put(charKey, new SoftReference<Shapes>(charShapes));
+                    charShapesCache.put(charKey, new SoftReference<>(charShapes));
                     // one could add a bbox clip here, but no example where it is needed
                     // not adding it should speed things up a bit
                     return charShapes;
-                } catch (IOException e) {
-                    logger.log(Level.FINE, "Error loading Type3 stream data.", e);
                 } catch (InterruptedException e) {
                     logger.log(Level.FINE, "Thread Interrupted while parsing Type3 stream data.", e);
                 }

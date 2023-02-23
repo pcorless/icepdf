@@ -268,8 +268,7 @@ class StandardEncryption {
                 aes.init(Cipher.DECRYPT_MODE, key, iVParameterSpec);
 
                 // finally add the stream or string data
-                final byte[] finalData = aes.doFinal(intermData);
-                return finalData;
+                return aes.doFinal(intermData);
 
             } catch (final NoSuchAlgorithmException ex) {
                 logger.log(Level.FINE, "NoSuchAlgorithmException.", ex);
@@ -349,8 +348,7 @@ class StandardEncryption {
                     final Cipher rc4 = Cipher.getInstance("RC4");
                     rc4.init(Cipher.DECRYPT_MODE, key);
                     // finally add the stream or string data
-                    final CipherInputStream cin = new CipherInputStream(input, rc4);
-                    return cin;
+                    return new CipherInputStream(input, rc4);
                 }
                 // use above a key for the AES encryption function.
                 else {
@@ -363,21 +361,18 @@ class StandardEncryption {
                         final IvParameterSpec iVParameterSpec = new IvParameterSpec(initialisationVector);
                         aes.init(Cipher.DECRYPT_MODE, key, iVParameterSpec);
                         // finally add the stream or string data
-                        final CipherInputStream cin = new CipherInputStream(input, aes);
-                        return cin;
+                        return new CipherInputStream(input, aes);
                     } else {
                         final IvParameterSpec iVParameterSpec = new IvParameterSpec(generateIv());
                         aes.init(encryptionMode, key, iVParameterSpec);
                         final ByteArrayOutputStream outputByteArray = new ByteArrayOutputStream();
                         // finally add the stream or string data
-                        try (final CipherOutputStream cos = new CipherOutputStream(outputByteArray, aes)) {
+                        try (input; final CipherOutputStream cos = new CipherOutputStream(outputByteArray, aes)) {
                             final byte[] data = new byte[4096];
                             int read;
                             while ((read = input.read(data)) != -1) {
                                 cos.write(data, 0, read);
                             }
-                        } finally {
-                            input.close();
                         }
                         byte[] finalData = outputByteArray.toByteArray();
                         // add randomness to the start
@@ -425,8 +420,7 @@ class StandardEncryption {
                 aes.init(Cipher.DECRYPT_MODE, key, iVParameterSpec);
 
                 // finally add the stream or string data
-                final CipherInputStream cin = new CipherInputStream(input, aes);
-                return cin;
+                return new CipherInputStream(input, aes);
 
             } catch (final NoSuchAlgorithmException ex) {
                 logger.log(Level.FINE, "NoSuchAlgorithmException.", ex);

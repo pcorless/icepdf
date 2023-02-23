@@ -143,11 +143,6 @@ public class LaunchAction extends Action {
      */
     public class WindowsLaunchParameters {
 
-        private final Name FILE_KEY = new Name("F");
-        private final Name DIRECTORY_KEY = new Name("D");
-        private final Name OPEN_KEY = new Name("O");
-        private final Name PARAMETER_KEY = new Name("P");
-
         private FileSpecification launchFileSpecification;
 
         private String launchFile;
@@ -167,6 +162,7 @@ public class LaunchAction extends Action {
         public WindowsLaunchParameters() {
 
 //            HashMap winLaunch = library.getDictionary(entries, "Win");
+            Name FILE_KEY = new Name("F");
             Object value = getObject(FILE_KEY);
             if (value instanceof DictionaryEntries) {
                 launchFileSpecification = new FileSpecification(library,
@@ -175,16 +171,19 @@ public class LaunchAction extends Action {
                 launchFile = ((StringObject) value).getDecryptedLiteralString(
                         library.getSecurityManager());
             }
+            Name DIRECTORY_KEY = new Name("D");
             value = getObject(DIRECTORY_KEY);
             if (value instanceof StringObject) {
                 defaultDirectory = ((StringObject) value)
                         .getDecryptedLiteralString(library.getSecurityManager());
             }
+            Name OPEN_KEY = new Name("O");
             value = getObject(OPEN_KEY);
             if (value instanceof StringObject) {
                 operation = ((StringObject) value)
                         .getDecryptedLiteralString(library.getSecurityManager());
             }
+            Name PARAMETER_KEY = new Name("P");
             value = getObject(PARAMETER_KEY);
             if (value instanceof StringObject) {
                 parameters =

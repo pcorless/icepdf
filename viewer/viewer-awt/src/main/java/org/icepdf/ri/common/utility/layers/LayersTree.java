@@ -107,7 +107,7 @@ class CheckBoxRenderer extends JPanel implements TreeCellRenderer {
     }
 
 
-    public class TreeLabel extends JLabel {
+    public static class TreeLabel extends JLabel {
         boolean isSelected;
         boolean hasFocus;
 

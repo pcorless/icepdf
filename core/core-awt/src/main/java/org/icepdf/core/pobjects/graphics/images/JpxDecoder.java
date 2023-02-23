@@ -51,7 +51,7 @@ public class JpxDecoder extends AbstractImageDecoder {
                 logger.info(
                         "ImageIO missing required plug-in to read JPEG 2000 images. " +
                                 "You can download the JAI ImageIO Tools from: " +
-                                "http://www.oracle.com/technetwork/java/javasebusiness/" +
+                                "https://www.oracle.com/technetwork/java/javasebusiness/" +
                                 "downloads/java-archive-downloads-java-client-419417.html");
                 return null;
             }

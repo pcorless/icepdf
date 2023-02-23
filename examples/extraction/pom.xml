@@ -6,7 +6,6 @@
         <artifactId>examples</artifactId>
         <version>7.1.0-SNAPSHOT</version>
     </parent>
-    <groupId>org.icepdf.examples</groupId>
     <artifactId>extraction</artifactId>
     <packaging>pom</packaging>
     <name>ICEpdf :: Examples :: Extraction</name>

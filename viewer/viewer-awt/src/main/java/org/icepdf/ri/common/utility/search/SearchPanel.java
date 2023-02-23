@@ -95,7 +95,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     // input for a search pattern
     private JTextField searchTextField;
     // pointer to document which will be searched
-    private org.icepdf.ri.common.views.Controller controller;
+    private final org.icepdf.ri.common.views.Controller controller;
 
     // list box to hold search results
     private JTree tree;
@@ -122,8 +122,8 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     // status label for search
     private JLabel findMessage;
     // message bundle for internationalization
-    private ResourceBundle messageBundle;
-    private MessageFormat searchResultMessageForm;
+    private final ResourceBundle messageBundle;
+    private final MessageFormat searchResultMessageForm;
 
     /**
      * Create a new instance of SearchPanel.
@@ -961,6 +961,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
      * An Entry objects represents the found pages
      */
     @SuppressWarnings("serial")
+    static
     class FindEntry extends DefaultMutableTreeNode {
 
         // The text to be displayed on the screen for this item.
@@ -1071,7 +1072,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                             // try to expand back to the same path
                             NameTreeNode nameTreeNode = (NameTreeNode) node;
                             // find and select a node with the same node.)
-                            Enumeration nodes = ((NameTreeNode) destinationModel.getRoot()).depthFirstEnumeration();
+                            Enumeration<TreeNode> nodes = ((NameTreeNode) destinationModel.getRoot()).depthFirstEnumeration();
                             while (nodes.hasMoreElements()) {
                                 NameTreeNode currentNode = (NameTreeNode) nodes.nextElement();
                                 if (currentNode.getName() != null &&

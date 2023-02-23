@@ -132,7 +132,7 @@ public class EmbeddedFileStream extends Dictionary {
      * @return decoded byte array input stream.
      * @throws IOException io exception during stream decoding.
      */
-    public InputStream getDecodedStreamData() throws IOException {
+    public InputStream getDecodedStreamData() {
         return fileStream.getDecodedByteArrayInputStream();
     }
 

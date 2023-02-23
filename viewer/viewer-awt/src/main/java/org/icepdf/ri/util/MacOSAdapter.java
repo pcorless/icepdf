@@ -105,7 +105,7 @@ public class MacOSAdapter implements InvocationHandler {
             if (macOSXApplication == null) {
                 macOSXApplication = applicationClass.getConstructor((Class[]) null).newInstance((Object[]) null);
             }
-            Class applicationListenerClass = Class.forName("com.apple.eawt.ApplicationListener");
+            Class<?> applicationListenerClass = Class.forName("com.apple.eawt.ApplicationListener");
             Method addListenerMethod = applicationClass.getDeclaredMethod("addApplicationListener", applicationListenerClass);
             // Create a proxy object around this handler that can be reflectively added as an Apple ApplicationListener
             Object osxAdapterProxy = Proxy.newProxyInstance(MacOSAdapter.class.getClassLoader(), new Class[]{applicationListenerClass}, adapter);
@@ -133,7 +133,7 @@ public class MacOSAdapter implements InvocationHandler {
         if (result == null) {
             return true;
         }
-        return Boolean.valueOf(result.toString());
+        return Boolean.parseBoolean(result.toString());
     }
 
     // InvocationHandler implementation

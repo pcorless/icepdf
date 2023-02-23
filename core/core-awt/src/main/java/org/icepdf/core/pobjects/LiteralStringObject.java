@@ -110,7 +110,7 @@ public class LiteralStringObject implements StringObject {
         stringBuffer.deleteCharAt(stringBuffer.length() - 1);
         // append string data
         stringData = new StringBuilder(stringBuffer.length());
-        stringData.append(stringBuffer.toString());
+        stringData.append(stringBuffer);
     }
 
     /**

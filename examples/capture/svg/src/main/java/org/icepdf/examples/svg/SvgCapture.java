@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 
 /**
  * The <code>org.icepdf.os.examples.SvgCapture</code> class is an example of how to save a PDF page as an SVG document.
@@ -23,9 +24,6 @@ import java.io.Writer;
  * @since 1.0
  */
 public class SvgCapture {
-
-    // Enable SVG CSS style attribute
-    private static final boolean SVG_CSS = true;
 
     public static void main(String[] args) {
 
@@ -69,7 +67,9 @@ public class SvgCapture {
 
             File file = new File("svgCapture_" + pageNumber + ".svg");
             // Finally, stream out SVG to the standard output using UTF-8character to byte encoding
-            Writer fileWriter = new OutputStreamWriter(new FileOutputStream(file), "UTF-8");
+            Writer fileWriter = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8);
+            // Enable SVG CSS style attribute
+            boolean SVG_CSS = true;
             svgGenerator.stream(fileWriter, SVG_CSS);
 
         } catch (Exception ex) {

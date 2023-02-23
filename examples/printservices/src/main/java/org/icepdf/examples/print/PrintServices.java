@@ -88,8 +88,8 @@ public class PrintServices {
         // setup for input from command line
         BufferedReader stdin =
                 new BufferedReader(new InputStreamReader(System.in));
-        /**
-         * Find Available printers
+        /*
+          Find Available printers
          */
         PrintService[] services =
                 PrintServiceLookup.lookupPrintServices(
@@ -135,13 +135,13 @@ public class PrintServices {
             }
         }
 
-        /**
-         * Selected Printer, via user input
+        /*
+          Selected Printer, via user input
          */
         PrintService selectedService = services[selectedPrinter - 1];
 
-        /**
-         * Show selected Printer default attributes.
+        /*
+          Show selected Printer default attributes.
          */
         System.out.println(
                 "Supported Job Properties for printer: " +

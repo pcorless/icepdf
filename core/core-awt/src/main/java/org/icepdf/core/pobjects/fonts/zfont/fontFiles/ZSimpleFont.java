@@ -408,7 +408,7 @@ public abstract class ZSimpleFont implements FontFile {
     protected static int findBinaryOffsetAfterExec(byte[] bytes, int startOffset) {
         int offset = startOffset;
         while (offset > 0) {
-            if (bytes[offset + 0] == 'e'
+            if (bytes[offset] == 'e'
                     && bytes[offset + 1] == 'x'
                     && bytes[offset + 2] == 'e'
                     && bytes[offset + 3] == 'c') {

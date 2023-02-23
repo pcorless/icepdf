@@ -201,79 +201,86 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         Object newValue = evt.getNewValue();
         Object oldValue = evt.getOldValue();
         String propertyName = evt.getPropertyName();
-        if (propertyName.equals(PropertyConstants.ANNOTATION_QUICK_COLOR_CHANGE)) {
-            AnnotationComponent annotationComponent = markupAnnotationHandlerPanel.getSelectedAnnotation();
+        switch (propertyName) {
+            case PropertyConstants.ANNOTATION_QUICK_COLOR_CHANGE: {
+                AnnotationComponent annotationComponent = markupAnnotationHandlerPanel.getSelectedAnnotation();
 
-            if (annotationComponent != null && newValue instanceof Color) {
-                Annotation annotation = annotationComponent.getAnnotation();
-                annotation.setColor((Color) newValue);
+                if (annotationComponent != null && newValue instanceof Color) {
+                    Annotation annotation = annotationComponent.getAnnotation();
+                    annotation.setColor((Color) newValue);
 
-                // save the action state back to the document structure.
-                controller.getDocumentViewController().updateAnnotation(annotationComponent);
-                annotationComponent.resetAppearanceShapes();
-                annotationComponent.repaint();
+                    // save the action state back to the document structure.
+                    controller.getDocumentViewController().updateAnnotation(annotationComponent);
+                    annotationComponent.resetAppearanceShapes();
+                    annotationComponent.repaint();
 
-                // repaint the tree
-                if (filterColorAction != null) {
-                    markupAnnotationHandlerPanel.refreshMarkupTree();
-                } else {
-                    markupAnnotationHandlerPanel.repaint();
-                }
-                // store the last used colour for the annoation type
-                if (annotation != null) {
-                    if (annotation instanceof TextMarkupAnnotation) {
-                        TextMarkupAnnotation textMarkupAnnotation = (TextMarkupAnnotation) annotation;
-                        if (textMarkupAnnotation.getSubType().equals(TextMarkupAnnotation.SUBTYPE_UNDERLINE)) {
-                            preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_COLOR,
+                    // repaint the tree
+                    if (filterColorAction != null) {
+                        markupAnnotationHandlerPanel.refreshMarkupTree();
+                    } else {
+                        markupAnnotationHandlerPanel.repaint();
+                    }
+                    // store the last used colour for the annoation type
+                    if (annotation != null) {
+                        if (annotation instanceof TextMarkupAnnotation) {
+                            TextMarkupAnnotation textMarkupAnnotation = (TextMarkupAnnotation) annotation;
+                            if (textMarkupAnnotation.getSubType().equals(TextMarkupAnnotation.SUBTYPE_UNDERLINE)) {
+                                preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_COLOR,
+                                        ((Color) newValue).getRGB());
+                            } else if (textMarkupAnnotation.getSubType().equals(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT)) {
+                                preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_STRIKE_OUT_COLOR,
+                                        ((Color) newValue).getRGB());
+                            }
+                        } else if (annotation instanceof LineAnnotation) {
+                            preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_COLOR,
                                     ((Color) newValue).getRGB());
-                        } else if (textMarkupAnnotation.getSubType().equals(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT)) {
-                            preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_STRIKE_OUT_COLOR,
+                        } else if (annotation instanceof SquareAnnotation) {
+                            preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_SQUARE_COLOR,
                                     ((Color) newValue).getRGB());
-                        }
-                    } else if (annotation instanceof LineAnnotation) {
-                        preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_COLOR,
-                                ((Color) newValue).getRGB());
-                    } else if (annotation instanceof SquareAnnotation) {
-                        preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_SQUARE_COLOR,
-                                ((Color) newValue).getRGB());
-                    } else if (annotation instanceof CircleAnnotation) {
-                        preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_CIRCLE_COLOR,
-                                ((Color) newValue).getRGB());
-                    } else if (annotation instanceof InkAnnotation) {
-                        preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_COLOR,
-                                ((Color) newValue).getRGB());
-                    } else if (annotation instanceof FreeTextAnnotation) {
-                        // set the free text font colour,
+                        } else if (annotation instanceof CircleAnnotation) {
+                            preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_CIRCLE_COLOR,
+                                    ((Color) newValue).getRGB());
+                        } else if (annotation instanceof InkAnnotation) {
+                            preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_COLOR,
+                                    ((Color) newValue).getRGB());
+                        } else if (annotation instanceof FreeTextAnnotation) {
+                            // set the free text font colour,
 //                        ((FreeTextAnnotation)annotation).setFontColor((Color) newValue);
 //                        annotationComponent.resetAppearanceShapes();
 //                        annotationComponent.repaint();
 //                        preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_COLOR,
 //                                ((Color) newValue).getRGB());
+                        }
                     }
                 }
+                break;
             }
-        } else if (propertyName.equals(PropertyConstants.ANNOTATION_SELECTED) ||
-                propertyName.equals(PropertyConstants.ANNOTATION_FOCUS_GAINED)) {
-            AnnotationComponent annotationComponent = (AnnotationComponent) newValue;
-            if (annotationComponent != null &&
-                    annotationComponent.getAnnotation() instanceof MarkupAnnotation) {
-                parentPanel.setSelectedTab(ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_MARKUP);
-                quickPaintAnnotationButton.setColor(annotationComponent.getAnnotation().getColor(), false);
-                quickPaintAnnotationButton.setEnabled(true);
-                // update the status bar
-                applyAnnotationStatusLabel(annotationComponent.getAnnotation());
+            case PropertyConstants.ANNOTATION_SELECTED:
+            case PropertyConstants.ANNOTATION_FOCUS_GAINED: {
+                AnnotationComponent annotationComponent = (AnnotationComponent) newValue;
+                if (annotationComponent != null &&
+                        annotationComponent.getAnnotation() instanceof MarkupAnnotation) {
+                    parentPanel.setSelectedTab(ViewerPropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_MARKUP);
+                    quickPaintAnnotationButton.setColor(annotationComponent.getAnnotation().getColor(), false);
+                    quickPaintAnnotationButton.setEnabled(true);
+                    // update the status bar
+                    applyAnnotationStatusLabel(annotationComponent.getAnnotation());
+                }
+                break;
             }
-        } else if (propertyName.equals(PropertyConstants.ANNOTATION_UPDATED) ||
-                propertyName.equals(PropertyConstants.ANNOTATION_SUMMARY_UPDATED)) {
-            AnnotationComponent annotationComponent = (AnnotationComponent) newValue;
-            if (annotationComponent != null &&
-                    annotationComponent.getAnnotation() instanceof MarkupAnnotation) {
-                // update the status bar
-                applyAnnotationStatusLabel(annotationComponent.getAnnotation());
-            } else if (annotationComponent != null &&
-                    annotationComponent.getAnnotation() instanceof PopupAnnotation) {
-                // update the status bar
-                applyAnnotationStatusLabel(((PopupAnnotation) annotationComponent.getAnnotation()).getParent());
+            case PropertyConstants.ANNOTATION_UPDATED:
+            case PropertyConstants.ANNOTATION_SUMMARY_UPDATED: {
+                AnnotationComponent annotationComponent = (AnnotationComponent) newValue;
+                if (annotationComponent != null &&
+                        annotationComponent.getAnnotation() instanceof MarkupAnnotation) {
+                    // update the status bar
+                    applyAnnotationStatusLabel(annotationComponent.getAnnotation());
+                } else if (annotationComponent != null &&
+                        annotationComponent.getAnnotation() instanceof PopupAnnotation) {
+                    // update the status bar
+                    applyAnnotationStatusLabel(((PopupAnnotation) annotationComponent.getAnnotation()).getParent());
+                }
+                break;
             }
         }
     }
@@ -571,13 +578,9 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         FilterAuthorColumn filterAuthor = (FilterAuthorColumn) filterAuthorAction.getValue(COLUMN_PROPERTY);
         Color filterColor = (Color) filterColorAction.getValue(COLUMN_PROPERTY);
         FilterVisibilityColumn filterVisibility = (FilterVisibilityColumn) filterVisibilityAction.getValue(COLUMN_PROPERTY);
-        if (!filterAuthor.equals(FilterAuthorColumn.ALL) ||
+        filterDropDownButton.setSelected(!filterAuthor.equals(FilterAuthorColumn.ALL) ||
                 !filterType.equals(FilterSubTypeColumn.ALL) ||
-                filterColor != null) {
-            filterDropDownButton.setSelected(true);
-        } else {
-            filterDropDownButton.setSelected(false);
-        }
+                filterColor != null);
 
         // setup search pattern
         Pattern searchPattern = null;
@@ -728,7 +731,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         public void actionPerformed(ActionEvent ae) {
             filterColorAction = this;
             if (getValue(COLUMN_PROPERTY) != null) {
-                Integer colorValue = ((Color) getValue(COLUMN_PROPERTY)).getRGB();
+                int colorValue = ((Color) getValue(COLUMN_PROPERTY)).getRGB();
                 preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FILTER_COLOR_COLUMN, colorValue);
             } else {
                 preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FILTER_COLOR_COLUMN, -1);

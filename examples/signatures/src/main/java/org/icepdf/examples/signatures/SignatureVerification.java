@@ -75,7 +75,7 @@ public class SignatureVerification {
                             // print out some important properties of the validator state.
                             SignatureVerification.printValidationSummary(signatureValidator);
                         } catch (SignatureIntegrityException e) {
-                            System.out.println("Signature failed to validate: " + signatureValidator.toString());
+                            System.out.println("Signature failed to validate: " + signatureValidator);
                             e.printStackTrace();
                         }
                     }

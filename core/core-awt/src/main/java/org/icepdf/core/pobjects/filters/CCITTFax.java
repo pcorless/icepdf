@@ -31,7 +31,6 @@ import java.awt.*;
 import java.awt.image.*;
 import java.awt.image.renderable.ParameterBlock;
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -443,7 +442,7 @@ public class CCITTFax {
                 addRun(0, state, outb);
             }
         }
-        int tmp[] = state.ref;
+        int[] tmp = state.ref;
         state.ref = state.cur;
         state.cur = tmp;
         //now zero out extra spots for runs
@@ -555,7 +554,7 @@ public class CCITTFax {
     }
 
     public static BufferedImage attemptDeriveBufferedImageFromBytes(
-            ImageStream stream, Library library, DictionaryEntries streamDictionary, Color fill) throws InvocationTargetException, IllegalAccessException {
+            ImageStream stream, Library library, DictionaryEntries streamDictionary, Color fill) {
         if (!USE_JAI_IMAGE_LIBRARY)
             return null;
 
@@ -639,15 +638,11 @@ public class CCITTFax {
             // Have to fill in values for: ImageWidth, ImageLength, BitsPerSample, Compression,
             //   PhotometricIntrerpretation, RowsPerStrip, StripByteCounts
 
-            boolean pdfStatesBlackAndWhite = false;
-            if (blackIs1) {
-                pdfStatesBlackAndWhite = true;
-            }
             int width = library.getInt(streamDictionary, ImageParams.WIDTH_KEY);
             int height = library.getInt(streamDictionary, ImageParams.HEIGHT_KEY);
 
             Object columnsObj = library.getObject(decodeParmsDictionary, COLUMNS_VALUE);
-            if (columnsObj != null && columnsObj instanceof Number) {
+            if (columnsObj instanceof Number) {
                 int columns = ((Number) columnsObj).intValue();
                 if (columns > width)
                     width = columns;
@@ -657,7 +652,7 @@ public class CCITTFax {
             Utils.setIntIntoByteArrayBE(height, fakeHeaderBytes, 0x2A);      // ImageLength
             Object bitsPerComponent =                                          // BitsPerSample
                     library.getObject(streamDictionary, ImageParams.BITS_PER_COMPONENT_KEY);
-            if (bitsPerComponent != null && bitsPerComponent instanceof Number) {
+            if (bitsPerComponent instanceof Number) {
                 Utils.setShortIntoByteArrayBE(((Number) bitsPerComponent).shortValue(), fakeHeaderBytes, 0x36);
             }
 
@@ -666,7 +661,7 @@ public class CCITTFax {
             // PDF has default BlackIs1=false               ==> White=1, Black=0
             // TIFF has default PhotometricInterpretation=0 ==> White=0, Black=1
             // So, if PDF doesn't state what black and white are, then use TIFF's default
-            if (pdfStatesBlackAndWhite) {
+            if (blackIs1) {
                 if (!blackIs1)
                     photometricInterpretation = TIFF_PHOTOMETRIC_INTERPRETATION_BLACK_IS_ZERO;
             }
@@ -733,9 +728,9 @@ public class CCITTFax {
      * @return RenderedImage if could derive one, else null
      */
     private static BufferedImage deriveBufferedImageFromTIFFBytes(
-            InputStream in, Library library, int compressedBytes, int width, int height, int compression) throws InvocationTargetException, IllegalAccessException {
+            InputStream in, Library library, int compressedBytes, int width, int height, int compression) {
         BufferedImage img = null;
-        try {
+        try (in) {
             /*
             com.sun.media.jai.codec.SeekableStream s = com.sun.media.jai.codec.SeekableStream.wrapInputStream( in, true );
             ParameterBlock pb = new ParameterBlock();
@@ -789,13 +784,8 @@ public class CCITTFax {
         } catch (Exception e) {
             // catch and return a null image so we can try again using a different compression method.
             logger.finer("Decoding TIFF: " + TIFF_COMPRESSION_NAMES[compression] + " failed trying alternative");
-        } finally {
-            try {
-                in.close();
-            } catch (IOException e) {
-                // keep quiet
-            }
         }
+        // keep quiet
         return img;
     }
 

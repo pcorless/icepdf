@@ -117,7 +117,7 @@ public class KeyListenerPageColumnChanger extends KeyAdapter {
         int keyCode = e.getKeyCode();
         if (keyCode == java.awt.event.KeyEvent.VK_UP ||
                 keyCode == java.awt.event.KeyEvent.VK_DOWN) {
-            SwingUtilities.invokeLater(() -> currentPageChanger.calculateCurrentPage());
+            SwingUtilities.invokeLater(currentPageChanger::calculateCurrentPage);
         }
     }
 }

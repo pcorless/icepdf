@@ -74,7 +74,6 @@ public class DocumentCapture {
     public static class CapturePages implements Runnable {
         private final Path path;
         private float scale = 1f;
-        private final float rotation = 0f;
 
         public CapturePages(Path path) {
             this.path = path;
@@ -98,6 +97,7 @@ public class DocumentCapture {
                 for (int pageNumber = 0, max = document.getNumberOfPages(); pageNumber < max; pageNumber++) {
                     Page page = document.getPageTree().getPage(pageNumber);
                     page.init();
+                    float rotation = 0f;
                     PDimension sz = page.getSize(Page.BOUNDARY_CROPBOX, rotation, scale);
 
                     int pageWidth = (int) sz.getWidth();

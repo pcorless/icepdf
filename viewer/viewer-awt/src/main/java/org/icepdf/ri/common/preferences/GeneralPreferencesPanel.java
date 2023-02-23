@@ -238,9 +238,6 @@ public class GeneralPreferencesPanel extends JPanel implements PropertyChangeLis
         } else if (source == viewBackgroundColorChooserButton) {
             AbstractDocumentView.backgroundColour = viewBackgroundColorChooserButton.getBackground();
             preferences.putInt(ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, AbstractDocumentView.backgroundColour.getRGB());
-        } else if (source == viewBackgroundColorChooserButton) {
-            AbstractDocumentView.backgroundColour = viewBackgroundColorChooserButton.getBackground();
-            preferences.putInt(ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, AbstractDocumentView.backgroundColour.getRGB());
         }
     }
 

@@ -70,7 +70,7 @@ public class ClassloaderTests {
             ClassLoader parent = String.class.getClassLoader();
             URLClassLoader clsLoader = URLClassLoader.newInstance(classPath.toArray(new URL[0]), parent);
 
-            Class documentClass = clsLoader.loadClass("org.icepdf.core.pobjects.Document");
+            Class<?> documentClass = clsLoader.loadClass("org.icepdf.core.pobjects.Document");
             Constructor fontClassConstructor = documentClass.getDeclaredConstructor();
             Object documentObject = fontClassConstructor.newInstance();
             System.out.println(documentObject);
@@ -92,12 +92,12 @@ public class ClassloaderTests {
                 Object pageTree = getPageTreeMethod.invoke(documentObject);
 
                 // get next page.
-                Class pageTreeClass = clsLoader.loadClass("org.icepdf.core.pobjects.PageTree");
+                Class<?> pageTreeClass = clsLoader.loadClass("org.icepdf.core.pobjects.PageTree");
                 Method getPageMethod = pageTreeClass.getMethod("getPage", int.class);
                 Object pageObject = getPageMethod.invoke(pageTree, pageNumber);
 
                 // init the page.
-                Class pageClass = clsLoader.loadClass("org.icepdf.core.pobjects.Page");
+                Class<?> pageClass = clsLoader.loadClass("org.icepdf.core.pobjects.Page");
                 Method initMethod = pageClass.getMethod("init");
                 initMethod.invoke(pageObject);
 

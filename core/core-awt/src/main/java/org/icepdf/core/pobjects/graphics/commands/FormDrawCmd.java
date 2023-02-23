@@ -38,7 +38,7 @@ import java.awt.image.BufferedImage;
  */
 public class FormDrawCmd extends AbstractDrawCmd {
 
-    private Form xForm;
+    private final Form xForm;
 
     private BufferedImage xFormBuffer;
     private int x, y;
@@ -292,6 +292,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
         for (DrawCmd cmd : xform.getShapes().getShapes()) {
             if (cmd instanceof ShapeDrawCmd && ((ShapeDrawCmd) cmd).getShape() == null) {
                 found = true;
+                break;
             }
         }
         return found;

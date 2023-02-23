@@ -127,7 +127,7 @@ public class ListItemTransferHandler extends TransferHandler {
     }
 
 
-    class ObjectSelection implements Transferable {
+    static class ObjectSelection implements Transferable {
 
         private final Object[] data;
 

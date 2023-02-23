@@ -74,12 +74,6 @@ public class Separation extends PColorSpace {
     protected final PColorSpace alternate;
     // transform for colour tint, named function type
     protected final Function tintTransform;
-    // The special colorant name All shall refer collectively to all colorants
-    // available on an output device, including those for the standard process
-    // colorants. When a Separation space with this colorant name is the current
-    // colour space, painting operators shall apply tint values to all available
-    // colorants at once.
-    private boolean isAll;
     public static final String COLORANT_ALL = "all";
     // The special colorant name None shall not produce any visible output.
     // Painting operations in a Separationspace with this colorant name shall
@@ -120,7 +114,12 @@ public class Separation extends PColorSpace {
                     || colorName.equals("auto"))) {
                 // sniff out All or Null
                 if (colorName.equals(COLORANT_ALL)) {
-                    isAll = true;
+                    // The special colorant name All shall refer collectively to all colorants
+                    // available on an output device, including those for the standard process
+                    // colorants. When a Separation space with this colorant name is the current
+                    // colour space, painting operators shall apply tint values to all available
+                    // colorants at once.
+                    boolean isAll = true;
                 } else if (colorName.equals(COLORANT_NONE)) {
                     isNone = true;
                 }
@@ -229,7 +228,7 @@ public class Separation extends PColorSpace {
             PColorSpace alternate, Function tintTransform, float[] f) {
         Color color = colorCache.get(key);
         if (color == null) {
-            float y[] = tintTransform.calculate(f);
+            float[] y = tintTransform.calculate(f);
             color = alternate.getColor(y);
             colorCache.put(key, color);
             return color;

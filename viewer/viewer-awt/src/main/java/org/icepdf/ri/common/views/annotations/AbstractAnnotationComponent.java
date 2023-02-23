@@ -24,6 +24,7 @@ import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.Appearance;
+import org.icepdf.core.pobjects.annotations.WidgetAnnotation;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
@@ -423,7 +424,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
                 }
                 // get the A and AA entries.
                 if (annotation instanceof AbstractWidgetAnnotation) {
-                    AbstractWidgetAnnotation widgetAnnotation = (AbstractWidgetAnnotation) annotation;
+                    WidgetAnnotation widgetAnnotation = (WidgetAnnotation) annotation;
                     FieldDictionary fieldDictionary = widgetAnnotation.getFieldDictionary();
                     if (fieldDictionary != null) {
                         AdditionalActionsDictionary additionalActionsDictionary =
@@ -445,7 +446,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
 
     protected void initiateMouseMoved(MouseEvent e) {
         Border border = getBorder();
-        if (border != null && border instanceof ResizableBorder) {
+        if (border instanceof ResizableBorder) {
             cursor = ((ResizableBorder) border).getCursor(e);
         }
         startPos = e.getPoint();

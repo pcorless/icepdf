@@ -120,16 +120,12 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
         borderPanel.setAnnotationComponent(annotation);
 
         // hide border panel for line components
-        if (annotationPropertyPanel instanceof LineAnnotationPanel ||
-                annotationPropertyPanel instanceof SquareAnnotationPanel ||
-                annotationPropertyPanel instanceof CircleAnnotationPanel ||
-                annotationPropertyPanel instanceof InkAnnotationPanel ||
-                annotationPropertyPanel instanceof FreeTextAnnotationPanel ||
-                annotation instanceof PopupAnnotationComponent) {
-            borderPanel.setVisible(false);
-        } else {
-            borderPanel.setVisible(true);
-        }
+        borderPanel.setVisible(!(annotationPropertyPanel instanceof LineAnnotationPanel) &&
+                !(annotationPropertyPanel instanceof SquareAnnotationPanel) &&
+                !(annotationPropertyPanel instanceof CircleAnnotationPanel) &&
+                !(annotationPropertyPanel instanceof InkAnnotationPanel) &&
+                !(annotationPropertyPanel instanceof FreeTextAnnotationPanel) &&
+                !(annotation instanceof PopupAnnotationComponent));
 
         // hide actions panel for the popup annotation
         if (annotation instanceof PopupAnnotationComponent) {

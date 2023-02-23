@@ -15,6 +15,8 @@
  */
 package org.icepdf.core.pobjects;
 
+import java.util.Objects;
+
 /**
  * The class represents a generic PDF object.  Each PDF object can be identified
  * by a unique reference object, which contains the objects object number and
@@ -95,10 +97,10 @@ public class PObject {
 
         PObject pObject = (PObject) o;
 
-        if (object != null ? !object.equals(pObject.object) : pObject.object != null) {
+        if (!Objects.equals(object, pObject.object)) {
             return false;
         }
-        return objectReference != null ? objectReference.equals(pObject.objectReference) : pObject.objectReference == null;
+        return Objects.equals(objectReference, pObject.objectReference);
     }
 
     public int getLinearTraversalOffset() {

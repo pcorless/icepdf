@@ -22,4 +22,4 @@ public class TimeTestWatcher {
         System.out.printf("%nTest %s took %.2f min.%n", testName, elapsed);
         return elapsed;
     }
-};
+}

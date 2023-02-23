@@ -329,7 +329,7 @@ public class SubmitFormAction extends FormAction {
             if ((value == null || value.equals("")) && child.getKids() != null && child.getKids().size() == 1) {
                 value = child.getKids().get(0);
                 if (value instanceof AbstractWidgetAnnotation) {
-                    value = ((AbstractWidgetAnnotation) value).getFieldDictionary().getFieldValue();
+                    value = ((AbstractWidgetAnnotation<?>) value).getFieldDictionary().getFieldValue();
                 } else if (value instanceof FieldDictionary) {
                     value = ((FieldDictionary) value).getFieldValue();
                 }
@@ -361,7 +361,7 @@ public class SubmitFormAction extends FormAction {
                         response.append(inputLine);
                     }
                     in.close();
-                    logger.finer("HTTP GET response: " + response.toString());
+                    logger.finer("HTTP GET response: " + response);
                 }else {
                     if (logger.isLoggable(Level.FINER)){
                         logger.finer("HTTP GET failed: " + url + ", response " + responseCode);
@@ -401,7 +401,7 @@ public class SubmitFormAction extends FormAction {
                         response.append(inputLine);
                     }
                     in.close();
-                    logger.finer("HTTP POST response: " + response.toString());
+                    logger.finer("HTTP POST response: " + response);
                 }
             }else {
                 if (logger.isLoggable(Level.FINER)){

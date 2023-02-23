@@ -64,7 +64,7 @@ public class DragDropColorList extends JList<DragDropColorList.ColorLabel> {
         };
         setTransferHandler(listItemTransferHandler);
 
-        setCellRenderer(new ListCellRenderer<ColorLabel>() {
+        setCellRenderer(new ListCellRenderer<>() {
             private final JPanel panel = new JPanel(new BorderLayout(3, 3));
             private final ColorChooserButton colorButton = new ColorChooserButton(Color.lightGray);
             private final JLabel label = new JLabel("", JLabel.LEFT);

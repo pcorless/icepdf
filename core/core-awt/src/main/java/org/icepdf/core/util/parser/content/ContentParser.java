@@ -37,7 +37,7 @@ public class ContentParser extends AbstractContentParser {
     }
 
     public ContentParser parse(byte[][] streamBytes, Reference[] references, Page page)
-            throws InterruptedException, IOException {
+            throws InterruptedException {
         if (shapes == null) {
             shapes = new Shapes();
             if (graphicState == null) {

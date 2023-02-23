@@ -1395,8 +1395,7 @@ public class CCITTFaxDecoder {
             }
         }
 
-        int i = i1 | i2;
-        return i;
+        return i1 | i2;
     }
 
     private int readEOL(boolean isFirstEOL) {

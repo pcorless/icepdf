@@ -381,7 +381,7 @@ public class OFont implements FontFile {
         if (log.isLoggable(Level.FINER)) {
             if (!awtFont.canDisplay(c)) {
                 log.finer(
-                        ((int) c1) + " " + Character.toString(c1) + " " +
+                        ((int) c1) + " " + c1 + " " +
                                 (int) c + " " + c + " " + awtFont);
                 //+ " " + textState.font.font + " " + textState.font.font.getNumGlyphs());
             }

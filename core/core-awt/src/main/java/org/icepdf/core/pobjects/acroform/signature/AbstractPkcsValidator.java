@@ -26,8 +26,6 @@ import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.pobjects.acroform.signature.certificates.CertificateVerifier;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.CertificateVerificationException;
-import org.icepdf.core.pobjects.acroform.signature.exceptions.RevocationVerificationException;
-import org.icepdf.core.pobjects.acroform.signature.exceptions.SelfSignedVerificationException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
@@ -46,7 +44,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * PKCS#1 and PKCS#7 are fairly close from a verification point of view so we'll use this class for common
+ * PKCS#1 and PKCS#7 are fairly close from a verification point of view, so we'll use this class for common
  * functionality between PKCS#1 and PKCS#7.
  */
 public abstract class AbstractPkcsValidator implements SignatureValidator {
@@ -184,7 +182,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
             // shows up in pkcs7.sha1 only
             encapsulatedContentInfoData = eContent.getOctets();
             if (logger.isLoggable(Level.FINER)) {
-                logger.finer("EncapsulatedContentInfo Data " + eContent.toString());
+                logger.finer("EncapsulatedContentInfo Data " + eContent);
             }
         } else if (encapsulatedContentInfo.size() == 1) {
             if (logger.isLoggable(Level.FINER)) {
@@ -388,7 +386,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         }
         /*
           id-data OBJECT IDENTIFIER ::= { iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1) pkcs7(7) 1 }
-          Currently not doing anything with this but we may need it at a later date to support different signed data.
+          Currently not doing anything with this, but we may need it at a later date to support different signed data.
           But we are looking pkcs7 variants.
          */
         ASN1ObjectIdentifier objectIdentifier = (ASN1ObjectIdentifier) cmsSequence.getObjectAt(0);
@@ -463,7 +461,6 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
      */
     protected ASN1Sequence buildASN1Primitive(byte[] cmsData) {
         try {
-            // setup the
             ASN1InputStream abstractSyntaxNotationStream = new ASN1InputStream(new ByteArrayInputStream(cmsData));
             ASN1Primitive pkcs = abstractSyntaxNotationStream.readObject();
 
@@ -486,7 +483,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
      * Gets a descriptive name for the given ANSI.1 object identifier number.
      *
      * @param objectId object id to lookup against know list of PKCS#7 id's.
-     * @return string describing the hard to read object id.
+     * @return string describing the hard-to-read object id.
      */
     protected static String getObjectIdName(String objectId) {
         if (ID_DATA_OBJECT_IDENTIFIER.equals(objectId)) {
@@ -531,9 +528,6 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
                 logger.finer("Certificate: \n" + signerCertificate.toString());
                 logger.finer("Public Key:  \n" + publicKey);
             }
-        } catch (NoSuchProviderException e1) {
-            logger.log(Level.WARNING, "No such provider found ", e1);
-            return;
         } catch (NoSuchAlgorithmException e1) {
             logger.log(Level.WARNING, "No such algorithm found ", e1);
             return;
@@ -564,7 +558,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
             documentByteBuffer.get(secondSection);
             messageDigestAlgorithm.update(secondSection);
         }
-        // setup the compare
+        // set up the compare
         try {
             // RFC3852 - The result of the message digest calculation process depends on whether the signedAttrs field
             // is present. When the field is absent, the result is just the message digest of the content as described
@@ -630,15 +624,9 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         } catch (CertificateExpiredException e) {
             logger.log(Level.FINEST, "Certificate chain could not be validated, certificate is expired", e);
             isCertificateDateValid = false;
-        } catch (SelfSignedVerificationException e) {
-            logger.log(Level.FINEST, "Certificate chain could not be validated, signature is self singed.", e);
-            isSelfSigned = true;
         } catch (CertificateVerificationException e) {
             logger.log(Level.FINEST, "Certificate chain could not be validated. ", e);
             isCertificateChainTrusted = false;
-        } catch (RevocationVerificationException e) {
-            logger.log(Level.FINEST, "Certificate chain could not be validated, certificate has been revoked.", e);
-            isRevocation = true;
         } catch (IOException e) {
             logger.log(Level.FINEST, "Error locating trusted keystore .", e);
             isCertificateChainTrusted = false;
@@ -651,7 +639,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         }
     }
 
-    public boolean checkByteRange() throws SignatureIntegrityException {
+    public boolean checkByteRange() {
         if (signatureFieldDictionary == null) {
             return false;
         }
@@ -712,9 +700,9 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
     }
 
     /**
-     * Indicates that data after the signature definition has been been modified.  This is most likely do to another
-     * signature being added to the document or some form or page manipulation.  However it is possible that
-     * an major update has been appended to the document.
+     * Indicates that data after the signature definition has been modified.  This is most likely do to another
+     * signature being added to the document or some form or page manipulation.  However, it is possible that
+     * a major update has been appended to the document.
      *
      * @return true if the document has been modified outside the byte range of the signature.
      */
@@ -751,7 +739,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
     /**
      * Indicates the signature was self singed and the certificate can not be trusted.
      *
-     * @return true if self signed, false otherwise.
+     * @return true if self-signed, false otherwise.
      */
     public boolean isSelfSigned() {
         return isSelfSigned;

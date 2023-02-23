@@ -147,9 +147,8 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
 
     private Rectangle2D getRectangle() {
         Rectangle2D origRect = getBbox() != null ? getBbox() : getUserSpaceRectangle();
-        Rectangle2D.Float jrect = new Rectangle2D.Float(0, 0,
+        return new Rectangle2D.Float(0, 0,
                 (float) origRect.getWidth(), (float) origRect.getHeight());
-        return jrect;
     }
 
     public abstract T getFieldDictionary();

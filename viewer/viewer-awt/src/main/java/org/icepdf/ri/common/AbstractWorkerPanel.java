@@ -142,7 +142,7 @@ public abstract class AbstractWorkerPanel extends JPanel implements MutableDocum
         tree.setExpandsSelectedPaths(true);
         tree.setShowsRootHandles(true);
         tree.setScrollsOnExpand(true);
-        // setup the optional selection listener.
+        // set up the optional selection listener.
         if (nodeSelectionListener != null) {
             nodeSelectionListener.setTree(tree);
             tree.addMouseListener(nodeSelectionListener);
@@ -181,7 +181,7 @@ public abstract class AbstractWorkerPanel extends JPanel implements MutableDocum
     /**
      * NodeSelectionListener handles the root node context menu creation display and command execution.
      */
-    public class NodeSelectionListener extends MouseAdapter {
+    public static class NodeSelectionListener extends MouseAdapter {
         protected JTree tree;
         protected JPopupMenu contextMenu;
 
@@ -235,7 +235,7 @@ public abstract class AbstractWorkerPanel extends JPanel implements MutableDocum
     /**
      * Utility for getting the document title.
      *
-     * @return document title, if non title then a simple search results
+     * @return document title, if no title then a simple search results
      * label is returned;
      */
     public String getDocumentTitle() {

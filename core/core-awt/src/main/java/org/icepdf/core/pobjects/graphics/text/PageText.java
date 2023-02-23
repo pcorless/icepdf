@@ -59,7 +59,7 @@ public class PageText implements TextSelect {
     // pointer to current line during document parse, no other use.
     private LineText currentLine;
 
-    private ArrayList<LineText> pageLines;
+    private final ArrayList<LineText> pageLines;
     private ArrayList<LineText> sortedPageLines;
 
     private AffineTransform previousTextTransform;

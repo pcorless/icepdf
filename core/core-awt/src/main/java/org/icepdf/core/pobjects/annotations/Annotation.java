@@ -428,7 +428,7 @@ public abstract class Annotation extends Dictionary {
 
     /**
      * Custom bit, for flagging an annotation as private and only viewable by a users with the same
-     * user name.  Default value is unset or public.
+     * username.  Default value is unset or public.
      */
     public static final int FLAG_PRIVATE_CONTENTS = 0x0400;
     /**
@@ -563,7 +563,7 @@ public abstract class Annotation extends Dictionary {
     }
 
     /**
-     * Should only be called from Parser,  Use AnnotationFactory if you
+     * Should only be called from Parser,  Use AnnotationFactory if
      * creating a new annotation.
      *
      * @param library document library
@@ -599,7 +599,7 @@ public abstract class Annotation extends Dictionary {
             } else if (subType.equals(Annotation.SUBTYPE_WIDGET)) {
                 Name fieldType = library.getName(entries, FieldDictionary.FT_KEY);
                 if (fieldType == null) {
-                    // get type from parent object if we the widget and field dictionary aren't combined.
+                    // get type from parent object if the widget and field dictionary aren't combined.
                     Object tmp = library.getObject(entries, FieldDictionary.PARENT_KEY);
                     if (tmp instanceof DictionaryEntries) {
                         fieldType = library.getName((DictionaryEntries) tmp, FieldDictionary.FT_KEY);
@@ -749,7 +749,7 @@ public abstract class Annotation extends Dictionary {
                 }
             }
         } else {
-            // new annotation, so setup the default appearance states.
+            // new annotation, so set up the default appearance states.
             createNewAppearance();
         }
     }
@@ -782,11 +782,11 @@ public abstract class Annotation extends Dictionary {
 
         Appearance appearance = new Appearance();
 
-        // iterate over all of the keys so we can index the various annotation
+        // iterate over all the keys, so we can index the various annotation
         // state names.
         if (streamOrDictionary instanceof DictionaryEntries) {
             DictionaryEntries dictionary = (DictionaryEntries) streamOrDictionary;
-            Set keys = dictionary.keySet();
+            Set<Name> keys = dictionary.keySet();
             Object value;
             for (Object key : keys) {
                 value = dictionary.get(key);
@@ -915,8 +915,8 @@ public abstract class Annotation extends Dictionary {
     public org.icepdf.core.pobjects.actions.Action getAction() {
         Object tmp = library.getDictionary(entries, ACTION_KEY);
         // initial parse will likely have the action as a dictionary, so we
-        // create the new action object on the fly.  However it is also possible
-        // that we are parsing an action that has no type specification and
+        // create the new action object on the fly.  However, it is also possible
+        // that we are parsing an action that has no type specification, and
         // thus we can't use the parser to create the new action.
         if (tmp != null) {
             Action action = Action.buildAction(library, (DictionaryEntries) tmp);
@@ -944,10 +944,9 @@ public abstract class Annotation extends Dictionary {
      * todo: future enhancement add support of next/muliple action chains.
      *
      * @param action action to add to this annotation.  This action must
-     *               be created using the the ActionFactory in order to correctly setup
+     *               be created using the ActionFactory in order to correctly set up
      *               the Pobject reference.
-     * @return action that was added to Annotation, null if it was not success
-     * fully added.
+     * @return action that was added to Annotation, null if it was not successfully added.
      */
     public Action addAction(Action action) {
 
@@ -972,7 +971,7 @@ public abstract class Annotation extends Dictionary {
             boolean isReference = library.isReference(getEntries(),
                     ACTION_KEY);
             // we have a next action that is an object, mark it for delete.
-            // Because its a reference no need to flag the annotation as changed.
+            // Because it is a reference no need to flag the annotation as changed.
             if (isReference) {
                 // mark this action for delete.
                 Action oldAction = (Action) action.getObject(ACTION_KEY);
@@ -980,7 +979,7 @@ public abstract class Annotation extends Dictionary {
                 stateManager.addChange(new PObject(oldAction,
                         oldAction.getPObjectReference()));
             }
-            // not a reference, we have an inline dictionary and we'll be
+            // not a reference, we have an inline dictionary, and we'll be
             // clearing it later, so we only need to add this annotation
             // to the state manager.
             else {
@@ -993,7 +992,7 @@ public abstract class Annotation extends Dictionary {
         stateManager.addChange(new PObject(this, getPObjectReference()));
 
         // if this is a link annotation and there is a dest, we need to remove
-        // as it is not allowed once an action has bee added.
+        // as it is not allowed once an action has been added.
         if (isDestKey && this instanceof LinkAnnotation) {
             // remove the dest key from the dictionary
             this.getEntries().remove(LinkAnnotation.DESTINATION_KEY);
@@ -1004,7 +1003,7 @@ public abstract class Annotation extends Dictionary {
         // add the new action to the state manager.
         action.setNew(true);
         stateManager.addChange(new PObject(action, action.getPObjectReference()));
-        // add it to the library so we can get it again.
+        // add it to the library, so we can get it again.
         library.addObject(action, action.getPObjectReference());
 
         return action;
@@ -1015,7 +1014,7 @@ public abstract class Annotation extends Dictionary {
      * of the specified action can not be found, no delete is make.
      *
      * @param action action to remove
-     * @return true if the delete was successful, false otherwise.
+     * @return true if the deletion was successful, false otherwise.
      */
     public boolean deleteAction(Action action) {
 
@@ -1078,12 +1077,12 @@ public abstract class Annotation extends Dictionary {
 
     public boolean allowScreenRolloverMode() {
         return allowScreenOrPrintRenderingOrInteraction() && !(getFlagNoView()
-                && !getFlagToggleNoView()) && !getFlagReadOnly();
+                && getFlagToggleNoView()) && !getFlagReadOnly();
     }
 
     public boolean allowScreenDownMode() {
         return allowScreenOrPrintRenderingOrInteraction() && !(getFlagNoView() &&
-                !getFlagToggleNoView()) && !getFlagReadOnly();
+                getFlagToggleNoView()) && !getFlagReadOnly();
     }
 
     public boolean allowPrintNormalMode() {
@@ -1179,7 +1178,7 @@ public abstract class Annotation extends Dictionary {
     /**
      * Gets the Annotation border style for the given annotation.  If no
      * annotation line style can be found the default value of BORDER_STYLE_SOLID
-     * is returned.  Otherwise the bordStyle and border dictionaries are used
+     * is returned.  Otherwise, the bordStyle and border dictionaries are used
      * to deduse a line style.
      *
      * @return BorderSTyle line constants.
@@ -1266,7 +1265,6 @@ public abstract class Annotation extends Dictionary {
         Composite oldComp = origG.getComposite();
 
         // Simply uncomment the //// lines to use a different Graphics object
-        Graphics2D g = origG;
         ////Graphics2D g = (Graphics2D) origG.create();
 
         AffineTransform at = new AffineTransform(oldAT);
@@ -1308,25 +1306,25 @@ public abstract class Annotation extends Dictionary {
         }
 
         GraphicsRenderingHints grh = GraphicsRenderingHints.getDefault();
-        g.setRenderingHints(grh.getRenderingHints(renderHintType));
-        g.setTransform(at);
-        Shape preAppearanceStreamClip = g.getClip();
-        g.clip(deriveDrawingRectangle());
+        origG.setRenderingHints(grh.getRenderingHints(renderHintType));
+        origG.setTransform(at);
+        Shape preAppearanceStreamClip = origG.getClip();
+        origG.clip(deriveDrawingRectangle());
 
-        renderAppearanceStream(g);
+        renderAppearanceStream(origG);
 
-        g.setTransform(at);
-        g.setClip(preAppearanceStreamClip);
+        origG.setTransform(at);
+        origG.setClip(preAppearanceStreamClip);
 
         if (tabSelected) {
-            renderBorderTabSelected(g);
+            renderBorderTabSelected(origG);
         } else {
-            renderBorder(g);
+            renderBorder(origG);
         }
 
-        g.setTransform(oldAT);
-        g.setClip(oldClip);
-        g.setComposite(oldComp);
+        origG.setTransform(oldAT);
+        origG.setClip(oldClip);
+        origG.setComposite(oldComp);
 
         ////g.dispose();
 
@@ -1353,7 +1351,7 @@ public abstract class Annotation extends Dictionary {
             // Matrix, to produce a quadrilateral with arbitrary orientation.
             Rectangle2D tBbox = matrix.createTransformedShape(bbox).getBounds2D();
 
-            // Step 2. matrix a is computed that scales and translates the
+            // Step 2. matrix is computed that scales and translates the
             // transformed appearance box (tBbox) to align with the edges of
             // the annotation's rectangle (Ret).
             Rectangle2D rect = getUserSpaceRectangle();
@@ -1365,7 +1363,7 @@ public abstract class Annotation extends Dictionary {
             // we have to be careful in such as case as the coordinates of the annotation may actually
             // be in page space.  If the rectangle in page pace is more or less the same location
             // as the tbbox then we know the annotation coordinate space must also be in page space.
-            // Thus we shift back to page space.
+            // Thus, we shift back to page space.
             if (rect.getMinX() == tBbox.getMinX() && rect.getMinY() == tBbox.getMinY()) {
                 tAs.setTransform(tAs.getScaleX(), tAs.getShearX(), tAs.getShearY(),
                         tAs.getScaleY(), -rect.getX(), -rect.getY());
@@ -1558,7 +1556,7 @@ public abstract class Annotation extends Dictionary {
                         //  instead of interpretting the 4th element (Number) into a Vector,
                         //  I'm just not going to do the border if it's the Number.  I know, hack.
                         // The only theory I have is that LinkAnnotation defaults the border
-                        //  color to black, when maybe it should be to null, but that could
+                        //  color to black, when maybe it should be also null, but that could
                         //  change a _lot_ of stuff, so I won't touch it now.
                         if (dashObj instanceof Number) {
                             // Disable border drawing
@@ -1732,7 +1730,7 @@ public abstract class Annotation extends Dictionary {
     }
 
     public boolean getFlagToggleNoView() {
-        return ((getInt(FLAG_KEY) & FLAG_TOGGLE_NO_VIEW) != 0);
+        return ((getInt(FLAG_KEY) & FLAG_TOGGLE_NO_VIEW) == 0);
     }
 
     public boolean getFlagLockedContents() {
@@ -1807,7 +1805,7 @@ public abstract class Annotation extends Dictionary {
                 if (AS instanceof Name)
                     N = library.getObject((DictionaryEntries) N, (Name) AS);
             }
-            // n should be a Form but we have a few cases of Stream
+            // n should be a Form, but we have a few cases of Stream
             if (N instanceof Stream) {
                 return (Stream) N;
             }
@@ -1817,7 +1815,7 @@ public abstract class Annotation extends Dictionary {
 
     /**
      * Gets the Appearance Form object associated with the annotation's appearances.  Many encoders do no create
-     * the stream if there is no data in the widget.  This method insure that an appearance XObject/Form is
+     * the stream if there is no data in the widget.  This method ensures that an appearance XObject/Form is
      * created.  The object new object is not added to the state manager.
      *
      * @return appearance for annotation.
@@ -1954,7 +1952,7 @@ public abstract class Annotation extends Dictionary {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("ANNOTATION= {");
-        Set keys = entries.keySet();
+        Set<Name> keys = entries.keySet();
         for (Object key : keys) {
             Object value = entries.get(key);
             sb.append(key.toString());
@@ -1964,7 +1962,7 @@ public abstract class Annotation extends Dictionary {
             else if (value instanceof StringObject)
                 sb.append(((StringObject) value).getDecryptedLiteralString(library.getSecurityManager()));
             else
-                sb.append(value.toString());
+                sb.append(value);
             sb.append(',');
         }
         sb.append('}');

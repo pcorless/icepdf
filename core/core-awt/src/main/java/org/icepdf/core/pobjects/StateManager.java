@@ -71,8 +71,7 @@ public class StateManager {
         // zero revision number for now but technically we can reuse
         // deleted references and increment the rev number.  For no we
         // keep it simple
-        Reference newReference = new Reference(nextReferenceNumber.getAndIncrement(), 0);
-        return newReference;
+        return new Reference(nextReferenceNumber.getAndIncrement(), 0);
     }
 
     /**
@@ -158,7 +157,7 @@ public class StateManager {
      * Sets a snapshot of the current changes.
      */
     public void setChangesSnapshot() {
-        savedChangesSnapshot = Collections.unmodifiableMap(new HashMap<>(changes));
+        savedChangesSnapshot = Map.copyOf(changes);
     }
 
     /**

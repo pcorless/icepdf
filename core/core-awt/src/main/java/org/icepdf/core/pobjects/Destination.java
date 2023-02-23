@@ -140,7 +140,7 @@ public class Destination extends Dictionary {
 
         // some name tree's use this format which is closer to an action format for defining a destination.
         if (object instanceof HashMap) {
-            object = ((HashMap) object).get(GoToAction.DESTINATION_KEY);
+            object = ((HashMap<?, ?>) object).get(GoToAction.DESTINATION_KEY);
         }
         if (object instanceof Destination) {
             object = ((Destination) object).getEncodedDestination();
@@ -202,7 +202,7 @@ public class Destination extends Dictionary {
                         }
                         // corner case for d attached list.
                         else if (ob instanceof HashMap) {
-                            parse((List) (((HashMap) ob).get(D_KEY)));
+                            parse((List) (((HashMap<?, ?>) ob).get(D_KEY)));
                         } else {
                             logger.log(Level.FINE, () -> "Destination type missed=" + ob);
                         }
@@ -371,7 +371,7 @@ public class Destination extends Dictionary {
         if (object instanceof List) {
             return (List) object;
         } else if (object instanceof HashMap) {
-            return (List) ((HashMap) object).get(D_KEY);
+            return (List) ((HashMap<?, ?>) object).get(D_KEY);
         }
         return null;
     }
@@ -587,23 +587,23 @@ public class Destination extends Dictionary {
                 v.add(type);
             }
             // left
-            if (left != null && left != Float.NaN) {
+            if (left != null && !Float.isNaN(left)) {
                 v.add(left);
             }
             // bottom
-            if (bottom != null && bottom != Float.NaN) {
+            if (bottom != null && !Float.isNaN(bottom)) {
                 v.add(bottom);
             }
             // right
-            if (right != null && right != Float.NaN) {
+            if (right != null && !Float.isNaN(right)) {
                 v.add(right);
             }
             // top
-            if (top != null && top != Float.NaN) {
+            if (top != null && !Float.isNaN(top)) {
                 v.add(top);
             }
             // zoom
-            if (zoom != null && zoom != Float.NaN) {
+            if (zoom != null && !Float.isNaN(zoom)) {
                 v.add(zoom);
             }
             return v;

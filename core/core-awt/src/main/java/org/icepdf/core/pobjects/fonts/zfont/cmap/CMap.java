@@ -64,28 +64,6 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
     private static final HashMap<Name, CMap> cMapCache = new HashMap<>();
 
     /**
-     * Dictionary containing entries that define the character collection  for
-     * the CIDFont or CIDFonts associate with the CMap.  Specifically the
-     * character collections registry, ordering and supplement is defined.
-     */
-    private HashMap cIdSystemInfo;
-
-    /**
-     * PostScript name of the CMap.
-     */
-    private String cMapName;
-
-    /**
-     * defines changes to the internal organization of CMap files or the
-     * semantics of CMap operators. The CMapType of CMaps described in
-     * this document.
-     * cMapType = 2 - indicates a ToUnicode cmap
-     * cMapType = 1 - indicates a CMap object
-     * cMapType = 0 - not sure yet, maybe CMap with external CMap reference
-     */
-    private float cMapType;
-
-    /**
      * The name of a predefined CMap, or a stream containing a CMap, that
      * is to be used as the base for this CMap. This allows the CMap to
      * be defined differentially, specifying only the character mappings
@@ -317,7 +295,12 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
                     // always be hash by definition and our parser result
                     token = parser.getStreamObject();
                     if (token instanceof HashMap) {
-                        cIdSystemInfo = (HashMap) token;
+                        /*
+                          Dictionary containing entries that define the character collection  for
+                          the CIDFont or CIDFonts associate with the CMap.  Specifically the
+                          character collections registry, ordering and supplement is defined.
+                         */
+                        HashMap cIdSystemInfo = (HashMap) token;
                         // always followed by a def token;
                         token = parser.getStreamObject();
                     }
@@ -330,7 +313,10 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
                     if (nameString.toLowerCase().contains("cmapname")) {
                         // cmapname will always be a Name object
                         token = parser.getStreamObject();
-                        cMapName = token.toString();
+                        /*
+                          PostScript name of the CMap.
+                         */
+                        String cMapName = token.toString();
                         // always followed by a def token;
                         token = parser.getStreamObject();
                     }
@@ -338,7 +324,15 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
                     if (nameString.toLowerCase().contains("cmaptype")) {
                         // cmapname will always be a float
                         token = parser.getStreamObject();
-                        cMapType = Float.parseFloat(token.toString());
+                        /*
+                          defines changes to the internal organization of CMap files or the
+                          semantics of CMap operators. The CMapType of CMaps described in
+                          this document.
+                          cMapType = 2 - indicates a ToUnicode cmap
+                          cMapType = 1 - indicates a CMap object
+                          cMapType = 0 - not sure yet, maybe CMap with external CMap reference
+                         */
+                        float cMapType = Float.parseFloat(token.toString());
                         // always followed by a def token;
                         token = parser.getStreamObject();
                     }
@@ -688,8 +682,7 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
                 // value - startRange will give the index in the vector of the desired
                 // mapping value
                 StringObject hexToken = (StringObject) offsetVecor.get(value - startRange);
-                char[] test = convertToString(hexToken.getLiteralStringBuffer());
-                return test;
+                return convertToString(hexToken.getLiteralStringBuffer());
             }
         }
     }

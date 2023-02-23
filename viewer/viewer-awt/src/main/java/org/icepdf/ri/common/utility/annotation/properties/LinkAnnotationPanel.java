@@ -53,7 +53,6 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     // named destination fields.
     private JLabel destinationName;
     private JButton viewNamedDesButton;
-    private NameTreeDialog nameTreeDialog;
 
     // appearance properties to take care of.
     private Name highlightStyle;
@@ -134,7 +133,7 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
             NameTree nameTree = controller.getDocument().getCatalog().getNames().getDestsNameTree();
             if (nameTree != null) {
                 // create new dialog instance.
-                nameTreeDialog = new NameTreeDialog(
+                NameTreeDialog nameTreeDialog = new NameTreeDialog(
                         controller,
                         true, nameTree);
                 nameTreeDialog.setDestinationName(destinationName.getText());

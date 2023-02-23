@@ -20,7 +20,6 @@ import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
-import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.common.utility.signatures.SignatureUtilities;
 import org.icepdf.ri.images.Images;
@@ -66,15 +65,11 @@ public class SignatureValidationStatus {
 
         // signed by
         singedBy = messageBundle.getString("viewer.annotation.signature.validation.common.notAvailable.label");
-        try {
-            validateSignatureNode(signatureWidgetAnnotation, signatureValidator);
-            MessageFormat formatter = new MessageFormat(messageBundle.getString(
-                    "viewer.annotation.signature.validation.common.signedBy.label"));
-            singedBy = formatter.format(new Object[]{(commonName != null ? commonName + " " : " "),
-                    (emailAddress != null ? "<" + emailAddress + ">" : "")});
-        } catch (SignatureIntegrityException e) {
-            e.printStackTrace();
-        }
+        validateSignatureNode(signatureWidgetAnnotation, signatureValidator);
+        MessageFormat formatter = new MessageFormat(messageBundle.getString(
+                "viewer.annotation.signature.validation.common.signedBy.label"));
+        singedBy = formatter.format(new Object[]{(commonName != null ? commonName + " " : " "),
+                (emailAddress != null ? "<" + emailAddress + ">" : "")});
 
         // document modification
         documentModified = "viewer.annotation.signature.validation.common.doc.modified.label";
@@ -117,8 +112,7 @@ public class SignatureValidationStatus {
         dictionaryDate = signatureDictionary.getDate();
     }
 
-    private void validateSignatureNode(SignatureWidgetAnnotation signatureWidgetAnnotation, SignatureValidator signatureValidator)
-            throws SignatureIntegrityException {
+    private void validateSignatureNode(SignatureWidgetAnnotation signatureWidgetAnnotation, SignatureValidator signatureValidator) {
         SignatureFieldDictionary fieldDictionary = signatureWidgetAnnotation.getFieldDictionary();
 
         if (fieldDictionary != null) {

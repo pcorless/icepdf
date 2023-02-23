@@ -33,12 +33,10 @@ import java.util.Vector;
 public class ScalableJComboBox extends JComboBox<ChoiceFieldDictionary.ChoiceOption> implements ScalableField {
 
     private static final long serialVersionUID = -353525405737762626L;
-    private final DocumentViewModel documentViewModel;
     private boolean active;
 
     public ScalableJComboBox(Vector<ChoiceFieldDictionary.ChoiceOption> items, final DocumentViewModel documentViewModel) {
         super(items);
-        this.documentViewModel = documentViewModel;
         // enable more precise painting of glyphs.
         putClientProperty("i18n", Boolean.TRUE.toString());
         LayerUI<JComponent> layerUI = new LayerUI<>() {

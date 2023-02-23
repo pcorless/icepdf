@@ -319,7 +319,7 @@ public class DraggableAnnotationPanel extends JPanel {
         }
     }
 
-    class ComponentBoundsCompare implements Comparator<Component> {
+    static class ComponentBoundsCompare implements Comparator<Component> {
         @Override
         public int compare(Component o1, Component o2) {
             return Integer.compare(o1.getY(), o2.getY());

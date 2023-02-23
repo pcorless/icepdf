@@ -125,7 +125,7 @@ public class ShadingType3Pattern extends ShadingPattern {
 
         float t0 = domain.get(0).floatValue();
         float t1 = domain.get(1).floatValue();
-        float s[] = new float[]{0.0f, 0.25f, 0.5f, 0.75f, 1.0f};
+        float[] s = new float[]{0.0f, 0.25f, 0.5f, 0.75f, 1.0f};
 
         Point2D.Float center = new Point2D.Float(
                 ((Number) coords.get(0)).floatValue(),

@@ -52,12 +52,8 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
 
     private String location = null;
     private String reason = null;
-    private String contact = null;
-    private String name = null;
     private String commonName = null;
-    private String organization = null;
     private String emailAddress = null;
-    private String date = null;
 
     /**
      * Creates a new instance of an OutlineItemTreeNode
@@ -95,11 +91,11 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
         SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
         if (fieldDictionary != null) {
             // grab some signer properties right from the annotations dictionary.
-            name = signatureDictionary.getName();
+            String name = signatureDictionary.getName();
             location = signatureDictionary.getLocation();
             reason = signatureDictionary.getReason();
-            contact = signatureDictionary.getContactInfo();
-            date = signatureDictionary.getDate();
+            String contact = signatureDictionary.getContactInfo();
+            String date = signatureDictionary.getDate();
 
             // getting a signatureValidator should give us a pointer the to the signer cert if all goes well.
             signatureValidator = signatureWidgetAnnotation.getSignatureValidator();
@@ -109,7 +105,7 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
             X500Name x500name = new X500Name(principal.getName());
             if (x500name.getRDNs() != null) {
                 commonName = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.CN);
-                organization = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.O);
+                String organization = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.O);
                 emailAddress = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.EmailAddress);
             }
             // Start validation process.

@@ -46,7 +46,7 @@ public class PdfFXViewer extends Application {
     }
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
+    public void start(Stage primaryStage) {
         BorderPane borderPane = new BorderPane();
         Scene scene = new Scene(borderPane);
 

@@ -48,7 +48,6 @@ public class ImplicitDestinationPanel extends JPanel implements ItemListener, An
 
     private final Controller controller;
     private final ResourceBundle messageBundle;
-    private AnnotationComponent currentAnnotation;
 
     private JComboBox implicitDestTypeComboBox;
     private JTextField pageNumberTextField;
@@ -137,9 +136,8 @@ public class ImplicitDestinationPanel extends JPanel implements ItemListener, An
 
     public void setAnnotationComponent(AnnotationComponent annotation) {
         // get a reference so we can setup a save on dialog close
-        currentAnnotation = annotation;
 
-        org.icepdf.core.pobjects.actions.Action action = currentAnnotation.getAnnotation().getAction();
+        org.icepdf.core.pobjects.actions.Action action = annotation.getAnnotation().getAction();
 
         // get the destination object, doesn't matter where it comes from.
         Destination dest = null;
@@ -147,8 +145,8 @@ public class ImplicitDestinationPanel extends JPanel implements ItemListener, An
             dest = ((GoToAction) action).getDestination();
         }
         // alternatively we can have a dest field on Link annotations
-        else if (action == null && currentAnnotation.getAnnotation() instanceof LinkAnnotation) {
-            LinkAnnotation linkAnnotation = (LinkAnnotation) currentAnnotation.getAnnotation();
+        else if (action == null && annotation.getAnnotation() instanceof LinkAnnotation) {
+            LinkAnnotation linkAnnotation = (LinkAnnotation) annotation.getAnnotation();
             dest = linkAnnotation.getDestination();
         }
 

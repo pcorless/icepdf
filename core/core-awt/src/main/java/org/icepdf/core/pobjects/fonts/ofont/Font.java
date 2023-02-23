@@ -92,7 +92,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
             GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
 
     // Array of type1 font differences based on family names.
-    static final String type1Diff[][] =
+    static final String[][] type1Diff =
             {{"Bookman-Demi", "URWBookmanL-DemiBold", "Arial"}, {
                     "Bookman-DemiItalic", "URWBookmanL-DemiBoldItal", "Arial"}, {
                     "Bookman-Light", "URWBookmanL-Ligh", "Arial"}, {

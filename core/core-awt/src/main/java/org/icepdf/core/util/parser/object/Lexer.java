@@ -5,7 +5,6 @@ import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +44,7 @@ public class Lexer {
         this.library = library;
     }
 
-    public void setByteBuffer(ByteBuffer byteBuffer) throws UnsupportedEncodingException {
+    public void setByteBuffer(ByteBuffer byteBuffer) {
         streamBytes = byteBuffer;
         pos = streamBytes.position();
     }
@@ -151,7 +150,7 @@ public class Lexer {
     /**
      * Utility for parsing a hex strings.
      */
-    private StringObject startHexString(Reference reference) throws IOException {
+    private StringObject startHexString(Reference reference)  {
         // skip the starting (
         streamBytes.get();
         startTokenPos = streamBytes.position();
@@ -177,7 +176,7 @@ public class Lexer {
     /**
      * Utility for parsing a lit strings.
      */
-    private StringObject startLiteralString(Reference reference) throws IOException {
+    private StringObject startLiteralString(Reference reference) {
         // skip the starting (
         startTokenPos = streamBytes.position();
 
@@ -349,7 +348,7 @@ public class Lexer {
     /**
      * Utility for parsing a name.
      */
-    private Name startName() throws IOException {
+    private Name startName() {
         // skip first / of name
         streamBytes.get();
         startTokenPos = pos = streamBytes.position();
@@ -370,7 +369,7 @@ public class Lexer {
         return new Name(new String(nameBytes));
     }
 
-    private Boolean startBoolean() throws IOException {
+    private Boolean startBoolean() {
         startTokenPos = pos;
         while (streamBytes.hasRemaining()) {
             // look for a natural break
@@ -390,7 +389,7 @@ public class Lexer {
         }
     }
 
-    private String startNull() throws IOException {
+    private String startNull() {
         startTokenPos = pos;
         while (streamBytes.hasRemaining()) {
             // look for a natural break
@@ -509,7 +508,7 @@ public class Lexer {
     /**
      * Utility of processing a number state.
      */
-    private Object startNumber() throws IOException {
+    private Object startNumber() {
         startTokenPos = pos;
         byte posByte;
         while (pos < streamBytes.limit()) {
@@ -529,7 +528,7 @@ public class Lexer {
     /**
      * Utility for processing the operand state.
      */
-    private Object startOperand() throws IOException {
+    private Object startOperand() {
         startTokenPos = pos;
         byte posByte;
         while (pos < streamBytes.limit()) {
@@ -559,7 +558,7 @@ public class Lexer {
     /**
      * Utility to find the next token state.
      */
-    private int parseNextState() throws IOException {
+    private int parseNextState() {
         int tokenType;
         // skip the white space
         while (pos < streamBytes.limit()) {
@@ -642,7 +641,7 @@ public class Lexer {
                         }
                         if (pos < streamBytes.limit()){
                             streamBytes.position(pos);
-                            c2 = streamBytes.get(pos);;
+                            c2 = streamBytes.get(pos);
                             if (c2 <= '9' && c2 >= '-') {
                                 startNumber();
                                 // clean any extra spaces

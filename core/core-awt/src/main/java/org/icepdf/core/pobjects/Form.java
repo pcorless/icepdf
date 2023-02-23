@@ -54,7 +54,6 @@ public class Form extends Stream {
     // Graphics state object to be used by content parser
     private GraphicsState graphicsState;
     private ExtGState extGState;
-    private Resources resources;
     private Resources parentResource;
     // transparency grouping data
     private boolean transparencyGroup;
@@ -131,7 +130,7 @@ public class Form extends Stream {
      * @return affine tansform based on v
      */
     private static AffineTransform getAffineTransform(List v) {
-        float f[] = new float[6];
+        float[] f = new float[6];
         for (int i = 0; i < 6; i++) {
             f[i] = ((Number) v.get(i)).floatValue();
         }
@@ -167,7 +166,6 @@ public class Form extends Stream {
         Resources leafResources = library.getResources(entries, RESOURCES_KEY);
         // apply parent resource, if the current resources is null
         if (leafResources != null) {
-            resources = leafResources;
         } else {
             leafResources = parentResource;
         }

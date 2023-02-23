@@ -22,9 +22,9 @@ import java.util.HashMap;
  */
 @Deprecated
 public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
-    private char enc[];
+    private final char[] enc;
 
-    private Encoding(char e[]) {
+    private Encoding(char[] e) {
         enc = e;
     }
 

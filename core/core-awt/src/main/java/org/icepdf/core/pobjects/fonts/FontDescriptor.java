@@ -228,7 +228,7 @@ public class FontDescriptor extends Dictionary {
             return new PRectangle(rectangle).getOriginalPoints();
         } else if (value instanceof int[]) {
             int[] ints = (int[]) value;
-            List<Integer> intList = new ArrayList<Integer>(ints.length);
+            List<Integer> intList = new ArrayList<>(ints.length);
             for (int i : ints) {
                 intList.add(i);
             }

@@ -15,10 +15,7 @@
  */
 package org.icepdf.ri.common.fonts;
 
-import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.Reference;
-import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.AbstractTask;
@@ -92,7 +89,7 @@ public class FindFontsTask extends AbstractTask<Void, Font> {
                 page.initPageResources();
                 Resources pageResources = page.getResources();
                 if (pageResources != null) {
-                    HashMap pageFonts = pageResources.getFonts();
+                    HashMap<Name, Object> pageFonts = pageResources.getFonts();
                     if (pageFonts != null && pageFonts.size() > 0) {
                         Set fontKeys = pageFonts.keySet();
                         for (Object fontObjectReference : fontKeys) {

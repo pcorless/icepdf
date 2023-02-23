@@ -232,7 +232,7 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
      * @return affine transform based on v
      */
     private static AffineTransform getAffineTransform(List v) {
-        float f[] = new float[6];
+        float[] f = new float[6];
         for (int i = 0; i < 6; i++) {
             f[i] = ((Number) v.get(i)).floatValue();
         }

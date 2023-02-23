@@ -68,7 +68,7 @@ public class ImageParams extends Dictionary {
     public static final Name SMASK_KEY = new Name("SMask");
     public static final Name MASK_KEY = new Name("Mask");
 
-    private Resources resources;
+    private final Resources resources;
 
 
     public ImageParams(Library library, DictionaryEntries entries, Resources resources) {

@@ -94,7 +94,7 @@ public class SeekableInputConstrainedWrapper extends InputStream {
         return false;
     }
 
-    public void reset() throws IOException {
+    public void reset() {
     }
 
     public long skip(long n) throws IOException {
@@ -159,7 +159,7 @@ public class SeekableInputConstrainedWrapper extends InputStream {
         if (streamDataInput == null)
             sb.append("null ");
         else
-            sb.append(streamDataInput.toString());
+            sb.append(streamDataInput);
         return sb.toString();
     }
 }

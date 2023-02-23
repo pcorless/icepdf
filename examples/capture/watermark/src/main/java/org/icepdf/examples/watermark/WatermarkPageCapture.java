@@ -126,8 +126,6 @@ public class WatermarkPageCapture {
     public static class CapturePage implements Callable<Void> {
         private final Document document;
         private final int pageNumber;
-        private final float scale = 1f;
-        private final float rotation = 0f;
 
         private CapturePage(Document document, int pageNumber) {
             this.document = document;
@@ -138,6 +136,8 @@ public class WatermarkPageCapture {
             try {
                 Page page = document.getPageTree().getPage(pageNumber);
                 page.init();
+                float rotation = 0f;
+                float scale = 1f;
                 PDimension sz = page.getSize(Page.BOUNDARY_CROPBOX, rotation, scale);
 
                 int pageWidth = (int) sz.getWidth();

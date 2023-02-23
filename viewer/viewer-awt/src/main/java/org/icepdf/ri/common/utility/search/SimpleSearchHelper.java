@@ -71,10 +71,8 @@ public class SimpleSearchHelper implements PropertyChangeListener {
     public void propertyChange(PropertyChangeEvent evt) {
         Object newValue = evt.getNewValue();
         String propertyName = evt.getPropertyName();
-        switch (propertyName) {
-            case PropertyConstants.DOCUMENT_CURRENT_PAGE:
-                currentPage = (int) newValue;
-                break;
+        if (propertyName.equals(PropertyConstants.DOCUMENT_CURRENT_PAGE)) {
+            currentPage = (int) newValue;
         }
     }
 

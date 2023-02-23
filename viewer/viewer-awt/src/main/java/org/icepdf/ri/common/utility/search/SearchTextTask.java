@@ -61,7 +61,6 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
     private final boolean cumulative;
     private final boolean showPages;
     private final boolean regex;
-    private final boolean r2L;
     private final boolean text;
     private final boolean forms;
     private final boolean comments;
@@ -91,7 +90,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         cumulative = builder.cumulative;
         regex = builder.regex;
         showPages = builder.showPages;
-        r2L = builder.r2L;
+        boolean r2L = builder.r2L;
         text = builder.text;
         forms = builder.forms;
         comments = builder.comments;

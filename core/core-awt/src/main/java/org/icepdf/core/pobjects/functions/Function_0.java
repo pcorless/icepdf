@@ -139,7 +139,7 @@ public class Function_0 extends Function {
         // length of output array
         int n = range.length / 2;
         // ready output array
-        float y[] = new float[n];
+        float[] y = new float[n];
         // work throw all input data and store in y[]
         try {
             // sampled each input value xi for 0 & i < m

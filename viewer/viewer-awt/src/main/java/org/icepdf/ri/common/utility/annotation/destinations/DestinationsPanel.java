@@ -33,6 +33,7 @@ import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -66,12 +67,9 @@ public class DestinationsPanel extends JPanel
     // layouts constraint
     protected final GridBagConstraints constraints;
 
-    private final ViewerPropertiesManager propertiesManager;
-    private final Preferences preferences;
     private final org.icepdf.ri.common.views.Controller controller;
     private final ResourceBundle messageBundle;
 
-    private AnnotationPanel parentPanel;
     private final NameJTree nameJTree;
 
     private final JPopupMenu contextMenu;
@@ -80,12 +78,11 @@ public class DestinationsPanel extends JPanel
 
     public DestinationsPanel(SwingController controller, ViewerPropertiesManager propertiesManager) {
         messageBundle = controller.getMessageBundle();
-        preferences = propertiesManager.getPreferences();
+        Preferences preferences = propertiesManager.getPreferences();
         setLayout(new GridBagLayout());
         setAlignmentY(JPanel.TOP_ALIGNMENT);
 
         this.controller = controller;
-        this.propertiesManager = propertiesManager;
 
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.BOTH;
@@ -137,11 +134,10 @@ public class DestinationsPanel extends JPanel
     }
 
     public void setParentPanel(AnnotationPanel parentPanel) {
-        this.parentPanel = parentPanel;
     }
 
     public void removeNameTreeNode(Destination destination) {
-        Enumeration e = ((NameTreeNode) nameJTree.getModel().getRoot()).depthFirstEnumeration();
+        Enumeration<TreeNode> e = ((NameTreeNode) nameJTree.getModel().getRoot()).depthFirstEnumeration();
         while (e.hasMoreElements()) {
             NameTreeNode currentNode = (NameTreeNode) e.nextElement();
             if (currentNode.getName() != null &&
@@ -164,7 +160,7 @@ public class DestinationsPanel extends JPanel
                 if (node instanceof NameTreeNode) {
                     NameTreeNode nameTreeNode = (NameTreeNode) node;
                     // find and select a node with the same node.)
-                    Enumeration e = ((NameTreeNode) nameJTree.getModel().getRoot()).depthFirstEnumeration();
+                    Enumeration<TreeNode> e = ((NameTreeNode) nameJTree.getModel().getRoot()).depthFirstEnumeration();
                     while (e.hasMoreElements()) {
                         NameTreeNode currentNode = (NameTreeNode) e.nextElement();
                         if (currentNode.getName() != null &&
@@ -189,7 +185,7 @@ public class DestinationsPanel extends JPanel
         Names names = controller.getDocument().getCatalog().getNames();
         if (names != null && names.getDestsNameTree() != null) {
             // find and select a node with the same node.)
-            Enumeration e = ((NameTreeNode) nameJTree.getModel().getRoot()).depthFirstEnumeration();
+            Enumeration<TreeNode> e = ((NameTreeNode) nameJTree.getModel().getRoot()).depthFirstEnumeration();
             while (e.hasMoreElements()) {
                 NameTreeNode currentNode = (NameTreeNode) e.nextElement();
                 if (currentNode.getName() != null &&

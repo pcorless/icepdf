@@ -56,7 +56,6 @@ public class Shapes {
     // stack already has the needed state,  more ops take longer to paint.
     private int rule;
     private float alpha;
-    private boolean interrupted;
 
     // Graphics stack for a page's content.
     protected final ArrayList<DrawCmd> shapes = new ArrayList<>(shapesInitialCapacity);
@@ -140,7 +139,7 @@ public class Shapes {
      */
     public void paint(Graphics2D g) throws InterruptedException {
         try {
-            interrupted = false;
+            boolean interrupted = false;
             AffineTransform base = new AffineTransform(g.getTransform());
             Shape clip = g.getClip();
 

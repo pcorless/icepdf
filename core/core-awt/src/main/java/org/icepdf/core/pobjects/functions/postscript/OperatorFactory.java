@@ -31,7 +31,7 @@ public class OperatorFactory {
             new ConcurrentHashMap<>();
 
     @SuppressWarnings(value = "unchecked")
-    public static Operator getOperator(char ch[], int offset, int length) {
+    public static Operator getOperator(char[] ch, int offset, int length) {
 
         // get the operator int value.
         final int operatorType = OperatorNames.getType(ch, offset, length);

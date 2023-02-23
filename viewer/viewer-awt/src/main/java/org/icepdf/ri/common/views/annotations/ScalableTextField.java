@@ -32,12 +32,10 @@ import java.awt.event.MouseEvent;
 public class ScalableTextField extends JTextField implements ScalableField {
 
     private static final long serialVersionUID = 1155416379916442539L;
-    private final DocumentViewModel documentViewModel;
     private boolean active;
 
     public ScalableTextField(final DocumentViewModel documentViewModel) {
         super();
-        this.documentViewModel = documentViewModel;
         // enable more precise painting of glyphs.
         getDocument().putProperty("i18n", Boolean.TRUE.toString());
         putClientProperty("i18n", Boolean.TRUE.toString());

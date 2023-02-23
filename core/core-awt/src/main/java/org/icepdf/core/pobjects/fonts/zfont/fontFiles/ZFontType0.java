@@ -245,7 +245,7 @@ public class ZFontType0 extends ZSimpleFont {
         return length2;
     }
 
-    private class FF3ByteSource implements CFFParser.ByteSource {
+    private static class FF3ByteSource implements CFFParser.ByteSource {
         private final Stream fontStream;
 
         public FF3ByteSource(Stream fontStream) {
@@ -253,7 +253,7 @@ public class ZFontType0 extends ZSimpleFont {
         }
 
         @Override
-        public byte[] getBytes() throws IOException {
+        public byte[] getBytes() {
             return fontStream.getDecodedStreamBytes();
         }
     }

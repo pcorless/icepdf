@@ -55,8 +55,6 @@ public class Mediator {
     // status bar
     private ProgressBar progressBar;
 
-    // main layout panels.
-    private BorderPane projectBorderPane;
     private ProjectPropertiesTabSet projectTabSet;
     private ProjectCompareView projectCompareView;
     private ComparatorPane comparatorPane;
@@ -534,7 +532,7 @@ public class Mediator {
     }
 
     public void setProjectBorderPane(BorderPane projectBorderPane) {
-        this.projectBorderPane = projectBorderPane;
+        // main layout panels.
     }
 
     public void setProjectTabSet(ProjectPropertiesTabSet projectTabSet) {

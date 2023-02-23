@@ -86,7 +86,7 @@ public class Parser {
      * if there are no more objects left in the DataInputStream or
      * a I/O error is encountered.
      */
-    public Object getObject(Library library) throws InterruptedException, IOException {
+    public Object getObject(Library library) throws IOException {
         int deepnessCount = 0;
         boolean inObject = false; // currently parsing tokens in an object
         boolean complete = false; // flag used for do loop.
@@ -498,7 +498,7 @@ public class Parser {
 
     public String peek2() throws IOException {
         reader.mark(2);
-        char c[] = new char[2];
+        char[] c = new char[2];
         c[0] = (char) reader.read();
         c[1] = (char) reader.read();
         String s = new String(c);

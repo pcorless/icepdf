@@ -80,7 +80,7 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
         vertexBitStream = new BitStream(meshDataStream.getDecodedByteArrayInputStream());
     }
 
-    public abstract Paint getPaint() throws InterruptedException;
+    public abstract Paint getPaint();
 
     /**
      * An array of numbers specifying how to map vertex coordinates and colour components into the

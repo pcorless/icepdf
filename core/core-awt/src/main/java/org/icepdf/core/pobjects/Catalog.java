@@ -20,6 +20,7 @@ import org.icepdf.core.util.Library;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -75,7 +76,7 @@ public class Catalog extends Dictionary {
     private InteractiveForm interactiveForm;
 
     private volatile boolean outlinesInited = false;
-    private volatile boolean namesTreeInited = false;
+    private final boolean namesTreeInited = false;
     private volatile boolean destsInited = false;
     private volatile boolean viewerPrefInited = false;
     private volatile boolean optionalContentInited = false;
@@ -246,11 +247,7 @@ public class Catalog extends Dictionary {
      */
     public Name getPageMode() {
         Name name = library.getName(entries, PAGEMODE_KEY);
-        if (name == null) {
-            return PAGE_MODE_USE_NONE_VALUE;
-        } else {
-            return name;
-        }
+        return Objects.requireNonNullElse(name, PAGE_MODE_USE_NONE_VALUE);
     }
 
     /**

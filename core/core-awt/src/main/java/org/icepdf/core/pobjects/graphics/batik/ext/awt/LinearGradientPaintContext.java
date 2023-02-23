@@ -41,7 +41,10 @@ final class LinearGradientPaintContext extends MultipleGradientPaintContext {
      * a device space coordinate, (X, Y):
      * g(X, Y) = dgdX*X + dgdY*Y + gc
      */
-    private float dgdX, dgdY, gc, pixSz;
+    private final float dgdX;
+    private final float dgdY;
+    private final float gc;
+    private final float pixSz;
 
     private static final int DEFAULT_IMPL = 1;
     private static final int ANTI_ALIAS_IMPL = 3;
@@ -140,7 +143,7 @@ final class LinearGradientPaintContext extends MultipleGradientPaintContext {
         }
     }
 
-    protected void fillHardNoCycle(int[] pixels, int off, int adjust,
+    private void fillHardNoCycle(int[] pixels, int off, int adjust,
                                    int x, int y, int w, int h) {
 
         //constant which can be pulled out of the inner loop
@@ -289,7 +292,7 @@ final class LinearGradientPaintContext extends MultipleGradientPaintContext {
         }
     }
 
-    protected void fillSimpleNoCycle(int[] pixels, int off, int adjust,
+    private void fillSimpleNoCycle(int[] pixels, int off, int adjust,
                                      int x, int y, int w, int h) {
         //constant which can be pulled out of the inner loop
         final float initConst = (dgdX * x) + gc;
@@ -368,7 +371,7 @@ final class LinearGradientPaintContext extends MultipleGradientPaintContext {
         }
     }
 
-    protected void fillSimpleRepeat(int[] pixels, int off, int adjust,
+    private void fillSimpleRepeat(int[] pixels, int off, int adjust,
                                     int x, int y, int w, int h) {
 
         final float initConst = (dgdX * x) + gc;
@@ -415,7 +418,7 @@ final class LinearGradientPaintContext extends MultipleGradientPaintContext {
         }
     }
 
-    protected void fillSimpleReflect(int[] pixels, int off, int adjust,
+    private void fillSimpleReflect(int[] pixels, int off, int adjust,
                                      int x, int y, int w, int h) {
         final float initConst = (dgdX * x) + gc;
 

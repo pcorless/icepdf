@@ -89,8 +89,7 @@ public class CalGray extends PColorSpace {
         if (Z > 1) {
             Z = 1;
         }
-        Color tmp = new Color(grayCS, new float[]{Z, Y, Z}, 1.0f);
-        return tmp;
+        return new Color(grayCS, new float[]{Z, Y, Z}, 1.0f);
     }
 
     @Override

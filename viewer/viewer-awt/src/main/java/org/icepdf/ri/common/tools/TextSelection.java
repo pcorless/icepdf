@@ -57,9 +57,6 @@ public class TextSelection extends SelectionBoxHandler {
     private GlyphLocation lastGlyphStartLocation;
     private GlyphLocation lastGlyphEndLocation;
 
-    // todo configurable system property to switch to rightToLeft.
-    private final boolean leftToRight = true;
-
     // todo make configurable
     protected int topMargin = 75;
     protected int bottomMargin = 75;
@@ -475,6 +472,8 @@ public class TextSelection extends SelectionBoxHandler {
                 }
 
                 // normal page selection,  fill in the the highlight between start and end.
+                // todo configurable system property to switch to rightToLeft.
+                boolean leftToRight = true;
                 if (glyphStartLocation != null && glyphEndLocation != null) {
                     selectedCount = GlyphLocation.highLightGlyphs(pageLines, glyphStartLocation, glyphEndLocation, leftToRight,
                             isDown, isLocalDown, isMovingRight, topMarginExclusion, bottomMarginExclusion);
@@ -701,7 +700,7 @@ class GlyphLocation {
 
             // check mouse location against y-coordinate of a line  and grab the last line
             // this is buggy if the lines aren't sorted via !org.icepdf.core.views.page.text.preserveColumns.
-            if ((isLocalDown && isDown) || isLocalDown) {
+            if (isLocalDown) {
                 int lastGlyphEndLine = 0;
                 if (lastGlyphEndLocation != null) {
                     lastGlyphEndLine = lastGlyphEndLocation.line;

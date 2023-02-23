@@ -23,7 +23,6 @@ import java.awt.event.MouseWheelListener;
  *
  */
 public class MouseWheelCurrentPageListener implements MouseWheelListener {
-    private final JScrollPane scrollpane;
     private final CurrentPageChanger currentPageChanger;
 
     /**
@@ -60,7 +59,6 @@ public class MouseWheelCurrentPageListener implements MouseWheelListener {
 
     protected MouseWheelCurrentPageListener(JScrollPane scrollpane,
                                             CurrentPageChanger currentPageChanger) {
-        this.scrollpane = scrollpane;
         this.currentPageChanger = currentPageChanger;
         calculatingCurrentPage = false;
     }

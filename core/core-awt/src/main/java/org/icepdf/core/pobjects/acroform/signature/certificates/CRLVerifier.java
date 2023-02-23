@@ -43,7 +43,7 @@ import java.util.List;
  * Class that verifies CRLs for given X509 certificate. Extracts the CRL
  * distribution points from the certificate (if available) and checks the
  * certificate revocation status against the CRLs coming from the
- * distribution points. Supports HTTP, HTTPS, FTP and LDAP based URLs.
+ * distribution points. Supports HTTPS and LDAP based URLs.
  *
  * @author Svetlin Nakov
  */
@@ -59,7 +59,7 @@ public class CRLVerifier {
      * @throws RevocationVerificationException  cert is revoked.
      */
     public static void verifyCertificateCRLs(X509Certificate cert)
-            throws CertificateVerificationException, RevocationVerificationException {
+            throws CertificateVerificationException {
         try {
             List<String> crlDistPoints = getCrlDistributionPoints(cert);
             for (String crlDP : crlDistPoints) {
@@ -81,13 +81,12 @@ public class CRLVerifier {
     }
 
     /**
-     * Downloads CRL from given URL. Supports http, https, ftp and ldap based URLs.
+     * Downloads CRL from given URL. Supports https and ldap based URLs.
      */
     private static X509CRL downloadCRL(String crlURL) throws IOException,
             CertificateException, CRLException,
             CertificateVerificationException, NamingException {
-        if (crlURL.startsWith("http://") || crlURL.startsWith("https://")
-                || crlURL.startsWith("ftp://")) {
+        if (crlURL.startsWith("https://")) {
             return downloadCRLFromWeb(crlURL);
         } else if (crlURL.startsWith("ldap://")) {
             return downloadCRLFromLDAP(crlURL);
@@ -149,7 +148,7 @@ public class CRLVerifier {
      * @throws IOException                 file reading problem
      */
     public static List<String> getCrlDistributionPoints(
-            X509Certificate cert) throws CertificateParsingException, IOException {
+            X509Certificate cert) throws IOException {
         byte[] crldpExt = cert.getExtensionValue(Extension.cRLDistributionPoints.getId());
         if (crldpExt == null) {
             return new ArrayList<>();

@@ -28,7 +28,7 @@ public class Indexer {
         this.library = library;
     }
 
-    public CrossReferenceRoot indexObjects(ByteBuffer byteBuffer) throws IOException, CrossReferenceStateException, ObjectStateException {
+    public CrossReferenceRoot indexObjects(ByteBuffer byteBuffer) throws IOException, CrossReferenceStateException {
         // reset the cross-reference store
         CrossReferenceRoot crossReferenceRoot = new CrossReferenceRoot(library);
         CrossReferenceTable crossReference = null;
@@ -49,7 +49,6 @@ public class Indexer {
                 int trailerPosition = pos = ByteBufferUtil.findReverseString(byteBuffer, byteBuffer.limit(), end, Parser.TRAILER_MARKER);
                 // look for a trailer first.
                 if (trailerPosition != byteBuffer.limit()) {
-                    int xrefStartPos = trailerPosition;
                     byteBuffer.position(trailerPosition + Parser.TRAILER_MARKER.length);
                     lexer.setByteBuffer(byteBuffer);
                     Object object = lexer.nextToken();
@@ -67,7 +66,7 @@ public class Indexer {
                             }
                         }
                         // fall back indexing file.
-                        crossReference = new CrossReferenceTable(library, xRefDictionary, xrefStartPos);
+                        crossReference = new CrossReferenceTable(library, xRefDictionary, trailerPosition);
                         crossReferenceRoot.addCrossReference(crossReference);
                         // move position to search for object from the end
                         pos = byteBuffer.limit();

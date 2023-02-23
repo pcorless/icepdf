@@ -15,7 +15,6 @@
  */
 package org.icepdf.core.pobjects;
 
-import org.icepdf.core.pobjects.structure.exceptions.ObjectStateException;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.parser.object.Lexer;
 import org.icepdf.core.util.parser.object.Parser;
@@ -66,13 +65,13 @@ public class ObjectStream extends Stream {
             }
         } catch (IOException e) {
             logger.log(Level.WARNING, e, () ->
-                    "Error loading object stream instance: " + this.toString());
+                    "Error loading object stream instance: " + this);
             throw e;
         }
         inited = true;
     }
 
-    public PObject decompressObject(Parser parser, int objectIndex) throws IOException, ObjectStateException {
+    public PObject decompressObject(Parser parser, int objectIndex) throws IOException {
         initialize();
         if (objectNumbers == null || objectOffset == null || objectNumbers.length != objectOffset.length ||
                 objectIndex < 0 || objectIndex >= objectNumbers.length) {

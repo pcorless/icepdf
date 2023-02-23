@@ -15,7 +15,6 @@ public class ProjectPropertiesTabSet extends TabPane {
 
     private final ProjectTab projectTabSet;
     private final ResultsTab resultsTabSet;
-    private final MetaDataTab metaDataTabSet;
 
     public ProjectPropertiesTabSet(Mediator mediator) {
         super();
@@ -23,7 +22,7 @@ public class ProjectPropertiesTabSet extends TabPane {
 
         projectTabSet = new ProjectTab("Project", mediator);
         resultsTabSet = new ResultsTab("Results", mediator);
-        metaDataTabSet = new MetaDataTab("Metadata", mediator);
+        MetaDataTab metaDataTabSet = new MetaDataTab("Metadata", mediator);
 
         getTabs().addAll(projectTabSet, resultsTabSet, metaDataTabSet);
     }

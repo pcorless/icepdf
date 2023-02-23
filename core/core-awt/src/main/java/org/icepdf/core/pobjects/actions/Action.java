@@ -66,7 +66,7 @@ public class Action extends Dictionary {
     // private Object Next
 
     /**
-     * Creates a new instance of a Action.
+     * Creates a new instance of an Action.
      *
      * @param l document library.
      * @param h Action dictionary entries.

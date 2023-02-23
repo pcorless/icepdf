@@ -94,7 +94,7 @@ public class HexDumper {
         return lineBytes.length;
     }
 
-    private void reset(OutputStream var1) throws IOException {
+    private void reset(OutputStream var1){
         offset = 0;
         printStream = new PrintStream(var1);
     }
@@ -105,7 +105,7 @@ public class HexDumper {
      * @param offsetLength line length.
      * @throws IOException  error reading input stream.
      */
-    protected void writeMemoryOffset(int offsetLength) throws IOException {
+    protected void writeMemoryOffset(int offsetLength) {
         convertByteToHex(printStream, (byte) (offset >>> 8 & 255));
         convertByteToHex(printStream, (byte) (offset & 255));
         printStream.print(": ");
@@ -120,7 +120,7 @@ public class HexDumper {
      * @param length    length of bytes of convert.
      * @throws IOException  error reading input stream.
      */
-    private void writeHexBytes(byte[] byteArray, int length) throws IOException {
+    private void writeHexBytes(byte[] byteArray, int length) {
         thisLine[this.currentByte] = byteArray[length];
         convertByteToHex(this.printStream, byteArray[length]);
         printStream.print(" ");
@@ -131,11 +131,9 @@ public class HexDumper {
     }
 
     /**
-     * Write ASCII data out to end of pritn stream.
-     *
-     * @throws IOException  error reading input stream.
+     * Write ASCII data out to end of print stream.
      */
-    private void writeASCIISummary() throws IOException {
+    private void writeASCIISummary() {
         // add some column padding
         if (currentLineLength < BYTE_PER_ROW) {
             for (int i = currentLineLength; i < BYTE_PER_ROW; i++) {

@@ -89,7 +89,7 @@ public class ResetFormAction extends FormAction {
      */
     protected void descendFormTree(Object formNode) {
         if (formNode instanceof AbstractWidgetAnnotation) {
-            ((AbstractWidgetAnnotation) formNode).reset();
+            ((AbstractWidgetAnnotation<?>) formNode).reset();
         } else if (formNode instanceof FieldDictionary) {
             // iterate over the kid's array.
             FieldDictionary child = (FieldDictionary) formNode;
@@ -101,7 +101,7 @@ public class ResetFormAction extends FormAction {
                         kid = library.getObject((Reference) kid);
                     }
                     if (kid instanceof AbstractWidgetAnnotation) {
-                        ((AbstractWidgetAnnotation) kid).reset();
+                        ((AbstractWidgetAnnotation<?>) kid).reset();
                     } else if (kid instanceof FieldDictionary) {
                         descendFormTree(kid);
                     }

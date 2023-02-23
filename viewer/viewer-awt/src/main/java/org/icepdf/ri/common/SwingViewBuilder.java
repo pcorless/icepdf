@@ -2203,8 +2203,7 @@ public class SwingViewBuilder implements ViewBuilder {
     }
 
     public DestinationsPanel buildDestinationsPanel() {
-        DestinationsPanel destinationsPanel = new DestinationsPanel(viewerController, propertiesManager);
-        return destinationsPanel;
+        return new DestinationsPanel(viewerController, propertiesManager);
     }
 
     /**

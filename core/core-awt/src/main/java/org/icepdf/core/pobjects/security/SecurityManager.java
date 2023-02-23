@@ -57,10 +57,10 @@ public class SecurityManager {
 
     // Default Encryption dictionary, which also contians keys need for
     // standard, crypt and public security handlers.
-    private EncryptionDictionary encryptDictionary;
+    private final EncryptionDictionary encryptDictionary;
 
     // Pointer to class which implements the SecurityHandler interface
-    private SecurityHandler securityHandler;
+    private final SecurityHandler securityHandler;
 
     // flag for detecting JCE
     private static boolean foundJCE = false;

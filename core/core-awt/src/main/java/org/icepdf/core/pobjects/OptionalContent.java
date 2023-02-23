@@ -165,13 +165,9 @@ public class OptionalContent extends Dictionary {
                 for (Object obj : toggle) {
                     OptionalContentGroup ocg = groups.get(obj);
                     if (ocg != null) {
-                        if (isBaseOn) {
-                            // remove the off entries
-                            ocg.setVisible(false);
-                        } else {
-                            // otherwise we add the on entries.
-                            ocg.setVisible(true);
-                        }
+                        // remove the off entries
+                        // otherwise we add the on entries.
+                        ocg.setVisible(!isBaseOn);
                     }
                 }
             }

@@ -777,7 +777,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     }
 
     public static final String BODY_START =
-            "<?xml version=\"1.0\"?><body xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xfa=\"http://www.xfa.org/schema/xfa-data/1.0/\" xfa:APIVersion=\"Acrobat:11.0.0\" xfa:spec=\"2.0.2\"  " +
+            "<?xml version=\"1.0\"?><body xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xfa=\"https://www.xfa.org/schema/xfa-data/1.0/\" xfa:APIVersion=\"Acrobat:11.0.0\" xfa:spec=\"2.0.2\"  " +
                     "style=\"{0}\">";
 
     public static final String BODY_END = "</body>";

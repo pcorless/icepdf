@@ -56,8 +56,6 @@ public class ActionsPanel extends AnnotationPanelAdapter
     private JButton editAction;
     private JButton removeAction;
 
-    // action type descriptions
-    private final String destinationLabel;
     private final String uriActionLabel;
     private final String goToActionLabel;
     private final String launchActionLabel;
@@ -69,7 +67,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
         super(controller);
         setLayout(new GridLayout(2, 1, 5, 5));
 
-        // Setup the basics of the panel
+        // Set up the basics of the panel
         setFocusable(true);
 
         // Add the tabbed pane to the overall panel
@@ -79,7 +77,8 @@ public class ActionsPanel extends AnnotationPanelAdapter
         this.setEnabled(false);
 
         // assign language values for supported action types
-        destinationLabel = messageBundle.getString("viewer.utilityPane.action.type.destination.label");
+        // action type descriptions
+        String destinationLabel = messageBundle.getString("viewer.utilityPane.action.type.destination.label");
         uriActionLabel = messageBundle.getString("viewer.utilityPane.action.type.uriAction.label");
         goToActionLabel = messageBundle.getString("viewer.utilityPane.action.type.goToAction.label");
         launchActionLabel = messageBundle.getString("viewer.utilityPane.action.type.launchAction.label");
@@ -262,7 +261,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
             URIAction uriAction = (URIAction) action;
             String oldURIValue = uriAction.getURI();
             String newURIValue = showURIActionDialog(oldURIValue);
-            // finally do all the lifting to edit a uri change.
+            // finally do all the lifting to edit an uri change.
             if (newURIValue != null &&
                     !oldURIValue.equals(newURIValue)) {
                 // create a new instance of the action type
@@ -462,7 +461,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
     /**
      * Action entries used with the actionList component.
      */
-    class ActionEntry {
+    static class ActionEntry {
 
         // The text to be displayed on the screen for this item.
         final String title;
@@ -498,7 +497,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
      * An Entry objects for the different action types, used in dialog
      * for creating/adding new actions.
      */
-    class ActionChoice {
+    static class ActionChoice {
 
         // The text to be displayed on the screen for this item.
         final String title;

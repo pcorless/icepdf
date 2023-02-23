@@ -337,9 +337,7 @@ public final class ViewerPropertiesManager {
 
     private static void updatePropertiesWithPreferences() throws BackingStoreException {
         defaultProps = new SortedProperties();
-        Arrays.stream(preferences.keys()).forEach(key -> {
-            defaultProps.setProperty(key, preferences.get(key, null));
-        });
+        Arrays.stream(preferences.keys()).forEach(key -> defaultProps.setProperty(key, preferences.get(key, null)));
         localProperties = new SortedProperties(defaultProps);
     }
 
@@ -379,7 +377,7 @@ public final class ViewerPropertiesManager {
      * now sticky and will persist for all viewer instances.
      */
     public static void saveLocalProperties() {
-        Enumeration keys = localProperties.keys();
+        Enumeration<Object> keys = localProperties.keys();
         while (keys.hasMoreElements()) {
             String key = (String) keys.nextElement();
             preferences.put(key, localProperties.getProperty(key));

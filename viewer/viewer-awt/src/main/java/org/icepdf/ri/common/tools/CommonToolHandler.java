@@ -82,11 +82,10 @@ public abstract class CommonToolHandler {
     protected AffineTransform getPageTransform(AbstractPageViewComponent pageViewComponent) {
         Page currentPage = pageViewComponent.getPage();
         DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-        AffineTransform at = currentPage.getPageTransform(
+        return currentPage.getPageTransform(
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
-        return at;
     }
 
     /**

@@ -52,19 +52,6 @@ public class ShadingType1Pattern extends ShadingType2Pattern {
      */
 //    protected java.util.List<Number> domain;
 
-    /**
-     * (Required) A 2-in, n-out function or an array of n 2-in, 1-out functions
-     * (where n is the number of colour components in the shading dictionary’s
-     * colour space). Each function’s domain shall be a superset of that of the
-     * shading dictionary. If the value returned by the function for a given
-     * colour component is out of range, it shall be adjusted to the nearest
-     * valid value.
-     */
-//    protected Function[] function;
-
-    // linear gradient paint describing the gradient.
-    private LinearGradientPaint linearGradientPaint;
-
     public ShadingType1Pattern(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
@@ -130,7 +117,17 @@ public class ShadingType1Pattern extends ShadingType2Pattern {
             Color[] colors = calculateColorPoints(numberOfPoints, startPoint, endPoint, t0, t1);
             float[] dist = calculateDomainEntries(numberOfPoints, t0, t1);
 
-            linearGradientPaint = new LinearGradientPaint(
+            /*
+              (Required) A 2-in, n-out function or an array of n 2-in, 1-out functions
+              (where n is the number of colour components in the shading dictionary’s
+              colour space). Each function’s domain shall be a superset of that of the
+              shading dictionary. If the value returned by the function for a given
+              colour component is out of range, it shall be adjusted to the nearest
+              valid value.
+             */
+            //    protected Function[] function;
+            // linear gradient paint describing the gradient.
+            LinearGradientPaint linearGradientPaint = new LinearGradientPaint(
                     startPoint, endPoint, dist, colors,
                     MultipleGradientPaint.NO_CYCLE,
                     MultipleGradientPaint.LINEAR_RGB,

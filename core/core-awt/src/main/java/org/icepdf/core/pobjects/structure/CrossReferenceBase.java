@@ -61,8 +61,7 @@ public abstract class CrossReferenceBase<T extends Dictionary> implements CrossR
     }
 
     public CrossReferenceEntry getEntryNoDescendents(Reference reference) {
-        CrossReferenceEntry crossReferenceEntry = indirectObjectReferences.get(reference);
-        return crossReferenceEntry;
+        return indirectObjectReferences.get(reference);
     }
 
     public int getXrefStartPos() {

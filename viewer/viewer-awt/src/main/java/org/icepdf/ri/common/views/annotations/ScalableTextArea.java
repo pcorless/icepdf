@@ -34,12 +34,10 @@ import java.awt.event.MouseEvent;
 public class ScalableTextArea extends JTextArea implements ScalableField {
 
     private static final long serialVersionUID = 409696785049691125L;
-    private final DocumentViewModel documentViewModel;
     private boolean active;
 
     public ScalableTextArea(final DocumentViewModel documentViewModel) {
         super();
-        this.documentViewModel = documentViewModel;
 
         // enable more precise painting of glyphs.
         getDocument().putProperty("i18n", Boolean.TRUE.toString());

@@ -39,7 +39,7 @@ public class UndoCaretaker {
                         "org.icepdf.ri.viewer.undo.size", 25);
     }
 
-    private ArrayList<Memento> mementoStateHistory;
+    private final ArrayList<Memento> mementoStateHistory;
     private int cursor;
 
     public UndoCaretaker() {

@@ -166,7 +166,6 @@ public class TilingPattern extends Stream implements Pattern {
     // An array of six numbers specifying the pattern matrix. The default value
     // is the identity matrix [1 0 0 1 0 0].
     private AffineTransform matrix;
-    private AffineTransform patternMatrix;
     // Parsed resource data is stored here.
     private Shapes shapes;
 
@@ -225,7 +224,7 @@ public class TilingPattern extends Stream implements Pattern {
      * @return affine tansform based on v
      */
     private static AffineTransform getAffineTransform(List v) {
-        float f[] = new float[6];
+        float[] f = new float[6];
         for (int i = 0; i < 6; i++) {
             f[i] = ((Number) v.get(i)).floatValue();
         }
@@ -310,7 +309,7 @@ public class TilingPattern extends Stream implements Pattern {
         // bbox is in the pattern coordinate system, so we'll convert it to the current user space.
         // we start off with the base transform of the page or the xobject before any scaling or
         // or other modifications takes place on the CTM.
-        patternMatrix = new AffineTransform();
+        AffineTransform patternMatrix = new AffineTransform();
         patternMatrix.concatenate(matrix);
         GeneralPath tmp = new GeneralPath(bBoxMod);
         bBoxMod = tmp.createTransformedShape(patternMatrix).getBounds2D();

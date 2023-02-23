@@ -366,7 +366,7 @@ public class NameTree extends Dictionary {
         return root;
     }
 
-    class Pair implements Comparable<Pair> {
+    static class Pair implements Comparable<Pair> {
         final String name;
         final Object value;
 

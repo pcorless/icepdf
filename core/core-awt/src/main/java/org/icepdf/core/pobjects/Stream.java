@@ -200,7 +200,7 @@ public class Stream extends Dictionary {
 
         // Get the filter name for the encoding type, which can be either
         // a Name or Vector.
-        List filterNames = getFilterNames();
+        List<String> filterNames = getFilterNames();
         if (filterNames == null)
             return input;
 

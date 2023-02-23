@@ -7,7 +7,6 @@ import javafx.scene.control.TabPane;
 import javafx.scene.control.TextArea;
 import org.icepdf.qa.viewer.common.Mediator;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 
@@ -17,21 +16,18 @@ import java.io.PrintStream;
  */
 public class ProjectUtilityPane extends TabPane {
 
-    private final Tab consoleTab;
-
     private final TextArea consoleTextArea;
-    private final PrintStream printStream;
     private int count;
 
     public ProjectUtilityPane(Mediator mediator) {
         super();
         setSide(Side.TOP);
 
-        consoleTab = new Tab("Console");
+        Tab consoleTab = new Tab("Console");
         consoleTab.setClosable(false);
 
         consoleTextArea = new TextArea();
-        printStream = new PrintStream(new Console(consoleTextArea));
+        PrintStream printStream = new PrintStream(new Console(consoleTextArea));
 
         System.setOut(printStream);
 //        System.setErr(printStream);
@@ -57,7 +53,7 @@ public class ProjectUtilityPane extends TabPane {
             Platform.runLater(() -> console.appendText(valueOf));
         }
 
-        public void write(int b) throws IOException {
+        public void write(int b) {
             if (count % 80 == 0) {
                 appendText(String.valueOf('\n'));
             }

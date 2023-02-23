@@ -121,7 +121,7 @@ public class Library {
 
     private boolean isEncrypted;
     private boolean isLinearTraversal;
-    private ImagePool imagePool;
+    private final ImagePool imagePool;
 
 
     /**
@@ -220,7 +220,7 @@ public class Library {
     }
 
     public CrossReferenceRoot rebuildCrossReferenceTable()
-            throws IOException, CrossReferenceStateException, ObjectStateException {
+            throws IOException, CrossReferenceStateException {
         Indexer indexer = new Indexer(this);
         synchronized (mappedFileByteBufferLock) {
             crossReferenceRoot = indexer.indexObjects(mappedFileByteBuffer);
@@ -233,7 +233,7 @@ public class Library {
         return fileOrigin;
     }
 
-    public void setCrossReferenceRoot(CrossReferenceRoot crossReferenceRoot) throws ObjectStateException {
+    public void setCrossReferenceRoot(CrossReferenceRoot crossReferenceRoot) {
         this.crossReferenceRoot = crossReferenceRoot;
     }
 
@@ -507,7 +507,7 @@ public class Library {
      */
     public boolean isValidEntry(Reference reference) {
         try {
-            java.lang.ref.Reference ob = objectStore.get(reference);
+            java.lang.ref.Reference<Object> ob = objectStore.get(reference);
             return (ob != null && ob.get() != null) ||
                     crossReferenceRoot.loadObject(objectLoader, reference, null) != null;
         } catch (ObjectStateException | CrossReferenceStateException | IOException e) {
@@ -744,7 +744,7 @@ public class Library {
             dictionaryEntries.put(key, resources);
             return resources;
         } else {
-            logger.log(Level.WARNING, () -> "Failed to get resource for key: " + key + " in " + dictionaryEntries.toString());
+            logger.log(Level.WARNING, () -> "Failed to get resource for key: " + key + " in " + dictionaryEntries);
         }
         return null;
     }
@@ -789,19 +789,19 @@ public class Library {
         }
     }
 
-    /**
-     * Sets a pointer to the orginal document input stream
-     *
-     * @param documentInput seekable inputstream.
+    /*
+      Sets a pointer to the orginal document input stream
+
+      @param documentInput seekable inputstream.
      */
 //    public void setDocumentInput(SeekableInput documentInput) {
 //        this.documentInput = documentInput;
 //    }
 
-    /**
-     * Gets the SeekableInput of the document underlying bytes.
-     *
-     * @return document bytes.
+    /*
+      Gets the SeekableInput of the document underlying bytes.
+
+      @return document bytes.
      */
 //    public SeekableInput getDocumentInput() {
 //        return documentInput;
@@ -946,7 +946,7 @@ public class Library {
     public void disposeFontResources() {
         Set<Reference> test = objectStore.keySet();
         for (Reference ref : test) {
-            java.lang.ref.Reference reference = objectStore.get(ref);
+            java.lang.ref.Reference<Object> reference = objectStore.get(ref);
             Object tmp = reference != null ? reference.get() : null;
             if (tmp instanceof Font || tmp instanceof FontDescriptor) {
                 objectStore.remove(ref);

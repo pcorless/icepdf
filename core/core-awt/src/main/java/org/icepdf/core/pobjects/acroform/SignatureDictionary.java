@@ -28,7 +28,7 @@ import java.util.List;
  * such as a public/private-key encrypted document digest, or it may be a biometric form of identification, such as a
  * handwritten signature, fingerprint, or retinal scan. The specific form of authentication used shall be implemented by
  * a special software module called a signature handler.
- *
+ * <p>
  * The SignatureDictionary store root data for signing and verifying signature in a document.
  */
 public class SignatureDictionary extends Dictionary {

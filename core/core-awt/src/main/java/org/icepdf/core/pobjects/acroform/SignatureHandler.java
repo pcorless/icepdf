@@ -76,8 +76,7 @@ public class SignatureHandler {
         if (signatureDictionary != null) {
             // Generate the correct validator and try to validate the signature.
             try {
-                SignatureValidator signatureValidator = DigitalSignatureFactory.getInstance().getValidatorInstance(signatureFieldDictionary);
-                return signatureValidator;
+                return DigitalSignatureFactory.getInstance().getValidatorInstance(signatureFieldDictionary);
             } catch (SignatureIntegrityException e) {
                 logger.log(Level.WARNING, "Signature certificate could not be initialized.", e);
             } catch (Exception e) {

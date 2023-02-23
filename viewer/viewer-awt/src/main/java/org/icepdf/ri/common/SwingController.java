@@ -1540,7 +1540,7 @@ public class SwingController extends ComponentAdapter
      */
     public boolean isPdfCollection() {
         Catalog catalog = document.getCatalog();
-        HashMap collection = catalog.getCollection();
+        HashMap<Name, Object> collection = catalog.getCollection();
         if (collection != null) {
             // one final check as some docs will have meta data but will specify a page mode.
             // check to see that at least one of the files is a PDF
@@ -2411,7 +2411,7 @@ public class SwingController extends ComponentAdapter
             recentPaths.add(fileName + PROPERTY_TOKEN_SEPARATOR + Paths.get(filePath));
         }
         // add our new path the start of the list, remove any existing file names.
-        String newRecentFile = path.getFileName() + PROPERTY_TOKEN_SEPARATOR + path.toString();
+        String newRecentFile = path.getFileName() + PROPERTY_TOKEN_SEPARATOR + path;
         if (recentPaths.contains(newRecentFile)) {
             recentPaths.remove(newRecentFile);
         }
@@ -2469,10 +2469,8 @@ public class SwingController extends ComponentAdapter
      *
      * @param document         document to set securityCallback on .
      * @param securityCallback security callback for prompting users or owner passwords.
-     * @throws PDFSecurityException security exception likely incorrect user or owner password.
      */
-    protected void setupSecurityHandler(Document document, SecurityCallback securityCallback) throws
-            PDFSecurityException {
+    protected void setupSecurityHandler(Document document, SecurityCallback securityCallback) {
         // create default security callback is user has not created one
         if (securityCallback == null) {
             document.setSecurityCallback(
@@ -4967,7 +4965,7 @@ public class SwingController extends ComponentAdapter
                             source == annotationPreviewMenuItem) {
                         showAnnotationPreviewWindow();
                     } else {
-                        logger.log(Level.FINE, "Unknown action event: " + source.toString());
+                        logger.log(Level.FINE, "Unknown action event: " + source);
                     }
                 } finally {
                     // set view pane back to previous icon
@@ -4975,8 +4973,7 @@ public class SwingController extends ComponentAdapter
                 }
             }
         } catch (Exception e) {
-            final Exception f = e;
-            String message = f.getMessage() == null || f.getMessage().isEmpty() ? f.toString() : f.getMessage();
+            String message = e.getMessage() == null || e.getMessage().isEmpty() ? e.toString() : e.getMessage();
             Runnable doSwingWork = () -> org.icepdf.ri.util.Resources.showMessageDialog(
                     viewer,
                     JOptionPane.INFORMATION_MESSAGE,
@@ -5427,7 +5424,7 @@ public class SwingController extends ComponentAdapter
                     }
                 } else if (dataFlavor.equals(DataFlavor.stringFlavor)) {
                     String s = (String) transferable.getTransferData(dataFlavor);
-                    int startIndex = s.toLowerCase().indexOf("http://");
+                    int startIndex = s.toLowerCase().indexOf("https://");
                     int endIndex = s.toLowerCase().indexOf(".pdf");
                     if (startIndex >= 0 && endIndex >= 0) {
                         s = s.substring(startIndex, endIndex + 4);

@@ -69,9 +69,8 @@ public class Utils {
      * @param byteBuffer byteBuffer to read from
      * @param numBytes   number of bytes to read to make integral value from [0, 8]
      * @return Integral value, which is composed of numBytes bytes, read using big-endian rules from in
-     * @throws IOException error reading input stream.
      */
-    public static int readIntWithVaryingBytesBE(ByteBuffer byteBuffer, int numBytes) throws IOException {
+    public static int readIntWithVaryingBytesBE(ByteBuffer byteBuffer, int numBytes) {
         int val = 0;
         for (int i = 0; i < numBytes; i++) {
             int curr = byteBuffer.get();
@@ -87,9 +86,8 @@ public class Utils {
      * @param byteBuffer       byteBuffer to read from
      * @param numBytes number of bytes to read to make integral value from [0, 4]
      * @return Integral value, which is composed of numBytes bytes, read using big-endian rules from in
-     * @throws IOException error reading int value
      */
-    public static long readLongWithVaryingBytesBE(ByteBuffer byteBuffer, int numBytes) throws IOException {
+    public static long readLongWithVaryingBytesBE(ByteBuffer byteBuffer, int numBytes) {
         long val = 0;
         for (int i = 0; i < numBytes; i++) {
             int curr = byteBuffer.get();
@@ -330,7 +328,7 @@ public class Utils {
      * none is specified, then String(byte[]) will use the platform's
      * default encoding. This method is for when encoding is not relevant,
      * when the String simply holds byte values in each char.
-     *
+     * <p>
      * {@link org.icepdf.core.pobjects.LiteralStringObject}
      * {@link org.icepdf.core.pobjects.HexStringObject}
      * @param  bytes to convert.

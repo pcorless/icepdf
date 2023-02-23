@@ -97,8 +97,7 @@ public class ZeroPaddedInputStream extends InputStream {
     }
 
     public long skip(long n) throws IOException {
-        long s = in.skip(n);
-//System.out.println("ZPIS.skip( " + n + " ) : " + s);
-        return s;
+        //System.out.println("ZPIS.skip( " + n + " ) : " + s);
+        return in.skip(n);
     }
 }

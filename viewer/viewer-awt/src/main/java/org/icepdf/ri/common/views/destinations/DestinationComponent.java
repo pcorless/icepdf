@@ -45,9 +45,7 @@ public class DestinationComponent extends JComponent implements FocusListener, M
     protected static final Logger logger =
             Logger.getLogger(DestinationComponent.class.toString());
 
-    private static final int WIDTH = 18;
     private static final int HEIGHT = 24;
-    private static final int OFFSET = 1;
 
     protected float currentZoom;
     protected float currentRotation;
@@ -158,8 +156,10 @@ public class DestinationComponent extends JComponent implements FocusListener, M
                     documentViewModel.getPageBoundary(),
                     documentViewModel.getViewRotation(),
                     documentViewModel.getViewZoom());
+            int WIDTH = 18;
             int x = destination.getLeft().intValue() - WIDTH;
             int y = destination.getTop().intValue();
+            int OFFSET = 1;
             Rectangle rect = new Rectangle(x + OFFSET, y - OFFSET, WIDTH, HEIGHT);
 
             // store the new annotation rectangle in its original user space

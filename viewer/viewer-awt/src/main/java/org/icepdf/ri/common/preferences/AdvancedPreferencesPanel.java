@@ -40,7 +40,6 @@ public class AdvancedPreferencesPanel extends JPanel {
 
     private final Preferences preferences;
 
-    private final JComboBox<BooleanItem> enableImageProxyComboBox;
     private JTextField imageProxyThreadCountField;
 
     private final JTextField commonThreadCountField;
@@ -63,7 +62,7 @@ public class AdvancedPreferencesPanel extends JPanel {
                 new BooleanItem(messageBundle.getString(
                         "viewer.dialog.viewerPreferences.section.advanced.imageProxyDisabled.label"),
                         false)};
-        enableImageProxyComboBox = new JComboBox<>(fontHintingOptions);
+        JComboBox<BooleanItem> enableImageProxyComboBox = new JComboBox<>(fontHintingOptions);
         enableImageProxyComboBox.setSelectedItem(new BooleanItem("", imageProxyEnabled));
         enableImageProxyComboBox.addActionListener(e -> {
             JComboBox cb = (JComboBox) e.getSource();

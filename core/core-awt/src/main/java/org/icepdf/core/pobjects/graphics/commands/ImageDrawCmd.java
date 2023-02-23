@@ -44,7 +44,7 @@ public class ImageDrawCmd extends AbstractDrawCmd {
         MIN_DIMENSION = Defs.intProperty("org.icepdf.core.imageDrawCmd.maxDimension", 5);
     }
 
-    private ImageReference image;
+    private final ImageReference image;
     // paint scale factor of original image.
     private int xScale = 1;
     private int yScale = 1;

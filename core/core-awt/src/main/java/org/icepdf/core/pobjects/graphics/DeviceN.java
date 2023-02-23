@@ -50,9 +50,6 @@ public class DeviceN extends PColorSpace {
     private final List<Name> names;
     private final PColorSpace alternate;
     private final Function tintTransform;
-    // for debugging purposes, not currently used.
-    private DictionaryEntries attributesDictionary;
-    private DictionaryEntries processDictionary;
 
     private boolean foundCMYKColorants;
 
@@ -77,9 +74,10 @@ public class DeviceN extends PColorSpace {
 
         // attributes are required for defining NChannel
         if (attributes != null) {
-            attributesDictionary = (DictionaryEntries) library.getObject(attributes);
+            // for debugging purposes, not currently used.
+            DictionaryEntries attributesDictionary = (DictionaryEntries) library.getObject(attributes);
             // setup process
-            processDictionary = (DictionaryEntries) library.getObject(attributesDictionary, PROCESS_KEY);
+            DictionaryEntries processDictionary = (DictionaryEntries) library.getObject(attributesDictionary, PROCESS_KEY);
         }
     }
 

@@ -51,15 +51,12 @@ import java.util.logging.Logger;
  */
 public class CircleAnnotationHandler extends SquareAnnotationHandler {
 
-    private CircleAnnotation annotation;
-
     private static final Logger logger =
             Logger.getLogger(CircleAnnotationHandler.class.toString());
 
     protected final static float DEFAULT_STROKE_WIDTH = 3.0f;
 
     private static final BasicStroke stroke;
-    private static final float strokeWidth;
     private static Color lineColor;
     private static Color internalColor;
     private static final boolean useInternalColor;
@@ -103,7 +100,7 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
         defaultOpacity = Defs.intProperty(
                 "org.icepdf.core.views.page.annotation.squareCircle.fill.opacity", 255);
 
-        strokeWidth = (float) Defs.doubleProperty("org.icepdf.core.views.page.annotation.circle.stroke.width",
+        float strokeWidth = (float) Defs.doubleProperty("org.icepdf.core.views.page.annotation.circle.stroke.width",
                 DEFAULT_STROKE_WIDTH);
 
         // need to make the stroke cap, thickness configurable. Or potentially
@@ -176,7 +173,7 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
 
         // create annotations types that that are rectangle based;
         // which is actually just link annotations
-        annotation = (CircleAnnotation)
+        CircleAnnotation annotation = (CircleAnnotation)
                 AnnotationFactory.buildAnnotation(
                         documentViewController.getDocument().getPageTree().getLibrary(),
                         Annotation.SUBTYPE_CIRCLE,

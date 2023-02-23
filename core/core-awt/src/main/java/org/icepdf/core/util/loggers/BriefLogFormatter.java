@@ -34,7 +34,7 @@ public class BriefLogFormatter extends Formatter {
         if (loggerName == null) {
             loggerName = "root";
         }
-        String output = loggerName +
+        return loggerName +
                 "[" +
                 record.getLevel() + '|' +
                 Thread.currentThread().getName() + '|' +
@@ -42,7 +42,6 @@ public class BriefLogFormatter extends Formatter {
                 "]: " +
                 record.getMessage() + ' ' +
                 lineSep;
-        return output;
     }
 
 }

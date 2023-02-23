@@ -148,13 +148,13 @@ public class FaxDecoder extends AbstractImageDecoder {
         }
 
         Class<?> tmDecoder = Class.forName("com.twelvemonkeys.imageio.plugins.tiff.CCITTFaxDecoderStream");
-        Constructor tmDecoderConst = tmDecoder.getConstructor(
-                InputStream.class, int.class, int.class, int.class, long.class, boolean.class);
+        Constructor<?> tmDecoderConst = tmDecoder.getConstructor(
+                InputStream.class, int.class, int.class, long.class, boolean.class);
         tmDecoderConst.setAccessible(true);
 
         ByteArrayInputStream bis = new ByteArrayInputStream(streamData);
         InputStream decoderStream = (InputStream) tmDecoderConst.newInstance(
-                bis, columns, compression, 1, options, encodedByteAlign);
+                bis, columns, compression, options, encodedByteAlign);
 
         DataInputStream dis = new DataInputStream(decoderStream);
         dis.readFully(decodedStreamData);

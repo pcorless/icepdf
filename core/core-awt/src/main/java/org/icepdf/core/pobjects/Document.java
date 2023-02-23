@@ -110,9 +110,7 @@ public class Document {
     // disable/enable file caching when downloading url data streams
     private static boolean isCachingEnabled;
 
-    // repository of all PDF object associated with this document.
-    private Header header;
-    private Library library;
+    private final Library library;
     // todo put file channel input library?
     private FileChannel documentFileChannel;
     private CrossReferenceRoot crossReferenceRoot;
@@ -343,7 +341,8 @@ public class Document {
             throws PDFSecurityException, IOException, IllegalStateException {
         try {
             // load the head
-            header = new Header();
+            // repository of all PDF object associated with this document.
+            Header header = new Header();
             input = header.parseHeader(input);
 
             library.setDocumentByteBuffer(input);
@@ -592,8 +591,7 @@ public class Document {
      * @throws IOException if there is some problem reading or writing the PDF data
      */
     public long saveToOutputStream(OutputStream out) throws IOException {
-        long documentLength = writeToOutputStream(out);
-        return documentLength;
+        return writeToOutputStream(out);
     }
 
     /**
@@ -763,7 +761,7 @@ public class Document {
      */
     private void descendFormTree(Object formNode, boolean highLight) {
         if (formNode instanceof AbstractWidgetAnnotation) {
-            ((AbstractWidgetAnnotation) formNode).setEnableHighlightedWidget(highLight);
+            ((AbstractWidgetAnnotation<?>) formNode).setEnableHighlightedWidget(highLight);
         } else if (formNode instanceof FieldDictionary) {
             // iterate over the kid's array.
             FieldDictionary child = (FieldDictionary) formNode;
@@ -775,7 +773,7 @@ public class Document {
                         kid = library.getObject((Reference) kid);
                     }
                     if (kid instanceof AbstractWidgetAnnotation) {
-                        ((AbstractWidgetAnnotation) kid).setEnableHighlightedWidget(highLight);
+                        ((AbstractWidgetAnnotation<?>) kid).setEnableHighlightedWidget(highLight);
                     } else if (kid instanceof FieldDictionary) {
                         descendFormTree(kid, highLight);
                     }

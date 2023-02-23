@@ -182,7 +182,7 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
     /**
      * Method to reflect certificate chain in the tree view
      */
-    private JTree buildCertChainTree(Certificate cert[]) {
+    private JTree buildCertChainTree(Certificate[] cert) {
         DefaultMutableTreeNode root = null;
         DefaultMutableTreeNode currentNode = null;
         for (Certificate aCert : cert) {

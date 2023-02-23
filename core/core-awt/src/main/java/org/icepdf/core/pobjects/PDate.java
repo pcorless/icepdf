@@ -467,12 +467,12 @@ public class PDate {
             if (offsetHour < 10) {
                 sb.append('0');
             }
-            sb.append(Integer.toString(offsetHour));
+            sb.append(offsetHour);
             sb.append('\'');
             if (offsetMinutes < 10) {
                 sb.append('0');
             }
-            sb.append(Integer.toString(offsetMinutes));
+            sb.append(offsetMinutes);
             sb.append('\'');
         }
         return sb.toString();

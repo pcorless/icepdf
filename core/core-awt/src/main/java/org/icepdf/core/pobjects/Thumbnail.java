@@ -66,7 +66,7 @@ public class Thumbnail extends Dictionary {
         }
     }
 
-    public synchronized void init() throws InterruptedException {
+    public synchronized void init() {
         Resources resource = new Resources(library, thumbStream.entries);
         image = thumbStream.getImage(null, resource);
         initialized = true;

@@ -62,7 +62,7 @@ public class FontManager {
     private static final int BOLD_ITALIC = 0xF0001000;
 
     // Differences for type1 fonts which match adobe core14 metrics
-    private static final String TYPE1_FONT_DIFFS[][] =
+    private static final String[][] TYPE1_FONT_DIFFS =
             {{"Bookman-Demi", "URWBookmanL-DemiBold", "Arial"},
                     {"Bookman-DemiItalic", "URWBookmanL-DemiBoldItal", "Arial"},
                     {"Bookman-Light", "URWBookmanL-Ligh", "Arial"},
@@ -190,13 +190,12 @@ public class FontManager {
             "kozminpro-regular"
     );
 
+    //        "HEB____.TTF"
     /**
      * Mutable list of font file names that are excluded from font font substitution. Font names must also
      * include the file extension.
      */
-    public static final List<String> FONT_FILE_NAME_EXCLUSION_LIST = Arrays.asList(
-//        "HEB____.TTF"
-    );
+    public static final List<String> FONT_FILE_NAME_EXCLUSION_LIST = List.of();
 
     /**
      * Change the base font name from lucidasans which is a Java Physical Font
@@ -257,7 +256,7 @@ public class FontManager {
         }
         // copy all data from fontList into the properties file
         fontProperites = new Properties();
-        Iterator fontIterator = fontList.iterator();
+        Iterator<Object[]> fontIterator = fontList.iterator();
         Object[] currentFont;
         String name;
         String family;
@@ -295,7 +294,7 @@ public class FontManager {
             String[] fontKeys = fontPreferences.keys();
             String name;
             String family;
-            Integer decorations;
+            int decorations;
             String path;
             StringTokenizer tokens;
             Object[] fontProperty;
@@ -492,7 +491,7 @@ public class FontManager {
     public String[] getAvailableNames() {
         if (fontList != null) {
             String[] availableNames = new String[fontList.size()];
-            Iterator nameIterator = fontList.iterator();
+            Iterator<Object[]> nameIterator = fontList.iterator();
             Object[] fontData;
             for (int i = 0; nameIterator.hasNext(); i++) {
                 fontData = (Object[]) nameIterator.next();
@@ -511,7 +510,7 @@ public class FontManager {
     public String[] getAvailableFamilies() {
         if (fontList != null) {
             String[] availableNames = new String[fontList.size()];
-            Iterator nameIterator = fontList.iterator();
+            Iterator<Object[]> nameIterator = fontList.iterator();
             Object[] fontData;
             for (int i = 0; nameIterator.hasNext(); i++) {
                 fontData = (Object[]) nameIterator.next();
@@ -530,7 +529,7 @@ public class FontManager {
     public String[] getAvailableStyle() {
         if (fontList != null) {
             String[] availableStyles = new String[fontList.size()];
-            Iterator nameIterator = fontList.iterator();
+            Iterator<Object[]> nameIterator = fontList.iterator();
             Object[] fontData;
             int decorations;
             StringBuilder style = new StringBuilder();
@@ -644,7 +643,7 @@ public class FontManager {
                         guessFontStyle(fontName), // weight and decorations, mainly bold,italic
                         resourcePath.toString()});  // path to font on OS
                 if (logger.isLoggable(Level.FINER)) {
-                    logger.finer("Adding system font: " + font.getName() + " " + resourcePath.toString());
+                    logger.finer("Adding system font: " + font.getName() + " " + resourcePath);
                 }
             }
         }
@@ -1204,7 +1203,7 @@ public class FontManager {
                 (flags & org.icepdf.core.pobjects.fonts.Font.FONT_FLAG_FORCE_BOLD) != 0) {
             style += " Bold";
         } else if ((sytle & ITALIC) == ITALIC ||
-                (flags & org.icepdf.core.pobjects.fonts.Font.FONT_FLAG_FORCE_BOLD) != 0) {
+                (flags & org.icepdf.core.pobjects.fonts.Font.FONT_FLAG_ITALIC) != 0) {
             style += " Italic";
         } else if ((sytle & PLAIN) == PLAIN) {
             style += " Plain";

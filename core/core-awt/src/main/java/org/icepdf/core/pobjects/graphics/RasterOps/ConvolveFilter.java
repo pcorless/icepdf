@@ -193,9 +193,8 @@ public class ConvolveFilter extends AbstractBufferedImageOp {
             int ioffset = y * width;
             for (int x = 0; x < width; x++) {
                 float r = 0, g = 0, b = 0, a = 0;
-                int moffset = cols2;
                 for (int col = -cols2; col <= cols2; col++) {
-                    float f = matrix[moffset + col];
+                    float f = matrix[cols2 + col];
 
                     if (f != 0) {
                         int ix = x + col;

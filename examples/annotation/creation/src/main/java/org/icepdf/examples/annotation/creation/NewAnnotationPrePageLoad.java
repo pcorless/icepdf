@@ -212,7 +212,7 @@ public class NewAnnotationPrePageLoad {
                         ActionFactory.GOTO_ACTION);
         Reference pageReference = document.getPageTree()
                 .getPageReference(pageIndex);
-        List destArray = Destination.destinationSyntax(pageReference,
+        List<Object> destArray = Destination.destinationSyntax(pageReference,
                 Destination.TYPE_FIT);
         action.setDestination(new Destination(library, destArray));
         return action;

@@ -29,5 +29,5 @@ public interface Memento {
      * Restore the state that was caputred when an instance of this object
      * was created.
      */
-    public void restore();
+    void restore();
 }

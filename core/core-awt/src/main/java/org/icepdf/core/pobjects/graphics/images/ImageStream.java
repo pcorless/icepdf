@@ -58,15 +58,14 @@ public class ImageStream extends Stream {
 
     /**
      * Gets the image object for the given resource.  This method can optionally
-     * scale an image to reduce the total memory foot print or to increase the
+     * scale an image to reduce the total memory footprint or to increase the
      * perceived render quality on screen at low zoom levels.
      *
      * @param graphicsState graphic state for image or parent form
      * @param resources     resources containing image reference
      * @return new image object
-     * @throws InterruptedException thread interrupted.
      */
-    public BufferedImage getImage(GraphicsState graphicsState, Resources resources) throws InterruptedException {
+    public BufferedImage getImage(GraphicsState graphicsState, Resources resources){
         // check the pool encase we already parse this image.
         imageParams = new ImageParams(library, entries, resources);
         if (pObjectReference != null) {

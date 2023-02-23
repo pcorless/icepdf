@@ -65,7 +65,7 @@ public class ImageDecoderFactory {
     }
 
     private static boolean containsFilter(ImageStream imageStream, String[] searchFilterNames) {
-        List filterNames = imageStream.getFilterNames();
+        List<String> filterNames = imageStream.getFilterNames();
         if (filterNames == null)
             return false;
         for (Object filterName1 : filterNames) {

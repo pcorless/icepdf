@@ -33,12 +33,12 @@ public class SeekableByteArrayInputStream extends ByteArrayInputStream implement
 
     private final ReentrantLock lock = new ReentrantLock();
 
-    public SeekableByteArrayInputStream(byte buf[]) {
+    public SeekableByteArrayInputStream(byte[] buf) {
         super(buf);
         m_iBeginningOffset = 0;
     }
 
-    public SeekableByteArrayInputStream(byte buf[], int offset, int length) {
+    public SeekableByteArrayInputStream(byte[] buf, int offset, int length) {
         super(buf, offset, length);
         m_iBeginningOffset = offset;
     }

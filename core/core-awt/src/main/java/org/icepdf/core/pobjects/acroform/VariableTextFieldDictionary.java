@@ -71,7 +71,6 @@ public class VariableTextFieldDictionary extends FieldDictionary {
      * Variable text fields.
      */
     private String defaultAppearance;
-    private String defaultStyle;
     private String defaultRichText;
 
     /**
@@ -108,6 +107,7 @@ public class VariableTextFieldDictionary extends FieldDictionary {
         }
         // get the default style string
         Object tmp = library.getObject(entries, DS_KEY);
+        String defaultStyle;
         if (tmp != null) {
             defaultStyle = Utils.convertStringObject(library, (StringObject) tmp);
         }

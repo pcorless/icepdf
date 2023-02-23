@@ -65,7 +65,7 @@ public class OptionalContentMembership extends Dictionary implements OptionalCon
      * null or deleted objects, the membership dictionary shall have no effect
      * on the visibility of any content.
      */
-    private final List<OptionalContentGroup> ocgs = new ArrayList<OptionalContentGroup>();
+    private final List<OptionalContentGroup> ocgs = new ArrayList<>();
 
     /**
      * An array specifying a visibility expression, used to compute visibility
@@ -128,7 +128,7 @@ public class OptionalContentMembership extends Dictionary implements OptionalCon
         return policy.isVisible(ocgs);
     }
 
-    public static enum VisibilityPolicy {
+    public enum VisibilityPolicy {
         ALL_ON {
             @Override
             boolean isVisible(List<OptionalContentGroup> ocgs) {

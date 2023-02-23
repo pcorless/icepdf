@@ -7,11 +7,9 @@ import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -31,7 +29,7 @@ public class CrossReferenceStream extends CrossReferenceBase<Stream> implements 
         super(new Stream(library, dictionaryEntries, rawBytes), 0);
     }
 
-    public void initialize() throws IOException {
+    public void initialize() {
         int size = crossReference.getInt(SIZE_KEY);
         List<Number> objNumAndEntriesCountPairs = crossReference.getList(INDEX_KEY);
         if (objNumAndEntriesCountPairs == null) {
@@ -55,44 +53,39 @@ public class CrossReferenceStream extends CrossReferenceBase<Stream> implements 
         int fieldTypeSize = fieldSizes[0];
         int fieldTwoSize = fieldSizes[1];
         int fieldThreeSize = fieldSizes[2];
-        try {
-            // parse out the object data.
-            for (int xrefSubsection = 0; xrefSubsection < objNumAndEntriesCountPairs.size(); xrefSubsection += 2) {
-                int startingObjectNumber = objNumAndEntriesCountPairs.get(xrefSubsection).intValue();
-                int entriesCount = objNumAndEntriesCountPairs.get(xrefSubsection + 1).intValue();
-                int afterObjectNumber = startingObjectNumber + entriesCount;
-                for (int objectNumber = startingObjectNumber; objectNumber < afterObjectNumber; objectNumber++) {
-                    int entryType = CrossReferenceEntry.TYPE_USED;    // Default value is 1
-                    if (fieldTypeSize > 0)
-                        entryType = Utils.readIntWithVaryingBytesBE(byteBuffer, fieldTypeSize);
-                    // used object but not compressed
-                    if (entryType == CrossReferenceEntry.TYPE_USED) {
-                        int filePositionOfObject = (int) Utils.readLongWithVaryingBytesBE(byteBuffer, fieldTwoSize);
-                        int generationNumber = 0;       // Default value is 0
-                        if (fieldThreeSize > 0) {
-                            generationNumber = Utils.readIntWithVaryingBytesBE(byteBuffer, fieldThreeSize);
-                        }
-                        addUsedEntry(objectNumber, generationNumber, filePositionOfObject);
+        // parse out the object data.
+        for (int xrefSubsection = 0; xrefSubsection < objNumAndEntriesCountPairs.size(); xrefSubsection += 2) {
+            int startingObjectNumber = objNumAndEntriesCountPairs.get(xrefSubsection).intValue();
+            int entriesCount = objNumAndEntriesCountPairs.get(xrefSubsection + 1).intValue();
+            int afterObjectNumber = startingObjectNumber + entriesCount;
+            for (int objectNumber = startingObjectNumber; objectNumber < afterObjectNumber; objectNumber++) {
+                int entryType = CrossReferenceEntry.TYPE_USED;    // Default value is 1
+                if (fieldTypeSize > 0)
+                    entryType = Utils.readIntWithVaryingBytesBE(byteBuffer, fieldTypeSize);
+                // used object but not compressed
+                if (entryType == CrossReferenceEntry.TYPE_USED) {
+                    int filePositionOfObject = (int) Utils.readLongWithVaryingBytesBE(byteBuffer, fieldTwoSize);
+                    int generationNumber = 0;       // Default value is 0
+                    if (fieldThreeSize > 0) {
+                        generationNumber = Utils.readIntWithVaryingBytesBE(byteBuffer, fieldThreeSize);
                     }
-                    // entries define compress objects.
-                    else if (entryType == CrossReferenceEntry.TYPE_COMPRESSED) {
-                        int objectNumberOfContainingObjectStream = Utils.readIntWithVaryingBytesBE(byteBuffer, fieldTwoSize);
-                        int indexWithinObjectStream = Utils.readIntWithVaryingBytesBE(byteBuffer, fieldThreeSize);
-                        addCompressedEntry(objectNumber, objectNumberOfContainingObjectStream, indexWithinObjectStream);
-                    }
-                    // free objects, no used.
-                    else if (entryType == CrossReferenceEntry.TYPE_FREE) {
-                        // we do nothing, but we still need to move the cursor.
-                        Utils.readIntWithVaryingBytesBE(byteBuffer, fieldTwoSize);
-                        Utils.readIntWithVaryingBytesBE(byteBuffer, fieldThreeSize);
-                    }
+                    addUsedEntry(objectNumber, generationNumber, filePositionOfObject);
+                }
+                // entries define compress objects.
+                else if (entryType == CrossReferenceEntry.TYPE_COMPRESSED) {
+                    int objectNumberOfContainingObjectStream = Utils.readIntWithVaryingBytesBE(byteBuffer, fieldTwoSize);
+                    int indexWithinObjectStream = Utils.readIntWithVaryingBytesBE(byteBuffer, fieldThreeSize);
+                    addCompressedEntry(objectNumber, objectNumberOfContainingObjectStream, indexWithinObjectStream);
+                }
+                // free objects, no used.
+                else if (entryType == CrossReferenceEntry.TYPE_FREE) {
+                    // we do nothing, but we still need to move the cursor.
+                    Utils.readIntWithVaryingBytesBE(byteBuffer, fieldTwoSize);
+                    Utils.readIntWithVaryingBytesBE(byteBuffer, fieldThreeSize);
                 }
             }
-        } catch (IOException e) {
-            // trigger a reindexing of the file.
-            logger.log(Level.WARNING, "Failed to initialized object stream: ", e );
-            throw e;
         }
+
     }
 
     private void addUsedEntry(int objectNumber, int generationNumber, int filePositionOfObject) {

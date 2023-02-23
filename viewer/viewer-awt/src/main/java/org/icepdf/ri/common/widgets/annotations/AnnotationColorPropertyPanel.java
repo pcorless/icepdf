@@ -153,7 +153,7 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
             }
 
         }
-        // if we have one we one we want to check if the new Color is already in the list and remove it.
+        // if we have one we want to check if the new Color is already in the list and remove it.
         if (newColor != null) {
             recentColors.remove(newColor);
         }

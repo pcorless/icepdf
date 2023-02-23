@@ -26,6 +26,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.text.ChoiceFormat;
 import java.text.Format;
 import java.text.MessageFormat;
@@ -118,7 +119,7 @@ public class TextExtractionTask extends SwingWorker<Void, StringBuilder> {
         try {
             // create file output stream
             BufferedWriter fileOutputStream = new BufferedWriter(
-                    new OutputStreamWriter(new FileOutputStream(file), "UTF8"));
+                    new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8));
             // Print document information
             String pageNumber = messageBundle.getString("viewer.exportText.fileStamp.msg");
 

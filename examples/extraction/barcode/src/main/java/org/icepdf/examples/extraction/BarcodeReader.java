@@ -89,7 +89,7 @@ public class BarcodeReader {
     }
 
     public void findBarcodes(String filePath) throws IOException, PDFSecurityException,
-            InterruptedException, NotFoundException {
+            InterruptedException {
 
         // open the document.
         Document document = new Document();

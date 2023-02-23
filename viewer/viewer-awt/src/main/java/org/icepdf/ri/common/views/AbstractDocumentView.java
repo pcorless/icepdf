@@ -73,7 +73,7 @@ public abstract class AbstractDocumentView
         }
     }
 
-    private Timer autoScrollTimer;
+    private final Timer autoScrollTimer;
     private Point lastMouseLocation;
 
     // general layout of page component spacing.

@@ -102,13 +102,13 @@ public class JBig2Decoder extends AbstractImageDecoder {
         Class<?> jbig2ImageReaderSpiClass = Class.forName(jbigClasses[1]);
         Class<?> jbig2GlobalsClass = Class.forName(jbigClasses[2]);
         Object jbig2ImageReaderSpi = jbig2ImageReaderSpiClass.newInstance();
-        Constructor levigoJbig2DecoderClassConstructor =
+        Constructor<?> levigoJbig2DecoderClassConstructor =
                 jbig2ImageReaderClass.getDeclaredConstructor(javax.imageio.spi.ImageReaderSpi.class);
         Object jbig2Reader = levigoJbig2DecoderClassConstructor.newInstance(jbig2ImageReaderSpi);
         // set the input
-        Class partypes[] = new Class[1];
+        Class[] partypes = new Class[1];
         partypes[0] = Object.class;
-        Object arglist[] = new Object[1];
+        Object[] arglist = new Object[1];
         arglist[0] = imageInputStream;
         Method setInput = jbig2ImageReaderClass.getMethod("setInput", partypes);
         setInput.invoke(jbig2Reader, arglist);

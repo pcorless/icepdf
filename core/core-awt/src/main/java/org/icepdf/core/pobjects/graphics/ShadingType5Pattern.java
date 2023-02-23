@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 
 /**
  * Lattice-Form Gouraud-shaded Triangle Meshes support.
- *
+ * <p>
  * Note: currently only parsing data and returning the first colour of the first vertex.
  *
  * @since 6.2
@@ -22,7 +22,6 @@ public class ShadingType5Pattern extends ShadingMeshPattern {
     private static final Logger logger =
             Logger.getLogger(ShadingType5Pattern.class.toString());
 
-    private ArrayList<Point2D.Float> coordinates = new ArrayList<>();
     private ArrayList<Color> colorComponents = new ArrayList<>();
 
     public ShadingType5Pattern(Library l, DictionaryEntries h, Stream meshDataStream) {
@@ -30,7 +29,7 @@ public class ShadingType5Pattern extends ShadingMeshPattern {
     }
 
     public synchronized void init(GraphicsState graphicsState) {
-        coordinates = new ArrayList<>();
+        ArrayList<Point2D.Float> coordinates = new ArrayList<>();
         colorComponents = new ArrayList<>();
         try {
             while (vertexBitStream.available() > 0) {
@@ -42,7 +41,7 @@ public class ShadingType5Pattern extends ShadingMeshPattern {
         }
     }
 
-    public Paint getPaint() throws InterruptedException {
+    public Paint getPaint() {
         return colorComponents.get(0);
     }
 }

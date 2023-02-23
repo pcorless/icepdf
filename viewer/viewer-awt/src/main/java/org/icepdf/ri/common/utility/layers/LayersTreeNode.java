@@ -18,6 +18,7 @@ package org.icepdf.ri.common.utility.layers;
 import org.icepdf.core.pobjects.OptionalContentGroup;
 
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeNode;
 import java.util.Enumeration;
 
 /**
@@ -91,7 +92,7 @@ public class LayersTreeNode extends DefaultMutableTreeNode {
         // only one node cn be selected at one.
         else if (selectionMode == RADIO_SELECTION) {
             // deselect other nodes.
-            Enumeration children = parent.children();
+            Enumeration<? extends TreeNode> children = parent.children();
             if (children != null) {
                 LayersTreeNode layerNode;
                 while (children.hasMoreElements()) {

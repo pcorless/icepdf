@@ -328,7 +328,7 @@ public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
     }
 
 
-    class AnnotationComparator implements Comparator<MarkupAnnotation> {
+    static class AnnotationComparator implements Comparator<MarkupAnnotation> {
 
         private final MarkupAnnotationPanel.SortColumn sortColumn;
 

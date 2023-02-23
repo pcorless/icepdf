@@ -50,9 +50,7 @@ public class FlateDecode extends ChunkingInputStream {
     public static final Name BITS_PER_COMPONENT_VALUE = new Name("BitsPerComponent");
 
 
-    private InputStream originalInputKeptSolelyForDebugging;
-    // default values for non image streams.
-    private int width = 1;
+    private final InputStream originalInputKeptSolelyForDebugging;
     private int numComponents = 1;
     private int bitsPerComponent = 8;
     private int predictor;
@@ -79,6 +77,8 @@ public class FlateDecode extends ChunkingInputStream {
         }
         if (predictor != PredictorDecode.PREDICTOR_NONE) {
             Number widthNumber = library.getNumber(props, WIDTH_VALUE);
+            // default values for non image streams.
+            int width = 1;
             if (widthNumber != null) {
                 width = widthNumber.intValue();
             }
@@ -160,7 +160,7 @@ public class FlateDecode extends ChunkingInputStream {
         if (originalInputKeptSolelyForDebugging == null)
             sb.append("null");
         else
-            sb.append(originalInputKeptSolelyForDebugging.toString());
+            sb.append(originalInputKeptSolelyForDebugging);
         return sb.toString();
     }
 }

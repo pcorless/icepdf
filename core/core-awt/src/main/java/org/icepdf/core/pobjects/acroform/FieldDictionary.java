@@ -219,7 +219,7 @@ public class FieldDictionary extends Dictionary {
             Object value = library.getObject(entries, KIDS_KEY);
             if (value instanceof List) {
                 List<Reference> children = (List<Reference>) value;
-                kids = new ArrayList(children.size());
+                kids = new ArrayList<>(children.size());
                 Object tmp;
                 for (Reference aChildren : children) {
                     tmp = library.getObject(aChildren);

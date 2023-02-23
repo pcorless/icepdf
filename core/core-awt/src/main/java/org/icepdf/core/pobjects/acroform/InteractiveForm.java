@@ -16,7 +16,6 @@
 package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.*;
-import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
@@ -190,7 +189,7 @@ public class InteractiveForm extends Dictionary {
         tmp = library.getObject(entries, FIELDS_KEY);
         if (tmp instanceof List) {
             List tmpFields = (List) tmp;
-            fields = new ArrayList(tmpFields.size());
+            fields = new ArrayList<>(tmpFields.size());
             Object annotObj;
             for (Object fieldRef : tmpFields) {
                 if (fieldRef instanceof Reference) {
@@ -245,30 +244,26 @@ public class InteractiveForm extends Dictionary {
      */
     public boolean isSignaturesCoverDocumentLength() {
         SignatureWidgetAnnotation signatureWidgetAnnotation;
-        try {
-            if (fields != null) {
-                boolean isValidByteRange = false;
-                for (Object field : fields) {
-                    if (field instanceof SignatureWidgetAnnotation) {
-                        signatureWidgetAnnotation = (SignatureWidgetAnnotation) field;
-                        if (signatureWidgetAnnotation.getSignatureValidator() != null &&
-                                signatureWidgetAnnotation.getSignatureValidator().checkByteRange()) {
-                            isValidByteRange = true;
-                            break;
-                        }
-                    }
-                }
-                if (isValidByteRange) {
-                    for (Object field : fields) {
-                        if (field instanceof SignatureWidgetAnnotation) {
-                            signatureWidgetAnnotation = (SignatureWidgetAnnotation) field;
-                            signatureWidgetAnnotation.getSignatureValidator().setSignaturesCoverDocumentLength(true);
-                        }
+        if (fields != null) {
+            boolean isValidByteRange = false;
+            for (Object field : fields) {
+                if (field instanceof SignatureWidgetAnnotation) {
+                    signatureWidgetAnnotation = (SignatureWidgetAnnotation) field;
+                    if (signatureWidgetAnnotation.getSignatureValidator() != null &&
+                            signatureWidgetAnnotation.getSignatureValidator().checkByteRange()) {
+                        isValidByteRange = true;
+                        break;
                     }
                 }
             }
-        } catch (SignatureIntegrityException e) {
-            logger.warning("Signature validation error has occurred");
+            if (isValidByteRange) {
+                for (Object field : fields) {
+                    if (field instanceof SignatureWidgetAnnotation) {
+                        signatureWidgetAnnotation = (SignatureWidgetAnnotation) field;
+                        signatureWidgetAnnotation.getSignatureValidator().setSignaturesCoverDocumentLength(true);
+                    }
+                }
+            }
         }
         return false;
     }

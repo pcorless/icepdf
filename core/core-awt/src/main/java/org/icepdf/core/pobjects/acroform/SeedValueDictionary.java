@@ -195,11 +195,7 @@ public class SeedValueDictionary extends Dictionary {
      * @see #FILTER_KEY
      */
     public List<Names> getSubFilter() {
-        List tmp = library.getArray(entries, FILTER_KEY);
-        if (tmp != null) {
-            return tmp;
-        }
-        return null;
+        return library.getArray(entries, FILTER_KEY);
     }
 
     /**
@@ -207,11 +203,7 @@ public class SeedValueDictionary extends Dictionary {
      * @see #DIGEST_METHOD_KEY
      */
     public List<Names> getDigestMethod() {
-        List tmp = library.getArray(entries, FILTER_KEY);
-        if (tmp != null) {
-            return tmp;
-        }
-        return null;
+        return library.getArray(entries, FILTER_KEY);
     }
 
     /**
@@ -241,10 +233,7 @@ public class SeedValueDictionary extends Dictionary {
      */
     public List<StringObject> getReasons() {
         List tmp = library.getArray(entries, REASONS_KEY);
-        if (tmp != null) {
-            return tmp;
-        }
-        return null;
+        return tmp;
     }
 
     // todo consider class for dictionary def.
@@ -273,10 +262,7 @@ public class SeedValueDictionary extends Dictionary {
      */
     public List<StringObject> getLegalAttestation() {
         List tmp = library.getArray(entries, LEGAL_ATTESTATION_KEY);
-        if (tmp != null) {
-            return tmp;
-        }
-        return null;
+        return tmp;
     }
 
     /**

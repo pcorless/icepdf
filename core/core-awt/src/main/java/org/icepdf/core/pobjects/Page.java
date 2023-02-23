@@ -964,7 +964,7 @@ public class Page extends Dictionary {
         // removed the annotations from the annots vector
         if (annots instanceof List) {
             // update annots dictionary with new annotations reference,
-            ((List) annots).remove(annot.getPObjectReference());
+            ((List<?>) annots).remove(annot.getPObjectReference());
         }
 
         // remove the annotations form the annotation cache in the page object

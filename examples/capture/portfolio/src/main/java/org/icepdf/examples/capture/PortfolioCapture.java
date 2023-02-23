@@ -57,13 +57,13 @@ public class PortfolioCapture {
             document.setFile(filePath);
 
             // executable list to capture.
-            List<Callable<Void>> callables = new ArrayList<Callable<Void>>();
+            List<Callable<Void>> callables = new ArrayList<>();
 
-            /**
-             * If we have a collection the PDF won't have any content we want to capture, the page is generally just
-             * a placeholder letting the end user know that the document is a collection.
-             * If it isn't a collection then we want to capture the document's page before moving on to the
-             * embedded files.
+            /*
+              If we have a collection the PDF won't have any content we want to capture, the page is generally just
+              a placeholder letting the end user know that the document is a collection.
+              If it isn't a collection then we want to capture the document's page before moving on to the
+              embedded files.
              */
             if (!(document.getCatalog().getCollection() != null &&
                     document.getCatalog().getCollection().size() > 0)) {
@@ -124,16 +124,12 @@ public class PortfolioCapture {
     /**
      * Captures images found in a page  parse to file.
      */
-    public class CaptureDocument implements Callable<Void> {
+    public static class CaptureDocument implements Callable<Void> {
         private final Document document;
-        private final String fileName;
         private final int fileIndex;
-        private final float scale = 1f;
-        private final float rotation = 0f;
 
         private CaptureDocument(Document document, int fileIndex, String fileName) {
             this.document = document;
-            this.fileName = fileName;
             this.fileIndex = fileIndex;
         }
 
@@ -145,6 +141,8 @@ public class PortfolioCapture {
                     // initialize the page.
                     Page page = document.getPageTree().getPage(j);
                     page.init();
+                    float rotation = 0f;
+                    float scale = 1f;
                     PDimension sz = page.getSize(Page.BOUNDARY_CROPBOX, rotation, scale);
                     int pageWidth = (int) sz.getWidth();
                     int pageHeight = (int) sz.getHeight();
@@ -178,7 +176,7 @@ public class PortfolioCapture {
     /**
      * Disposes the document.
      */
-    public class DocumentCloser implements Callable<Void> {
+    public static class DocumentCloser implements Callable<Void> {
         private final Document document;
 
         private DocumentCloser(Document document) {

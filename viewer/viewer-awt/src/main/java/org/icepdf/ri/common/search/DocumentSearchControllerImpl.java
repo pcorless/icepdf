@@ -200,8 +200,8 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         List<SearchTerm> terms = searchModel.getSearchTerms();
         // we need to do the search for  each term.
         SearchTerm term;
-        for (int j = 0; j < terms.size(); j++) {
-            term = terms.get(j);
+        for (SearchTerm searchTerm : terms) {
+            term = searchTerm;
 
             // found word index to keep track of when we have found a hit
             int searchPhraseHitCount = 0;
@@ -279,7 +279,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                         if (searchPhraseHitCount > 0 && searchPhraseHitCount == searchPhraseFoundCount) {
                             LineText lineText = new LineText();
                             int lineWordsSize = lineWords.size();
-                            java.util.List<WordText> hitWords = lineText.getWords();
+                            List<WordText> hitWords = lineText.getWords();
                             // add pre padding
                             int spaces = searchPhraseHitCount - 1;
                             spaces = spaces < 0 ? 0 : spaces;

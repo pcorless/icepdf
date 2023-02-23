@@ -73,13 +73,11 @@ public class Appearance {
     }
 
     public AppearanceState getSelectedAppearanceState() {
-        AppearanceState state = appearance.get(selectedName);
-        return state;
+        return appearance.get(selectedName);
     }
 
     public AppearanceState getAppearanceState(Name name) {
-        AppearanceState state = appearance.get(name);
-        return state;
+        return appearance.get(name);
     }
 
     /**
