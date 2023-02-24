@@ -18,7 +18,7 @@ import java.awt.image.*;
  * @since 6.2.3
  */
 public class IccCmykRasterOp implements RasterOp {
-    private RenderingHints hints = null;
+    private RenderingHints hints;
     private final ColorSpace colorSpace;
 
     public IccCmykRasterOp(RenderingHints hints) {

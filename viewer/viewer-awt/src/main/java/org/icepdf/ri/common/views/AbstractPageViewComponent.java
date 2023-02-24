@@ -49,8 +49,8 @@ public abstract class AbstractPageViewComponent
     protected static final int PAGE_BOUNDARY_BOX = Page.BOUNDARY_CROPBOX;
 
     private static Color pageColor;
-    protected static int pageBufferPadding = 250;
-    protected static boolean progressivePaint = true;
+    protected static int pageBufferPadding;
+    protected static boolean progressivePaint;
 
     static {
         try {

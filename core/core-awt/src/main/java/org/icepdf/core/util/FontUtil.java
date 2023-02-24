@@ -124,7 +124,7 @@ public class FontUtil {
     public static String removeBaseFontSubset(String name) {
         if (name != null && name.length() > 7) {
             int i = name.indexOf('+') + 1;
-            return name.substring(i, name.length());
+            return name.substring(i);
         } else {
             return name;
         }

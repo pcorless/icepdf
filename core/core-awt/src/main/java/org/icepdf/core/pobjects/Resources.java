@@ -86,18 +86,14 @@ public class Resources extends Dictionary {
             if (colorspaces != null && colorspaces.get(o) != null) {
                 tmp = colorspaces.get(o);
                 PColorSpace cs = PColorSpace.getColorSpace(library, tmp);
-                if (cs != null) {
-                    cs.init();
-                }
+                cs.init();
                 return cs;
             }
             // look for our name in the pattern dictionary
             if (patterns != null && patterns.get(o) != null) {
                 tmp = patterns.get(o);
                 PColorSpace cs = PColorSpace.getColorSpace(library, tmp);
-                if (cs != null) {
-                    cs.init();
-                }
+                cs.init();
                 return cs;
             }
 

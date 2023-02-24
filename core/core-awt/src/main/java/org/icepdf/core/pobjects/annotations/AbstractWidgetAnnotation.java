@@ -163,7 +163,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
     protected Rectangle2D.Float findBoundRectangle(String markedContent) {
         int selectionStart = markedContent.indexOf("q") + 1;
         int selectionEnd = markedContent.indexOf("re");
-        if (selectionStart < selectionEnd && selectionEnd > 0) {
+        if (selectionStart < selectionEnd) {
             String potentialNumbers = markedContent.substring(selectionStart, selectionEnd);
             float[] points = parseRectanglePoints(potentialNumbers);
             if (points != null) {

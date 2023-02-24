@@ -744,7 +744,7 @@ class StandardEncryption {
             byte[] e = null;
             for (int round = 0; round < 64 || (e[e.length - 1] & 0xFF) > round - 32; round++) {
                 final byte[] k1;
-                if (userKey != null && userKey.length >= 48) {
+                if (userKey.length >= 48) {
                     k1 = new byte[64 * (password.length + k.length + 48)];
                 } else {
                     k1 = new byte[64 * (password.length + k.length)];
@@ -756,7 +756,7 @@ class StandardEncryption {
                     pos += password.length;
                     System.arraycopy(k, 0, k1, pos, k.length);
                     pos += k.length;
-                    if (userKey != null && userKey.length >= 48) {
+                    if (userKey.length >= 48) {
                         System.arraycopy(userKey, 0, k1, pos, 48);
                         pos += 48;
                     }
@@ -1177,7 +1177,7 @@ class StandardEncryption {
                 "", true);
 
         // Step 2: start decryption of O
-        byte[] decryptedO = null;
+        byte[] decryptedO;
         try {
             // get bigO value
             final byte[] bigO = Utils.convertByteCharSequenceToByteArray(

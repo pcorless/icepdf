@@ -133,8 +133,8 @@ public class AnnotationPropertiesDialog extends EscapeJDialog implements Annotat
         // disable the component if the annotation is readonly.
         if (annotation.getAnnotation().getFlagReadOnly()) {
             if (annotationPropertyPanel != null) annotationPropertyPanel.setEnabled(false);
-            if (actionsPanel != null) actionsPanel.setEnabled(false);
-            if (borderPanel != null) borderPanel.setEnabled(false);
+            actionsPanel.setEnabled(false);
+            borderPanel.setEnabled(false);
             if (flagsPanel != null) flagsPanel.setEnabled(false);
         }
     }

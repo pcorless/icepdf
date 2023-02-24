@@ -563,7 +563,7 @@ public class Document {
                 ByteBuffer documentByteBuffer = library.getMappedFileByteBuffer();
                 documentByteBuffer.position(0);
                 int documentLength = documentByteBuffer.remaining();
-                long appendedLength = 0;
+                long appendedLength;
                 try (WritableByteChannel channel = Channels.newChannel(out)) {
                     channel.write(documentByteBuffer);
                     appendedLength = new IncrementalUpdater().appendIncrementalUpdate(

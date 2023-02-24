@@ -1147,7 +1147,7 @@ public class Parser {
                     readNonWhitespace = true;
                 } else if (curr >= '0' && curr <= '9') {
                     num *= 10L;
-                    num += ((long) (curr - '0'));
+                    num += curr - '0';
                     readNonWhitespace = true;
                 } else {
                     break;

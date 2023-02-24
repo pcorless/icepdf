@@ -57,7 +57,6 @@ public class SignerSummaryPanel extends JPanel {
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.NONE;
         constraints.weightx = 1.0;
-        constraints.anchor = GridBagConstraints.NORTH;
         constraints.anchor = GridBagConstraints.EAST;
         constraints.insets = new Insets(5, 5, 5, 5);
         if (showIcon) {

@@ -207,7 +207,6 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
         constraints.weighty = 1.0;
         addGB(panel, colorButton, 0, 1, 1, 1);
 
-        constraints.fill = GridBagConstraints.NONE;
         constraints.insets = new Insets(5, 1, 5, 1);
         constraints.weightx = 1.0;
         constraints.fill = GridBagConstraints.BOTH;

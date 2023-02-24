@@ -66,13 +66,11 @@ public class SeekableByteArrayInputStream extends ByteArrayInputStream implement
     }
 
     public long getAbsolutePosition() {
-        int absPos = pos - m_iBeginningOffset;
-        return (((long) absPos));
+        return pos - m_iBeginningOffset;
     }
 
     public long getLength() {
-        int len = count - m_iBeginningOffset;
-        return (((long) len));
+        return count - m_iBeginningOffset;
     }
 
     public InputStream getInputStream() {

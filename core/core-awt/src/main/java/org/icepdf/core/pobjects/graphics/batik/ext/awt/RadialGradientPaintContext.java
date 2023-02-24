@@ -249,7 +249,7 @@ final class RadialGradientPaintContext extends MultipleGradientPaintContext {
                                                            int adjust,
                                                            int x, int y,
                                                            int w, int h) {
-        float iSq = 0;  // Square distance index
+        float iSq;  // Square distance index
         final float indexFactor = fastGradientArraySize / radius;
 
         //constant part of X and Y coordinates for the entire raster

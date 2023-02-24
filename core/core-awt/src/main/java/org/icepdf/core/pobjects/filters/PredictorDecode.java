@@ -66,10 +66,10 @@ public class PredictorDecode extends ChunkingInputStream {
     protected static final Name EARLY_CHANGE_VALUE = new Name("EarlyChange");
     // default values for non image streams.
     protected final int predictor;
-    protected int numComponents = 1;
-    protected int bitsPerComponent = 8;
+    protected int numComponents;
+    protected int bitsPerComponent;
     protected int width = 1;
-    protected int bytesPerPixel = 1;// From RFC 2083 (PNG), it's bytes per pixel, rounded up to 1
+    protected int bytesPerPixel;// From RFC 2083 (PNG), it's bytes per pixel, rounded up to 1
 
     // reference to previous buffer
     protected byte[] aboveBuffer;

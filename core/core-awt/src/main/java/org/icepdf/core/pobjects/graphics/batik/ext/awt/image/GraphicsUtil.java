@@ -733,10 +733,8 @@ public class GraphicsUtil {
         sR = sR.intersection(src.getBounds());
         dR = dR.intersection(dst.getBounds());
         int width, height;
-        if (dR.width < sR.width) width = dR.width;
-        else width = sR.width;
-        if (dR.height < sR.height) height = dR.height;
-        else height = sR.height;
+        width = Math.min(dR.width, sR.width);
+        height = Math.min(dR.height, sR.height);
 
         int x = sR.x + dx;
         int[] samples = null;
@@ -838,7 +836,7 @@ public class GraphicsUtil {
             while (sp < end) {
                 int pixel = pixels[sp];
                 int a = pixel >>> 24;
-                if ((a >= 0) && (a < 255)) {   // this does NOT include a == 255 (0xff) !
+                if (a < 255) {   // this does NOT include a == 255 (0xff) !
                     pixels[sp] = ((a << 24) |
                             ((((pixel & 0xFF0000) * a) >> 8) & 0xFF0000) |
                             ((((pixel & 0x00FF00) * a) >> 8) & 0x00FF00) |

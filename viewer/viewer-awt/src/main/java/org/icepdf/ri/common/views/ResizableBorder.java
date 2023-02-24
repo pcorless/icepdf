@@ -129,7 +129,6 @@ public class ResizableBorder extends AbstractBorder {
 
             isEditable = annot.isEditable();
             isRollover = annot.isRollover();
-            isMovable = annot.isMovable();
             isResizable = annot.isResizable();
             isShowInvisibleBorder = annot.isShowInvisibleBorder();
         }

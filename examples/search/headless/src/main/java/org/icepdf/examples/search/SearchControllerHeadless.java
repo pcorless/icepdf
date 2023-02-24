@@ -75,13 +75,12 @@ public class SearchControllerHeadless {
                 BufferedImage image = new BufferedImage(pageWidth,
                         pageHeight,
                         BufferedImage.TYPE_INT_RGB);
-                Graphics g = image.createGraphics();
-                Graphics2D g2d = (Graphics2D) g;
+                Graphics2D g = image.createGraphics();
 
                 // capture current transform for graphics context.
                 page.paint(g, GraphicsRenderingHints.SCREEN,
                         Page.BOUNDARY_CROPBOX, rotation, scale, true, true);
-                g2d.dispose();
+                g.dispose();
 
                 // capture the page image to file
                 File file = new File("imageCapture1_" + i + ".png");

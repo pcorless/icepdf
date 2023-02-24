@@ -120,8 +120,7 @@ final class LinearGradientPaintContext extends MultipleGradientPaintContext {
 
         float dgdXAbs = Math.abs(dgdX);
         float dgdYAbs = Math.abs(dgdY);
-        if (dgdXAbs > dgdYAbs) pixSz = dgdXAbs;
-        else pixSz = dgdYAbs;
+        pixSz = Math.max(dgdXAbs, dgdYAbs);
 
         //constant, incorporates the translation components from the matrix
         gc = (a02 - start.x) * constX + (a12 - start.y) * constY;

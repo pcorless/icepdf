@@ -267,7 +267,7 @@ public class PDate {
                 else {
                     sb.append(" (UTC ").append(timeZoneOffset);
                     if (timeZoneHour.length() > 0)
-                        sb.append("").append(timeZoneHour);
+                        sb.append(timeZoneHour);
                     if (timeZoneMinute.length() > 0)
                         sb.append(":").append(timeZoneMinute);
                     sb.append(")");
@@ -366,7 +366,7 @@ public class PDate {
 
         // total offset count
         int totalOffset = 0;
-        int currentOffset = 0;
+        int currentOffset;
 
         // start peeling of values from string
         if (totalOffset + OFFSET_YYYY <= date.length()) {

@@ -529,7 +529,6 @@ public class Lexer {
                     numRead = streamBytes.length;
                     continue;
                 } else {
-                    tokenType = NO_MORE;
                     break;
                 }
             }

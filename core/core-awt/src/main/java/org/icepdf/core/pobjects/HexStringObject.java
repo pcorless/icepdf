@@ -113,7 +113,7 @@ public class HexStringObject implements StringObject {
             hex.append("FEFF");
             String hexCode;
             for (char aChar : chars) {
-                hexCode = Integer.toHexString((int) aChar);
+                hexCode = Integer.toHexString(aChar);
                 if (hexCode.length() == 2) {
                     hexCode = "00" + hexCode;
                 } else if (hexCode.length() == 1) {

@@ -20,6 +20,7 @@ import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.util.Defs;
 
+import java.lang.reflect.InvocationTargetException;
 import java.security.Provider;
 import java.security.Security;
 import java.util.logging.Level;
@@ -50,13 +51,13 @@ public class SignatureHandler {
         }
         try {
             // try and create a new provider
-            Object provider = Class.forName(defaultSecurityProvider).newInstance();
+            Object provider = Class.forName(defaultSecurityProvider).getDeclaredConstructor().newInstance();
             Security.insertProviderAt((Provider) provider, 2);
         } catch (ClassNotFoundException e) {
             logger.log(Level.FINE, "Optional BouncyCastle security provider not found");
         } catch (InstantiationException e) {
             logger.log(Level.FINE, "Optional BouncyCastle security provider could not be instantiated");
-        } catch (IllegalAccessException e) {
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             logger.log(Level.FINE, "Optional BouncyCastle security provider could not be created");
         }
     }

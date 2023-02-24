@@ -145,11 +145,7 @@ public class ImageCompareTask extends AbstractTestTask {
     public void config() throws ConfigurationException {
         System.out.println("---- Configuration started -----");
         // create union of content sets that will be used in the compare
-        if (captureSetA.getCapturePageCount() < captureSetB.getCapturePageCount()) {
-            commonPageCount = captureSetA.getCapturePageCount();
-        } else {
-            commonPageCount = captureSetB.getCapturePageCount();
-        }
+        commonPageCount = Math.min(captureSetA.getCapturePageCount(), captureSetB.getCapturePageCount());
         if (commonPageCount == 0) {
             throw new ConfigurationException("Capture page count must be at least one.");
         }

@@ -98,7 +98,7 @@ public class PrintServices {
         int selectedPrinter = 0;
         // ask the user which printer they want, only quite when they type
         // q, otherwise just keep asking them which printer to use.
-        while (!(selectedPrinter > 0 && selectedPrinter <= services.length)) {
+        while (true) {
             System.out.println(
                     "Please select the printer number your wish to print to (q to quit):");
             int printerIndex = 1;
@@ -118,7 +118,7 @@ public class PrintServices {
             if (input.length() == 0) {
                 System.out.println("Please select a valid printer number.");
                 System.out.println();
-            } else if (input.toLowerCase().equals("q")) {
+            } else if (input.equalsIgnoreCase("q")) {
                 System.exit(0);
             } else {
                 try {

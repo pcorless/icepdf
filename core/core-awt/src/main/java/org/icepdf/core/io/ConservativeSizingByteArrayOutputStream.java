@@ -132,7 +132,6 @@ public class ConservativeSizingByteArrayOutputStream extends OutputStream {
         if (newBuf == null)
             return false;
         System.arraycopy(buf, 0, newBuf, 0, count);
-        buf = null;
         buf = newBuf;
         return true;
     }

@@ -42,9 +42,7 @@ public class PixelUtils {
     public static int clamp(int c) {
         if (c < 0)
             return 0;
-        if (c > 255)
-            return 255;
-        return c;
+        return Math.min(c, 255);
     }
 
     public static int interpolate(int v1, int v2, float f) {

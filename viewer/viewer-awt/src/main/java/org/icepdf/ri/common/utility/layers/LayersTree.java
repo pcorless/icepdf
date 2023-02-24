@@ -79,8 +79,7 @@ class CheckBoxRenderer extends JPanel implements TreeCellRenderer {
         Dimension d_check = checkBox.getPreferredSize();
         Dimension d_label = treeLabel.getPreferredSize();
         return new Dimension(d_check.width + d_label.width,
-                (d_check.height < d_label.height ?
-                        d_label.height : d_check.height));
+                (Math.max(d_check.height, d_label.height)));
     }
 
     public void doLayout() {

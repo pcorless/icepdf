@@ -252,7 +252,7 @@ public class DeviceCMYK extends PColorSpace {
         // we can run into decode issue if we share the profile across
         String customCMYKProfilePath = null;
         try {
-            Object profileStream;
+            InputStream profileStream;
             customCMYKProfilePath = Defs.sysProperty("org.icepdf.core.pobjects.graphics.cmyk");
             if (customCMYKProfilePath == null) {
                 customCMYKProfilePath = "/org/icepdf/core/pobjects/graphics/res/CoatedFOGRA27.icc";
@@ -261,7 +261,7 @@ public class DeviceCMYK extends PColorSpace {
                 profileStream = new FileInputStream(customCMYKProfilePath);
             }
 
-            ICC_Profile icc_profile = ICC_Profile.getInstance((InputStream) profileStream);
+            ICC_Profile icc_profile = ICC_Profile.getInstance(profileStream);
             return new ICC_ColorSpace(icc_profile);
         } catch (Exception exception) {
             logger.warning("Error loading ICC color profile: " + customCMYKProfilePath);

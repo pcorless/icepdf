@@ -173,6 +173,7 @@ public class CertSeedValueDictionary extends Dictionary {
     }
 
     public List<DictionaryEntries> getSubjectDn() {
+        //noinspection unchecked
         List<Object> tmp = library.getArray(entries, SUBJECT_DN_KEY);
         if (tmp != null) {
             //noinspection unchecked
@@ -183,12 +184,8 @@ public class CertSeedValueDictionary extends Dictionary {
     }
 
     public List<String> getKeyUsage() {
-        Object tmp = library.getArray(entries, KEY_USAGE_KEY);
-        if (tmp != null) {
-            return (List) tmp;
-        } else {
-            return null;
-        }
+        //noinspection unchecked
+        return (List<String>) library.getArray(entries, KEY_USAGE_KEY);
     }
 
     public List getIssuer() {

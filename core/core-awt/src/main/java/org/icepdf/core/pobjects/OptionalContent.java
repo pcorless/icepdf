@@ -222,9 +222,9 @@ public class OptionalContent extends Dictionary {
         OptionalContentGroup group = null;
         for (Object obj : rawOrder) {
             if (obj instanceof Reference) {
-                Object refObject = getOCGs((Reference) obj);
+                OptionalContentGroup refObject = getOCGs((Reference) obj);
                 if (refObject != null) {
-                    group = (OptionalContentGroup) refObject;
+                    group = refObject;
                     if (parent != null && !parent.isVisible()) {
                         group.setVisible(false);
                     }

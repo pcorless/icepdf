@@ -266,7 +266,7 @@ public class FontManager {
         // the value is the family, decoration and path information
         // separated by the "|" character.
         while (fontIterator.hasNext()) {
-            currentFont = (Object[]) fontIterator.next();
+            currentFont = fontIterator.next();
             name = (String) currentFont[FONT_NAME];
             family = (String) currentFont[FONT_FAMILY];
             decorations = (Integer) currentFont[FONT_DECORATIONS];
@@ -494,7 +494,7 @@ public class FontManager {
             Iterator<Object[]> nameIterator = fontList.iterator();
             Object[] fontData;
             for (int i = 0; nameIterator.hasNext(); i++) {
-                fontData = (Object[]) nameIterator.next();
+                fontData = nameIterator.next();
                 availableNames[i] = fontData[0].toString();
             }
             return availableNames;
@@ -513,7 +513,7 @@ public class FontManager {
             Iterator<Object[]> nameIterator = fontList.iterator();
             Object[] fontData;
             for (int i = 0; nameIterator.hasNext(); i++) {
-                fontData = (Object[]) nameIterator.next();
+                fontData = nameIterator.next();
                 availableNames[i] = fontData[1].toString();
             }
             return availableNames;
@@ -534,7 +534,7 @@ public class FontManager {
             int decorations;
             StringBuilder style = new StringBuilder();
             for (int i = 0; nameIterator.hasNext(); i++) {
-                fontData = (Object[]) nameIterator.next();
+                fontData = nameIterator.next();
                 decorations = (Integer) fontData[2];
                 if ((decorations & BOLD_ITALIC) == BOLD_ITALIC) {
                     style.append(" BoldItalic");
@@ -603,7 +603,7 @@ public class FontManager {
             }
         }
 
-        return font;
+        return null;
     }
 
     /**

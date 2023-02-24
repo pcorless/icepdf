@@ -43,9 +43,7 @@ public class ZeroPaddedInputStream extends InputStream {
     public int read() throws IOException {
         int r = in.read();
 //System.out.println("ZPIS.read()  r: " + r);
-        if (r < 0)
-            return 0;
-        return r;
+        return Math.max(r, 0);
     }
 
     public int read(byte[] buffer) throws IOException {
@@ -66,7 +64,7 @@ public class ZeroPaddedInputStream extends InputStream {
                 return readIn;
             }
             int end = offset + length;
-            for (int current = offset + Math.max(0, readIn); current < end; current++)
+            for (int current = offset; current < end; current++)
                 buffer[current] = 0;
         }
         return length;

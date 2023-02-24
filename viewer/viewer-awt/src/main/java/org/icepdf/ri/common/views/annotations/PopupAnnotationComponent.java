@@ -374,10 +374,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         /*
          * Build search GUI
          */
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.weightx = 1.0;
         constraints.weighty = 0;
-        constraints.anchor = GridBagConstraints.NORTH;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(1, 1, 1, 1);
 
@@ -400,7 +397,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         }
         constraints.insets = new Insets(1, 1, 1, 1);
         addGB(commentPanel, minimizeButton, 3, 0, 1, 1);
-        constraints.insets = new Insets(1, 5, 1, 5);
 
         // add comment tree if there are any IRT's
         constraints.fill = GridBagConstraints.BOTH;
@@ -547,7 +543,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         ActionMap actionMap = getActionMap();
 
         /// ctrl-- to increase font size.
-        KeyStroke key = KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, InputEvent.CTRL_MASK);
+        KeyStroke key = KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, InputEvent.CTRL_DOWN_MASK);
         inputMap.put(key, "font-size-increase");
         actionMap.put("font-size-increase", new AbstractAction() {
             @Override
@@ -559,7 +555,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         });
 
         // ctrl-0 to dfeault font size.
-        key = KeyStroke.getKeyStroke(KeyEvent.VK_0, InputEvent.CTRL_MASK);
+        key = KeyStroke.getKeyStroke(KeyEvent.VK_0, InputEvent.CTRL_DOWN_MASK);
         inputMap.put(key, "font-size-default");
         actionMap.put("font-size-default", new AbstractAction() {
             @Override
@@ -571,7 +567,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         });
 
         // ctrl-- to decrease font size.
-        key = KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, InputEvent.CTRL_MASK);
+        key = KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, InputEvent.CTRL_DOWN_MASK);
         inputMap.put(key, "font-size-decrease");
         actionMap.put("font-size-decrease", new AbstractAction() {
             @Override

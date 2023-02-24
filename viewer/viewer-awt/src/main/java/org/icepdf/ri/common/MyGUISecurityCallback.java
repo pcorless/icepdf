@@ -132,7 +132,6 @@ public class MyGUISecurityCallback implements SecurityCallback {
             constraints = new GridBagConstraints();
             constraints.fill = GridBagConstraints.NONE;
             constraints.weightx = 1.0;
-            constraints.anchor = GridBagConstraints.NORTH;
             constraints.anchor = GridBagConstraints.WEST;
             constraints.insets = new Insets(1, 10, 1, 1);
 

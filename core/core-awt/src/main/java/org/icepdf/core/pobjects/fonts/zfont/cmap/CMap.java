@@ -167,7 +167,7 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
             // parse the cidToGid stream out, arranging the high bit,
             // each character position that has a value > 0 is a valid
             // entry in the CFF.
-            while (character != -1 && i < length) {
+            while (i < length) {
                 character = cidStream.read();
                 character = (char) ((character << 8) | cidStream.read());
                 cidToGid[i] = (char) character;
@@ -616,9 +616,9 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
     class CMapBfRange implements CMapRange {
 
         // start value for a bfrange
-        int startRange = 0;
+        int startRange;
         // end value for a bfrange
-        int endRange = 0;
+        int endRange;
         // offset mapping
         int offsetValue = 0;
         // offset vector
@@ -690,11 +690,11 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
     static class CMapCidRange implements CMapRange {
 
         // start value for a bfrange
-        int startRange = 0;
+        int startRange;
         // end value for a bfrange
-        int endRange = 0;
+        int endRange;
         // offset mapping
-        int offsetValue = 0;
+        int offsetValue;
 
         /**
          * Create a new instance of a CMapRange, when it is a simple range

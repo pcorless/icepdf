@@ -44,7 +44,7 @@ public class FieldDictionaryFactory {
      */
     public static FieldDictionary buildField(Library library,
                                              DictionaryEntries entries) {
-        FieldDictionary fieldDictionary = null;
+        FieldDictionary fieldDictionary;
         Name fieldType = library.getName(entries, FieldDictionary.FT_KEY);
         if (TYPE_BUTTON.equals(fieldType)) {
             fieldDictionary = new ButtonFieldDictionary(library, entries);

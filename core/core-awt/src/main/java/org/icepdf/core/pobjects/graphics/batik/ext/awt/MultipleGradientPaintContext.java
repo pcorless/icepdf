@@ -387,7 +387,7 @@ abstract class MultipleGradientPaintContext implements PaintContext {
         float[] workTbl = normalizedIntervals;   // local is cheaper
         for (int i = 0; i < n; i++) {
             // ??? find the LARGEST value in normalizedIntervals
-            Imin = (Imin > workTbl[i]) ? workTbl[i] : Imin;
+            Imin = Math.min(Imin, workTbl[i]);
         }
 
         //estimate the size of the entire gradients array.
@@ -1029,12 +1029,12 @@ abstract class MultipleGradientPaintContext implements PaintContext {
             // Note when we reflect we change sense of p1/2_up.
             if (p2 < 0) {
                 p1 = -p1;
-                p1_up = !p1_up;
+                p1_up = false;
                 p2 = -p2;
-                p2_up = !p2_up;
+                p2_up = true;
             } else if (p1 < 0) {
                 p1 = -p1;
-                p1_up = !p1_up;
+                p1_up = false;
             }
 
             int part1, part2;

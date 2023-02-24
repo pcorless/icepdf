@@ -81,6 +81,8 @@ public abstract class ZSimpleFont implements FontFile {
         this.cMap = font.cMap;
         this.size = font.size;
         this.source = font.source;
+        this.fontBoxFont = font.fontBoxFont;
+        this.isDamaged = font.isDamaged;
         this.gsTransform = new AffineTransform(gsTransform);
         this.fontMatrix = new AffineTransform(font.fontMatrix);
         this.fontTransform = new AffineTransform(font.fontTransform);
@@ -385,7 +387,7 @@ public abstract class ZSimpleFont implements FontFile {
     protected int repairLength1(byte[] bytes, int length1) {
         // scan backwards from the end of the first segment to find 'exec'
         int offset = Math.max(0, length1 - 4);
-        if (offset <= 0 || offset > bytes.length - 4) {
+        if (offset == 0 || offset > bytes.length - 4) {
             offset = bytes.length - 4;
         }
 

@@ -220,7 +220,7 @@ public class Separation extends PColorSpace {
         // alternative colour.
         // -- Only applies to subtractive devices, screens are additive but I'm
         // leaving this in encase something goes horribly wrong.
-        return namedColor;
+        return null;
     }
 
     private static Color addColorToCache(

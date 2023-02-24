@@ -54,9 +54,7 @@ public class ColorKeyMask extends Dictionary {
             if (colourSpace instanceof Indexed) {
                 Indexed icolourSpace = (Indexed) colourSpace;
                 Color[] colors = icolourSpace.accessColorTable();
-                if (colors != null &&
-                        maskMinOrigCompsInt.length >= 1 &&
-                        maskMaxOrigCompsInt.length >= 1) {
+                if (colors != null && maskMinOrigCompsInt.length >= 1) {
                     maskMinIndex = maskMinOrigCompsInt[0];
                     maskMaxIndex = maskMaxOrigCompsInt[0];
                     if (maskMinIndex >= 0 && maskMinIndex < colors.length &&

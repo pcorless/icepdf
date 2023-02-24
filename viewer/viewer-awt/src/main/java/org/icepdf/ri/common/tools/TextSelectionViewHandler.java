@@ -217,7 +217,7 @@ public class TextSelectionViewHandler extends TextSelection
             Component target = documentViewController.getViewPort().getView();
             Point p = SwingUtilities.convertPoint(e.getComponent(), e.getPoint(), target);
             MouseEvent m = new MouseEvent(target,
-                    0, e.getWhen(), e.getModifiers(),
+                    0, e.getWhen(), e.getModifiersEx(),
                     p.x, p.y,
                     e.getClickCount(), e.isPopupTrigger(), e.getButton());
             mouseDragged(m);

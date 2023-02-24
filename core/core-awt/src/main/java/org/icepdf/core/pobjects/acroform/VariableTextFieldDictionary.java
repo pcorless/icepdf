@@ -78,7 +78,7 @@ public class VariableTextFieldDictionary extends FieldDictionary {
      */
     public static final Name RV_KEY = new Name("RV");
 
-    protected Quadding quadding = Quadding.LEFT_JUSTIFIED;
+    protected Quadding quadding;
     protected float size = 12;
     protected float leading = 0;
     protected Name fontName = new Name("Helv");

@@ -49,7 +49,7 @@ public class Appearance {
 
     public void addAppearance(Name name, AppearanceState appearanceState) {
         appearance.put(name, appearanceState);
-        if (name.getName().toLowerCase().equals("off")) {
+        if (name.getName().equalsIgnoreCase("off")) {
             offName = name;
         } else {
             onName = name;

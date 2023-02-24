@@ -88,7 +88,7 @@ public class MouseWheelListenerPageChanger implements MouseWheelListener {
                         : null;
 
         // Scrolling down but only if the ctrl mask isn't present.
-        if (!((e.getModifiers() & InputEvent.CTRL_MASK) == InputEvent.CTRL_MASK ||
+        if (!((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) == InputEvent.CTRL_DOWN_MASK ||
                 documentView.getCurrentToolHandler() instanceof DynamicZoomHandler)) {
             int amount = e.getScrollAmount();
             int rotation = e.getWheelRotation();

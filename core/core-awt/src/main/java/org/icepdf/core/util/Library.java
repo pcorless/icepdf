@@ -268,7 +268,7 @@ public class Library {
             fileID.add(new LiteralStringObject(""));
         }
 
-        if (encryptDictionary != null && fileID != null) {
+        if (encryptDictionary != null) {
             // create new security manager
             securityManager = new SecurityManager(this, encryptDictionary, fileID);
             madeSecurityManager = true;

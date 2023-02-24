@@ -788,10 +788,10 @@ public abstract class Annotation extends Dictionary {
             DictionaryEntries dictionary = (DictionaryEntries) streamOrDictionary;
             Set<Name> keys = dictionary.keySet();
             Object value;
-            for (Object key : keys) {
+            for (Name key : keys) {
                 value = dictionary.get(key);
                 if (value instanceof Reference) {
-                    appearance.addAppearance((Name) key,
+                    appearance.addAppearance(key,
                             new AppearanceState(library, dictionary,
                                     library.getObject((Reference) value)));
                 }
@@ -921,8 +921,7 @@ public abstract class Annotation extends Dictionary {
         if (tmp != null) {
             Action action = Action.buildAction(library, (DictionaryEntries) tmp);
             // assign reference if applicable
-            if (action != null &&
-                    library.isReference(entries, ACTION_KEY)) {
+            if (library.isReference(entries, ACTION_KEY)) {
                 action.setPObjectReference(
                         library.getReference(entries, ACTION_KEY));
             }

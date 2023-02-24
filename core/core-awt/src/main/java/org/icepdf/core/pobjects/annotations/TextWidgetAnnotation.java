@@ -135,8 +135,8 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
         int btStart = currentContentStream.indexOf("BMC") + 3;
         int etEnd = currentContentStream.lastIndexOf("EMC");
 
-        String preBt = "";
-        String postEt = "";
+        String preBt;
+        String postEt;
         String markedContent = "";
         if (btStart >= 0 && etEnd >= 0) {
             // grab the pre post marked content postscript.

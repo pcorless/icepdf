@@ -19,7 +19,7 @@ import java.awt.image.WritableRaster;
  */
 public class YCCKRasterOp implements RasterOp {
 
-    private RenderingHints hints = null;
+    private RenderingHints hints;
 
     public YCCKRasterOp(RenderingHints hints) {
         this.hints = hints;

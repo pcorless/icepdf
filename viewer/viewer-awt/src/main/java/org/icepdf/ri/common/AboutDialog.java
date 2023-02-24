@@ -47,7 +47,6 @@ public class AboutDialog extends EscapeJDialog implements ActionListener, Window
 
         // Show OK button instead of using display timer
         buttons = OK;
-        whichTimer = NO_TIMER;
 
         setTitle(messageBundle.getString("viewer.dialog.about.title"));
         setResizable(false);

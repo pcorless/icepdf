@@ -144,7 +144,7 @@ public class BarcodeStamper {
                     ResultPoint rp = result.getResultPoints()[pointIndex];
                     if (pointIndex == 0) {
                         generalPath.moveTo(rp.getX(), rp.getY());
-                    } else if (pointIndex < max) {
+                    } else {
                         generalPath.lineTo(rp.getX(), rp.getY());
                     }
                 }

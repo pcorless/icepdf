@@ -52,7 +52,7 @@ public class TypeCidType2Font extends CompositeFont {
             font = ((ZFontType2) font).deriveFont(org.icepdf.core.pobjects.fonts.zfont.cmap.CMap.IDENTITY, subfontToUnicodeCMap);
         }
         if (gidMap instanceof Name) {
-            String mappingName = null;
+            String mappingName;
             mappingName = gidMap.toString();
             if (toUnicodeCMap instanceof CMapIdentityH) {
                 mappingName = toUnicodeCMap.toString();

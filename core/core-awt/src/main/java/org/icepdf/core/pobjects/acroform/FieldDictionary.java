@@ -245,9 +245,7 @@ public class FieldDictionary extends Dictionary {
             Object value = library.getObject(entries, PARENT_KEY);
             if (value instanceof DictionaryEntries) {
                 parentField = FieldDictionaryFactory.buildField(library, (DictionaryEntries) value);
-                if (parentField != null) {
-                    parentField.setPObjectReference((Reference) entries.get(PARENT_KEY));
-                }
+                parentField.setPObjectReference((Reference) entries.get(PARENT_KEY));
             }
         }
         return parentField;

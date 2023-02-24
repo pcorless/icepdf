@@ -211,9 +211,9 @@ public class ZFontType0 extends ZSimpleFont {
     public String getFamily() {
         try {
             if (cidFont != null) {
-                cidFont.getName();
+                return cidFont.getName();
             } else {
-                t1Font.getName();
+                return t1Font.getName();
             }
         } catch (IOException e) {
             logger.log(Level.FINE, "Error finding font family name", e);

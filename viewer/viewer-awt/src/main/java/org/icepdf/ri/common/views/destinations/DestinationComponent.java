@@ -87,7 +87,7 @@ public class DestinationComponent extends JComponent implements FocusListener, M
         this.pageViewComponent = pageViewComponent;
 
         if (destination.getNamedDestination() != null) {
-            setToolTipText(destination.getNamedDestination().toString());
+            setToolTipText(destination.getNamedDestination());
         }
         setFocusable(true);
         setBorder(resizableBorder);
@@ -122,7 +122,7 @@ public class DestinationComponent extends JComponent implements FocusListener, M
     public void updateDestination(Destination destination) {
         this.destination = destination;
         if (destination.getNamedDestination() != null) {
-            setToolTipText(destination.getNamedDestination().toString());
+            setToolTipText(destination.getNamedDestination());
         }
         refreshBounds();
     }

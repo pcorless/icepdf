@@ -93,11 +93,9 @@ public class ConfigSerializer {
     public static CaptureSet retrieveCaptureSet(String captureSetFileName) {
         try {
             Path contentSetPath = Paths.get(PreferencesController.getCaptureSetDirectory(), captureSetFileName);
-            if (contentSetPath != null) {
-                CaptureSet captureSet = mapper.readValue(new FileReader(contentSetPath.toFile()), CaptureSet.class);
-                captureSet.setCaptureSetPath(contentSetPath.toAbsolutePath());
-                return captureSet;
-            }
+            CaptureSet captureSet = mapper.readValue(new FileReader(contentSetPath.toFile()), CaptureSet.class);
+            captureSet.setCaptureSetPath(contentSetPath.toAbsolutePath());
+            return captureSet;
         } catch (IOException e) {
             e.printStackTrace();
         }

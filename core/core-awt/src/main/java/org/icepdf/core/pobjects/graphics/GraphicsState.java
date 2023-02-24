@@ -648,8 +648,7 @@ public class GraphicsState {
 
     public void setLineWidth(float lineWidth) {
         // Automatic Stroke Adjustment
-        if (lineWidth <= Float.MIN_VALUE || lineWidth >= Float.MAX_VALUE ||
-                lineWidth == 0) {
+        if (lineWidth <= Float.MIN_VALUE || lineWidth >= Float.MAX_VALUE) {
             // set line width to a very small none zero number.
             this.lineWidth = 0.001f;
         } else {

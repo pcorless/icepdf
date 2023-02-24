@@ -188,9 +188,7 @@ public class TextSelection extends SelectionBoxHandler {
             // clear the rectangle
             clearRectangle(pageViewComponent);
 
-            if (pageViewComponent != null) {
-                pageViewComponent.repaint();
-            }
+            pageViewComponent.repaint();
         } catch (InterruptedException e) {
             logger.fine("Text selection page access interrupted");
         }
@@ -954,12 +952,8 @@ class GlyphLocation {
                                    boolean isRight, boolean isDown) {
         int selectedCount = 0;
         if (isRight && end.word > start.word) {
-            // same word so we move to select start->end.
-            if (start.word == end.word && start.line == end.line) {
-                // nothing to do handled by the first word.
-            }
-            // at least two words so we can do the last half of start and first half of end.
-            else if (start.line == end.line) {
+            // same word, so we move to select start->end.
+            if (start.line == end.line) {
                 WordText word = words.get(end.word);
                 word.setHasSelected(true);
                 for (int glyphIndex = 0; glyphIndex <= end.glyph; glyphIndex++) {

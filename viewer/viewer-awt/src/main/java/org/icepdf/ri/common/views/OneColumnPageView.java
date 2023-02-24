@@ -85,12 +85,12 @@ public class OneColumnPageView extends AbstractDocumentView {
                 documentViewController.getDocumentViewModel().getPageComponents();
 
         if (pageComponents != null) {
-            for (PageViewComponent pageViewComponent : pageComponents) {
+            for (AbstractPageViewComponent pageViewComponent : pageComponents) {
                 if (pageViewComponent != null) {
                     pageViewComponent.setDocumentViewCallback(this);
                     // add component to layout
                     pagesPanel.add(new PageViewDecorator(
-                            (AbstractPageViewComponent) pageViewComponent));
+                            pageViewComponent));
                 }
             }
         }

@@ -22,7 +22,7 @@ public class CMYKRasterOp implements RasterOp {
 
     // default cmyk value,  > 255 will lighten the image.
     private static float blackRatio;
-    private RenderingHints hints = null;
+    private RenderingHints hints;
 
     public CMYKRasterOp(RenderingHints hints) {
         this.hints = hints;

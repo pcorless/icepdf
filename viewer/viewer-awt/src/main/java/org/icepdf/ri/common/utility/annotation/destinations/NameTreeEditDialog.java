@@ -183,7 +183,6 @@ public class NameTreeEditDialog extends EscapeJDialog implements ActionListener 
         addGB(destinationPanel, errorLabel, 1, 1, 1, 1);
         constraints.anchor = GridBagConstraints.WEST;
         addGB(destinationPanel, implicitDestinationPanel, 0, 2, 6, 1);
-        constraints.fill = GridBagConstraints.BOTH;
 
         constraints.weightx = 1.0;
         constraints.weighty = 1.0;

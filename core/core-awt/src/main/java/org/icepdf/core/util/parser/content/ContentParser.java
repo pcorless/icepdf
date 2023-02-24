@@ -970,7 +970,7 @@ public class ContentParser extends AbstractContentParser {
             shapes.add(new GlyphOutlineDrawCmd(glyphOutlineClip));
         }
         graphicState.set(textBlockBase);
-        if (nextToken instanceof Integer && (Integer) nextToken == Operands.ET) {
+        if (nextToken instanceof Integer) {
             inTextBlock = false;
         }
 

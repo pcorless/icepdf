@@ -177,12 +177,12 @@ public class NameNode extends Dictionary {
         List<NameNode> kidsNodes = null;
         if (sz > 0) {
             kidsNodes = new ArrayList<>(sz);
-            for (Object ref : kidsReferences) {
+            for (Reference ref : kidsReferences) {
                 if (ref instanceof Reference) {
-                    Object o = library.getObject((Reference) ref);
+                    Object o = library.getObject(ref);
                     if (o instanceof DictionaryEntries) {
                         NameNode node = new NameNode(library, (DictionaryEntries) o);
-                        node.setPObjectReference((Reference) ref);
+                        node.setPObjectReference(ref);
                         kidsNodes.add(node);
                     } else if (o instanceof NameNode) {
                         kidsNodes.add((NameNode) o);
@@ -265,9 +265,7 @@ public class NameNode extends Dictionary {
             int cmpU = upperLimit.compareTo(name);
             if (cmpL >= 1 || cmpU >= 1)
                 return this;
-            else if (cmpL > 0) {
-                return NOT_FOUND_IS_LESSER;
-            } else if (cmpU < 0) {
+            else if (cmpU < 0) {
                 return NOT_FOUND_IS_GREATER;
             }
             Object ret = binarySearchNodeKids(0, numNamesAndValues - 1, name, null);
@@ -408,10 +406,9 @@ public class NameNode extends Dictionary {
             return ob;
         } else if (cmp > 0) {
             return binarySearchNames(firstIndex, pivot - 1, name);
-        } else if (cmp < 0) {
+        } else {
             return binarySearchNames(pivot + 2, lastIndex, name);
         }
-        return NOT_FOUND;
     }
 
     public NameNode getNode(int index) {

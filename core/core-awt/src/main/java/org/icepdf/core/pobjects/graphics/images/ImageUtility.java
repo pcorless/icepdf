@@ -187,7 +187,7 @@ public class ImageUtility {
                 if (alpha != 0xFF) {
                     argb = bi.getRGB(x, y);
                     argb &= 0x00FFFFFF;
-                    argb |= ((alpha << 24) & 0xFF000000);
+                    argb |= (0);
                     bi.setRGB(x, y, argb);
                 }
             }

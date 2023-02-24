@@ -437,9 +437,6 @@ public class CCITTFax {
                 if ((state.curIndex & 0x1) != 0)
                     addRun(0, state, outb);
                 addRun(state.width - state.a0, state, outb);
-            } else if (state.a0 > state.width) {
-                addRun(state.width, state, outb);
-                addRun(0, state, outb);
             }
         }
         int[] tmp = state.ref;
@@ -571,7 +568,7 @@ public class CCITTFax {
         short compression = TIFF_COMPRESSION_NONE_default;
         if (k < 0) compression = TIFF_COMPRESSION_GROUP4;
         else if (k > 0) compression = TIFF_COMPRESSION_GROUP3_2D;
-        else if (k == 0) compression = TIFF_COMPRESSION_GROUP3_1D;
+        else compression = TIFF_COMPRESSION_GROUP3_1D;
         boolean hasHeader;
 
         InputStream input = stream.getDecodedByteArrayInputStream();
@@ -661,9 +658,8 @@ public class CCITTFax {
             // PDF has default BlackIs1=false               ==> White=1, Black=0
             // TIFF has default PhotometricInterpretation=0 ==> White=0, Black=1
             // So, if PDF doesn't state what black and white are, then use TIFF's default
-            if (blackIs1) {
-                if (!blackIs1)
-                    photometricInterpretation = TIFF_PHOTOMETRIC_INTERPRETATION_BLACK_IS_ZERO;
+            if (!blackIs1) {
+                photometricInterpretation = TIFF_PHOTOMETRIC_INTERPRETATION_BLACK_IS_ZERO;
             }
             Utils.setShortIntoByteArrayBE(                                     // PhotometricInterpretation
                     photometricInterpretation, fakeHeaderBytes, 0x4E);

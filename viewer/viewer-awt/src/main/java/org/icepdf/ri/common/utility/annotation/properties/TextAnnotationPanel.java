@@ -188,7 +188,6 @@ public class TextAnnotationPanel extends AnnotationPanelAdapter implements ItemL
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.weightx = 1.0;
-        constraints.anchor = GridBagConstraints.NORTH;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(1, 2, 1, 2);
 

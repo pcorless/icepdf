@@ -705,9 +705,7 @@ public class OperatorFactory {
         }
 
         // add the new operator to the cache
-        if (operator != null) {
-            operatorCache.put(operator.getType(), operator);
-        }
+        operatorCache.put(operator.getType(), operator);
         return operator;
     }
 }

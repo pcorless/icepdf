@@ -321,7 +321,7 @@ public class ExtGState extends Dictionary {
     public List getLineDashPattern() {
         List<Object> dashPattern = null;
         Number dashPhase;
-        float[] dashArray = null;
+        float[] dashArray;
         if (entries.containsKey(D_KEY)) {
             try {
                 List dashData = (List) entries.get(D_KEY);

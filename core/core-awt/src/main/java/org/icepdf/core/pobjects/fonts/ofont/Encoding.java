@@ -29,7 +29,7 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
     }
 
     public char get(char i) {
-        if (i >= 0 && i < 256) {
+        if (i < 256) {
 //            char c = enc[i];
             //            if (c >= 0)
             return enc[i];

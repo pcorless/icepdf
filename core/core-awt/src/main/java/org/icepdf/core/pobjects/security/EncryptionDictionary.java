@@ -293,7 +293,7 @@ public class EncryptionDictionary extends Dictionary {
 
     // File ID,  generated when document is created, first index used by
     // encryption algorithms
-    private List fileID = null;
+    private List fileID;
 
     private CryptFilter cryptFilter;
 

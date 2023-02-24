@@ -2498,29 +2498,27 @@ public class SwingController extends ComponentAdapter
                 addRecentFileEntry(Paths.get(pathname));
 
                 saveFilePath = getTempSaveFileName(pathname);
-                if (saveFilePath != null) {
-                    File tmpFile = new File(saveFilePath);
-                    if (tmpFile.exists() && new File(pathname).exists()) {
-                        String[] options = {messageBundle.getString("viewer.button.yes.label"), messageBundle.getString("viewer.button.no.label")};
-                        int ret = JOptionPane.showOptionDialog(viewer, MessageFormat.format(messageBundle.getString("viewer.dialog.restore.label"), new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(tmpFile.lastModified())), messageBundle.getString("viewer.dialog.restore.title"), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-                        if (ret == JOptionPane.YES_OPTION) {
-                            try {
-                                Files.copy(tmpFile.toPath(), new File(pathname).toPath(), StandardCopyOption.REPLACE_EXISTING);
-                            } catch (IOException e) {
-                                org.icepdf.ri.util.Resources.showMessageDialog(
-                                        viewer,
-                                        JOptionPane.INFORMATION_MESSAGE,
-                                        messageBundle,
-                                        "viewer.dialog.restore.exception.title",
-                                        "viewer.dialog.restore.exception.label",
-                                        e.getMessage() != null && !e.getMessage().isEmpty() ? e.getMessage() : e.toString());
-                            }
-                        } else {
-                            try {
-                                Files.delete(tmpFile.toPath());
-                            } catch (IOException e) {
-                                logger.log(Level.FINE, "Couldn't delete file " + tmpFile.getAbsolutePath(), e);
-                            }
+                File tmpFile = new File(saveFilePath);
+                if (tmpFile.exists() && new File(pathname).exists()) {
+                    String[] options = {messageBundle.getString("viewer.button.yes.label"), messageBundle.getString("viewer.button.no.label")};
+                    int ret = JOptionPane.showOptionDialog(viewer, MessageFormat.format(messageBundle.getString("viewer.dialog.restore.label"), new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(tmpFile.lastModified())), messageBundle.getString("viewer.dialog.restore.title"), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+                    if (ret == JOptionPane.YES_OPTION) {
+                        try {
+                            Files.copy(tmpFile.toPath(), new File(pathname).toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        } catch (IOException e) {
+                            org.icepdf.ri.util.Resources.showMessageDialog(
+                                    viewer,
+                                    JOptionPane.INFORMATION_MESSAGE,
+                                    messageBundle,
+                                    "viewer.dialog.restore.exception.title",
+                                    "viewer.dialog.restore.exception.label",
+                                    e.getMessage() != null && !e.getMessage().isEmpty() ? e.getMessage() : e.toString());
+                        }
+                    } else {
+                        try {
+                            Files.delete(tmpFile.toPath());
+                        } catch (IOException e) {
+                            logger.log(Level.FINE, "Couldn't delete file " + tmpFile.getAbsolutePath(), e);
                         }
                     }
                 }
@@ -3810,7 +3808,6 @@ public class SwingController extends ComponentAdapter
         try {
             showAnnotationProperties(annotationComponent, viewer);
         } finally {
-            page = null;
         }
     }
 
@@ -5047,17 +5044,14 @@ public class SwingController extends ComponentAdapter
             } else if (source == fitActualSizeButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageFitMode(DocumentViewController.PAGE_FIT_ACTUAL_SIZE, false);
-                    doSetFocus = true;
                 }
             } else if (source == fitHeightButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_HEIGHT, false);
-                    doSetFocus = true;
                 }
             } else if (source == fitWidthButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_WIDTH, false);
-                    doSetFocus = true;
                 }
             }
             // tool selection - a call to setDocumentToolMode will generate
@@ -5068,25 +5062,21 @@ public class SwingController extends ComponentAdapter
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_PAN;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
-                    doSetFocus = true;
                 }
             } else if (source == zoomInToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN);
-                    doSetFocus = true;
                 }
             } else if (source == zoomDynamicToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_DYNAMIC;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_DYNAMIC);
-                    doSetFocus = true;
                 }
             } else if (source == textSelectToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION);
-                    doSetFocus = true;
                 }
             }
             // annotations selection and creation tools.
@@ -5163,28 +5153,24 @@ public class SwingController extends ComponentAdapter
                     setPageViewMode(
                             DocumentViewControllerImpl.TWO_PAGE_RIGHT_VIEW,
                             false);
-                    doSetFocus = true;
                 }
             } else if (source == facingPageViewContinuousButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageViewMode(
                             DocumentViewControllerImpl.TWO_COLUMN_RIGHT_VIEW,
                             false);
-                    doSetFocus = true;
                 }
             } else if (source == singlePageViewNonContinuousButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageViewMode(
                             DocumentViewControllerImpl.ONE_PAGE_VIEW,
                             false);
-                    doSetFocus = true;
                 }
             } else if (source == singlePageViewContinuousButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageViewMode(
                             DocumentViewControllerImpl.ONE_COLUMN_VIEW,
                             false);
-                    doSetFocus = true;
                 }
             }
 
@@ -5697,7 +5683,7 @@ public class SwingController extends ComponentAdapter
                 destination = (Destination) evt.getOldValue();
                 // remove the destination
                 Catalog catalog = getDocument().getCatalog();
-                catalog.deleteNamedDestination(destination.getNamedDestination().toString());
+                catalog.deleteNamedDestination(destination.getNamedDestination());
                 // update the tree and remove this node.
                 if (annotationPanel != null && annotationPanel.getDestinationsPanel() != null) {
                     annotationPanel.getDestinationsPanel().removeNameTreeNode(destination);

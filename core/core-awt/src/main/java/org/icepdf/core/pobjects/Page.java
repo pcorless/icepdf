@@ -355,8 +355,8 @@ public class Page extends Dictionary {
                         }
                     }
                 } catch (IllegalStateException e) {
-                    logger.warning("Malformed annotation could not be initialized. " +
-                            a != null ? " " + a.getPObjectReference() + a.getEntries() : "");
+                    Annotation finalA = a;
+                    logger.log(Level.WARNING, e, () -> " " + finalA.getPObjectReference() + finalA.getEntries());
                 }
             }
             //The popup annotations may not be referenced in the page annotations entry, we have to add them manually.

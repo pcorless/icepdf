@@ -192,9 +192,9 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
         }
 
         if (width == 0.0f && charWidths.size() > 0) {
-            Object tmp = charWidths.get(charName);
+            Point2D.Float tmp = charWidths.get(charName);
             if (tmp != null) {
-                width = (float) (((Point2D.Float) tmp).x * fontMatrix.getScaleX());
+                width = (float) (tmp.x * fontMatrix.getScaleX());
             }
         }
 

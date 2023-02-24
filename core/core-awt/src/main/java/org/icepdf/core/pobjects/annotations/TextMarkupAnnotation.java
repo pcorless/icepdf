@@ -346,9 +346,6 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
             if (subtype != null && SUBTYPE_HIGHLIGHT.equals(subtype)) {
                 g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, .30f));
                 // remove other alpha defs from painting
-                if (shapes != null) {
-                    shapes.setPaintAlpha(false);
-                }
             }
 
             Object tmp = getObject(RECTANGLE_KEY);
@@ -375,9 +372,6 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
             if (subtype != null && SUBTYPE_HIGHLIGHT.equals(subtype)) {
                 g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
                 // remove other alpha defs from painting
-                if (shapes != null) {
-                    shapes.setPaintAlpha(true);
-                }
             }
         }
     }

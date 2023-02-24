@@ -344,20 +344,8 @@ class CertificateInfo {
 
             // Extract subject name
             subjectName = CertificatePropertiesDialog.parseRelativeDistinguishedName(principal, BCStyle.CN);
-            if (subjectName == null) {
-                subjectName = CertificatePropertiesDialog.parseRelativeDistinguishedName(principal, BCStyle.O);
-            }
-            if (subjectName == null) {
-                subjectName = messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.unknownSubject.label");
-            }
             // Extract issuer name
             issuerName = CertificatePropertiesDialog.parseRelativeDistinguishedName(principalIssuer, BCStyle.CN);
-            if (issuerName == null) {
-                issuerName = CertificatePropertiesDialog.parseRelativeDistinguishedName(principalIssuer, BCStyle.O);
-            }
-            if (issuerName == null) {
-                issuerName = messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.unknownIssuer.label");
-            }
         } catch (Exception e) {
             e.printStackTrace();
         }

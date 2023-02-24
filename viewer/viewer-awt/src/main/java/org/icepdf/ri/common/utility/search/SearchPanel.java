@@ -276,7 +276,6 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         constraints.fill = GridBagConstraints.NONE;
         constraints.weightx = 1.0;
         constraints.weighty = 0;
-        constraints.anchor = GridBagConstraints.NORTH;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(5, 1, 1, 5);
 
@@ -306,7 +305,6 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
 
         // Add Results label
         constraints.insets = new Insets(1, 1, 1, 1);
-        constraints.fill = GridBagConstraints.NONE;
 
         // add the lit to scroll pane
         constraints.fill = GridBagConstraints.BOTH;

@@ -75,7 +75,7 @@ public class Indexer {
                 // otherwise have a compressed cross-reference so find /XRef and find first << position
                 else {
                     pos = byteBuffer.position();
-                    end = pos > 1024 ? 1024 : pos;
+                    end = Math.min(pos, 1024);
                     int xRefPosition = ByteBufferUtil.findReverseString(byteBuffer, pos, end, Parser.XREF_MARKER);
                     // we don't haven an examples of this at this time, will make one.
                     try {

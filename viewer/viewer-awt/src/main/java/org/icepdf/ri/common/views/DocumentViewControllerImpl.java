@@ -151,7 +151,6 @@ public class DocumentViewControllerImpl
         // clean up any previous documents
         if (document != null) {
             document.dispose();
-            document = null;
         }
         document = newDocument;
 
@@ -776,11 +775,7 @@ public class DocumentViewControllerImpl
         if (documentViewModel != null) {
             decrement = documentView.getPreviousPageIncrement();
             int current = documentViewModel.getViewCurrentPageIndex();
-            if ((current - decrement) >= 0) {
-                documentViewModel.setViewCurrentPageIndex(current - decrement);
-            } else {
-                documentViewModel.setViewCurrentPageIndex(0);
-            }
+            documentViewModel.setViewCurrentPageIndex(Math.max((current - decrement), 0));
         }
         return decrement;
     }

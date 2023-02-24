@@ -389,7 +389,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
     private float[] findSelectionColour(String markedContent) {
         int selectionStart = markedContent.indexOf("n") + 1;
         int selectionEnd = markedContent.lastIndexOf("rg");
-        if (selectionStart < selectionEnd && selectionEnd > 0) {
+        if (selectionStart < selectionEnd) {
             String potentialNumbers = markedContent.substring(selectionStart, selectionEnd);
             StringTokenizer toker = new StringTokenizer(potentialNumbers);
             float[] points = new float[3];

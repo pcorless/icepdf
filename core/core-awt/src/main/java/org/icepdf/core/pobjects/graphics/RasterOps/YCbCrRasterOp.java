@@ -12,7 +12,7 @@ import java.awt.image.*;
  */
 public class YCbCrRasterOp implements RasterOp {
 
-    private RenderingHints hints = null;
+    private RenderingHints hints;
 
     public YCbCrRasterOp(RenderingHints hints) {
         this.hints = hints;
@@ -54,7 +54,7 @@ public class YCbCrRasterOp implements RasterOp {
 
     // clamp the input between 0 ... 255
     private static int clamp(int x) {
-        return (x < 0) ? 0 : ((x > 255) ? 255 : x);
+        return (x < 0) ? 0 : (Math.min(x, 255));
     }
 
     public Rectangle2D getBounds2D(Raster src) {

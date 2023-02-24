@@ -171,9 +171,9 @@ public class Permissions {
     private final boolean[] permissions = new boolean[10];
     // original permission integer from encrypt dictionary
     // not permission bits and revered bits. 11111111111111111111000011000000
-    private int permissionFlags = 0xFFFFF0C0;
+    private int permissionFlags;
     // Revision of standard encryption algorithms
-    private int revision = 2;
+    private int revision;
 
     // Initiated flag
     boolean isInit = false;

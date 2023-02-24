@@ -92,9 +92,9 @@ public class TwoColumnPageView extends AbstractDocumentView {
                 documentViewController.getDocumentViewModel().getPageComponents();
 
         if (pageComponents != null) {
-            PageViewComponent pageViewComponent;
+            AbstractPageViewComponent pageViewComponent;
             for (int i = 0, max = pageComponents.size(), max2 = pageComponents.size();
-                 i < max && i < max2; i++) {
+                 i < max; i++) {
                 // save for facing page
                 if (i == 0 && max2 > 2 && viewAlignment == RIGHT_VIEW) {
                     // should be adding spacer
@@ -104,7 +104,7 @@ public class TwoColumnPageView extends AbstractDocumentView {
                 if (pageViewComponent != null) {
                     pageViewComponent.setDocumentViewCallback(this);
                     pagesPanel.add(new PageViewDecorator(
-                            (AbstractPageViewComponent) pageViewComponent));
+                            pageViewComponent));
                 }
             }
         }

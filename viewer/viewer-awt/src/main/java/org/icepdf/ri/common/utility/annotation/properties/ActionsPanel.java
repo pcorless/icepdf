@@ -238,13 +238,16 @@ public class ActionsPanel extends AnnotationPanelAdapter
                                 currentAnnotationComponent.getAnnotation().getLibrary(),
                                 ActionFactory.LAUNCH_ACTION);
                 // get action and add the new action
-                launchAction.setExternalFile(fileString);
-                currentAnnotationComponent.getAnnotation().addAction(launchAction);
-                // add the new action to the list.
-                actionListModel.addElement(new ActionEntry(
-                        messageBundle.getString(
-                                "viewer.utilityPane.action.type.launchAction.label"),
-                        launchAction));
+                if (launchAction != null) {
+                    launchAction.setExternalFile(fileString);
+
+                    currentAnnotationComponent.getAnnotation().addAction(launchAction);
+                    // add the new action to the list.
+                    actionListModel.addElement(new ActionEntry(
+                            messageBundle.getString(
+                                    "viewer.utilityPane.action.type.launchAction.label"),
+                            launchAction));
+                }
             }
         }
     }

@@ -20,7 +20,7 @@ public class ConvolveFilter extends AbstractBufferedImageOp {
     public static final int CLAMP_EDGES = 1;
     public static final int WRAP_EDGES = 2;
 
-    protected Kernel kernel = null;
+    protected Kernel kernel;
     public final boolean alpha = true;
     private int edgeAction = CLAMP_EDGES;
 

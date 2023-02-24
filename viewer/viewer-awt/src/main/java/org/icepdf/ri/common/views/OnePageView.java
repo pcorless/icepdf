@@ -89,7 +89,7 @@ public class OnePageView extends AbstractDocumentView {
         java.util.List<AbstractPageViewComponent> pageComponents = documentViewModel.getPageComponents();
         if (pageComponents != null) {
 
-            PageViewComponent pageViewComponent =
+            AbstractPageViewComponent pageViewComponent =
                     pageComponents.get(documentViewModel.getViewCurrentPageIndex());
             if (pageViewComponent != null) {
 
@@ -98,9 +98,9 @@ public class OnePageView extends AbstractDocumentView {
 
                 pageViewComponent.setDocumentViewCallback(this);
                 // add component to layout
-                pagesPanel.add(buildPageDecoration((AbstractPageViewComponent) pageViewComponent));
-                ((AbstractPageViewComponent) pageViewComponent).revalidate();
-                ((AbstractPageViewComponent) pageViewComponent).repaint();
+                pagesPanel.add(buildPageDecoration(pageViewComponent));
+                pageViewComponent.revalidate();
+                pageViewComponent.repaint();
             }
 
             // make sure we have setup all pages with callback call.

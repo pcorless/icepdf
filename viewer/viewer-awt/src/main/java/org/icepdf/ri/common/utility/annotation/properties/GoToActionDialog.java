@@ -129,7 +129,7 @@ public class GoToActionDialog extends AnnotationDialogAdapter
                 // enable GUI elements.
                 implicitDestinationFieldsEnabled(false);
                 // assign name to name label
-                destinationName.setText(dest.getNamedDestination().toString());
+                destinationName.setText(dest.getNamedDestination());
             }
         } else {
             // apply default fit type for new annotations.
@@ -236,7 +236,6 @@ public class GoToActionDialog extends AnnotationDialogAdapter
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.NONE;
         constraints.weightx = 1.0;
-        constraints.anchor = GridBagConstraints.NORTH;
         constraints.anchor = GridBagConstraints.EAST;
         constraints.insets = new Insets(5, 5, 5, 5);
 

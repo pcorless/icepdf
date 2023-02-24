@@ -143,7 +143,7 @@ public class ImageMath {
      * @return the clamped value
      */
     public static float clamp(float x, float a, float b) {
-        return (x < a) ? a : (x > b) ? b : x;
+        return (x < a) ? a : Math.min(x, b);
     }
 
     /**
@@ -155,7 +155,7 @@ public class ImageMath {
      * @return the clamped value
      */
     public static int clamp(int x, int a, int b) {
-        return (x < a) ? a : (x > b) ? b : x;
+        return (x < a) ? a : Math.min(x, b);
     }
 
     /**

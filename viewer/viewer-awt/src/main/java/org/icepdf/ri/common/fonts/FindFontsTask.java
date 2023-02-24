@@ -76,7 +76,6 @@ public class FindFontsTask extends AbstractTask<Void, Font> {
             for (int i = 0; i < document.getNumberOfPages(); i++) {
                 // break if needed
                 if (isCancelled()) {
-                    taskStatusMessage = "";
                     break;
                 }
                 // update search message in results pane.

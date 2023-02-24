@@ -64,7 +64,7 @@ public class ScalablePasswordField extends JPasswordField implements ScalableFie
                 // transform the point in MouseEvent using the current zoom factor
                 float zoom = documentViewModel.getViewZoom();
                 MouseEvent newEvent = new MouseEvent((Component) e.getSource(),
-                        e.getID(), e.getWhen(), e.getModifiers(),
+                        e.getID(), e.getWhen(), e.getModifiersEx(),
                         (int) (e.getX() / zoom), (int) (e.getY() / zoom),
                         e.getClickCount(), e.isPopupTrigger(), e.getButton());
                 // consume the MouseEvent and then process the modified event

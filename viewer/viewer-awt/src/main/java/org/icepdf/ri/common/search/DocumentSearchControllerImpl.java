@@ -282,16 +282,16 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                             List<WordText> hitWords = lineText.getWords();
                             // add pre padding
                             int spaces = searchPhraseHitCount - 1;
-                            spaces = spaces < 0 ? 0 : spaces;
+                            spaces = Math.max(spaces, 0);
                             int start = i - searchPhraseHitCount - spaces - wordPadding + 1;
-                            start = start < 0 ? 0 : start;
+                            start = Math.max(start, 0);
                             int end = i - searchPhraseHitCount - spaces;
-                            end = end < 0 ? 0 : end;
+                            end = Math.max(end, 0);
                             // add post padding indexes.
                             int start2 = i + 1;
-                            start2 = start2 > lineWordsSize ? lineWordsSize : start2;
+                            start2 = Math.min(start2, lineWordsSize);
                             int end2 = start2 + wordPadding;
-                            end2 = end2 > lineWordsSize ? lineWordsSize : end2;
+                            end2 = Math.min(end2, lineWordsSize);
 
                             for (int p = start; p < end; p++) {
                                 hitWords.add(lineWords.get(p));
@@ -557,10 +557,10 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         ArrayList<MarkupAnnotation> foundAnnotations = new ArrayList<>();
         if (annotationReferences != null && annotationReferences.size() > 0) {
             // get search terms from model and search for each occurrence.
-            Collection<SearchTerm> terms = searchModel.getSearchTerms();
+            ArrayList<SearchTerm> terms = searchModel.getSearchTerms();
             // we need to do the search for  each term.
             if (terms.size() > 0) {
-                SearchTerm term = ((ArrayList<SearchTerm>) terms).get(0);
+                SearchTerm term = terms.get(0);
                 Pattern searchPattern = term.getRegexPattern();
                 String searchTerm = term.getTerm();
                 for (Object annotationReference : annotationReferences) {
@@ -599,8 +599,8 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                 names != null && names.getDestsNameTree() != null) {
             NameTree nameTree = names.getDestsNameTree();
             if (nameTree != null) {
-                Collection<SearchTerm> terms = searchModel.getSearchTerms();
-                SearchTerm term = ((ArrayList<SearchTerm>) terms).get(0);
+                ArrayList<SearchTerm> terms = searchModel.getSearchTerms();
+                SearchTerm term = terms.get(0);
                 Pattern searchPattern = term.getRegexPattern();
                 String searchTerm = term.getTerm();
                 if (searchPattern == null) {
@@ -650,8 +650,8 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         ArrayList<OutlineItem> foundOutlines = new ArrayList<>();
         Outlines outlines = document.getCatalog().getOutlines();
         if (outlines != null && searchModel.getSearchTerms().size() > 0) {
-            Collection<SearchTerm> terms = searchModel.getSearchTerms();
-            SearchTerm term = ((ArrayList<SearchTerm>) terms).get(0);
+            ArrayList<SearchTerm> terms = searchModel.getSearchTerms();
+            SearchTerm term = terms.get(0);
             Pattern searchPattern = term.getRegexPattern();
             String searchTerm = term.getTerm();
             if (searchPattern == null) {

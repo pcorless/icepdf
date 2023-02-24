@@ -42,7 +42,7 @@ public class Trailer {
     public void parseXrefOffset(ByteBuffer byteBuffer) throws CrossReferenceStateException {
         try {
             // go back 3k as we have two files that have a bunch of crud at the end but are otherwise OK.
-            parseXrefOffset(byteBuffer, byteBuffer.limit() < 1028 ? byteBuffer.limit() : 1028);
+            parseXrefOffset(byteBuffer, Math.min(byteBuffer.limit(), 1028));
         } catch (CrossReferenceStateException e) {
             int limit = byteBuffer.limit();
             // must be lots of garbage at the end of file, so lets search further into the file.

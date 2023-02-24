@@ -151,12 +151,10 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.weightx = 1.0;
-        constraints.anchor = GridBagConstraints.NORTH;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(5, 1, 5, 1);
 
         // add everything back again.
-        annotationPropertyPanel = buildAnnotationPropertyPanel(null, controller);
         actionsPanel = new ActionsPanel(controller);
         borderPanel = new BorderPanel(controller);
 

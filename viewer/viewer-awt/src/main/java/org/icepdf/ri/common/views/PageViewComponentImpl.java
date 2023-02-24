@@ -215,7 +215,9 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
      * @return list of annotation components, can be null.
      */
     public ArrayList<AbstractAnnotationComponent> getAnnotationComponents() {
-        return annotationComponents;
+        synchronized (annotationComponentsLock) {
+            return annotationComponents;
+        }
     }
 
     /**
@@ -430,22 +432,24 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
      */
     public void addAnnotation(AnnotationComponent annotation) {
         // delegate to handler.
-        if (annotationComponents == null) {
-            annotationComponents = new ArrayList<>();
-            annotationToComponent = new HashMap<>();
-        }
-        annotationComponents.add((AbstractAnnotationComponent) annotation);
-        annotationToComponent.put(annotation.getAnnotation(), annotation);
-        if (annotation instanceof PopupAnnotationComponent) {
-            this.add((AbstractAnnotationComponent) annotation, JLayeredPane.POPUP_LAYER);
-        } else if (annotation instanceof MarkupAnnotationComponent) {
-            MarkupAnnotationComponent markupAnnotationComponent = (MarkupAnnotationComponent) annotation;
-            PopupAnnotationComponent popupAnnotationComponent = markupAnnotationComponent.getPopupAnnotationComponent();
-            this.add(new MarkupGlueComponent(markupAnnotationComponent, popupAnnotationComponent),
-                    JLayeredPane.DEFAULT_LAYER);
-            this.add((AbstractAnnotationComponent) annotation, JLayeredPane.PALETTE_LAYER);
-        } else {
-            this.add((AbstractAnnotationComponent) annotation, JLayeredPane.PALETTE_LAYER);
+        synchronized (annotationComponentsLock) {
+            if (annotationComponents == null) {
+                annotationComponents = new ArrayList<>();
+                annotationToComponent = new HashMap<>();
+            }
+            annotationComponents.add((AbstractAnnotationComponent) annotation);
+            annotationToComponent.put(annotation.getAnnotation(), annotation);
+            if (annotation instanceof PopupAnnotationComponent) {
+                this.add((AbstractAnnotationComponent) annotation, JLayeredPane.POPUP_LAYER);
+            } else if (annotation instanceof MarkupAnnotationComponent) {
+                MarkupAnnotationComponent markupAnnotationComponent = (MarkupAnnotationComponent) annotation;
+                PopupAnnotationComponent popupAnnotationComponent = markupAnnotationComponent.getPopupAnnotationComponent();
+                this.add(new MarkupGlueComponent(markupAnnotationComponent, popupAnnotationComponent),
+                        JLayeredPane.DEFAULT_LAYER);
+                this.add((AbstractAnnotationComponent) annotation, JLayeredPane.PALETTE_LAYER);
+            } else {
+                this.add((AbstractAnnotationComponent) annotation, JLayeredPane.PALETTE_LAYER);
+            }
         }
     }
 
@@ -455,22 +459,24 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
      * @param annotationComp annotation to be removed.
      */
     public void removeAnnotation(AnnotationComponent annotationComp) {
-        annotationComponents.remove(annotationComp);
-        if (annotationComp.getAnnotation() != null) {
-            annotationToComponent.remove(annotationComp.getAnnotation());
-        } else {
-            annotationToComponent.entrySet().stream().filter(e -> e.getValue().equals(annotationComp)).findFirst()
-                    .ifPresent(e -> annotationToComponent.remove(e.getKey()));
-        }
-        this.remove((AbstractAnnotationComponent) annotationComp);
-        // make sure we remove the glue
-        if (annotationComp instanceof MarkupAnnotationComponent) {
-            synchronized (this.getTreeLock()) {
-                Component[] components = this.getComponents();
-                for (Component component : components) {
-                    if (component instanceof MarkupGlueComponent &&
-                            ((MarkupGlueComponent) component).getMarkupAnnotationComponent().equals(annotationComp)) {
-                        this.remove(component);
+        synchronized (annotationComponentsLock) {
+            annotationComponents.remove(annotationComp);
+            if (annotationComp.getAnnotation() != null) {
+                annotationToComponent.remove(annotationComp.getAnnotation());
+            } else {
+                annotationToComponent.entrySet().stream().filter(e -> e.getValue().equals(annotationComp)).findFirst()
+                        .ifPresent(e -> annotationToComponent.remove(e.getKey()));
+            }
+            this.remove((AbstractAnnotationComponent) annotationComp);
+            // make sure we remove the glue
+            if (annotationComp instanceof MarkupAnnotationComponent) {
+                synchronized (this.getTreeLock()) {
+                    Component[] components = this.getComponents();
+                    for (Component component : components) {
+                        if (component instanceof MarkupGlueComponent &&
+                                ((MarkupGlueComponent) component).getMarkupAnnotationComponent().equals(annotationComp)) {
+                            this.remove(component);
+                        }
                     }
                 }
             }

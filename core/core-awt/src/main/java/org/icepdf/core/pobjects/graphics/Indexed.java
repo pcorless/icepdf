@@ -73,14 +73,14 @@ public class Indexed extends PColorSpace {
             if (tmp instanceof Stream) {
                 Stream lookup = (Stream) tmp;
                 byte[] colorStream = lookup.getDecodedStreamBytes(0);
-                int length = colors.length < colorStream.length ? colors.length : colorStream.length;
+                int length = Math.min(colors.length, colorStream.length);
                 System.arraycopy(colorStream, 0, colors, 0, length);
             } else if (tmp instanceof StringObject) {
                 // treating as raw unencrypted string
                 StringBuilder stringData = ((StringObject) tmp).getHexStringBuffer();
                 int colorStreamLength = stringData.length();
                 byte[] colorStream = new byte[colorStreamLength / 2];
-                int length = colors.length < colorStream.length ? colors.length : colorStream.length;
+                int length = Math.min(colors.length, colorStream.length);
                 for (int i = 0, j = 0, max = colorStreamLength / 2; i < max; i++, j += 2) {
                     colorStream[i] = (byte) Integer.parseInt(stringData.substring(j, j + 2), 16);
                 }

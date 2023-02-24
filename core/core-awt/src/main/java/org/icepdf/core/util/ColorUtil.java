@@ -489,14 +489,9 @@ public class ColorUtil {
                             break L;
                         case 'y':
                             c = s.charAt(2);
-                            if (c == 'a') {
+                            if (c == 'a' || c == 'e') {
                                 if (s.charAt(0) == 'g' && s.charAt(1) == 'r') {
                                     id = Id_gray;
-                                    break L0;
-                                }
-                            } else if (c == 'e') {
-                                if (s.charAt(0) == 'g' && s.charAt(1) == 'r') {
-                                    id = Id_grey;
                                     break L0;
                                 }
                             } else if (c == 'v') {
@@ -1128,7 +1123,7 @@ public class ColorUtil {
                     id = Id_lightgoldenrodyellow;
                     break;
             }
-            if (X != null && X != s && !X.equals(s)) id = 0;
+            if (X != null && !X.equals(s)) id = 0;
         }
 // #/generated#
 // #/string_id_map#

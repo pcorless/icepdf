@@ -72,9 +72,6 @@ public class FontPanel extends JPanel implements ActionListener, WindowListener 
         setLayout(new GridBagLayout());
 
         constraints = new GridBagConstraints();
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.weightx = 1.0;
-        constraints.weighty = 0;
         constraints.anchor = GridBagConstraints.NORTHWEST;
         constraints.insets = new Insets(1, 5, 5, 5);
 

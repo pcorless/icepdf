@@ -745,7 +745,7 @@ public final class ViewerPropertiesManager {
 
     private static String makeResPath(String prefix, String base_name) {
         if (base_name.length() != 0 && base_name.charAt(0) == '/') {
-            return base_name.substring(1, base_name.length());
+            return base_name.substring(1);
         } else if (prefix == null) {
             return base_name;
         } else {

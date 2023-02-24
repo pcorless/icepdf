@@ -337,11 +337,10 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         // font.
         if (fontDescriptor == null && basefont != null) {
             // see if the baseFont name matches one of the AFM names
-            Object afm = AFM.AFMs.get(basefont.toLowerCase());
+            AFM afm = AFM.AFMs.get(basefont.toLowerCase());
             if (afm instanceof AFM) {
-                AFM fontMetrix = (AFM) afm;
                 // finally create a fontDescriptor based on AFM data.
-                fontDescriptor = FontDescriptor.createDescriptor(library, fontMetrix);
+                fontDescriptor = FontDescriptor.createDescriptor(library, afm);
                 fontDescriptor.init(subtype);
             }
         }
@@ -419,7 +418,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         isFontSubstitution = true;
 //        isAFMFont = true;
         // awt font reference just for debugging purposes.
-        java.awt.Font awtFont = null;
+        java.awt.Font awtFont;
 
         // get most types of embedded fonts from here
         if (fontDescriptor != null && fontDescriptor.getEmbeddedFont() != null) {
@@ -519,13 +518,13 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                 font = new OFont(awtFont);
                 basefont = "sansserif";
             }
-            // see if we working with a mono spaced font
+            // see if we are working with a monospaced font
             else if ((font.getName().toLowerCase().contains("courier") ||
                     font.getName().toLowerCase().contains("courier new") ||
                     font.getName().toLowerCase().contains("couriernew") ||
                     font.getName().toLowerCase().contains("prestige") ||
                     font.getName().toLowerCase().contains("eversonmono") ||
-                    font.getName().toLowerCase().contains("Everson Mono"))) {
+                    font.getName().toLowerCase().contains("everson mono"))) {
                 awtFont = new java.awt.Font("monospaced", font.getStyle(), (int) font.getSize());
                 font = new OFont(awtFont);
                 basefont = "monospaced";

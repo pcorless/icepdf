@@ -79,11 +79,7 @@ public class Shapes {
      * @return number of shapes on the stack
      */
     public int getShapesCount() {
-        if (shapes != null) {
-            return shapes.size();
-        } else {
-            return 0;
-        }
+        return shapes.size();
     }
 
     public ArrayList<DrawCmd> getShapes() {
@@ -150,8 +146,7 @@ public class Shapes {
             // for loops actually faster in this case.
             for (int i = 0, max = shapes.size(); i < max; i++) {
                 // try and minimize interrupted checks, costly.
-                if (interrupted || (i % 1000 == 0 && Thread.currentThread().isInterrupted())) {
-                    interrupted = false;
+                if (i % 1000 == 0 && Thread.currentThread().isInterrupted()) {
                     throw new InterruptedException("Page painting thread interrupted");
                 }
 
@@ -191,9 +186,7 @@ public class Shapes {
      * it contains.
      */
     public void contract() {
-        if (shapes != null) {
-            shapes.trimToSize();
-        }
+        shapes.trimToSize();
     }
 
     public int getRule() {

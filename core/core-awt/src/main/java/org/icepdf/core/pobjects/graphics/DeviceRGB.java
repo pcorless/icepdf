@@ -40,11 +40,7 @@ public class DeviceRGB extends PColorSpace {
     private float validateColorRange(float component) {
         if (component < 0.0f) {
             return 0.0f;
-        } else if (component > 1.0f) {
-            return 1.0f;
-        } else {
-            return component;
-        }
+        } else return Math.min(component, 1.0f);
     }
 
     /**

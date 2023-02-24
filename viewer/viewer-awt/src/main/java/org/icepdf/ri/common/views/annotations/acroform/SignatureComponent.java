@@ -167,11 +167,11 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
     private SignatureWidgetAnnotation getSignatureWidgetAnnotation() {
         SignatureWidgetAnnotation widget = null;
         if (annotation instanceof SignatureWidgetAnnotation) {
-            widget = (SignatureWidgetAnnotation) annotation;
+            widget = annotation;
         } else {
-            // corner case for PDF that aren't well formed
+            // corner case for PDF that aren't well-formed
             try {
-                widget = new SignatureWidgetAnnotation(annotation);
+                widget = new SignatureWidgetAnnotation(null);
                 widget.init();
                 annotation = widget;
             } catch (InterruptedException e) {
