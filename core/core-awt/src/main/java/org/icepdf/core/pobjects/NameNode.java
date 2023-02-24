@@ -48,7 +48,7 @@ public class NameNode extends Dictionary {
         super(l, h);
         // root node can either be a Kids or Names
         Object o = library.getObject(entries, KIDS_KEY);
-        if (o != null && o instanceof List) {
+        if (o instanceof List) {
             // we have a kids array which can be composed of an intermediary
             // /limits/kids and or the leaf /limits/names
             kidsReferences = (List) o;
@@ -58,13 +58,13 @@ public class NameNode extends Dictionary {
             // process the names
             namesAreDecrypted = false;
             o = library.getObject(entries, NAMES_KEY);
-            if (o != null && o instanceof List) {
+            if (o instanceof List) {
                 namesAndValues = (List) o;
             }
         }
         // assign the upper and lower limits if any.
         o = library.getObject(entries, LIMITS_KEY);
-        if (o != null && o instanceof List) {
+        if (o instanceof List) {
             List limits = (List) o;
             if (limits.size() >= 2) {
                 lowerLimit = decryptIfText(limits.get(0));

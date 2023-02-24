@@ -285,7 +285,7 @@ public class OutlineItem extends Dictionary {
             while (nextReference != null) {
                 // result the outline dictionary
                 tmp = library.getObject(nextReference);
-                if (tmp == null || !(tmp instanceof DictionaryEntries)) {
+                if (!(tmp instanceof DictionaryEntries)) {
                     break;
                 } else {
                     dictionary = (DictionaryEntries) tmp;

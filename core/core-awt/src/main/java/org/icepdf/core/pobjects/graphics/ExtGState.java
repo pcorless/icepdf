@@ -459,7 +459,7 @@ public class ExtGState extends Dictionary {
 
     public SoftMask getSMask() {
         Object tmp = library.getObject(entries, SMASK_KEY);
-        if (tmp != null && tmp instanceof DictionaryEntries) {
+        if (tmp instanceof DictionaryEntries) {
             // create a new SMask dictionary
             SoftMask softMask = new SoftMask(library, (DictionaryEntries) tmp);
             softMask.setPObjectReference(library.getReference(entries, SMASK_KEY));

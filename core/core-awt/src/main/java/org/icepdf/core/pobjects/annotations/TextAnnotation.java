@@ -126,7 +126,7 @@ public class TextAnnotation extends MarkupAnnotation {
 
         // state
         Object value = library.getObject(entries, STATE_KEY);
-        if (value != null && value instanceof StringObject) {
+        if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
             state = text.getDecryptedLiteralString(securityManager);
         } else if (value instanceof String) {
@@ -141,7 +141,7 @@ public class TextAnnotation extends MarkupAnnotation {
 
         // state model
         value = library.getObject(entries, STATE_MODEL_KEY);
-        if (value != null && value instanceof StringObject) {
+        if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
             stateModel = text.getDecryptedLiteralString(securityManager);
         } else if (value instanceof String) {

@@ -663,7 +663,7 @@ public abstract class Annotation extends Dictionary {
             DictionaryEntries borderMap = new DictionaryEntries();
             // get old school border
             Object borderObject = getObject(BORDER_KEY);
-            if (borderObject != null && borderObject instanceof List) {
+            if (borderObject instanceof List) {
                 border = (List) borderObject;
                 // copy over the properties to border style.
                 if (border.size() == 3) {
@@ -931,7 +931,7 @@ public abstract class Annotation extends Dictionary {
         // subsequent new or edit actions will put in a reference and property
         // dictionary entry.
         tmp = getObject(ACTION_KEY);
-        if (tmp != null && tmp instanceof Action) {
+        if (tmp instanceof Action) {
             return (Action) tmp;
         }
         return null;
@@ -1227,7 +1227,7 @@ public abstract class Annotation extends Dictionary {
     public boolean isBorder() {
         boolean borderWidth = false;
         Object border = getObject(BORDER_KEY);
-        if (border != null && border instanceof List) {
+        if (border instanceof List) {
             List borderProps = (List) border;
             if (borderProps.size() == 3) {
                 borderWidth = ((Number) borderProps.get(2)).floatValue() > 0;
@@ -1772,7 +1772,7 @@ public abstract class Annotation extends Dictionary {
     public PDate getModifiedDate() {
         if (modifiedDate == null) {
             Object value = library.getObject(entries, M_KEY);
-            if (value != null && value instanceof StringObject) {
+            if (value instanceof StringObject) {
                 StringObject text = (StringObject) value;
                 modifiedDate = new PDate(securityManager,
                         text.getDecryptedLiteralString(securityManager));

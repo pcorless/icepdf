@@ -92,15 +92,13 @@ public class VariableTextFieldDictionary extends FieldDictionary {
         Number value = library.getInt(entries, Q_KEY);
         int quad = value.intValue();
         switch (quad) {
-            case 0:
-                quadding = Quadding.LEFT_JUSTIFIED;
-                break;
             case 1:
                 quadding = Quadding.CENTERED;
                 break;
             case 2:
                 quadding = Quadding.RIGHT_JUSTIFIED;
                 break;
+            case 0:
             default:
                 quadding = Quadding.LEFT_JUSTIFIED;
                 break;

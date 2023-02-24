@@ -133,7 +133,8 @@ public class BaseWriter {
         } else if (val instanceof HexStringObject) {
             hexStringObjectWriter.write((HexStringObject) val, output);
         } else if (val instanceof List) {
-            arrayWriter.write((List) val, output);
+            //noinspection unchecked
+            arrayWriter.write((List<Object>) val, output);
         } else if (val instanceof Dictionary) {
             writeDictionary((Dictionary) val, output);
         } else if (val instanceof DictionaryEntries) {

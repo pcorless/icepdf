@@ -87,7 +87,7 @@ public interface DocumentSearchController {
      * @param wordPadding word padding on either side of hit to give context
      *                    to found words in the returned LineText.  Values should be greater than
      *                    zero
-     * @return number of hits found for this page.
+     * @return List<LineText> hits found for this page.
      */
     List<LineText> searchHighlightPage(int pageIndex, int wordPadding);
 

@@ -116,7 +116,7 @@ public class StateManager {
      * Returns an instance of the specified reference
      *
      * @param reference reference to look for an existing usage
-     * @return Change of corresponding reference if present, false otherwise.
+     * @return Change of corresponding reference if present
      */
     public Object getChange(Reference reference) {
         Change change = changes.get(reference);

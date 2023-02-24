@@ -178,7 +178,6 @@ public abstract class AbstractContentParser {
      * @param streamBytes byte stream containing page content
      * @return a Shapes Object containing all the pages text and images shapes.
      * @throws InterruptedException if current parse thread is interrupted.
-     * @throws java.io.IOException  unexpected end of content stream.
      */
     public abstract ContentParser parse(byte[][] streamBytes, Reference[] references, Page page)
             throws InterruptedException;
@@ -647,6 +646,7 @@ public abstract class AbstractContentParser {
             // pop dashPhase off the stack
             dashPhase = Math.abs(((Number) stack.pop()).floatValue());
             // pop the dashVector of the stack
+            //noinspection unchecked
             java.util.List<Object> dashVector = (java.util.List<Object>) stack.pop();
             // if the dash vector size is zero we have a default none dashed
             // line and thus we skip out

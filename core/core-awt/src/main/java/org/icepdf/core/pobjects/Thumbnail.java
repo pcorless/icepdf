@@ -72,7 +72,7 @@ public class Thumbnail extends Dictionary {
         initialized = true;
     }
 
-    public BufferedImage getImage() throws InterruptedException {
+    public BufferedImage getImage() {
         if (!initialized) {
             init();
         }

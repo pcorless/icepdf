@@ -232,8 +232,7 @@ public class SeedValueDictionary extends Dictionary {
      * @see #REASONS_KEY
      */
     public List<StringObject> getReasons() {
-        List tmp = library.getArray(entries, REASONS_KEY);
-        return tmp;
+        return library.getArray(entries, REASONS_KEY);
     }
 
     // todo consider class for dictionary def.
@@ -261,8 +260,7 @@ public class SeedValueDictionary extends Dictionary {
      * @see #LEGAL_ATTESTATION_KEY
      */
     public List<StringObject> getLegalAttestation() {
-        List tmp = library.getArray(entries, LEGAL_ATTESTATION_KEY);
-        return tmp;
+        return library.getArray(entries, LEGAL_ATTESTATION_KEY);
     }
 
     /**

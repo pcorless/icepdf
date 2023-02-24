@@ -142,7 +142,6 @@ public class Mediator {
     /**
      * Clears/removes all results files associated with the proje
      *
-     * @param captureSet
      */
     private void clearCaptureSetResults(CaptureSet captureSet) {
         Path resultsFolder = Paths.get(PreferencesController.getResultsPathDirectory(),
@@ -168,7 +167,6 @@ public class Mediator {
     /**
      * Load the current project and populate the UI with project data.
      *
-     * @param project
      */
     public void loadProject(Project project) {
         if (currentProject != null) {

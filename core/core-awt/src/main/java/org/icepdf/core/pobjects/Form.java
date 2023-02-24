@@ -156,9 +156,9 @@ public class Form extends Stream {
             return;
         }
         Object v = library.getObject(entries, MATRIX_KEY);
-        if (v != null && v instanceof List) {
+        if (v instanceof List) {
             matrix = getAffineTransform((List) v);
-        } else if (v != null && v instanceof AffineTransform) {
+        } else if (v instanceof AffineTransform) {
             matrix = (AffineTransform) v;
         }
         bbox = library.getRectangle(entries, BBOX_KEY);

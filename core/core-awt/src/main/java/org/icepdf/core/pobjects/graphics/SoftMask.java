@@ -99,7 +99,7 @@ public class SoftMask extends Dictionary {
             return softMask;
         }
         Object GKey = library.getObject(entries, G_KEY);
-        if (GKey != null && GKey instanceof Form) {
+        if (GKey instanceof Form) {
             try {
                 softMask = (Form) GKey;
                 softMask.init();

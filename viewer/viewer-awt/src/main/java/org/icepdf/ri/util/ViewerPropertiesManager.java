@@ -364,7 +364,6 @@ public final class ViewerPropertiesManager {
     /**
      * Removes the
      *
-     * @param propertyName
      */
     public void remove(String propertyName) {
         localProperties.remove(propertyName);

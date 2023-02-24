@@ -411,7 +411,7 @@ public class Parser {
                             obj = hashMap.get(new Name("type"));
                         }
                         // Process the know first level dictionaries.
-                        if (obj != null && obj instanceof Name) {
+                        if (obj instanceof Name) {
                             Name n = (Name) obj;
                             if (n.equals(Catalog.TYPE)) {
                                 stack.push(new Catalog(library, hashMap));
@@ -945,13 +945,12 @@ public class Parser {
                 // we need to return the CR LR, as it is need by stream parsing
                 if (currentByte == 13 || currentByte == 10) {
                     reader.reset();
-                    break;
                 }
                 // break on any whitespace
                 else {
                     // return  stringBuffer.toString();
-                    break;
                 }
+                break;
             } else if (isDelimiter(currentChar)) {
                 // reset the reader so we start on this token on the next parse
                 reader.reset();

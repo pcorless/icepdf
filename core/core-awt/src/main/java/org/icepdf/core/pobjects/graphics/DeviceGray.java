@@ -46,14 +46,12 @@ public class DeviceGray extends PColorSpace {
     public Color getColor(float[] f, boolean fillAndStroke) {
         float gray = f[0] > 1.0 ? f[0] / 255.f : f[0];
         Color color = colorHashMap.get(f[0]);
-        if (color != null) {
-            return color;
-        } else {
+        if (color == null) {
             color = new Color(RGB_COLOR_SPACE,
                     new Color(gray, gray, gray).getRGBComponents(null),
                     1);
             colorHashMap.put(f[0], color);
-            return color;
         }
+        return color;
     }
 }

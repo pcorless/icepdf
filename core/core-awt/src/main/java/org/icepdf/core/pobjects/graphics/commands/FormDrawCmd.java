@@ -262,8 +262,6 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 if (!xForm.isShading()) {
                     canvas.translate(-(int) bBox.getX(), -(int) bBox.getY());
                     canvas.setClip(bBox);
-                    xFormShapes.paint(canvas);
-                    xFormShapes.setPageParent(null);
                 }
                 // basic support for gradient fills,  still have a few corners cases to work on.
                 else {
@@ -275,9 +273,9 @@ public class FormDrawCmd extends AbstractDrawCmd {
                     }
                     canvas.translate(-x, -y);
                     canvas.setClip(bBox.getBounds2D());
-                    xFormShapes.paint(canvas);
-                    xFormShapes.setPageParent(null);
                 }
+                xFormShapes.paint(canvas);
+                xFormShapes.setPageParent(null);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

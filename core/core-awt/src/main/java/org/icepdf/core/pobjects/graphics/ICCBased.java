@@ -136,13 +136,11 @@ public class ICCBased extends PColorSpace {
             ConcurrentHashMap<Integer, Color> iccColorCache, int key,
             ColorSpace colorSpace, float[] f) {
         Color color = iccColorCache.get(key);
-        if (color != null) {
-            return color;
-        } else {
+        if (color == null) {
             color = new Color(calculateColor(f, colorSpace));
             iccColorCache.put(key, color);
-            return color;
         }
+        return color;
     }
 
     public Color getColor(float[] f, boolean fillAndStroke) {

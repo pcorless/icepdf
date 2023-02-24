@@ -237,7 +237,7 @@ public class DestinationComponent extends JComponent implements FocusListener, M
                 DocumentViewModel.DISPLAY_TOOL_SELECTION &&
                 documentViewController.getParentController().getViewModel().isAnnotationEditingMode()) {
             Border border = getBorder();
-            if (border != null && border instanceof ResizableBorder) {
+            if (border instanceof ResizableBorder) {
                 cursor = ((ResizableBorder) border).getCursor(e);
             }
             startPos = e.getPoint();

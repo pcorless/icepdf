@@ -231,10 +231,8 @@ public class Separation extends PColorSpace {
             float[] y = tintTransform.calculate(f);
             color = alternate.getColor(y);
             colorCache.put(key, color);
-            return color;
-        } else {
-            return color;
         }
+        return color;
     }
 
     public float getTint() {

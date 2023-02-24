@@ -259,7 +259,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
 
         // ToUnicode indicates that we now have CMap stream that need to be parsed
         Object objectUnicode = library.getObject(entries, TOUNICODE_KEY);
-        if (objectUnicode != null && objectUnicode instanceof Stream) {
+        if (objectUnicode instanceof Stream) {
             toUnicodeCMap = new CMap((Stream) objectUnicode);
             toUnicodeCMap.init();
         }
@@ -338,7 +338,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         if (fontDescriptor == null && basefont != null) {
             // see if the baseFont name matches one of the AFM names
             Object afm = AFM.AFMs.get(basefont.toLowerCase());
-            if (afm != null && afm instanceof AFM) {
+            if (afm instanceof AFM) {
                 AFM fontMetrix = (AFM) afm;
                 // finally create a fontDescriptor based on AFM data.
                 fontDescriptor = FontDescriptor.createDescriptor(library, fontMetrix);

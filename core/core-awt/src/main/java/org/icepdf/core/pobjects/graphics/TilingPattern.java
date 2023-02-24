@@ -251,10 +251,8 @@ public class TilingPattern extends Stream implements Pattern {
         // if now shapes then we go with black.
         if (unColored == null) {
             unColored = Color.black;
-            return unColored;
-        } else {
-            return unColored;
         }
+        return unColored;
     }
 
     /**

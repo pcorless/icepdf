@@ -3,7 +3,6 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.Library;
 
-import java.io.IOException;
 import java.io.InputStream;
 
 /**
@@ -106,7 +105,7 @@ public class EmbeddedFileStream extends Dictionary {
     /**
      * (Optional) The size of the uncompressed embedded file, in bytes.
      *
-     * @return uncompressed size in bytes,  null if not specified.
+     * @return uncompressed size in bytes.
      */
     public int getParamUncompressedSize() {
         int size = library.getInt(getParams(), PARAMS_SIZE_KEY);
@@ -130,7 +129,6 @@ public class EmbeddedFileStream extends Dictionary {
      * file handler.
      *
      * @return decoded byte array input stream.
-     * @throws IOException io exception during stream decoding.
      */
     public InputStream getDecodedStreamData() {
         return fileStream.getDecodedByteArrayInputStream();
@@ -143,7 +141,7 @@ public class EmbeddedFileStream extends Dictionary {
      */
     public PDate getParamCreationData() {
         Object value = library.getObject(getParams(), PARAMS_CREATION_DATE_KEY);
-        if (value != null && value instanceof StringObject) {
+        if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
             return new PDate(securityManager, text.getDecryptedLiteralString(securityManager));
         }
@@ -157,7 +155,7 @@ public class EmbeddedFileStream extends Dictionary {
      */
     public PDate getParamLastModifiedData() {
         Object value = library.getObject(getParams(), PARAMS_MOD_DATE_KEY);
-        if (value != null && value instanceof StringObject) {
+        if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
             return new PDate(securityManager, text.getDecryptedLiteralString(securityManager));
         }
@@ -182,7 +180,7 @@ public class EmbeddedFileStream extends Dictionary {
      */
     public String getCheckSum() {
         Object value = library.getObject(getParams(), PARAMS_CHECK_SUM_KEY);
-        if (value != null && value instanceof StringObject) {
+        if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
             return text.getDecryptedLiteralString(securityManager);
         }

@@ -100,7 +100,7 @@ public class InkAnnotation extends MarkupAnnotation {
      * Converts the ink path back to an array of points.
      *
      * @param inkPath path to translate to an array
-     * @return an array of an array of points.
+     * @return a list of an array of points.
      */
     private List<List<Float>> convertPathToArray(Shape inkPath) {
         List<List<Float>> inkLists = new ArrayList<>();

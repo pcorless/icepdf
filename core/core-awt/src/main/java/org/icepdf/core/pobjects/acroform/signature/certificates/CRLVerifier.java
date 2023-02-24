@@ -56,7 +56,6 @@ public class CRLVerifier {
      *
      * @param cert the certificate to be checked for revocation
      * @throws CertificateVerificationException if the certificate is revoked
-     * @throws RevocationVerificationException  cert is revoked.
      */
     public static void verifyCertificateCRLs(X509Certificate cert)
             throws CertificateVerificationException {
@@ -144,7 +143,6 @@ public class CRLVerifier {
      *
      * @param cert cert to extract CRL from.
      * @return crl distribution list.
-     * @throws CertificateParsingException error parsing the cert.
      * @throws IOException                 file reading problem
      */
     public static List<String> getCrlDistributionPoints(

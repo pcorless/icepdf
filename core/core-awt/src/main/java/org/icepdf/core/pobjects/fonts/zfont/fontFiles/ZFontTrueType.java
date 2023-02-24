@@ -44,8 +44,8 @@ public class ZFontTrueType extends ZSimpleFont {
 
     }
 
-    public ZFontTrueType(URL url) throws Exception {
-        this(url.openStream().readAllBytes());
+    public ZFontTrueType(byte[] fontBytes, URL url) throws Exception {
+        this(fontBytes);
         source = url;
     }
 

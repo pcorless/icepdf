@@ -670,7 +670,7 @@ public class CCITTFax {
             Utils.setIntIntoByteArrayBE(height, fakeHeaderBytes, 0x66);      // RowsPerStrip
             int lengthOfCompressedData = Integer.MAX_VALUE - 1;                // StripByteCounts
             Object lengthValue = library.getObject(streamDictionary, Stream.LENGTH_KEY);
-            if (lengthValue != null && lengthValue instanceof Number)
+            if (lengthValue instanceof Number)
                 lengthOfCompressedData = ((Number) lengthValue).intValue();
             else {
                 // JAI's SeekableStream pukes if we give a number too large

@@ -493,7 +493,7 @@ public class Lexer {
         return array;
     }
 
-    private Object startReference() throws IOException {
+    private Object startReference() {
         int objectNumber = (Integer) startNumber();
         parseNextState();
         int generationNumber = (Integer) startNumber();

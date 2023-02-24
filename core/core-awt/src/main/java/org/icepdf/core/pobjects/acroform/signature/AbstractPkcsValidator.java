@@ -143,6 +143,8 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
             // should always be 1.
             int cmsVersion = ((ASN1Integer) signedData.getObjectAt(0)).getValue().intValue();
             logger.finest("CMS version: " + cmsVersion);
+
+            //noinspection unchecked
             Enumeration<ASN1Sequence> enumeration = ((ASN1Set) signedData.getObjectAt(1)).getObjects();
             while (enumeration.hasMoreElements()) {
                 String objectId = ((ASN1ObjectIdentifier) enumeration.nextElement().getObjectAt(0)).getId();
@@ -177,8 +179,9 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
                         Pkcs7Validator.getObjectIdName(eObjectIdentifierId));
             }
             // should be octets encode as pkcs#7
-            ASN1OctetString eContent = (ASN1OctetString) ((ASN1TaggedObject) encapsulatedContentInfo.getObjectAt(1))
-                    .getObject();
+            ASN1TaggedObject taggedObject = ASN1TaggedObject.getInstance(encapsulatedContentInfo.getObjectAt(1));
+            ASN1Object baseObject = taggedObject.getBaseObject();
+            ASN1OctetString eContent = ASN1OctetString.getInstance(baseObject);
             // shows up in pkcs7.sha1 only
             encapsulatedContentInfoData = eContent.getOctets();
             if (logger.isLoggable(Level.FINER)) {
@@ -409,7 +412,9 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
             throw new SignatureIntegrityException("ANSI.1 object must be of type Signed Data");
         }
         // Signed-data content type -- start of parsing
-        return (ASN1Sequence) ((ASN1TaggedObject) cmsSequence.getObjectAt(1)).getObject();
+        ASN1TaggedObject taggedObject = ASN1TaggedObject.getInstance(cmsSequence.getObjectAt(1));
+        ASN1Object baseObject = taggedObject.getBaseObject();
+        return ASN1Sequence.getInstance(baseObject);
     }
 
     // Verify that the signature is indeed correct and verify the public key is a match.

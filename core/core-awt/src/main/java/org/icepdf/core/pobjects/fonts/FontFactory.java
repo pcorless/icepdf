@@ -23,6 +23,7 @@ import org.icepdf.core.pobjects.fonts.zfont.fontFiles.*;
 import org.icepdf.core.util.Library;
 
 import java.io.File;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -144,11 +145,12 @@ public class FontFactory {
 
     public FontFile createFontFile(URL url, int fontType, String fontSubType) {
         FontFile fontFile = null;
-        try {
+        try (InputStream inputStream = url.openStream()) {
+            byte[] fontBytes = inputStream.readAllBytes();
             if (FONT_TRUE_TYPE == fontType || FONT_OPEN_TYPE == fontType) {
-                fontFile = new ZFontTrueType(url);
+                fontFile = new ZFontTrueType(fontBytes, url);
             } else if (FONT_TYPE_1 == fontType) {
-                fontFile = new ZFontType1(url);
+                fontFile = new ZFontType1(fontBytes, url);
             }
         } catch (Exception e) {
             logger.log(Level.FINE, e, () -> "Could not create instance of font file " + fontType);

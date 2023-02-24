@@ -167,7 +167,7 @@ public class FieldDictionary extends Dictionary {
 
         // field name
         Object value = library.getObject(entries, T_KEY);
-        if (value != null && value instanceof StringObject) {
+        if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
             partialFieldName = Utils.convertStringObject(library, text);
         } else if (value instanceof String) {
@@ -175,7 +175,7 @@ public class FieldDictionary extends Dictionary {
         }
         // alternate field name.
         value = library.getObject(entries, TU_KEY);
-        if (value != null && value instanceof StringObject) {
+        if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
             alternativeFieldName = Utils.convertStringObject(library, text);
         } else if (value instanceof String) {
@@ -183,7 +183,7 @@ public class FieldDictionary extends Dictionary {
         }
         // mapping name for data export.
         value = library.getObject(entries, TM_KEY);
-        if (value != null && value instanceof StringObject) {
+        if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
             exportMappingName = Utils.convertStringObject(library, text);
         } else if (value instanceof String) {
@@ -199,7 +199,7 @@ public class FieldDictionary extends Dictionary {
         }
 
         value = library.getObject(entries, AA_KEY);
-        if (value != null && value instanceof DictionaryEntries) {
+        if (value instanceof DictionaryEntries) {
             additionalActionsDictionary = new AdditionalActionsDictionary(library, (DictionaryEntries) value);
         }
 

@@ -699,10 +699,6 @@ class StandardEncryption {
     /**
      * Revision 5 algorithm. Simply uses SHA-256
      *
-     * @param input
-     * @param password
-     * @param userKey
-     * @return
      */
     private static byte[] computeSha256(final byte[] input, final byte[] password, final byte[] userKey) {
         try {

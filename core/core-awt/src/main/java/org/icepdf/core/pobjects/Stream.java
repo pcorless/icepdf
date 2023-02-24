@@ -241,8 +241,6 @@ public class Stream extends Dictionary {
                 case "CCITTFaxDecode":
                 case "/CCF":
                 case "CCF":
-                    // Leave empty so our else clause works
-                    break;
                 case "DCTDecode":
                 case "/DCT":
                 case "DCT":

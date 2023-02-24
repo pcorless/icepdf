@@ -83,8 +83,8 @@ public class PortfolioCapture {
                         // file name and file specification pairs.
                         Object rawFileName = library.getObject(filePairs.get(i));
                         Object rawFileProperties = library.getObject(filePairs.get(i + 1));
-                        if (rawFileName != null && rawFileName instanceof LiteralStringObject &&
-                                rawFileProperties != null && rawFileProperties instanceof HashMap) {
+                        if (rawFileName instanceof LiteralStringObject &&
+                                rawFileProperties instanceof HashMap) {
                             String fileAttachmentName = Utils.convertStringObject(library, (LiteralStringObject) rawFileName);
                             // file specification has the document stream
                             FileSpecification fileSpecification = new FileSpecification(library, (DictionaryEntries) rawFileProperties);

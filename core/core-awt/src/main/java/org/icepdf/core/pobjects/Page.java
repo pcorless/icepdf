@@ -286,7 +286,7 @@ public class Page extends Dictionary {
      */
     public List<Reference> getAnnotationReferences() {
         Object annots = library.getObject(entries, ANNOTS_KEY);
-        if (annots != null && annots instanceof ArrayList) {
+        if (annots instanceof ArrayList) {
             final List<Object> list = (List<Object>) annots;
             return list.stream().filter(Reference.class::isInstance).map(Reference.class::cast).collect(Collectors.toList());
         }
@@ -296,7 +296,7 @@ public class Page extends Dictionary {
     private void initPageAnnotations() throws InterruptedException {
         // find annotations in main library for our pages dictionary
         Object annots = library.getObject(entries, ANNOTS_KEY);
-        if (annots != null && annots instanceof List) {
+        if (annots instanceof List) {
             List v = (List) annots;
             annotations = new ArrayList<>(v.size() + 1);
             // add annotations
@@ -480,7 +480,7 @@ public class Page extends Dictionary {
      */
     public Thumbnail getThumbnail() {
         Object thumb = library.getObject(entries, THUMB_KEY);
-        if (thumb != null && thumb instanceof Stream) {
+        if (thumb instanceof Stream) {
             return new Thumbnail(library, entries);
         } else {
             return null;

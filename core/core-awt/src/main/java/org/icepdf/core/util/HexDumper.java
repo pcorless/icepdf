@@ -103,7 +103,6 @@ public class HexDumper {
      * Write the memory offset to the start of each line.
      *
      * @param offsetLength line length.
-     * @throws IOException  error reading input stream.
      */
     protected void writeMemoryOffset(int offsetLength) {
         convertByteToHex(printStream, (byte) (offset >>> 8 & 255));
@@ -118,7 +117,6 @@ public class HexDumper {
      *
      * @param byteArray array of data
      * @param length    length of bytes of convert.
-     * @throws IOException  error reading input stream.
      */
     private void writeHexBytes(byte[] byteArray, int length) {
         thisLine[this.currentByte] = byteArray[length];

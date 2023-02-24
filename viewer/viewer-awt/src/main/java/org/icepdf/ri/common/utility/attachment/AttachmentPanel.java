@@ -140,8 +140,8 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
                         // file name and file specification pairs.
                         Object rawFileName = library.getObject(filePairs.get(i));
                         Object rawFileProperties = library.getObject(filePairs.get(i + 1));
-                        if (rawFileName != null && rawFileName instanceof LiteralStringObject &&
-                                rawFileProperties != null && rawFileProperties instanceof HashMap) {
+                        if (rawFileName instanceof LiteralStringObject &&
+                                rawFileProperties instanceof HashMap) {
                             String fileName = Utils.convertStringObject(library, (LiteralStringObject) rawFileName);
                             files.put(fileName, new FileSpecification(library, (DictionaryEntries) rawFileProperties));
                         }
@@ -164,7 +164,7 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
         if (e.getSource().equals(saveAsMenuItem)) {
             int selectedRow = fileTable.getSelectedRow();
             Object value = fileTableModel.getValueAt(selectedRow, DATA_COLUMN);
-            if (value != null && value instanceof FileSpecification) {
+            if (value instanceof FileSpecification) {
                 FileSpecification fileSpecification = (FileSpecification) value;
                 final EmbeddedFileStream embeddedFileStream = fileSpecification.getEmbeddedFileStream();
                 final String fileName = (String) fileTableModel.getValueAt(selectedRow, NAME_COLUMN);
@@ -180,7 +180,7 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
         if (mouseEvent.getClickCount() == 2 && mouseEvent.getButton() == MouseEvent.BUTTON1) {
             int selectedRow = fileTable.getSelectedRow();
             Object value = fileTableModel.getValueAt(selectedRow, DATA_COLUMN);
-            if (value != null && value instanceof FileSpecification) {
+            if (value instanceof FileSpecification) {
                 FileSpecification fileSpecification = (FileSpecification) value;
                 EmbeddedFileStream embeddedFileStream = fileSpecification.getEmbeddedFileStream();
                 String fileName = (String) fileTableModel.getValueAt(selectedRow, NAME_COLUMN);

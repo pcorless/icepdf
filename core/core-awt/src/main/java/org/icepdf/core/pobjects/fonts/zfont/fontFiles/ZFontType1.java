@@ -60,8 +60,7 @@ public class ZFontType1 extends ZSimpleFont {
         }
     }
 
-    public ZFontType1(URL url) throws IOException {
-        byte[] fontBytes = url.openStream().readAllBytes();
+    public ZFontType1(byte[] fontBytes, URL url) throws IOException {
         source = url;
         type1Font = Type1Font.createWithPFB(fontBytes);
         calculateFontBbox();

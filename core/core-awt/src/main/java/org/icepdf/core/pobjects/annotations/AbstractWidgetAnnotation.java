@@ -318,7 +318,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
      * null value is returned.
      *
      * @param potentialNumbers space separated string of four numbers.
-     * @return list of four numbers, null if string can not be converted.
+     * @return float[] of four numbers, null if string can not be converted.
      */
     protected float[] parseRectanglePoints(String potentialNumbers) {
         StringTokenizer toker = new StringTokenizer(potentialNumbers);

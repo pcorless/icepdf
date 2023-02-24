@@ -911,8 +911,6 @@ public class CCITTFaxDecoder {
 
                             number = decodeBlackCodeWord();
                             setToBlack(buffer, lineOffset, bitOffset, number);
-                            bitOffset += number;
-                            currChangingElems[currIndex++] = bitOffset;
                         } else {
                             number = decodeBlackCodeWord();
                             setToBlack(buffer, lineOffset, bitOffset, number);
@@ -920,9 +918,9 @@ public class CCITTFaxDecoder {
                             currChangingElems[currIndex++] = bitOffset;
 
                             number = decodeWhiteCodeWord();
-                            bitOffset += number;
-                            currChangingElems[currIndex++] = bitOffset;
                         }
+                        bitOffset += number;
+                        currChangingElems[currIndex++] = bitOffset;
 
                         a0 = bitOffset;
                     } else if (code <= 8) {
@@ -1061,8 +1059,6 @@ public class CCITTFaxDecoder {
                             number = w - bitOffset;
                         }
                         setToBlack(buffer, lineOffset, bitOffset, number);
-                        bitOffset += number;
-                        cce[currIndex++] = bitOffset;
                     } else {
                         // First a black run and then a white run follows
                         number = decodeBlackCodeWord();
@@ -1074,9 +1070,9 @@ public class CCITTFaxDecoder {
                         cce[currIndex++] = bitOffset;
 
                         number = decodeWhiteCodeWord();
-                        bitOffset += number;
-                        cce[currIndex++] = bitOffset;
                     }
+                    bitOffset += number;
+                    cce[currIndex++] = bitOffset;
 
                     a0 = bitOffset;
                 } else if (code <= 8) { // Vertical

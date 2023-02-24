@@ -115,13 +115,11 @@ public class ByteDoubleArrayInputStream extends InputStream {
     public synchronized int read() {
         float posOffset = bufOffset[posIndex] + pos;
         if (posOffset < count) {
-            if (posOffset < bufOffset[posIndex] + buf[posIndex].length) {
-                return (buf[posIndex][pos++] & 0xff);
-            } else {
+            if (!(posOffset < bufOffset[posIndex] + buf[posIndex].length)) {
                 posIndex++;
                 pos = 0;
-                return (buf[posIndex][pos++] & 0xff);
             }
+            return (buf[posIndex][pos++] & 0xff);
         } else {
             return -1;
         }

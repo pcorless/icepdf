@@ -80,7 +80,7 @@ public class ShadingType2Pattern extends ShadingPattern {
         colorSpace = PColorSpace.getColorSpace(library,
                 library.getObject(shadingDictionary, COLORSPACE_KEY));
         Object tmp = library.getObject(shadingDictionary, BACKGROUND_KEY);
-        if (tmp != null && tmp instanceof List) {
+        if (tmp instanceof List) {
             background = (java.util.List) tmp;
         }
         antiAlias = library.getBoolean(shadingDictionary, ANTIALIAS_KEY);
@@ -167,7 +167,7 @@ public class ShadingType2Pattern extends ShadingPattern {
      * @param endPoint       end of line segment.
      * @param t0             domain min
      * @param t1             domain max
-     * @return list of points found on line
+     * @return array of colour points found on the line
      */
     protected Color[] calculateColorPoints(int numberOfPoints,
                                            Point2D.Float startPoint,

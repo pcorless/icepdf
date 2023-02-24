@@ -101,7 +101,7 @@ public class JBig2Decoder extends AbstractImageDecoder {
         Class<?> jbig2ImageReaderClass = Class.forName(jbigClasses[0]);
         Class<?> jbig2ImageReaderSpiClass = Class.forName(jbigClasses[1]);
         Class<?> jbig2GlobalsClass = Class.forName(jbigClasses[2]);
-        Object jbig2ImageReaderSpi = jbig2ImageReaderSpiClass.newInstance();
+        Object jbig2ImageReaderSpi = jbig2ImageReaderSpiClass.getDeclaredConstructor().newInstance();
         Constructor<?> levigoJbig2DecoderClassConstructor =
                 jbig2ImageReaderClass.getDeclaredConstructor(javax.imageio.spi.ImageReaderSpi.class);
         Object jbig2Reader = levigoJbig2DecoderClassConstructor.newInstance(jbig2ImageReaderSpi);

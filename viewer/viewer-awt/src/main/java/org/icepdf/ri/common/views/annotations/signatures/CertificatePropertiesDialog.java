@@ -190,11 +190,10 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
                     new CertificateInfo((X509Certificate) aCert, messageBundle));
             if (root == null) {
                 root = childNode;
-                currentNode = childNode;
             } else {
                 currentNode.add(childNode);
-                currentNode = childNode;
             }
+            currentNode = childNode;
         }
         JTree tree = new JTree(root);
         // Disable HTML to disable anchor click out.

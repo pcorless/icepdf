@@ -272,7 +272,7 @@ public abstract class Font extends Dictionary {
         // is the most commonly used font family for pdfs
         basefont = "Serif";
         Object tmp = entries.get(BASEFONT_KEY);
-        if (tmp != null && tmp instanceof Name) {
+        if (tmp instanceof Name) {
             basefont = ((Name) tmp).getName();
         }
 //        basefont = cleanFontName(basefont);

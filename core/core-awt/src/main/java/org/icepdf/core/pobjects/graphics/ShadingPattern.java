@@ -148,9 +148,9 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
         // factory type approach, find shading entries and get type
         Object shading = library.getObject(attribute, SHADING_KEY);
         // setup 1-3 as they are dictionary based.
-        if (shading != null && shading instanceof DictionaryEntries) {
+        if (shading instanceof DictionaryEntries) {
             return shadingFactory(library, attribute, (DictionaryEntries) shading);
-        } else if (shading != null && shading instanceof Stream) {
+        } else if (shading instanceof Stream) {
             return getShadingPattern(library, attribute, (Stream) shading);
         }
         return null;

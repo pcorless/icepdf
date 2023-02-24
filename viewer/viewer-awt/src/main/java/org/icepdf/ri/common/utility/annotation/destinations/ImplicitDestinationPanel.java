@@ -141,7 +141,7 @@ public class ImplicitDestinationPanel extends JPanel implements ItemListener, An
 
         // get the destination object, doesn't matter where it comes from.
         Destination dest = null;
-        if (action != null && action instanceof GoToAction) {
+        if (action instanceof GoToAction) {
             dest = ((GoToAction) action).getDestination();
         }
         // alternatively we can have a dest field on Link annotations

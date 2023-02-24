@@ -194,7 +194,7 @@ public class UR3TransferParam extends Dictionary implements TransformParams {
      * permit only those rights that are enabled by the entries in the dictionary. However, conforming readers shall
      * permit saving the document as long as any rights that permit modifying the document are enabled.
      *
-     * @return array of named documents rights.
+     * @return ArrayList of named documents rights.
      */
     public ArrayList<Name> getDocumentRights() {
         return (ArrayList) library.getArray(entries, DOCUMENT_KEY);
@@ -208,7 +208,7 @@ public class UR3TransferParam extends Dictionary implements TransformParams {
      */
     public String getMsg() {
         Object value = library.getObject(entries, MSG_KEY);
-        if (value != null && value instanceof StringObject) {
+        if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
             return Utils.convertStringObject(library, text);
         } else {
@@ -231,7 +231,7 @@ public class UR3TransferParam extends Dictionary implements TransformParams {
     /**
      * An array of names specifying additional annotation-related usage rights for the document.
      *
-     * @return Array of annotation rights names, null if not set.
+     * @return ArrayList of annotation rights names, null if not set.
      */
     public ArrayList<Name> getAnnotationRights() {
         return (ArrayList) library.getArray(entries, ANNOTATION_KEY);
@@ -240,7 +240,7 @@ public class UR3TransferParam extends Dictionary implements TransformParams {
     /**
      * An array of names specifying additional form-field-related usage rights for the document.
      *
-     * @return Array of forms rights names, null if not set.
+     * @return ArrayList of forms rights names, null if not set.
      */
     public ArrayList<Name> getFormRights() {
         return (ArrayList) library.getArray(entries, FORM_KEY);

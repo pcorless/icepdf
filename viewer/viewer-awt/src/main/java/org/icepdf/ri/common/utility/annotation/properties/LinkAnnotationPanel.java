@@ -104,7 +104,7 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
 
         // check for  destination key
         Object dest = linkAnnotation.getEntries().get(LinkAnnotation.DESTINATION_KEY);
-        if (dest != null && dest instanceof LiteralStringObject) {
+        if (dest instanceof LiteralStringObject) {
             destinationName.setText(((LiteralStringObject) dest).getDecryptedLiteralString(
                     controller.getDocument().getSecurityManager()));
         }

@@ -119,7 +119,7 @@ public class AnnotationPopup<T extends AnnotationComponent> extends JPopupMenu i
                     LinkAnnotation annotation = (LinkAnnotation) annotationComponent.getAnnotation();
                     Object dest = annotation.getEntries().get(LinkAnnotation.DESTINATION_KEY);
                     String destName = "";
-                    if (dest != null && dest instanceof LiteralStringObject) {
+                    if (dest instanceof LiteralStringObject) {
                         destName = ((LiteralStringObject) dest).getDecryptedLiteralString(
                                 controller.getDocument().getSecurityManager());
                     }

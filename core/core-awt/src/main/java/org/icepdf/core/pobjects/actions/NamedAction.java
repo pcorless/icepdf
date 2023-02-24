@@ -72,7 +72,7 @@ public class NamedAction extends Action {
         super(library, entries);
 
         Object tmp = library.getObject(entries, N_KEY);
-        if (tmp != null && tmp instanceof Name) {
+        if (tmp instanceof Name) {
             name = (Name) tmp;
         }
     }

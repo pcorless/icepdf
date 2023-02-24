@@ -58,7 +58,7 @@ public class DraggableAnnotationPanel extends JPanel {
         public void mouseClicked(MouseEvent e) {
             if (e.getButton() == MouseEvent.BUTTON3) {
                 Component comp = getComponentAt(e.getPoint());
-                if (comp != null && comp instanceof AnnotationSummaryBox) {
+                if (comp instanceof AnnotationSummaryBox) {
                     AnnotationSummaryBox annotationSummaryBox = (AnnotationSummaryBox) comp;
                     JPopupMenu contextMenu = annotationSummaryBox.getContextMenu(frame, this);
                     contextMenu.show(e.getComponent(), e.getX(), e.getY());
@@ -67,7 +67,7 @@ public class DraggableAnnotationPanel extends JPanel {
             if (e.getButton() == MouseEvent.BUTTON1 &&
                     e.getClickCount() == 2) {
                 Component comp = getComponentAt(e.getPoint());
-                if (comp != null && comp instanceof AnnotationSummaryBox) {
+                if (comp instanceof AnnotationSummaryBox) {
                     AnnotationSummaryBox annotationSummaryBox = (AnnotationSummaryBox) comp;
                     Annotation annotation = annotationSummaryBox.getAnnotation().getParent();
                     PageComponentSelector.SelectAnnotationComponent(annotationSummaryBox.getController(), annotation);
@@ -78,7 +78,7 @@ public class DraggableAnnotationPanel extends JPanel {
         @Override
         public void mousePressed(MouseEvent e) {
             Component comp = getComponentAt(e.getPoint());
-            if (e.getButton() == MouseEvent.BUTTON1 && comp != null && comp instanceof AnnotationSummaryBox) {
+            if (e.getButton() == MouseEvent.BUTTON1 && comp instanceof AnnotationSummaryBox) {
                 dragComponent = comp;
                 dragComponent.requestFocus();
                 // bring the component to the front.

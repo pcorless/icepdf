@@ -69,12 +69,8 @@ public class RgbColorChooser {
             // removed the none rgb colour space reference panels
             switch (displayName) {
                 case "HSV":
-                    colorChooser.removeChooserPanel(p);
-                    break;
-                case "HSL":
-                    colorChooser.removeChooserPanel(p);
-                    break;
                 case "CMYK":
+                case "HSL":
                     colorChooser.removeChooserPanel(p);
                     break;
             }

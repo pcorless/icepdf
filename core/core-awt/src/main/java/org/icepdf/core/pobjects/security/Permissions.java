@@ -15,6 +15,8 @@
  */
 package org.icepdf.core.pobjects.security;
 
+import java.util.Arrays;
+
 /**
  * <p>Standard encryption has permissions associated with it which is defined
  * by a key in the encryption dictionary.  It is up to the viewer application
@@ -192,9 +194,7 @@ public class Permissions {
      */
     public void init() {
 
-        for (int i = 0; i < permissions.length; i++) {
-            permissions[i] = false;
-        }
+        Arrays.fill(permissions, false);
 
         // Create permissions based on Revision 2 rules
         if (revision == 2) {

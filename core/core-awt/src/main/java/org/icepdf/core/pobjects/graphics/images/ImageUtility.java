@@ -31,6 +31,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -264,9 +265,7 @@ public class ImageUtility {
     private BufferedImage makeRGBABufferedImage(WritableRaster wr, final int transparency) {
         ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
         int[] bits = new int[4];
-        for (int i = 0; i < bits.length; i++) {
-            bits[i] = 8;
-        }
+        Arrays.fill(bits, 8);
         ColorModel cm = new ComponentColorModel(
                 cs, bits, true, false,
                 transparency,
@@ -293,8 +292,7 @@ public class ImageUtility {
     static BufferedImage makeRGBBufferedImage(WritableRaster wr) {
         ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
         int[] bits = new int[3];
-        for (int i = 0; i < bits.length; i++)
-            bits[i] = 8;
+        Arrays.fill(bits, 8);
         ColorModel cm = new ComponentColorModel(
                 cs, bits, false, false,
                 ColorModel.OPAQUE,
@@ -305,8 +303,7 @@ public class ImageUtility {
     static BufferedImage makeGrayBufferedImage(WritableRaster wr) {
         ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_GRAY);
         int[] bits = new int[1];
-        for (int i = 0; i < bits.length; i++)
-            bits[i] = 8;
+        Arrays.fill(bits, 8);
         ColorModel cm = new ComponentColorModel(
                 cs, bits, false, false,
                 ColorModel.OPAQUE,
@@ -901,7 +898,6 @@ public class ImageUtility {
             // convert it to rgb
             IccCmykRasterOp cmykToRgb = new IccCmykRasterOp(null);
             cmykToRgb.filter(cmykRaster, rgbRaster);
-            return rgbImage;
         } else {
             WritableRaster rgbRaster = rgbImage.getRaster();
 
@@ -912,8 +908,8 @@ public class ImageUtility {
             // convert it to rgb
             CMYKRasterOp cmykRasterOp = new CMYKRasterOp(null);
             cmykRasterOp.filter(cmykRaster, rgbRaster);
-            return rgbImage;
         }
+        return rgbImage;
     }
 
     static BufferedImage convertYCbCrToRGB(Raster yCbCrRaster, float[] decode) {
@@ -943,7 +939,6 @@ public class ImageUtility {
             // convert it to rgb
             IccCmykRasterOp cmykToRgb = new IccCmykRasterOp(null);
             cmykToRgb.filter(ycckRaster, rgbRaster);
-            return rgbImage;
         } else {
             WritableRaster rgbRaster = rgbImage.getRaster();
             // apply the decode filter
@@ -956,8 +951,8 @@ public class ImageUtility {
             // convert it to rgb
             CMYKRasterOp cmykRasterOp = new CMYKRasterOp(null);
             cmykRasterOp.filter(ycckRaster, rgbRaster);
-            return rgbImage;
         }
+        return rgbImage;
     }
 
     static BufferedImage makeImageWithRasterFromBytes(byte[] data, GraphicsState graphicsState, ImageParams imageParams) {
@@ -1294,15 +1289,14 @@ public class ImageUtility {
                 // calculate scale factors.
                 maskImage = scale(width, height, maskWidth, maskHeight, maskImage);
             }
-            return new BufferedImage[]{baseImage, maskImage};
         } else {
             // scale the mask to match the smaller image.
             if (width < maskWidth || height < maskHeight) {
                 // calculate scale factors.
                 maskImage = scale(width, height, maskWidth, maskHeight, maskImage);
             }
-            return new BufferedImage[]{baseImage, maskImage};
         }
+        return new BufferedImage[]{baseImage, maskImage};
     }
 
     private static BufferedImage scale(int width, int height, int width2, int height2, BufferedImage image) {

@@ -167,11 +167,10 @@ public class Function_3 extends Function {
 
             x[0] = interpolate(x[0], b1, b2, encode[2 * i], encode[2 * i + 1]);
 
-            x = function.calculate(x);
         } else {
             x[0] = interpolate(x[0], domain[0], domain[1], encode[2 * i], encode[2 * i + 1]);
-            x = function.calculate(x);
         }
+        x = function.calculate(x);
 
         // Have seen a few corner cases where the bounds are not defined or are null. There is nothing
         // in the spec about how to handle this, so the work around below is experimental.

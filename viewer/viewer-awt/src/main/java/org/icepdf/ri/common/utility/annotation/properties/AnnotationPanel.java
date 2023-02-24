@@ -71,21 +71,21 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
         if (annotationComp != null) {
             // check action type
             Annotation annotation = annotationComp.getAnnotation();
-            if (annotation != null && annotation instanceof LinkAnnotation) {
+            if (annotation instanceof LinkAnnotation) {
                 return new LinkAnnotationPanel(controller);
-            } else if (annotation != null && annotation instanceof TextMarkupAnnotation) {
+            } else if (annotation instanceof TextMarkupAnnotation) {
                 return new TextMarkupAnnotationPanel(controller);
-            } else if (annotation != null && annotation instanceof LineAnnotation) {
+            } else if (annotation instanceof LineAnnotation) {
                 return new LineAnnotationPanel(controller);
-            } else if (annotation != null && annotation instanceof SquareAnnotation) {
+            } else if (annotation instanceof SquareAnnotation) {
                 return new SquareAnnotationPanel(controller);
-            } else if (annotation != null && annotation instanceof CircleAnnotation) {
+            } else if (annotation instanceof CircleAnnotation) {
                 return new CircleAnnotationPanel(controller);
-            } else if (annotation != null && annotation instanceof InkAnnotation) {
+            } else if (annotation instanceof InkAnnotation) {
                 return new InkAnnotationPanel(controller);
-            } else if (annotation != null && annotation instanceof TextAnnotation) {
+            } else if (annotation instanceof TextAnnotation) {
                 return new TextAnnotationPanel(controller);
-            } else if (annotation != null && annotation instanceof FreeTextAnnotation) {
+            } else if (annotation instanceof FreeTextAnnotation) {
                 return new FreeTextAnnotationPanel(controller);
             }
         }

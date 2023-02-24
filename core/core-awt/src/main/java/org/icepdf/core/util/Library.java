@@ -571,7 +571,7 @@ public class Library {
      *
      * @param dictionaryEntries the dictionary entries to look up the key in.
      * @param key               string value representing the dictionary key.
-     * @return int value if a valid key,  null if the key does not point
+     * @return int value if a valid key,  zero if the key does not point
      * to an int or is invalid.
      */
     public int getInt(DictionaryEntries dictionaryEntries, Name key) {
@@ -668,7 +668,8 @@ public class Library {
     public List getArray(DictionaryEntries dictionaryEntries, Name key) {
         Object o = getObject(dictionaryEntries, key);
         if (o instanceof List) {
-            return (List) o;
+            //noinspection unchecked
+            return (List<Object>) o;
         }
         return null;
     }
@@ -825,7 +826,7 @@ public class Library {
         if (o == null)
             return null;
         Reference currentRef = null;
-        while (o != null && (o instanceof Reference)) {
+        while ((o instanceof Reference)) {
             currentRef = (Reference) o;
             o = getObject(currentRef);
         }

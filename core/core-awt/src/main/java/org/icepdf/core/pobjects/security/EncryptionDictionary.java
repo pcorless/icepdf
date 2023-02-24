@@ -472,7 +472,7 @@ public class EncryptionDictionary extends Dictionary {
      */
     public Name getStmF() {
         Object tmp = library.getObject(entries, STMF_KEY);
-        if (tmp != null && tmp instanceof Name) {
+        if (tmp instanceof Name) {
             return (Name) tmp;
         }
         return null;
@@ -491,7 +491,7 @@ public class EncryptionDictionary extends Dictionary {
      */
     public Name getStrF() {
         Object tmp = library.getObject(entries, STRF_KEY);
-        if (tmp != null && tmp instanceof Name) {
+        if (tmp instanceof Name) {
             return (Name) tmp;
         }
         return null;
@@ -517,7 +517,7 @@ public class EncryptionDictionary extends Dictionary {
      */
     public Name getEEF() {
         Object tmp = library.getObject(entries, EEF_KEY);
-        if (tmp != null && tmp instanceof Name) {
+        if (tmp instanceof Name) {
             return (Name) tmp;
         }
         return null;

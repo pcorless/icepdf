@@ -93,7 +93,7 @@ public class Lexer {
         while (!done) {
 
             // Did we reach the end of the buffer, if so copy the next block
-            // of data into the buffer.
+            // of data into the buffer
             if (pos == buf.length) {
                 // Copy the start of the token to the beginning
                 System.arraycopy(buf, startTokenPos, buf, 0, pos - startTokenPos);

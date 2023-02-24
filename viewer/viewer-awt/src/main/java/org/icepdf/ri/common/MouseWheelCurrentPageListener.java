@@ -51,8 +51,7 @@ public class MouseWheelCurrentPageListener implements MouseWheelListener {
     }
 
     public static void uninstall(JScrollPane scrollpane, Object listener) {
-        if (scrollpane != null && listener != null &&
-                listener instanceof MouseWheelCurrentPageListener) {
+        if (scrollpane != null && listener instanceof MouseWheelCurrentPageListener) {
             scrollpane.removeMouseWheelListener((MouseWheelCurrentPageListener) listener);
         }
     }

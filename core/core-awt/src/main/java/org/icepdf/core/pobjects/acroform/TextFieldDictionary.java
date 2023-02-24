@@ -127,7 +127,7 @@ public class TextFieldDictionary extends VariableTextFieldDictionary {
         super(library, entries);
         // parse out max length.
         Object value = library.getObject(entries, MAX_LENGTH_KEY);
-        if (value != null && value instanceof Number) {
+        if (value instanceof Number) {
             maxLength = ((Number) value).intValue();
         }
         // determine the text type

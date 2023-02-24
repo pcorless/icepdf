@@ -38,7 +38,6 @@ public class ProjectCompareView extends SplitPane {
     /**
      * Load the project and load the correct comparator view.
      *
-     * @param currentProject
      */
     public void setProject(Project currentProject) {
         if (currentProject.getCaptureSetA() != null && currentProject.getCaptureSetB() != null &&

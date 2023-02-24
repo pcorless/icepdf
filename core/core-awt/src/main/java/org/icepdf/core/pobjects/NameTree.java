@@ -159,7 +159,7 @@ public class NameTree extends Dictionary {
             if (found != null) return false;
             // other wise we need to figure out which child to insert into.
             Object tmp = root.searchForInsertionNode(newName);
-            if (tmp != null && tmp instanceof NameNode) {
+            if (tmp instanceof NameNode) {
                 // add the new node and update limits.
                 destination.entries = destination.getRawDestination();
                 destination.setPObjectReference(stateManager.getNewReferenceNumber());
@@ -200,7 +200,7 @@ public class NameTree extends Dictionary {
                 foundNew = root.searchName(newName);
             }
             // update if the new name isn't in play and we found the old node.
-            if (foundNew == null && found != null && found instanceof PObject) {
+            if (foundNew == null && found instanceof PObject) {
                 Reference reference = ((PObject) found).getReference();
                 Object tmp = library.getObject(reference);
                 NameNode nameNode = null;
@@ -255,7 +255,7 @@ public class NameTree extends Dictionary {
         if (root != null) {
             Object found = root.searchName(name);
             // we found the item and its parent's reference
-            if (found != null && found instanceof PObject) {
+            if (found instanceof PObject) {
                 Reference reference = ((PObject) found).getReference();
                 Object tmp = library.getObject(reference);
                 // we'll remove the name from the parent names tree and orphan the destination if indirect.

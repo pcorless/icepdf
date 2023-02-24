@@ -265,7 +265,7 @@ public class DocumentViewControllerImpl
         if (selectedPages != null &&
                 selectedPages.size() > 0) {
             for (AbstractPageViewComponent pageComp : selectedPages) {
-                if (pageComp != null && pageComp instanceof PageViewComponentImpl) {
+                if (pageComp instanceof PageViewComponentImpl) {
                     pageComp.clearSelectedText();
                 }
             }

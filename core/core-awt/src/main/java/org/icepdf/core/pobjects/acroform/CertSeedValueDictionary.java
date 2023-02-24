@@ -173,8 +173,9 @@ public class CertSeedValueDictionary extends Dictionary {
     }
 
     public List<DictionaryEntries> getSubjectDn() {
-        Object tmp = library.getArray(entries, SUBJECT_DN_KEY);
+        List<Object> tmp = library.getArray(entries, SUBJECT_DN_KEY);
         if (tmp != null) {
+            //noinspection unchecked
             return (List) tmp;
         } else {
             return null;

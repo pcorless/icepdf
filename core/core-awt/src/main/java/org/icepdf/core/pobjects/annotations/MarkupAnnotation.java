@@ -185,13 +185,13 @@ public abstract class MarkupAnnotation extends Annotation {
 
         // creation date
         Object value = library.getObject(entries, CREATION_DATE_KEY);
-        if (value != null && value instanceof StringObject) {
+        if (value instanceof StringObject) {
             creationDate = new PDate(securityManager, getString(CREATION_DATE_KEY));
         }
 
         // popup child
         value = library.getObject(entries, POPUP_KEY);
-        if (value != null && value instanceof PopupAnnotation) {
+        if (value instanceof PopupAnnotation) {
             popupAnnotation = (PopupAnnotation) value;
         }
 
@@ -203,7 +203,7 @@ public abstract class MarkupAnnotation extends Annotation {
 
         // in reply to annotation
         value = library.getObject(entries, IRT_KEY);
-        if (value != null && value instanceof MarkupAnnotation) {
+        if (value instanceof MarkupAnnotation) {
             inReplyToAnnotation = (MarkupAnnotation) value;
         }
 
