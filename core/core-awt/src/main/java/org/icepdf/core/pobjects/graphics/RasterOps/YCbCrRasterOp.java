@@ -12,7 +12,7 @@ import java.awt.image.*;
  */
 public class YCbCrRasterOp implements RasterOp {
 
-    private RenderingHints hints;
+    private final RenderingHints hints;
 
     public YCbCrRasterOp(RenderingHints hints) {
         this.hints = hints;

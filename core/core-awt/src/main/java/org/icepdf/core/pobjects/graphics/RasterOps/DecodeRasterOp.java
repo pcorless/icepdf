@@ -22,7 +22,7 @@ public class DecodeRasterOp implements RasterOp {
 
     private static final float NORMAL_DECODE_CEIL = 1.0f / 255;
 
-    private RenderingHints hints;
+    private final RenderingHints hints;
     private final float[] decode;
 
     public DecodeRasterOp(float[] decode, RenderingHints hints) {

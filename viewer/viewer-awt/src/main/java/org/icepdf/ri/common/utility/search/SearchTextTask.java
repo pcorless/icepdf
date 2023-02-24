@@ -54,7 +54,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
     // keep track of total hits
     private int totalHitCount;
     // String to search for and parameters from gui
-    private String pattern;
+    private final String pattern;
     private Pattern searchPattern;
     private final boolean wholeWord;
     private final boolean caseSensitive;

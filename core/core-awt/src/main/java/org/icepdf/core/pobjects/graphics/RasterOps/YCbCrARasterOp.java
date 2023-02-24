@@ -14,7 +14,7 @@ import java.awt.image.WritableRaster;
  */
 public class YCbCrARasterOp implements RasterOp {
 
-    private RenderingHints hints;
+    private final RenderingHints hints;
 
     public YCbCrARasterOp(RenderingHints hints) {
         this.hints = hints;

@@ -34,8 +34,8 @@ public class CompoundIcon implements Icon {
 
     private final int gap;
 
-    private float alignmentX;
-    private float alignmentY;
+    private final float alignmentX;
+    private final float alignmentY;
 
     /**
      * Convenience constructor for creating a CompoundIcon where the

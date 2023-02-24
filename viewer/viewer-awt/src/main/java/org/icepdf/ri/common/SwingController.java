@@ -3740,7 +3740,7 @@ public class SwingController extends ComponentAdapter
         // browser window
         Runnable doSwingWork = () -> {
             AboutDialog ad = new AboutDialog(viewer, messageBundle, true,
-                    AboutDialog.OK, AboutDialog.NO_TIMER);
+                    AboutDialog.NO_TIMER);
             ad.setVisible(true);
         };
         SwingUtilities.invokeLater(doSwingWork);
@@ -3805,10 +3805,7 @@ public class SwingController extends ComponentAdapter
         // dialog get referenced. At least I think that's what might be happening.
         PageTree pageTree = getPageTree();
         Page page = pageTree.getPage(documentViewController.getCurrentPageIndex());
-        try {
-            showAnnotationProperties(annotationComponent, viewer);
-        } finally {
-        }
+        showAnnotationProperties(annotationComponent, viewer);
     }
 
     /**

@@ -27,7 +27,7 @@ import java.util.Objects;
  */
 public class PObject {
     private final Object object;
-    private Reference objectReference;
+    private final Reference objectReference;
     private int linearTraversalOffset;
 
     /**

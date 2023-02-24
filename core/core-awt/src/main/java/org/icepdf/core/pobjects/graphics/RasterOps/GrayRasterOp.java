@@ -14,7 +14,7 @@ import java.awt.image.WritableRaster;
  * @since 5.1
  */
 public class GrayRasterOp implements RasterOp {
-    private RenderingHints hints;
+    private final RenderingHints hints;
     private final float[] decode;
 
     public GrayRasterOp(float[] decode, RenderingHints hints) {
