@@ -29,7 +29,7 @@ import java.util.ResourceBundle;
 public class AboutDialog extends EscapeJDialog implements ActionListener, WindowListener {
 
 
-    private JButton ok;
+    private final JButton ok;
     private Timer timer;
     private final int whichTimer;
 
