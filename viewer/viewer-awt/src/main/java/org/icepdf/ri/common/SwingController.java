@@ -2963,9 +2963,8 @@ public class SwingController extends ComponentAdapter
         }
         // make sure we don't keep Attachments view around from a previous load
         // as we don't want to use it for a none attachments PDF file.
-        if (documentViewController.getViewMode() ==
-                DocumentViewControllerImpl.USE_ATTACHMENTS_VIEW) {
-            documentViewController.revertViewType();
+        else if (documentViewController.getViewMode() == DocumentViewControllerImpl.USE_ATTACHMENTS_VIEW) {
+            documentViewController.setViewType(DocumentViewControllerImpl.ONE_COLUMN_VIEW);
         }
         // check to see if we have collection
         if (isPdfCollection()) {
@@ -3220,7 +3219,7 @@ public class SwingController extends ComponentAdapter
             annotationSummaryFrame.dispose();
         }
 
-        // set the default cursor.  
+        // set the default cursor.
         documentViewController.closeDocument();
 
         // clear search controller caches.
