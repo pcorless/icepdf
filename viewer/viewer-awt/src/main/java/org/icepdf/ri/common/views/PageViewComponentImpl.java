@@ -547,8 +547,10 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                     annotationComponents = new ArrayList<>(annotations.size());
                     annotationToComponent = new HashMap<>(annotations.size());
                     Annotation annotation;
-                    for (Annotation value : annotations) {
-                        annotation = value;
+                    // is possible that a Popup annotation is added to the page during initialization but the component
+                    // creation will be handled during that creation process.
+                    for (int i = 0; i < annotations.size(); i++) {
+                        annotation = annotations.get(i);
                         // parser can sometimes return an empty array depending on the PDF syntax being used.
                         if (annotation != null) {
                             final AbstractAnnotationComponent comp =
