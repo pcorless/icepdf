@@ -56,7 +56,9 @@ public class AppearanceState extends Dictionary {
             try {
                 Form form = (Form) streamOrDictionary;
                 form.init();
-                originalContentStream = new String(((Form) streamOrDictionary).getDecodedStreamBytes());
+                byte[] streamBytes = ((Form) streamOrDictionary).getDecodedStreamBytes();
+                originalContentStream = streamBytes != null ?
+                        new String(((Form) streamOrDictionary).getDecodedStreamBytes()) : "";
                 resources = form.getResources();
                 shapes = form.getShapes();
                 matrix = form.getMatrix();

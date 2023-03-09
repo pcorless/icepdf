@@ -1351,12 +1351,14 @@ public abstract class AbstractContentParser {
                 stringObject = (StringObject) currentObject;
                 textState = graphicState.getTextState();
                 // draw string takes care of PageText extraction
-                drawString(stringObject.getLiteralStringBuffer(
-                        textState.font.getSubTypeFormat(),
-                        textState.font.getFont()),
-                        textMetrics,
-                        graphicState.getTextState(), shapes, glyphOutlineClip,
-                        graphicState, oCGs);
+                if (stringObject.getLength() > 0) {
+                    drawString(stringObject.getLiteralStringBuffer(
+                                    textState.font.getSubTypeFormat(),
+                                    textState.font.getFont()),
+                            textMetrics,
+                            graphicState.getTextState(), shapes, glyphOutlineClip,
+                            graphicState, oCGs);
+                }
             } else if (currentObject instanceof Number) {
                 f = (Number) currentObject;
                 textMetrics.getAdvance().x -= (f.floatValue() / 1000f) *
@@ -1384,14 +1386,16 @@ public abstract class AbstractContentParser {
                 // apply transparency
                 setAlpha(shapes, graphicState, AlphaPaintType.ALPHA_FILL);
                 // draw string will take care of text pageText construction
-                drawString(stringObject.getLiteralStringBuffer(
-                        textState.font.getSubTypeFormat(),
-                        textState.font.getFont()),
-                        textMetrics,
-                        graphicState.getTextState(),
-                        shapes,
-                        glyphOutlineClip,
-                        graphicState, oCGs);
+                if (stringObject.getLength() > 0) {
+                    drawString(stringObject.getLiteralStringBuffer(
+                                    textState.font.getSubTypeFormat(),
+                                    textState.font.getFont()),
+                            textMetrics,
+                            graphicState.getTextState(),
+                            shapes,
+                            glyphOutlineClip,
+                            graphicState, oCGs);
+                }
                 graphicState.set(tmp);
             }
         }

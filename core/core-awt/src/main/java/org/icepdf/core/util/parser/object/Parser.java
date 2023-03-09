@@ -84,7 +84,7 @@ public class Parser {
             lexer.skipWhiteSpace();
             // stream offset
             streamOffsetStart = byteBuffer.position();
-            int streamLength = library.getInt((DictionaryEntries) objectData, Dictionary.LENGTH_KEY);
+            int streamLength = getLength(objectData);
             // create a new buffer to encapsulate the stream data using the length
             streamByteBuffer = ByteBufferUtil.sliceObjectStream(
                     byteBuffer,
@@ -125,6 +125,17 @@ public class Parser {
         }
         // push dictionary through factory to build correct instance.
         return ObjectFactory.getInstance(library, objectNumber, objectGeneration, objectData, streamByteBuffer);
+    }
+
+    private int getLength(Object objectData){
+        if (objectData instanceof DictionaryEntries) {
+            return library.getInt((DictionaryEntries) objectData, Dictionary.LENGTH_KEY);
+        } else if (objectData instanceof Dictionary) {
+            Dictionary dictionary = (Dictionary) objectData;
+            return library.getInt(dictionary.getEntries(), Dictionary.LENGTH_KEY);
+        } else {
+            return 0;
+        }
     }
 
     public PObject getCompressedObject(ByteBuffer streamObjectByteBuffer, int objectNumber,

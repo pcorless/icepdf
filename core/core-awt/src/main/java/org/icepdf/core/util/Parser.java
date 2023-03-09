@@ -657,7 +657,7 @@ public class Parser {
             tmp.setPObjectReference(objectReference);
         }
 
-        // the the object to the library
+        // the object to the library
         library.addObject(o, objectReference);
 
         return new PObject(o, objectReference);
@@ -677,7 +677,7 @@ public class Parser {
             if (o.equals("<<")) {
                 HashMap<Object, Object> h = new HashMap<>();
                 Object o1 = getStreamObject();
-                while (!o1.equals(">>")) {
+                while (o1 != null && !o1.equals(">>")) {
                     h.put(o1, getStreamObject());
                     o1 = getStreamObject();
                 }
@@ -688,7 +688,7 @@ public class Parser {
             else if (o.equals("[")) {
                 List<Object> v = new ArrayList<>();
                 Object o1 = getStreamObject();
-                while (!o1.equals("]")) {
+                while (o1 != null && !o1.equals("]")) {
                     v.add(o1);
                     o1 = getStreamObject();
                 }

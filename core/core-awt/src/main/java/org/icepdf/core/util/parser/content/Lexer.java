@@ -379,7 +379,8 @@ public class Lexer {
         Object key = null;
         Object value;
         int count = 1;
-        while (!(streamBytes[pos] == '>' && streamBytes[pos + 1] == '>')) {
+        while (pos < streamBytes.length &&
+                !(streamBytes[pos] == '>' && streamBytes[pos + 1] == '>')) {
             if (count == 1) {
                 key = next();
                 // double check we don't have an empty dictionary << >>

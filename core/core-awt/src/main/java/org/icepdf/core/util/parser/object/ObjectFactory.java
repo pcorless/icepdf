@@ -23,7 +23,12 @@ public class ObjectFactory {
                                       Object objectData, ByteBuffer streamData) {
         // if we have as a byteBuffer then we have a stream.
         if (streamData != null) {
-            DictionaryEntries entries = (DictionaryEntries) objectData;
+            DictionaryEntries entries;
+            if (objectData instanceof DictionaryEntries) {
+                entries = (DictionaryEntries)objectData;
+            } else {
+                entries = ((Dictionary)objectData).getEntries();
+            }
             Name type = (Name) entries.get(Dictionary.TYPE_KEY);
             Name subType = (Name) entries.get(Dictionary.SUBTYPE_KEY);
             // bulk copy as all our filters expect byte[], this may be expensive in some instances.

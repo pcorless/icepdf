@@ -3,6 +3,7 @@ package org.icepdf.core.pobjects.fonts.zfont;
 import org.apache.fontbox.util.BoundingBox;
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
@@ -141,7 +142,16 @@ public abstract class CompositeFont extends SimpleFont {
                     i++;
                 } else if (currentNext instanceof Number) {
                     int currentEnd = ((Number) currentNext).intValue();
-                    float width2 = (float) (((Number) individualWidths.get(i + 2)).intValue());
+                    Object tmp = individualWidths.get(i + 2);
+                    float width2;
+                    if (tmp instanceof Number) {
+                        width2 = (float) (((Number) tmp).intValue());
+                    } else if (tmp instanceof Reference) {
+                        tmp = library.getObject(tmp);
+                        width2 = (float) (((Number) tmp).intValue());
+                    } else {
+                        width2 = 1.0f;
+                    }
                     for (; current <= currentEnd; current++) {
                         widths[current] = width2 * 0.001f;
                     }

@@ -24,7 +24,7 @@ public class TypeCidType2Font extends CompositeFont {
     @Override
     public synchronized void init() {
         super.init();
-        if (!(font instanceof ZFontType2)) {
+        if (!(font instanceof ZFontType2) && font instanceof ZFontTrueType) {
             font = new ZFontType2((ZFontTrueType) font);
         }
         parseCidToGidMap();

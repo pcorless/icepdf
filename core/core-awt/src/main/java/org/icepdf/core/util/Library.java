@@ -683,21 +683,39 @@ public class Library {
      * @return rectangle in Java2D coordinate system.
      */
     public Rectangle2D.Float getRectangle(DictionaryEntries dictionaryEntries, Name key) {
-        List v = (List) getObject(dictionaryEntries, key);
+        List<Object> v = (List) getObject(dictionaryEntries, key);
         if (v != null) {
-            // s by default contains data in the Cartesian plain.
-            if (v.get(0) instanceof Number) {
-                return new PRectangle(v).toJava2dCoordinates();
-            } // crazy corner case that contains each number as reference.
-            else if (v.get(0) instanceof Reference) {
-                v.set(0, getObject(v.get(0)));
-                v.set(1, getObject(v.get(1)));
-                v.set(2, getObject(v.get(2)));
-                v.set(3, getObject(v.get(3)));
-                return new PRectangle(v).toJava2dCoordinates();
-            }
+            return new PRectangle(getFloatList(v)).toJava2dCoordinates();
         }
         return null;
+    }
+
+    /**
+     * Checks the given values for floats and resolves and References.
+     * @param values list of floats
+     * @return list of floats
+     */
+    public List<Float> getFloatList(List<Object> values) {
+        if (values != null) {
+            float x1 = getFloatNumber(values.get(0));
+            float y1 = getFloatNumber(values.get(1));
+
+            float x2 = getFloatNumber(values.get(2));
+            float y2 = getFloatNumber(values.get(3));
+
+            return List.of(x1, y1, x2, y2);
+        }
+        return null;
+    }
+
+    private Float getFloatNumber(Object object) {
+        if (object instanceof Number) {
+            return ((Number) object).floatValue();
+        } else if (object instanceof  Reference) {
+            return ((Number)getObject((Reference) object)).floatValue();
+        } else {
+            return null;
+        }
     }
 
     /**

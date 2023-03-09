@@ -224,8 +224,8 @@ public class FontDescriptor extends Dictionary {
     public Rectangle2D getFontBBox() {
         Object value = library.getObject(entries, FONT_BBOX);
         if (value instanceof List) {
-            List rectangle = (List) value;
-            return new PRectangle(rectangle).getOriginalPoints();
+            List<Float> coordinates = library.getFloatList((List<Object>)value);
+            return new PRectangle(coordinates).getOriginalPoints();
         } else if (value instanceof int[]) {
             int[] ints = (int[]) value;
             List<Integer> intList = new ArrayList<>(ints.length);
