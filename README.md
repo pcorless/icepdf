@@ -170,7 +170,7 @@ window.setVisible(true);
 controller.openDocument(filePath);
 ```
  
- Make sure to take a look at the [Wiki](https://github.com/pcorless/icepdf/wiki/Examples) for more examples of extracting content.  
+ Make sure to take a look at the [Wiki](https://github.com/pcorless/icepdf/wiki/Usage-Examples)) for more examples of extracting content.  
  
  ## Learning
   
