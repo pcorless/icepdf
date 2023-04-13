@@ -238,8 +238,9 @@ public class HexStringObject implements StringObject {
                 charValue = getUnsignedInt(i - lastIndex, offset);
                 // 0 cid is valid, so we have ot be careful we don't exclude the
                 // cid 00 = 0 or 0000 = 0, not 0000 = 00.
-                if (!(offset < length && charValue == 0) &&
-                        font.canDisplay((char) charValue)) {
+                // removed font check as it was causing problems with a lot of Latin based hex strings
+                // may need to revisit in the future when getting back to multibyte encodings. 
+                if (!(offset < length && charValue == 0)) {
                     tmp.append((char) charValue);
                     lastIndex = 0;
                 } else {

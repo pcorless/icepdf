@@ -23,12 +23,12 @@ ICEpdf is an open source project and is always looking for more contributors.  T
  <dependency>
      <groupId>com.github.pcorless.icepdf</groupId>
      <artifactId>icepdf-core</artifactId>
-     <version>7.0.0</version>
+     <version>7.0.2</version>
  </dependency>
  <dependency>
      <groupId>com.github.pcorless.icepdf</groupId>
      <artifactId>icepdf-viewer</artifactId>
-     <version>7.0.0</version>
+     <version>7.0.2</version>
  </dependency>
  ```
  
@@ -170,14 +170,14 @@ window.setVisible(true);
 controller.openDocument(filePath);
 ```
  
- Make sure to take a look at the [Wiki](https://github.com/pcorless/icepdf/wiki/Examples) for more examples of extracting content.  
+ Make sure to take a look at the [Wiki](https://github.com/pcorless/icepdf/wiki/Usage-Examples)) for more examples of extracting content.  
  
  ## Learning
   
  ### Examples
 
 There are bunch of examples located in the root of the project grouped by common usage scenarios.  Similarly the 
-Wiki contains [example](https://github.com/pcorless/icepdf/wiki/Examples) information. 
+Wiki contains [example](https://github.com/pcorless/icepdf/wiki/Usage-Examples) information. 
 
  ### API Documentation
  

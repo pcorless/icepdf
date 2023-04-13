@@ -115,6 +115,7 @@ public class ChoiceListComponent extends AbstractChoiceComponent implements
         }
         choiceList.setFont(new Font(fontName, Font.PLAIN,
                 (int) (choiceFieldDictionary.getSize() * documentViewModel.getViewZoom())));
+        super.validate();
     }
 
     @Override
