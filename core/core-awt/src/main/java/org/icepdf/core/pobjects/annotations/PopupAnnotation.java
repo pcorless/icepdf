@@ -68,8 +68,8 @@ public class PopupAnnotation extends Annotation {
 
     protected MarkupAnnotation parent;
 
+    private GridBagConstraints constraints;
     private boolean resetPopupPaintables = true;
-    private JPanel popupPaintablesPanel;
 
     public PopupAnnotation(Library l, HashMap h) {
         super(l, h);
@@ -128,17 +128,20 @@ public class PopupAnnotation extends Annotation {
     @Override
     protected void renderAppearanceStream(Graphics2D g2d) {
         GraphicsConfiguration graphicsConfiguration = g2d.getDeviceConfiguration();
-        if (graphicsConfiguration.getDevice().getType() == GraphicsDevice.TYPE_PRINTER) {
-            // make sure we have parent content print.
+        boolean isPrintingAllowed = getParent().getFlagPrint();
+        if (graphicsConfiguration.getDevice().getType() == GraphicsDevice.TYPE_PRINTER &&
+                isOpen() && isPrintingAllowed ) {
             String contents = getParent() != null ? getParent().getContents() : "";
             if (contents != null && resetPopupPaintables) {
                 buildPopupPaintables();
             }
-            // todo likely also test for minimized to be useful?
-            if (contents != null){
-                paintPopupPaintables(g2d);
-            }
+            paintPopupPaintables(g2d);
         }
+    }
+
+    public boolean allowPrintNormalMode() {
+        boolean isParentPrintable = parent != null && parent.getFlagPrint();
+        return allowScreenOrPrintRenderingOrInteraction() && isParentPrintable;
     }
 
     private void paintPopupPaintables(Graphics2D g2d) {
@@ -146,12 +149,14 @@ public class PopupAnnotation extends Annotation {
         Rectangle2D rect = new Rectangle2D.Double(0, 0, origRect.width, origRect.height);
 
         AffineTransform oldTransform = g2d.getTransform();
-        g2d.scale(1,-1);
+        g2d.scale(1, -1);
         g2d.translate(0, -rect.getBounds().getSize().height);
 
         // build out a basic representation of the panel
-        popupPaintablesPanel = new JPanel();
+        JPanel popupPaintablesPanel = new JPanel();
+
         Color color = getParent().getColor();
+        Color contrastColor = calculateContrastHighLowColor(color.getRGB());
         popupPaintablesPanel.setBackground(color);
         popupPaintablesPanel.setBounds(rect.getBounds());
         popupPaintablesPanel.setSize(rect.getBounds().getSize());
@@ -161,15 +166,17 @@ public class PopupAnnotation extends Annotation {
         // user
         String title = markupAnnotation.getFormattedTitleText();
         JLabel titleLabel = new JLabel(title);
+        titleLabel.setForeground(contrastColor);
         popupPaintablesPanel.add(titleLabel);
 
         // creation date
         JLabel creationLabel = new JLabel();
         creationLabel.setText(markupAnnotation.getFormattedCreationDate(FormatStyle.MEDIUM));
+        creationLabel.setForeground(contrastColor);
         popupPaintablesPanel.add(creationLabel);
 
         // text area
-        String contents = markupAnnotation.getFormattedTitleText();
+        String contents = getParent() != null ? getParent().getContents() : "";
         JTextArea textArea = new JTextArea(contents);
         textArea.setFont(new JLabel().getFont());
         textArea.setWrapStyleWord(true);
@@ -177,12 +184,19 @@ public class PopupAnnotation extends Annotation {
                 BorderFactory.createEmptyBorder(2, 2, 2, 2)));
         popupPaintablesPanel.add(textArea);
 
+        // basic layout
         Component[] components = popupPaintablesPanel.getComponents();
+        int yOffset = 0;
+        int padding = 2;
         for (Component comp : components) {
             Dimension size = comp.getPreferredSize();
             comp.setSize(size);
             comp.setPreferredSize(size);
+            comp.setLocation(padding, yOffset);
+            yOffset += comp.getHeight() + padding;
         }
+        // stretch text area.
+        textArea.setSize((int) (origRect.width - (padding * 2)), (int) (origRect.height + textArea.getHeight() - yOffset));
         popupPaintablesPanel.invalidate();
         popupPaintablesPanel.revalidate();
         popupPaintablesPanel.print(g2d);
@@ -192,6 +206,18 @@ public class PopupAnnotation extends Annotation {
 
     private void buildPopupPaintables() {
         resetPopupPaintables = false;
+    }
+
+    public Color calculateContrastHighLowColor(int rgb) {
+        int tolerance = 120;
+        if ((rgb & 0xFF) <= tolerance &&
+                (rgb >> 8 & 0xFF) <= tolerance ||
+                (rgb >> 16 & 0xFF) <= tolerance) {
+            return Color.WHITE;
+        } else {
+            return Color.BLACK;
+        }
+
     }
 
     public void setContents(String content) {

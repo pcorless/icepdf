@@ -1076,7 +1076,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     }
 
     protected void resetComponentColors() {
-        Color contrastColor = calculateContrastHighLowColor(popupBackgroundColor.getRGB());
+        Color contrastColor = annotation.calculateContrastHighLowColor(popupBackgroundColor.getRGB());
         minimizeButton.setForeground(contrastColor);
         minimizeButton.setBackground(popupBackgroundColor);
         minimizeButton.setBackground(popupBackgroundColor);
@@ -1202,18 +1202,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             return new Color((0x7F7F7F + rgb) & 0xFFFFFF);
         } else {
             return new Color(rgb ^ 0xFFFFFF);
-        }
-
-    }
-
-    protected Color calculateContrastHighLowColor(int rgb) {
-        int tolerance = 120;
-        if ((rgb & 0xFF) <= tolerance &&
-                (rgb >> 8 & 0xFF) <= tolerance ||
-                (rgb >> 16 & 0xFF) <= tolerance) {
-            return Color.WHITE;
-        } else {
-            return Color.BLACK;
         }
 
     }

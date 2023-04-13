@@ -1250,9 +1250,8 @@ public abstract class Annotation extends Dictionary {
             return;
         if (renderHintType == GraphicsRenderingHints.SCREEN && !allowScreenNormalMode())
             return;
-        // need an override on this as popups aren't usually printed.
-//        if (renderHintType == GraphicsRenderingHints.PRINT && !allowPrintNormalMode())
-//            return;
+        if (renderHintType == GraphicsRenderingHints.PRINT && !allowPrintNormalMode())
+            return;
 
 //System.out.println("render(-)  " + this);
         Rectangle2D.Float rect = getUserSpaceRectangle();
