@@ -68,7 +68,7 @@ public class PopupAnnotation extends Annotation {
 
     protected MarkupAnnotation parent;
 
-    private GridBagConstraints constraints;
+    protected JPanel popupPaintablesPanel;
     private boolean resetPopupPaintables = true;
 
     public PopupAnnotation(Library l, HashMap h) {
@@ -130,7 +130,8 @@ public class PopupAnnotation extends Annotation {
         GraphicsConfiguration graphicsConfiguration = g2d.getDeviceConfiguration();
         boolean isPrintingAllowed = getParent().getFlagPrint();
         if (graphicsConfiguration.getDevice().getType() == GraphicsDevice.TYPE_PRINTER &&
-                isOpen() && isPrintingAllowed ) {
+                isOpen() &&
+                isPrintingAllowed) {
             String contents = getParent() != null ? getParent().getContents() : "";
             if (contents != null && resetPopupPaintables) {
                 buildPopupPaintables();
@@ -145,22 +146,36 @@ public class PopupAnnotation extends Annotation {
     }
 
     private void paintPopupPaintables(Graphics2D g2d) {
-        Rectangle2D.Float origRect = getUserSpaceRectangle();
-        Rectangle2D rect = new Rectangle2D.Double(0, 0, origRect.width, origRect.height);
+
+        Rectangle2D.Float popupBounds = getUserSpaceRectangle();
 
         AffineTransform oldTransform = g2d.getTransform();
         g2d.scale(1, -1);
-        g2d.translate(0, -rect.getBounds().getSize().height);
+        g2d.translate(0, -popupBounds.getBounds().getSize().height);
 
-        // build out a basic representation of the panel
-        JPanel popupPaintablesPanel = new JPanel();
+        popupPaintablesPanel.invalidate();
+        popupPaintablesPanel.revalidate();
+        popupPaintablesPanel.print(g2d);
+
+        g2d.setTransform(oldTransform);
+    }
+
+    /**
+     * Builds a JPanel representing the popup annotation that can be printed.
+     */
+    private void buildPopupPaintables() {
+
+        Rectangle2D.Float popupBounds = getUserSpaceRectangle();
+        Rectangle popupBoundsNormalized = new Rectangle2D.Double(0, 0, popupBounds.width, popupBounds.height).getBounds();
+
+        popupPaintablesPanel = new JPanel();
 
         Color color = getParent().getColor();
         Color contrastColor = calculateContrastHighLowColor(color.getRGB());
         popupPaintablesPanel.setBackground(color);
-        popupPaintablesPanel.setBounds(rect.getBounds());
-        popupPaintablesPanel.setSize(rect.getBounds().getSize());
-        popupPaintablesPanel.setPreferredSize(rect.getBounds().getSize());
+        popupPaintablesPanel.setBounds(popupBoundsNormalized);
+        popupPaintablesPanel.setSize(popupBoundsNormalized.getSize());
+        popupPaintablesPanel.setPreferredSize(popupBoundsNormalized.getSize());
 
         MarkupAnnotation markupAnnotation = getParent();
         // user
@@ -196,15 +211,7 @@ public class PopupAnnotation extends Annotation {
             yOffset += comp.getHeight() + padding;
         }
         // stretch text area.
-        textArea.setSize((int) (origRect.width - (padding * 2)), (int) (origRect.height + textArea.getHeight() - yOffset));
-        popupPaintablesPanel.invalidate();
-        popupPaintablesPanel.revalidate();
-        popupPaintablesPanel.print(g2d);
-
-        g2d.setTransform(oldTransform);
-    }
-
-    private void buildPopupPaintables() {
+        textArea.setSize((int) (popupBounds.width - (padding * 2)), (int) (popupBounds.height + textArea.getHeight() - yOffset));
         resetPopupPaintables = false;
     }
 

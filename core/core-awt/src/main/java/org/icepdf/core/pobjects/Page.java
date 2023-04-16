@@ -353,6 +353,13 @@ public class Page extends Dictionary {
                             // add any found annotations to the vector.
                             annotations.add(a);
                         }
+                        // create synthetic annotation to paint the glue between a markup annotation and the popup
+                        // this is only used for print purposes.  A similar pattern is also used in the Viewer RI
+                        if (a instanceof MarkupAnnotation) {
+                            MarkupAnnotation markupAnnotation = (MarkupAnnotation) a;
+                            PopupAnnotation popupAnnotation = markupAnnotation.getPopupAnnotation();
+                            annotations.add(new MarkupGlueAnnotation(library, markupAnnotation, popupAnnotation));
+                        }
                     }
                 } catch (IllegalStateException e) {
                     logger.warning("Malformed annotation could not be initialized. " +
