@@ -49,17 +49,17 @@ public class MarkupGlueComponent extends JComponent {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+        if (popupAnnotationComponent.getAnnotation().isOpen()) {
+            Rectangle popupBounds = popupAnnotationComponent.getBounds();
+            Rectangle markupBounds = markupAnnotationComponent.getBounds();
+            Rectangle glueBounds = markupAnnotationComponent.getBounds().union(popupAnnotationComponent.getBounds());
+            setBounds(glueBounds);
+            setPreferredSize(glueBounds.getSize());
+            setSize(glueBounds.getSize());
 
-        Rectangle popupBounds = popupAnnotationComponent.getBounds();
-        Rectangle markupBounds = markupAnnotationComponent.getBounds();
-        Rectangle glueBounds = markupAnnotationComponent.getBounds().union(popupAnnotationComponent.getBounds());
-        setBounds(glueBounds);
-        setPreferredSize(glueBounds.getSize());
-        setSize(glueBounds.getSize());
-
-        MarkupGluePainter.paintGlue(
-                g, markupBounds, popupBounds, glueBounds,
-                popupAnnotationComponent.annotation.isOpen(),
-                markupAnnotationComponent.getAnnotation().getColor());
+            MarkupGluePainter.paintGlue(
+                    g, markupBounds, popupBounds, glueBounds,
+                    markupAnnotationComponent.getAnnotation().getColor());
+        }
     }
 }
