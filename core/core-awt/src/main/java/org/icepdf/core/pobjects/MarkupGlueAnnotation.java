@@ -27,6 +27,8 @@ public class MarkupGlueAnnotation extends Annotation {
     }
 
     protected void renderAppearanceStream(Graphics2D g2d) {
+        if (this.popupAnnotation == null || this.markupAnnotation == null) return;
+
         GraphicsConfiguration graphicsConfiguration = g2d.getDeviceConfiguration();
         boolean isPrintingAllowed = this.markupAnnotation.getFlagPrint();
         if (graphicsConfiguration.getDevice().getType() == GraphicsDevice.TYPE_PRINTER &&
@@ -38,7 +40,8 @@ public class MarkupGlueAnnotation extends Annotation {
     }
 
     public Rectangle2D.Float getUserSpaceRectangle() {
-        if (userSpaceRectangle == null) {
+        // make sure we always update this to get the correct clip during painting
+        if (this.markupAnnotation != null && this.popupAnnotation != null) {
             Rectangle rect = this.markupAnnotation.getUserSpaceRectangle().getBounds().union(
                     this.popupAnnotation.getUserSpaceRectangle().getBounds());
             userSpaceRectangle = new Rectangle2D.Float(rect.x, rect.y, rect.width, rect.height);
@@ -53,5 +56,9 @@ public class MarkupGlueAnnotation extends Annotation {
     @Override
     public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew) {
 
+    }
+
+    public MarkupAnnotation getMarkupAnnotation() {
+        return markupAnnotation;
     }
 }

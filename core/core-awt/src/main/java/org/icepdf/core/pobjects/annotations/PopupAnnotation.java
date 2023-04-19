@@ -132,8 +132,7 @@ public class PopupAnnotation extends Annotation {
         if (graphicsConfiguration.getDevice().getType() == GraphicsDevice.TYPE_PRINTER &&
                 isOpen() &&
                 isPrintingAllowed) {
-            String contents = getParent() != null ? getParent().getContents() : "";
-            if (contents != null && resetPopupPaintables) {
+            if (resetPopupPaintables) {
                 buildPopupPaintables();
             }
             paintPopupPaintables(g2d);

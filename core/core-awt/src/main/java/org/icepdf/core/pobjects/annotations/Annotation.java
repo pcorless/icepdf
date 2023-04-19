@@ -1316,7 +1316,10 @@ public abstract class Annotation extends Dictionary {
         g.setRenderingHints(grh.getRenderingHints(renderHintType));
         g.setTransform(at);
         Shape preAppearanceStreamClip = g.getClip();
-        g.clip(deriveDrawingRectangle());
+        Rectangle2D.Float derivedClip = deriveDrawingRectangle();
+        if (derivedClip != null) {
+            g.clip(deriveDrawingRectangle());
+        }
 
         renderAppearanceStream(g);
 
