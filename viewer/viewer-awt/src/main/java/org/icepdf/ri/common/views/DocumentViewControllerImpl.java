@@ -626,7 +626,6 @@ public class DocumentViewControllerImpl
             Object oldValue = evt.getOldValue();
             // propagate the even to each page.
             if (PropertyConstants.DOCUMENT_VIEW_REFRESH_CHANGE.equals(prop) ||
-                    PropertyConstants.DOCUMENT_VIEW_DEMO_MODE_CHANGE.equals(prop) ||
                     PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE.equals(prop) ||
                     PropertyConstants.DOCUMENT_VIEW_ROTATION_CHANGE.equals(prop)) {
                 List<AbstractPageViewComponent> pageComponents = documentViewModel.getPageComponents();

@@ -62,7 +62,7 @@ public class OnePageView extends AbstractDocumentView {
     private void buildGUI() {
         this.setLayout(new PageViewLayout());
         this.setBackground(backgroundColour);
-        this.setBorder(new EmptyBorder(5,5,5,5));
+        this.setBorder(new EmptyBorder(layoutInserts, layoutInserts, layoutInserts, layoutInserts));
 
         updateDocumentView();
     }

@@ -20,6 +20,7 @@ import org.icepdf.ri.common.KeyListenerPageChanger;
 import org.icepdf.ri.common.MouseWheelListenerPageChanger;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 /**
@@ -74,27 +75,20 @@ public class TwoPageView extends AbstractDocumentView {
 
 
     private void buildGUI() {
+        this.setLayout(new PageViewLayout());
+        this.setBackground(backgroundColour);
+        this.setBorder(new EmptyBorder(layoutInserts, layoutInserts, layoutInserts, layoutInserts));
         // add all page components to gridlayout panel
         pagesPanel = new JPanel();
         pagesPanel.setBackground(backgroundColour);
         // one column equals single page view continuous
         GridLayout gridLayout = new GridLayout(0, 2, horizontalSpace, verticalSpace);
         pagesPanel.setLayout(gridLayout);
-
-        // use a gridbag to center the page component panel
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.weighty = 1.0;                  // allows vertical resizing
-        gbc.weightx = 1.0;                  // allows horizontal resizing
-        gbc.insets =  // component spacer [top, left, bottom, right]
-                new Insets(layoutInserts, layoutInserts, layoutInserts, layoutInserts);
-        gbc.gridwidth = GridBagConstraints.REMAINDER;      // one component per row
+        this.add(pagesPanel);
 
         // finally add all the components
         // add components for every page in the document
         updateDocumentView();
-
-        this.setLayout(new GridBagLayout());
-        this.add(pagesPanel, gbc);
     }
 
     public void updateDocumentView() {
@@ -205,7 +199,7 @@ public class TwoPageView extends AbstractDocumentView {
         pageViewHeight = Math.abs(pageViewHeight / currentZoom);
 
         // two pages wide, generalization, pages are usually the same size we
-        // don't bother to look at the second pages size for the time being. 
+        // don't bother to look at the second pages size for the time being.
         pageViewWidth *= 2;
 
         // add any horizontal padding from layout manager

@@ -48,6 +48,8 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     // document that model is associated.
     protected Document currentDocument;
 
+    protected DocumentView documentView;
+
     // Pages that have selected text.
     private HashMap<Integer, AbstractPageViewComponent> selectedPageText;
     // select all state flag, optimization for painting select all state lazily
@@ -76,6 +78,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         this.currentDocument = currentDocument;
         // create new instance of the undoCaretaker
         undoCaretaker = new UndoCaretaker();
+        floatingAnnotationComponents = new ArrayList<>();
     }
 
     protected abstract AbstractPageViewComponent buildPageViewComponent(DocumentViewModel documentViewModel,
@@ -88,6 +91,18 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     public List<AbstractPageViewComponent> getPageComponents() {
         return pageComponents;
+    }
+
+    public List<AbstractAnnotationComponent> getFloatingAnnotationComponents() {
+        return floatingAnnotationComponents;
+    }
+
+    public void addFloatingAnnotationComponent(AbstractAnnotationComponent annotationComponent){
+        floatingAnnotationComponents.add(annotationComponent);
+    }
+
+    public void removeFloatingAnnotationComponent(AbstractAnnotationComponent annotationComponent){
+        floatingAnnotationComponents.remove(annotationComponent);
     }
 
     public boolean setViewCurrentPageIndex(int pageIndex) {
@@ -256,6 +271,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     public Rectangle getPageBounds(int pageIndex) {
         Rectangle pageBounds = new Rectangle();
+        long start = System.currentTimeMillis();
         if (pageComponents != null && pageIndex < pageComponents.size()) {
             Component pageViewComponentImpl = pageComponents.get(pageIndex);
             if (pageViewComponentImpl != null) {
@@ -269,6 +285,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
                 }
             }
         }
+        long end = System.currentTimeMillis();
         return pageBounds;
     }
 
@@ -281,6 +298,9 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
                 }
             }
             pageComponents.clear();
+        }
+        if (floatingAnnotationComponents != null) {
+            floatingAnnotationComponents.clear();
         }
     }
 
@@ -310,6 +330,14 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         if (this.currentAnnotation != null) {
             this.currentAnnotation.setSelected(true);
         }
+    }
+
+    public DocumentView getDocumentView() {
+        return documentView;
+    }
+
+    public void setDocumentView(DocumentView documentView) {
+        this.documentView = documentView;
     }
 
     /**

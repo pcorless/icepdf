@@ -19,6 +19,7 @@ import org.icepdf.ri.common.CurrentPageChanger;
 import org.icepdf.ri.common.KeyListenerPageColumnChanger;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 
@@ -68,23 +69,16 @@ public class TwoColumnPageView extends AbstractDocumentView {
     }
 
     private void buildGUI() {
+        this.setLayout(new PageViewLayout());
+        this.setBackground(backgroundColour);
+        this.setBorder(new EmptyBorder(layoutInserts, layoutInserts, layoutInserts, layoutInserts));
         // add all page components to gridlayout panel
         pagesPanel = new JPanel();
         pagesPanel.setBackground(backgroundColour);
         // two column equals facing page view continuous
         GridLayout gridLayout = new GridLayout(0, 2, horizontalSpace, verticalSpace);
         pagesPanel.setLayout(gridLayout);
-
-        // use a gridbag to center the page component panel
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.weighty = 1.0;                  // allows vertical resizing
-        gbc.weightx = 1.0;                  // allows horizontal resizing
-        gbc.insets =  // component spacer [top, left, bottom, right]
-                new Insets(layoutInserts, layoutInserts, layoutInserts, layoutInserts);
-        gbc.gridwidth = GridBagConstraints.REMAINDER;      // one component per row
-
-        this.setLayout(new GridBagLayout());
-        this.add(pagesPanel, gbc);
+        this.add(pagesPanel);
 
         // finally add all the components
         // add components for every page in the document

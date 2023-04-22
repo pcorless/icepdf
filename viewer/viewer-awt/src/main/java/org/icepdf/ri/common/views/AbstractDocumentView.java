@@ -79,7 +79,7 @@ public abstract class AbstractDocumentView
     // general layout of page component spacing.
     public static int verticalSpace = 2;
     public static int horizontalSpace = 1;
-    public static int layoutInserts = 0;
+    public static int layoutInserts = 2;
 
     protected DocumentViewController documentViewController;
     protected DocumentViewModel documentViewModel;

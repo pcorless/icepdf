@@ -209,12 +209,6 @@ public abstract class AbstractPageViewComponent
             pageZoom = (Float) newValue;
         } else if (PropertyConstants.DOCUMENT_VIEW_REFRESH_CHANGE.equals(propertyConstant)) {
             // nothing to do but repaint
-        } else if (PropertyConstants.DOCUMENT_VIEW_DEMO_MODE_CHANGE.equals(propertyConstant)) {
-            // re-initialized the page.
-            pageBufferStore.setDirty(true);
-            Page page = getPage();
-            page.getLibrary().disposeFontResources();
-            page.resetInitializedState();
         }
         calculatePageSize(pageSize, pageRotation, pageZoom);
         pageBufferStore.setDirty(true);

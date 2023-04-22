@@ -1,5 +1,7 @@
 package org.icepdf.ri.common.views;
 
+import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
+
 import java.awt.*;
 
 /**
@@ -34,17 +36,21 @@ public class PageViewLayout implements LayoutManager2 {
 
         for (int i = 0; i < nComps; i++) {
             Component component = parent.getComponent(i);
-            if (component.isVisible()) {
+            if (component.isVisible() && !(component instanceof PopupAnnotationComponent)) {
                 Dimension d = component.getPreferredSize();
 
-                // center the pages panel
-                int xoffset = (maxWidth - d.width) / 2;
-                int yoffset = (maxHeight - d.height) / 2;
+                // center the page or pagesPanel
+                int xCord = (maxWidth - d.width) / 2;
+                int yCord = (maxHeight - d.height) / 2;
 
-                if (xoffset < 0) xoffset = 0;
-                if (yoffset < 0) yoffset = 0;
+                if (xCord < 0) xCord = 0;
+                if (yCord < 0) yCord = 0;
 
-                component.setBounds(xoffset,yoffset, d.width, d.height);
+                xCord += insets.left;
+                yCord += insets.top;
+
+                component.setBounds(xCord, yCord, d.width, d.height);
+
 
                 // popup components
                 // map page space coordinate to parent pages location
@@ -110,6 +116,7 @@ public class PageViewLayout implements LayoutManager2 {
 
     /**
      * Reset preferred/minimum width and height.
+     *
      * @param parent parent container
      */
     private void setSizes(Container parent) {
