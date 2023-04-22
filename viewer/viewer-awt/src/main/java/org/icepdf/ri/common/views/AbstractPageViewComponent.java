@@ -399,6 +399,7 @@ public abstract class AbstractPageViewComponent
 
         public Object call() throws Exception {
             if (!isPageIntersectViewport()) {
+                // page teardown when out of view.
                 pageTeardownCallback();
                 return null;
             }

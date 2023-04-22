@@ -20,6 +20,7 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.ri.common.UndoCaretaker;
+import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 
 import javax.swing.*;
 import java.awt.*;
@@ -52,6 +53,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     // select all state flag, optimization for painting select all state lazily
     private boolean selectAll;
     protected List<AbstractPageViewComponent> pageComponents;
+    protected List<AbstractAnnotationComponent> floatingAnnotationComponents;
     // scroll pane used to contain the view
     protected JScrollPane documentViewScrollPane;
     // annotation memento caretaker

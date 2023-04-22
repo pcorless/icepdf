@@ -264,6 +264,8 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
                 documentViewModel.getViewZoom());
         // store the new annotation rectangle in its original user space
         Rectangle bounds = getBounds();
+        // todo this bounds value won't always be in page space,  likely need to create a new
+        // method that can be overridden by popupComponent as it lives in document space, or some other utility
         annotation.syncBBoxToUserSpaceRectangle(commonBoundsNormalization(new GeneralPath(bounds), at));
     }
 

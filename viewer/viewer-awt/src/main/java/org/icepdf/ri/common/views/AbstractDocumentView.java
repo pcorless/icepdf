@@ -185,7 +185,7 @@ public abstract class AbstractDocumentView
 
     public void invalidate() {
         super.invalidate();
-        pagesPanel.invalidate();
+        if (pagesPanel != null) pagesPanel.invalidate();
     }
 
     public void dispose() {

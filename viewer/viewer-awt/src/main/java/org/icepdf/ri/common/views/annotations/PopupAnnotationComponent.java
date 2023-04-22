@@ -462,6 +462,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         // set the bounds and refresh the userSpace rectangle
         setBounds(bBox2);
         // resets user space rectangle to match bbox converted to page space
+        // todo likely need to override for document level painting
         refreshAnnotationRect();
     }
 

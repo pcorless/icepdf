@@ -429,6 +429,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         }
         annotationComponents.add((AbstractAnnotationComponent) annotation);
         annotationToComponent.put(annotation.getAnnotation(), annotation);
+        // todo move JLayeredPane out to the page view
         if (annotation instanceof PopupAnnotationComponent) {
             this.add((AbstractAnnotationComponent) annotation, JLayeredPane.POPUP_LAYER);
         } else if (annotation instanceof MarkupAnnotationComponent) {
@@ -482,11 +483,19 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     }
 
     public void pageTeardownCallback() {
+        System.out.println("pageTeardownCallback " + pageIndex + " removing " + annotationComponents.size());
         SwingUtilities.invokeLater(() -> {
             // we're cleaning up the page which may involve awt component manipulations o we queue
             // callback on the awt thread so we don't try and paint something we just removed
+            // todo clean up old annotations components and glue from layout
+//            if (annotationComponents != null) {
+//                for (AbstractAnnotationComponent abstractAnnotationComponent : annotationComponents) {
+//                    remove(abstractAnnotationComponent);
+//                }
+//            }
             annotationComponents = null;
             annotationToComponent = null;
+
         });
     }
 
