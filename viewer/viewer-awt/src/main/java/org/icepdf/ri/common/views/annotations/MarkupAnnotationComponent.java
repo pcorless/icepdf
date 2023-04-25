@@ -214,21 +214,21 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
                 }
                 // make sure the popup is drawn on the page and
                 // not outside the page clip.
-                Rectangle popupBounds = popupComponent.getBounds();
-                Rectangle pageBounds = pageViewComponent.getBounds();
-                if (!pageBounds.contains(popupBounds.getX(), popupBounds.getY(),
-                        popupBounds.getWidth(), popupBounds.getHeight())) {
-                    int x = popupBounds.x;
-                    int y = popupBounds.y;
-                    if (x + popupBounds.width > pageBounds.width) {
-                        x = x - (popupBounds.width - (pageBounds.width - popupBounds.x));
-                    }
-                    if (y + popupBounds.height > pageBounds.height) {
-                        y = y - (popupBounds.height - (pageBounds.height - popupBounds.y));
-                    }
-                    popupBounds.setLocation(x, y);
-                    popupComponent.setBounds(popupBounds);
-                }
+//                Rectangle popupBounds = popupComponent.getBounds();
+//                Rectangle pageBounds = pageViewComponent.getBounds();
+//                if (!pageBounds.contains(popupBounds.getX(), popupBounds.getY(),
+//                        popupBounds.getWidth(), popupBounds.getHeight())) {
+//                    int x = popupBounds.x;
+//                    int y = popupBounds.y;
+//                    if (x + popupBounds.width > pageBounds.width) {
+//                        x = x - (popupBounds.width - (pageBounds.width - popupBounds.x));
+//                    }
+//                    if (y + popupBounds.height > pageBounds.height) {
+//                        y = y - (popupBounds.height - (pageBounds.height - popupBounds.y));
+//                    }
+//                    popupBounds.setLocation(x, y);
+//                    popupComponent.setBounds(popupBounds);
+//                }
             }
             // no markupAnnotation so we need to create one and display for the addition comments.
             else {

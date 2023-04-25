@@ -399,13 +399,13 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         // revalidate the annotation components.
         if (PropertyConstants.DOCUMENT_VIEW_ROTATION_CHANGE.equals(propertyConstant) ||
                 PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE.equals(propertyConstant)) {
-            if (annotationComponents != null) {
-                synchronized (annotationComponents) {
-                    for (AbstractAnnotationComponent comp : annotationComponents) {
-                        comp.validate();
-                    }
-                }
-            }
+//            if (annotationComponents != null) {
+//                synchronized (annotationComponents) {
+//                    for (AbstractAnnotationComponent comp : annotationComponents) {
+//                        comp.validate();
+//                    }
+//                }
+//            }
             if (destinationComponents != null) {
                 synchronized (destinationComponents) {
                     for (DestinationComponent comp : destinationComponents) {

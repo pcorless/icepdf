@@ -1272,9 +1272,8 @@ public class DocumentViewControllerImpl
         // selected we need to adjust the zoom level appropriately.
         if (src == documentViewScrollPane) {
             setFitMode(getFitMode());
-            // TODO fire new event type to resize/layout changes
-            ((AbstractDocumentView) getDocumentView()).firePropertyChange(
-                    PropertyConstants.DOCUMENT_VIEW_REFRESH_CHANGE, false, true);
+            // update popup annotation page offsets
+            getDocumentView().updatePopupAnnotationAndGlueLocation();
         }
     }
 

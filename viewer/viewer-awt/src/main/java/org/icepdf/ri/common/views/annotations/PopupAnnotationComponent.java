@@ -172,7 +172,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         Rectangle pageBounds = documentViewController.getDocumentViewModel().getPageBounds(parentPageViewComponent.getPageIndex());
         annotationPageSpaceBounds.x += pageBounds.x;
         annotationPageSpaceBounds.y += pageBounds.y;
-        System.out.println("dirty " + pageBounds + " " + annotationPageSpaceBounds.getLocation());
         setBounds(annotationPageSpaceBounds);
     }
 
@@ -190,14 +189,11 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
         // store the new annotation rectangle in its original user space
-        Rectangle bounds = getBounds();
-
-        Rectangle annotationPageSpaceBounds = commonBoundsNormalization(new GeneralPath(bounds), at);
         Rectangle pageBounds = documentViewController.getDocumentViewModel().getPageBounds(parentPageViewComponent.getPageIndex());
-        annotationPageSpaceBounds.x -= pageBounds.x;
-        annotationPageSpaceBounds.y -= pageBounds.y;
-        System.out.println("refresh " + pageBounds + " " + annotationPageSpaceBounds.getLocation());
-        // method that can be overridden by popupComponent as it lives in document space, or some other utility
+        Rectangle bounds = getBounds();
+        bounds.x -= pageBounds.x;
+        bounds.y -= pageBounds.y;
+        Rectangle annotationPageSpaceBounds = commonBoundsNormalization(new GeneralPath(bounds), at);
         annotation.syncBBoxToUserSpaceRectangle(annotationPageSpaceBounds);
     }
 

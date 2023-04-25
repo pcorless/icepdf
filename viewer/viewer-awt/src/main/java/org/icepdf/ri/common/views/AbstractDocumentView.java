@@ -205,12 +205,15 @@ public abstract class AbstractDocumentView
         }
     }
 
-    protected void updatePopupAnnotationAndGlueLocation() {
-        // grab any popups from the view model as they'll need to be re attached to the document vuew
-        HashMap<AbstractPageViewComponent, ArrayList<AbstractAnnotationComponent>> popupComponentsMap
-                = documentViewModel.getFloatingAnnotationComponents();
-        popupComponentsMap.forEach((pageViewComponent, abstractAnnotationComponents) ->
-                abstractAnnotationComponents.forEach(AbstractAnnotationComponent::refreshDirtyBounds));
+    public void updatePopupAnnotationAndGlueLocation() {
+        // invoke later so the layout has time to have correct page positions.
+        SwingUtilities.invokeLater(() -> {
+            // grab any popups from the view model as they'll need to be re attached to the document view
+            HashMap<AbstractPageViewComponent, ArrayList<AbstractAnnotationComponent>> popupComponentsMap
+                    = documentViewModel.getFloatingAnnotationComponents();
+            popupComponentsMap.forEach((pageViewComponent, abstractAnnotationComponents) ->
+                    abstractAnnotationComponents.forEach(AbstractAnnotationComponent::refreshDirtyBounds));
+        });
     }
 
 

@@ -88,6 +88,8 @@ public interface DocumentView extends AdjustmentListener, FocusListener {
      */
     void updateDocumentView();
 
+    void updatePopupAnnotationAndGlueLocation();
+
     /**
      * Sets the tool type/mode that is to be enabled for the particular
      * view.  Mouse and keyboard listeners are associated with this call.  No
