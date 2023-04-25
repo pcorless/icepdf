@@ -55,7 +55,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     // select all state flag, optimization for painting select all state lazily
     private boolean selectAll;
     protected List<AbstractPageViewComponent> pageComponents;
-    protected List<AbstractAnnotationComponent> floatingAnnotationComponents;
+    protected HashMap<AbstractPageViewComponent, ArrayList<AbstractAnnotationComponent>> floatingAnnotationComponents;
     // scroll pane used to contain the view
     protected JScrollPane documentViewScrollPane;
     // annotation memento caretaker
@@ -78,7 +78,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         this.currentDocument = currentDocument;
         // create new instance of the undoCaretaker
         undoCaretaker = new UndoCaretaker();
-        floatingAnnotationComponents = new ArrayList<>();
+        floatingAnnotationComponents = new HashMap<>();
     }
 
     protected abstract AbstractPageViewComponent buildPageViewComponent(DocumentViewModel documentViewModel,
@@ -93,15 +93,33 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         return pageComponents;
     }
 
-    public List<AbstractAnnotationComponent> getFloatingAnnotationComponents() {
+
+    public HashMap<AbstractPageViewComponent, ArrayList<AbstractAnnotationComponent>> getFloatingAnnotationComponents() {
         return floatingAnnotationComponents;
     }
-
-    public void addFloatingAnnotationComponent(AbstractAnnotationComponent annotationComponent){
-        floatingAnnotationComponents.add(annotationComponent);
+    @Override
+    public ArrayList<AbstractAnnotationComponent> getFloatingAnnotationComponents(AbstractPageViewComponent pageViewComponent) {
+        return floatingAnnotationComponents.get(pageViewComponent);
     }
 
-    public void removeFloatingAnnotationComponent(AbstractAnnotationComponent annotationComponent){
+    @Override
+    public void addFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent, AbstractAnnotationComponent annotationComponent) {
+        if (!floatingAnnotationComponents.containsKey(pageViewComponent)) {
+            floatingAnnotationComponents.put(pageViewComponent, new ArrayList<>());
+        }
+        List<AbstractAnnotationComponent> components = floatingAnnotationComponents.get(pageViewComponent);
+        components.add(annotationComponent);
+    }
+
+    @Override
+    public void removeFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent, AbstractAnnotationComponent annotationComponent) {
+        if (!floatingAnnotationComponents.containsKey(pageViewComponent)) {
+            List<AbstractAnnotationComponent> components = floatingAnnotationComponents.get(pageViewComponent);
+            components.remove(annotationComponent);
+        }
+    }
+
+    public void removeFloatingAnnotationComponent(AbstractAnnotationComponent annotationComponent) {
         floatingAnnotationComponents.remove(annotationComponent);
     }
 
@@ -271,7 +289,6 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     public Rectangle getPageBounds(int pageIndex) {
         Rectangle pageBounds = new Rectangle();
-        long start = System.currentTimeMillis();
         if (pageComponents != null && pageIndex < pageComponents.size()) {
             Component pageViewComponentImpl = pageComponents.get(pageIndex);
             if (pageViewComponentImpl != null) {
@@ -285,7 +302,6 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
                 }
             }
         }
-        long end = System.currentTimeMillis();
         return pageBounds;
     }
 

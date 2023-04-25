@@ -100,6 +100,8 @@ public class TwoPageView extends AbstractDocumentView {
             // remove old component
             pagesPanel.removeAll();
             pagesPanel.validate();
+            removeAll();
+            add(pagesPanel);
             AbstractPageViewComponent pageViewComponent;
             int count = 0;
             int index = documentViewModel.getViewCurrentPageIndex();
@@ -123,12 +125,15 @@ public class TwoPageView extends AbstractDocumentView {
                     pageViewComponent.setDocumentViewCallback(this);
                     // add component to layout
                     pagesPanel.add(new PageViewDecorator(pageViewComponent));
-                    pageViewComponent.invalidate();
-                    pageViewComponent.validate();
+                    addPopupAnnotationAndGlue(pageViewComponent);
                     count++;
                 }
             }
-            documentViewModel.getDocumentViewScrollPane().validate();
+            revalidate();
+
+            updatePopupAnnotationAndGlueLocation();
+
+            repaint();
 
             // make sure we have setup all pages with callback call.
             for (PageViewComponent pageViewCom : pageComponents) {
@@ -154,7 +159,6 @@ public class TwoPageView extends AbstractDocumentView {
     }
 
     public void dispose() {
-        disposing = true;
         // remove utilities
         if (pageChangerListener != null) {
             JScrollPane documentScrollpane = documentViewModel.getDocumentViewScrollPane();

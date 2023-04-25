@@ -72,6 +72,8 @@ public class TwoColumnPageView extends AbstractDocumentView {
         this.setLayout(new PageViewLayout());
         this.setBackground(backgroundColour);
         this.setBorder(new EmptyBorder(layoutInserts, layoutInserts, layoutInserts, layoutInserts));
+        // remove old component
+        this.removeAll();
         // add all page components to gridlayout panel
         pagesPanel = new JPanel();
         pagesPanel.setBackground(backgroundColour);
@@ -86,21 +88,25 @@ public class TwoColumnPageView extends AbstractDocumentView {
                 documentViewController.getDocumentViewModel().getPageComponents();
 
         if (pageComponents != null) {
-            PageViewComponent pageViewComponent;
-            for (int i = 0, max = pageComponents.size(), max2 = pageComponents.size();
-                 i < max && i < max2; i++) {
+            AbstractPageViewComponent pageViewComponent;
+            for (int i = 0, max = pageComponents.size(); i < max; i++) {
                 // save for facing page
-                if (i == 0 && max2 > 2 && viewAlignment == RIGHT_VIEW) {
+                if (i == 0 && max > 2 && viewAlignment == RIGHT_VIEW) {
                     // should be adding spacer
                     pagesPanel.add(new JLabel());
                 }
                 pageViewComponent = pageComponents.get(i);
                 if (pageViewComponent != null) {
                     pageViewComponent.setDocumentViewCallback(this);
-                    pagesPanel.add(new PageViewDecorator(
-                            (AbstractPageViewComponent) pageViewComponent));
+                    pagesPanel.add(new PageViewDecorator(pageViewComponent));
+                    addPopupAnnotationAndGlue(pageViewComponent);
                 }
             }
+            revalidate();
+
+            updatePopupAnnotationAndGlueLocation();
+
+            repaint();
         }
     }
 
@@ -129,8 +135,6 @@ public class TwoColumnPageView extends AbstractDocumentView {
     }
 
     public void dispose() {
-        disposing = true;
-
         // remove utilities
         if (currentPageChanger != null) {
             currentPageChanger.dispose();

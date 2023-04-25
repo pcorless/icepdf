@@ -16,6 +16,7 @@
 package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.PDate;
+import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
@@ -45,6 +46,7 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.dnd.*;
 import java.awt.event.*;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.GeneralPath;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
@@ -107,7 +109,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     protected MarkupAnnotation selectedMarkupAnnotation;
 
     protected boolean disableSpellCheck;
-    protected boolean adjustBounds = true;
+
+    protected AbstractPageViewComponent parentPageViewComponent;
 
     private final String userName = SystemProperties.USER_NAME;
 
@@ -150,6 +153,54 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 this); // DropTargetListener
     }
 
+    public void setParentPageComponent(AbstractPageViewComponent pageViewComponent) {
+        parentPageViewComponent = pageViewComponent;
+    }
+
+    /**
+     * Refreshes the components bounds for the current page transformation.
+     * Bounds are already in user space.
+     */
+    public void refreshDirtyBounds() {
+        Page currentPage = pageViewComponent.getPage();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
+        AffineTransform at = currentPage.getPageTransform(
+                documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(),
+                documentViewModel.getViewZoom());
+        Rectangle annotationPageSpaceBounds = commonBoundsNormalization(new GeneralPath(annotation.getUserSpaceRectangle()), at);
+        Rectangle pageBounds = documentViewController.getDocumentViewModel().getPageBounds(parentPageViewComponent.getPageIndex());
+        annotationPageSpaceBounds.x += pageBounds.x;
+        annotationPageSpaceBounds.y += pageBounds.y;
+        System.out.println("dirty " + pageBounds + " " + annotationPageSpaceBounds.getLocation());
+        setBounds(annotationPageSpaceBounds);
+    }
+
+    /**
+     * Refreshes/transforms the page space bounds back to user space.  This
+     * must be done in order refresh the annotation user space rectangle after
+     * UI manipulation, otherwise the annotation will be incorrectly located
+     * on the next repaint.
+     */
+    public void refreshAnnotationRect() {
+        Page currentPage = pageViewComponent.getPage();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
+        AffineTransform at = currentPage.getToPageSpaceTransform(
+                documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(),
+                documentViewModel.getViewZoom());
+        // store the new annotation rectangle in its original user space
+        Rectangle bounds = getBounds();
+
+        Rectangle annotationPageSpaceBounds = commonBoundsNormalization(new GeneralPath(bounds), at);
+        Rectangle pageBounds = documentViewController.getDocumentViewModel().getPageBounds(parentPageViewComponent.getPageIndex());
+        annotationPageSpaceBounds.x -= pageBounds.x;
+        annotationPageSpaceBounds.y -= pageBounds.y;
+        System.out.println("refresh " + pageBounds + " " + annotationPageSpaceBounds.getLocation());
+        // method that can be overridden by popupComponent as it lives in document space, or some other utility
+        annotation.syncBBoxToUserSpaceRectangle(annotationPageSpaceBounds);
+    }
+
     @Override
     public void dispose() {
         super.dispose();
@@ -182,32 +233,32 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
         // check to make sure the new bounds will be visible, if not we correct them
         // this reads, ugly, sorry...
-        if (adjustBounds) {
-            Rectangle currentBounds = getBounds();
-            Dimension pageSize = pageViewComponent.getSize();
-            if (currentBounds.x != x || currentBounds.y != y) {
-                if (x < 0) {
-                    if (currentBounds.width != width) width += x;
-                    x = 0;
-                } else if (x + width > pageSize.width) {
-                    x = pageSize.width - currentBounds.width;
-                }
-                if (y < 0) {
-                    if (currentBounds.height != height) height += y;
-                    y = 0;
-                } else if (y + height > pageSize.height) {
-                    y = pageSize.height - currentBounds.height;
-                }
-            }
-            if (currentBounds.width != width || currentBounds.height != height) {
-                // we have a resize, make sure the component is contained in the page.
-                if (x + width > pageSize.width) {
-                    width = pageSize.width - x;
-                } else if (y + height > pageSize.height) {
-                    height = pageSize.height - y;
-                }
-            }
-        }
+//        if (adjustBounds) {
+//            Rectangle currentBounds = getBounds();
+//            Dimension pageSize = pageViewComponent.getSize();
+//            if (currentBounds.x != x || currentBounds.y != y) {
+//                if (x < 0) {
+//                    if (currentBounds.width != width) width += x;
+//                    x = 0;
+//                } else if (x + width > pageSize.width) {
+//                    x = pageSize.width - currentBounds.width;
+//                }
+//                if (y < 0) {
+//                    if (currentBounds.height != height) height += y;
+//                    y = 0;
+//                } else if (y + height > pageSize.height) {
+//                    y = pageSize.height - currentBounds.height;
+//                }
+//            }
+//            if (currentBounds.width != width || currentBounds.height != height) {
+//                // we have a resize, make sure the component is contained in the page.
+//                if (x + width > pageSize.width) {
+//                    width = pageSize.width - x;
+//                } else if (y + height > pageSize.height) {
+//                    height = pageSize.height - y;
+//                }
+//            }
+//        }
         super.setBounds(x, y, width, height);
     }
 
@@ -235,19 +286,19 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             setBounds(bounds.x, bounds.y, DEFAULT_WIDTH, DEFAULT_HEIGHT);
         }
         // scrub the bounds to make sure they are visible.
-        bounds = getBounds();
-        Rectangle pageBounds = pageViewComponent.getBounds();
-        if (!pageBounds.contains(bounds)) {
-            int x = bounds.x;
-            int y = bounds.y;
-            int width = bounds.width;
-            int height = bounds.height;
-            if (width <= 0) width = DEFAULT_WIDTH;
-            if (height <= 0) height = DEFAULT_HEIGHT;
-            if (x + width > pageBounds.width) x = pageBounds.width - width;
-            if (y + height > pageBounds.height) y = pageBounds.height - height;
-            setBounds(x, y, bounds.width, bounds.height);
-        }
+//        bounds = getBounds();
+//        Rectangle pageBounds = pageViewComponent.getBounds();
+//        if (!pageBounds.contains(bounds)) {
+//            int x = bounds.x;
+//            int y = bounds.y;
+//            int width = bounds.width;
+//            int height = bounds.height;
+//            if (width <= 0) width = DEFAULT_WIDTH;
+//            if (height <= 0) height = DEFAULT_HEIGHT;
+//            if (x + width > pageBounds.width) x = pageBounds.width - width;
+//            if (y + height > pageBounds.height) y = pageBounds.height - height;
+//            setBounds(x, y, bounds.width, bounds.height);
+//        }
         if (getParent() != null) getParent().repaint();
         if (aFlag) {
             textArea.requestFocusInWindow();

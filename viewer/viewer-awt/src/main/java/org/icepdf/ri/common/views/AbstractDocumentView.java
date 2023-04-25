@@ -19,6 +19,8 @@ import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.tools.*;
+import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
 
 import javax.swing.*;
@@ -26,6 +28,8 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -84,7 +88,6 @@ public abstract class AbstractDocumentView
     protected DocumentViewController documentViewController;
     protected DocumentViewModel documentViewModel;
     protected JPanel pagesPanel;
-    protected boolean disposing;
 
     // current page view tool.
     protected ToolHandler currentTool;
@@ -188,6 +191,29 @@ public abstract class AbstractDocumentView
         if (pagesPanel != null) pagesPanel.invalidate();
     }
 
+    protected void addPopupAnnotationAndGlue(AbstractPageViewComponent pageViewComponent) {
+        // grab any popups from the view model as they'll need to be re attached to the document vuew
+        ArrayList<AbstractAnnotationComponent> popupComponentsAndGlue =
+                documentViewModel.getFloatingAnnotationComponents(pageViewComponent);
+        if (popupComponentsAndGlue != null) {
+            // todo: add glue followed by components to setup paint order.
+            for (AbstractAnnotationComponent component: popupComponentsAndGlue) {
+                if (component instanceof PopupAnnotationComponent){
+                    this.add(component, 0);
+                }
+            }
+        }
+    }
+
+    protected void updatePopupAnnotationAndGlueLocation() {
+        // grab any popups from the view model as they'll need to be re attached to the document vuew
+        HashMap<AbstractPageViewComponent, ArrayList<AbstractAnnotationComponent>> popupComponentsMap
+                = documentViewModel.getFloatingAnnotationComponents();
+        popupComponentsMap.forEach((pageViewComponent, abstractAnnotationComponents) ->
+                abstractAnnotationComponents.forEach(AbstractAnnotationComponent::refreshDirtyBounds));
+    }
+
+
     public void dispose() {
         // clean up scroll listeners
         documentViewController.getHorizontalScrollBar().removeAdjustmentListener(this);
@@ -212,6 +238,9 @@ public abstract class AbstractDocumentView
         KeyboardFocusManager focusManager =
                 KeyboardFocusManager.getCurrentKeyboardFocusManager();
         focusManager.removePropertyChangeListener(this);
+
+        this.removeAll();
+        this.invalidate();
     }
 
     /**

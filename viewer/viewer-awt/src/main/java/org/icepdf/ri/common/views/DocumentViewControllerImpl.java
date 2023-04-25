@@ -629,6 +629,7 @@ public class DocumentViewControllerImpl
                     PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE.equals(prop) ||
                     PropertyConstants.DOCUMENT_VIEW_ROTATION_CHANGE.equals(prop)) {
                 List<AbstractPageViewComponent> pageComponents = documentViewModel.getPageComponents();
+                // documentViewScrollPane.revalidate();
                 for (AbstractPageViewComponent pageViewComponent : pageComponents) {
                     // pass in zoom, rotation etc, or get form model....
                     pageViewComponent.updateView(prop, oldValue, newValue);
@@ -1271,6 +1272,9 @@ public class DocumentViewControllerImpl
         // selected we need to adjust the zoom level appropriately.
         if (src == documentViewScrollPane) {
             setFitMode(getFitMode());
+            // TODO fire new event type to resize/layout changes
+            ((AbstractDocumentView) getDocumentView()).firePropertyChange(
+                    PropertyConstants.DOCUMENT_VIEW_REFRESH_CHANGE, false, true);
         }
     }
 

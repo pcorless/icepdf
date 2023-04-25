@@ -78,11 +78,8 @@ public class OnePageView extends AbstractDocumentView {
 
                 // add component to layout
                 this.add(buildPageDecoration(pageViewComponent));
-                pageViewComponent.revalidate();
-                pageViewComponent.repaint();
+                addPopupAnnotationAndGlue(pageViewComponent);
             }
-
-            // todo check the documentViewModel for any popup components that should be added to the view
 
             // make sure we have set up all pages with callback call.
             for (PageViewComponent pageViewCom : pageComponents) {
@@ -90,6 +87,12 @@ public class OnePageView extends AbstractDocumentView {
                     pageViewCom.setDocumentViewCallback(this);
                 }
             }
+
+            revalidate();
+
+            updatePopupAnnotationAndGlueLocation();
+
+            repaint();
         }
     }
 
@@ -112,7 +115,6 @@ public class OnePageView extends AbstractDocumentView {
     }
 
     public void dispose() {
-        disposing = true;
         // remove utilities
         if (pageChangerListener != null) {
             JScrollPane documentScrollpane = documentViewModel.getDocumentViewScrollPane();
@@ -122,10 +124,6 @@ public class OnePageView extends AbstractDocumentView {
         if (keyListenerPageChanger != null) {
             keyListenerPageChanger.uninstall();
         }
-
-        // trigger a re-layout
-        this.removeAll();
-        this.invalidate();
 
         // make sure we call super.
         super.dispose();
