@@ -197,6 +197,7 @@ public interface DocumentViewModel {
      * @param annotationComponent annotation component to remove
      */
     void removeFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent, AbstractAnnotationComponent annotationComponent);
+    void removeAllFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent);
 
     /**
      * Sets the view model current page index.

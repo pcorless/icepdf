@@ -119,6 +119,12 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         }
     }
 
+    public void removeAllFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent) {
+        if (!floatingAnnotationComponents.containsKey(pageViewComponent)) {
+            floatingAnnotationComponents.remove(pageViewComponent);
+        }
+    }
+
     public void removeFloatingAnnotationComponent(AbstractAnnotationComponent annotationComponent) {
         floatingAnnotationComponents.remove(annotationComponent);
     }

@@ -88,7 +88,9 @@ public interface DocumentView extends AdjustmentListener, FocusListener {
      */
     void updateDocumentView();
 
+    // todo no longer needed
     void updatePopupAnnotationAndGlueLocation();
+    void repaintPopupAnnotationAndGlueLocation();
 
     /**
      * Sets the tool type/mode that is to be enabled for the particular

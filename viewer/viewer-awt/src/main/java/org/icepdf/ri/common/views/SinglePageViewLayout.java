@@ -1,5 +1,6 @@
 package org.icepdf.ri.common.views;
 
+import org.icepdf.ri.common.views.annotations.MarkupGlueComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 
 import java.awt.*;
@@ -7,19 +8,13 @@ import java.awt.*;
 /**
  * Layout manager for centering and adding pages to single or facing pages contiguous and non-contiguous views.
  */
-public class PageViewLayout implements LayoutManager2 {
-    private final int vgap;
-    private int minWidth = 0, minHeight = 0;
-    private int preferredWidth = 0, preferredHeight = 0;
-    private boolean sizeUnknown = true;
+public class SinglePageViewLayout implements LayoutManager2 {
 
-    public PageViewLayout() {
-        this(5);
-    }
-
-    public PageViewLayout(int v) {
-        vgap = v;
-    }
+    protected static final int PAGE_SPACING_HORIZONTAL = 2;
+    protected static final int PAGE_SPACING_VERTICAL = 2;
+    protected int minWidth = 0, minHeight = 0;
+    protected int preferredWidth = 0, preferredHeight = 0;
+    protected boolean sizeUnknown = true;
 
     /*
      * This is called when the panel is first displayed, and every time its size changes.
@@ -36,9 +31,9 @@ public class PageViewLayout implements LayoutManager2 {
 
         for (int i = 0; i < nComps; i++) {
             Component component = parent.getComponent(i);
-            if (component.isVisible() && !(component instanceof PopupAnnotationComponent)) {
+            if (component.isVisible() &&
+                    !(component instanceof PopupAnnotationComponent || component instanceof MarkupGlueComponent)) {
                 Dimension d = component.getPreferredSize();
-
                 // center the page or pagesPanel
                 int xCord = (maxWidth - d.width) / 2;
                 int yCord = (maxHeight - d.height) / 2;
@@ -50,13 +45,6 @@ public class PageViewLayout implements LayoutManager2 {
                 yCord += insets.top;
 
                 component.setBounds(xCord, yCord, d.width, d.height);
-
-
-                // popup components
-                // map page space coordinate to parent pages location
-                // likely keep a cache of the page offsets to speed this up
-
-                // worry about glue later
             }
         }
     }
@@ -119,7 +107,7 @@ public class PageViewLayout implements LayoutManager2 {
      *
      * @param parent parent container
      */
-    private void setSizes(Container parent) {
+    protected void setSizes(Container parent) {
         preferredWidth = 0;
         preferredHeight = 0;
         minWidth = 0;
@@ -130,15 +118,11 @@ public class PageViewLayout implements LayoutManager2 {
 
         for (int i = 0; i < nComps; i++) {
             Component component = parent.getComponent(i);
-            if (component.isVisible()) {
+            if (component.isVisible() &&
+                    !(component instanceof PopupAnnotationComponent || component instanceof MarkupGlueComponent)) {
                 dimension = component.getPreferredSize();
-                if (i > 0) {
-                    preferredWidth += dimension.width / 2;
-                    preferredHeight += vgap;
-                } else {
-                    preferredWidth = dimension.width;
-                }
-                preferredHeight += dimension.height;
+                preferredWidth = dimension.width;
+                preferredHeight += dimension.height + PAGE_SPACING_VERTICAL;
 
                 minWidth = Math.max(component.getMinimumSize().width, minWidth);
                 minHeight = preferredHeight;
@@ -147,7 +131,6 @@ public class PageViewLayout implements LayoutManager2 {
     }
 
     public String toString() {
-        String str = "";
-        return getClass().getName() + "[vgap=" + vgap + str + "]";
+        return getClass().getName();
     }
 }

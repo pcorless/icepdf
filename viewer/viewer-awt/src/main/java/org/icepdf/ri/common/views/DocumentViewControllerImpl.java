@@ -634,6 +634,8 @@ public class DocumentViewControllerImpl
                     // pass in zoom, rotation etc, or get form model....
                     pageViewComponent.updateView(prop, oldValue, newValue);
                 }
+                // todo hide popups until the layout settles on page moved call makes them visible again?
+//                documentView.repaintPopupAnnotationAndGlueLocation();
             }
         }
     }
@@ -1272,8 +1274,6 @@ public class DocumentViewControllerImpl
         // selected we need to adjust the zoom level appropriately.
         if (src == documentViewScrollPane) {
             setFitMode(getFitMode());
-            // update popup annotation page offsets
-            getDocumentView().updatePopupAnnotationAndGlueLocation();
         }
     }
 

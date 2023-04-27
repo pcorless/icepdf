@@ -75,7 +75,7 @@ public class TwoPageView extends AbstractDocumentView {
 
 
     private void buildGUI() {
-        this.setLayout(new PageViewLayout());
+        this.setLayout(new SinglePageViewLayout());
         this.setBackground(backgroundColour);
         this.setBorder(new EmptyBorder(layoutInserts, layoutInserts, layoutInserts, layoutInserts));
         // add all page components to gridlayout panel

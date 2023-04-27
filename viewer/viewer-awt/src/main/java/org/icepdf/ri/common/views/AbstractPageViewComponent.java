@@ -179,6 +179,10 @@ public abstract class AbstractPageViewComponent
         documentViewController = this.parentDocumentView.getParentViewController();
     }
 
+    public DocumentView getParentDocumentView() {
+        return parentDocumentView;
+    }
+
     public static boolean isAnnotationTool(final int displayTool) {
         return displayTool == DocumentViewModel.DISPLAY_TOOL_SELECTION ||
                 displayTool == DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION ||

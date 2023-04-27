@@ -62,19 +62,10 @@ public class OneColumnPageView extends AbstractDocumentView {
     }
 
     private void buildGUI() {
-        this.setLayout(new PageViewLayout());
+        this.setLayout(new SingleColumnPageViewLayout());
         this.setBackground(backgroundColour);
         this.setBorder(new EmptyBorder(layoutInserts, layoutInserts, layoutInserts, layoutInserts));
-        // add all page components to grid layout panel
-        pagesPanel = new JPanel();
-        pagesPanel.setBackground(backgroundColour);
-        // one column equals single page view continuous
-        GridLayout gridLayout = new GridLayout(0, 1, horizontalSpace, verticalSpace);
-        pagesPanel.setLayout(gridLayout);
-        this.add(pagesPanel);
 
-        // finally add all the components
-        // add components for every page in the document
         List<AbstractPageViewComponent> pageComponents =
                 documentViewController.getDocumentViewModel().getPageComponents();
 
@@ -83,14 +74,13 @@ public class OneColumnPageView extends AbstractDocumentView {
                 if (pageViewComponent != null) {
                     pageViewComponent.setDocumentViewCallback(this);
                     // add component to layout
-                    pagesPanel.add(new PageViewDecorator(pageViewComponent));
+                    JComponent page = new PageViewDecorator(pageViewComponent);
+                    page.addComponentListener(this);
+                    add(page);
                     addPopupAnnotationAndGlue(pageViewComponent);
                 }
             }
             revalidate();
-
-            updatePopupAnnotationAndGlueLocation();
-
             repaint();
         }
     }
@@ -124,27 +114,26 @@ public class OneColumnPageView extends AbstractDocumentView {
         }
 
         // trigger a re-layout
-        pagesPanel.removeAll();
-        pagesPanel.invalidate();
+        removeAll();
+        invalidate();
 
         // make sure we call super.
         super.dispose();
     }
 
     public Dimension getDocumentSize() {
+        // todo this might not be needed anymore?
         float pageViewWidth = 0;
         float pageViewHeight = 0;
-        if (pagesPanel != null) {
-            int currCompIndex = documentViewController.getCurrentPageIndex();
-            int numComponents = pagesPanel.getComponentCount();
-            if (currCompIndex >= 0 && currCompIndex < numComponents) {
-                Component comp = pagesPanel.getComponent(currCompIndex);
-                if (comp instanceof PageViewDecorator) {
-                    PageViewDecorator pvd = (PageViewDecorator) comp;
-                    Dimension dim = pvd.getPreferredSize();
-                    pageViewWidth = dim.width;
-                    pageViewHeight = dim.height;
-                }
+        int currCompIndex = documentViewController.getCurrentPageIndex();
+        int numComponents = getComponentCount();
+        if (currCompIndex >= 0 && currCompIndex < numComponents) {
+            Component comp = getComponent(currCompIndex);
+            if (comp instanceof PageViewDecorator) {
+                PageViewDecorator pvd = (PageViewDecorator) comp;
+                Dimension dim = pvd.getPreferredSize();
+                pageViewWidth = dim.width;
+                pageViewHeight = dim.height;
             }
         }
         // normalize the dimensions to a zoom level of zero.

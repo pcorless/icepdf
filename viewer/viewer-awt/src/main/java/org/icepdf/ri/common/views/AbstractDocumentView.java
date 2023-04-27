@@ -43,7 +43,7 @@ import java.util.logging.Logger;
  */
 public abstract class AbstractDocumentView
         extends JComponent
-        implements DocumentView, PropertyChangeListener, MouseListener, MouseMotionListener, ActionListener {
+        implements DocumentView, PropertyChangeListener, MouseListener, MouseMotionListener, ActionListener, ComponentListener {
 
     private static final Logger logger =
             Logger.getLogger(AbstractDocumentView.class.toString());
@@ -192,11 +192,10 @@ public abstract class AbstractDocumentView
     }
 
     protected void addPopupAnnotationAndGlue(AbstractPageViewComponent pageViewComponent) {
-        // grab any popups from the view model as they'll need to be re attached to the document vuew
+        // grab any popups from the view model as they'll need to be re attached to the document view
         ArrayList<AbstractAnnotationComponent> popupComponentsAndGlue =
                 documentViewModel.getFloatingAnnotationComponents(pageViewComponent);
         if (popupComponentsAndGlue != null) {
-            // todo: add glue followed by components to setup paint order.
             for (AbstractAnnotationComponent component: popupComponentsAndGlue) {
                 if (component instanceof PopupAnnotationComponent){
                     this.add(component, 0);
@@ -205,6 +204,7 @@ public abstract class AbstractDocumentView
         }
     }
 
+    // todo remove
     public void updatePopupAnnotationAndGlueLocation() {
         // invoke later so the layout has time to have correct page positions.
         SwingUtilities.invokeLater(() -> {
@@ -212,8 +212,48 @@ public abstract class AbstractDocumentView
             HashMap<AbstractPageViewComponent, ArrayList<AbstractAnnotationComponent>> popupComponentsMap
                     = documentViewModel.getFloatingAnnotationComponents();
             popupComponentsMap.forEach((pageViewComponent, abstractAnnotationComponents) ->
-                    abstractAnnotationComponents.forEach(AbstractAnnotationComponent::refreshDirtyBounds));
+                    abstractAnnotationComponents.forEach((annotationComponent -> {
+                        annotationComponent.refreshDirtyBounds();
+                        annotationComponent.repaint();
+                    })));
         });
+    }
+
+    // todo remove
+    public void repaintPopupAnnotationAndGlueLocation() {
+        // invoke later so the layout has time to have correct page positions.
+            // grab any popups from the view model as they'll need to be re attached to the document view
+            HashMap<AbstractPageViewComponent, ArrayList<AbstractAnnotationComponent>> popupComponentsMap
+                    = documentViewModel.getFloatingAnnotationComponents();
+            popupComponentsMap.forEach((pageViewComponent, abstractAnnotationComponents) ->
+                    abstractAnnotationComponents.forEach((annotationComponent -> {
+                        annotationComponent.setVisible(false);
+                    })));
+    }
+
+    public void componentMoved(ComponentEvent e) {
+        /// annotation components can come and go,  so we need to get the current ones.
+        if (e.getComponent() instanceof PageViewDecorator) {
+            PageViewComponent pageViewComponent = ((PageViewDecorator) e.getComponent()).getPageViewComponent();
+            ArrayList<AbstractAnnotationComponent> annotationComponents =
+                    documentViewModel.getFloatingAnnotationComponents((AbstractPageViewComponent) pageViewComponent);
+            if (annotationComponents != null ){
+                annotationComponents.forEach((annotationComponent -> {
+                    annotationComponent.refreshDirtyBounds();
+                    // todo make them paintable again?
+//                    annotationComponent.setVisible(((PopupAnnotationComponent)annotationComponent).getAnnotation().isOpen());
+                }));
+            }
+            this.repaint();
+        }
+    }
+    public void componentHidden(ComponentEvent e) {
+    }
+
+    public void componentResized(ComponentEvent e) {
+    }
+
+    public void componentShown(ComponentEvent e) {
     }
 
 
@@ -232,6 +272,13 @@ public abstract class AbstractDocumentView
         documentViewModel.getDocumentViewScrollPane().removeMouseWheelListener(mouseWheelZoom);
         removeMouseListener(this);
         removeMouseMotionListener(this);
+
+        // remove the component resize listeners
+        java.util.List<AbstractPageViewComponent> pageComponents = documentViewModel.getPageComponents();
+        if (pageComponents != null) {
+            pageComponents.forEach(pageViewComponent -> pageViewComponent.removeComponentListener(this));
+        }
+
         // stop the auto scroll timer
         autoScrollTimer.stop();
 

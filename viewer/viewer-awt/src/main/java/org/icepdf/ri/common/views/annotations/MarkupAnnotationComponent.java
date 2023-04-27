@@ -175,6 +175,7 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
             PopupAnnotationComponent comp = (PopupAnnotationComponent)
                     AnnotationComponentFactory.buildAnnotationComponent(
                             popupAnnotation, documentViewController, pageViewComponent);
+            comp.setParentPageComponent(pageViewComponent);
             // set the bounds and refresh the userSpace rectangle
             comp.setBounds(bBox);
             // resets user space rectangle to match bbox converted to page space

@@ -85,8 +85,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         implements TreeSelectionListener, ActionListener, DocumentListener, PropertyChangeListener, MouseWheelListener,
         DropTargetListener {
 
-    public static int DEFAULT_WIDTH = 215;
-    public static int DEFAULT_HEIGHT = 150;
+    public static int DEFAULT_WIDTH = 325;
+    public static int DEFAULT_HEIGHT = 225;
     public static Color backgroundColor = new Color(252, 253, 227);
     public static Color borderColor = new Color(153, 153, 153);
     public static Dimension BUTTON_SIZE = new Dimension(22, 22);
@@ -169,7 +169,9 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
         Rectangle annotationPageSpaceBounds = commonBoundsNormalization(new GeneralPath(annotation.getUserSpaceRectangle()), at);
-        Rectangle pageBounds = documentViewController.getDocumentViewModel().getPageBounds(parentPageViewComponent.getPageIndex());
+        // todo optimize by just grabbing the decorator location directly
+//        Rectangle pageBounds = documentViewController.getDocumentViewModel().getPageBounds(parentPageViewComponent.getPageIndex());
+        Rectangle pageBounds = parentPageViewComponent.getParent().getBounds();
         annotationPageSpaceBounds.x += pageBounds.x;
         annotationPageSpaceBounds.y += pageBounds.y;
         setBounds(annotationPageSpaceBounds);
@@ -189,7 +191,9 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
         // store the new annotation rectangle in its original user space
-        Rectangle pageBounds = documentViewController.getDocumentViewModel().getPageBounds(parentPageViewComponent.getPageIndex());
+        // todo optimize by just grabbing the decorator location directly
+//        Rectangle pageBounds = documentViewController.getDocumentViewModel().getPageBounds(parentPageViewComponent.getPageIndex());
+        Rectangle pageBounds = parentPageViewComponent.getParent().getBounds();
         Rectangle bounds = getBounds();
         bounds.x -= pageBounds.x;
         bounds.y -= pageBounds.y;
@@ -229,32 +233,32 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
         // check to make sure the new bounds will be visible, if not we correct them
         // this reads, ugly, sorry...
-//        if (adjustBounds) {
-//            Rectangle currentBounds = getBounds();
-//            Dimension pageSize = pageViewComponent.getSize();
-//            if (currentBounds.x != x || currentBounds.y != y) {
-//                if (x < 0) {
-//                    if (currentBounds.width != width) width += x;
-//                    x = 0;
-//                } else if (x + width > pageSize.width) {
-//                    x = pageSize.width - currentBounds.width;
-//                }
-//                if (y < 0) {
-//                    if (currentBounds.height != height) height += y;
-//                    y = 0;
-//                } else if (y + height > pageSize.height) {
-//                    y = pageSize.height - currentBounds.height;
-//                }
-//            }
-//            if (currentBounds.width != width || currentBounds.height != height) {
-//                // we have a resize, make sure the component is contained in the page.
-//                if (x + width > pageSize.width) {
-//                    width = pageSize.width - x;
-//                } else if (y + height > pageSize.height) {
-//                    height = pageSize.height - y;
-//                }
-//            }
-//        }
+        if (isMousePressed) {
+            Rectangle currentBounds = getBounds();
+            Dimension documentSize = ((JComponent)pageViewComponent.getParentDocumentView()).getSize();
+            if (currentBounds.x != x || currentBounds.y != y) {
+                if (x < 0) {
+                    if (currentBounds.width != width) width += x;
+                    x = 0;
+                } else if (x + width > documentSize.width) {
+                    x = documentSize.width - currentBounds.width;
+                }
+                if (y < 0) {
+                    if (currentBounds.height != height) height += y;
+                    y = 0;
+                } else if (y + height > documentSize.height) {
+                    y = documentSize.height - currentBounds.height;
+                }
+            }
+            if (currentBounds.width != width || currentBounds.height != height) {
+                // we have a resize, make sure the component is contained in the page.
+                if (x + width > documentSize.width) {
+                    width = documentSize.width - x;
+                } else if (y + height > documentSize.height) {
+                    height = documentSize.height - y;
+                }
+            }
+        }
         super.setBounds(x, y, width, height);
     }
 
@@ -1316,7 +1320,10 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         @Override
         public String toString() {
             final MarkupAnnotation annot = (MarkupAnnotation) userObject;
-            return annot.getTitleText() + " - " + annot.getContents();
+            if (annot != null) {
+                return annot.getTitleText() + " - " + annot.getContents();
+            }
+            return "";
         }
 
         @Override
