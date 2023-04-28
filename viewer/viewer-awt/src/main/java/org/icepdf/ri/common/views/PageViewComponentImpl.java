@@ -454,19 +454,10 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
             annotationToComponent.entrySet().stream().filter(e -> e.getValue().equals(annotationComp)).findFirst()
                     .ifPresent(e -> annotationToComponent.remove(e.getKey()));
         }
-        // todo clean popup and glue too.
-        this.remove((AbstractAnnotationComponent) annotationComp);
-        // make sure we remove the glue
-        if (annotationComp instanceof MarkupAnnotationComponent) {
-            synchronized (this.getTreeLock()) {
-                Component[] components = this.getComponents();
-                for (Component component : components) {
-                    if (component instanceof MarkupGlueComponent &&
-                            ((MarkupGlueComponent) component).getMarkupAnnotationComponent().equals(annotationComp)) {
-                        this.remove(component);
-                    }
-                }
-            }
+        if (annotationComp instanceof PopupAnnotationComponent) {
+            removePopupAnnotationComponent((PopupAnnotationComponent)annotationComp);
+        } else {
+            this.remove((AbstractAnnotationComponent) annotationComp);
         }
     }
 
@@ -612,6 +603,16 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     private void removePopupAnnotationComponent(PopupAnnotationComponent popupAnnotationComponent) {
         parentDocumentView.remove(popupAnnotationComponent);
         documentViewModel.removeFloatingAnnotationComponent(this, popupAnnotationComponent);
+        // make sure we remove the glue
+//        synchronized (this.getTreeLock()) {
+//            Component[] components = this.getComponents();
+//            for (Component component : components) {
+//                if (component instanceof MarkupGlueComponent &&
+//                        ((MarkupGlueComponent) component).getMarkupAnnotationComponent().equals(popupAnnotationComponent)) {
+//                    this.remove(component);
+//                }
+//            }
+//        }
     }
 
     private void initializeDestinationComponents(Page page) {

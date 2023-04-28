@@ -634,8 +634,6 @@ public class DocumentViewControllerImpl
                     // pass in zoom, rotation etc, or get form model....
                     pageViewComponent.updateView(prop, oldValue, newValue);
                 }
-                // todo hide popups until the layout settles on page moved call makes them visible again?
-//                documentView.repaintPopupAnnotationAndGlueLocation();
             }
         }
     }
@@ -1113,9 +1111,14 @@ public class DocumentViewControllerImpl
         boolean changed = documentViewModel.setViewZoom(zoom);
 
         if (changed) {
+            // hide the popups as they will flicker in the old location on the zoom chance
+            // they are made visible again when the page component moved event fires
+            documentView.hidePopupAnnotationAndGlueLocation();
+
+            // send it to each individual page
             firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE, oldZoom, zoom);
-            ((JComponent) documentView).invalidate();
-            // send out the property change event.
+
+            // send the zoom chance to the document page view
             ((JComponent) documentView).firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE, oldZoom, zoom);
             // get the view port validate the viewport and shift the components
             ((JComponent) documentView).revalidate();

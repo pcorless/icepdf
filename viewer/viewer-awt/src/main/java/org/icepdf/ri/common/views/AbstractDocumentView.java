@@ -196,8 +196,8 @@ public abstract class AbstractDocumentView
         ArrayList<AbstractAnnotationComponent> popupComponentsAndGlue =
                 documentViewModel.getFloatingAnnotationComponents(pageViewComponent);
         if (popupComponentsAndGlue != null) {
-            for (AbstractAnnotationComponent component: popupComponentsAndGlue) {
-                if (component instanceof PopupAnnotationComponent){
+            for (AbstractAnnotationComponent component : popupComponentsAndGlue) {
+                if (component instanceof PopupAnnotationComponent) {
                     this.add(component, 0);
                 }
             }
@@ -219,16 +219,13 @@ public abstract class AbstractDocumentView
         });
     }
 
-    // todo remove
-    public void repaintPopupAnnotationAndGlueLocation() {
+    public void hidePopupAnnotationAndGlueLocation() {
         // invoke later so the layout has time to have correct page positions.
-            // grab any popups from the view model as they'll need to be re attached to the document view
-            HashMap<AbstractPageViewComponent, ArrayList<AbstractAnnotationComponent>> popupComponentsMap
-                    = documentViewModel.getFloatingAnnotationComponents();
-            popupComponentsMap.forEach((pageViewComponent, abstractAnnotationComponents) ->
-                    abstractAnnotationComponents.forEach((annotationComponent -> {
-                        annotationComponent.setVisible(false);
-                    })));
+        // grab any popups from the view model as they'll need to be re attached to the document view
+        HashMap<AbstractPageViewComponent, ArrayList<AbstractAnnotationComponent>> popupComponentsMap
+                = documentViewModel.getFloatingAnnotationComponents();
+        popupComponentsMap.forEach((pageViewComponent, abstractAnnotationComponents) ->
+                abstractAnnotationComponents.forEach((annotationComponent -> annotationComponent.setVisible(false))));
     }
 
     public void componentMoved(ComponentEvent e) {
@@ -237,16 +234,16 @@ public abstract class AbstractDocumentView
             PageViewComponent pageViewComponent = ((PageViewDecorator) e.getComponent()).getPageViewComponent();
             ArrayList<AbstractAnnotationComponent> annotationComponents =
                     documentViewModel.getFloatingAnnotationComponents((AbstractPageViewComponent) pageViewComponent);
-            if (annotationComponents != null ){
+            if (annotationComponents != null) {
                 annotationComponents.forEach((annotationComponent -> {
+                    // one position has been set, make it visible and set the new bound, order matters.
+                    annotationComponent.setVisible(((PopupAnnotationComponent) annotationComponent).getAnnotation().isOpen());
                     annotationComponent.refreshDirtyBounds();
-                    // todo make them paintable again?
-//                    annotationComponent.setVisible(((PopupAnnotationComponent)annotationComponent).getAnnotation().isOpen());
                 }));
             }
-            this.repaint();
         }
     }
+
     public void componentHidden(ComponentEvent e) {
     }
 
