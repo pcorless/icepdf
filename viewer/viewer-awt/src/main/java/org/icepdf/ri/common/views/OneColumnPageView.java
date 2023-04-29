@@ -62,7 +62,7 @@ public class OneColumnPageView extends AbstractDocumentView {
     }
 
     private void buildGUI() {
-        this.setLayout(new SingleColumnPageViewLayout());
+        this.setLayout(new OneColumnPageViewLayout());
         this.setBackground(backgroundColour);
         this.setBorder(new EmptyBorder(layoutInserts, layoutInserts, layoutInserts, layoutInserts));
 

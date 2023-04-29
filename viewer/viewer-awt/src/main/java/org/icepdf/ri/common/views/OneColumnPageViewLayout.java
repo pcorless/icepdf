@@ -5,7 +5,7 @@ import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 
 import java.awt.*;
 
-public class SingleColumnPageViewLayout extends SinglePageViewLayout {
+public class OneColumnPageViewLayout extends OnePageViewLayout {
     public void layoutContainer(Container parent) {
         Insets insets = parent.getInsets();
         int maxWidth = parent.getWidth() - (insets.left + insets.right);

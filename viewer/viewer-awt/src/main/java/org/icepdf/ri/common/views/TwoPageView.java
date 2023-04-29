@@ -75,16 +75,9 @@ public class TwoPageView extends AbstractDocumentView {
 
 
     private void buildGUI() {
-        this.setLayout(new SinglePageViewLayout());
+        this.setLayout(new TwoPageViewLayout(viewAlignment));
         this.setBackground(backgroundColour);
         this.setBorder(new EmptyBorder(layoutInserts, layoutInserts, layoutInserts, layoutInserts));
-        // add all page components to gridlayout panel
-        pagesPanel = new JPanel();
-        pagesPanel.setBackground(backgroundColour);
-        // one column equals single page view continuous
-        GridLayout gridLayout = new GridLayout(0, 2, horizontalSpace, verticalSpace);
-        pagesPanel.setLayout(gridLayout);
-        this.add(pagesPanel);
 
         // finally add all the components
         // add components for every page in the document
@@ -98,41 +91,35 @@ public class TwoPageView extends AbstractDocumentView {
 
         if (pageComponents != null) {
             // remove old component
-            pagesPanel.removeAll();
-            pagesPanel.validate();
-            removeAll();
-            add(pagesPanel);
+            this.removeAll();
+
             AbstractPageViewComponent pageViewComponent;
             int count = 0;
             int index = documentViewModel.getViewCurrentPageIndex();
             int docLength = pageComponents.size();
 
-
+            // adjust for 2 up view, so we don't page again to the 3 pages...
             if (viewAlignment == RIGHT_VIEW &&
                     ((index > 0 && index % 2 == 0) || (index > 0 && docLength == 2))) {
                 index--;
             }
 
             for (int i = index; i < docLength && count < 2; i++) {
-                // save for facing page
+                // skip for facing page
                 if (i == 0 && docLength > 2 && viewAlignment == RIGHT_VIEW) {
-                    // should be adding spacer
-                    pagesPanel.add(new JLabel());
                     count++;
                 }
                 pageViewComponent = pageComponents.get(i);
                 if (pageViewComponent != null) {
-                    pageViewComponent.setDocumentViewCallback(this);
                     // add component to layout
-                    pagesPanel.add(new PageViewDecorator(pageViewComponent));
+                    JComponent page = new PageViewDecorator(pageViewComponent);
+                    page.addComponentListener(this);
+                    this.add(page);
                     addPopupAnnotationAndGlue(pageViewComponent);
                     count++;
                 }
             }
             revalidate();
-
-            updatePopupAnnotationAndGlueLocation();
-
             repaint();
 
             // make sure we have setup all pages with callback call.
@@ -172,8 +159,8 @@ public class TwoPageView extends AbstractDocumentView {
         }
 
         // trigger a re-layout
-        pagesPanel.removeAll();
-        pagesPanel.invalidate();
+        removeAll();
+        invalidate();
 
         // make sure we call super.
         super.dispose();
@@ -182,19 +169,17 @@ public class TwoPageView extends AbstractDocumentView {
     public Dimension getDocumentSize() {
         float pageViewWidth = 0;
         float pageViewHeight = 0;
-        if (pagesPanel != null) {
-            int count = pagesPanel.getComponentCount();
-            Component comp;
-            // should only have one page view decorator for single page view.
-            for (int i = 0; i < count; i++) {
-                comp = pagesPanel.getComponent(i);
-                if (comp instanceof PageViewDecorator) {
-                    PageViewDecorator pvd = (PageViewDecorator) comp;
-                    Dimension dim = pvd.getPreferredSize();
-                    pageViewWidth = dim.width;
-                    pageViewHeight = dim.height;
-                    break;
-                }
+        int count = getComponentCount();
+        Component comp;
+        // should only have one page view decorator for single page view.
+        for (int i = 0; i < count; i++) {
+            comp = getComponent(i);
+            if (comp instanceof PageViewDecorator) {
+                PageViewDecorator pvd = (PageViewDecorator) comp;
+                Dimension dim = pvd.getPreferredSize();
+                pageViewWidth = dim.width;
+                pageViewHeight = dim.height;
+                break;
             }
         }
         // normalize the dimensions to a zoom level of zero.

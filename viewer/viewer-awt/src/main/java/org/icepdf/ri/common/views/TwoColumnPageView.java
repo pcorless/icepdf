@@ -69,7 +69,7 @@ public class TwoColumnPageView extends AbstractDocumentView {
     }
 
     private void buildGUI() {
-        this.setLayout(new SinglePageViewLayout());
+        this.setLayout(new OnePageViewLayout());
         this.setBackground(backgroundColour);
         this.setBorder(new EmptyBorder(layoutInserts, layoutInserts, layoutInserts, layoutInserts));
         // remove old component

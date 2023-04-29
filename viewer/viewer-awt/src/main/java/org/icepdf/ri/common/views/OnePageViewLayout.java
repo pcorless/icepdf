@@ -8,7 +8,7 @@ import java.awt.*;
 /**
  * Layout manager for centering and adding pages to single or facing pages contiguous and non-contiguous views.
  */
-public class SinglePageViewLayout implements LayoutManager2 {
+public class OnePageViewLayout implements LayoutManager2 {
 
     protected static final int PAGE_SPACING_HORIZONTAL = 2;
     protected static final int PAGE_SPACING_VERTICAL = 2;
