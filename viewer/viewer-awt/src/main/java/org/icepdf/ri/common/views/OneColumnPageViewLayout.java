@@ -1,11 +1,15 @@
 package org.icepdf.ri.common.views;
 
-import org.icepdf.ri.common.views.annotations.MarkupGlueComponent;
-import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
-
 import java.awt.*;
+import java.util.Arrays;
 
 public class OneColumnPageViewLayout extends OnePageViewLayout {
+
+
+    public OneColumnPageViewLayout(DocumentViewModel documentViewModel) {
+        super(documentViewModel);
+    }
+
     public void layoutContainer(Container parent) {
         Insets insets = parent.getInsets();
         int maxWidth = parent.getWidth() - (insets.left + insets.right);
@@ -17,33 +21,35 @@ public class OneColumnPageViewLayout extends OnePageViewLayout {
             setSizes(parent);
         }
 
-        for (int i = 0, count = 0; i < nComps; i++) {
-            Component component = parent.getComponent(i);
-            if (component.isVisible() &&
-                    !(component instanceof PopupAnnotationComponent || component instanceof MarkupGlueComponent)) {
-                Dimension d = component.getPreferredSize();
-                // set starting position for page, everything else flows from there
-                if(count == 0){
-                    // detect if we should be centering
-                    if (minWidth < maxWidth){
-                        xCord = (maxWidth - d.width) / 2;
-                    }
-                    if (minHeight < maxHeight){
-                        yCord = (maxHeight - minHeight) / 2;
-                    }
-                    if (xCord < 0) xCord = 0;
-                    if (yCord < 0) yCord = 0;
+        PageViewDecorator[] pages = Arrays.stream(parent.getComponents())
+                .filter(component -> component instanceof PageViewDecorator && component.isVisible())
+                .toArray(PageViewDecorator[]::new);
 
-                    yCord += insets.top;
-                } else {
+        int index = 0;
+        for (PageViewDecorator pageViewDecorator : pages) {
+            Dimension d = pageViewDecorator.getPreferredSize();
+            // set starting position for page, everything else flows from there
+            if(index == 0){
+                // detect if we should be centering
+                if (minWidth < maxWidth){
                     xCord = (maxWidth - d.width) / 2;
-                    yCord += d.height + PAGE_SPACING_VERTICAL;
                 }
-                xCord += insets.left;
-                count++;
+                if (minHeight < maxHeight){
+                    yCord = (maxHeight - minHeight) / 2;
+                }
+                if (xCord < 0) xCord = 0;
+                if (yCord < 0) yCord = 0;
 
-                component.setBounds(xCord, yCord, d.width, d.height);
+                yCord += insets.top;
+            } else {
+                xCord = (maxWidth - d.width) / 2;
+                yCord += d.height + PAGE_SPACING_VERTICAL;
             }
+            index++;
+            xCord += insets.left;
+
+            pageViewDecorator.setBounds(xCord, yCord, d.width, d.height);
+            updatePopupAnnotationComponents(pageViewDecorator);
         }
     }
 }

@@ -4,17 +4,22 @@ import org.icepdf.ri.common.views.annotations.MarkupGlueComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 
 import java.awt.*;
+import java.util.Arrays;
 
 /**
  * Layout manager for centering and adding pages to single or facing pages contiguous and non-contiguous views.
  */
-public class OnePageViewLayout implements LayoutManager2 {
+public class OnePageViewLayout extends BasePageViewLayout implements LayoutManager2 {
 
     protected static final int PAGE_SPACING_HORIZONTAL = 2;
     protected static final int PAGE_SPACING_VERTICAL = 2;
     protected int minWidth = 0, minHeight = 0;
     protected int preferredWidth = 0, preferredHeight = 0;
     protected boolean sizeUnknown = true;
+
+    public OnePageViewLayout(DocumentViewModel documentViewModel) {
+        super(documentViewModel);
+    }
 
     /*
      * This is called when the panel is first displayed, and every time its size changes.
@@ -29,23 +34,24 @@ public class OnePageViewLayout implements LayoutManager2 {
             setSizes(parent);
         }
 
-        for (int i = 0; i < nComps; i++) {
-            Component component = parent.getComponent(i);
-            if (component.isVisible() &&
-                    !(component instanceof PopupAnnotationComponent || component instanceof MarkupGlueComponent)) {
-                Dimension d = component.getPreferredSize();
-                // center the page or pagesPanel
-                int xCord = (maxWidth - d.width) / 2;
-                int yCord = (maxHeight - d.height) / 2;
+        PageViewDecorator[] pages = Arrays.stream(parent.getComponents())
+                .filter(component -> component instanceof PageViewDecorator && component.isVisible())
+                .toArray(PageViewDecorator[]::new);
 
-                if (xCord < 0) xCord = 0;
-                if (yCord < 0) yCord = 0;
+        for (PageViewDecorator pageViewDecorator : pages) {
+            Dimension d = pageViewDecorator.getPreferredSize();
+            // center the page or pagesPanel
+            int xCord = (maxWidth - d.width) / 2;
+            int yCord = (maxHeight - d.height) / 2;
 
-                xCord += insets.left;
-                yCord += insets.top;
+            if (xCord < 0) xCord = 0;
+            if (yCord < 0) yCord = 0;
 
-                component.setBounds(xCord, yCord, d.width, d.height);
-            }
+            xCord += insets.left;
+            yCord += insets.top;
+
+            pageViewDecorator.setBounds(xCord, yCord, d.width, d.height);
+            updatePopupAnnotationComponents(pageViewDecorator);
         }
     }
 

@@ -75,7 +75,7 @@ public class TwoPageView extends AbstractDocumentView {
 
 
     private void buildGUI() {
-        this.setLayout(new TwoPageViewLayout(viewAlignment));
+        this.setLayout(new TwoPageViewLayout(viewAlignment, documentViewModel));
         this.setBackground(backgroundColour);
         this.setBorder(new EmptyBorder(layoutInserts, layoutInserts, layoutInserts, layoutInserts));
 
@@ -113,7 +113,6 @@ public class TwoPageView extends AbstractDocumentView {
                 if (pageViewComponent != null) {
                     // add component to layout
                     JComponent page = new PageViewDecorator(pageViewComponent);
-                    page.addComponentListener(this);
                     this.add(page);
                     addPopupAnnotationAndGlue(pageViewComponent);
                     count++;
@@ -122,7 +121,7 @@ public class TwoPageView extends AbstractDocumentView {
             revalidate();
             repaint();
 
-            // make sure we have setup all pages with callback call.
+            // make sure we have set up all pages with callback call.
             for (PageViewComponent pageViewCom : pageComponents) {
                 if (pageViewCom != null) {
                     pageViewCom.setDocumentViewCallback(this);

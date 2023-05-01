@@ -1111,10 +1111,6 @@ public class DocumentViewControllerImpl
         boolean changed = documentViewModel.setViewZoom(zoom);
 
         if (changed) {
-            // hide the popups as they will flicker in the old location on the zoom chance
-            // they are made visible again when the page component moved event fires
-            documentView.hidePopupAnnotationAndGlueLocation();
-
             // send it to each individual page
             firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE, oldZoom, zoom);
 

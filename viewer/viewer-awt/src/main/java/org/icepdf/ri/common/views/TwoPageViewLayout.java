@@ -7,7 +7,7 @@ import java.util.Arrays;
 /**
  * Layout manager for centering and adding pages to single or facing pages contiguous and non-contiguous views.
  */
-public class TwoPageViewLayout implements LayoutManager2 {
+public class TwoPageViewLayout extends BasePageViewLayout implements LayoutManager2 {
 
     protected static final int PAGE_SPACING_HORIZONTAL = 2;
     protected static final int PAGE_SPACING_VERTICAL = 2;
@@ -17,7 +17,8 @@ public class TwoPageViewLayout implements LayoutManager2 {
 
     protected int viewType;
 
-    public TwoPageViewLayout(int viewType) {
+    public TwoPageViewLayout(int viewType, DocumentViewModel documentViewModel) {
+        super(documentViewModel);
         this.viewType = viewType;
     }
 
@@ -48,6 +49,7 @@ public class TwoPageViewLayout implements LayoutManager2 {
                 if (pageIndex == 0 && pages.length == 1) {
                     // offset to the right side
                     xCord = ((maxWidth - preferredWidth) / 2) + d.width + PAGE_SPACING_HORIZONTAL;
+                    xCord += insets.left;
                 } else if (count == 0) {
                     // start layout left to right
                     xCord += (maxWidth - preferredWidth) / 2;
@@ -61,10 +63,10 @@ public class TwoPageViewLayout implements LayoutManager2 {
                 if (xCord < 0) xCord = 0;
                 if (yCord < 0) yCord = 0;
 
-                xCord += insets.left;
                 yCord += insets.top;
 
                 pageViewDecorator.setBounds(xCord, yCord, d.width, d.height);
+                updatePopupAnnotationComponents(pageViewDecorator);
             }
         } else {
             PageViewDecorator pageViewDecorator;
@@ -86,10 +88,10 @@ public class TwoPageViewLayout implements LayoutManager2 {
                 if (xCord < 0) xCord = 0;
                 if (yCord < 0) yCord = 0;
 
-                xCord += insets.left;
                 yCord += insets.top;
 
                 pageViewDecorator.setBounds(xCord, yCord, d.width, d.height);
+                updatePopupAnnotationComponents(pageViewDecorator);
             }
         }
     }

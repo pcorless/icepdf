@@ -43,7 +43,7 @@ import java.util.logging.Logger;
  */
 public abstract class AbstractDocumentView
         extends JComponent
-        implements DocumentView, PropertyChangeListener, MouseListener, MouseMotionListener, ActionListener, ComponentListener {
+        implements DocumentView, PropertyChangeListener, MouseListener, MouseMotionListener, ActionListener {
 
     private static final Logger logger =
             Logger.getLogger(AbstractDocumentView.class.toString());
@@ -87,7 +87,6 @@ public abstract class AbstractDocumentView
 
     protected DocumentViewController documentViewController;
     protected DocumentViewModel documentViewModel;
-    protected JPanel pagesPanel;
 
     // current page view tool.
     protected ToolHandler currentTool;
@@ -186,11 +185,6 @@ public abstract class AbstractDocumentView
         return documentViewController.getDocumentViewModel();
     }
 
-    public void invalidate() {
-        super.invalidate();
-        if (pagesPanel != null) pagesPanel.invalidate();
-    }
-
     protected void addPopupAnnotationAndGlue(AbstractPageViewComponent pageViewComponent) {
         // grab any popups from the view model as they'll need to be re attached to the document view
         ArrayList<AbstractAnnotationComponent> popupComponentsAndGlue =
@@ -228,32 +222,6 @@ public abstract class AbstractDocumentView
                 abstractAnnotationComponents.forEach((annotationComponent -> annotationComponent.setVisible(false))));
     }
 
-    public void componentMoved(ComponentEvent e) {
-        /// annotation components can come and go,  so we need to get the current ones.
-        if (e.getComponent() instanceof PageViewDecorator) {
-            PageViewComponent pageViewComponent = ((PageViewDecorator) e.getComponent()).getPageViewComponent();
-            ArrayList<AbstractAnnotationComponent> annotationComponents =
-                    documentViewModel.getFloatingAnnotationComponents((AbstractPageViewComponent) pageViewComponent);
-            if (annotationComponents != null) {
-                annotationComponents.forEach((annotationComponent -> {
-                    // one position has been set, make it visible and set the new bound, order matters.
-                    annotationComponent.setVisible(((PopupAnnotationComponent) annotationComponent).getAnnotation().isOpen());
-                    annotationComponent.refreshDirtyBounds();
-                }));
-            }
-        }
-    }
-
-    public void componentHidden(ComponentEvent e) {
-    }
-
-    public void componentResized(ComponentEvent e) {
-    }
-
-    public void componentShown(ComponentEvent e) {
-    }
-
-
     public void dispose() {
         // clean up scroll listeners
         documentViewController.getHorizontalScrollBar().removeAdjustmentListener(this);
@@ -269,12 +237,6 @@ public abstract class AbstractDocumentView
         documentViewModel.getDocumentViewScrollPane().removeMouseWheelListener(mouseWheelZoom);
         removeMouseListener(this);
         removeMouseMotionListener(this);
-
-        // remove the component resize listeners
-        java.util.List<AbstractPageViewComponent> pageComponents = documentViewModel.getPageComponents();
-        if (pageComponents != null) {
-            pageComponents.forEach(pageViewComponent -> pageViewComponent.removeComponentListener(this));
-        }
 
         // stop the auto scroll timer
         autoScrollTimer.stop();

@@ -61,7 +61,7 @@ public class OnePageView extends AbstractDocumentView {
 
 
     private void buildGUI() {
-        this.setLayout(new OnePageViewLayout());
+        this.setLayout(new OnePageViewLayout(documentViewModel));
         this.setBackground(backgroundColour);
         this.setBorder(new EmptyBorder(layoutInserts, layoutInserts, layoutInserts, layoutInserts));
 
@@ -79,7 +79,6 @@ public class OnePageView extends AbstractDocumentView {
 
                 // add component to layout
                 JComponent page = buildPageDecoration(pageViewComponent);
-                page.addComponentListener(this);
                 this.add(page);
                 addPopupAnnotationAndGlue(pageViewComponent);
             }

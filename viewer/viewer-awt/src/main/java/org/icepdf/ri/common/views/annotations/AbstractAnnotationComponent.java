@@ -227,9 +227,6 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
     }
 
     protected void resize() {
-        if (getParent() != null) {
-            getParent().validate();
-        }
         resized = true;
     }
 
