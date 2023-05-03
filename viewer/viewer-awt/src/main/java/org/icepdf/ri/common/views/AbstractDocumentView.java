@@ -20,6 +20,7 @@ import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.tools.*;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.MarkupGlueComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
 
@@ -190,6 +191,11 @@ public abstract class AbstractDocumentView
         ArrayList<AbstractAnnotationComponent> popupComponentsAndGlue =
                 documentViewModel.getFloatingAnnotationComponents(pageViewComponent);
         if (popupComponentsAndGlue != null) {
+            for (AbstractAnnotationComponent component : popupComponentsAndGlue) {
+                if (component instanceof MarkupGlueComponent) {
+                    this.add(component, 0);
+                }
+            }
             for (AbstractAnnotationComponent component : popupComponentsAndGlue) {
                 if (component instanceof PopupAnnotationComponent) {
                     this.add(component, 0);

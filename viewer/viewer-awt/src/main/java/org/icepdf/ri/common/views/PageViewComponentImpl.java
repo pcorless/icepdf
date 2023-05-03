@@ -455,7 +455,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                     .ifPresent(e -> annotationToComponent.remove(e.getKey()));
         }
         if (annotationComp instanceof PopupAnnotationComponent) {
-            removePopupAnnotationComponent((PopupAnnotationComponent)annotationComp);
+            removePopupAnnotationComponent((PopupAnnotationComponent) annotationComp);
         } else {
             this.remove((AbstractAnnotationComponent) annotationComp);
         }
@@ -475,16 +475,11 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     public void pageTeardownCallback() {
         System.out.println("pageTeardownCallback " + pageIndex + " removing " + annotationComponents.size());
         SwingUtilities.invokeLater(() -> {
-            // we're cleaning up the page which may involve awt component manipulations o we queue
-            // callback on the awt thread so we don't try and paint something we just removed
-            // todo clean up old annotations components and glue from layout
-//            if (annotationComponents != null) {
-//                for (AbstractAnnotationComponent abstractAnnotationComponent : annotationComponents) {
-//                    remove(abstractAnnotationComponent);
-//                }
-//            }
-            // todo remove floating components form the parent page view
+            // remove popups from layout, so we can cleanly re-initialize if viewed again.
             ArrayList<AbstractAnnotationComponent> components = documentViewModel.getFloatingAnnotationComponents(this);
+            for (JComponent component : components) {
+                parentDocumentView.remove(component);
+            }
             documentViewModel.removeAllFloatingAnnotationComponent(this);
 
             annotationComponents = null;
@@ -551,7 +546,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                             // add to layout
                             if (comp instanceof PopupAnnotationComponent) {
                                 PopupAnnotationComponent popupAnnotationComponent = (PopupAnnotationComponent) comp;
-                                // check if we have created the parent markup,  if so add the glue
+                                // check if we have created the parent markup, if so add the glue
                                 MarkupAnnotationComponent markupAnnotationComponent =
                                         popupAnnotationComponent.getMarkupAnnotationComponent();
                                 if (markupAnnotationComponent != null) {
@@ -586,18 +581,19 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         popupAnnotationComponent.setParentPageComponent(this);
         popupAnnotationComponent.refreshDirtyBounds();
         parentDocumentView.add(popupAnnotationComponent, 0);
-//        getParent().addComponentListener(popupAnnotationComponent);
         documentViewModel.addFloatingAnnotationComponent(this, popupAnnotationComponent);
     }
 
     private void addPopupAnnotationComponentGlue(MarkupAnnotationComponent markupAnnotationComponent,
                                                  PopupAnnotationComponent popupAnnotationComponent) {
-        MarkupGlueComponent markupGlueComponent = new MarkupGlueComponent(markupAnnotationComponent, popupAnnotationComponent);
+        MarkupGlueComponent markupGlueComponent =
+                new MarkupGlueComponent(documentViewController, this,
+                        markupAnnotationComponent, popupAnnotationComponent);
         // assign parent so we can properly place the popup relative to its parent page.
-//        markupGlueComponent.setParentPageComponent(this);
-//        markupGlueComponent.refreshDirtyBounds();
-//        parentDocumentView.add(markupGlueComponent);
-//        documentViewModel.addFloatingAnnotationComponent(this, markupGlueComponent);
+        markupGlueComponent.setParentPageComponent(this);
+        markupGlueComponent.refreshDirtyBounds();
+        parentDocumentView.add(markupGlueComponent, 0);
+        documentViewModel.addFloatingAnnotationComponent(this, markupGlueComponent);
     }
 
     private void removePopupAnnotationComponent(PopupAnnotationComponent popupAnnotationComponent) {

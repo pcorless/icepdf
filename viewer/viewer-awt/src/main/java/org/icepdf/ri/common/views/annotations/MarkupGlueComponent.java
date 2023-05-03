@@ -15,10 +15,15 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
-import javax.swing.*;
+import org.icepdf.core.pobjects.Page;
+import org.icepdf.ri.common.views.AbstractPageViewComponent;
+import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.DocumentViewModel;
+
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
+import java.awt.geom.Rectangle2D;
 
 /**
  * MarkupGlueComponent allows for a visual associating between a markup annotation and it's popup annotation
@@ -26,35 +31,53 @@ import java.awt.geom.GeneralPath;
  *
  * @since 6.3
  */
-public class MarkupGlueComponent extends JComponent {
+public class MarkupGlueComponent extends AbstractAnnotationComponent {
 
     protected MarkupAnnotationComponent markupAnnotationComponent;
     protected PopupAnnotationComponent popupAnnotationComponent;
 
-    public MarkupGlueComponent(MarkupAnnotationComponent markupAnnotationComponent, PopupAnnotationComponent popupAnnotationComponent) {
+    protected Rectangle adjustedMarkupAnnotationBounds;
+
+    protected AbstractPageViewComponent parentPageViewComponent;
+
+    public MarkupGlueComponent(DocumentViewController documentViewController,
+                               AbstractPageViewComponent pageViewComponent,
+                               MarkupAnnotationComponent markupAnnotationComponent,
+                               PopupAnnotationComponent popupAnnotationComponent) {
+        super(popupAnnotationComponent.getAnnotation(), documentViewController, pageViewComponent);
         this.markupAnnotationComponent = markupAnnotationComponent;
         this.popupAnnotationComponent = popupAnnotationComponent;
-        if (popupAnnotationComponent != null) {
-            Rectangle bound = markupAnnotationComponent.getBounds().union(popupAnnotationComponent.getBounds());
-            setBounds(markupAnnotationComponent.getBounds().union(popupAnnotationComponent.getBounds()));
-            setPreferredSize(new Dimension(bound.width, bound.height));
-            setSize(new Dimension(bound.width, bound.height));
-        }
     }
 
-    public MarkupAnnotationComponent getMarkupAnnotationComponent() {
-        return markupAnnotationComponent;
+    public void refreshDirtyBounds() {
+        adjustedMarkupAnnotationBounds = recalculateAnnotationBounds();
+        setBounds(adjustedMarkupAnnotationBounds);
+    }
+
+    private Rectangle recalculateAnnotationBounds() {
+        Page currentPage = pageViewComponent.getPage();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
+        AffineTransform at = currentPage.getPageTransform(
+                documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(),
+                documentViewModel.getViewZoom());
+        Rectangle2D markupUserSpaceRectangle = markupAnnotationComponent.getAnnotation().getUserSpaceRectangle();
+        Rectangle annotationPageSpaceBounds = commonBoundsNormalization(new GeneralPath(markupUserSpaceRectangle), at);
+        Rectangle pageBounds = parentPageViewComponent.getParent().getBounds();
+        annotationPageSpaceBounds.x += pageBounds.x;
+        annotationPageSpaceBounds.y += pageBounds.y;
+        return annotationPageSpaceBounds;
     }
 
     @Override
-    protected void paintComponent(Graphics g) {
+    public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
+        // todo could probably be set via a component listener listener on the popup component.
         Rectangle popupBounds = popupAnnotationComponent.getBounds();
-        Rectangle markupBounds = markupAnnotationComponent.getBounds();
-        setBounds(markupAnnotationComponent.getBounds().union(popupAnnotationComponent.getBounds()));
-        Rectangle bound = markupAnnotationComponent.getBounds().union(popupAnnotationComponent.getBounds());
-        setBounds(markupAnnotationComponent.getBounds().union(popupAnnotationComponent.getBounds()));
+        Rectangle markupBounds = adjustedMarkupAnnotationBounds;
+        Rectangle bound = markupBounds.union(popupBounds);
+        setBounds(bound);
         setPreferredSize(new Dimension(bound.width, bound.height));
         setSize(new Dimension(bound.width, bound.height));
 
@@ -144,5 +167,23 @@ public class MarkupGlueComponent extends JComponent {
             g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
             g2d.fill(path);
         }
+    }
+
+    public void setParentPageComponent(AbstractPageViewComponent pageViewComponent) {
+        parentPageViewComponent = pageViewComponent;
+    }
+
+    @Override
+    public boolean isActive() {
+        return false;
+    }
+
+    @Override
+    public void resetAppearanceShapes() {
+
+    }
+
+    public MarkupAnnotationComponent getMarkupAnnotationComponent() {
+        return markupAnnotationComponent;
     }
 }

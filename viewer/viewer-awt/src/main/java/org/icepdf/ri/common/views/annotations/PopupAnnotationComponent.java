@@ -169,8 +169,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
         Rectangle annotationPageSpaceBounds = commonBoundsNormalization(new GeneralPath(annotation.getUserSpaceRectangle()), at);
-        // todo optimize by just grabbing the decorator location directly
-//        Rectangle pageBounds = documentViewController.getDocumentViewModel().getPageBounds(parentPageViewComponent.getPageIndex());
         Rectangle pageBounds = parentPageViewComponent.getParent().getBounds();
         annotationPageSpaceBounds.x += pageBounds.x;
         annotationPageSpaceBounds.y += pageBounds.y;
