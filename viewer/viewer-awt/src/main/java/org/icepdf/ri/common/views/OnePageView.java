@@ -79,7 +79,7 @@ public class OnePageView extends AbstractDocumentView {
 
                 // add component to layout
                 JComponent page = buildPageDecoration(pageViewComponent);
-                this.add(page);
+                add(page, JLayeredPane.DEFAULT_LAYER);
                 addPopupAnnotationAndGlue(pageViewComponent);
             }
 

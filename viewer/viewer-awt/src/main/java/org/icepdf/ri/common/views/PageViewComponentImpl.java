@@ -483,7 +483,6 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
 
             annotationComponents = null;
             annotationToComponent = null;
-
         });
     }
 
@@ -518,7 +517,6 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     }
 
     private void initializeAnnotationsComponent(Page page) {
-        // todo need to push popups up to parent container
         List<Annotation> annotations = page.getAnnotations();
         AbstractPageViewComponent parent = this;
         if (documentViewController.getAnnotationCallback() != null) {
@@ -571,7 +569,6 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                     }
                 }
             }
-
         }
     }
 
@@ -579,8 +576,10 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         // assign parent so we can properly place the popup relative to its parent page.
         popupAnnotationComponent.setParentPageComponent(this);
         popupAnnotationComponent.refreshDirtyBounds();
-        parentDocumentView.add(popupAnnotationComponent, 0);
         documentViewModel.addFloatingAnnotationComponent(this, popupAnnotationComponent);
+        // won't show up on the right layer if layer isn't set first.
+        ((JLayeredPane)parentDocumentView).setLayer(popupAnnotationComponent, JLayeredPane.POPUP_LAYER);
+        parentDocumentView.add(popupAnnotationComponent);
     }
 
     private void addPopupAnnotationComponentGlue(MarkupAnnotationComponent markupAnnotationComponent,
@@ -591,23 +590,15 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         // assign parent so we can properly place the popup relative to its parent page.
         markupGlueComponent.setParentPageComponent(this);
         markupGlueComponent.refreshDirtyBounds();
-        parentDocumentView.add(markupGlueComponent, 0);
+        // won't show up on the right layer if layer isn't set first.
         documentViewModel.addFloatingAnnotationComponent(this, markupGlueComponent);
+        ((JLayeredPane)parentDocumentView).setLayer(markupGlueComponent, JLayeredPane.MODAL_LAYER);
+        parentDocumentView.add(markupGlueComponent);
     }
 
     private void removePopupAnnotationComponent(PopupAnnotationComponent popupAnnotationComponent) {
         parentDocumentView.remove(popupAnnotationComponent);
         documentViewModel.removeFloatingAnnotationComponent(this, popupAnnotationComponent);
-        // make sure we remove the glue
-//        synchronized (this.getTreeLock()) {
-//            Component[] components = this.getComponents();
-//            for (Component component : components) {
-//                if (component instanceof MarkupGlueComponent &&
-//                        ((MarkupGlueComponent) component).getMarkupAnnotationComponent().equals(popupAnnotationComponent)) {
-//                    this.remove(component);
-//                }
-//            }
-//        }
     }
 
     private void initializeDestinationComponents(Page page) {

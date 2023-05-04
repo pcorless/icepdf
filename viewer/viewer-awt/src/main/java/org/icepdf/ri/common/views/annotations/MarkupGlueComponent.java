@@ -50,6 +50,14 @@ public class MarkupGlueComponent extends JComponent implements PageViewAnnotatio
         this.popupAnnotationComponent = popupAnnotationComponent;
     }
 
+    public MarkupAnnotationComponent getMarkupAnnotationComponent() {
+        return markupAnnotationComponent;
+    }
+
+    public PopupAnnotationComponent getPopupAnnotationComponent() {
+        return popupAnnotationComponent;
+    }
+
     public void refreshDirtyBounds() {
         adjustedMarkupAnnotationBounds = recalculateAnnotationBounds();
         setBounds(adjustedMarkupAnnotationBounds);
@@ -73,8 +81,6 @@ public class MarkupGlueComponent extends JComponent implements PageViewAnnotatio
 
     @Override
     public void paintComponent(Graphics g) {
-        super.paintComponent(g);
-
         // not ideal to setBounds during the paint but it covers a lot of painting corner cases very well.
         Rectangle popupBounds = popupAnnotationComponent.getBounds();
         Rectangle markupBounds = adjustedMarkupAnnotationBounds;
@@ -166,6 +172,9 @@ public class MarkupGlueComponent extends JComponent implements PageViewAnnotatio
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
             g2d.fill(path);
+            g2d.setStroke(new BasicStroke(3));
+            g2d.setColor(Color.RED);
+            g2d.draw(bound);
         }
     }
 

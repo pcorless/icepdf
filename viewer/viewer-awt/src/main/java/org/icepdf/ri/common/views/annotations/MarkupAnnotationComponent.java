@@ -177,7 +177,8 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
                             popupAnnotation, documentViewController, pageViewComponent);
             comp.setParentPageComponent(pageViewComponent);
             // set the bounds and refresh the userSpace rectangle
-            comp.setBounds(bBox);
+
+            comp.refreshDirtyBounds();
             // resets user space rectangle to match bbox converted to page space
             comp.refreshAnnotationRect();
             // not new, which means the popup wasn't part of the document, we don't want to save it at this time

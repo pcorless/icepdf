@@ -42,7 +42,7 @@ import java.util.logging.Logger;
  * @since 2.5
  */
 public abstract class AbstractDocumentView
-        extends JComponent
+        extends JLayeredPane
         implements DocumentView, PropertyChangeListener, MouseListener, MouseMotionListener, ActionListener {
 
     private static final Logger logger =
@@ -190,15 +190,12 @@ public abstract class AbstractDocumentView
         ArrayList<PageViewAnnotationComponent> popupComponentsAndGlue =
                 documentViewModel.getFloatingAnnotationComponents(pageViewComponent);
         if (popupComponentsAndGlue != null) {
-            // todo replay using JLayeredPane
             for (PageViewAnnotationComponent component : popupComponentsAndGlue) {
                 if (component instanceof MarkupGlueComponent) {
-                    this.add((MarkupGlueComponent) component, 0);
+                    this.add((MarkupGlueComponent) component, JLayeredPane.MODAL_LAYER);
                 }
-            }
-            for (PageViewAnnotationComponent component : popupComponentsAndGlue) {
                 if (component instanceof PopupAnnotationComponent) {
-                    this.add((PopupAnnotationComponent) component, 0);
+                    this.add((PopupAnnotationComponent) component,JLayeredPane.POPUP_LAYER);
                 }
             }
         }

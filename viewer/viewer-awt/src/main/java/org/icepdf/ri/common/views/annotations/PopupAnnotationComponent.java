@@ -85,8 +85,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         implements TreeSelectionListener, ActionListener, DocumentListener, PropertyChangeListener, MouseWheelListener,
         DropTargetListener, PageViewAnnotationComponent {
 
-    public static int DEFAULT_WIDTH = 325;
-    public static int DEFAULT_HEIGHT = 225;
+    public static int DEFAULT_WIDTH = 215;
+    public static int DEFAULT_HEIGHT = 150;
     public static Color backgroundColor = new Color(252, 253, 227);
     public static Color borderColor = new Color(153, 153, 153);
     public static Dimension BUTTON_SIZE = new Dimension(22, 22);
@@ -491,20 +491,15 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     }
 
     public void setBoundsRelativeToParent(int x, int y, AffineTransform pageInverseTransform) {
-        Rectangle pageBounds = pageViewComponent.getBounds();
+        Rectangle pageBounds = pageViewComponent.getParent().getBounds();
         // position the new popup on the icon center.
         Rectangle bBox2 = new Rectangle(x, y,
                 (int) Math.abs(DEFAULT_WIDTH * pageInverseTransform.getScaleX()),
                 (int) Math.abs(DEFAULT_HEIGHT * pageInverseTransform.getScaleY()));
 
-        // make sure the popup stays within the page bounds.
-        if (!pageBounds.contains(bBox2.getX(), bBox2.getY(),
-                bBox2.getWidth(), bBox2.getHeight())) {
-            // center on the icon as before but take into account height width
-            // and it will be drawn more or less on the page.
-            // todo: need to improve coordinate adjustment
-            bBox2.setLocation(bBox2.x - bBox2.width, bBox2.y - bBox2.height);
-        }
+        // add page offset
+        bBox2.x += pageBounds.x;
+        bBox2.y += pageBounds.y;
         // set the bounds and refresh the userSpace rectangle
         setBounds(bBox2);
         // resets user space rectangle to match bbox converted to page space

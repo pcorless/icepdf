@@ -113,7 +113,7 @@ public class TwoPageView extends AbstractDocumentView {
                 if (pageViewComponent != null) {
                     // add component to layout
                     JComponent page = new PageViewDecorator(pageViewComponent);
-                    this.add(page);
+                    add(page, JLayeredPane.DEFAULT_LAYER);
                     addPopupAnnotationAndGlue(pageViewComponent);
                     count++;
                 }
