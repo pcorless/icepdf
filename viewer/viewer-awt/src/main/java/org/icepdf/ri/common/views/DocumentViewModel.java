@@ -17,7 +17,7 @@ package org.icepdf.ri.common.views;
 
 import org.icepdf.core.Memento;
 import org.icepdf.core.pobjects.Document;
-import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.PageViewAnnotationComponent;
 
 import javax.swing.*;
 import java.awt.*;
@@ -178,25 +178,25 @@ public interface DocumentViewModel {
      */
     List<AbstractPageViewComponent> getPageComponents();
 
-    HashMap<AbstractPageViewComponent, ArrayList<AbstractAnnotationComponent>> getFloatingAnnotationComponents();
+    HashMap<AbstractPageViewComponent, ArrayList<PageViewAnnotationComponent>> getFloatingAnnotationComponents();
 
     /**
      * Gets all the annotation components that float in the DocumentView and are not bound by page dimensions.
      * @return list of annotation components that should be added the document view
      */
-    ArrayList<AbstractAnnotationComponent> getFloatingAnnotationComponents(AbstractPageViewComponent pageViewComponent);
+    ArrayList<PageViewAnnotationComponent> getFloatingAnnotationComponents(AbstractPageViewComponent pageViewComponent);
 
     /**
      * Adds an annotation component the list of floating annotation components that are painted in the DocumentView.
      * @param annotationComponent annotation component to add
      */
-    void addFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent, AbstractAnnotationComponent annotationComponent);
+    void addFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent, PageViewAnnotationComponent annotationComponent);
 
     /**
      * Removes an annotation component the list of floating annotation components that are painted in the DocumentView.
      * @param annotationComponent annotation component to remove
      */
-    void removeFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent, AbstractAnnotationComponent annotationComponent);
+    void removeFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent, PageViewAnnotationComponent annotationComponent);
     void removeAllFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent);
 
     /**

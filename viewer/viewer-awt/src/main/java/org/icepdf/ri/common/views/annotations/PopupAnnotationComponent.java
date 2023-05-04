@@ -75,7 +75,7 @@ import static org.icepdf.core.util.SystemProperties.INTERACTIVE_ANNOTATIONS;
  * for editing, replying and deleting TextAnnotation comments.
  * appearance stream.
  * <br>
- * Font size can be change via a wheel mouse or crt-0 (reset), ctr--(zoom out) and crt-+ (zoom in).
+ * Font size can be changed via a wheel mouse or crt-0 (reset), ctr--(zoom out) and crt-+ (zoom in).
  *
  * @see FreeTextAnnotationPanel
  * @since 5.0
@@ -83,7 +83,7 @@ import static org.icepdf.core.util.SystemProperties.INTERACTIVE_ANNOTATIONS;
 @SuppressWarnings("serial")
 public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupAnnotation>
         implements TreeSelectionListener, ActionListener, DocumentListener, PropertyChangeListener, MouseWheelListener,
-        DropTargetListener {
+        DropTargetListener, PageViewAnnotationComponent {
 
     public static int DEFAULT_WIDTH = 325;
     public static int DEFAULT_HEIGHT = 225;
@@ -188,9 +188,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
-        // store the new annotation rectangle in its original user space
-        // todo optimize by just grabbing the decorator location directly
-//        Rectangle pageBounds = documentViewController.getDocumentViewModel().getPageBounds(parentPageViewComponent.getPageIndex());
         Rectangle pageBounds = parentPageViewComponent.getParent().getBounds();
         Rectangle bounds = getBounds();
         bounds.x -= pageBounds.x;

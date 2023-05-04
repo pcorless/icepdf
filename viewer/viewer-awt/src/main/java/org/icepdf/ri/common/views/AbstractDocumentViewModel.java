@@ -21,6 +21,7 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.ri.common.UndoCaretaker;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.PageViewAnnotationComponent;
 
 import javax.swing.*;
 import java.awt.*;
@@ -55,7 +56,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     // select all state flag, optimization for painting select all state lazily
     private boolean selectAll;
     protected List<AbstractPageViewComponent> pageComponents;
-    protected HashMap<AbstractPageViewComponent, ArrayList<AbstractAnnotationComponent>> floatingAnnotationComponents;
+    protected HashMap<AbstractPageViewComponent, ArrayList<PageViewAnnotationComponent>> floatingAnnotationComponents;
     // scroll pane used to contain the view
     protected JScrollPane documentViewScrollPane;
     // annotation memento caretaker
@@ -94,27 +95,27 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     }
 
 
-    public HashMap<AbstractPageViewComponent, ArrayList<AbstractAnnotationComponent>> getFloatingAnnotationComponents() {
+    public HashMap<AbstractPageViewComponent, ArrayList<PageViewAnnotationComponent>> getFloatingAnnotationComponents() {
         return floatingAnnotationComponents;
     }
     @Override
-    public ArrayList<AbstractAnnotationComponent> getFloatingAnnotationComponents(AbstractPageViewComponent pageViewComponent) {
+    public ArrayList<PageViewAnnotationComponent> getFloatingAnnotationComponents(AbstractPageViewComponent pageViewComponent) {
         return floatingAnnotationComponents.get(pageViewComponent);
     }
 
     @Override
-    public void addFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent, AbstractAnnotationComponent annotationComponent) {
+    public void addFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent, PageViewAnnotationComponent annotationComponent) {
         if (!floatingAnnotationComponents.containsKey(pageViewComponent)) {
             floatingAnnotationComponents.put(pageViewComponent, new ArrayList<>());
         }
-        List<AbstractAnnotationComponent> components = floatingAnnotationComponents.get(pageViewComponent);
+        List<PageViewAnnotationComponent> components = floatingAnnotationComponents.get(pageViewComponent);
         components.add(annotationComponent);
     }
 
     @Override
-    public void removeFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent, AbstractAnnotationComponent annotationComponent) {
+    public void removeFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent, PageViewAnnotationComponent annotationComponent) {
         if (!floatingAnnotationComponents.containsKey(pageViewComponent)) {
-            List<AbstractAnnotationComponent> components = floatingAnnotationComponents.get(pageViewComponent);
+            List<PageViewAnnotationComponent> components = floatingAnnotationComponents.get(pageViewComponent);
             components.remove(annotationComponent);
         }
     }

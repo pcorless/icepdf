@@ -271,7 +271,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
      * @param at        transform to apply to shapePath
      * @return bound value of the shape path.
      */
-    protected Rectangle commonBoundsNormalization(GeneralPath shapePath,
+    public static Rectangle commonBoundsNormalization(GeneralPath shapePath,
                                                   AffineTransform at) {
         shapePath.transform(at);
         Rectangle2D pageSpaceBound = shapePath.getBounds2D();

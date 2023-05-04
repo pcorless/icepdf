@@ -20,6 +20,7 @@ import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
@@ -31,20 +32,20 @@ import java.awt.geom.Rectangle2D;
  *
  * @since 6.3
  */
-public class MarkupGlueComponent extends AbstractAnnotationComponent {
+public class MarkupGlueComponent extends JComponent implements PageViewAnnotationComponent {
 
     protected MarkupAnnotationComponent markupAnnotationComponent;
     protected PopupAnnotationComponent popupAnnotationComponent;
 
     protected Rectangle adjustedMarkupAnnotationBounds;
 
+    private DocumentViewController documentViewController;
     protected AbstractPageViewComponent parentPageViewComponent;
 
     public MarkupGlueComponent(DocumentViewController documentViewController,
-                               AbstractPageViewComponent pageViewComponent,
                                MarkupAnnotationComponent markupAnnotationComponent,
                                PopupAnnotationComponent popupAnnotationComponent) {
-        super(popupAnnotationComponent.getAnnotation(), documentViewController, pageViewComponent);
+        this.documentViewController = documentViewController;
         this.markupAnnotationComponent = markupAnnotationComponent;
         this.popupAnnotationComponent = popupAnnotationComponent;
     }
@@ -55,14 +56,15 @@ public class MarkupGlueComponent extends AbstractAnnotationComponent {
     }
 
     private Rectangle recalculateAnnotationBounds() {
-        Page currentPage = pageViewComponent.getPage();
+        Page currentPage = parentPageViewComponent.getPage();
         DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         AffineTransform at = currentPage.getPageTransform(
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
         Rectangle2D markupUserSpaceRectangle = markupAnnotationComponent.getAnnotation().getUserSpaceRectangle();
-        Rectangle annotationPageSpaceBounds = commonBoundsNormalization(new GeneralPath(markupUserSpaceRectangle), at);
+        Rectangle annotationPageSpaceBounds =
+                AbstractAnnotationComponent.commonBoundsNormalization(new GeneralPath(markupUserSpaceRectangle), at);
         Rectangle pageBounds = parentPageViewComponent.getParent().getBounds();
         annotationPageSpaceBounds.x += pageBounds.x;
         annotationPageSpaceBounds.y += pageBounds.y;
@@ -73,13 +75,11 @@ public class MarkupGlueComponent extends AbstractAnnotationComponent {
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        // todo could probably be set via a component listener listener on the popup component.
+        // not ideal to setBounds during the paint but it covers a lot of painting corner cases very well.
         Rectangle popupBounds = popupAnnotationComponent.getBounds();
         Rectangle markupBounds = adjustedMarkupAnnotationBounds;
         Rectangle bound = markupBounds.union(popupBounds);
         setBounds(bound);
-        setPreferredSize(new Dimension(bound.width, bound.height));
-        setSize(new Dimension(bound.width, bound.height));
 
         Rectangle bounds = getBounds();
         Graphics2D g2d = (Graphics2D) g;
@@ -173,17 +173,4 @@ public class MarkupGlueComponent extends AbstractAnnotationComponent {
         parentPageViewComponent = pageViewComponent;
     }
 
-    @Override
-    public boolean isActive() {
-        return false;
-    }
-
-    @Override
-    public void resetAppearanceShapes() {
-
-    }
-
-    public MarkupAnnotationComponent getMarkupAnnotationComponent() {
-        return markupAnnotationComponent;
-    }
 }

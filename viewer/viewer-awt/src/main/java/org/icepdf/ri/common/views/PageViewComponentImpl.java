@@ -473,12 +473,11 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     }
 
     public void pageTeardownCallback() {
-        System.out.println("pageTeardownCallback " + pageIndex + " removing " + annotationComponents.size());
         SwingUtilities.invokeLater(() -> {
             // remove popups from layout, so we can cleanly re-initialize if viewed again.
-            ArrayList<AbstractAnnotationComponent> components = documentViewModel.getFloatingAnnotationComponents(this);
-            for (JComponent component : components) {
-                parentDocumentView.remove(component);
+            ArrayList<PageViewAnnotationComponent> components = documentViewModel.getFloatingAnnotationComponents(this);
+            for (PageViewAnnotationComponent component : components) {
+                parentDocumentView.remove((JComponent)component);
             }
             documentViewModel.removeAllFloatingAnnotationComponent(this);
 
@@ -587,7 +586,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     private void addPopupAnnotationComponentGlue(MarkupAnnotationComponent markupAnnotationComponent,
                                                  PopupAnnotationComponent popupAnnotationComponent) {
         MarkupGlueComponent markupGlueComponent =
-                new MarkupGlueComponent(documentViewController, this,
+                new MarkupGlueComponent(documentViewController,
                         markupAnnotationComponent, popupAnnotationComponent);
         // assign parent so we can properly place the popup relative to its parent page.
         markupGlueComponent.setParentPageComponent(this);

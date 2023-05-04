@@ -19,8 +19,8 @@ import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.tools.*;
-import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.MarkupGlueComponent;
+import org.icepdf.ri.common.views.annotations.PageViewAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
 
@@ -30,7 +30,6 @@ import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -188,44 +187,21 @@ public abstract class AbstractDocumentView
 
     protected void addPopupAnnotationAndGlue(AbstractPageViewComponent pageViewComponent) {
         // grab any popups from the view model as they'll need to be re attached to the document view
-        ArrayList<AbstractAnnotationComponent> popupComponentsAndGlue =
+        ArrayList<PageViewAnnotationComponent> popupComponentsAndGlue =
                 documentViewModel.getFloatingAnnotationComponents(pageViewComponent);
         if (popupComponentsAndGlue != null) {
-            for (AbstractAnnotationComponent component : popupComponentsAndGlue) {
+            // todo replay using JLayeredPane
+            for (PageViewAnnotationComponent component : popupComponentsAndGlue) {
                 if (component instanceof MarkupGlueComponent) {
-                    this.add(component, 0);
+                    this.add((MarkupGlueComponent) component, 0);
                 }
             }
-            for (AbstractAnnotationComponent component : popupComponentsAndGlue) {
+            for (PageViewAnnotationComponent component : popupComponentsAndGlue) {
                 if (component instanceof PopupAnnotationComponent) {
-                    this.add(component, 0);
+                    this.add((PopupAnnotationComponent) component, 0);
                 }
             }
         }
-    }
-
-    // todo remove
-    public void updatePopupAnnotationAndGlueLocation() {
-        // invoke later so the layout has time to have correct page positions.
-        SwingUtilities.invokeLater(() -> {
-            // grab any popups from the view model as they'll need to be re attached to the document view
-            HashMap<AbstractPageViewComponent, ArrayList<AbstractAnnotationComponent>> popupComponentsMap
-                    = documentViewModel.getFloatingAnnotationComponents();
-            popupComponentsMap.forEach((pageViewComponent, abstractAnnotationComponents) ->
-                    abstractAnnotationComponents.forEach((annotationComponent -> {
-                        annotationComponent.refreshDirtyBounds();
-                        annotationComponent.repaint();
-                    })));
-        });
-    }
-
-    public void hidePopupAnnotationAndGlueLocation() {
-        // invoke later so the layout has time to have correct page positions.
-        // grab any popups from the view model as they'll need to be re attached to the document view
-        HashMap<AbstractPageViewComponent, ArrayList<AbstractAnnotationComponent>> popupComponentsMap
-                = documentViewModel.getFloatingAnnotationComponents();
-        popupComponentsMap.forEach((pageViewComponent, abstractAnnotationComponents) ->
-                abstractAnnotationComponents.forEach((annotationComponent -> annotationComponent.setVisible(false))));
     }
 
     public void dispose() {
