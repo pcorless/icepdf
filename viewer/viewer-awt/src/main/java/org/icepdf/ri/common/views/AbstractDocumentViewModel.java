@@ -117,16 +117,6 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         if (!floatingAnnotationComponents.containsKey(pageViewComponent)) {
             List<PageViewAnnotationComponent> components = floatingAnnotationComponents.get(pageViewComponent);
             components.remove(annotationComponent);
-            // todo make sure we remove the glue
-//            synchronized (this.getTreeLock()) {
-//                Component[] components = this.getComponents();
-//                for (Component component : components) {
-//                    if (component instanceof MarkupGlueComponent &&
-//                            ((MarkupGlueComponent) component).getPopupAnnotationComponent().equals(popupAnnotationComponent)) {
-//                        this.remove(component);
-//                    }
-//                }
-//            }
         }
     }
 

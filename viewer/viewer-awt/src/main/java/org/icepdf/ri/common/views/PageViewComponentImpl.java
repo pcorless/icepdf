@@ -599,6 +599,14 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     private void removePopupAnnotationComponent(PopupAnnotationComponent popupAnnotationComponent) {
         parentDocumentView.remove(popupAnnotationComponent);
         documentViewModel.removeFloatingAnnotationComponent(this, popupAnnotationComponent);
+        ArrayList<PageViewAnnotationComponent> components = documentViewModel.getFloatingAnnotationComponents(this);
+        // don't forget to remove the glue component
+        for (PageViewAnnotationComponent component : components) {
+            if (component instanceof MarkupGlueComponent &&
+                    ((MarkupGlueComponent) component).getPopupAnnotationComponent().equals(popupAnnotationComponent)) {
+                parentDocumentView.remove((JComponent)component);
+            }
+        }
     }
 
     private void initializeDestinationComponents(Page page) {
