@@ -17,6 +17,7 @@ public class TwoColumnPageViewLayout extends TwoPageViewLayout{
         int maxWidth = parent.getWidth() - (insets.left + insets.right);
         int maxHeight = parent.getHeight() - (insets.top + insets.bottom);
         int xCord = 0, yCord = 0;
+        int previousHeight = 0;
 
         if (sizeUnknown) {
             setSizes(parent);
@@ -36,7 +37,7 @@ public class TwoColumnPageViewLayout extends TwoPageViewLayout{
                 if (pageIndex == 0) {
                     // offset to the right side
                     if (pages.length > 2 ){
-                        xCord = ((maxWidth - preferredWidth) / 2) + d.width + PAGE_SPACING_HORIZONTAL;
+                        xCord = ((maxWidth - preferredWidth) / 2) + d.width + PAGE_SPACING_HORIZONTAL + insets.left;
                     } else {
                         xCord = (maxWidth - preferredWidth) / 2;
                         previousDimension = d;
@@ -50,13 +51,14 @@ public class TwoColumnPageViewLayout extends TwoPageViewLayout{
                     // start layout left to right
                     xCord = (maxWidth - preferredWidth) / 2;
                     xCord += insets.left;
-                    yCord += d.height + PAGE_SPACING_VERTICAL;
+                    yCord += previousHeight + PAGE_SPACING_VERTICAL;
                     previousDimension = d;
                     count++;
                 } else {
                     count = 0;
                     xCord += previousDimension.width + PAGE_SPACING_HORIZONTAL;
                 }
+                previousHeight = d.height;
                 pageViewDecorator.setBounds(xCord, yCord, d.width, d.height);
                 updatePopupAnnotationComponents(pageViewDecorator);
             }

@@ -23,6 +23,8 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
+import static org.icepdf.ri.common.views.TwoPageViewLayout.PAGE_SPACING_HORIZONTAL;
+
 /**
  * <p>Constructs a two page view as defined in the PDF specification.
  * A two column page view displays two pages with odd numbered pages
@@ -170,7 +172,6 @@ public class TwoPageView extends AbstractDocumentView {
         float pageViewHeight = 0;
         int count = getComponentCount();
         Component comp;
-        // should only have one page view decorator for single page view.
         for (int i = 0; i < count; i++) {
             comp = getComponent(i);
             if (comp instanceof PageViewDecorator) {
@@ -191,8 +192,8 @@ public class TwoPageView extends AbstractDocumentView {
         pageViewWidth *= 2;
 
         // add any horizontal padding from layout manager
-        pageViewWidth += AbstractDocumentView.horizontalSpace * 4;
-        pageViewHeight += AbstractDocumentView.verticalSpace * 2;
+        pageViewWidth += PAGE_SPACING_HORIZONTAL;
+        pageViewHeight += PAGE_SPACING_HORIZONTAL * 2;
 
         return new Dimension((int) pageViewWidth, (int) pageViewHeight);
     }

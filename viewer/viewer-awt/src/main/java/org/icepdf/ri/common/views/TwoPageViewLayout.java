@@ -9,8 +9,6 @@ import java.util.Arrays;
  */
 public class TwoPageViewLayout extends BasePageViewLayout implements LayoutManager2 {
 
-    protected static final int PAGE_SPACING_HORIZONTAL = 2;
-    protected static final int PAGE_SPACING_VERTICAL = 2;
     protected int minWidth = 0, minHeight = 0;
     protected int preferredWidth = 0, preferredHeight = 0;
     protected boolean sizeUnknown = true;
@@ -52,7 +50,7 @@ public class TwoPageViewLayout extends BasePageViewLayout implements LayoutManag
                     xCord += insets.left;
                 } else if (count == 0) {
                     // start layout left to right
-                    xCord += (maxWidth - preferredWidth) / 2;
+                    xCord += PAGE_SPACING_HORIZONTAL + (maxWidth - preferredWidth) / 2;
                     previousWidth = d.width;
                     count++;
                 } else {
@@ -77,7 +75,7 @@ public class TwoPageViewLayout extends BasePageViewLayout implements LayoutManag
                 // apply right to left reading
                 if ((pageIndex == 0 && pages.length == 1) || count == 0) {
                     // left side
-                    xCord += (maxWidth - preferredWidth) / 2;
+                    xCord += PAGE_SPACING_HORIZONTAL + (maxWidth - preferredWidth) / 2;
                     previousWidth = d.width;
                     count++;
                 } else {

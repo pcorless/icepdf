@@ -295,21 +295,14 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     }
 
     public Rectangle getPageBounds(int pageIndex) {
-        Rectangle pageBounds = new Rectangle();
         if (pageComponents != null && pageIndex < pageComponents.size()) {
             Component pageViewComponentImpl = pageComponents.get(pageIndex);
             if (pageViewComponentImpl != null) {
-                Component parentComponent = pageViewComponentImpl;
-                Dimension size = pageViewComponentImpl.getPreferredSize();
-                pageBounds.setSize(size.width, size.height);
-                while (parentComponent != null && !(parentComponent instanceof DocumentView)) {
-                    pageBounds.x += parentComponent.getBounds().x;
-                    pageBounds.y += parentComponent.getBounds().y;
-                    parentComponent = parentComponent.getParent();
-                }
+                Rectangle pageBounds = pageViewComponentImpl.getParent().getBounds();
+                return pageBounds;
             }
         }
-        return pageBounds;
+        return new Rectangle();
     }
 
     public void dispose() {

@@ -15,8 +15,7 @@ public class OneColumnPageViewLayout extends OnePageViewLayout {
         int maxWidth = parent.getWidth() - (insets.left + insets.right);
         int maxHeight = parent.getHeight() - (insets.top + insets.bottom);
         int xCord = 0, yCord= 0;
-        int nComps = parent.getComponentCount();
-
+        int previousHeight = 0;
         if (sizeUnknown) {
             setSizes(parent);
         }
@@ -43,8 +42,9 @@ public class OneColumnPageViewLayout extends OnePageViewLayout {
                 yCord += insets.top;
             } else {
                 xCord = (maxWidth - d.width) / 2;
-                yCord += d.height + PAGE_SPACING_VERTICAL;
+                yCord += previousHeight + PAGE_SPACING_VERTICAL;
             }
+            previousHeight = d.height;
             index++;
             xCord += insets.left;
 

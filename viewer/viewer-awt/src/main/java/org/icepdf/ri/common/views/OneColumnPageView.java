@@ -23,6 +23,8 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.util.List;
 
+import static org.icepdf.ri.common.views.BasePageViewLayout.PAGE_SPACING_HORIZONTAL;
+
 
 /**
  * <p>Constructs a one column page view as defined in the PDF specification. A one
@@ -121,19 +123,14 @@ public class OneColumnPageView extends AbstractDocumentView {
     }
 
     public Dimension getDocumentSize() {
-        // todo this might not be needed anymore?
+        // still used by page fit code
         float pageViewWidth = 0;
         float pageViewHeight = 0;
         int currCompIndex = documentViewController.getCurrentPageIndex();
-        int numComponents = getComponentCount();
-        if (currCompIndex >= 0 && currCompIndex < numComponents) {
-            Component comp = getComponent(currCompIndex);
-            if (comp instanceof PageViewDecorator) {
-                PageViewDecorator pvd = (PageViewDecorator) comp;
-                Dimension dim = pvd.getPreferredSize();
-                pageViewWidth = dim.width;
-                pageViewHeight = dim.height;
-            }
+        Rectangle bounds = documentViewModel.getPageBounds(currCompIndex);
+        if (bounds != null) {
+            pageViewWidth = bounds.width;
+            pageViewHeight = bounds.height;
         }
         // normalize the dimensions to a zoom level of zero.
         float currentZoom = documentViewController.getDocumentViewModel().getViewZoom();
@@ -141,8 +138,8 @@ public class OneColumnPageView extends AbstractDocumentView {
         pageViewHeight = Math.abs(pageViewHeight / currentZoom);
 
         // add any horizontal padding from layout manager
-        pageViewWidth += AbstractDocumentView.horizontalSpace * 2;
-        pageViewHeight += AbstractDocumentView.verticalSpace * 2;
+        pageViewWidth += PAGE_SPACING_HORIZONTAL;
+        pageViewHeight += PAGE_SPACING_HORIZONTAL * 2;
         return new Dimension((int) pageViewWidth, (int) pageViewHeight);
     }
 

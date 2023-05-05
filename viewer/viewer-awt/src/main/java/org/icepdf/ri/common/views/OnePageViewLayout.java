@@ -1,8 +1,5 @@
 package org.icepdf.ri.common.views;
 
-import org.icepdf.ri.common.views.annotations.MarkupGlueComponent;
-import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
-
 import java.awt.*;
 import java.util.Arrays;
 
@@ -11,8 +8,6 @@ import java.util.Arrays;
  */
 public class OnePageViewLayout extends BasePageViewLayout implements LayoutManager2 {
 
-    protected static final int PAGE_SPACING_HORIZONTAL = 2;
-    protected static final int PAGE_SPACING_VERTICAL = 2;
     protected int minWidth = 0, minHeight = 0;
     protected int preferredWidth = 0, preferredHeight = 0;
     protected boolean sizeUnknown = true;
@@ -28,7 +23,6 @@ public class OnePageViewLayout extends BasePageViewLayout implements LayoutManag
         Insets insets = parent.getInsets();
         int maxWidth = parent.getWidth() - (insets.left + insets.right);
         int maxHeight = parent.getHeight() - (insets.top + insets.bottom);
-        int nComps = parent.getComponentCount();
 
         if (sizeUnknown) {
             setSizes(parent);
@@ -119,20 +113,19 @@ public class OnePageViewLayout extends BasePageViewLayout implements LayoutManag
         minWidth = 0;
         minHeight = 0;
 
-        int nComps = parent.getComponentCount();
         Dimension dimension;
 
-        for (int i = 0; i < nComps; i++) {
-            Component component = parent.getComponent(i);
-            if (component.isVisible() &&
-                    !(component instanceof PopupAnnotationComponent || component instanceof MarkupGlueComponent)) {
-                dimension = component.getPreferredSize();
-                preferredWidth = dimension.width;
-                preferredHeight += dimension.height + PAGE_SPACING_VERTICAL;
+        PageViewDecorator[] pages = Arrays.stream(parent.getComponents())
+                .filter(component -> component instanceof PageViewDecorator && component.isVisible())
+                .toArray(PageViewDecorator[]::new);
 
-                minWidth = Math.max(component.getMinimumSize().width, minWidth);
-                minHeight = preferredHeight;
-            }
+        for (PageViewDecorator pageViewDecorator : pages) {
+            dimension = pageViewDecorator.getPreferredSize();
+            preferredWidth = dimension.width;
+            preferredHeight += dimension.height + PAGE_SPACING_VERTICAL;
+
+            minWidth = Math.max(pageViewDecorator.getMinimumSize().width, minWidth);
+            minHeight = preferredHeight;
         }
     }
 
