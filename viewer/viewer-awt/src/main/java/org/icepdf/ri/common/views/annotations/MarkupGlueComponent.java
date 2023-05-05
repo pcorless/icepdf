@@ -22,17 +22,19 @@ import org.icepdf.ri.common.views.DocumentViewModel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
 
 /**
- * MarkupGlueComponent allows for a visual associating between a markup annotation and it's popup annotation
+ * MarkupGlueComponent allows for a visual associating between a markup annotation, and it's popup annotation
  * when open.
  *
  * @since 6.3
  */
-public class MarkupGlueComponent extends JComponent implements PageViewAnnotationComponent {
+public class MarkupGlueComponent extends JComponent implements PageViewAnnotationComponent, ComponentListener {
 
     protected MarkupAnnotationComponent markupAnnotationComponent;
     protected PopupAnnotationComponent popupAnnotationComponent;
@@ -48,19 +50,17 @@ public class MarkupGlueComponent extends JComponent implements PageViewAnnotatio
         this.documentViewController = documentViewController;
         this.markupAnnotationComponent = markupAnnotationComponent;
         this.popupAnnotationComponent = popupAnnotationComponent;
+        this.popupAnnotationComponent.addComponentListener(this);
     }
 
-    public MarkupAnnotationComponent getMarkupAnnotationComponent() {
-        return markupAnnotationComponent;
+    public void dispose(){
+        if (popupAnnotationComponent != null) {
+            popupAnnotationComponent.removeComponentListener(this);
+        }
     }
 
     public PopupAnnotationComponent getPopupAnnotationComponent() {
         return popupAnnotationComponent;
-    }
-
-    public void refreshDirtyBounds() {
-        adjustedMarkupAnnotationBounds = recalculateAnnotationBounds();
-        setBounds(adjustedMarkupAnnotationBounds);
     }
 
     private Rectangle recalculateAnnotationBounds() {
@@ -79,13 +79,16 @@ public class MarkupGlueComponent extends JComponent implements PageViewAnnotatio
         return annotationPageSpaceBounds;
     }
 
-    @Override
-    public void paintComponent(Graphics g) {
-        // not ideal to setBounds during the paint but it covers a lot of painting corner cases very well.
+    public void refreshDirtyBounds() {
+        adjustedMarkupAnnotationBounds = recalculateAnnotationBounds();
         Rectangle popupBounds = popupAnnotationComponent.getBounds();
         Rectangle markupBounds = adjustedMarkupAnnotationBounds;
         Rectangle bound = markupBounds.union(popupBounds);
         setBounds(bound);
+    }
+
+    @Override
+    public void paintComponent(Graphics g) {
 
         Rectangle bounds = getBounds();
         Graphics2D g2d = (Graphics2D) g;
@@ -95,6 +98,9 @@ public class MarkupGlueComponent extends JComponent implements PageViewAnnotatio
             g2d.setStroke(new BasicStroke(1));
             GeneralPath path = new GeneralPath();
             path.moveTo(0, 0);
+
+            Rectangle popupBounds = popupAnnotationComponent.getBounds();
+            Rectangle markupBounds = adjustedMarkupAnnotationBounds;
 
             // in order to draw the curvy shape we need to determine which of the 8 surrounding regions
             // the popup is relative to the markup annotation.
@@ -172,10 +178,27 @@ public class MarkupGlueComponent extends JComponent implements PageViewAnnotatio
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
             g2d.fill(path);
-            g2d.setStroke(new BasicStroke(3));
-            g2d.setColor(Color.RED);
-            g2d.draw(bound);
         }
+    }
+
+    @Override
+    public void componentResized(ComponentEvent componentEvent) {
+
+    }
+
+    @Override
+    public void componentMoved(ComponentEvent componentEvent) {
+        this.refreshDirtyBounds();
+    }
+
+    @Override
+    public void componentShown(ComponentEvent componentEvent) {
+
+    }
+
+    @Override
+    public void componentHidden(ComponentEvent componentEvent) {
+
     }
 
     public void setParentPageComponent(AbstractPageViewComponent pageViewComponent) {

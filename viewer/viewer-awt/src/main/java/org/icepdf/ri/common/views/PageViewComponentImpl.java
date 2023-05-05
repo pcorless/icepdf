@@ -286,7 +286,10 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                             searchHitComponents.forEach(this::remove);
                             searchHitComponents = newSearchHitComponents;
                             //In front of annotations, behind popups
-                            searchHitComponents.forEach(comp -> this.add(comp, JLayeredPane.MODAL_LAYER));
+                            searchHitComponents.forEach(comp -> {
+                                this.setLayer(comp, JLayeredPane.MODAL_LAYER);
+                                this.add(comp);
+                            });
                             validate();
                         }
                     }
@@ -435,9 +438,11 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
             MarkupAnnotationComponent markupAnnotationComponent = (MarkupAnnotationComponent) annotation;
             PopupAnnotationComponent popupAnnotationComponent = markupAnnotationComponent.getPopupAnnotationComponent();
             addPopupAnnotationComponentGlue(markupAnnotationComponent, popupAnnotationComponent);
-            this.add((AbstractAnnotationComponent) annotation, JLayeredPane.PALETTE_LAYER);
+            this.setLayer((AbstractAnnotationComponent) annotation, JLayeredPane.PALETTE_LAYER);
+            this.add((AbstractAnnotationComponent) annotation);
         } else {
-            this.add((AbstractAnnotationComponent) annotation, JLayeredPane.PALETTE_LAYER);
+            this.setLayer((AbstractAnnotationComponent) annotation, JLayeredPane.PALETTE_LAYER);
+            this.add((AbstractAnnotationComponent) annotation);
         }
     }
 
@@ -476,8 +481,13 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         SwingUtilities.invokeLater(() -> {
             // remove popups from layout, so we can cleanly re-initialize if viewed again.
             ArrayList<PageViewAnnotationComponent> components = documentViewModel.getFloatingAnnotationComponents(this);
-            for (PageViewAnnotationComponent component : components) {
-                parentDocumentView.remove((JComponent)component);
+            if (components != null) {
+                for (PageViewAnnotationComponent component : components) {
+                    parentDocumentView.remove((JComponent) component);
+                    if (component instanceof MarkupGlueComponent) {
+                        ((MarkupGlueComponent)component).dispose();
+                    }
+                }
             }
             documentViewModel.removeAllFloatingAnnotationComponent(this);
 
@@ -559,9 +569,11 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                                 if (popupAnnotationComponent != null) {
                                     addPopupAnnotationComponentGlue(markupAnnotationComponent, popupAnnotationComponent);
                                 }
-                                parent.add(markupAnnotationComponent, JLayeredPane.PALETTE_LAYER);
+                                parent.setLayer(comp, JLayeredPane.PALETTE_LAYER);
+                                parent.add(markupAnnotationComponent);
                             } else {
-                                parent.add(comp, JLayeredPane.PALETTE_LAYER);
+                                parent.setLayer(comp, JLayeredPane.PALETTE_LAYER);
+                                parent.add(comp);
                             }
                             comp.revalidate();
                             comp.repaint();
@@ -622,7 +634,8 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                     // create the destination
                     for (Destination dest : destinations) {
                         DestinationComponent comp = new DestinationComponent(dest, documentViewController, this);
-                        parent.add(comp, JLayeredPane.PALETTE_LAYER);
+                        parent.setLayer(comp, JLayeredPane.PALETTE_LAYER);
+                        parent.add(comp);
                         destinationComponents.add(comp);
                         comp.revalidate();
                         comp.repaint();
