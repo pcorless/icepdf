@@ -930,7 +930,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 final TreeNode tn = (TreeNode) node;
                 if (node instanceof MarkupAnnotationTreeNode) {
                     final Annotation annot = (MarkupAnnotation) ((MarkupAnnotationTreeNode) node).getUserObject();
-                    if (refs.contains(annot.getPObjectReference())) {
+                    if (refs != null && refs.contains(annot.getPObjectReference())) {
                         return true;
                     }
                 }
