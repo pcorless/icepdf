@@ -56,7 +56,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     // select all state flag, optimization for painting select all state lazily
     private boolean selectAll;
     protected List<AbstractPageViewComponent> pageComponents;
-    protected HashMap<AbstractPageViewComponent, ArrayList<PageViewAnnotationComponent>> floatingAnnotationComponents;
+    protected HashMap<AbstractPageViewComponent, ArrayList<PageViewAnnotationComponent>> documentViewAnnotationComponents;
     // scroll pane used to contain the view
     protected JScrollPane documentViewScrollPane;
     // annotation memento caretaker
@@ -79,7 +79,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         this.currentDocument = currentDocument;
         // create new instance of the undoCaretaker
         undoCaretaker = new UndoCaretaker();
-        floatingAnnotationComponents = new HashMap<>();
+        documentViewAnnotationComponents = new HashMap<>();
     }
 
     protected abstract AbstractPageViewComponent buildPageViewComponent(DocumentViewModel documentViewModel,
@@ -95,39 +95,40 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     }
 
 
-    public HashMap<AbstractPageViewComponent, ArrayList<PageViewAnnotationComponent>> getFloatingAnnotationComponents() {
-        return floatingAnnotationComponents;
+    public HashMap<AbstractPageViewComponent, ArrayList<PageViewAnnotationComponent>> getDocumentViewAnnotationComponents() {
+        return documentViewAnnotationComponents;
     }
     @Override
-    public ArrayList<PageViewAnnotationComponent> getFloatingAnnotationComponents(AbstractPageViewComponent pageViewComponent) {
-        return floatingAnnotationComponents.get(pageViewComponent);
+    public ArrayList<PageViewAnnotationComponent> getDocumentViewAnnotationComponents(AbstractPageViewComponent pageViewComponent) {
+        return documentViewAnnotationComponents.get(pageViewComponent);
     }
 
     @Override
-    public void addFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent, PageViewAnnotationComponent annotationComponent) {
-        if (!floatingAnnotationComponents.containsKey(pageViewComponent)) {
-            floatingAnnotationComponents.put(pageViewComponent, new ArrayList<>());
+    public void addDocumentViewAnnotationComponent(AbstractPageViewComponent pageViewComponent, PageViewAnnotationComponent annotationComponent) {
+        if (!documentViewAnnotationComponents.containsKey(pageViewComponent)) {
+            documentViewAnnotationComponents.put(pageViewComponent, new ArrayList<>());
         }
-        List<PageViewAnnotationComponent> components = floatingAnnotationComponents.get(pageViewComponent);
+        List<PageViewAnnotationComponent> components = documentViewAnnotationComponents.get(pageViewComponent);
         components.add(annotationComponent);
     }
 
     @Override
-    public void removeFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent, PageViewAnnotationComponent annotationComponent) {
-        if (!floatingAnnotationComponents.containsKey(pageViewComponent)) {
-            List<PageViewAnnotationComponent> components = floatingAnnotationComponents.get(pageViewComponent);
+    public void removeDocumentViewAnnotationComponent(AbstractPageViewComponent pageViewComponent, PageViewAnnotationComponent annotationComponent) {
+        if (!documentViewAnnotationComponents.containsKey(pageViewComponent)) {
+            List<PageViewAnnotationComponent> components = documentViewAnnotationComponents.get(pageViewComponent);
             components.remove(annotationComponent);
         }
     }
 
     public void removeAllFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent) {
-        if (!floatingAnnotationComponents.containsKey(pageViewComponent)) {
-            floatingAnnotationComponents.remove(pageViewComponent);
+        if (!documentViewAnnotationComponents.containsKey(pageViewComponent)) {
+            documentViewAnnotationComponents.remove(pageViewComponent);
         }
     }
 
+    //todo clean up name and why this isn't called.
     public void removeFloatingAnnotationComponent(AbstractAnnotationComponent annotationComponent) {
-        floatingAnnotationComponents.remove(annotationComponent);
+        documentViewAnnotationComponents.remove(annotationComponent);
     }
 
     public boolean setViewCurrentPageIndex(int pageIndex) {
@@ -315,8 +316,8 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
             }
             pageComponents.clear();
         }
-        if (floatingAnnotationComponents != null) {
-            floatingAnnotationComponents.clear();
+        if (documentViewAnnotationComponents != null) {
+            documentViewAnnotationComponents.clear();
         }
     }
 

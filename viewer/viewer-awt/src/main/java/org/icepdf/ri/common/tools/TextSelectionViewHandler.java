@@ -67,8 +67,6 @@ public class TextSelectionViewHandler extends TextSelection
             // check if we are over a page
             PageViewComponentImpl pageComponent = isOverPageComponent(parentComponent, e);
 
-            System.out.println(documentViewController.getDocumentViewModel().getPageBounds(pageComponent.getPageIndex()));
-
             if (pageComponent != null) {
                 pageComponent.requestFocus();
                 // click word and line selection

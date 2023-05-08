@@ -91,7 +91,9 @@ public class TwoColumnPageView extends AbstractDocumentView {
                 pageViewComponent = pageComponents.get(i);
                 if (pageViewComponent != null) {
                     pageViewComponent.setDocumentViewCallback(this);
-                    add(new PageViewDecorator(pageViewComponent), JLayeredPane.DEFAULT_LAYER);
+                    PageViewDecorator pageViewDecorator = new PageViewDecorator(pageViewComponent);
+                    setLayer(pageViewDecorator, JLayeredPane.DEFAULT_LAYER);
+                    add(pageViewDecorator);
                     addPopupAnnotationAndGlue(pageViewComponent);
                 }
             }

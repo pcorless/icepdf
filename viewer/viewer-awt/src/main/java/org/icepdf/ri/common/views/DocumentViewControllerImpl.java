@@ -629,9 +629,8 @@ public class DocumentViewControllerImpl
                     PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE.equals(prop) ||
                     PropertyConstants.DOCUMENT_VIEW_ROTATION_CHANGE.equals(prop)) {
                 List<AbstractPageViewComponent> pageComponents = documentViewModel.getPageComponents();
-                // documentViewScrollPane.revalidate();
                 for (AbstractPageViewComponent pageViewComponent : pageComponents) {
-                    // pass in zoom, rotation etc, or get form model....
+                    // pass in zoom, rotation etc. or get form model....
                     pageViewComponent.updateView(prop, oldValue, newValue);
                 }
             }

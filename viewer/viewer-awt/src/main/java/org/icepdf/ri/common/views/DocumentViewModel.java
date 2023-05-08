@@ -178,25 +178,25 @@ public interface DocumentViewModel {
      */
     List<AbstractPageViewComponent> getPageComponents();
 
-    HashMap<AbstractPageViewComponent, ArrayList<PageViewAnnotationComponent>> getFloatingAnnotationComponents();
+    HashMap<AbstractPageViewComponent, ArrayList<PageViewAnnotationComponent>> getDocumentViewAnnotationComponents();
 
     /**
      * Gets all the annotation components that float in the DocumentView and are not bound by page dimensions.
      * @return list of annotation components that should be added the document view
      */
-    ArrayList<PageViewAnnotationComponent> getFloatingAnnotationComponents(AbstractPageViewComponent pageViewComponent);
+    ArrayList<PageViewAnnotationComponent> getDocumentViewAnnotationComponents(AbstractPageViewComponent pageViewComponent);
 
     /**
      * Adds an annotation component the list of floating annotation components that are painted in the DocumentView.
      * @param annotationComponent annotation component to add
      */
-    void addFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent, PageViewAnnotationComponent annotationComponent);
+    void addDocumentViewAnnotationComponent(AbstractPageViewComponent pageViewComponent, PageViewAnnotationComponent annotationComponent);
 
     /**
      * Removes an annotation component the list of floating annotation components that are painted in the DocumentView.
      * @param annotationComponent annotation component to remove
      */
-    void removeFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent, PageViewAnnotationComponent annotationComponent);
+    void removeDocumentViewAnnotationComponent(AbstractPageViewComponent pageViewComponent, PageViewAnnotationComponent annotationComponent);
     void removeAllFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent);
 
     /**

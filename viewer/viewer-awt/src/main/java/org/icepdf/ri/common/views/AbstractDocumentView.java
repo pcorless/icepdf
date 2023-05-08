@@ -188,14 +188,18 @@ public abstract class AbstractDocumentView
     protected void addPopupAnnotationAndGlue(AbstractPageViewComponent pageViewComponent) {
         // grab any popups from the view model as they'll need to be re attached to the document view
         ArrayList<PageViewAnnotationComponent> popupComponentsAndGlue =
-                documentViewModel.getFloatingAnnotationComponents(pageViewComponent);
+                documentViewModel.getDocumentViewAnnotationComponents(pageViewComponent);
         if (popupComponentsAndGlue != null) {
             for (PageViewAnnotationComponent component : popupComponentsAndGlue) {
                 if (component instanceof MarkupGlueComponent) {
-                    this.add((MarkupGlueComponent) component, JLayeredPane.MODAL_LAYER);
+                    MarkupGlueComponent markupGlueComponent = (MarkupGlueComponent) component;
+                    this.setLayer(markupGlueComponent, JLayeredPane.MODAL_LAYER);
+                    this.add(markupGlueComponent);
                 }
                 if (component instanceof PopupAnnotationComponent) {
-                    this.add((PopupAnnotationComponent) component,JLayeredPane.POPUP_LAYER);
+                    PopupAnnotationComponent popupAnnotationComponent = (PopupAnnotationComponent) component;
+                    this.setLayer(popupAnnotationComponent, JLayeredPane.POPUP_LAYER);
+                    this.add(popupAnnotationComponent);
                 }
             }
         }

@@ -480,7 +480,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     public void pageTeardownCallback() {
         SwingUtilities.invokeLater(() -> {
             // remove popups from layout, so we can cleanly re-initialize if viewed again.
-            ArrayList<PageViewAnnotationComponent> components = documentViewModel.getFloatingAnnotationComponents(this);
+            ArrayList<PageViewAnnotationComponent> components = documentViewModel.getDocumentViewAnnotationComponents(this);
             if (components != null) {
                 for (PageViewAnnotationComponent component : components) {
                     parentDocumentView.remove((JComponent) component);
@@ -565,7 +565,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                                 // will create popup if not already created.
                                 PopupAnnotationComponent popupAnnotationComponent =
                                         markupAnnotationComponent.getPopupAnnotationComponent();
-                                // we may or may not have creat the popup, if so we create the glue
+                                // we may or may not have created the popup, if so we create the glue
                                 if (popupAnnotationComponent != null) {
                                     addPopupAnnotationComponentGlue(markupAnnotationComponent, popupAnnotationComponent);
                                 }
@@ -588,7 +588,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         // assign parent so we can properly place the popup relative to its parent page.
         popupAnnotationComponent.setParentPageComponent(this);
         popupAnnotationComponent.refreshDirtyBounds();
-        documentViewModel.addFloatingAnnotationComponent(this, popupAnnotationComponent);
+        documentViewModel.addDocumentViewAnnotationComponent(this, popupAnnotationComponent);
         // won't show up on the right layer if layer isn't set first.
         ((JLayeredPane)parentDocumentView).setLayer(popupAnnotationComponent, JLayeredPane.POPUP_LAYER);
         parentDocumentView.add(popupAnnotationComponent);
@@ -603,15 +603,15 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         markupGlueComponent.setParentPageComponent(this);
         markupGlueComponent.refreshDirtyBounds();
         // won't show up on the right layer if layer isn't set first.
-        documentViewModel.addFloatingAnnotationComponent(this, markupGlueComponent);
+        documentViewModel.addDocumentViewAnnotationComponent(this, markupGlueComponent);
         ((JLayeredPane)parentDocumentView).setLayer(markupGlueComponent, JLayeredPane.MODAL_LAYER);
         parentDocumentView.add(markupGlueComponent);
     }
 
     private void removePopupAnnotationComponent(PopupAnnotationComponent popupAnnotationComponent) {
         parentDocumentView.remove(popupAnnotationComponent);
-        documentViewModel.removeFloatingAnnotationComponent(this, popupAnnotationComponent);
-        ArrayList<PageViewAnnotationComponent> components = documentViewModel.getFloatingAnnotationComponents(this);
+        documentViewModel.removeDocumentViewAnnotationComponent(this, popupAnnotationComponent);
+        ArrayList<PageViewAnnotationComponent> components = documentViewModel.getDocumentViewAnnotationComponents(this);
         // don't forget to remove the glue component
         for (PageViewAnnotationComponent component : components) {
             if (component instanceof MarkupGlueComponent &&

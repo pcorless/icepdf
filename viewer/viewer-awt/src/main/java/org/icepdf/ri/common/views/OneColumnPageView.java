@@ -77,7 +77,8 @@ public class OneColumnPageView extends AbstractDocumentView {
                     pageViewComponent.setDocumentViewCallback(this);
                     // add component to layout
                     JComponent page = new PageViewDecorator(pageViewComponent);
-                    add(page, JLayeredPane.DEFAULT_LAYER);
+                    setLayer(page, JLayeredPane.DEFAULT_LAYER);
+                    add(page);
                     addPopupAnnotationAndGlue(pageViewComponent);
                 }
             }
