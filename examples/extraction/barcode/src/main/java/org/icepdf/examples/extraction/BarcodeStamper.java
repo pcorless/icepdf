@@ -20,7 +20,6 @@ import com.google.zxing.client.result.ResultParser;
 import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.multi.GenericMultipleBarcodeReader;
 import com.google.zxing.multi.MultipleBarcodeReader;
-import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
@@ -49,12 +48,11 @@ import java.util.*;
 public class BarcodeStamper {
 
     // barcode reader hints
-    private static Map<DecodeHintType, Object> hints;
+    private static final Map<DecodeHintType, Object> hints;
 
     static {
         // formats to scan for; shorter list will make a shorter scan time.
-        List<BarcodeFormat> formats = new ArrayList<BarcodeFormat>();
-        formats.addAll(Arrays.asList(
+        List<BarcodeFormat> formats = new ArrayList<>(Arrays.asList(
                 BarcodeFormat.UPC_A,
                 BarcodeFormat.UPC_E,
                 BarcodeFormat.EAN_13,
@@ -92,13 +90,13 @@ public class BarcodeStamper {
         try {
             BarcodeStamper barcodeStamper = new BarcodeStamper();
             barcodeStamper.findBarcodes(filePath);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void findBarcodes(String filePath) throws IOException, PDFException, PDFSecurityException,
-            InterruptedException, NotFoundException {
+    public void findBarcodes(String filePath) throws IOException, PDFSecurityException,
+            InterruptedException {
 
         // open the document.
         Document document = new Document();
@@ -118,7 +116,7 @@ public class BarcodeStamper {
             RGBLuminanceSource source = new RGBLuminanceSource(image.getWidth(), image.getHeight(), pixels);
             BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
 
-            // setup a the reader.
+            // set up the reader.
             System.out.println("Scanning Page: " + i);
             MultiFormatReader multiFormatReader = new MultiFormatReader();
             MultipleBarcodeReader reader = new GenericMultipleBarcodeReader(multiFormatReader);
@@ -146,7 +144,7 @@ public class BarcodeStamper {
                     ResultPoint rp = result.getResultPoints()[pointIndex];
                     if (pointIndex == 0) {
                         generalPath.moveTo(rp.getX(), rp.getY());
-                    } else if (pointIndex < max) {
+                    } else {
                         generalPath.lineTo(rp.getX(), rp.getY());
                     }
                 }

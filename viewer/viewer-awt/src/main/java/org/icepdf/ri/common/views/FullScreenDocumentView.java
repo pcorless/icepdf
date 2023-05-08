@@ -22,7 +22,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.ResourceBundle;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -41,7 +40,7 @@ public class FullScreenDocumentView extends OnePageView implements WindowListene
 
     private GraphicsDevice defaultScreenDevice;
 
-    private DocumentViewController controller;
+    private final DocumentViewController controller;
     private JFrame frame;
 
     public FullScreenDocumentView(DocumentViewController controller) {
@@ -60,26 +59,22 @@ public class FullScreenDocumentView extends OnePageView implements WindowListene
         GraphicsEnvironment graphicsEnvironment = GraphicsEnvironment.getLocalGraphicsEnvironment();
         defaultScreenDevice = graphicsEnvironment.getDefaultScreenDevice();
         if (defaultScreenDevice != null && defaultScreenDevice.isFullScreenSupported()) {
-            try {
-                FullScreenDocumentView fullScreenDocumentView = this;
-                frame = new JFrame() {
-                    protected JRootPane createRootPane() {
-                        // setup a closing action
-                        ActionListener actionListener = actionEvent -> fullScreenDocumentView.dispose();
-                        // setup the esc key mapping.
-                        JRootPane rootPane = new JRootPane();
-                        KeyStroke stroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
-                        rootPane.registerKeyboardAction(actionListener, stroke, JComponent.WHEN_IN_FOCUSED_WINDOW);
-                        return rootPane;
-                    }
-                };
-                frame.addWindowListener(this);
-                frame.setUndecorated(true);
-                buildFullScreenDocumentView();
-                defaultScreenDevice.setFullScreenWindow(frame);
-            } catch (Throwable e) {
-                logger.log(Level.WARNING, "Could not build fullscreen view: ", e);
-            }
+            FullScreenDocumentView fullScreenDocumentView = this;
+            frame = new JFrame() {
+                protected JRootPane createRootPane() {
+                    // set up a closing action
+                    ActionListener actionListener = actionEvent -> fullScreenDocumentView.dispose();
+                    // set up the esc key mapping.
+                    JRootPane rootPane = new JRootPane();
+                    KeyStroke stroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
+                    rootPane.registerKeyboardAction(actionListener, stroke, JComponent.WHEN_IN_FOCUSED_WINDOW);
+                    return rootPane;
+                }
+            };
+            frame.addWindowListener(this);
+            frame.setUndecorated(true);
+            buildFullScreenDocumentView();
+            defaultScreenDevice.setFullScreenWindow(frame);
         } else {
             ResourceBundle messageBundle = documentViewController.getParentController().getMessageBundle();
             org.icepdf.ri.util.Resources.showMessageDialog(documentViewController.getViewContainer(),

@@ -16,11 +16,11 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -252,7 +252,7 @@ public class ExtGState extends Dictionary {
      * @param graphicsState dictionary containing entries from teh graphcis
      *                      state parameters dictionary.
      */
-    public ExtGState(Library library, HashMap graphicsState) {
+    public ExtGState(Library library, DictionaryEntries graphicsState) {
         super(library, graphicsState);
     }
 
@@ -321,7 +321,7 @@ public class ExtGState extends Dictionary {
     public List getLineDashPattern() {
         List<Object> dashPattern = null;
         Number dashPhase;
-        float[] dashArray = null;
+        float[] dashArray;
         if (entries.containsKey(D_KEY)) {
             try {
                 List dashData = (List) entries.get(D_KEY);
@@ -459,9 +459,9 @@ public class ExtGState extends Dictionary {
 
     public SoftMask getSMask() {
         Object tmp = library.getObject(entries, SMASK_KEY);
-        if (tmp != null && tmp instanceof HashMap) {
+        if (tmp instanceof DictionaryEntries) {
             // create a new SMask dictionary
-            SoftMask softMask = new SoftMask(library, (HashMap) tmp);
+            SoftMask softMask = new SoftMask(library, (DictionaryEntries) tmp);
             softMask.setPObjectReference(library.getReference(entries, SMASK_KEY));
             return softMask;
         }

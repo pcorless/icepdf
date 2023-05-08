@@ -119,7 +119,7 @@ public interface SignatureValidator {
      */
     X509Certificate getSignerCertificate();
 
-    boolean checkByteRange() throws SignatureIntegrityException;
+    boolean checkByteRange();
 
     /**
      * CertificateChain.

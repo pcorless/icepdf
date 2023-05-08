@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects.filters;
 
 import org.icepdf.core.io.BitStream;
 import org.icepdf.core.io.ZeroPaddedInputStream;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.graphics.images.ImageParams;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
@@ -30,9 +31,7 @@ import java.awt.*;
 import java.awt.image.*;
 import java.awt.image.renderable.ParameterBlock;
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -438,12 +437,9 @@ public class CCITTFax {
                 if ((state.curIndex & 0x1) != 0)
                     addRun(0, state, outb);
                 addRun(state.width - state.a0, state, outb);
-            } else if (state.a0 > state.width) {
-                addRun(state.width, state, outb);
-                addRun(0, state, outb);
             }
         }
-        int tmp[] = state.ref;
+        int[] tmp = state.ref;
         state.ref = state.cur;
         state.cur = tmp;
         //now zero out extra spots for runs
@@ -550,12 +546,12 @@ public class CCITTFax {
             // out.flush(); // need this for further proccessing
             out.close();
         } catch (Exception e) {
-            logger.log(Level.FINE, "Error decoding group4 CITTFax", e);
+            logger.log(Level.WARNING, "Error decoding group4 CITTFax", e);
         }
     }
 
     public static BufferedImage attemptDeriveBufferedImageFromBytes(
-            ImageStream stream, Library library, HashMap streamDictionary, Color fill) throws InvocationTargetException, IllegalAccessException {
+            ImageStream stream, Library library, DictionaryEntries streamDictionary, Color fill) {
         if (!USE_JAI_IMAGE_LIBRARY)
             return null;
 
@@ -563,7 +559,7 @@ public class CCITTFax {
         boolean imageMask = stream.getImageParams().isImageMask();
         float[] decodeArray = imageParams.getDecode();
         // get decode parameters from stream properties
-        HashMap decodeParmsDictionary = imageParams.getDecodeParams();
+        DictionaryEntries decodeParmsDictionary = imageParams.getDecodeParams();
         boolean blackIs1 = imageParams.getBlackIs1(decodeParmsDictionary);
         // double check for blackIs1 in the main dictionary.
 
@@ -572,7 +568,7 @@ public class CCITTFax {
         short compression = TIFF_COMPRESSION_NONE_default;
         if (k < 0) compression = TIFF_COMPRESSION_GROUP4;
         else if (k > 0) compression = TIFF_COMPRESSION_GROUP3_2D;
-        else if (k == 0) compression = TIFF_COMPRESSION_GROUP3_1D;
+        else compression = TIFF_COMPRESSION_GROUP3_1D;
         boolean hasHeader;
 
         InputStream input = stream.getDecodedByteArrayInputStream();
@@ -639,15 +635,11 @@ public class CCITTFax {
             // Have to fill in values for: ImageWidth, ImageLength, BitsPerSample, Compression,
             //   PhotometricIntrerpretation, RowsPerStrip, StripByteCounts
 
-            boolean pdfStatesBlackAndWhite = false;
-            if (blackIs1) {
-                pdfStatesBlackAndWhite = true;
-            }
             int width = library.getInt(streamDictionary, ImageParams.WIDTH_KEY);
             int height = library.getInt(streamDictionary, ImageParams.HEIGHT_KEY);
 
             Object columnsObj = library.getObject(decodeParmsDictionary, COLUMNS_VALUE);
-            if (columnsObj != null && columnsObj instanceof Number) {
+            if (columnsObj instanceof Number) {
                 int columns = ((Number) columnsObj).intValue();
                 if (columns > width)
                     width = columns;
@@ -657,7 +649,7 @@ public class CCITTFax {
             Utils.setIntIntoByteArrayBE(height, fakeHeaderBytes, 0x2A);      // ImageLength
             Object bitsPerComponent =                                          // BitsPerSample
                     library.getObject(streamDictionary, ImageParams.BITS_PER_COMPONENT_KEY);
-            if (bitsPerComponent != null && bitsPerComponent instanceof Number) {
+            if (bitsPerComponent instanceof Number) {
                 Utils.setShortIntoByteArrayBE(((Number) bitsPerComponent).shortValue(), fakeHeaderBytes, 0x36);
             }
 
@@ -666,16 +658,15 @@ public class CCITTFax {
             // PDF has default BlackIs1=false               ==> White=1, Black=0
             // TIFF has default PhotometricInterpretation=0 ==> White=0, Black=1
             // So, if PDF doesn't state what black and white are, then use TIFF's default
-            if (pdfStatesBlackAndWhite) {
-                if (!blackIs1)
-                    photometricInterpretation = TIFF_PHOTOMETRIC_INTERPRETATION_BLACK_IS_ZERO;
+            if (!blackIs1) {
+                photometricInterpretation = TIFF_PHOTOMETRIC_INTERPRETATION_BLACK_IS_ZERO;
             }
             Utils.setShortIntoByteArrayBE(                                     // PhotometricInterpretation
                     photometricInterpretation, fakeHeaderBytes, 0x4E);
             Utils.setIntIntoByteArrayBE(height, fakeHeaderBytes, 0x66);      // RowsPerStrip
             int lengthOfCompressedData = Integer.MAX_VALUE - 1;                // StripByteCounts
             Object lengthValue = library.getObject(streamDictionary, Stream.LENGTH_KEY);
-            if (lengthValue != null && lengthValue instanceof Number)
+            if (lengthValue instanceof Number)
                 lengthOfCompressedData = ((Number) lengthValue).intValue();
             else {
                 // JAI's SeekableStream pukes if we give a number too large
@@ -733,9 +724,9 @@ public class CCITTFax {
      * @return RenderedImage if could derive one, else null
      */
     private static BufferedImage deriveBufferedImageFromTIFFBytes(
-            InputStream in, Library library, int compressedBytes, int width, int height, int compression) throws InvocationTargetException, IllegalAccessException {
+            InputStream in, Library library, int compressedBytes, int width, int height, int compression) {
         BufferedImage img = null;
-        try {
+        try (in) {
             /*
             com.sun.media.jai.codec.SeekableStream s = com.sun.media.jai.codec.SeekableStream.wrapInputStream( in, true );
             ParameterBlock pb = new ParameterBlock();
@@ -786,16 +777,11 @@ public class CCITTFax {
                     img = (BufferedImage) roGetAsBufferedImage.invoke(javax_media_jai_RenderedOp_op);
                 }
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             // catch and return a null image so we can try again using a different compression method.
             logger.finer("Decoding TIFF: " + TIFF_COMPRESSION_NAMES[compression] + " failed trying alternative");
-        } finally {
-            try {
-                in.close();
-            } catch (IOException e) {
-                // keep quiet
-            }
         }
+        // keep quiet
         return img;
     }
 
@@ -817,9 +803,9 @@ public class CCITTFax {
             // From empirically testing 6 of the 9 possible combinations of
             //  BlackIs1 {true, false, not given} and Decode {[0 1], [1 0], not given}
             //  this is the rule. Unknown combinations:
-            //    BlackIs1=false, Decode=[0 1] 
-            //    BlackIs1=false, Decode=[1 0] 
-            //    BlackIs1=true,  Decode=[0 1] 
+            //    BlackIs1=false, Decode=[0 1]
+            //    BlackIs1=false, Decode=[1 0]
+            //    BlackIs1=true,  Decode=[0 1]
             boolean flag = ((blackIs1 == null) && (!defaultDecode)) ||
                     ((blackIs1 != null) && blackIs1 && (decode == null));
             if (imageMask) {

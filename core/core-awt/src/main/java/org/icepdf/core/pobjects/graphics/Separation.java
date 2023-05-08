@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.functions.Function;
 import org.icepdf.core.util.ColorUtil;
@@ -67,18 +68,12 @@ public class Separation extends PColorSpace {
 
     // named colour reference if valid conversion took place
     protected Color namedColor;
-    protected HashMap<Float, Color> namedColorCache = new HashMap<>();
+    protected final HashMap<Float, Color> namedColorCache = new HashMap<>();
     protected final Object cacheLock = new Object();
     // alternative colour space, named colour can not be resolved.
-    protected PColorSpace alternate;
+    protected final PColorSpace alternate;
     // transform for colour tint, named function type
-    protected Function tintTransform;
-    // The special colorant name All shall refer collectively to all colorants
-    // available on an output device, including those for the standard process
-    // colorants. When a Separation space with this colorant name is the current
-    // colour space, painting operators shall apply tint values to all available
-    // colorants at once.
-    private boolean isAll;
+    protected final Function tintTransform;
     public static final String COLORANT_ALL = "all";
     // The special colorant name None shall not produce any visible output.
     // Painting operations in a Separationspace with this colorant name shall
@@ -87,9 +82,9 @@ public class Separation extends PColorSpace {
     public static final String COLORANT_NONE = "none";
     private float tint = 1.0f;
     // basic cache to speed up the lookup.
-    private ConcurrentHashMap<Integer, Color> colorTable1B;
-    private ConcurrentHashMap<Integer, Color> colorTable3B;
-    private ConcurrentHashMap<Integer, Color> colorTable4B;
+    private final ConcurrentHashMap<Integer, Color> colorTable1B;
+    private final ConcurrentHashMap<Integer, Color> colorTable3B;
+    private final ConcurrentHashMap<Integer, Color> colorTable4B;
 
     /**
      * Create a new Seperation colour space.  Separation is specified using
@@ -101,7 +96,7 @@ public class Separation extends PColorSpace {
      * @param alternateSpace name of alternative colour space
      * @param tintTransform  function which defines the tint transform
      */
-    protected Separation(Library l, HashMap h, Object name, Object alternateSpace, Object tintTransform) {
+    protected Separation(Library l, DictionaryEntries h, Object name, Object alternateSpace, Object tintTransform) {
         super(l, h);
         alternate = getColorSpace(l, alternateSpace);
         colorTable1B = new ConcurrentHashMap<>(256);
@@ -113,13 +108,18 @@ public class Separation extends PColorSpace {
         if (name instanceof Name) {
             String colorName = ((Name) name).getName().toLowerCase();
             // check for additive colours we can work with .
-            if (!(colorName.equals("red") || colorName.equals("blue")
+            if (!(colorName.equals("red")
                     || colorName.equals("blue") || colorName.equals("black")
                     || colorName.equals("cyan") || colorName.equals("brown")
                     || colorName.equals("auto"))) {
                 // sniff out All or Null
                 if (colorName.equals(COLORANT_ALL)) {
-                    isAll = true;
+                    // The special colorant name All shall refer collectively to all colorants
+                    // available on an output device, including those for the standard process
+                    // colorants. When a Separation space with this colorant name is the current
+                    // colour space, painting operators shall apply tint values to all available
+                    // colorants at once.
+                    boolean isAll = true;
                 } else if (colorName.equals(COLORANT_NONE)) {
                     isNone = true;
                 }
@@ -220,7 +220,7 @@ public class Separation extends PColorSpace {
         // alternative colour.
         // -- Only applies to subtractive devices, screens are additive but I'm
         // leaving this in encase something goes horribly wrong.
-        return namedColor;
+        return null;
     }
 
     private static Color addColorToCache(
@@ -228,13 +228,11 @@ public class Separation extends PColorSpace {
             PColorSpace alternate, Function tintTransform, float[] f) {
         Color color = colorCache.get(key);
         if (color == null) {
-            float y[] = tintTransform.calculate(f);
+            float[] y = tintTransform.calculate(f);
             color = alternate.getColor(y);
             colorCache.put(key, color);
-            return color;
-        } else {
-            return color;
         }
+        return color;
     }
 
     public float getTint() {

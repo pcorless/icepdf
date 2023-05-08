@@ -45,8 +45,8 @@ import java.util.*;
  */
 public class PageText implements TextSelect {
 
-    private static boolean checkForDuplicates;
-    private static boolean preserveColumns;
+    private static final boolean checkForDuplicates;
+    private static final boolean preserveColumns;
 
     static {
         checkForDuplicates = Defs.booleanProperty(
@@ -59,7 +59,7 @@ public class PageText implements TextSelect {
     // pointer to current line during document parse, no other use.
     private LineText currentLine;
 
-    private ArrayList<LineText> pageLines;
+    private final ArrayList<LineText> pageLines;
     private ArrayList<LineText> sortedPageLines;
 
     private AffineTransform previousTextTransform;
@@ -270,10 +270,8 @@ public class PageText implements TextSelect {
     }
 
     public void clearSelected() {
-        if (pageLines != null) {
-            for (LineText lineText : pageLines) {
-                lineText.clearSelected();
-            }
+        for (LineText lineText : pageLines) {
+            lineText.clearSelected();
         }
         if (sortedPageLines != null) {
             for (LineText lineText : sortedPageLines) {
@@ -288,10 +286,8 @@ public class PageText implements TextSelect {
             for (OptionalContents key : keys) {
                 if (key != null) {
                     optionalLines = optionalPageLines.get(key).getAllPageLines();
-                    if (optionalLines != null) {
-                        for (LineText lineText : optionalLines) {
-                            lineText.clearSelected();
-                        }
+                    for (LineText lineText : optionalLines) {
+                        lineText.clearSelected();
                     }
                 }
             }
@@ -322,10 +318,8 @@ public class PageText implements TextSelect {
     }
 
     public void clearHighlightedCursor() {
-        if (pageLines != null) {
-            for (LineText lineText : pageLines) {
-                lineText.clearHighlightedCursor();
-            }
+        for (LineText lineText : pageLines) {
+            lineText.clearHighlightedCursor();
         }
         if (sortedPageLines != null) {
             for (LineText lineText : sortedPageLines) {
@@ -473,26 +467,24 @@ public class PageText implements TextSelect {
      */
     private void insertOptionalLines(ArrayList<LineText> sortedPageLines) {
         ArrayList<LineText> optionalPageLines = getVisiblePageLines(true);
-        if (optionalPageLines != null) {
-            for (LineText optionalPageLine : optionalPageLines) {
-                double yOptional = optionalPageLine.getBounds().y;
-                boolean found = false;
-                for (LineText sortedPageLine : sortedPageLines) {
-                    Rectangle2D.Double sortedBounds = sortedPageLine.getBounds();
-                    double height = sortedBounds.height;
-                    double y = sortedBounds.y;
-                    double diff = Math.abs(yOptional - y);
-                    // corner case inclusion of a word and a space which is out of order from the
-                    // rest of the text in the document.
-                    if (diff < height) {
-                        sortedPageLine.addAll(optionalPageLine.getWords());
-                        found = true;
-                        break;
-                    }
+        for (LineText optionalPageLine : optionalPageLines) {
+            double yOptional = optionalPageLine.getBounds().y;
+            boolean found = false;
+            for (LineText sortedPageLine : sortedPageLines) {
+                Rectangle2D.Double sortedBounds = sortedPageLine.getBounds();
+                double height = sortedBounds.height;
+                double y = sortedBounds.y;
+                double diff = Math.abs(yOptional - y);
+                // corner case inclusion of a word and a space which is out of order from the
+                // rest of the text in the document.
+                if (diff < height) {
+                    sortedPageLine.addAll(optionalPageLine.getWords());
+                    found = true;
+                    break;
                 }
-                if (!found) {
-                    sortedPageLines.add(optionalPageLine);
-                }
+            }
+            if (!found) {
+                sortedPageLines.add(optionalPageLine);
             }
         }
     }

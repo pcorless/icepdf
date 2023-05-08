@@ -2,7 +2,6 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.util.Library;
 
-import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**
@@ -71,56 +70,56 @@ public class Names extends Dictionary {
     private NameTree renditionsNameTree;
     private NameTree annotationAppearanceNameTree;
 
-    public Names(Library l, HashMap h) {
+    public Names(Library l, DictionaryEntries h) {
         super(l, h);
 
         if (!inited) {
             // destinations
             Object tmp = library.getObject(entries, DEST_KEY);
-            if (tmp != null && tmp instanceof HashMap) {
-                destsNameTree = new NameTree(library, (HashMap) tmp);
+            if (tmp instanceof DictionaryEntries) {
+                destsNameTree = new NameTree(library, (DictionaryEntries) tmp);
                 destsNameTree.init();
             }
             // Javascript
             tmp = library.getObject(entries, JAVASCRIPT_KEY);
-            if (tmp != null && tmp instanceof HashMap) {
-                javaScriptNameTree = new NameTree(library, (HashMap) tmp);
+            if (tmp instanceof DictionaryEntries) {
+                javaScriptNameTree = new NameTree(library, (DictionaryEntries) tmp);
                 javaScriptNameTree.init();
             }
             // Pages
             tmp = library.getObject(entries, PAGES_KEY);
-            if (tmp != null && tmp instanceof HashMap) {
-                pagesNameTree = new NameTree(library, (HashMap) tmp);
+            if (tmp instanceof DictionaryEntries) {
+                pagesNameTree = new NameTree(library, (DictionaryEntries) tmp);
                 pagesNameTree.init();
             }
             // templates
             tmp = library.getObject(entries, TEMPLATES_KEY);
-            if (tmp != null && tmp instanceof HashMap) {
-                templatesNameTree = new NameTree(library, (HashMap) tmp);
+            if (tmp instanceof DictionaryEntries) {
+                templatesNameTree = new NameTree(library, (DictionaryEntries) tmp);
                 templatesNameTree.init();
             }
             // ID's
             tmp = library.getObject(entries, IDS_KEY);
-            if (tmp != null && tmp instanceof HashMap) {
-                idsNameTree = new NameTree(library, (HashMap) tmp);
+            if (tmp instanceof DictionaryEntries) {
+                idsNameTree = new NameTree(library, (DictionaryEntries) tmp);
                 idsNameTree.init();
             }
             // embedded files
             tmp = library.getObject(entries, EMBEDDED_FILES_KEY);
-            if (tmp != null && tmp instanceof HashMap) {
-                embeddedFilesNameTree = new NameTree(library, (HashMap) tmp);
+            if (tmp instanceof DictionaryEntries) {
+                embeddedFilesNameTree = new NameTree(library, (DictionaryEntries) tmp);
                 embeddedFilesNameTree.init();
             }
             // alternative presentation
             tmp = library.getObject(entries, ALTERNATE_PRESENTATIONS_KEY);
-            if (tmp != null && tmp instanceof HashMap) {
-                alternatePresentationsNameTree = new NameTree(library, (HashMap) tmp);
+            if (tmp instanceof DictionaryEntries) {
+                alternatePresentationsNameTree = new NameTree(library, (DictionaryEntries) tmp);
                 alternatePresentationsNameTree.init();
             }
             // renditions
             tmp = library.getObject(entries, RENDITIONS_KEY);
-            if (tmp != null && tmp instanceof HashMap) {
-                renditionsNameTree = new NameTree(library, (HashMap) tmp);
+            if (tmp instanceof DictionaryEntries) {
+                renditionsNameTree = new NameTree(library, (DictionaryEntries) tmp);
                 renditionsNameTree.init();
             }
         }

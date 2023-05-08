@@ -3,7 +3,6 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.util.Library;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 /**
  * Instead of being defined directly with the explicit syntax a destination may
@@ -20,7 +19,7 @@ import java.util.HashMap;
  */
 public class NamedDestinations extends Dictionary {
 
-    public NamedDestinations(Library library, HashMap entries) {
+    public NamedDestinations(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 
@@ -33,7 +32,7 @@ public class NamedDestinations extends Dictionary {
      */
     public Destination getDestination(String name) {
         Object tmp = entries.get(name);
-        if (tmp != null && tmp instanceof ArrayList) {
+        if (tmp instanceof ArrayList) {
             return new Destination(library, tmp);
         }
         return null;

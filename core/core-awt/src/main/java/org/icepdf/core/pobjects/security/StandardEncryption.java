@@ -268,8 +268,7 @@ class StandardEncryption {
                 aes.init(Cipher.DECRYPT_MODE, key, iVParameterSpec);
 
                 // finally add the stream or string data
-                final byte[] finalData = aes.doFinal(intermData);
-                return finalData;
+                return aes.doFinal(intermData);
 
             } catch (final NoSuchAlgorithmException ex) {
                 logger.log(Level.FINE, "NoSuchAlgorithmException.", ex);
@@ -349,8 +348,7 @@ class StandardEncryption {
                     final Cipher rc4 = Cipher.getInstance("RC4");
                     rc4.init(Cipher.DECRYPT_MODE, key);
                     // finally add the stream or string data
-                    final CipherInputStream cin = new CipherInputStream(input, rc4);
-                    return cin;
+                    return new CipherInputStream(input, rc4);
                 }
                 // use above a key for the AES encryption function.
                 else {
@@ -363,21 +361,18 @@ class StandardEncryption {
                         final IvParameterSpec iVParameterSpec = new IvParameterSpec(initialisationVector);
                         aes.init(Cipher.DECRYPT_MODE, key, iVParameterSpec);
                         // finally add the stream or string data
-                        final CipherInputStream cin = new CipherInputStream(input, aes);
-                        return cin;
+                        return new CipherInputStream(input, aes);
                     } else {
                         final IvParameterSpec iVParameterSpec = new IvParameterSpec(generateIv());
                         aes.init(encryptionMode, key, iVParameterSpec);
                         final ByteArrayOutputStream outputByteArray = new ByteArrayOutputStream();
                         // finally add the stream or string data
-                        try (final CipherOutputStream cos = new CipherOutputStream(outputByteArray, aes)) {
+                        try (input; final CipherOutputStream cos = new CipherOutputStream(outputByteArray, aes)) {
                             final byte[] data = new byte[4096];
                             int read;
                             while ((read = input.read(data)) != -1) {
                                 cos.write(data, 0, read);
                             }
-                        } finally {
-                            input.close();
                         }
                         byte[] finalData = outputByteArray.toByteArray();
                         // add randomness to the start
@@ -425,8 +420,7 @@ class StandardEncryption {
                 aes.init(Cipher.DECRYPT_MODE, key, iVParameterSpec);
 
                 // finally add the stream or string data
-                final CipherInputStream cin = new CipherInputStream(input, aes);
-                return cin;
+                return new CipherInputStream(input, aes);
 
             } catch (final NoSuchAlgorithmException ex) {
                 logger.log(Level.FINE, "NoSuchAlgorithmException.", ex);
@@ -705,10 +699,6 @@ class StandardEncryption {
     /**
      * Revision 5 algorithm. Simply uses SHA-256
      *
-     * @param input
-     * @param password
-     * @param userKey
-     * @return
      */
     private static byte[] computeSha256(final byte[] input, final byte[] password, final byte[] userKey) {
         try {
@@ -754,7 +744,7 @@ class StandardEncryption {
             byte[] e = null;
             for (int round = 0; round < 64 || (e[e.length - 1] & 0xFF) > round - 32; round++) {
                 final byte[] k1;
-                if (userKey != null && userKey.length >= 48) {
+                if (userKey.length >= 48) {
                     k1 = new byte[64 * (password.length + k.length + 48)];
                 } else {
                     k1 = new byte[64 * (password.length + k.length)];
@@ -766,7 +756,7 @@ class StandardEncryption {
                     pos += password.length;
                     System.arraycopy(k, 0, k1, pos, k.length);
                     pos += k.length;
-                    if (userKey != null && userKey.length >= 48) {
+                    if (userKey.length >= 48) {
                         System.arraycopy(userKey, 0, k1, pos, 48);
                         pos += 48;
                     }
@@ -1187,7 +1177,7 @@ class StandardEncryption {
                 "", true);
 
         // Step 2: start decryption of O
-        byte[] decryptedO = null;
+        byte[] decryptedO;
         try {
             // get bigO value
             final byte[] bigO = Utils.convertByteCharSequenceToByteArray(

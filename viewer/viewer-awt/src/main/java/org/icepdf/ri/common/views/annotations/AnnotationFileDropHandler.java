@@ -33,7 +33,7 @@ public final class AnnotationFileDropHandler {
 
     private static AnnotationFileDropHandler instance;
 
-    private List<FileDropHandler> fileDropHandlers;
+    private final List<FileDropHandler> fileDropHandlers;
 
     private AnnotationFileDropHandler() {
         fileDropHandlers = new ArrayList<>();
@@ -62,7 +62,7 @@ public final class AnnotationFileDropHandler {
 
     /**
      * Takes the given file and checks for the FileDropHandler that can handle the extension. If a FileDropHandler
-     * match is found the the FileDropHandler.execute() method is called to process the file and annotation.
+     * match is found the FileDropHandler.execute() method is called to process the file and annotation.
      *
      * @param file                     file that was dragged on the the popup annotation component.
      * @param popupAnnotationComponent annotation component that should be processed by the FileDropHandler.

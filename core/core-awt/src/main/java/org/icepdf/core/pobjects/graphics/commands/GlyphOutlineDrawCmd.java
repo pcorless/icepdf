@@ -31,7 +31,7 @@ import java.awt.geom.AffineTransform;
  */
 public class GlyphOutlineDrawCmd extends AbstractDrawCmd {
 
-    private GlyphOutlineClip glyphOutlineClip;
+    private final GlyphOutlineClip glyphOutlineClip;
 
     public GlyphOutlineDrawCmd(GlyphOutlineClip glyphOutlineClip) {
         this.glyphOutlineClip = glyphOutlineClip;

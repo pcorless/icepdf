@@ -9,7 +9,7 @@ import org.icepdf.qa.viewer.common.Mediator;
  */
 public class ToggleDiffFilterCommand implements EventHandler<ActionEvent>, Command {
 
-    private Mediator mediator;
+    private final Mediator mediator;
 
     public ToggleDiffFilterCommand(Mediator mediator) {
         this.mediator = mediator;

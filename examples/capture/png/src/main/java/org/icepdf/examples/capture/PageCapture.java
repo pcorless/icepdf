@@ -15,7 +15,6 @@ package org.icepdf.examples.capture;
  */
 
 
-import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
@@ -68,19 +67,15 @@ public class PageCapture {
             document.setFile(filePath);
             // create a list of callables.
             int pages = document.getNumberOfPages();
-            java.util.List<Callable<Void>> callables = new ArrayList<Callable<Void>>(pages);
+            java.util.List<Callable<Void>> callables = new ArrayList<>(pages);
             for (int i = 0; i < pages; i++) {
                 callables.add(new CapturePage(document, i));
             }
             executorService.invokeAll(callables);
             executorService.submit(new DocumentCloser(document)).get();
 
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | ExecutionException e) {
             System.out.println("Error parsing PDF document " + e);
-        } catch (ExecutionException e) {
-            System.out.println("Error parsing PDF document " + e);
-        } catch (PDFException ex) {
-            System.out.println("Error parsing PDF document " + ex);
         } catch (PDFSecurityException ex) {
             System.out.println("Error encryption not supported " + ex);
         } catch (FileNotFoundException ex) {
@@ -94,11 +89,9 @@ public class PageCapture {
     /**
      * Captures images found in a page  parse to file.
      */
-    public class CapturePage implements Callable<Void> {
-        private Document document;
-        private int pageNumber;
-        private float scale = 1f;
-        private float rotation = 0f;
+    public static class CapturePage implements Callable<Void> {
+        private final Document document;
+        private final int pageNumber;
 
         private CapturePage(Document document, int pageNumber) {
             this.document = document;
@@ -109,6 +102,8 @@ public class PageCapture {
             try {
                 Page page = document.getPageTree().getPage(pageNumber);
                 page.init();
+                float rotation = 0f;
+                float scale = 1f;
                 PDimension sz = page.getSize(Page.BOUNDARY_CROPBOX, rotation, scale);
 
                 int pageWidth = (int) sz.getWidth();
@@ -130,7 +125,7 @@ public class PageCapture {
 
                 image.flush();
 
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 
@@ -141,8 +136,8 @@ public class PageCapture {
     /**
      * Disposes the document.
      */
-    public class DocumentCloser implements Callable<Void> {
-        private Document document;
+    public static class DocumentCloser implements Callable<Void> {
+        private final Document document;
 
         private DocumentCloser(Document document) {
             this.document = document;

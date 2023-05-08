@@ -49,7 +49,7 @@ public class Function_4 extends Function {
     private byte[] functionContent;
 
     // cache for calculated colour values
-    private ConcurrentHashMap<Integer, float[]> resultCache;
+    private final ConcurrentHashMap<Integer, float[]> resultCache;
 
     public Function_4(Dictionary d) {
         super(d);
@@ -91,8 +91,8 @@ public class Function_4 extends Function {
         // parse/evaluate the type 4 functions with the input value(s) x.
         try {
             lex.parse(x);
-        } catch (Throwable e) {
-            logger.log(Level.FINER, "Error Processing Type 4 definition", e);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error Processing Type 4 definition", e);
         }
 
         // get the remaining number on the stack which are the return values.
@@ -101,7 +101,7 @@ public class Function_4 extends Function {
         // length of output array
         int n = range.length / 2;
         // ready output array
-        float y[] = new float[n];
+        float[] y = new float[n];
 
         // pop remaining items off the stack and apply the range bounds.
         for (int i = 0; i < n; i++) {

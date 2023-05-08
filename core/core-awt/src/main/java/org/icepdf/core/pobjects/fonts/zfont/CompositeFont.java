@@ -1,7 +1,9 @@
 package org.icepdf.core.pobjects.fonts.zfont;
 
 import org.apache.fontbox.util.BoundingBox;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
@@ -33,7 +35,7 @@ public abstract class CompositeFont extends SimpleFont {
     protected float[] widths = null;
 
 
-    public CompositeFont(Library library, HashMap entries) {
+    public CompositeFont(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 
@@ -56,9 +58,9 @@ public abstract class CompositeFont extends SimpleFont {
         }
         // Get CIDSystemInfo dictionary so we can get ordering data
         Object obj = library.getObject(entries, CID_SYSTEM_INFO_KEY);
-        if (obj instanceof HashMap) {
-            StringObject orderingObject = (StringObject) ((HashMap) obj).get(new Name("Ordering"));
-            StringObject registryObject = (StringObject) ((HashMap) obj).get(new Name("Registry"));
+        if (obj instanceof DictionaryEntries) {
+            StringObject orderingObject = (StringObject) ((DictionaryEntries) obj).get(new Name("Ordering"));
+            StringObject registryObject = (StringObject) ((DictionaryEntries) obj).get(new Name("Registry"));
             if (orderingObject != null && registryObject != null) {
                 ordering = orderingObject.getDecryptedLiteralString(library.getSecurityManager());
                 String registry = registryObject.getDecryptedLiteralString(library.getSecurityManager());
@@ -140,7 +142,16 @@ public abstract class CompositeFont extends SimpleFont {
                     i++;
                 } else if (currentNext instanceof Number) {
                     int currentEnd = ((Number) currentNext).intValue();
-                    float width2 = (float) (((Number) individualWidths.get(i + 2)).intValue());
+                    Object tmp = individualWidths.get(i + 2);
+                    float width2;
+                    if (tmp instanceof Number) {
+                        width2 = (float) (((Number) tmp).intValue());
+                    } else if (tmp instanceof Reference) {
+                        tmp = library.getObject(tmp);
+                        width2 = (float) (((Number) tmp).intValue());
+                    } else {
+                        width2 = 1.0f;
+                    }
                     for (; current <= currentEnd; current++) {
                         widths[current] = width2 * 0.001f;
                     }

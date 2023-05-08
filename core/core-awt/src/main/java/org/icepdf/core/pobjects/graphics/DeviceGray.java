@@ -15,12 +15,12 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.color.ColorSpace;
-import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -32,9 +32,9 @@ public class DeviceGray extends PColorSpace {
     public static final Name G_KEY = new Name("G");
     private static final ColorSpace RGB_COLOR_SPACE = ColorSpace.getInstance(ColorSpace.CS_sRGB);
 
-    private static ConcurrentHashMap<Float, Color> colorHashMap = new ConcurrentHashMap<>(255);
+    private static final ConcurrentHashMap<Float, Color> colorHashMap = new ConcurrentHashMap<>(255);
 
-    public DeviceGray(Library l, HashMap h) {
+    public DeviceGray(Library l, DictionaryEntries h) {
         super(l, h);
     }
 
@@ -46,14 +46,12 @@ public class DeviceGray extends PColorSpace {
     public Color getColor(float[] f, boolean fillAndStroke) {
         float gray = f[0] > 1.0 ? f[0] / 255.f : f[0];
         Color color = colorHashMap.get(f[0]);
-        if (color != null) {
-            return color;
-        } else {
+        if (color == null) {
             color = new Color(RGB_COLOR_SPACE,
                     new Color(gray, gray, gray).getRGBComponents(null),
                     1);
             colorHashMap.put(f[0], color);
-            return color;
         }
+        return color;
     }
 }

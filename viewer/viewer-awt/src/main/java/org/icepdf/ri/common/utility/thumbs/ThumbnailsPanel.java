@@ -37,12 +37,12 @@ import java.awt.*;
 @SuppressWarnings("serial")
 public class ThumbnailsPanel extends JPanel implements MutableDocument {
 
-    protected ViewerPropertiesManager propertiesManager;
+    protected final ViewerPropertiesManager propertiesManager;
     protected float thumbNailZoom = 0.1f; // default zoom is 10%
 
     protected static final int MAX_PAGE_SIZE_READ_AHEAD = 10;
 
-    private Controller controller;
+    private final Controller controller;
 
     public ThumbnailsPanel(Controller controller,
                            ViewerPropertiesManager propertiesManager) {

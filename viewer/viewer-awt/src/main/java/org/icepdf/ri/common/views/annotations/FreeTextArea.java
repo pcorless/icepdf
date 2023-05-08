@@ -38,7 +38,7 @@ public class FreeTextArea extends JTextArea {
         float getZoom();
     }
 
-    private ZoomProvider zoomProvider;
+    private final ZoomProvider zoomProvider;
     private boolean active;
     public FreeTextArea(final ZoomProvider zoomProvider) {
         super();
@@ -46,7 +46,7 @@ public class FreeTextArea extends JTextArea {
         // enable more precise painting of glyphs.
         getDocument().putProperty("i18n", Boolean.TRUE.toString());
         putClientProperty("i18n", Boolean.TRUE.toString());
-        LayerUI<JComponent> layerUI = new LayerUI<JComponent>() {
+        LayerUI<JComponent> layerUI = new LayerUI<>() {
             @SuppressWarnings("unchecked")
             @Override
             public void installUI(JComponent c) {
@@ -70,7 +70,7 @@ public class FreeTextArea extends JTextArea {
                 // transform the point in MouseEvent using the current zoom factor
                 float zoom = FreeTextArea.this.zoomProvider.getZoom();
                 MouseEvent newEvent = new MouseEvent((Component) e.getSource(),
-                        e.getID(), e.getWhen(), e.getModifiers(),
+                        e.getID(), e.getWhen(), e.getModifiersEx(),
                         (int) (e.getX() / zoom), (int) (e.getY() / zoom),
                         e.getClickCount(), e.isPopupTrigger(), e.getButton());
                 // consume the MouseEvent and then process the modified event

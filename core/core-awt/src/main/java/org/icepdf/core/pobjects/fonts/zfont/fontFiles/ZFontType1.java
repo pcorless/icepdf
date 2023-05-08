@@ -54,14 +54,13 @@ public class ZFontType1 extends ZSimpleFont {
             }
             fontBoxFont = type1Font;
             calculateFontBbox();
-        } catch (Throwable e) {
-            logger.log(Level.FINE, "Error reading font file with ", e);
-            throw new Exception(e);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error reading font file with ", e);
+            throw e;
         }
     }
 
-    public ZFontType1(URL url) throws IOException {
-        byte[] fontBytes = url.openStream().readAllBytes();
+    public ZFontType1(byte[] fontBytes, URL url) throws IOException {
         source = url;
         type1Font = Type1Font.createWithPFB(fontBytes);
         calculateFontBbox();

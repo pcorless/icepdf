@@ -128,7 +128,7 @@ public class LexerText {
         int n = 4;
         float[] range = new float[]{0, 1, 0, 1, 0, 1, 0, 1};
         // ready output array
-        float y[] = new float[n];
+        float[] y = new float[n];
 
         System.out.println();
         float value;
@@ -158,7 +158,7 @@ public class LexerText {
         int n = 4;
         float[] range = new float[]{0, 1, 0, 1, 0, 1, 0, 1};
         // ready output array
-        float y[] = new float[n];
+        float[] y = new float[n];
 
         System.out.println();
         float value;
@@ -185,7 +185,7 @@ public class LexerText {
         int n = 4;
         float[] range = new float[]{0, 1, 0, 1, 0, 1, 0, 1};
         // ready output array
-        float y[] = new float[n];
+        float[] y = new float[n];
 
         // domain = 0, 1, 0, 1, 0, 1
         System.out.println();

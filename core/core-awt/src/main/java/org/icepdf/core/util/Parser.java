@@ -15,7 +15,6 @@
  */
 package org.icepdf.core.util;
 
-import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.io.*;
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.*;
@@ -24,8 +23,6 @@ import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.fonts.FontFactory;
-import org.icepdf.core.pobjects.graphics.TilingPattern;
-import org.icepdf.core.pobjects.graphics.images.ImageStream;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,11 +46,11 @@ public class Parser {
     // DO NOT close this, since we have two cases: read everything up front, and progressive reads
 //    private BufferedMarkedInputStream reader;
 
-    private InputStream reader;
+    private final InputStream reader;
     boolean lastTokenHString = false;
-    private Stack<Object> stack = new Stack<>();
-    private Stack<Integer> offSetStack = new Stack<>();
-    private int parseMode;
+    private final Stack<Object> stack = new Stack<>();
+    private final Stack<Integer> offSetStack = new Stack<>();
+    private final int parseMode;
     private boolean isTrailer;
     private int linearTraversalOffset;
 
@@ -88,9 +85,8 @@ public class Parser {
      * @return the next object in the DataInputStream.  Null is returned
      * if there are no more objects left in the DataInputStream or
      * a I/O error is encountered.
-     * @throws PDFException error getting object from library
      */
-    public Object getObject(Library library) throws PDFException, InterruptedException, IOException {
+    public Object getObject(Library library) throws IOException {
         int deepnessCount = 0;
         boolean inObject = false; // currently parsing tokens in an object
         boolean complete = false; // flag used for do loop.
@@ -183,11 +179,11 @@ public class Parser {
                 deepnessCount++;
                 // pop dictionary that defines the stream
                 Object tmp = stack.pop();
-                HashMap streamHash;
+                DictionaryEntries streamHash;
                 if (tmp instanceof Dictionary) {
                     streamHash = ((Dictionary) tmp).getEntries();
                 } else {
-                    streamHash = (HashMap) tmp;
+                    streamHash = (DictionaryEntries) tmp;
                 }
                 // find the length of the stream
                 int streamLength = library.getInt(streamHash, Dictionary.LENGTH_KEY);
@@ -284,56 +280,56 @@ public class Parser {
                     // found a xref stream which is made up it's own entry format
                     // different then an standard xref table, mainly used to
                     // access cross-reference entries but also to compress xref tables.
-                    if (type.equals("XRef")) {
-                        stream = new Stream(library, streamHash, streamInputWrapper);
-                        stream.init();
-                        InputStream in = stream.getDecodedByteArrayInputStream();
-                        CrossReference xrefStream = new CrossReference();
-                        if (in != null) {
-                            try {
-                                xrefStream.addXRefStreamEntries(library, streamHash, in);
-                            } finally {
-                                try {
-                                    in.close();
-                                } catch (Throwable e) {
-                                    logger.log(Level.WARNING, "Error appending stream entries.", e);
-                                }
-                            }
-                        }
-
-                        // XRef dict is both Trailer dict and XRef stream dict.
-                        // PTrailer alters its dict, so copy it to keep everything sane
-                        HashMap trailerHash = (HashMap) streamHash.clone();
-                        trailer = new PTrailer(library, trailerHash, null, xrefStream);
-                    } else if (type.equals("ObjStm")) {
-                        stream = new ObjectStream(library, streamHash, streamInputWrapper);
-                    } else if (type.equals("XObject") && subtype.equals("Image")) {
-                        stream = new ImageStream(library, streamHash, streamInputWrapper);
-                    }
-                    // new Tiling Pattern Object, will have a stream.
-                    else if (type.equals("Pattern")) {
-                        stream = new TilingPattern(library, streamHash, streamInputWrapper);
-                    }
+//                    if (type.equals("XRef")) {
+//                        stream = new Stream(library, streamHash, streamInputWrapper);
+//                        stream.init();
+//                        InputStream in = stream.getDecodedByteArrayInputStream();
+//                        CrossReference xrefStream = new CrossReference();
+//                        if (in != null) {
+//                            try {
+//                                xrefStream.addXRefStreamEntries(library, streamHash, in);
+//                            } finally {
+//                                try {
+//                                    in.close();
+//                                } catch (Throwable e) {
+//                                    logger.log(Level.WARNING, "Error appending stream entries.", e);
+//                                }
+//                            }
+//                        }
+//
+//                        // XRef dict is both Trailer dict and XRef stream dict.
+//                        // PTrailer alters its dict, so copy it to keep everything sane
+//                        DictionaryEntries trailerHash = (DictionaryEntries) streamHash.clone();
+//                        trailer = new PTrailer(library, trailerHash, null, xrefStream);
+//                    } else if (type.equals("ObjStm")) {
+//                        stream = new ObjectStream(library, streamHash, streamInputWrapper);
+//                    } else if (type.equals("XObject") && subtype.equals("Image")) {
+//                        stream = new ImageStream(library, streamHash, streamInputWrapper);
+//                    }
+//                    // new Tiling Pattern Object, will have a stream.
+//                    else if (type.equals("Pattern")) {
+//                        stream = new TilingPattern(library, streamHash, streamInputWrapper);
+//                    }
                 }
                 if (stream == null && subtype != null) {
                     // new form object
-                    if (subtype.equals("Image")) {
-                        stream = new ImageStream(library, streamHash, streamInputWrapper);
-                    } else if (subtype.equals("Form") && !"Pattern".equals(type)) {
-                        stream = new Form(library, streamHash, streamInputWrapper);
-                    } else if (subtype.equals("Form") && "Pattern".equals(type)) {
-                        stream = new TilingPattern(library, streamHash, streamInputWrapper);
-                    }
+//                    if (subtype.equals("Image")) {
+//                        stream = new ImageStream(library, streamHash, streamInputWrapper);
+//                    } else if (subtype.equals("Form") && !"Pattern".equals(type)) {
+//                        stream = new Form(library, streamHash, streamInputWrapper);
+//                    } else if (subtype.equals("Form") && "Pattern".equals(type)) {
+//                        stream = new TilingPattern(library, streamHash, streamInputWrapper);
+//                    }
                 }
                 if (trailer != null) {
                     stack.push(trailer);
                 } else {
                     // finally create a generic stream object which will be parsed
                     // at a later time
-                    if (stream == null) {
-                        stream = new Stream(library, streamHash, streamInputWrapper);
-                    }
-                    stack.push(stream);
+//                    if (stream == null) {
+//                        stream = new Stream(library, streamHash, streamInputWrapper);
+//                    }
+//                    stack.push(stream);
                     // forcing a object return just encase the length is wrong
                     // and we don't get to the endstream.
                     return addPObject(library, objectReference);
@@ -395,14 +391,14 @@ public class Parser {
                 // check for extra >> which we want to ignore
                 if (isTrailer ? deepnessCount > 0 : deepnessCount >= 0) {
                     if (!stack.isEmpty()) {
-                        HashMap<Object, Object> hashMap = new HashMap<>();
+                        DictionaryEntries hashMap = new DictionaryEntries();
                         Object obj = stack.pop();
                         // put all of the dictionary definistion into the
                         // the hashTabl
                         while (!((obj instanceof String)
                                 && (obj.equals("<<"))) && !stack.isEmpty()) {
                             Object key = stack.pop();
-                            hashMap.put(key, obj);
+                            hashMap.put((Name) key, obj);
                             if (!stack.isEmpty()) {
                                 obj = stack.pop();
                             } else {
@@ -415,7 +411,7 @@ public class Parser {
                             obj = hashMap.get(new Name("type"));
                         }
                         // Process the know first level dictionaries.
-                        if (obj != null && obj instanceof Name) {
+                        if (obj instanceof Name) {
                             Name n = (Name) obj;
                             if (n.equals(Catalog.TYPE)) {
                                 stack.push(new Catalog(library, hashMap));
@@ -472,22 +468,6 @@ public class Parser {
                     return hashMap;
                 }
             }
-            // found traditional XrefTable found in all documents.
-            else if (nextToken.equals("xref")) {
-                // parse out hte traditional
-                CrossReference xrefTable = new CrossReference();
-                xrefTable.addXRefTableEntries(this);
-                stack.push(xrefTable);
-            } else if (nextToken.equals("trailer")) {
-                CrossReference xrefTable = null;
-                if (stack.peek() instanceof CrossReference)
-                    xrefTable = (CrossReference) stack.pop();
-                stack.clear();
-                isTrailer = true;
-                HashMap trailerDictionary = (HashMap) getObject(library);
-                isTrailer = false;
-                return new PTrailer(library, trailerDictionary, xrefTable, null);
-            }
             // comments
             else if (nextToken instanceof String &&
                     ((String) nextToken).startsWith("%")) {
@@ -518,7 +498,7 @@ public class Parser {
 
     public String peek2() throws IOException {
         reader.mark(2);
-        char c[] = new char[2];
+        char[] c = new char[2];
         c[0] = (char) reader.read();
         c[1] = (char) reader.read();
         String s = new String(c);
@@ -677,7 +657,7 @@ public class Parser {
             tmp.setPObjectReference(objectReference);
         }
 
-        // the the object to the library
+        // the object to the library
         library.addObject(o, objectReference);
 
         return new PObject(o, objectReference);
@@ -697,7 +677,7 @@ public class Parser {
             if (o.equals("<<")) {
                 HashMap<Object, Object> h = new HashMap<>();
                 Object o1 = getStreamObject();
-                while (!o1.equals(">>")) {
+                while (o1 != null && !o1.equals(">>")) {
                     h.put(o1, getStreamObject());
                     o1 = getStreamObject();
                 }
@@ -708,7 +688,7 @@ public class Parser {
             else if (o.equals("[")) {
                 List<Object> v = new ArrayList<>();
                 Object o1 = getStreamObject();
-                while (!o1.equals("]")) {
+                while (o1 != null && !o1.equals("]")) {
                     v.add(o1);
                     o1 = getStreamObject();
                 }
@@ -965,13 +945,12 @@ public class Parser {
                 // we need to return the CR LR, as it is need by stream parsing
                 if (currentByte == 13 || currentByte == 10) {
                     reader.reset();
-                    break;
                 }
                 // break on any whitespace
                 else {
                     // return  stringBuffer.toString();
-                    break;
                 }
+                break;
             } else if (isDelimiter(currentChar)) {
                 // reset the reader so we start on this token on the next parse
                 reader.reset();
@@ -1168,7 +1147,7 @@ public class Parser {
                     readNonWhitespace = true;
                 } else if (curr >= '0' && curr <= '9') {
                     num *= 10L;
-                    num += ((long) (curr - '0'));
+                    num += curr - '0';
                     readNonWhitespace = true;
                 } else {
                     break;

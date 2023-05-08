@@ -57,9 +57,6 @@ public class TextSelection extends SelectionBoxHandler {
     private GlyphLocation lastGlyphStartLocation;
     private GlyphLocation lastGlyphEndLocation;
 
-    // todo configurable system property to switch to rightToLeft.
-    private boolean leftToRight = true;
-
     // todo make configurable
     protected int topMargin = 75;
     protected int bottomMargin = 75;
@@ -191,9 +188,7 @@ public class TextSelection extends SelectionBoxHandler {
             // clear the rectangle
             clearRectangle(pageViewComponent);
 
-            if (pageViewComponent != null) {
-                pageViewComponent.repaint();
-            }
+            pageViewComponent.repaint();
         } catch (InterruptedException e) {
             logger.fine("Text selection page access interrupted");
         }
@@ -475,6 +470,8 @@ public class TextSelection extends SelectionBoxHandler {
                 }
 
                 // normal page selection,  fill in the the highlight between start and end.
+                // todo configurable system property to switch to rightToLeft.
+                boolean leftToRight = true;
                 if (glyphStartLocation != null && glyphEndLocation != null) {
                     selectedCount = GlyphLocation.highLightGlyphs(pageLines, glyphStartLocation, glyphEndLocation, leftToRight,
                             isDown, isLocalDown, isMovingRight, topMarginExclusion, bottomMarginExclusion);
@@ -612,7 +609,9 @@ public class TextSelection extends SelectionBoxHandler {
 
 class GlyphLocation {
 
-    private int line, word, glyph;
+    private final int line;
+    private final int word;
+    private final int glyph;
 
     public GlyphLocation(int line, int word, int glyph) {
         this.line = line;
@@ -699,7 +698,7 @@ class GlyphLocation {
 
             // check mouse location against y-coordinate of a line  and grab the last line
             // this is buggy if the lines aren't sorted via !org.icepdf.core.views.page.text.preserveColumns.
-            if ((isLocalDown && isDown) || isLocalDown) {
+            if (isLocalDown) {
                 int lastGlyphEndLine = 0;
                 if (lastGlyphEndLocation != null) {
                     lastGlyphEndLine = lastGlyphEndLocation.line;
@@ -953,12 +952,8 @@ class GlyphLocation {
                                    boolean isRight, boolean isDown) {
         int selectedCount = 0;
         if (isRight && end.word > start.word) {
-            // same word so we move to select start->end.
-            if (start.word == end.word && start.line == end.line) {
-                // nothing to do handled by the first word.
-            }
-            // at least two words so we can do the last half of start and first half of end.
-            else if (start.line == end.line) {
+            // same word, so we move to select start->end.
+            if (start.line == end.line) {
                 WordText word = words.get(end.word);
                 word.setHasSelected(true);
                 for (int glyphIndex = 0; glyphIndex <= end.glyph; glyphIndex++) {

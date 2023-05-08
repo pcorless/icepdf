@@ -38,7 +38,7 @@ public class PageComponentSelector {
      *
      * @param controller       swing controller.
      * @param widgetAnnotation annotation to do search for wrapping component.
-     * @return true if component could be found, false otherwise.
+     * @return selected annotation component.
      */
     public static AnnotationComponent SelectAnnotationComponent(Controller controller, Annotation widgetAnnotation) {
         return SelectAnnotationComponent(controller, widgetAnnotation, true);
@@ -50,7 +50,7 @@ public class PageComponentSelector {
      * @param controller       swing controller.
      * @param widgetAnnotation annotation to do search for wrapping component.
      * @param select           select the annotation component applying focus to the component.
-     * @return true if component could be found, false otherwise.
+     * @return selected annotation component.
      */
     public static AnnotationComponent SelectAnnotationComponent(Controller controller, Annotation widgetAnnotation, boolean select) {
         return SelectAnnotationComponent(controller, widgetAnnotation, select, true);
@@ -63,7 +63,7 @@ public class PageComponentSelector {
      * @param widgetAnnotation annotation to do search for wrapping component.
      * @param select           select the annotation component applying focus to the component.
      * @param scrollTo         scroll the view to the component.
-     * @return true if component could be found, false otherwise.
+     * @return selected annotation component.
      */
     public static AnnotationComponent SelectAnnotationComponent(Controller controller, Annotation widgetAnnotation,
                                                                 boolean select, boolean scrollTo) {
@@ -119,7 +119,7 @@ public class PageComponentSelector {
      *
      * @param controller  swing controller.
      * @param destination destination to do search for wrapping component.
-     * @return true if component could be found, false otherwise.
+     * @return selected annotation component.
      */
     public static DestinationComponent SelectDestinationComponent(Controller controller, Destination destination) {
         // turn out the parent is seldom used correctly and generally just points to page zero.

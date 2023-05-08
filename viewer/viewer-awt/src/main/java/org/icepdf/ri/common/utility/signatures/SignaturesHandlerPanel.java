@@ -232,13 +232,6 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
     }
 
     /**
-     * Component clean on on document window tear down.
-     */
-    public void disposeDocument() {
-        super.disposeDocument();
-    }
-
-    /**
      * NodeSelectionListener handles the root node context menu creation display and command execution.
      */
     private class NodeSelectionListener extends AbstractWorkerPanel.NodeSelectionListener {
@@ -312,7 +305,7 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
      */
     private class SignaturesPropertiesActionListener implements ActionListener {
 
-        protected JTree tree;
+        protected final JTree tree;
 
         SignaturesPropertiesActionListener(JTree tree) {
             this.tree = tree;

@@ -27,7 +27,7 @@ import java.awt.event.KeyEvent;
 public class KeyEventConstants {
 
     // Get the correct menu shortcut key for the current platform
-    public static final int MENU_SHORTCUT_KEY_MASK = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
+    public static final int MENU_SHORTCUT_KEY_MASK = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
 
     public static final int KEY_CODE_OPEN_FILE = KeyEvent.VK_O;
     public static final int MODIFIER_OPEN_FILE = MENU_SHORTCUT_KEY_MASK;

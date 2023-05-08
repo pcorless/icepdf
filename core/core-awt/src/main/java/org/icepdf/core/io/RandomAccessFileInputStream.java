@@ -30,7 +30,7 @@ public class RandomAccessFileInputStream extends InputStream implements Seekable
             Logger.getLogger(RandomAccessFileInputStream.class.toString());
 
     private long m_lMarkPosition;
-    private RandomAccessFile m_RandomAccessFile;
+    private final RandomAccessFile m_RandomAccessFile;
 
     private final ReentrantLock lock = new ReentrantLock();
 
@@ -70,9 +70,7 @@ public class RandomAccessFileInputStream extends InputStream implements Seekable
         try {
             return (int) (m_RandomAccessFile.getFilePointer());
         } catch (IOException e) {
-            if (logger.isLoggable(Level.FINE)) {
-                logger.log(Level.WARNING, "Error calling available", e);
-            }
+            logger.log(Level.WARNING, "Error calling available", e);
         }
         return 0;
     }
@@ -95,7 +93,7 @@ public class RandomAccessFileInputStream extends InputStream implements Seekable
 
     public long skip(long n) throws IOException {
         int nn = (int) (n);
-        return (long) m_RandomAccessFile.skipBytes(nn);
+        return m_RandomAccessFile.skipBytes(nn);
     }
 
 

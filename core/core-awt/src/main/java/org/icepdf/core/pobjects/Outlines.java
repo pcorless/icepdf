@@ -17,8 +17,6 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.util.Library;
 
-import java.util.HashMap;
-
 /**
  * <p>This class represents a PDF document outline.  A document outline is
  * an optional component of a PDF document and is accessible from the document's
@@ -51,7 +49,7 @@ public class Outlines extends Dictionary {
      * @param l document library.
      * @param h Outlines dictionary entries.
      */
-    public Outlines(Library l, HashMap h) {
+    public Outlines(Library l, DictionaryEntries h) {
         super(l, h);
         if (entries != null) {
             count = library.getInt(entries, COUNT_KEY);

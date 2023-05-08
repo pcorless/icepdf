@@ -18,7 +18,6 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.util.Library;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -32,9 +31,9 @@ public class NameNode extends Dictionary {
     public static final Name NAMES_KEY = new Name("Names");
     public static final Name LIMITS_KEY = new Name("Limits");
 
-    public static Object NOT_FOUND = new Object();
-    public static Object NOT_FOUND_IS_LESSER = new Object();
-    public static Object NOT_FOUND_IS_GREATER = new Object();
+    public static final Object NOT_FOUND = new Object();
+    public static final Object NOT_FOUND_IS_LESSER = new Object();
+    public static final Object NOT_FOUND_IS_GREATER = new Object();
 
     private boolean namesAreDecrypted;
     // flat tree, names and values only.
@@ -45,11 +44,11 @@ public class NameNode extends Dictionary {
     private String upperLimit;
 
     @SuppressWarnings("unchecked")
-    public NameNode(Library l, HashMap h) {
+    public NameNode(Library l, DictionaryEntries h) {
         super(l, h);
         // root node can either be a Kids or Names
         Object o = library.getObject(entries, KIDS_KEY);
-        if (o != null && o instanceof List) {
+        if (o instanceof List) {
             // we have a kids array which can be composed of an intermediary
             // /limits/kids and or the leaf /limits/names
             kidsReferences = (List) o;
@@ -59,13 +58,13 @@ public class NameNode extends Dictionary {
             // process the names
             namesAreDecrypted = false;
             o = library.getObject(entries, NAMES_KEY);
-            if (o != null && o instanceof List) {
+            if (o instanceof List) {
                 namesAndValues = (List) o;
             }
         }
         // assign the upper and lower limits if any.
         o = library.getObject(entries, LIMITS_KEY);
-        if (o != null && o instanceof List) {
+        if (o instanceof List) {
             List limits = (List) o;
             if (limits.size() >= 2) {
                 lowerLimit = decryptIfText(limits.get(0));
@@ -178,12 +177,12 @@ public class NameNode extends Dictionary {
         List<NameNode> kidsNodes = null;
         if (sz > 0) {
             kidsNodes = new ArrayList<>(sz);
-            for (Object ref : kidsReferences) {
+            for (Reference ref : kidsReferences) {
                 if (ref instanceof Reference) {
-                    Object o = library.getObject((Reference) ref);
-                    if (o instanceof HashMap) {
-                        NameNode node = new NameNode(library, (HashMap) o);
-                        node.setPObjectReference((Reference) ref);
+                    Object o = library.getObject(ref);
+                    if (o instanceof DictionaryEntries) {
+                        NameNode node = new NameNode(library, (DictionaryEntries) o);
+                        node.setPObjectReference(ref);
                         kidsNodes.add(node);
                     } else if (o instanceof NameNode) {
                         kidsNodes.add((NameNode) o);
@@ -266,9 +265,7 @@ public class NameNode extends Dictionary {
             int cmpU = upperLimit.compareTo(name);
             if (cmpL >= 1 || cmpU >= 1)
                 return this;
-            else if (cmpL > 0) {
-                return NOT_FOUND_IS_LESSER;
-            } else if (cmpU < 0) {
+            else if (cmpU < 0) {
                 return NOT_FOUND_IS_GREATER;
             }
             Object ret = binarySearchNodeKids(0, numNamesAndValues - 1, name, null);
@@ -409,10 +406,9 @@ public class NameNode extends Dictionary {
             return ob;
         } else if (cmp > 0) {
             return binarySearchNames(firstIndex, pivot - 1, name);
-        } else if (cmp < 0) {
+        } else {
             return binarySearchNames(pivot + 2, lastIndex, name);
         }
-        return NOT_FOUND;
     }
 
     public NameNode getNode(int index) {
@@ -420,8 +416,8 @@ public class NameNode extends Dictionary {
         NameNode node = null;
         if (ref != null) {
             Object obj = library.getObject(ref);
-            if (obj instanceof HashMap) {
-                node = new NameNode(library, (HashMap) obj);
+            if (obj instanceof DictionaryEntries) {
+                node = new NameNode(library, (DictionaryEntries) obj);
                 node.setPObjectReference(ref);
             } else if (obj instanceof NameNode) {
                 node = (NameNode) obj;

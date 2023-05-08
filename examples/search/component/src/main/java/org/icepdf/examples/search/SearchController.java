@@ -75,8 +75,8 @@ public class SearchController {
         applicationFrame.pack();
         applicationFrame.setVisible(true);
 
-        /**
-         * Start of a simple search for the loaded file
+        /*
+          Start of a simple search for the loaded file
          */
         // get the search controller
         DocumentSearchController searchController =

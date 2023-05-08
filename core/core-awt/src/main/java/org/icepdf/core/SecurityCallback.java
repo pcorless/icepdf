@@ -34,5 +34,5 @@ public interface SecurityCallback {
      * @param document document being opened.
      * @return received password.
      */
-    public String requestPassword(Document document);
+    String requestPassword(Document document);
 }

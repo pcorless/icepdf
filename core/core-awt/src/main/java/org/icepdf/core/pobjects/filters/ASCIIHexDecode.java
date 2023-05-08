@@ -15,7 +15,7 @@
  */
 package org.icepdf.core.pobjects.filters;
 
-import org.icepdf.core.util.Parser;
+import org.icepdf.core.util.Utils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,7 +29,7 @@ public class ASCIIHexDecode extends ChunkingInputStream {
         super();
 
         setInputStream(input);
-        setBufferSize(4096);
+        setBufferSize(8 * 1024);
     }
 
     protected int fillInternalBuffer() throws IOException {
@@ -41,12 +41,12 @@ public class ASCIIHexDecode extends ChunkingInputStream {
             int lo;
             do {
                 hi = in.read();
-            } while (Parser.isWhitespace((char) hi));
+            } while (Utils.isWhitespace((char) hi));
             if (hi < 0)
                 break;
             do {
                 lo = in.read();
-            } while (Parser.isWhitespace((char) lo));
+            } while (Utils.isWhitespace((char) lo));
 
             if (hi >= '0' && hi <= '9') {
                 hi -= '0';

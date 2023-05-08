@@ -279,7 +279,7 @@ class SaslPrep {
      * Appendix C.2.1</a>.
      */
     private static boolean asciiControl(char ch) {
-        return '\u0000' <= ch && ch <= '\u001F' || ch == '\u007F';
+        return ch <= '\u001F' || ch == '\u007F';
     }
 
     /**

@@ -32,7 +32,7 @@ import java.awt.geom.AffineTransform;
  */
 public class ShapesDrawCmd extends AbstractDrawCmd {
 
-    private Shapes shapes;
+    private final Shapes shapes;
 
     public ShapesDrawCmd(Shapes shapes) {
         this.shapes = shapes;

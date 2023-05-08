@@ -15,10 +15,10 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
-import java.util.HashMap;
 
 /**
  * Generic annotation that instantiated when an annotation subtype is not
@@ -34,7 +34,7 @@ public class GenericAnnotation extends Annotation {
      * @param l document library.
      * @param h dictionary entries.
      */
-    public GenericAnnotation(Library l, HashMap h) {
+    public GenericAnnotation(Library l, DictionaryEntries h) {
         super(l, h);
     }
 

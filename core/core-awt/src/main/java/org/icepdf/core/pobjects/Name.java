@@ -99,7 +99,7 @@ public class Name {
         if (obj instanceof Name) {
             return equals((Name) obj);
         } else {
-            return obj != null && name.equals(obj);
+            return name.equals(obj);
         }
     }
 
@@ -122,7 +122,7 @@ public class Name {
      *         false, otherwise.
      */
     public boolean equals(String obj) {
-        return obj != null && name.equals(obj);
+        return name.equals(obj);
     }
 
     /**
@@ -161,10 +161,9 @@ public class Name {
                     }
                 }
             }
-        } catch (Throwable e) {
-            logger.finer("Error parsing hexadecimal characters.");
-            //  we are going to bail on any exception and just return the original
-            // string.
+        } catch (Exception e) {
+            logger.fine("Error parsing hexadecimal characters.");
+            //  we are going to bail on any exception and just return the original string
             return name.toString();
         }
         return name.toString();

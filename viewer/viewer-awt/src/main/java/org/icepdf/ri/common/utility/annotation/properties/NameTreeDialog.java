@@ -40,8 +40,8 @@ import java.util.ResourceBundle;
 public class NameTreeDialog extends EscapeJDialog
         implements ActionListener, TreeSelectionListener {
 
-    private Controller controller;
-    private ResourceBundle messageBundle;
+    private final Controller controller;
+    private final ResourceBundle messageBundle;
 
     private JTree nameJTree;
     private NameTreeNode selectedName;
@@ -62,7 +62,7 @@ public class NameTreeDialog extends EscapeJDialog
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == okButton) {
-            // assign the selected name. 
+            // assign the selected name.
             if (selectedName != null) {
                 destinationName = selectedName.getName().toString();
             }
@@ -84,7 +84,7 @@ public class NameTreeDialog extends EscapeJDialog
             if (selectedNode.getReference() != null) {
                 selectedName = selectedNode;
             } else {
-                // null the selection. 
+                // null the selection.
                 nameJTree.setSelectionPath(null);
                 selectedName = null;
             }
@@ -97,7 +97,7 @@ public class NameTreeDialog extends EscapeJDialog
         setTitle(messageBundle.getString(
                 "viewer.utilityPane.action.dialog.goto.nameTree.title"));
 
-        // build the name tree. 
+        // build the name tree.
         nameJTree = new NameJTree();
         nameJTree.setModel(new DefaultTreeModel(
                 new NameTreeNode(nameTree.getRoot(), messageBundle)));

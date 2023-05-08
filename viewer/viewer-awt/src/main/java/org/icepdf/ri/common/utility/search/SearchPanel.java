@@ -77,7 +77,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     private static final Logger logger =
             Logger.getLogger(SearchPanel.class.toString());
 
-    private static int maxPagesForLiveSearch;
+    private static final int maxPagesForLiveSearch;
 
     static {
         maxPagesForLiveSearch = Defs.intProperty(
@@ -95,7 +95,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     // input for a search pattern
     private JTextField searchTextField;
     // pointer to document which will be searched
-    private org.icepdf.ri.common.views.Controller controller;
+    private final org.icepdf.ri.common.views.Controller controller;
 
     // list box to hold search results
     private JTree tree;
@@ -122,8 +122,8 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     // status label for search
     private JLabel findMessage;
     // message bundle for internationalization
-    private ResourceBundle messageBundle;
-    private MessageFormat searchResultMessageForm;
+    private final ResourceBundle messageBundle;
+    private final MessageFormat searchResultMessageForm;
 
     /**
      * Create a new instance of SearchPanel.
@@ -276,7 +276,6 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         constraints.fill = GridBagConstraints.NONE;
         constraints.weightx = 1.0;
         constraints.weighty = 0;
-        constraints.anchor = GridBagConstraints.NORTH;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(5, 1, 1, 5);
 
@@ -306,7 +305,6 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
 
         // Add Results label
         constraints.insets = new Insets(1, 1, 1, 1);
-        constraints.fill = GridBagConstraints.NONE;
 
         // add the lit to scroll pane
         constraints.fill = GridBagConstraints.BOTH;
@@ -374,7 +372,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                                 searchController.setCurrentSearchHit(pageIndex, wordText);
                             }
                         }
-                    } catch (Throwable e1) {
+                    } catch (InterruptedException e1) {
                         logger.finer("Page text retrieval interrupted.");
                     }
                 }
@@ -961,13 +959,14 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
      * An Entry objects represents the found pages
      */
     @SuppressWarnings("serial")
+    static
     class FindEntry extends DefaultMutableTreeNode {
 
         // The text to be displayed on the screen for this item.
-        String title;
+        final String title;
 
         // The destination to be displayed when this item is activated
-        int pageNumber;
+        final int pageNumber;
 
         WordText wordText;
 
@@ -1071,7 +1070,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                             // try to expand back to the same path
                             NameTreeNode nameTreeNode = (NameTreeNode) node;
                             // find and select a node with the same node.)
-                            Enumeration nodes = ((NameTreeNode) destinationModel.getRoot()).depthFirstEnumeration();
+                            Enumeration<TreeNode> nodes = ((NameTreeNode) destinationModel.getRoot()).depthFirstEnumeration();
                             while (nodes.hasMoreElements()) {
                                 NameTreeNode currentNode = (NameTreeNode) nodes.nextElement();
                                 if (currentNode.getName() != null &&

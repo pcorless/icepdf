@@ -34,12 +34,12 @@ public class DropDownButton extends JButton
 
     private static final Logger logger = Logger.getLogger(DropDownButton.class.toString());
 
-    protected Controller controller;
+    protected final Controller controller;
 
-    protected JPopupMenu popupMenu;
+    protected final JPopupMenu popupMenu;
 
-    protected String imageName;
-    protected String imageSize;
+    protected final String imageName;
+    protected final String imageSize;
 
     public DropDownButton(Controller controller,
                           String title, String toolTip, String imageName,

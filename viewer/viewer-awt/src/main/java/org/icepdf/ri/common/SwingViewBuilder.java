@@ -306,7 +306,7 @@ public class SwingViewBuilder implements ViewBuilder {
     protected ResourceBundle messageBundle;
     protected static ViewerPropertiesManager propertiesManager;
 
-    protected static boolean isMacOs;
+    protected static final boolean isMacOs;
 
     static {
         isMacOs = SystemProperties.OS_NAME.contains("OS X");
@@ -624,7 +624,7 @@ public class SwingViewBuilder implements ViewBuilder {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.open.file.label"),
                 buildKeyStroke(KeyEventConstants.KEY_CODE_OPEN_FILE, KeyEventConstants.MODIFIER_OPEN_FILE));
-        if (viewerController != null && mi != null)
+        if (viewerController != null)
             viewerController.setOpenFileMenuItem(mi);
         return mi;
     }
@@ -643,7 +643,7 @@ public class SwingViewBuilder implements ViewBuilder {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.open.URL.label"),
                 buildKeyStroke(KeyEventConstants.KEY_CODE_OPEN_URL, KeyEventConstants.MODIFIER_OPEN_URL));
-        if (viewerController != null && mi != null)
+        if (viewerController != null)
             viewerController.setOpenURLMenuItem(mi);
         return mi;
     }
@@ -935,14 +935,14 @@ public class SwingViewBuilder implements ViewBuilder {
 
     public JMenuItem buildShowHideToolBarMenuItem() {
         JMenuItem mi = makeMenuItem("", null);
-        if (viewerController != null && mi != null)
+        if (viewerController != null)
             viewerController.setShowHideToolBarMenuItem(mi);
         return mi;
     }
 
     public JMenuItem buildShowHideUtilityPaneMenuItem() {
         JMenuItem mi = makeMenuItem("", null);
-        if (viewerController != null && mi != null)
+        if (viewerController != null)
             viewerController.setShowHideUtilityPaneMenuItem(mi);
         return mi;
     }
@@ -1008,14 +1008,14 @@ public class SwingViewBuilder implements ViewBuilder {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.document.search.label"),
                 buildKeyStroke(KeyEventConstants.KEY_CODE_SEARCH, KeyEventConstants.MODIFIER_SEARCH));
-        if (viewerController != null && mi != null)
+        if (viewerController != null)
             viewerController.setSearchMenuItem(mi);
         return mi;
     }
 
     public JMenuItem buildAdvancedSearchMenuItem() {
         final JMenuItem mi = makeMenuItem(messageBundle.getString("viewer.toolbar.search.advanced.label"), buildKeyStroke(KeyEventConstants.KEY_CODE_SEARCH, KeyEventConstants.MODIFIER_ADVANCED_SEARCH));
-        if (viewerController != null && mi != null) {
+        if (viewerController != null) {
             viewerController.setAdvancedSearchMenuItem(mi);
         }
         return mi;
@@ -1025,7 +1025,7 @@ public class SwingViewBuilder implements ViewBuilder {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.document.search.next.label"),
                 buildKeyStroke(KeyEventConstants.KEY_CODE_SEARCH_NEXT, KeyEventConstants.MODIFIER_SEARCH_NEXT));
-        if (viewerController != null && mi != null)
+        if (viewerController != null)
             viewerController.setSearchNextMenuItem(mi);
         return mi;
     }
@@ -1034,7 +1034,7 @@ public class SwingViewBuilder implements ViewBuilder {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.document.search.previous.label"),
                 buildKeyStroke(KeyEventConstants.KEY_CODE_SEARCH_PREVIOUS, KeyEventConstants.MODIFIER_SEARCH_PREVIOUS));
-        if (viewerController != null && mi != null)
+        if (viewerController != null)
             viewerController.setSearchPreviousMenuItem(mi);
         return mi;
     }
@@ -1043,7 +1043,7 @@ public class SwingViewBuilder implements ViewBuilder {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.document.gotToPage.label"),
                 buildKeyStroke(KeyEventConstants.KEY_CODE_GOTO, KeyEventConstants.MODIFIER_GOTO));
-        if (viewerController != null && mi != null)
+        if (viewerController != null)
             viewerController.setGoToPageMenuItem(mi);
         return mi;
     }
@@ -1183,7 +1183,7 @@ public class SwingViewBuilder implements ViewBuilder {
     public JMenuItem buildAboutMenuItem() {
 
         JMenuItem mi = makeMenuItem(messageBundle.getString("viewer.menu.help.about.label"), null);
-        if (viewerController != null && mi != null)
+        if (viewerController != null)
             viewerController.setAboutMenuItem(mi);
         return mi;
     }
@@ -2203,8 +2203,7 @@ public class SwingViewBuilder implements ViewBuilder {
     }
 
     public DestinationsPanel buildDestinationsPanel() {
-        DestinationsPanel destinationsPanel = new DestinationsPanel(viewerController, propertiesManager);
-        return destinationsPanel;
+        return new DestinationsPanel(viewerController, propertiesManager);
     }
 
     /**

@@ -16,7 +16,6 @@
 package org.icepdf.ri.common;
 
 import org.icepdf.core.SecurityCallback;
-import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.io.SizeInputStream;
 import org.icepdf.core.pobjects.*;
@@ -1541,7 +1540,7 @@ public class SwingController extends ComponentAdapter
      */
     public boolean isPdfCollection() {
         Catalog catalog = document.getCatalog();
-        HashMap collection = catalog.getCollection();
+        HashMap<Name, Object> collection = catalog.getCollection();
         if (collection != null) {
             // one final check as some docs will have meta data but will specify a page mode.
             // check to see that at least one of the files is a PDF
@@ -2412,7 +2411,7 @@ public class SwingController extends ComponentAdapter
             recentPaths.add(fileName + PROPERTY_TOKEN_SEPARATOR + Paths.get(filePath));
         }
         // add our new path the start of the list, remove any existing file names.
-        String newRecentFile = path.getFileName() + PROPERTY_TOKEN_SEPARATOR + path.toString();
+        String newRecentFile = path.getFileName() + PROPERTY_TOKEN_SEPARATOR + path;
         if (recentPaths.contains(newRecentFile)) {
             recentPaths.remove(newRecentFile);
         }
@@ -2470,11 +2469,8 @@ public class SwingController extends ComponentAdapter
      *
      * @param document         document to set securityCallback on .
      * @param securityCallback security callback for prompting users or owner passwords.
-     * @throws PDFException         general PDF parsing error.
-     * @throws PDFSecurityException security exception likely incorrect user or owner password.
      */
-    protected void setupSecurityHandler(Document document, SecurityCallback securityCallback) throws
-            PDFException, PDFSecurityException {
+    protected void setupSecurityHandler(Document document, SecurityCallback securityCallback) {
         // create default security callback is user has not created one
         if (securityCallback == null) {
             document.setSecurityCallback(
@@ -2502,29 +2498,27 @@ public class SwingController extends ComponentAdapter
                 addRecentFileEntry(Paths.get(pathname));
 
                 saveFilePath = getTempSaveFileName(pathname);
-                if (saveFilePath != null) {
-                    File tmpFile = new File(saveFilePath);
-                    if (tmpFile.exists() && new File(pathname).exists()) {
-                        String[] options = {messageBundle.getString("viewer.button.yes.label"), messageBundle.getString("viewer.button.no.label")};
-                        int ret = JOptionPane.showOptionDialog(viewer, MessageFormat.format(messageBundle.getString("viewer.dialog.restore.label"), new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(tmpFile.lastModified())), messageBundle.getString("viewer.dialog.restore.title"), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-                        if (ret == JOptionPane.YES_OPTION) {
-                            try {
-                                Files.copy(tmpFile.toPath(), new File(pathname).toPath(), StandardCopyOption.REPLACE_EXISTING);
-                            } catch (IOException e) {
-                                org.icepdf.ri.util.Resources.showMessageDialog(
-                                        viewer,
-                                        JOptionPane.INFORMATION_MESSAGE,
-                                        messageBundle,
-                                        "viewer.dialog.restore.exception.title",
-                                        "viewer.dialog.restore.exception.label",
-                                        e.getMessage() != null && !e.getMessage().isEmpty() ? e.getMessage() : e.toString());
-                            }
-                        } else {
-                            try {
-                                Files.delete(tmpFile.toPath());
-                            } catch (IOException e) {
-                                logger.log(Level.FINE, "Couldn't delete file " + tmpFile.getAbsolutePath(), e);
-                            }
+                File tmpFile = new File(saveFilePath);
+                if (tmpFile.exists() && new File(pathname).exists()) {
+                    String[] options = {messageBundle.getString("viewer.button.yes.label"), messageBundle.getString("viewer.button.no.label")};
+                    int ret = JOptionPane.showOptionDialog(viewer, MessageFormat.format(messageBundle.getString("viewer.dialog.restore.label"), new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(tmpFile.lastModified())), messageBundle.getString("viewer.dialog.restore.title"), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+                    if (ret == JOptionPane.YES_OPTION) {
+                        try {
+                            Files.copy(tmpFile.toPath(), new File(pathname).toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        } catch (IOException e) {
+                            org.icepdf.ri.util.Resources.showMessageDialog(
+                                    viewer,
+                                    JOptionPane.INFORMATION_MESSAGE,
+                                    messageBundle,
+                                    "viewer.dialog.restore.exception.title",
+                                    "viewer.dialog.restore.exception.label",
+                                    e.getMessage() != null && !e.getMessage().isEmpty() ? e.getMessage() : e.toString());
+                        }
+                    } else {
+                        try {
+                            Files.delete(tmpFile.toPath());
+                        } catch (IOException e) {
+                            logger.log(Level.FINE, "Couldn't delete file " + tmpFile.getAbsolutePath(), e);
                         }
                     }
                 }
@@ -2533,16 +2527,6 @@ public class SwingController extends ComponentAdapter
                 setupSecurityHandler(document, documentViewController.getSecurityCallback());
                 document.setFile(pathname);
                 commonNewDocumentHandling(pathname);
-            } catch (PDFException e) {
-                org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
-                        JOptionPane.INFORMATION_MESSAGE,
-                        messageBundle,
-                        "viewer.dialog.openDocument.pdfException.title",
-                        "viewer.dialog.openDocument.pdfException.msg",
-                        pathname);
-                document = null;
-                logger.log(Level.FINE, "Error opening document.", e);
             } catch (PDFSecurityException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
                         viewer,
@@ -2695,16 +2679,6 @@ public class SwingController extends ComponentAdapter
                             }
                             closeDocument();
                             document = null;
-                        } catch (PDFException e) {
-                            org.icepdf.ri.util.Resources.showMessageDialog(
-                                    viewer,
-                                    JOptionPane.INFORMATION_MESSAGE,
-                                    messageBundle,
-                                    "viewer.dialog.openDocument.pdfException.title",
-                                    "viewer.dialog.openDocument.pdfException.msg",
-                                    location);
-                            document = null;
-                            logger.log(Level.FINE, "Error opening document.", e);
                         } catch (PDFSecurityException e) {
                             org.icepdf.ri.util.Resources.showMessageDialog(
                                     viewer,
@@ -2793,16 +2767,6 @@ public class SwingController extends ComponentAdapter
                 document.setInputStream(inputStream, pathOrURL);
 
                 commonNewDocumentHandling(description);
-            } catch (PDFException e) {
-                org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
-                        JOptionPane.INFORMATION_MESSAGE,
-                        messageBundle,
-                        "viewer.dialog.openDocument.pdfException.title",
-                        "viewer.dialog.openDocument.pdfException.msg",
-                        description);
-                document = null;
-                logger.log(Level.FINE, "Error opening document.", e);
             } catch (PDFSecurityException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
                         viewer,
@@ -2895,16 +2859,6 @@ public class SwingController extends ComponentAdapter
                 document.setByteArray(data, offset, length, pathOrURL);
 
                 commonNewDocumentHandling(description);
-            } catch (PDFException e) {
-                org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
-                        JOptionPane.INFORMATION_MESSAGE,
-                        messageBundle,
-                        "viewer.dialog.openDocument.pdfException.title",
-                        "viewer.dialog.openDocument.pdfException.msg",
-                        description);
-                document = null;
-                logger.log(Level.FINE, "Error opening document.", e);
             } catch (PDFSecurityException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
                         viewer,
@@ -2945,7 +2899,7 @@ public class SwingController extends ComponentAdapter
         // values are SinglePage, OnceColumn, TwoColumnLeft, TwoColumnRight,
         // TwoPageLeft, TwoPageRight.
         Object tmp = catalog.getObject(Catalog.PAGELAYOUT_KEY);
-        if (tmp != null && tmp instanceof Name) {
+        if (tmp instanceof Name) {
             String pageLayout = ((Name) tmp).getName();
             int viewType = DocumentViewControllerImpl.ONE_PAGE_VIEW;
             if (pageLayout.equalsIgnoreCase("OneColumn")) {
@@ -2963,7 +2917,8 @@ public class SwingController extends ComponentAdapter
         }
         // make sure we don't keep Attachments view around from a previous load
         // as we don't want to use it for a none attachments PDF file.
-        else if (documentViewController.getViewMode() == DocumentViewControllerImpl.USE_ATTACHMENTS_VIEW) {
+        if (documentViewController.getViewMode() ==
+                DocumentViewControllerImpl.USE_ATTACHMENTS_VIEW) {
             documentViewController.setViewType(DocumentViewControllerImpl.ONE_COLUMN_VIEW);
         }
         // check to see if we have collection
@@ -3600,7 +3555,7 @@ public class SwingController extends ComponentAdapter
                     //  and would complicate the incremental update code, so we're
                     //  harmonising on this approach.
                     try (final FileOutputStream fileOutputStream = new FileOutputStream(file);
-                         final BufferedOutputStream buf = new BufferedOutputStream(fileOutputStream, 4096 * 2)) {
+                         final BufferedOutputStream buf = new BufferedOutputStream(fileOutputStream, 8192)) {
 
                         // We want 'save as' or 'save a copy to always occur
                         if (!document.getStateManager().isChange()) {
@@ -3612,9 +3567,11 @@ public class SwingController extends ComponentAdapter
                         }
                         document.getStateManager().setChangesSnapshot();
                     } catch (MalformedURLException e) {
-                        logger.log(Level.FINE, "Malformed URL Exception ", e);
+                        logger.log(Level.WARNING, "Malformed URL Exception ", e);
                     } catch (IOException e) {
-                        logger.log(Level.FINE, "IO Exception ", e);
+                        logger.log(Level.WARNING, "IO Exception ", e);
+                    } catch (Exception e) {
+                        logger.log(Level.WARNING, "Failed to append document changes", e);
                     }
                     // save the default directory
                     ViewModel.setDefaultFile(file);
@@ -3783,7 +3740,7 @@ public class SwingController extends ComponentAdapter
         // browser window
         Runnable doSwingWork = () -> {
             AboutDialog ad = new AboutDialog(viewer, messageBundle, true,
-                    AboutDialog.OK, AboutDialog.NO_TIMER);
+                    AboutDialog.NO_TIMER);
             ad.setVisible(true);
         };
         SwingUtilities.invokeLater(doSwingWork);
@@ -3848,11 +3805,7 @@ public class SwingController extends ComponentAdapter
         // dialog get referenced. At least I think that's what might be happening.
         PageTree pageTree = getPageTree();
         Page page = pageTree.getPage(documentViewController.getCurrentPageIndex());
-        try {
-            showAnnotationProperties(annotationComponent, viewer);
-        } finally {
-            page = null;
-        }
+        showAnnotationProperties(annotationComponent, viewer);
     }
 
     /**
@@ -4113,7 +4066,7 @@ public class SwingController extends ComponentAdapter
                             ((URIAction) action).getURI());
                 } else {
                     Library library = action.getLibrary();
-                    HashMap entries = action.getEntries();
+                    DictionaryEntries entries = action.getEntries();
                     dest = new Destination(library, library.getObject(entries, Destination.D_KEY));
                 }
             } else if (dest.getNamedDestination() != null) {
@@ -5006,7 +4959,7 @@ public class SwingController extends ComponentAdapter
                             source == annotationPreviewMenuItem) {
                         showAnnotationPreviewWindow();
                     } else {
-                        logger.log(Level.FINE, "Unknown action event: " + source.toString());
+                        logger.log(Level.FINE, "Unknown action event: " + source);
                     }
                 } finally {
                     // set view pane back to previous icon
@@ -5014,8 +4967,7 @@ public class SwingController extends ComponentAdapter
                 }
             }
         } catch (Exception e) {
-            final Exception f = e;
-            String message = f.getMessage() == null || f.getMessage().isEmpty() ? f.toString() : f.getMessage();
+            String message = e.getMessage() == null || e.getMessage().isEmpty() ? e.toString() : e.getMessage();
             Runnable doSwingWork = () -> org.icepdf.ri.util.Resources.showMessageDialog(
                     viewer,
                     JOptionPane.INFORMATION_MESSAGE,
@@ -5089,17 +5041,14 @@ public class SwingController extends ComponentAdapter
             } else if (source == fitActualSizeButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageFitMode(DocumentViewController.PAGE_FIT_ACTUAL_SIZE, false);
-                    doSetFocus = true;
                 }
             } else if (source == fitHeightButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_HEIGHT, false);
-                    doSetFocus = true;
                 }
             } else if (source == fitWidthButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_WIDTH, false);
-                    doSetFocus = true;
                 }
             }
             // tool selection - a call to setDocumentToolMode will generate
@@ -5110,25 +5059,21 @@ public class SwingController extends ComponentAdapter
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_PAN;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
-                    doSetFocus = true;
                 }
             } else if (source == zoomInToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN);
-                    doSetFocus = true;
                 }
             } else if (source == zoomDynamicToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_DYNAMIC;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_DYNAMIC);
-                    doSetFocus = true;
                 }
             } else if (source == textSelectToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION);
-                    doSetFocus = true;
                 }
             }
             // annotations selection and creation tools.
@@ -5205,28 +5150,24 @@ public class SwingController extends ComponentAdapter
                     setPageViewMode(
                             DocumentViewControllerImpl.TWO_PAGE_RIGHT_VIEW,
                             false);
-                    doSetFocus = true;
                 }
             } else if (source == facingPageViewContinuousButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageViewMode(
                             DocumentViewControllerImpl.TWO_COLUMN_RIGHT_VIEW,
                             false);
-                    doSetFocus = true;
                 }
             } else if (source == singlePageViewNonContinuousButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageViewMode(
                             DocumentViewControllerImpl.ONE_PAGE_VIEW,
                             false);
-                    doSetFocus = true;
                 }
             } else if (source == singlePageViewContinuousButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageViewMode(
                             DocumentViewControllerImpl.ONE_COLUMN_VIEW,
                             false);
-                    doSetFocus = true;
                 }
             }
 
@@ -5466,7 +5407,7 @@ public class SwingController extends ComponentAdapter
                     }
                 } else if (dataFlavor.equals(DataFlavor.stringFlavor)) {
                     String s = (String) transferable.getTransferData(dataFlavor);
-                    int startIndex = s.toLowerCase().indexOf("http://");
+                    int startIndex = s.toLowerCase().indexOf("https://");
                     int endIndex = s.toLowerCase().indexOf(".pdf");
                     if (startIndex >= 0 && endIndex >= 0) {
                         s = s.substring(startIndex, endIndex + 4);
@@ -5739,7 +5680,7 @@ public class SwingController extends ComponentAdapter
                 destination = (Destination) evt.getOldValue();
                 // remove the destination
                 Catalog catalog = getDocument().getCatalog();
-                catalog.deleteNamedDestination(destination.getNamedDestination().toString());
+                catalog.deleteNamedDestination(destination.getNamedDestination());
                 // update the tree and remove this node.
                 if (annotationPanel != null && annotationPanel.getDestinationsPanel() != null) {
                     annotationPanel.getDestinationsPanel().removeNameTreeNode(destination);

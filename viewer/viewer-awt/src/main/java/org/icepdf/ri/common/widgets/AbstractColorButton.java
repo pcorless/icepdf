@@ -40,12 +40,12 @@ public abstract class AbstractColorButton extends AbstractButton
 
     private static final Logger logger = Logger.getLogger(AbstractColorButton.class.toString());
 
-    protected AnnotationColorPropertyPanel annotationColorPropertyPanel;
+    protected final AnnotationColorPropertyPanel annotationColorPropertyPanel;
     protected AbstractButton colorButton;
-    protected JButton dropDownArrowButton;
+    protected final JButton dropDownArrowButton;
     protected JWindow popup;
 
-    protected Controller controller;
+    protected final Controller controller;
 
     public AbstractColorButton(Controller controller,
                                ResourceBundle messageBundle) {
@@ -58,7 +58,7 @@ public abstract class AbstractColorButton extends AbstractButton
         dropDownArrowButton.setRolloverEnabled(false);
         dropDownArrowButton.setFocusPainted(false);
 
-        // assign the drop down window and setup a properties change event.
+        // assign the drop-down window and set up a properties change event.
         this.annotationColorPropertyPanel =
                 new AnnotationColorPropertyPanel(controller, messageBundle);
         this.annotationColorPropertyPanel.setCallback(this);

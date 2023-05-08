@@ -73,13 +73,13 @@ public abstract class AbstractDocumentView
         }
     }
 
-    private Timer autoScrollTimer;
+    private final Timer autoScrollTimer;
     private Point lastMouseLocation;
 
     // general layout of page component spacing.
-    public static int verticalSpace = 2;
-    public static int horizontalSpace = 1;
-    public static int layoutInserts = 0;
+    public static final int verticalSpace = 2;
+    public static final int horizontalSpace = 1;
+    public static final int layoutInserts = 0;
 
     protected DocumentViewController documentViewController;
     protected DocumentViewModel documentViewModel;
@@ -146,32 +146,17 @@ public abstract class AbstractDocumentView
                     logger.fine("Selected Annotation " + newValue);
                 }
                 documentViewController.firePropertyChange(
-                        PropertyConstants.ANNOTATION_FOCUS_GAINED, evt.getOldValue(), evt.getNewValue());
+                        PropertyConstants.ANNOTATION_FOCUS_GAINED, oldValue, newValue);
             } else if (newValue instanceof DestinationComponent) {
                 if (logger.isLoggable(Level.FINE)) {
                     logger.fine("Selected destination " + newValue);
                 }
                 documentViewController.firePropertyChange(
                         PropertyConstants.DESTINATION_FOCUS_GAINED,
-                        evt.getOldValue(),
-                        evt.getNewValue());
+                        oldValue,
+                        newValue);
             }
 
-        } else if ("focusOwner".equals(prop)) {
-            DocumentViewController documentViewController = getParentViewController();
-            if (oldValue instanceof AnnotationComponent) {
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.fine("Deselected Annotation " + oldValue);
-                }
-                documentViewController.firePropertyChange(
-                        PropertyConstants.ANNOTATION_FOCUS_LOST, evt.getOldValue(), evt.getNewValue());
-            } else if (oldValue instanceof AnnotationComponent) {
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.fine("Deselected destination " + oldValue);
-                }
-                documentViewController.firePropertyChange(
-                        PropertyConstants.DESTINATION_FOCUS_LOST, evt.getOldValue(), evt.getNewValue());
-            }
         }
     }
 

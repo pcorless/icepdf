@@ -110,7 +110,7 @@ public abstract class ChunkingInputStream extends InputStream {
     public void mark(int readlimit) {
     }
 
-    public void reset() throws IOException {
+    public void reset() {
     }
 
     public int read() throws IOException {
@@ -168,7 +168,7 @@ public abstract class ChunkingInputStream extends InputStream {
         return skipped;
     }
 
-    public int available() throws IOException {
+    public int available(){
         return bufferAvailable;
     }
 
@@ -187,7 +187,7 @@ public abstract class ChunkingInputStream extends InputStream {
         if (in == null)
             sb.append("null");
         else
-            sb.append(in.toString());
+            sb.append(in);
         return sb.toString();
     }
 }

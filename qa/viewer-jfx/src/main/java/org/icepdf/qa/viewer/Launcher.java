@@ -39,7 +39,7 @@ public class Launcher extends Application {
     }
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
+    public void start(Stage primaryStage) {
 //        setUserAgentStylesheet(STYLESHEET_MODENA);
 
         // our main primary stage.
@@ -64,9 +64,7 @@ public class Launcher extends Application {
                 ImageLoader.loadImage("icepdf-app-icon-64x64.png"));
         primaryStage.setTitle(Mediator.TITLE_TEXT);
         primaryStage.setScene(scene);
-        primaryStage.setOnCloseRequest(event -> {
-            mediator.cancelTestInstance();
-        });
+        primaryStage.setOnCloseRequest(event -> mediator.cancelTestInstance());
         primaryStage.show();
 
         // check for last opened project

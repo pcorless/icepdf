@@ -1,6 +1,5 @@
 package org.icepdf.examples.capture;
-import org.icepdf.core.exceptions.PDFException;
-import org.icepdf.core.exceptions.PDFSecurityException;
+
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
@@ -64,9 +63,7 @@ public class DocumentCapture {
                 running = watchKey.reset();
 
             } while (running);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
         // shutdown the pool
@@ -74,10 +71,9 @@ public class DocumentCapture {
 
     }
 
-    public class CapturePages implements Runnable {
-        private Path path;
+    public static class CapturePages implements Runnable {
+        private final Path path;
         private float scale = 1f;
-        private float rotation = 0f;
 
         public CapturePages(Path path) {
             this.path = path;
@@ -101,6 +97,7 @@ public class DocumentCapture {
                 for (int pageNumber = 0, max = document.getNumberOfPages(); pageNumber < max; pageNumber++) {
                     Page page = document.getPageTree().getPage(pageNumber);
                     page.init();
+                    float rotation = 0f;
                     PDimension sz = page.getSize(Page.BOUNDARY_CROPBOX, rotation, scale);
 
                     int pageWidth = (int) sz.getWidth();
@@ -135,27 +132,15 @@ public class DocumentCapture {
                         outputStream.close();
                         inputStream.close();
 
-                    } catch (Throwable e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                     image.flush();
                 }
                 System.out.println("Finished capturing file: " + path);
 
-            } catch (PDFException ex) {
-                System.out.println("Error parsing PDF document " + ex);
+            } catch (Exception ex) {
                 ex.printStackTrace();
-            } catch (PDFSecurityException ex) {
-                System.out.println("Error encryption not supported " + ex);
-                ex.printStackTrace();
-            } catch (FileNotFoundException ex) {
-                System.out.println("Error file not found " + ex);
-                ex.printStackTrace();
-            } catch (IOException ex) {
-                System.out.println("Error handling PDF document " + ex);
-                ex.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             } finally {
                 document.dispose();
             }

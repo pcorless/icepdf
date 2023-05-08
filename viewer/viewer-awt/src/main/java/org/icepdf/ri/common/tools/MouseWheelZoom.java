@@ -31,8 +31,8 @@ import java.awt.event.MouseWheelListener;
  */
 public class MouseWheelZoom implements MouseWheelListener {
 
-    protected DocumentViewController documentViewController;
-    protected JScrollPane documentScrollPane;
+    protected final DocumentViewController documentViewController;
+    protected final JScrollPane documentScrollPane;
 
     public MouseWheelZoom(DocumentViewController documentViewController,
                           JScrollPane documentScrollPane) {
@@ -48,10 +48,10 @@ public class MouseWheelZoom implements MouseWheelListener {
     public void mouseWheelMoved(MouseWheelEvent e) {
         int rotation = e.getWheelRotation();
         // turn off scroll on zoom and then back on again next time
-        // the wheel is used with out the ctrl mask.
-        if ((e.getModifiers() & InputEvent.CTRL_MASK) == InputEvent.CTRL_MASK
+        // the wheel is used without the ctrl mask.
+        if ((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) == InputEvent.CTRL_DOWN_MASK
                 ||
-                (e.getModifiers() & InputEvent.META_MASK) == InputEvent.META_MASK) {
+                (e.getModifiersEx() & InputEvent.META_DOWN_MASK) == InputEvent.META_DOWN_MASK) {
             documentScrollPane.setWheelScrollingEnabled(false);
             Point offset = documentScrollPane.getViewport().getViewPosition();
             int viewWidth = documentScrollPane.getViewport().getWidth() / 2;

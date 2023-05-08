@@ -17,7 +17,6 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.io.BitStream;
 import org.icepdf.core.io.ConservativeSizingByteArrayOutputStream;
-import org.icepdf.core.io.SeekableInputConstrainedWrapper;
 import org.icepdf.core.pobjects.filters.*;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.Library;
@@ -25,8 +24,8 @@ import org.icepdf.core.util.Library;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -60,33 +59,22 @@ public class Stream extends Dictionary {
     // original byte stream that has not been decoded
     protected byte[] rawBytes;
 
-    protected HashMap decodeParams;
+    protected DictionaryEntries decodeParams;
 
     // default compression state for a file loaded stream,  for re-saving
     // of form data we want to avoid re-compressing the data.
     protected boolean compressed = true;
 
-    /**
-     * Create a new instance of a Stream.
-     *
-     * @param l                  library containing a hash of all document objects
-     * @param h                  HashMap of parameters specific to the Stream object.
-     * @param streamInputWrapper Accessor to stream byte data
-     */
-    public Stream(Library l, HashMap h, SeekableInputConstrainedWrapper streamInputWrapper) {
-        super(l, h);
-        // capture raw bytes for later processing.
-        if (streamInputWrapper != null) {
-            this.rawBytes = getRawStreamBytes(streamInputWrapper);
-        }
-        decodeParams = library.getDictionary(entries, DECODEPARAM_KEY);
-    }
-
-    public Stream(Library l, HashMap h, byte[] rawBytes) {
-        super(l, h);
+    public Stream(Library library, DictionaryEntries dictionaryEntries, byte[] rawBytes) {
+        super(library, dictionaryEntries);
+        decodeParams = this.library.getDictionary(entries, DECODEPARAM_KEY);
         this.rawBytes = rawBytes;
     }
 
+    public Stream(DictionaryEntries dictionaryEntries, byte[] rawBytes) {
+        super(null, dictionaryEntries);
+        this.rawBytes = rawBytes;
+    }
 
     public byte[] getRawBytes() {
         return rawBytes;
@@ -104,18 +92,6 @@ public class Stream extends Dictionary {
     protected boolean isImageSubtype() {
         Object subtype = library.getObject(entries, SUBTYPE_KEY);
         return subtype != null && subtype.equals("Image");
-    }
-
-    private byte[] getRawStreamBytes(SeekableInputConstrainedWrapper streamInputWrapper) {
-        // copy the raw bytes out to internal storage for later decoding.
-        int length = (int) streamInputWrapper.getLength();
-        byte[] rawBytes = new byte[length];
-        try {
-            streamInputWrapper.read(rawBytes, 0, length);
-        } catch (IOException e) {
-            logger.warning("IO Error getting stream bytes");
-        }
-        return rawBytes;
     }
 
     /**
@@ -143,7 +119,6 @@ public class Stream extends Dictionary {
         // decompress the stream
         if (compressed) {
             try {
-                // todo, could nio all a little speed up here.
                 ByteArrayInputStream streamInput = new ByteArrayInputStream(rawBytes);
                 long rawStreamLength = rawBytes.length;
                 InputStream input = getDecodedInputStream(streamInput, rawStreamLength);
@@ -152,11 +127,11 @@ public class Stream extends Dictionary {
                 if (presize > 0) {
                     outLength = presize;
                 } else {
-                    outLength = Math.max(4096, (int) rawStreamLength);
+                    outLength = Math.max(8192, (int) rawStreamLength);
                 }
                 ConservativeSizingByteArrayOutputStream out = new
                         ConservativeSizingByteArrayOutputStream(outLength);
-                byte[] buffer = new byte[(outLength > 4096) ? 4096 : 8192];
+                byte[] buffer = new byte[Math.min(outLength, 8 * 1024)];
                 while (true) {
                     int read = input.read(buffer);
                     if (read <= 0)
@@ -180,6 +155,15 @@ public class Stream extends Dictionary {
         return null;
     }
 
+    public ByteBuffer getDecodedStreamByteBuffer() {
+        return getDecodedStreamByteBuffer(8192);
+    }
+
+    public ByteBuffer getDecodedStreamByteBuffer(int presiz) {
+        byte[] decodeBytes = getDecodedStreamBytes(presiz);
+        return ByteBuffer.wrap(decodeBytes);
+    }
+
     /**
      * Utility method for decoding the byte stream using the decode algorithem
      * specified by the filter parameter
@@ -200,7 +184,7 @@ public class Stream extends Dictionary {
 
         InputStream input = streamInput;
 
-        int bufferSize = Math.min(Math.max((int) streamLength, 64), 16 * 1024);
+        int bufferSize = Math.min((int)streamLength, 8 * 1024);
         input = new java.io.BufferedInputStream(input, bufferSize);
 
         // Search for crypt dictionary entry and decode params so that
@@ -216,7 +200,7 @@ public class Stream extends Dictionary {
 
         // Get the filter name for the encoding type, which can be either
         // a Name or Vector.
-        List filterNames = getFilterNames();
+        List<String> filterNames = getFilterNames();
         if (filterNames == null)
             return input;
 
@@ -257,8 +241,6 @@ public class Stream extends Dictionary {
                 case "CCITTFaxDecode":
                 case "/CCF":
                 case "CCF":
-                    // Leave empty so our else clause works
-                    break;
                 case "DCTDecode":
                 case "/DCT":
                 case "DCT":

@@ -122,7 +122,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         FreeTextAnnotationComponent freeTextAnnotationComponent = (FreeTextAnnotationComponent)
                 currentAnnotationComponent;
 
-        freeTextAnnotation = (FreeTextAnnotation) freeTextAnnotationComponent.getAnnotation();
+        freeTextAnnotation = freeTextAnnotationComponent.getAnnotation();
 
 
         // font comps
@@ -329,7 +329,6 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.weightx = 1.0;
-        constraints.anchor = GridBagConstraints.NORTH;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(1, 2, 1, 2);
 

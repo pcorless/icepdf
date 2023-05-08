@@ -27,9 +27,9 @@ import java.awt.*;
 public class AnnotationPanel extends JPanel implements MutableDocument {
 
     // layouts constraint
-    private GridBagConstraints constraints;
+    private final GridBagConstraints constraints;
 
-    private JTabbedPane annotationTabbedPane;
+    private final JTabbedPane annotationTabbedPane;
 
     private MarkupAnnotationPanel markupAnnotationPanel;
     private DestinationsPanel destinationsPanel;

@@ -14,8 +14,8 @@ import org.icepdf.qa.viewer.common.PreferencesController;
  */
 public class NewCaptureSetDialog extends AbstractDialog<CaptureSet> {
 
-    private TextField projectName;
-    private Label errorLabel;
+    private final TextField projectName;
+    private final Label errorLabel;
 
     public NewCaptureSetDialog(Mediator mediator) {
         super(mediator);

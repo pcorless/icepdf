@@ -15,11 +15,11 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -44,18 +44,18 @@ public class CalRGB extends PColorSpace {
     public static final Name MATRIX_KEY = new Name("Matrix");
     public static final Name CALRGB_KEY = new Name("CalRGB");
 
-    protected float[] whitepoint = {
+    protected final float[] whitepoint = {
             1, 1, 1
     };
-    protected float[] gamma = {
+    protected final float[] gamma = {
             1, 1, 1
     };
-    protected float[] matrix = {
+    protected final float[] matrix = {
             1, 0, 0, 0, 1, 0, 0, 0, 1
     };
 
 
-    CalRGB(Library l, HashMap h) {
+    CalRGB(Library l, DictionaryEntries h) {
         super(l, h);
         List m = (List) h.get(WHITE_POINT_KEY);
         if (m != null) {

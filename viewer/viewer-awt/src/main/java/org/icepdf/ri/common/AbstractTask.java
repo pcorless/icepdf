@@ -31,11 +31,11 @@ public abstract class AbstractTask<T, V> extends SwingWorker<T, V> {
     protected int lengthOfTask;
 
     // parent swing controller
-    protected Controller controller;
+    protected final Controller controller;
     // message bundle for internationalization
-    protected ResourceBundle messageBundle;
+    protected final ResourceBundle messageBundle;
     // parent pane which will be updated for progress and messages.
-    protected AbstractWorkerPanel workerPanel;
+    protected final AbstractWorkerPanel workerPanel;
 
     public AbstractTask(Controller controller, AbstractWorkerPanel workerPanel, ResourceBundle messageBundle) {
         this.controller = controller;

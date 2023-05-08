@@ -131,16 +131,16 @@ public class Defs {
         if (value != null) {
             switch (value.length()) {
                 case 2:
-                    if ("no".equals(value.toLowerCase())) return false;
+                    if ("no".equalsIgnoreCase(value)) return false;
                     break;
                 case 3:
-                    if ("yes".equals(value.toLowerCase())) return true;
+                    if ("yes".equalsIgnoreCase(value)) return true;
                     break;
                 case 4:
-                    if ("true".equals(value.toLowerCase())) return true;
+                    if ("true".equalsIgnoreCase(value)) return true;
                     break;
                 case 5:
-                    if ("false".equals(value.toLowerCase())) return false;
+                    if ("false".equalsIgnoreCase(value)) return false;
                     break;
             }
         }

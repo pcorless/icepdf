@@ -25,7 +25,7 @@ import java.awt.*;
  */
 public class ColorToggleButton extends JToggleButton implements PaintButtonInterface {
 
-    protected PaintButtonBase paintButtonBase;
+    protected final PaintButtonBase paintButtonBase;
 
     public ColorToggleButton() {
         paintButtonBase = new PaintButtonBase(this);

@@ -29,7 +29,7 @@ import java.util.ResourceBundle;
  */
 public class SignerSummaryPanel extends JPanel {
     // layouts constraint
-    private GridBagConstraints constraints;
+    private final GridBagConstraints constraints;
 
     public SignerSummaryPanel(SignatureValidationStatus signatureValidationStatus, ResourceBundle messageBundle,
                               SignatureWidgetAnnotation signatureWidgetAnnotation, SignatureValidator signatureValidator,
@@ -57,7 +57,6 @@ public class SignerSummaryPanel extends JPanel {
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.NONE;
         constraints.weightx = 1.0;
-        constraints.anchor = GridBagConstraints.NORTH;
         constraints.anchor = GridBagConstraints.EAST;
         constraints.insets = new Insets(5, 5, 5, 5);
         if (showIcon) {

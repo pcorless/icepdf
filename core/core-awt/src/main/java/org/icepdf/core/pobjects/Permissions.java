@@ -18,7 +18,6 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.util.Library;
 
-import java.util.HashMap;
 
 /**
  * The Perms entry in the document catalogue (see Table 28) shall specify a permissions dictionary (PDF 1.5). Each entry
@@ -59,8 +58,8 @@ public class Permissions extends Dictionary {
     // todo need to find some info this key
     public static final Name UR_KEY = new Name("UR");
 
-    public Permissions(Library library, HashMap entries) {
-        super(library, entries);
+    public Permissions(Library library, DictionaryEntries dictionaryEntries) {
+        super(library, dictionaryEntries);
     }
 
     /**

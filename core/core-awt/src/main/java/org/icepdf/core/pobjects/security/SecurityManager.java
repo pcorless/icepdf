@@ -16,14 +16,15 @@
 package org.icepdf.core.pobjects.security;
 
 import org.icepdf.core.exceptions.PDFSecurityException;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.security.Provider;
 import java.security.Security;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -56,10 +57,10 @@ public class SecurityManager {
 
     // Default Encryption dictionary, which also contians keys need for
     // standard, crypt and public security handlers.
-    private EncryptionDictionary encryptDictionary = null;
+    private final EncryptionDictionary encryptDictionary;
 
     // Pointer to class which implements the SecurityHandler interface
-    private SecurityHandler securityHandler = null;
+    private final SecurityHandler securityHandler;
 
     // flag for detecting JCE
     private static boolean foundJCE = false;
@@ -84,14 +85,18 @@ public class SecurityManager {
         }
         try {
             // try and create a new provider
-            Object provider = Class.forName(defaultSecurityProvider).newInstance();
+            Object provider = Class.forName(defaultSecurityProvider).getDeclaredConstructor().newInstance();
             Security.addProvider((Provider) provider);
         } catch (ClassNotFoundException e) {
             logger.log(Level.FINE, "Optional BouncyCastle security provider not found");
+        } catch (NoSuchMethodException e) {
+            logger.log(Level.FINE, "Optional BouncyCastle security provider no such method error");
         } catch (InstantiationException e) {
             logger.log(Level.FINE, "Optional BouncyCastle security provider could not be instantiated");
         } catch (IllegalAccessException e) {
             logger.log(Level.FINE, "Optional BouncyCastle security provider could not be created");
+        } catch (InvocationTargetException e) {
+            logger.log(Level.FINE, "Optional BouncyCastle security provider invocation target exception");
         }
 
         try {
@@ -117,7 +122,7 @@ public class SecurityManager {
      * @param fileID               fileID of PDF document
      * @throws PDFSecurityException if the security provider could not be found
      */
-    public SecurityManager(Library library, HashMap<Object, Object> encryptionDictionary,
+    public SecurityManager(Library library, DictionaryEntries encryptionDictionary,
                            List fileID)
             throws PDFSecurityException {
 
@@ -242,7 +247,7 @@ public class SecurityManager {
     public InputStream decryptInputStream(
             Reference objectReference,
             byte[] encryptionKey,
-            HashMap decodeParams,
+            DictionaryEntries decodeParams,
             InputStream input,
             boolean returnInputIfNullResult) {
         InputStream result = securityHandler.decryptInputStream(
@@ -267,7 +272,7 @@ public class SecurityManager {
     public InputStream encryptInputStream(
             Reference objectReference,
             byte[] encryptionKey,
-            HashMap decodeParams,
+            DictionaryEntries decodeParams,
             InputStream input,
             boolean returnInputIfNullResult) {
         InputStream result = securityHandler.encryptInputStream(

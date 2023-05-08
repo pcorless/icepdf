@@ -20,7 +20,7 @@ import java.util.List;
  */
 public class ConfigSerializer {
 
-    private static ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     static {
         mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
@@ -93,11 +93,9 @@ public class ConfigSerializer {
     public static CaptureSet retrieveCaptureSet(String captureSetFileName) {
         try {
             Path contentSetPath = Paths.get(PreferencesController.getCaptureSetDirectory(), captureSetFileName);
-            if (contentSetPath != null) {
-                CaptureSet captureSet = mapper.readValue(new FileReader(contentSetPath.toFile()), CaptureSet.class);
-                captureSet.setCaptureSetPath(contentSetPath.toAbsolutePath());
-                return captureSet;
-            }
+            CaptureSet captureSet = mapper.readValue(new FileReader(contentSetPath.toFile()), CaptureSet.class);
+            captureSet.setCaptureSetPath(contentSetPath.toAbsolutePath());
+            return captureSet;
         } catch (IOException e) {
             e.printStackTrace();
         }

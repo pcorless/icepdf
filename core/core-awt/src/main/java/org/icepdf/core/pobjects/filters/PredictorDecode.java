@@ -1,5 +1,6 @@
 package org.icepdf.core.pobjects.filters;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.graphics.images.ImageParams;
 import org.icepdf.core.util.Library;
@@ -7,7 +8,6 @@ import org.icepdf.core.util.Utils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 
 /**
  * Predictor decoder for LZW and Flate data streams.  Uses the same streaming
@@ -65,19 +65,19 @@ public class PredictorDecode extends ChunkingInputStream {
     protected static final Name BITS_PER_COMPONENT_VALUE = new Name("BitsPerComponent");
     protected static final Name EARLY_CHANGE_VALUE = new Name("EarlyChange");
     // default values for non image streams.
-    protected int predictor;
-    protected int numComponents = 1;
-    protected int bitsPerComponent = 8;
+    protected final int predictor;
+    protected int numComponents;
+    protected int bitsPerComponent;
     protected int width = 1;
-    protected int bytesPerPixel = 1;// From RFC 2083 (PNG), it's bytes per pixel, rounded up to 1
+    protected int bytesPerPixel;// From RFC 2083 (PNG), it's bytes per pixel, rounded up to 1
 
     // reference to previous buffer
     protected byte[] aboveBuffer;
 
-    public PredictorDecode(InputStream input, Library library, HashMap entries) {
+    public PredictorDecode(InputStream input, Library library, DictionaryEntries entries) {
         super();
         // get decode parameters from stream properties
-        HashMap decodeParmsDictionary = ImageParams.getDecodeParams(library, entries);
+        DictionaryEntries decodeParmsDictionary = ImageParams.getDecodeParams(library, entries);
         predictor = library.getInt(decodeParmsDictionary, PREDICTOR_VALUE);
 
         Number widthNumber = library.getNumber(entries, WIDTH_VALUE);
@@ -232,9 +232,8 @@ public class PredictorDecode extends ChunkingInputStream {
         return (((int) aboveBuffer[i - bytesPerPixel]) & 0xFF);
     }
 
-    public static boolean isPredictor(Library library, HashMap entries) {
-        HashMap decodeParmsDictionary = ImageParams.getDecodeParams(library, entries);
-        ;
+    public static boolean isPredictor(Library library, DictionaryEntries entries) {
+        DictionaryEntries decodeParmsDictionary = ImageParams.getDecodeParams(library, entries);
         if (decodeParmsDictionary == null) {
             return false;
         }

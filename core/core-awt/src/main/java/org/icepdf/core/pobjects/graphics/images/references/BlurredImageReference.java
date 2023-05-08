@@ -21,13 +21,13 @@ import java.util.logging.Logger;
  * seems to provide a nice balance,  the value can go as low as 2 for just a light blur or as high as 25 for a very
  * blurred image result.  This image reference format is best suited for TIFF images that are hard to read at small zoom
  * levels.
- *
+ * <p>
  * The blur value can be set with the system property org.icepdf.core.imageReference.blurred.dimension and once again
  * the default value is 3.  The blurring algorithm has a minimum image size associated with it.  To small an image and
  * the blur effect looks less then ideal.  The default values for minimum image size is 1800x2200 and can be set with either
  * org.icepdf.core.imageReference.blurred.minwidth or org.icepdf.core.imageReference.blurred.minheight.  However
  * smaller values can lead to missing content on low res images.
- *
+ * <p>
  * When an image size is less then the min width and min height then the image data will then be passed onto the smooth
  * scaled image reference implementation.  The SmoothScaledImageReference does a better job of smoothing out small
  * images and printer bands.  For more information {@link SmoothScaledImageReference}.
@@ -39,7 +39,9 @@ public class BlurredImageReference extends CachedImageReference {
     private static final Logger logger =
             Logger.getLogger(ImageStreamReference.class.toString());
 
-    private static int dimension, minWidth, minHeight;
+    private static final int dimension;
+    private static final int minWidth;
+    private static final int minHeight;
 
     static {
         dimension = Defs.intProperty("org.icepdf.core.imageReference.blurred.dimension", 3);
@@ -47,7 +49,7 @@ public class BlurredImageReference extends CachedImageReference {
         minHeight = Defs.intProperty("org.icepdf.core.imageReference.blurred.minheight", 2200);
     }
 
-    private static float[] matrix;
+    private static final float[] matrix;
 
     static {
         float size = dimension * dimension;
@@ -92,9 +94,9 @@ public class BlurredImageReference extends CachedImageReference {
                 image = new SmoothScaledImageReference(
                         imageStream, graphicsState, resources, imageIndex, parentPage).call();
             }
-        } catch (Throwable e) {
-            logger.log(Level.WARNING, "Error loading image: " + imageStream.getPObjectReference() +
-                    " " + imageStream.toString(), e);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, e, () -> "Error loading image: " + imageStream.getPObjectReference() +
+                    " " + imageStream.toString());
         }
         long end = System.nanoTime();
         notifyImagePageEvents((end - start));

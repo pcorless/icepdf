@@ -32,7 +32,7 @@ import java.awt.image.BufferedImage;
  */
 public abstract class CachedImageReference extends ImageReference {
 
-    private ImagePool imagePool;
+    private final ImagePool imagePool;
     private boolean isNull;
 
     protected CachedImageReference(ImageStream imageStream, GraphicsState graphicsState,

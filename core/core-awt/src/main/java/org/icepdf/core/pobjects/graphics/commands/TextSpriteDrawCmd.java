@@ -32,7 +32,7 @@ import java.awt.geom.AffineTransform;
  */
 public class TextSpriteDrawCmd extends AbstractDrawCmd {
 
-    private TextSprite textSprite;
+    private final TextSprite textSprite;
 
     public TextSpriteDrawCmd(TextSprite textSprite) {
         this.textSprite = textSprite;

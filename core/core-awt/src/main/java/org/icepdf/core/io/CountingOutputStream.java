@@ -25,7 +25,7 @@ import java.io.OutputStream;
  */
 
 public class CountingOutputStream extends OutputStream {
-    private OutputStream wrapped;
+    private final OutputStream wrapped;
     private long count;
 
     public CountingOutputStream(OutputStream wrap) {
