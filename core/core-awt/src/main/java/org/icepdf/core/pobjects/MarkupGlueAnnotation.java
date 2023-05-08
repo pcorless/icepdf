@@ -9,19 +9,18 @@ import org.icepdf.core.util.Library;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
-import java.util.HashMap;
 
 public class MarkupGlueAnnotation extends Annotation {
 
     protected MarkupAnnotation markupAnnotation;
     protected PopupAnnotation popupAnnotation;
 
-    public MarkupGlueAnnotation(Library l, HashMap h) {
+    public MarkupGlueAnnotation(Library l, DictionaryEntries h) {
         super(l, h);
     }
 
     public MarkupGlueAnnotation(Library l, MarkupAnnotation markupAnnotation, PopupAnnotation popupAnnotation) {
-        super(l, new HashMap());
+        super(l, new DictionaryEntries());
         this.markupAnnotation = markupAnnotation;
         this.popupAnnotation = popupAnnotation;
     }
