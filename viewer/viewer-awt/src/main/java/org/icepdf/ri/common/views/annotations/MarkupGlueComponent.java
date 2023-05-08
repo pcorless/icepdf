@@ -21,7 +21,6 @@ import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentEvent;
@@ -43,7 +42,7 @@ public class MarkupGlueComponent extends JComponent implements PageViewAnnotatio
 
     protected Rectangle adjustedMarkupAnnotationBounds;
 
-    private DocumentViewController documentViewController;
+    private final DocumentViewController documentViewController;
     protected AbstractPageViewComponent parentPageViewComponent;
 
     public MarkupGlueComponent(DocumentViewController documentViewController,
@@ -55,7 +54,7 @@ public class MarkupGlueComponent extends JComponent implements PageViewAnnotatio
         this.popupAnnotationComponent.addComponentListener(this);
     }
 
-    public void dispose(){
+    public void dispose() {
         if (popupAnnotationComponent != null) {
             popupAnnotationComponent.removeComponentListener(this);
         }
@@ -90,38 +89,12 @@ public class MarkupGlueComponent extends JComponent implements PageViewAnnotatio
     }
 
     @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-
-
+    public void paintComponent(Graphics g) {
         if (popupAnnotationComponent.isVisible()) {
             Rectangle popupBounds = popupAnnotationComponent.getBounds();
-            Rectangle markupBounds = markupAnnotationComponent.getBounds();
-            Rectangle glueBounds = markupAnnotationComponent.getBounds().union(popupAnnotationComponent.getBounds());
-            setBounds(glueBounds);
-            setPreferredSize(glueBounds.getSize());
-            setSize(glueBounds.getSize());
-
-            MarkupGluePainter.paintGlue(
-                    g, markupBounds, popupBounds, glueBounds,
-                    markupAnnotationComponent.getAnnotation().getColor());
-
-
-    }
-
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        if (popupAnnotationComponent.getAnnotation().isOpen()) {
-            Rectangle popupBounds = popupAnnotationComponent.getBounds();
-            Rectangle markupBounds = markupAnnotationComponent.getBounds();
-            Rectangle glueBounds = markupAnnotationComponent.getBounds().union(popupAnnotationComponent.getBounds());
-            setBounds(glueBounds);
-            setPreferredSize(glueBounds.getSize());
-            setSize(glueBounds.getSize());
-
-            MarkupGluePainter.paintGlue(
-                    g, markupBounds, popupBounds, glueBounds,
+            Rectangle markupBounds = adjustedMarkupAnnotationBounds;
+            MarkupGluePainter.paintGlue(g,
+                    markupBounds, popupBounds, getBounds(),
                     markupAnnotationComponent.getAnnotation().getColor());
         }
     }
