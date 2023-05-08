@@ -18,8 +18,12 @@ package org.icepdf.core.pobjects.annotations;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
+import java.time.format.FormatStyle;
+import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**
@@ -61,8 +65,15 @@ public class PopupAnnotation extends Annotation {
 
     protected MarkupAnnotation parent;
 
+    protected JPanel popupPaintablesPanel;
+    private boolean resetPopupPaintables = true;
+
     public PopupAnnotation(Library library, DictionaryEntries dictionaryEntries) {
         super(library, dictionaryEntries);
+    }
+
+    public synchronized void init() throws InterruptedException {
+        super.init();
     }
 
     /**
@@ -109,6 +120,112 @@ public class PopupAnnotation extends Annotation {
         }
 
         return popupAnnotation;
+    }
+
+    @Override
+    protected void renderAppearanceStream(Graphics2D g2d) {
+        GraphicsConfiguration graphicsConfiguration = g2d.getDeviceConfiguration();
+        boolean isPrintingAllowed = getParent().getFlagPrint();
+        if (graphicsConfiguration.getDevice().getType() == GraphicsDevice.TYPE_PRINTER &&
+                isOpen() &&
+                isPrintingAllowed) {
+            if (resetPopupPaintables) {
+                buildPopupPaintables();
+            }
+            paintPopupPaintables(g2d);
+        }
+    }
+
+    public boolean allowPrintNormalMode() {
+        boolean isParentPrintable = parent != null && parent.getFlagPrint();
+        return allowScreenOrPrintRenderingOrInteraction() && isParentPrintable;
+    }
+
+    private void paintPopupPaintables(Graphics2D g2d) {
+
+        Rectangle2D.Float popupBounds = getUserSpaceRectangle();
+
+        AffineTransform oldTransform = g2d.getTransform();
+        g2d.scale(1, -1);
+        g2d.translate(0, -popupBounds.getBounds().getSize().height);
+
+        popupPaintablesPanel.invalidate();
+        popupPaintablesPanel.revalidate();
+        popupPaintablesPanel.print(g2d);
+
+        g2d.setTransform(oldTransform);
+    }
+
+    /**
+     * Builds a JPanel representing the popup annotation that can be printed.
+     */
+    private void buildPopupPaintables() {
+
+        Rectangle2D.Float popupBounds = getUserSpaceRectangle();
+        Rectangle popupBoundsNormalized = new Rectangle2D.Double(0, 0, popupBounds.width, popupBounds.height).getBounds();
+
+        popupPaintablesPanel = new JPanel();
+
+        Color color = getParent().getColor();
+        Color contrastColor = calculateContrastHighLowColor(color.getRGB());
+        popupPaintablesPanel.setBackground(color);
+        popupPaintablesPanel.setBounds(popupBoundsNormalized);
+        popupPaintablesPanel.setSize(popupBoundsNormalized.getSize());
+        popupPaintablesPanel.setPreferredSize(popupBoundsNormalized.getSize());
+
+        MarkupAnnotation markupAnnotation = getParent();
+        // user
+        String title = markupAnnotation.getFormattedTitleText();
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setForeground(contrastColor);
+        popupPaintablesPanel.add(titleLabel);
+
+        // creation date
+        JLabel creationLabel = new JLabel();
+        creationLabel.setText(markupAnnotation.getFormattedCreationDate(FormatStyle.MEDIUM));
+        creationLabel.setForeground(contrastColor);
+        popupPaintablesPanel.add(creationLabel);
+
+        // text area
+        String contents = getParent() != null ? getParent().getContents() : "";
+        JTextArea textArea = new JTextArea(contents);
+        textArea.setFont(new JLabel().getFont());
+        textArea.setWrapStyleWord(true);
+        textArea.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(color),
+                BorderFactory.createEmptyBorder(2, 2, 2, 2)));
+        popupPaintablesPanel.add(textArea);
+
+        // basic layout
+        Component[] components = popupPaintablesPanel.getComponents();
+        int yOffset = 0;
+        int padding = 2;
+        for (Component comp : components) {
+            Dimension size = comp.getPreferredSize();
+            comp.setSize(size);
+            comp.setPreferredSize(size);
+            comp.setLocation(padding, yOffset);
+            yOffset += comp.getHeight() + padding;
+        }
+        // stretch text area.
+        textArea.setSize((int) (popupBounds.width - (padding * 2)), (int) (popupBounds.height + textArea.getHeight() - yOffset));
+        resetPopupPaintables = false;
+    }
+
+    public Color calculateContrastHighLowColor(int rgb) {
+        int tolerance = 120;
+        if ((rgb & 0xFF) <= tolerance &&
+                (rgb >> 8 & 0xFF) <= tolerance ||
+                (rgb >> 16 & 0xFF) <= tolerance) {
+            return Color.WHITE;
+        } else {
+            return Color.BLACK;
+        }
+
+    }
+
+    public void setContents(String content) {
+        super.setString(CONTENTS_KEY, content);
+        resetPopupPaintables = true;
     }
 
     @Override
