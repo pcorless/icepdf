@@ -14,8 +14,6 @@ package org.icepdf.examples.search;
  * governing permissions and limitations under the License.
  */
 
-import org.icepdf.core.exceptions.PDFException;
-import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
@@ -27,7 +25,6 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 
 /**
  * The <code>SearchControllerHeadless</code> class is an example of how to
@@ -78,13 +75,12 @@ public class SearchControllerHeadless {
                 BufferedImage image = new BufferedImage(pageWidth,
                         pageHeight,
                         BufferedImage.TYPE_INT_RGB);
-                Graphics g = image.createGraphics();
-                Graphics2D g2d = (Graphics2D) g;
+                Graphics2D g = image.createGraphics();
 
                 // capture current transform for graphics context.
                 page.paint(g, GraphicsRenderingHints.SCREEN,
                         Page.BOUNDARY_CROPBOX, rotation, scale, true, true);
-                g2d.dispose();
+                g.dispose();
 
                 // capture the page image to file
                 File file = new File("imageCapture1_" + i + ".png");
@@ -94,13 +90,7 @@ public class SearchControllerHeadless {
             // clean up resources
             document.dispose();
 
-        } catch (PDFException e) {
-            e.printStackTrace();
-        } catch (PDFSecurityException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

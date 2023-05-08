@@ -25,7 +25,7 @@ public class Mediator {
     public static final String TITLE_TEXT = "ICEpdf QA";
     public static final String STATUS_TEXT = "Status: ";
 
-    private Stage primaryStage;
+    private final Stage primaryStage;
 
     // menu items we need to disable.
     private MenuItem newCaptureSet;
@@ -55,8 +55,6 @@ public class Mediator {
     // status bar
     private ProgressBar progressBar;
 
-    // main layout panels.
-    private BorderPane projectBorderPane;
     private ProjectPropertiesTabSet projectTabSet;
     private ProjectCompareView projectCompareView;
     private ComparatorPane comparatorPane;
@@ -144,7 +142,6 @@ public class Mediator {
     /**
      * Clears/removes all results files associated with the proje
      *
-     * @param captureSet
      */
     private void clearCaptureSetResults(CaptureSet captureSet) {
         Path resultsFolder = Paths.get(PreferencesController.getResultsPathDirectory(),
@@ -170,7 +167,6 @@ public class Mediator {
     /**
      * Load the current project and populate the UI with project data.
      *
-     * @param project
      */
     public void loadProject(Project project) {
         if (currentProject != null) {
@@ -534,7 +530,7 @@ public class Mediator {
     }
 
     public void setProjectBorderPane(BorderPane projectBorderPane) {
-        this.projectBorderPane = projectBorderPane;
+        // main layout panels.
     }
 
     public void setProjectTabSet(ProjectPropertiesTabSet projectTabSet) {

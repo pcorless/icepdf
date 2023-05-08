@@ -33,14 +33,15 @@ public class GlyphText extends AbstractText {
             Logger.getLogger(GlyphText.class.toString());
 
     // x and y coordinates used for painting glyph
-    private float x, y;
+    private final float x;
+    private final float y;
 
     // character code used to represent glyph, maybe ascii or CID value
-    private String cid;
+    private final String cid;
 
     // Unicode/ASCII value that is represented by glyph, a cid can be
     // represented by one or more characters.
-    private String unicode;
+    private final String unicode;
 
     public GlyphText(float x, float y, Rectangle2D.Double bounds,
                      String cid, String unicode) {

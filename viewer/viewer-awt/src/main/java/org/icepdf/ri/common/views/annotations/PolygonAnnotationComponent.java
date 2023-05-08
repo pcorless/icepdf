@@ -44,11 +44,6 @@ public class PolygonAnnotationComponent extends MarkupAnnotationComponent {
     }
 
     @Override
-    public void resetAppearanceShapes() {
-        super.resetAppearanceShapes();
-    }
-
-    @Override
     public void paintComponent(Graphics g) {
 
     }

@@ -56,19 +56,18 @@ public class Shapes {
     // stack already has the needed state,  more ops take longer to paint.
     private int rule;
     private float alpha;
-    private boolean interrupted;
 
     // Graphics stack for a page's content.
-    protected ArrayList<DrawCmd> shapes = new ArrayList<>(shapesInitialCapacity);
+    protected final ArrayList<DrawCmd> shapes = new ArrayList<>(shapesInitialCapacity);
 
     // stores the state of the currently visible optional content.
-    protected OptionalContentState optionalContentState = new OptionalContentState();
+    protected final OptionalContentState optionalContentState = new OptionalContentState();
 
     // the collection of objects listening for page paint events
     private Page parentPage;
 
     // text extraction data structure
-    private PageText pageText = new PageText();
+    private final PageText pageText = new PageText();
 
     public PageText getPageText() {
         return pageText;
@@ -80,11 +79,7 @@ public class Shapes {
      * @return number of shapes on the stack
      */
     public int getShapesCount() {
-        if (shapes != null) {
-            return shapes.size();
-        } else {
-            return 0;
-        }
+        return shapes.size();
     }
 
     public ArrayList<DrawCmd> getShapes() {
@@ -92,7 +87,7 @@ public class Shapes {
     }
 
     public void add(ArrayList<DrawCmd> shapes) {
-        shapes.addAll(shapes);
+        this.shapes.addAll(shapes);
     }
 
     public void setPageParent(Page parent) {
@@ -140,7 +135,7 @@ public class Shapes {
      */
     public void paint(Graphics2D g) throws InterruptedException {
         try {
-            interrupted = false;
+            boolean interrupted = false;
             AffineTransform base = new AffineTransform(g.getTransform());
             Shape clip = g.getClip();
 
@@ -151,8 +146,7 @@ public class Shapes {
             // for loops actually faster in this case.
             for (int i = 0, max = shapes.size(); i < max; i++) {
                 // try and minimize interrupted checks, costly.
-                if (interrupted || (i % 1000 == 0 && Thread.currentThread().isInterrupted())) {
-                    interrupted = false;
+                if (i % 1000 == 0 && Thread.currentThread().isInterrupted()) {
                     throw new InterruptedException("Page painting thread interrupted");
                 }
 
@@ -164,7 +158,7 @@ public class Shapes {
         catch (InterruptedException e){
             throw new InterruptedException(e.getMessage());
         } catch (Exception e) {
-            logger.log(Level.FINE, "Error painting shapes.", e);
+            logger.log(Level.WARNING, "Error painting shapes.", e);
         }
     }
 
@@ -192,9 +186,7 @@ public class Shapes {
      * it contains.
      */
     public void contract() {
-        if (shapes != null) {
-            shapes.trimToSize();
-        }
+        shapes.trimToSize();
     }
 
     public int getRule() {

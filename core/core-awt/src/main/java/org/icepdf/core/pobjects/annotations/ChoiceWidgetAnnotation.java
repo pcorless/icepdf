@@ -27,7 +27,6 @@ import org.icepdf.core.util.Library;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 
@@ -42,9 +41,9 @@ import static org.icepdf.core.pobjects.acroform.ChoiceFieldDictionary.ChoiceFiel
  */
 public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceFieldDictionary> {
 
-    private ChoiceFieldDictionary fieldDictionary;
+    private final ChoiceFieldDictionary fieldDictionary;
 
-    public ChoiceWidgetAnnotation(Library l, HashMap h) {
+    public ChoiceWidgetAnnotation(Library l, DictionaryEntries h) {
         super(l, h);
         fieldDictionary = new ChoiceFieldDictionary(library, entries);
     }
@@ -134,7 +133,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
             StateManager stateManager = library.getStateManager();
             stateManager.addChange(new PObject(appearanceStream, appearanceStream.getPObjectReference()));
             // add an AP entry for the
-            HashMap<Object, Object> appearanceRefs = new HashMap<>();
+            DictionaryEntries appearanceRefs = new DictionaryEntries();
             appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, appearanceStream.getPObjectReference());
             entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
             Rectangle2D formBbox = new Rectangle2D.Float(0, 0,
@@ -390,7 +389,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
     private float[] findSelectionColour(String markedContent) {
         int selectionStart = markedContent.indexOf("n") + 1;
         int selectionEnd = markedContent.lastIndexOf("rg");
-        if (selectionStart < selectionEnd && selectionEnd > 0) {
+        if (selectionStart < selectionEnd) {
             String potentialNumbers = markedContent.substring(selectionStart, selectionEnd);
             StringTokenizer toker = new StringTokenizer(potentialNumbers);
             float[] points = new float[3];

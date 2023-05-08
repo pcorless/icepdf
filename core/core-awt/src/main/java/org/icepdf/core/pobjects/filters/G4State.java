@@ -29,7 +29,7 @@ class G4State {
     int refIndex; // the previous scan line
     int curIndex; // the current scan line
     int runLength;
-    int width;
+    final int width;
     int longrun;
 
     /**

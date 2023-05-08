@@ -16,7 +16,7 @@
 package org.icepdf.core.pobjects.graphics.images;
 
 
-import org.icepdf.core.io.SeekableInputConstrainedWrapper;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.Stream;
@@ -25,7 +25,6 @@ import org.icepdf.core.pobjects.graphics.PColorSpace;
 import org.icepdf.core.util.Library;
 
 import java.awt.image.BufferedImage;
-import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**
@@ -43,19 +42,7 @@ public class ImageStream extends Stream {
 
     private ImageParams imageParams;
 
-    /**
-     * Create a new instance of a Stream.
-     *
-     * @param l                  library containing a hash of all document objects
-     * @param h                  HashMap of parameters specific to the Stream object.
-     * @param streamInputWrapper Accessor to stream byte data
-     */
-    public ImageStream(Library l, HashMap h, SeekableInputConstrainedWrapper streamInputWrapper) {
-        super(l, h, streamInputWrapper);
-        imageParams = new ImageParams(library, entries, null);
-    }
-
-    public ImageStream(Library l, HashMap h, byte[] rawBytes) {
+    public ImageStream(Library l, DictionaryEntries h, byte[] rawBytes) {
         super(l, h, rawBytes);
         imageParams = new ImageParams(library, entries, null);
     }
@@ -71,16 +58,14 @@ public class ImageStream extends Stream {
 
     /**
      * Gets the image object for the given resource.  This method can optionally
-     * scale an image to reduce the total memory foot print or to increase the
+     * scale an image to reduce the total memory footprint or to increase the
      * perceived render quality on screen at low zoom levels.
      *
      * @param graphicsState graphic state for image or parent form
      * @param resources     resources containing image reference
      * @return new image object
-     * @throws InterruptedException thread interrupted.
      */
-    @SuppressWarnings("unchecked")
-    public BufferedImage getImage(GraphicsState graphicsState, Resources resources) throws InterruptedException {
+    public BufferedImage getImage(GraphicsState graphicsState, Resources resources){
         // check the pool encase we already parse this image.
         imageParams = new ImageParams(library, entries, resources);
         if (pObjectReference != null) {

@@ -45,21 +45,19 @@ public class DestinationComponent extends JComponent implements FocusListener, M
     protected static final Logger logger =
             Logger.getLogger(DestinationComponent.class.toString());
 
-    private static int WIDTH = 18;
-    private static int HEIGHT = 24;
-    private static int OFFSET = 1;
+    private static final int HEIGHT = 24;
 
     protected float currentZoom;
     protected float currentRotation;
 
     // reusable border
     public static final int resizeBoxSize = 4;
-    protected static ResizableBorder resizableBorder =
+    protected static final ResizableBorder resizableBorder =
             new ResizableBorder(resizeBoxSize);
 
     protected Destination destination;
-    protected DocumentViewController documentViewController;
-    protected AbstractPageViewComponent pageViewComponent;
+    protected final DocumentViewController documentViewController;
+    protected final AbstractPageViewComponent pageViewComponent;
 
     protected boolean isSelected;
     protected boolean isMousePressed;
@@ -78,9 +76,9 @@ public class DestinationComponent extends JComponent implements FocusListener, M
     protected Point startOfMousePress;
     protected Point endOfMousePress;
 
-    private JPopupMenu contextMenu;
-    private JMenuItem deleteNameTreeNode;
-    private JMenuItem editNameTreeNode;
+    private final JPopupMenu contextMenu;
+    private final JMenuItem deleteNameTreeNode;
+    private final JMenuItem editNameTreeNode;
 
     public DestinationComponent(Destination destination, DocumentViewController documentViewController,
                                 AbstractPageViewComponent pageViewComponent) {
@@ -89,7 +87,7 @@ public class DestinationComponent extends JComponent implements FocusListener, M
         this.pageViewComponent = pageViewComponent;
 
         if (destination.getNamedDestination() != null) {
-            setToolTipText(destination.getNamedDestination().toString());
+            setToolTipText(destination.getNamedDestination());
         }
         setFocusable(true);
         setBorder(resizableBorder);
@@ -124,7 +122,7 @@ public class DestinationComponent extends JComponent implements FocusListener, M
     public void updateDestination(Destination destination) {
         this.destination = destination;
         if (destination.getNamedDestination() != null) {
-            setToolTipText(destination.getNamedDestination().toString());
+            setToolTipText(destination.getNamedDestination());
         }
         refreshBounds();
     }
@@ -158,8 +156,10 @@ public class DestinationComponent extends JComponent implements FocusListener, M
                     documentViewModel.getPageBoundary(),
                     documentViewModel.getViewRotation(),
                     documentViewModel.getViewZoom());
+            int WIDTH = 18;
             int x = destination.getLeft().intValue() - WIDTH;
             int y = destination.getTop().intValue();
+            int OFFSET = 1;
             Rectangle rect = new Rectangle(x + OFFSET, y - OFFSET, WIDTH, HEIGHT);
 
             // store the new annotation rectangle in its original user space
@@ -237,7 +237,7 @@ public class DestinationComponent extends JComponent implements FocusListener, M
                 DocumentViewModel.DISPLAY_TOOL_SELECTION &&
                 documentViewController.getParentController().getViewModel().isAnnotationEditingMode()) {
             Border border = getBorder();
-            if (border != null && border instanceof ResizableBorder) {
+            if (border instanceof ResizableBorder) {
                 cursor = ((ResizableBorder) border).getCursor(e);
             }
             startPos = e.getPoint();

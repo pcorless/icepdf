@@ -48,10 +48,10 @@ public class GoToActionDialog extends AnnotationDialogAdapter
 
     public static final String EMPTY_DESTINATION = "      ";
 
-    private org.icepdf.ri.common.views.Controller controller;
-    private ResourceBundle messageBundle;
+    private final org.icepdf.ri.common.views.Controller controller;
+    private final ResourceBundle messageBundle;
     private AnnotationComponent currentAnnotation;
-    private ActionsPanel actionsPanel;
+    private final ActionsPanel actionsPanel;
 
     // state full ui elements.
     private GridBagConstraints constraints;
@@ -96,7 +96,7 @@ public class GoToActionDialog extends AnnotationDialogAdapter
 
         // get the destination object, doesn't matter where it comes from.
         Destination dest = null;
-        if (action != null && action instanceof GoToAction) {
+        if (action instanceof GoToAction) {
             dest = ((GoToAction) action).getDestination();
         }
         // alternatively we can have a dest field on Link annotations
@@ -129,7 +129,7 @@ public class GoToActionDialog extends AnnotationDialogAdapter
                 // enable GUI elements.
                 implicitDestinationFieldsEnabled(false);
                 // assign name to name label
-                destinationName.setText(dest.getNamedDestination().toString());
+                destinationName.setText(dest.getNamedDestination());
             }
         } else {
             // apply default fit type for new annotations.
@@ -236,7 +236,6 @@ public class GoToActionDialog extends AnnotationDialogAdapter
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.NONE;
         constraints.weightx = 1.0;
-        constraints.anchor = GridBagConstraints.NORTH;
         constraints.anchor = GridBagConstraints.EAST;
         constraints.insets = new Insets(5, 5, 5, 5);
 

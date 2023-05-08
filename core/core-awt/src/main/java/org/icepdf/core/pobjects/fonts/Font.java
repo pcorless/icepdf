@@ -17,11 +17,10 @@ package org.icepdf.core.pobjects.fonts;
 
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.util.Library;
-
-import java.util.HashMap;
 
 /**
  * <p>This class represents a PDF object which has a subtype value equal to "Font".
@@ -124,7 +123,7 @@ public abstract class Font extends Dictionary {
     public static final int FONT_FLAG_FORCE_BOLD = 0x40000;   // bit 19
 
     // Object name always "Font"
-    protected Name name;
+    protected final Name name;
 
     // The name of the object, Font
     protected String basefont;
@@ -241,7 +240,7 @@ public abstract class Font extends Dictionary {
      * @param library Library of all objects in PDF
      * @param entries hash of parsed font attributes
      */
-    public Font(Library library, HashMap entries) {
+    public Font(Library library, DictionaryEntries entries) {
         super(library, entries);
 
         // name of object  "Font"
@@ -254,7 +253,7 @@ public abstract class Font extends Dictionary {
 
         // figure out type
         if (subtype != null) {
-            subTypeFormat = (subtype.getName().toLowerCase().equals("type0") ||
+            subTypeFormat = (subtype.getName().equalsIgnoreCase("type0") ||
                     subtype.getName().toLowerCase().contains("cid")) ?
                     CID_FORMAT : SIMPLE_FORMAT;
         }
@@ -273,7 +272,7 @@ public abstract class Font extends Dictionary {
         // is the most commonly used font family for pdfs
         basefont = "Serif";
         Object tmp = entries.get(BASEFONT_KEY);
-        if (tmp != null && tmp instanceof Name) {
+        if (tmp instanceof Name) {
             basefont = ((Name) tmp).getName();
         }
 //        basefont = cleanFontName(basefont);
@@ -292,8 +291,8 @@ public abstract class Font extends Dictionary {
             fontDescriptor = (FontDescriptor) of;
         }
         // encase of missing the type entry so we
-        else if (of instanceof HashMap) {
-            fontDescriptor = new FontDescriptor(library, (HashMap) of);
+        else if (of instanceof DictionaryEntries) {
+            fontDescriptor = new FontDescriptor(library, (DictionaryEntries) of);
         }
         if (fontDescriptor != null) {
             fontDescriptor.init(subtype);

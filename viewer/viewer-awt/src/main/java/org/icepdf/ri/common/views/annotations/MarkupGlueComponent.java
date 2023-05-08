@@ -28,8 +28,8 @@ import java.awt.*;
  */
 public class MarkupGlueComponent extends JComponent {
 
-    protected MarkupAnnotationComponent markupAnnotationComponent;
-    protected PopupAnnotationComponent popupAnnotationComponent;
+    protected final MarkupAnnotationComponent markupAnnotationComponent;
+    protected final PopupAnnotationComponent popupAnnotationComponent;
 
     public MarkupGlueComponent(MarkupAnnotationComponent markupAnnotationComponent, PopupAnnotationComponent popupAnnotationComponent) {
         this.markupAnnotationComponent = markupAnnotationComponent;

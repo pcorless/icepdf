@@ -1,5 +1,6 @@
 package org.icepdf.core.pobjects.fonts.zfont;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.CMap;
@@ -9,7 +10,6 @@ import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType2;
 import org.icepdf.core.util.Library;
 
-import java.util.HashMap;
 import java.util.logging.Logger;
 
 public class TypeCidType2Font extends CompositeFont {
@@ -17,14 +17,14 @@ public class TypeCidType2Font extends CompositeFont {
     private static final Logger logger =
             Logger.getLogger(TypeCidType2Font.class.toString());
 
-    public TypeCidType2Font(Library library, HashMap entries) {
+    public TypeCidType2Font(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 
     @Override
     public synchronized void init() {
         super.init();
-        if (!(font instanceof ZFontType2)) {
+        if (!(font instanceof ZFontType2) && font instanceof ZFontTrueType) {
             font = new ZFontType2((ZFontTrueType) font);
         }
         parseCidToGidMap();
@@ -52,7 +52,7 @@ public class TypeCidType2Font extends CompositeFont {
             font = ((ZFontType2) font).deriveFont(org.icepdf.core.pobjects.fonts.zfont.cmap.CMap.IDENTITY, subfontToUnicodeCMap);
         }
         if (gidMap instanceof Name) {
-            String mappingName = null;
+            String mappingName;
             mappingName = gidMap.toString();
             if (toUnicodeCMap instanceof CMapIdentityH) {
                 mappingName = toUnicodeCMap.toString();

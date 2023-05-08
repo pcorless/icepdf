@@ -29,8 +29,8 @@ public class SignatureCertTreeNode extends DefaultMutableTreeNode {
     private static final Logger logger =
             Logger.getLogger(SignatureTreeNode.class.toString());
 
-    private Collection<? extends Certificate> certificateChain;
-    private Image image;
+    private final Collection<? extends Certificate> certificateChain;
+    private final Image image;
 
     public SignatureCertTreeNode(Object userObject, Collection<? extends Certificate> certificateChain, Image image) {
         super(userObject);

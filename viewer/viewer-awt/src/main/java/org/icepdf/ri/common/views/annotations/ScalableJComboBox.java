@@ -33,16 +33,15 @@ import java.util.Vector;
 public class ScalableJComboBox extends JComboBox<ChoiceFieldDictionary.ChoiceOption> implements ScalableField {
 
     private static final long serialVersionUID = -353525405737762626L;
-    private DocumentViewModel documentViewModel;
     private boolean active;
 
     public ScalableJComboBox(Vector<ChoiceFieldDictionary.ChoiceOption> items, final DocumentViewModel documentViewModel) {
         super(items);
-        this.documentViewModel = documentViewModel;
         // enable more precise painting of glyphs.
         putClientProperty("i18n", Boolean.TRUE.toString());
-        LayerUI<JComponent> layerUI = new LayerUI<JComponent>() {
+        LayerUI<JComponent> layerUI = new LayerUI<>() {
             private static final long serialVersionUID = 1152416379916442539L;
+
             @SuppressWarnings("unchecked")
             @Override
             public void installUI(JComponent c) {
@@ -66,7 +65,7 @@ public class ScalableJComboBox extends JComboBox<ChoiceFieldDictionary.ChoiceOpt
                 // transform the point in MouseEvent using the current zoom factor
                 float zoom = documentViewModel.getViewZoom();
                 MouseEvent newEvent = new MouseEvent((Component) e.getSource(),
-                        e.getID(), e.getWhen(), e.getModifiers(),
+                        e.getID(), e.getWhen(), e.getModifiersEx(),
                         (int) (e.getX() / zoom), (int) (e.getY() / zoom),
                         e.getClickCount(), e.isPopupTrigger(), e.getButton());
                 // consume the MouseEvent and then process the modified event

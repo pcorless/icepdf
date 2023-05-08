@@ -16,13 +16,13 @@
 
 package org.icepdf.core.pobjects.acroform;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.util.Library;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -116,13 +116,13 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
         CHOICE_LIST_SINGLE_SELECT, CHOICE_LIST_MULTIPLE_SELECT
     }
 
-    protected ChoiceFieldType choiceFieldType;
+    protected final ChoiceFieldType choiceFieldType;
     protected ArrayList<ChoiceOption> options;
     protected int topIndex;
     protected ArrayList<Integer> indexes;
 
     @SuppressWarnings("unchecked")
-    public ChoiceFieldDictionary(Library library, HashMap entries) {
+    public ChoiceFieldDictionary(Library library, DictionaryEntries entries) {
         super(library, entries);
 
         // options/list times.
@@ -294,7 +294,7 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
         this.options = options;
     }
 
-    public class ChoiceOption {
+    public static class ChoiceOption {
         private String label;
         private String value;
         private boolean isSelected;

@@ -41,7 +41,7 @@ class MipMappedImageReference extends ImageReference {
     private static final Logger logger =
             Logger.getLogger(MipMappedImageReference.class.toString());
 
-    private ArrayList<ImageReference> images;
+    private final ArrayList<ImageReference> images;
 
     protected MipMappedImageReference(ImageStream imageStream, GraphicsState graphicsState,
                                       Resources resources, int imageIndex,
@@ -69,8 +69,8 @@ class MipMappedImageReference extends ImageReference {
                 images.add(imageReference);
             }
         } catch (InterruptedException e) {
-            logger.log(Level.FINER, "Error loading image: " + imageStream.getPObjectReference() +
-                    " " + imageStream.toString(), e);
+            logger.log(Level.FINER, e, () -> "Error loading image: " + imageStream.getPObjectReference() +
+                    " " + imageStream);
         }
     }
 

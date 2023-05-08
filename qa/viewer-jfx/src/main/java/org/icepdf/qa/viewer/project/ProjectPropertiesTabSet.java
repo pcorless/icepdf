@@ -13,9 +13,8 @@ import java.util.List;
  */
 public class ProjectPropertiesTabSet extends TabPane {
 
-    private ProjectTab projectTabSet;
-    private ResultsTab resultsTabSet;
-    private MetaDataTab metaDataTabSet;
+    private final ProjectTab projectTabSet;
+    private final ResultsTab resultsTabSet;
 
     public ProjectPropertiesTabSet(Mediator mediator) {
         super();
@@ -23,7 +22,7 @@ public class ProjectPropertiesTabSet extends TabPane {
 
         projectTabSet = new ProjectTab("Project", mediator);
         resultsTabSet = new ResultsTab("Results", mediator);
-        metaDataTabSet = new MetaDataTab("Metadata", mediator);
+        MetaDataTab metaDataTabSet = new MetaDataTab("Metadata", mediator);
 
         getTabs().addAll(projectTabSet, resultsTabSet, metaDataTabSet);
     }

@@ -337,9 +337,7 @@ public final class ViewerPropertiesManager {
 
     private static void updatePropertiesWithPreferences() throws BackingStoreException {
         defaultProps = new SortedProperties();
-        Arrays.stream(preferences.keys()).forEach(key -> {
-            defaultProps.setProperty(key, preferences.get(key, null));
-        });
+        Arrays.stream(preferences.keys()).forEach(key -> defaultProps.setProperty(key, preferences.get(key, null)));
         localProperties = new SortedProperties(defaultProps);
     }
 
@@ -366,7 +364,6 @@ public final class ViewerPropertiesManager {
     /**
      * Removes the
      *
-     * @param propertyName
      */
     public void remove(String propertyName) {
         localProperties.remove(propertyName);
@@ -379,7 +376,7 @@ public final class ViewerPropertiesManager {
      * now sticky and will persist for all viewer instances.
      */
     public static void saveLocalProperties() {
-        Enumeration keys = localProperties.keys();
+        Enumeration<Object> keys = localProperties.keys();
         while (keys.hasMoreElements()) {
             String key = (String) keys.nextElement();
             preferences.put(key, localProperties.getProperty(key));
@@ -640,7 +637,7 @@ public final class ViewerPropertiesManager {
             for (String key : keys) {
                 preferences.remove(key);
             }
-        } catch (Throwable ex) {
+        } catch (Exception ex) {
             // log the error
             if (logger.isLoggable(Level.WARNING)) {
                 logger.log(Level.WARNING, "Error clearing preferences cache", ex);
@@ -661,7 +658,7 @@ public final class ViewerPropertiesManager {
                 defaultProps.load(in);
                 // we only set the default preferences on first load.
                 if (preferences.get(PROPERTY_DEFAULT_FILE_PATH, null) == null) {
-                    Enumeration keys = defaultProps.keys();
+                    Enumeration<Object> keys = defaultProps.keys();
                     while (keys.hasMoreElements()) {
                         String key = (String) keys.nextElement();
                         preferences.put(key, defaultProps.getProperty(key));
@@ -670,7 +667,7 @@ public final class ViewerPropertiesManager {
             } else if (logger.isLoggable(Level.FINER)) {
                 logger.finer("Default properties file could not be found on the class path. ");
             }
-        } catch (Throwable ex) {
+        } catch (IOException ex) {
             // log the error
             if (logger.isLoggable(Level.WARNING)) {
                 logger.log(Level.WARNING, "Error loading default properties cache", ex);
@@ -748,7 +745,7 @@ public final class ViewerPropertiesManager {
 
     private static String makeResPath(String prefix, String base_name) {
         if (base_name.length() != 0 && base_name.charAt(0) == '/') {
-            return base_name.substring(1, base_name.length());
+            return base_name.substring(1);
         } else if (prefix == null) {
             return base_name;
         } else {

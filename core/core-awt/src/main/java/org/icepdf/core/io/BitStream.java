@@ -40,7 +40,7 @@ public class BitStream {
     boolean readEOF;
 
     // making value
-    private static final int masks[] = new int[32];
+    private static final int[] masks = new int[32];
 
     static {
         for (int i = 0; i < 32; i++) {
@@ -148,7 +148,7 @@ public class BitStream {
         return 1;
     }
 
-    public void skipByte() throws IOException {
+    public void skipByte() {
         bits_left = 0;
         bits = 0;
     }

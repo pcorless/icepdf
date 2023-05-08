@@ -15,10 +15,7 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
-import org.icepdf.core.pobjects.Dictionary;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.PRectangle;
-import org.icepdf.core.pobjects.StateManager;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 
 import javax.swing.*;
@@ -71,8 +68,8 @@ public class PopupAnnotation extends Annotation {
     protected JPanel popupPaintablesPanel;
     private boolean resetPopupPaintables = true;
 
-    public PopupAnnotation(Library l, HashMap h) {
-        super(l, h);
+    public PopupAnnotation(Library library, DictionaryEntries dictionaryEntries) {
+        super(library, dictionaryEntries);
     }
 
     public synchronized void init() throws InterruptedException {
@@ -92,7 +89,7 @@ public class PopupAnnotation extends Annotation {
         StateManager stateManager = library.getStateManager();
 
         // create a new entries to hold the annotation properties
-        HashMap<Name, Object> entries = new HashMap<>();
+        DictionaryEntries entries = new DictionaryEntries();
         // set default link annotation values.
         entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
         entries.put(Dictionary.SUBTYPE_KEY, Annotation.SUBTYPE_POPUP);

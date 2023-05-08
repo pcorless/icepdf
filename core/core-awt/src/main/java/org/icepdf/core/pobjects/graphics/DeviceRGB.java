@@ -15,11 +15,11 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
-import java.util.HashMap;
 
 /**
  * put your documentation comment here
@@ -29,7 +29,7 @@ public class DeviceRGB extends PColorSpace {
     public static final Name DEVICERGB_KEY = new Name("DeviceRGB");
     public static final Name RGB_KEY = new Name("RGB");
 
-    DeviceRGB(Library l, HashMap h) {
+    DeviceRGB(Library l, DictionaryEntries h) {
         super(l, h);
     }
 
@@ -40,11 +40,7 @@ public class DeviceRGB extends PColorSpace {
     private float validateColorRange(float component) {
         if (component < 0.0f) {
             return 0.0f;
-        } else if (component > 1.0f) {
-            return 1.0f;
-        } else {
-            return component;
-        }
+        } else return Math.min(component, 1.0f);
     }
 
     /**

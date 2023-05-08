@@ -14,8 +14,6 @@ package org.icepdf.examples.loadingEvents;
  * governing permissions and limitations under the License.
  */
 
-import org.icepdf.core.exceptions.PDFException;
-import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
@@ -27,11 +25,9 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -69,25 +65,15 @@ public class PageLoadingEvents {
             document.setFile(filePath);
             // create a list of callables.
             int pages = document.getNumberOfPages();
-            java.util.List<Callable<Void>> callables = new ArrayList<Callable<Void>>(pages);
+            java.util.List<Callable<Void>> callables = new ArrayList<>(pages);
             for (int i = 0; i <= pages; i++) {
                 callables.add(new CapturePage(document, i));
             }
             executorService.invokeAll(callables);
             executorService.submit(new DocumentCloser(document)).get();
 
-        } catch (InterruptedException e) {
-            System.out.println("Error parsing PDF document " + e);
-        } catch (ExecutionException e) {
-            System.out.println("Error parsing PDF document " + e);
-        } catch (PDFException ex) {
-            System.out.println("Error parsing PDF document " + ex);
-        } catch (PDFSecurityException ex) {
-            System.out.println("Error encryption not supported " + ex);
-        } catch (FileNotFoundException ex) {
-            System.out.println("Error file not found " + ex);
-        } catch (IOException ex) {
-            System.out.println("Error handling PDF document " + ex);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         executorService.shutdown();
     }
@@ -95,11 +81,9 @@ public class PageLoadingEvents {
     /**
      * Captures images found in a page  parse to file.
      */
-    public class CapturePage implements Callable<Void> {
-        private Document document;
-        private int pageNumber;
-        private float scale = 1f;
-        private float rotation = 0f;
+    public static class CapturePage implements Callable<Void> {
+        private final Document document;
+        private final int pageNumber;
 
         private CapturePage(Document document, int pageNumber) {
             this.document = document;
@@ -113,6 +97,8 @@ public class PageLoadingEvents {
                 page.addPageProcessingListener(new MetricsPageLoadingListener(
                         document.getNumberOfPages()));
                 page.init();
+                float rotation = 0f;
+                float scale = 1f;
                 PDimension sz = page.getSize(Page.BOUNDARY_CROPBOX, rotation, scale);
 
                 int pageWidth = (int) sz.getWidth();
@@ -131,7 +117,7 @@ public class PageLoadingEvents {
                 File file = new File("imageCapture_" + pageNumber + ".png");
                 ImageIO.write(image, "png", file);
                 image.flush();
-            } catch (Throwable e) {
+            } catch (InterruptedException | IOException e) {
                 e.printStackTrace();
             }
             return null;
@@ -141,8 +127,8 @@ public class PageLoadingEvents {
     /**
      * Disposes the document.
      */
-    public class DocumentCloser implements Callable<Void> {
-        private Document document;
+    public static class DocumentCloser implements Callable<Void> {
+        private final Document document;
 
         private DocumentCloser(Document document) {
             this.document = document;

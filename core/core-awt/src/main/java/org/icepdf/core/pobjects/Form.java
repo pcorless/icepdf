@@ -15,7 +15,6 @@
  */
 package org.icepdf.core.pobjects;
 
-import org.icepdf.core.io.SeekableInputConstrainedWrapper;
 import org.icepdf.core.pobjects.graphics.ExtGState;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.Shapes;
@@ -24,7 +23,6 @@ import org.icepdf.core.util.parser.content.ContentParser;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,8 +37,7 @@ import java.util.logging.Logger;
  */
 public class Form extends Stream {
 
-    private static final Logger logger =
-            Logger.getLogger(Form.class.toString());
+    private static final Logger logger = Logger.getLogger(Form.class.toString());
 
     public static final Name TYPE_VALUE = new Name("XObject");
     public static final Name SUB_TYPE_VALUE = new Name("Form");
@@ -57,7 +54,6 @@ public class Form extends Stream {
     // Graphics state object to be used by content parser
     private GraphicsState graphicsState;
     private ExtGState extGState;
-    private Resources resources;
     private Resources parentResource;
     // transparency grouping data
     private boolean transparencyGroup;
@@ -66,19 +62,12 @@ public class Form extends Stream {
     private boolean shading;
     private boolean inited = false;
 
-    /**
-     * Creates a new instance of the xObject.
-     *
-     * @param l                  document library
-     * @param h                  xObject dictionary entries.
-     * @param streamInputWrapper content stream of image or post script commands.
-     */
-    public Form(Library l, HashMap h, SeekableInputConstrainedWrapper streamInputWrapper) {
-        super(l, h, streamInputWrapper);
+    public Form(Library l, DictionaryEntries h, byte[] rawBytes) {
+        super(l, h, rawBytes);
 
         // check for grouping flags so we can do special handling during the
         // xform content stream parsing.
-        HashMap group = library.getDictionary(entries, GROUP_KEY);
+        DictionaryEntries group = library.getDictionary(entries, GROUP_KEY);
         if (group != null) {
             transparencyGroup = true;
             isolated = library.getBoolean(group, I_KEY);
@@ -86,11 +75,10 @@ public class Form extends Stream {
         }
     }
 
-    public HashMap getGroup() {
+    public DictionaryEntries getGroup() {
         return library.getDictionary(entries, GROUP_KEY);
     }
 
-    @SuppressWarnings("unchecked")
     public void setAppearance(Shapes shapes, AffineTransform matrix, Rectangle2D bbox) {
         inited = false;
         this.shapes = shapes;
@@ -142,7 +130,7 @@ public class Form extends Stream {
      * @return affine tansform based on v
      */
     private static AffineTransform getAffineTransform(List v) {
-        float f[] = new float[6];
+        float[] f = new float[6];
         for (int i = 0; i < 6; i++) {
             f[i] = ((Number) v.get(i)).floatValue();
         }
@@ -168,9 +156,9 @@ public class Form extends Stream {
             return;
         }
         Object v = library.getObject(entries, MATRIX_KEY);
-        if (v != null && v instanceof List) {
+        if (v instanceof List) {
             matrix = getAffineTransform((List) v);
-        } else if (v != null && v instanceof AffineTransform) {
+        } else if (v instanceof AffineTransform) {
             matrix = (AffineTransform) v;
         }
         bbox = library.getRectangle(entries, BBOX_KEY);
@@ -178,21 +166,18 @@ public class Form extends Stream {
         Resources leafResources = library.getResources(entries, RESOURCES_KEY);
         // apply parent resource, if the current resources is null
         if (leafResources != null) {
-            resources = leafResources;
         } else {
             leafResources = parentResource;
         }
         // Build a new content parser for the content streams and apply the
-        // content stream of the calling content stream. 
+        // content stream of the calling content stream.
         ContentParser cp = new ContentParser(library, leafResources);
         cp.setGraphicsState(graphicsState);
         byte[] in = getDecodedStreamBytes();
         if (in != null) {
             try {
-                if (logger.isLoggable(Level.FINER)) {
-                    logger.finer("Parsing form " + getPObjectReference());
-                }
-                shapes = cp.parse(new byte[][]{in}, null).getShapes();
+                logger.log(Level.FINER, () -> "Parsing form " + getPObjectReference());
+                shapes = cp.parse(new byte[][]{in}, new Reference[]{this.getPObjectReference()}, null).getShapes();
                 inited = true;
             } catch (InterruptedException e) {
                 // the initialization was interrupted so we need to make sure we bubble up the exception
@@ -200,11 +185,11 @@ public class Form extends Stream {
                 shapes = new Shapes();
                 logger.log(Level.FINE, "Parsing form interrupted parsing Form content stream.", e);
                 throw new InterruptedException(e.getMessage());
-            } catch (Throwable e) {
-                // some parsing or other wise unrecoverable problem, we'll try to render the page none the less.
+            } catch (Exception e) {
+                // some parsing or otherwise unrecoverable problem, we'll try to render the page nonetheless.
                 // but not this form object.
                 shapes = new Shapes();
-                logger.log(Level.FINE, "Error parsing Form content stream.", e);
+                logger.log(Level.WARNING, "Error parsing Form content stream.", e);
             }
         }
     }
@@ -212,12 +197,11 @@ public class Form extends Stream {
     public Resources getResources() {
         Resources leafResources = library.getResources(entries, RESOURCES_KEY);
         if (leafResources == null) {
-            leafResources = new Resources(library, new HashMap());
+            leafResources = new Resources(library, new DictionaryEntries());
         }
         return leafResources;
     }
 
-    @SuppressWarnings("unchecked")
     public void setResources(Resources resources) {
         entries.put(RESOURCES_KEY, resources.getEntries());
     }

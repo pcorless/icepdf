@@ -144,7 +144,7 @@ public class CaptureSet {
         if (obj != null)
             return this.getName().equals(((CaptureSet) obj).getName());
         else {
-            return super.equals(obj);
+            return false;
         }
     }
 

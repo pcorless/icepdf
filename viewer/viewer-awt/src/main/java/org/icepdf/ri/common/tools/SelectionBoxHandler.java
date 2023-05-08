@@ -32,8 +32,8 @@ import java.awt.event.MouseEvent;
 public abstract class SelectionBoxHandler extends CommonToolHandler {
 
     // dashed selection rectangle stroke
-    protected static float dash1[] = {1.0f};
-    protected static BasicStroke stroke = new BasicStroke(1.0f,
+    protected static final float[] dash1 = {1.0f};
+    protected static final BasicStroke stroke = new BasicStroke(1.0f,
             BasicStroke.CAP_BUTT,
             BasicStroke.JOIN_MITER,
             1.0f, dash1, 0.0f);
@@ -41,7 +41,7 @@ public abstract class SelectionBoxHandler extends CommonToolHandler {
     // selection rectangle used for glyph intersection aka text selection
     protected Rectangle currentRect = null;
     protected Rectangle rectToDraw = null;
-    protected Rectangle previousRectDrawn = new Rectangle();
+    protected final Rectangle previousRectDrawn = new Rectangle();
 
     protected static Color selectionBoxColour = Color.lightGray;
 
@@ -145,7 +145,7 @@ public abstract class SelectionBoxHandler extends CommonToolHandler {
 
         //Make the width and height positive, if necessary.
         if (width < 0) {
-            width = 0 - width;
+            width = -width;
             x = x - width + 1;
             if (x < 0) {
                 width += x;
@@ -153,7 +153,7 @@ public abstract class SelectionBoxHandler extends CommonToolHandler {
             }
         }
         if (height < 0) {
-            height = 0 - height;
+            height = -height;
             y = y - height + 1;
             if (y < 0) {
                 height += y;

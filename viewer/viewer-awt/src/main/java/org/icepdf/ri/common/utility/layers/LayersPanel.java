@@ -43,11 +43,11 @@ import java.util.ResourceBundle;
 @SuppressWarnings("serial")
 public class LayersPanel extends JPanel implements MutableDocument {
 
-    private SwingController controller;
+    private final SwingController controller;
 
     protected LayersTreeNode nodes;
     // message bundle for internationalization
-    ResourceBundle messageBundle;
+    final ResourceBundle messageBundle;
 
     public LayersPanel(SwingController controller) {
         super(true);
@@ -141,7 +141,7 @@ public class LayersPanel extends JPanel implements MutableDocument {
     }
 
     class NodeSelectionListener extends MouseAdapter {
-        JTree tree;
+        final JTree tree;
 
         NodeSelectionListener(JTree tree) {
             this.tree = tree;

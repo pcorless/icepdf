@@ -81,6 +81,8 @@ public abstract class ZSimpleFont implements FontFile {
         this.cMap = font.cMap;
         this.size = font.size;
         this.source = font.source;
+        this.fontBoxFont = font.fontBoxFont;
+        this.isDamaged = font.isDamaged;
         this.gsTransform = new AffineTransform(gsTransform);
         this.fontMatrix = new AffineTransform(font.fontMatrix);
         this.fontTransform = new AffineTransform(font.fontTransform);
@@ -368,7 +370,7 @@ public abstract class ZSimpleFont implements FontFile {
             return new AffineTransform(matrix.get(0).floatValue(), matrix.get(1).floatValue(),
                     -matrix.get(2).floatValue(), matrix.get(3).floatValue(),
                     matrix.get(4).floatValue(), matrix.get(5).floatValue());
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.log(Level.WARNING, "Could not convert font matrix ", e);
         }
         return new AffineTransform(0.001f, 0, 0, -0.001f, 0, 0);
@@ -385,7 +387,7 @@ public abstract class ZSimpleFont implements FontFile {
     protected int repairLength1(byte[] bytes, int length1) {
         // scan backwards from the end of the first segment to find 'exec'
         int offset = Math.max(0, length1 - 4);
-        if (offset <= 0 || offset > bytes.length - 4) {
+        if (offset == 0 || offset > bytes.length - 4) {
             offset = bytes.length - 4;
         }
 
@@ -408,7 +410,7 @@ public abstract class ZSimpleFont implements FontFile {
     protected static int findBinaryOffsetAfterExec(byte[] bytes, int startOffset) {
         int offset = startOffset;
         while (offset > 0) {
-            if (bytes[offset + 0] == 'e'
+            if (bytes[offset] == 'e'
                     && bytes[offset + 1] == 'x'
                     && bytes[offset + 2] == 'e'
                     && bytes[offset + 3] == 'c') {

@@ -39,10 +39,10 @@ public abstract class CommonToolHandler {
             Logger.getLogger(CommonToolHandler.class.toString());
 
     // parent page component
-    protected AbstractPageViewComponent pageViewComponent;
+    protected final AbstractPageViewComponent pageViewComponent;
     protected DocumentViewController documentViewController;
 
-    protected Preferences preferences;
+    protected final Preferences preferences;
 
     /**
      * Create a new common tool handler.  The tool handle can operate on a view or at the page level.  If the
@@ -82,11 +82,10 @@ public abstract class CommonToolHandler {
     protected AffineTransform getPageTransform(AbstractPageViewComponent pageViewComponent) {
         Page currentPage = pageViewComponent.getPage();
         DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-        AffineTransform at = currentPage.getPageTransform(
+        return currentPage.getPageTransform(
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
-        return at;
     }
 
     /**
@@ -134,7 +133,7 @@ public abstract class CommonToolHandler {
      * Converts the given point from g2d space to page space.
      *
      * @param points points to convert.
-     * @return list of converted points with Point2D precision.
+     * @return array of converted points with Point2D precision.
      */
     protected Point2D[] convertToPageSpace(Point... points) {
         if (points != null) {

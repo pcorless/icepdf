@@ -27,7 +27,7 @@ import java.awt.geom.AffineTransform;
  */
 public class TextTransformDrawCmd extends AbstractDrawCmd {
 
-    private AffineTransform affineTransform;
+    private final AffineTransform affineTransform;
 
     public TextTransformDrawCmd(AffineTransform affineTransform) {
         this.affineTransform = affineTransform;

@@ -39,8 +39,8 @@ public class QuickPaintAnnotationButton extends AnnotationColorButton {
     private static final Logger logger = Logger.getLogger(QuickPaintAnnotationButton.class.toString());
 
     // define the bounded shape used to colourise the icon with the current colour
-    private static GeneralPath textIconPathSmall;
-    private static GeneralPath textIconPathLarge;
+    private static final GeneralPath textIconPathSmall;
+    private static final GeneralPath textIconPathLarge;
 
     static {
         // small

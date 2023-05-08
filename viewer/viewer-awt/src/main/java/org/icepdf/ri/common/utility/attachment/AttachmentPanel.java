@@ -1,5 +1,6 @@
 package org.icepdf.ri.common.utility.attachment;
 
+import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
@@ -41,7 +42,7 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
 
     private static final String PDF_EXTENSION = ".pdf";
 
-    private org.icepdf.ri.common.views.Controller controller;
+    private final org.icepdf.ri.common.views.Controller controller;
 
     private JTable fileTable;
     private FileTableModel fileTableModel;
@@ -50,7 +51,7 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
     private HashMap<String, FileSpecification> files;
 
     // message bundle for internationalization
-    private ResourceBundle messageBundle;
+    private final ResourceBundle messageBundle;
 
     public AttachmentPanel(SwingController controller) {
         this.controller = controller;
@@ -139,10 +140,10 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
                         // file name and file specification pairs.
                         Object rawFileName = library.getObject(filePairs.get(i));
                         Object rawFileProperties = library.getObject(filePairs.get(i + 1));
-                        if (rawFileName != null && rawFileName instanceof LiteralStringObject &&
-                                rawFileProperties != null && rawFileProperties instanceof HashMap) {
+                        if (rawFileName instanceof LiteralStringObject &&
+                                rawFileProperties instanceof HashMap) {
                             String fileName = Utils.convertStringObject(library, (LiteralStringObject) rawFileName);
-                            files.put(fileName, new FileSpecification(library, (HashMap) rawFileProperties));
+                            files.put(fileName, new FileSpecification(library, (DictionaryEntries) rawFileProperties));
                         }
                     }
                     buildUI();
@@ -163,7 +164,7 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
         if (e.getSource().equals(saveAsMenuItem)) {
             int selectedRow = fileTable.getSelectedRow();
             Object value = fileTableModel.getValueAt(selectedRow, DATA_COLUMN);
-            if (value != null && value instanceof FileSpecification) {
+            if (value instanceof FileSpecification) {
                 FileSpecification fileSpecification = (FileSpecification) value;
                 final EmbeddedFileStream embeddedFileStream = fileSpecification.getEmbeddedFileStream();
                 final String fileName = (String) fileTableModel.getValueAt(selectedRow, NAME_COLUMN);
@@ -174,12 +175,12 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
         }
     }
 
-    public void mouseClicked(MouseEvent e) {
+    public void mouseClicked(MouseEvent mouseEvent) {
         // try and do double click file opening of PDF documents.
-        if (e.getClickCount() == 2 && e.getButton() == MouseEvent.BUTTON1) {
+        if (mouseEvent.getClickCount() == 2 && mouseEvent.getButton() == MouseEvent.BUTTON1) {
             int selectedRow = fileTable.getSelectedRow();
             Object value = fileTableModel.getValueAt(selectedRow, DATA_COLUMN);
-            if (value != null && value instanceof FileSpecification) {
+            if (value instanceof FileSpecification) {
                 FileSpecification fileSpecification = (FileSpecification) value;
                 EmbeddedFileStream embeddedFileStream = fileSpecification.getEmbeddedFileStream();
                 String fileName = (String) fileTableModel.getValueAt(selectedRow, NAME_COLUMN);
@@ -190,17 +191,19 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
                         Document embeddedDocument = new Document();
                         embeddedDocument.setInputStream(fileInputStream, fileName);
                         WindowManager.getInstance().newWindow(embeddedDocument, fileName);
-                    } catch (Throwable e1) {
-                        logger.log(Level.WARNING, "Error opening PDF " + fileName, e);
+                    } catch (IOException e) {
+                        logger.log(Level.WARNING, "Error opening PDF file stream " + fileName, e);
+                    } catch( PDFSecurityException e) {
+                        logger.log(Level.WARNING, "Error opening PDF security exception " + fileName, e);
                     }
                 }
             }
         }
-        if (e.getButton() == MouseEvent.BUTTON3 || e.getButton() == MouseEvent.BUTTON2) {
-            int row = fileTable.rowAtPoint(e.getPoint());
+        if (mouseEvent.getButton() == MouseEvent.BUTTON3 || mouseEvent.getButton() == MouseEvent.BUTTON2) {
+            int row = fileTable.rowAtPoint(mouseEvent.getPoint());
             // if pointer is over a selected row, show popup
             if (fileTable.isRowSelected(row)) {
-                contextMenu.show(e.getComponent(), e.getX(), e.getY());
+                contextMenu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
             }
         }
     }

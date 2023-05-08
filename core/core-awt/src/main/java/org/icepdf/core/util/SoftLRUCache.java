@@ -25,8 +25,8 @@ import java.util.LinkedHashMap;
  * @since 5.0
  */
 public class SoftLRUCache<K, V> {
-    private LinkedHashMap<K, SoftReference<V>> lruCache;
-    private ReferenceQueue<? super V> reqQueue;
+    private final LinkedHashMap<K, SoftReference<V>> lruCache;
+    private final ReferenceQueue<? super V> reqQueue;
 
     public SoftLRUCache(int aInitialSize) {
         lruCache = new LinkedHashMap<>(
@@ -70,7 +70,7 @@ public class SoftLRUCache<K, V> {
     }
 
     private static class KeyReference<K, V> extends SoftReference<V> {
-        private K key;
+        private final K key;
 
         public KeyReference(K key, V value, ReferenceQueue<? super V> refQueue) {
             super(value, refQueue);

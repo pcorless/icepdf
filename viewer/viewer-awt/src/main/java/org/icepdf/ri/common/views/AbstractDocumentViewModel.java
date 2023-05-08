@@ -45,7 +45,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
             Logger.getLogger(AbstractDocumentViewModel.class.toString());
 
     // document that model is associated.
-    protected Document currentDocument;
+    protected final Document currentDocument;
 
     // Pages that have selected text.
     private HashMap<Integer, AbstractPageViewComponent> selectedPageText;
@@ -55,7 +55,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     // scroll pane used to contain the view
     protected JScrollPane documentViewScrollPane;
     // annotation memento caretaker
-    protected UndoCaretaker undoCaretaker;
+    protected final UndoCaretaker undoCaretaker;
     // currently selected annotation
     protected AnnotationComponent currentAnnotation;
     // page view settings
@@ -66,7 +66,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     // page tool settings
     protected int userToolModeFlag, oldUserToolModeFlag;
 
-    // 10 pages doesn't take to long to look at, any more and people will notice
+    // 10 pages doesn't take to long to look at, anymore and people will notice
     // the rest of the page sizes will be figured out later.
     protected static final int MAX_PAGE_SIZE_READ_AHEAD = 10;
 
@@ -101,8 +101,8 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     /**
      * Gets the list of components that have a selected state.  The
-     * WeakReference must be check to make sure the page was not disposed of
-     * for for some reason by the the memory manager.
+     * WeakReference must be checked to make sure the page was not disposed of
+     * for some reason by the memory manager.
      *
      * @return list of pages that are in a selected state.
      */
@@ -133,7 +133,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
      * document text is all selected; otherwise, false. This is only a flag
      * and must be interpreted by the pages and page view components.
      *
-     * @param selectAll to to specify all text is selected, false to specify
+     * @param selectAll to specify all text is selected, false to specify
      *                  no text is selected
      */
     public void setSelectAll(boolean selectAll) {
@@ -142,7 +142,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     /**
      * Adds the specified page to selected page cache.  No checking is done
-     * to make sure of selected text.  The caches is used as an optimization
+     * to make sure of selected text.  The caches are used as an optimization
      * to make sure selected text can be cleared quickly.
      *
      * @param pageComponent pageView component to add to list.
@@ -156,7 +156,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     /**
      * Removes the specified page to selected page cache.  No checking is done
-     * to make sure of selected text.  The caches is used as an optimization
+     * to make sure of selected text.  The caches are used as an optimization
      * to make sure selected text can be cleared quickly.
      *
      * @param pageComponent pageView component to add to list.

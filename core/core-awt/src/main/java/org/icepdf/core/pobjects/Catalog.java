@@ -19,8 +19,8 @@ import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.util.Library;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -76,26 +76,18 @@ public class Catalog extends Dictionary {
     private InteractiveForm interactiveForm;
 
     private volatile boolean outlinesInited = false;
-    private volatile boolean namesTreeInited = false;
+    private final boolean namesTreeInited = false;
     private volatile boolean destsInited = false;
     private volatile boolean viewerPrefInited = false;
     private volatile boolean optionalContentInited = false;
 
     // Announce ICEpdf Core
     static {
-        if (logger.isLoggable(Level.INFO)) {
-            logger.info("ICEpdf Core " + Document.getLibraryVersion());
-        }
+        logger.log(Level.INFO, () -> "ICEpdf Core " + Document.getLibraryVersion());
     }
 
-    /**
-     * Creates a new instance of a Catalog.
-     *
-     * @param l document library.
-     * @param h Catalog dictionary entries.
-     */
-    public Catalog(Library l, HashMap<Object, Object> h) {
-        super(l, h);
+    public Catalog(Library library, DictionaryEntries dictionaryEntries) {
+        super(library, dictionaryEntries);
     }
 
     /**
@@ -109,17 +101,17 @@ public class Catalog extends Dictionary {
         }
         // malformed core corner case, pages must not be references, but we
         // have a couple cases that break the spec.
-        else if (tmp instanceof HashMap) {
-            pageTree = new PageTree(library, (HashMap) tmp);
+        else if (tmp instanceof DictionaryEntries) {
+            pageTree = new PageTree(library, (DictionaryEntries) tmp);
         }
         // malformed corner case, just have a page object, instead of tree.
         else if (tmp instanceof Page) {
             Page tmpPage = (Page) tmp;
-            HashMap<String, Object> tmpPages = new HashMap<>();
+            DictionaryEntries tmpPages = new DictionaryEntries();
             List<Reference> kids = new ArrayList<>();
             kids.add(tmpPage.getPObjectReference());
-            tmpPages.put("Kids", kids);
-            tmpPages.put("Count", 1);
+            tmpPages.put(PageTree.KIDS_KEY, kids);
+            tmpPages.put(PageTree.COUNT_KEY, 1);
             pageTree = new PageTree(library, tmpPages);
         }
 
@@ -131,7 +123,7 @@ public class Catalog extends Dictionary {
         // check for the collections dictionary for the presence of a portable collection
         tmp = library.getObject(entries, NAMES_KEY);
         if (tmp != null) {
-            names = new Names(library, (HashMap) tmp);
+            names = new Names(library, (DictionaryEntries) tmp);
             names.init();
             if (entries.get(NAMES_KEY) instanceof Reference) {
                 names.setPObjectReference((Reference) entries.get(NAMES_KEY));
@@ -140,8 +132,8 @@ public class Catalog extends Dictionary {
 
         // load the Acroform data.
         tmp = library.getObject(entries, ACRO_FORM_KEY);
-        if (tmp instanceof HashMap) {
-            interactiveForm = new InteractiveForm(library, (HashMap) tmp);
+        if (tmp instanceof DictionaryEntries) {
+            interactiveForm = new InteractiveForm(library, (DictionaryEntries) tmp);
             interactiveForm.init();
         }
         // todo namesTree contains forms javascript, might need to be initialized here
@@ -167,15 +159,13 @@ public class Catalog extends Dictionary {
      * {@link OutlineItem}
      */
     public Outlines getOutlines() {
-        if (!outlinesInited) {
-            synchronized (this) {
-                if (!outlinesInited) {
-                    Object o = library.getObject(entries, OUTLINES_KEY);
-                    if (o != null) {
-                        outlines = new Outlines(library, (HashMap) o);
-                    }
-                    outlinesInited = true;
+        synchronized (this) {
+            if (!outlinesInited) {
+                Object o = library.getObject(entries, OUTLINES_KEY);
+                if (o != null) {
+                    outlines = new Outlines(library, (DictionaryEntries) o);
                 }
+                outlinesInited = true;
             }
         }
         return outlines;
@@ -193,7 +183,7 @@ public class Catalog extends Dictionary {
         // make sure we have s structure to work with
         StateManager stateManager = library.getStateManager();
         if (names == null) {
-            names = new Names(library, new HashMap());
+            names = new Names(library, new DictionaryEntries());
             // add the object to the catalog
             names.setPObjectReference(stateManager.getNewReferenceNumber());
             entries.put(NAMES_KEY, names.getPObjectReference());
@@ -203,7 +193,7 @@ public class Catalog extends Dictionary {
         }
         if (names.getDestsNameTree() == null) {
             // create a the name tree.
-            NameTree destsNameTree = new NameTree(library, new HashMap());
+            NameTree destsNameTree = new NameTree(library, new DictionaryEntries());
             destsNameTree.init();
             destsNameTree.setPObjectReference(stateManager.getNewReferenceNumber());
             names.setDestsNameTree(destsNameTree);
@@ -246,7 +236,7 @@ public class Catalog extends Dictionary {
      *
      * @return collection dictionary.
      */
-    public HashMap getCollection() {
+    public DictionaryEntries getCollection() {
         return library.getDictionary(entries, COLLECTION_KEY);
     }
 
@@ -257,11 +247,7 @@ public class Catalog extends Dictionary {
      */
     public Name getPageMode() {
         Name name = library.getName(entries, PAGEMODE_KEY);
-        if (name == null) {
-            return PAGE_MODE_USE_NONE_VALUE;
-        } else {
-            return name;
-        }
+        return Objects.requireNonNullElse(name, PAGE_MODE_USE_NONE_VALUE);
     }
 
     /**
@@ -299,17 +285,14 @@ public class Catalog extends Dictionary {
      *
      * @return A Dictionary of Destinations; if none, null is returned.
      */
-    @SuppressWarnings("unchecked")
     public NamedDestinations getDestinations() {
-        if (!destsInited) {
-            synchronized (this) {
-                if (!destsInited) {
-                    Object o = library.getObject(entries, DESTS_KEY);
-                    if (o != null) {
-                        dests = new NamedDestinations(library, (HashMap<Object, Object>) o);
-                    }
-                    destsInited = true;
+        synchronized (this) {
+            if (!destsInited) {
+                Object o = library.getObject(entries, DESTS_KEY);
+                if (o instanceof DictionaryEntries) {
+                    dests = new NamedDestinations(library, (DictionaryEntries) o);
                 }
+                destsInited = true;
             }
         }
         return dests;
@@ -323,46 +306,42 @@ public class Catalog extends Dictionary {
      * @return the constructed ViewerPreferences object
      */
     public ViewerPreferences getViewerPreferences() {
-        if (!viewerPrefInited) {
-            synchronized (this) {
-                if (!viewerPrefInited) {
-                    Object o = library.getObject(entries, VIEWERPREFERENCES_KEY);
-                    if (o != null) {
-                        if (o instanceof HashMap) {
-                            viewerPref = new ViewerPreferences(library, (HashMap) o);
-                            viewerPref.init();
-                        } // strange corner case where there is a incorrect reference.
-                        else if (o instanceof Catalog) {
-                            viewerPref = new ViewerPreferences(library, ((Catalog) o).getEntries());
-                            viewerPref.init();
-                        }
+        synchronized (this) {
+            if (!viewerPrefInited) {
+                Object o = library.getObject(entries, VIEWERPREFERENCES_KEY);
+                if (o != null) {
+                    if (o instanceof DictionaryEntries) {
+                        viewerPref = new ViewerPreferences(library, (DictionaryEntries) o);
+                        viewerPref.init();
+                    } // strange corner case where there is a incorrect reference.
+                    else if (o instanceof Catalog) {
+                        viewerPref = new ViewerPreferences(library, ((Catalog) o).getEntries());
+                        viewerPref.init();
                     }
-                    viewerPrefInited = true;
                 }
+                viewerPrefInited = true;
             }
         }
         return viewerPref;
     }
 
     /**
-     * Gets the the optional content properties dictionary if present.
+     * Gets the optional content properties dictionary if present.
      *
      * @return OptionalContent dictionary, null if none exists.
      */
     public OptionalContent getOptionalContent() {
-        if (!optionalContentInited) {
-            synchronized (this) {
-                if (!optionalContentInited) {
-                    Object o = library.getObject(entries, OCPROPERTIES_KEY);
-                    if (o != null && o instanceof HashMap) {
-                        optionalContent = new OptionalContent(library, ((HashMap) o));
-                        optionalContent.init();
-                    } else {
-                        optionalContent = new OptionalContent(library, new HashMap());
-                        optionalContent.init();
-                    }
-                    optionalContentInited = true;
+        synchronized (this) {
+            if (!optionalContentInited) {
+                Object o = library.getObject(entries, OCPROPERTIES_KEY);
+                if (o instanceof DictionaryEntries) {
+                    optionalContent = new OptionalContent(library, (DictionaryEntries) o);
+                    optionalContent.init();
+                } else {
+                    optionalContent = new OptionalContent(library, new DictionaryEntries());
+                    optionalContent.init();
                 }
+                optionalContentInited = true;
             }
         }
         return optionalContent;
@@ -377,7 +356,7 @@ public class Catalog extends Dictionary {
      */
     public Stream getMetaData() {
         Object o = library.getObject(entries, METADATA_KEY);
-        if (o != null && o instanceof Stream) {
+        if (o instanceof Stream) {
             return (Stream) o;
         }
         return null;
@@ -389,9 +368,9 @@ public class Catalog extends Dictionary {
      * @return permissions if present, otherwise false.
      */
     public Permissions getPermissions() {
-        HashMap hashMap = library.getDictionary(entries, PERMS_KEY);
-        if (hashMap != null) {
-            return new Permissions(library, hashMap);
+        DictionaryEntries entries = library.getDictionary(this.entries, PERMS_KEY);
+        if (entries != null) {
+            return new Permissions(library, entries);
         } else {
             return null;
         }

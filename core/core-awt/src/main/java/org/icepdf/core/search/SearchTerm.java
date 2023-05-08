@@ -31,19 +31,19 @@ import java.util.regex.Pattern;
 public class SearchTerm {
 
     //original term before it was cut up into terms.
-    private String term;
+    private final String term;
 
     // number of string in search term, one or more strings that make
     // up a phrase. words, white space and punctuation
-    private ArrayList<String> terms;
+    private final ArrayList<String> terms;
     private final Color highlightColor;
 
     // case sensitive search
-    private boolean caseSensitive;
+    private final boolean caseSensitive;
     // whole word search.
-    private boolean wholeWord;
+    private final boolean wholeWord;
     // allow for regex compare
-    private boolean regex;
+    private final boolean regex;
     private Pattern searchPattern;
 
     /**

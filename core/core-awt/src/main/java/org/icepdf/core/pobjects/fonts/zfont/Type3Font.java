@@ -1,9 +1,8 @@
 package org.icepdf.core.pobjects.fonts.zfont;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType3;
 import org.icepdf.core.util.Library;
-
-import java.util.HashMap;
 
 public class Type3Font extends SimpleFont {
 
@@ -13,7 +12,7 @@ public class Type3Font extends SimpleFont {
      * @param library Library of all objects in PDF
      * @param entries hash of parsed font attributes
      */
-    public Type3Font(Library library, HashMap entries) {
+    public Type3Font(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 

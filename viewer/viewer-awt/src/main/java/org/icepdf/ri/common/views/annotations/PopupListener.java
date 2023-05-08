@@ -27,7 +27,7 @@ import java.awt.event.MouseEvent;
  */
 public class PopupListener extends MouseAdapter {
 
-    protected JPopupMenu contextMenu;
+    protected final JPopupMenu contextMenu;
 
     public PopupListener(JPopupMenu contextMenu) {
         this.contextMenu = contextMenu;

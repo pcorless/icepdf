@@ -35,9 +35,9 @@ public class SignatureValidationDialog extends EscapeJDialog {
     private static final Logger logger =
             Logger.getLogger(SignatureValidationDialog.class.toString());
 
-    private SignatureValidator signatureValidator;
+    private final SignatureValidator signatureValidator;
     protected static ResourceBundle messageBundle;
-    protected SignatureWidgetAnnotation signatureWidgetAnnotation;
+    protected final SignatureWidgetAnnotation signatureWidgetAnnotation;
 
     public SignatureValidationDialog(Frame parent, ResourceBundle messageBundle,
                                      SignatureWidgetAnnotation signatureWidgetAnnotation, SignatureValidator signatureValidator) {

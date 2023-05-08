@@ -32,7 +32,7 @@ import java.awt.geom.AffineTransform;
  */
 public class OCGStartDrawCmd extends AbstractDrawCmd {
 
-    private OptionalContents optionalContents;
+    private final OptionalContents optionalContents;
 
     public OCGStartDrawCmd(OptionalContents optionalContents) {
         this.optionalContents = optionalContents;

@@ -26,6 +26,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.text.ChoiceFormat;
 import java.text.Format;
 import java.text.MessageFormat;
@@ -45,26 +46,26 @@ public class TextExtractionTask extends SwingWorker<Void, StringBuilder> {
             Logger.getLogger(TextExtractionTask.class.toString());
 
     // total length of task (total page count), used for progress bar
-    private int lengthOfTask;
+    private final int lengthOfTask;
 
     // current progress, used for the progress bar
     private int current;
 
     // message displayed on progress bar
-    private MessageFormat messageDialogFormat;
-    private MessageFormat messageTextFormat;
+    private final MessageFormat messageDialogFormat;
+    private final MessageFormat messageTextFormat;
     private String dialogMessage;
 
     // internationalization
-    private ResourceBundle messageBundle;
+    private final ResourceBundle messageBundle;
 
     // PDF document pointer
-    private Document document;
+    private final Document document;
 
     // File used for text export
-    private File file;
+    private final File file;
 
-    private ProgressMonitor progressMonitor;
+    private final ProgressMonitor progressMonitor;
 
     private static final double[] fileLimits = {0, 1, 2};
 
@@ -118,7 +119,7 @@ public class TextExtractionTask extends SwingWorker<Void, StringBuilder> {
         try {
             // create file output stream
             BufferedWriter fileOutputStream = new BufferedWriter(
-                    new OutputStreamWriter(new FileOutputStream(file), "UTF8"));
+                    new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8));
             // Print document information
             String pageNumber = messageBundle.getString("viewer.exportText.fileStamp.msg");
 
@@ -164,8 +165,8 @@ public class TextExtractionTask extends SwingWorker<Void, StringBuilder> {
             current = 0;
             fileOutputStream.flush();
             fileOutputStream.close();
-        } catch (Throwable e) {
-            logger.log(Level.FINE, "Malformed URL Exception ", e);
+        } catch (Exception e) {
+            logger.log(Level.FINE, "Error extraction page text to file ", e);
         }
         return null;
     }

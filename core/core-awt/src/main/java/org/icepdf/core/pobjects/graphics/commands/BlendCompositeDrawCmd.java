@@ -31,7 +31,7 @@ import java.awt.geom.AffineTransform;
  */
 public class BlendCompositeDrawCmd extends AbstractDrawCmd {
 
-    private Composite blendComposite;
+    private final Composite blendComposite;
     private boolean alphaCompositeFallback;
 
     public BlendCompositeDrawCmd(Name blendComposite, float alpha) {

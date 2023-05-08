@@ -74,7 +74,7 @@ public class ComponentKeyBinding {
         // add copy text command to input map
         InputMap inputMap = viewerContainer.getInputMap(
                 JComponent.WHEN_IN_FOCUSED_WINDOW);
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_MASK),
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_DOWN_MASK),
                 "copyText");
         viewerContainer.getActionMap().put("copyText",
                 copyText);

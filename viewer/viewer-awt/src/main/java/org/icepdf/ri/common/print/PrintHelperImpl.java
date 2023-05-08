@@ -30,6 +30,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
+import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,9 +47,9 @@ public class PrintHelperImpl extends PrintHelper implements Printable {
     private static final Logger logger =
             Logger.getLogger(PrintHelperImpl.class.toString());
 
-    private PageTree pageTree;
-    private Container container;
-    private float userRotation;
+    private final PageTree pageTree;
+    private final Container container;
+    private final float userRotation;
 
 
     /**
@@ -103,8 +104,10 @@ public class PrintHelperImpl extends PrintHelper implements Printable {
             pj.setPrintService(getPrintServiceOrDefault());
             // Step 2: Pass the settings to a page dialog and print dialog.
             pj.pageDialog(getPrintRequestAttributeSet());
-        } catch (Throwable e) {
-            logger.log(Level.FINE, "Error creating page setup dialog.", e);
+        } catch (HeadlessException e) {
+            logger.log(Level.WARNING, "Headless environment detected, cannot show print dialog", e);
+        } catch (PrinterException e) {
+            logger.log(Level.WARNING, "Printer does not support print service and or Java2d", e);
         }
     }
 

@@ -124,13 +124,11 @@ public class PRectangle extends Rectangle2D.Float {
      */
     public PRectangle createCartesianIntersection(PRectangle src2) {
         PRectangle rec = new PRectangle(src2.x, src2.y, src2.width, src2.height);
-        float xLeft = (x > rec.x) ? x : rec.x;
-        float xRight = ((x + width) > (rec.x + rec.width)) ?
-                (rec.x + rec.width) : (x + width);
+        float xLeft = Math.max(x, rec.x);
+        float xRight = Math.min((x + width), (rec.x + rec.width));
 
-        float yBottom = ((y - height) < (rec.y - rec.height) ?
-                (rec.y - rec.height) : (y - height));
-        float yTop = (y > rec.y) ? rec.y : y;
+        float yBottom = (Math.max((y - height), (rec.y - rec.height)));
+        float yTop = Math.min(y, rec.y);
 
         rec.x = xLeft;
         rec.y = yTop;

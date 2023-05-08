@@ -38,11 +38,11 @@ public class CurrentPageChanger extends MouseAdapter implements AdjustmentListen
 
     private boolean isScrolled = false;
 
-    private List<AbstractPageViewComponent> pageComponents;
-    private JScrollPane scrollpane;
-    private Object mouseWheelCurrentPageListener;
-    private AbstractDocumentView documentView;
-    private DocumentViewModel documentViewModel;
+    private final List<AbstractPageViewComponent> pageComponents;
+    private final JScrollPane scrollpane;
+    private final Object mouseWheelCurrentPageListener;
+    private final AbstractDocumentView documentView;
+    private final DocumentViewModel documentViewModel;
 
     public CurrentPageChanger(JScrollPane scrollpane,
                               AbstractDocumentView documentView,

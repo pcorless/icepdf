@@ -29,7 +29,7 @@ import java.util.ResourceBundle;
 public class AboutDialog extends EscapeJDialog implements ActionListener, WindowListener {
 
 
-    private JButton ok;
+    private final JButton ok;
     private Timer timer;
     private final int whichTimer;
 
@@ -41,13 +41,11 @@ public class AboutDialog extends EscapeJDialog implements ActionListener, Window
     public static final int DISAPPEAR = 4;
 
     public AboutDialog(Frame frame, ResourceBundle messageBundle, boolean isModal,
-                       int buttons, int whichTimer) {
+                       int whichTimer) {
         super(frame, isModal);
         this.whichTimer = whichTimer;
 
         // Show OK button instead of using display timer
-        buttons = OK;
-        whichTimer = NO_TIMER;
 
         setTitle(messageBundle.getString("viewer.dialog.about.title"));
         setResizable(false);
@@ -94,7 +92,7 @@ public class AboutDialog extends EscapeJDialog implements ActionListener, Window
 
         JPanel panel2 = new JPanel();
         panel2.setLayout(new FlowLayout());
-        if ((buttons & OK) > 0) {
+        if ((OK & OK) > 0) {
             ok = new JButton(messageBundle.getString("viewer.button.ok.label"));
             ok.addActionListener(this);
             panel2.add(ok);

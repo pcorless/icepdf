@@ -1,7 +1,5 @@
 package org.icepdf.examples.capture;
 
-import org.icepdf.core.exceptions.PDFException;
-import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.util.Library;
@@ -12,14 +10,11 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -62,13 +57,13 @@ public class PortfolioCapture {
             document.setFile(filePath);
 
             // executable list to capture.
-            List<Callable<Void>> callables = new ArrayList<Callable<Void>>();
+            List<Callable<Void>> callables = new ArrayList<>();
 
-            /**
-             * If we have a collection the PDF won't have any content we want to capture, the page is generally just
-             * a placeholder letting the end user know that the document is a collection.
-             * If it isn't a collection then we want to capture the document's page before moving on to the
-             * embedded files.
+            /*
+              If we have a collection the PDF won't have any content we want to capture, the page is generally just
+              a placeholder letting the end user know that the document is a collection.
+              If it isn't a collection then we want to capture the document's page before moving on to the
+              embedded files.
              */
             if (!(document.getCatalog().getCollection() != null &&
                     document.getCatalog().getCollection().size() > 0)) {
@@ -88,11 +83,11 @@ public class PortfolioCapture {
                         // file name and file specification pairs.
                         Object rawFileName = library.getObject(filePairs.get(i));
                         Object rawFileProperties = library.getObject(filePairs.get(i + 1));
-                        if (rawFileName != null && rawFileName instanceof LiteralStringObject &&
-                                rawFileProperties != null && rawFileProperties instanceof HashMap) {
+                        if (rawFileName instanceof LiteralStringObject &&
+                                rawFileProperties instanceof HashMap) {
                             String fileAttachmentName = Utils.convertStringObject(library, (LiteralStringObject) rawFileName);
                             // file specification has the document stream
-                            FileSpecification fileSpecification = new FileSpecification(library, (HashMap) rawFileProperties);
+                            FileSpecification fileSpecification = new FileSpecification(library, (DictionaryEntries) rawFileProperties);
 
                             // create the stream instance from the embedded file streams File entry.
                             EmbeddedFileStream embeddedFileStream = fileSpecification.getEmbeddedFileStream();
@@ -101,7 +96,7 @@ public class PortfolioCapture {
                             String fileName = fileSpecification.getUnicodeFileSpecification() != null ?
                                     fileSpecification.getUnicodeFileSpecification() :
                                     fileSpecification.getFileSpecification() != null ?
-                                            fileSpecification.getFileSpecification() : "";
+                                    fileSpecification.getFileSpecification() : "";
 
                             // queue the embedded document for page capture
                             System.out.println("Loading embedded file "+ fileAttachmentName + " : " + fileName);
@@ -120,18 +115,8 @@ public class PortfolioCapture {
             executorService.invokeAll(callables);
             executorService.submit(new DocumentCloser(document)).get();
 
-        } catch (PDFException ex) {
-            System.out.println("Error parsing PDF document " + ex);
-        } catch (PDFSecurityException ex) {
-            System.out.println("Error encryption not supported " + ex);
-        } catch (FileNotFoundException ex) {
-            System.out.println("Error file not found " + ex);
-        } catch (IOException ex) {
-            System.out.println("Error handling PDF document " + ex);
-        } catch (InterruptedException e) {
-            System.out.println("Error parsing PDF document " + e);
-        } catch (ExecutionException e) {
-            System.out.println("Error parsing PDF document " + e);
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
         executorService.shutdown();
     }
@@ -139,16 +124,12 @@ public class PortfolioCapture {
     /**
      * Captures images found in a page  parse to file.
      */
-    public class CaptureDocument implements Callable<Void> {
-        private Document document;
-        private String fileName;
-        private int fileIndex;
-        private float scale = 1f;
-        private float rotation = 0f;
+    public static class CaptureDocument implements Callable<Void> {
+        private final Document document;
+        private final int fileIndex;
 
         private CaptureDocument(Document document, int fileIndex, String fileName) {
             this.document = document;
-            this.fileName = fileName;
             this.fileIndex = fileIndex;
         }
 
@@ -160,6 +141,8 @@ public class PortfolioCapture {
                     // initialize the page.
                     Page page = document.getPageTree().getPage(j);
                     page.init();
+                    float rotation = 0f;
+                    float scale = 1f;
                     PDimension sz = page.getSize(Page.BOUNDARY_CROPBOX, rotation, scale);
                     int pageWidth = (int) sz.getWidth();
                     int pageHeight = (int) sz.getHeight();
@@ -183,7 +166,7 @@ public class PortfolioCapture {
                     image.flush();
                 }
                 document.dispose();
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
             return null;
@@ -193,8 +176,8 @@ public class PortfolioCapture {
     /**
      * Disposes the document.
      */
-    public class DocumentCloser implements Callable<Void> {
-        private Document document;
+    public static class DocumentCloser implements Callable<Void> {
+        private final Document document;
 
         private DocumentCloser(Document document) {
             this.document = document;

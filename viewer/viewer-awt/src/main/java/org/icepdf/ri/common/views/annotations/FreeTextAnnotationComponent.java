@@ -207,7 +207,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
         Dimension preferredSize = getPreferredSize();
         Rectangle bounds = getBounds();
         // expand only, no contraction
-        int padding = +FreeTextAnnotation.INSETS * 2;
+        int padding = FreeTextAnnotation.INSETS * 2;
         setBounds(bounds.x, bounds.y, preferredSize.width + padding, preferredSize.height);
         resize();
         refreshAnnotationRect();
@@ -320,7 +320,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
         freeTextPane.requestFocus();
     }
 
-    public class MyHtml2Text extends HTMLEditorKit.ParserCallback {
+    public static class MyHtml2Text extends HTMLEditorKit.ParserCallback {
         StringBuffer s;
 
         public MyHtml2Text() {

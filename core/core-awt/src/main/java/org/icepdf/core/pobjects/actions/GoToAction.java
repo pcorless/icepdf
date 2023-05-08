@@ -16,10 +16,9 @@
 package org.icepdf.core.pobjects.actions;
 
 import org.icepdf.core.pobjects.Destination;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
-
-import java.util.HashMap;
 
 /**
  * The class <code>GoToAction</code> represents the Action type "GoTo".  It's
@@ -38,7 +37,7 @@ public class GoToAction extends Action {
      * @param l document library.
      * @param h Action dictionary entries.
      */
-    public GoToAction(Library l, HashMap h) {
+    public GoToAction(Library l, DictionaryEntries h) {
         super(l, h);
     }
 

@@ -36,9 +36,9 @@ import java.util.List;
 public class OneColumnPageView extends AbstractDocumentView {
 
     // specialized listeners for different gui operations
-    protected CurrentPageChanger currentPageChanger;
+    protected final CurrentPageChanger currentPageChanger;
 
-    protected KeyListenerPageColumnChanger keyListenerPageChanger;
+    protected final KeyListenerPageColumnChanger keyListenerPageChanger;
 
     public OneColumnPageView(DocumentViewController documentDocumentViewController,
                              JScrollPane documentScrollpane,
@@ -85,12 +85,12 @@ public class OneColumnPageView extends AbstractDocumentView {
                 documentViewController.getDocumentViewModel().getPageComponents();
 
         if (pageComponents != null) {
-            for (PageViewComponent pageViewComponent : pageComponents) {
+            for (AbstractPageViewComponent pageViewComponent : pageComponents) {
                 if (pageViewComponent != null) {
                     pageViewComponent.setDocumentViewCallback(this);
                     // add component to layout
                     pagesPanel.add(new PageViewDecorator(
-                            (AbstractPageViewComponent) pageViewComponent));
+                            pageViewComponent));
                 }
             }
         }

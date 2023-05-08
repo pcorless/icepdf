@@ -36,8 +36,8 @@ public class AnnotationTreeNode extends AbstractAnnotationTreeNode<Annotation> {
             Logger.getLogger(AnnotationTreeNode.class.toString());
 
     private Annotation annotation;
-    private Pattern searchPattern;
-    private boolean caseSensitive;
+    private final Pattern searchPattern;
+    private final boolean caseSensitive;
 
     public AnnotationTreeNode(Annotation annotation, ResourceBundle messageBundle, Pattern searchPattern, boolean caseSensitive) {
         this.annotation = annotation;

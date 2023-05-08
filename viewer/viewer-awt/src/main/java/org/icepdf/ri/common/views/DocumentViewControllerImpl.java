@@ -105,17 +105,17 @@ public class DocumentViewControllerImpl
     protected DocumentViewModel documentViewModel;
     protected DocumentView documentView;
 
-    protected JScrollPane documentViewScrollPane;
+    protected final JScrollPane documentViewScrollPane;
 
     protected int viewType, oldViewType;
     protected int viewportFitMode;
     protected int cursorType;
 
-    protected SwingController viewerController;
+    protected final SwingController viewerController;
     protected AnnotationCallback annotationCallback;
     protected SecurityCallback securityCallback;
 
-    protected PropertyChangeSupport changes = new PropertyChangeSupport(this);
+    protected final PropertyChangeSupport changes = new PropertyChangeSupport(this);
 
     public DocumentViewControllerImpl(final SwingController viewerController) {
 
@@ -151,7 +151,6 @@ public class DocumentViewControllerImpl
         // clean up any previous documents
         if (document != null) {
             document.dispose();
-            document = null;
         }
         document = newDocument;
 
@@ -265,7 +264,7 @@ public class DocumentViewControllerImpl
         if (selectedPages != null &&
                 selectedPages.size() > 0) {
             for (AbstractPageViewComponent pageComp : selectedPages) {
-                if (pageComp != null && pageComp instanceof PageViewComponentImpl) {
+                if (pageComp instanceof PageViewComponentImpl) {
                     pageComp.clearSelectedText();
                 }
             }
@@ -776,11 +775,7 @@ public class DocumentViewControllerImpl
         if (documentViewModel != null) {
             decrement = documentView.getPreviousPageIncrement();
             int current = documentViewModel.getViewCurrentPageIndex();
-            if ((current - decrement) >= 0) {
-                documentViewModel.setViewCurrentPageIndex(current - decrement);
-            } else {
-                documentViewModel.setViewCurrentPageIndex(0);
-            }
+            documentViewModel.setViewCurrentPageIndex(Math.max((current - decrement), 0));
         }
         return decrement;
     }

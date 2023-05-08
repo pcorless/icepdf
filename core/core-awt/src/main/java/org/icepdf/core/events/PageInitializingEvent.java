@@ -23,7 +23,7 @@ package org.icepdf.core.events;
 @SuppressWarnings("serial")
 public class PageInitializingEvent extends java.util.EventObject {
 
-    private boolean interrupted;
+    private final boolean interrupted;
 
     public PageInitializingEvent(Object source, boolean interrupted) {
         super(source);

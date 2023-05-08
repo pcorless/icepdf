@@ -33,9 +33,9 @@ import java.awt.*;
 @SuppressWarnings("serial")
 public class OnePageView extends AbstractDocumentView {
 
-    protected Object pageChangerListener;
+    protected final Object pageChangerListener;
 
-    protected KeyListenerPageChanger keyListenerPageChanger;
+    protected final KeyListenerPageChanger keyListenerPageChanger;
 
 
     public OnePageView(DocumentViewController documentDocumentViewController,
@@ -89,7 +89,7 @@ public class OnePageView extends AbstractDocumentView {
         java.util.List<AbstractPageViewComponent> pageComponents = documentViewModel.getPageComponents();
         if (pageComponents != null) {
 
-            PageViewComponent pageViewComponent =
+            AbstractPageViewComponent pageViewComponent =
                     pageComponents.get(documentViewModel.getViewCurrentPageIndex());
             if (pageViewComponent != null) {
 
@@ -98,9 +98,9 @@ public class OnePageView extends AbstractDocumentView {
 
                 pageViewComponent.setDocumentViewCallback(this);
                 // add component to layout
-                pagesPanel.add(buildPageDecoration((AbstractPageViewComponent) pageViewComponent));
-                ((AbstractPageViewComponent) pageViewComponent).revalidate();
-                ((AbstractPageViewComponent) pageViewComponent).repaint();
+                pagesPanel.add(buildPageDecoration(pageViewComponent));
+                pageViewComponent.revalidate();
+                pageViewComponent.repaint();
             }
 
             // make sure we have setup all pages with callback call.
@@ -168,7 +168,7 @@ public class OnePageView extends AbstractDocumentView {
                 }
             }
         }
-        // normalize the dimensions to a zoom level of zero. 
+        // normalize the dimensions to a zoom level of zero.
         float currentZoom = documentViewController.getDocumentViewModel().getViewZoom();
         pageViewWidth = Math.abs(pageViewWidth / currentZoom);
         pageViewHeight = Math.abs(pageViewHeight / currentZoom);

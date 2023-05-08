@@ -30,7 +30,7 @@ import java.awt.geom.AffineTransform;
  */
 public class ColorDrawCmd extends AbstractDrawCmd {
 
-    private Color color;
+    private final Color color;
 
     public ColorDrawCmd(Color color) {
         this.color = color;

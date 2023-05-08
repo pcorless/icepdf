@@ -91,6 +91,8 @@ public interface AnnotationComponent {
      */
     boolean isBorderStyle();
 
+    boolean isActive();
+
     /**
      * Annotation is in a selected state. Used for drawing a highlighted state.
      *

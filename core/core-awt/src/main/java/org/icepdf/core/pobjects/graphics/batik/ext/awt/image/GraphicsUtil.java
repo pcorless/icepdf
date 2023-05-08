@@ -581,21 +581,19 @@ public class GraphicsUtil {
                 pixel = srcR.getPixels(x0, y, w, 1, pixel);
                 in = w * (bands - 1) - 1;
                 out = (w * bands) - 2; // The 2 skips alpha channel on last pix
-                switch (bands) {
-                    case 4:
-                        while (in >= 0) {
+                if (bands == 4) {
+                    while (in >= 0) {
+                        oPix[out--] = pixel[in--];
+                        oPix[out--] = pixel[in--];
+                        oPix[out--] = pixel[in--];
+                        out--;
+                    }
+                } else {
+                    while (in >= 0) {
+                        for (b = 0; b < bands - 1; b++)
                             oPix[out--] = pixel[in--];
-                            oPix[out--] = pixel[in--];
-                            oPix[out--] = pixel[in--];
-                            out--;
-                        }
-                        break;
-                    default:
-                        while (in >= 0) {
-                            for (b = 0; b < bands - 1; b++)
-                                oPix[out--] = pixel[in--];
-                            out--;
-                        }
+                        out--;
+                    }
                 }
                 dstR.setPixels(x0 + dx, y + dy, w, 1, oPix);
             }
@@ -606,38 +604,36 @@ public class GraphicsUtil {
             for (int y = y0; y <= y1; y++) {
                 pixel = srcR.getPixels(x0, y, w, 1, pixel);
                 in = bands * w - 1;
-                switch (bands) {
-                    case 4:
-                        while (in >= 0) {
-                            a = pixel[in];
-                            if (a == 255)
-                                in -= 4;
-                            else {
-                                in--;
-                                alpha = fpNorm * a;
-                                pixel[in] = (pixel[in] * alpha + pt5) >>> 24;
-                                in--;
-                                pixel[in] = (pixel[in] * alpha + pt5) >>> 24;
-                                in--;
+                if (bands == 4) {
+                    while (in >= 0) {
+                        a = pixel[in];
+                        if (a == 255)
+                            in -= 4;
+                        else {
+                            in--;
+                            alpha = fpNorm * a;
+                            pixel[in] = (pixel[in] * alpha + pt5) >>> 24;
+                            in--;
+                            pixel[in] = (pixel[in] * alpha + pt5) >>> 24;
+                            in--;
+                            pixel[in] = (pixel[in] * alpha + pt5) >>> 24;
+                            in--;
+                        }
+                    }
+                } else {
+                    while (in >= 0) {
+                        a = pixel[in];
+                        if (a == 255)
+                            in -= bands;
+                        else {
+                            in--;
+                            alpha = fpNorm * a;
+                            for (b = 0; b < bands - 1; b++) {
                                 pixel[in] = (pixel[in] * alpha + pt5) >>> 24;
                                 in--;
                             }
                         }
-                        break;
-                    default:
-                        while (in >= 0) {
-                            a = pixel[in];
-                            if (a == 255)
-                                in -= bands;
-                            else {
-                                in--;
-                                alpha = fpNorm * a;
-                                for (b = 0; b < bands - 1; b++) {
-                                    pixel[in] = (pixel[in] * alpha + pt5) >>> 24;
-                                    in--;
-                                }
-                            }
-                        }
+                    }
                 }
                 dstR.setPixels(x0 + dx, y + dy, w, 1, pixel);
             }
@@ -648,38 +644,36 @@ public class GraphicsUtil {
             for (int y = y0; y <= y1; y++) {
                 pixel = srcR.getPixels(x0, y, w, 1, pixel);
                 in = (bands * w) - 1;
-                switch (bands) {
-                    case 4:
-                        while (in >= 0) {
-                            a = pixel[in];
-                            if ((a <= 0) || (a >= 255))
-                                in -= 4;
-                            else {
-                                in--;
-                                ialpha = fpNorm / a;
-                                pixel[in] = (pixel[in] * ialpha + pt5) >>> 16;
-                                in--;
-                                pixel[in] = (pixel[in] * ialpha + pt5) >>> 16;
-                                in--;
+                if (bands == 4) {
+                    while (in >= 0) {
+                        a = pixel[in];
+                        if ((a <= 0) || (a >= 255))
+                            in -= 4;
+                        else {
+                            in--;
+                            ialpha = fpNorm / a;
+                            pixel[in] = (pixel[in] * ialpha + pt5) >>> 16;
+                            in--;
+                            pixel[in] = (pixel[in] * ialpha + pt5) >>> 16;
+                            in--;
+                            pixel[in] = (pixel[in] * ialpha + pt5) >>> 16;
+                            in--;
+                        }
+                    }
+                } else {
+                    while (in >= 0) {
+                        a = pixel[in];
+                        if ((a <= 0) || (a >= 255))
+                            in -= bands;
+                        else {
+                            in--;
+                            ialpha = fpNorm / a;
+                            for (b = 0; b < bands - 1; b++) {
                                 pixel[in] = (pixel[in] * ialpha + pt5) >>> 16;
                                 in--;
                             }
                         }
-                        break;
-                    default:
-                        while (in >= 0) {
-                            a = pixel[in];
-                            if ((a <= 0) || (a >= 255))
-                                in -= bands;
-                            else {
-                                in--;
-                                ialpha = fpNorm / a;
-                                for (b = 0; b < bands - 1; b++) {
-                                    pixel[in] = (pixel[in] * ialpha + pt5) >>> 16;
-                                    in--;
-                                }
-                            }
-                        }
+                    }
                 }
                 dstR.setPixels(x0 + dx, y + dy, w, 1, pixel);
             }
@@ -739,10 +733,8 @@ public class GraphicsUtil {
         sR = sR.intersection(src.getBounds());
         dR = dR.intersection(dst.getBounds());
         int width, height;
-        if (dR.width < sR.width) width = dR.width;
-        else width = sR.width;
-        if (dR.height < sR.height) height = dR.height;
-        else height = sR.height;
+        width = Math.min(dR.width, sR.width);
+        height = Math.min(dR.height, sR.height);
 
         int x = sR.x + dx;
         int[] samples = null;
@@ -844,7 +836,7 @@ public class GraphicsUtil {
             while (sp < end) {
                 int pixel = pixels[sp];
                 int a = pixel >>> 24;
-                if ((a >= 0) && (a < 255)) {   // this does NOT include a == 255 (0xff) !
+                if (a < 255) {   // this does NOT include a == 255 (0xff) !
                     pixels[sp] = ((a << 24) |
                             ((((pixel & 0xFF0000) * a) >> 8) & 0xFF0000) |
                             ((((pixel & 0x00FF00) * a) >> 8) & 0x00FF00) |

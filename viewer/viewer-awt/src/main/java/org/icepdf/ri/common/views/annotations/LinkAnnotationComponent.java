@@ -46,8 +46,8 @@ import java.awt.geom.Rectangle2D;
 @SuppressWarnings("serial")
 public class LinkAnnotationComponent extends AbstractAnnotationComponent<LinkAnnotation> {
 
-    protected Color highlightColor = new Color(Integer.parseInt("83A3D3", 16));
-    protected Color linkColor = new Color(Integer.parseInt("990033", 16));
+    protected final Color highlightColor = new Color(Integer.parseInt("83A3D3", 16));
+    protected final Color linkColor = new Color(Integer.parseInt("990033", 16));
 
     public LinkAnnotationComponent(LinkAnnotation annotation, DocumentViewController documentViewController,
                                    AbstractPageViewComponent pageViewComponent) {
@@ -101,10 +101,10 @@ public class LinkAnnotationComponent extends AbstractAnnotationComponent<LinkAnn
             GeneralPath generalPath = new GeneralPath();
             generalPath.moveTo(0, 0);
             generalPath.lineTo(width - indent, 0);
-            generalPath.lineTo(width, height / 2);
+            generalPath.lineTo(width, height >> 1);
             generalPath.lineTo(width - indent, height);
             generalPath.lineTo(0, height);
-            generalPath.lineTo(indent, height / 2);
+            generalPath.lineTo(indent, height >> 1);
             generalPath.closePath();
 
             DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();

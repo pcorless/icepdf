@@ -62,7 +62,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
     // need to make the stroke cap, thickness configurable. Or potentially
     // static from the lineAnnotationHandle so it would look like the last
     // settings where remembered.
-    protected static BasicStroke stroke = new BasicStroke(1.0f,
+    protected static final BasicStroke stroke = new BasicStroke(1.0f,
             BasicStroke.CAP_BUTT,
             BasicStroke.JOIN_MITER,
             1.0f);
@@ -112,7 +112,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
     protected Point startOfLine;
     protected Point endOfLine;
 
-    protected BorderStyle borderStyle = new BorderStyle();
+    protected final BorderStyle borderStyle = new BorderStyle();
 
     /**
      * New Text selection handler.  Make sure to correctly and and remove
