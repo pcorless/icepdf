@@ -15,12 +15,12 @@
  */
 package org.icepdf.core.pobjects.acroform.signature.certificates;
 
+import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.*;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.CertificateVerificationException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.RevocationVerificationException;
 
@@ -43,7 +43,7 @@ import java.util.List;
  * Class that verifies CRLs for given X509 certificate. Extracts the CRL
  * distribution points from the certificate (if available) and checks the
  * certificate revocation status against the CRLs coming from the
- * distribution points. Supports HTTP, HTTPS, FTP and LDAP based URLs.
+ * distribution points. Supports HTTPS and LDAP based URLs.
  *
  * @author Svetlin Nakov
  */
@@ -56,10 +56,9 @@ public class CRLVerifier {
      *
      * @param cert the certificate to be checked for revocation
      * @throws CertificateVerificationException if the certificate is revoked
-     * @throws RevocationVerificationException  cert is revoked.
      */
     public static void verifyCertificateCRLs(X509Certificate cert)
-            throws CertificateVerificationException, RevocationVerificationException {
+            throws CertificateVerificationException {
         try {
             List<String> crlDistPoints = getCrlDistributionPoints(cert);
             for (String crlDP : crlDistPoints) {
@@ -81,13 +80,12 @@ public class CRLVerifier {
     }
 
     /**
-     * Downloads CRL from given URL. Supports http, https, ftp and ldap based URLs.
+     * Downloads CRL from given URL. Supports https and ldap based URLs.
      */
     private static X509CRL downloadCRL(String crlURL) throws IOException,
             CertificateException, CRLException,
             CertificateVerificationException, NamingException {
-        if (crlURL.startsWith("http://") || crlURL.startsWith("https://")
-                || crlURL.startsWith("ftp://")) {
+        if (crlURL.startsWith("https://")) {
             return downloadCRLFromWeb(crlURL);
         } else if (crlURL.startsWith("ldap://")) {
             return downloadCRLFromLDAP(crlURL);
@@ -145,11 +143,10 @@ public class CRLVerifier {
      *
      * @param cert cert to extract CRL from.
      * @return crl distribution list.
-     * @throws CertificateParsingException error parsing the cert.
      * @throws IOException                 file reading problem
      */
     public static List<String> getCrlDistributionPoints(
-            X509Certificate cert) throws CertificateParsingException, IOException {
+            X509Certificate cert) throws IOException {
         byte[] crldpExt = cert.getExtensionValue(Extension.cRLDistributionPoints.getId());
         if (crldpExt == null) {
             return new ArrayList<>();
@@ -174,7 +171,7 @@ public class CRLVerifier {
                     // Look for an URI
                     for (GeneralName genName : genNames) {
                         if (genName.getTagNo() == GeneralName.uniformResourceIdentifier) {
-                            String url = DERIA5String.getInstance(
+                            String url = ASN1IA5String.getInstance(
                                     genName.getName()).getString();
                             crlUrls.add(url);
                         }

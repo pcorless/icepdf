@@ -52,7 +52,7 @@ public class TextSprite {
 
     // text bounds, including all child Glyph sprites, in glyph space
     // this bound is used during painting to respect painting clip.
-    Rectangle2D.Float bounds;
+    final Rectangle2D.Float bounds;
 
     // space reference for where glyph
     private AffineTransform graphicStateTransform;

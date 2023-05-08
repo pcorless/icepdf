@@ -99,7 +99,8 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
     public static final int resizeBoxSize = 4;
 
     // reusable border
-    protected static ResizableBorder resizableBorder = new ResizableBorder(resizeBoxSize);
+    protected static final ResizableBorder resizableBorder =
+            new ResizableBorder(resizeBoxSize);
 
     protected PageViewComponentImpl pageViewComponent;
     protected DocumentViewController documentViewController;
@@ -441,7 +442,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
 
     protected void initiateMouseMoved(MouseEvent e) {
         Border border = getBorder();
-        if (border != null && border instanceof ResizableBorder) {
+        if (border instanceof ResizableBorder) {
             cursor = ((ResizableBorder) border).getCursor(e);
         }
         startPos = e.getPoint();

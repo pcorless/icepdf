@@ -18,7 +18,7 @@ public class ProjectCompareView extends SplitPane {
 
     private TextArea consoleTextArea;
     private PrintStream printStream;
-    private Mediator mediator;
+    private final Mediator mediator;
 
     public ProjectCompareView(Mediator mediator) {
         super();
@@ -38,7 +38,6 @@ public class ProjectCompareView extends SplitPane {
     /**
      * Load the project and load the correct comparator view.
      *
-     * @param currentProject
      */
     public void setProject(Project currentProject) {
         if (currentProject.getCaptureSetA() != null && currentProject.getCaptureSetB() != null &&

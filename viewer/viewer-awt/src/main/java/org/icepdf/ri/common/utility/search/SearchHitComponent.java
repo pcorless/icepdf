@@ -6,7 +6,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 public abstract class SearchHitComponent extends JComponent {
-    protected String text;
+    protected final String text;
 
     protected SearchHitComponent(final String text) {
         this.text = text;

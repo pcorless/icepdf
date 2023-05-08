@@ -15,8 +15,8 @@ import java.awt.image.*;
  */
 public class PColorSpaceRasterOp implements RasterOp {
 
-    private RenderingHints hints = null;
-    private PColorSpace colorSpace;
+    private final RenderingHints hints;
+    private final PColorSpace colorSpace;
 
     public PColorSpaceRasterOp(PColorSpace colorSpace, RenderingHints hints) {
         this.hints = hints;

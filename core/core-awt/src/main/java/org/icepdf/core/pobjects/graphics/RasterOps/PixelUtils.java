@@ -31,7 +31,7 @@ public class PixelUtils {
     public final static int ALPHA = 19;
     public final static int ALPHA_TO_GRAY = 20;
 
-    private static Random randomGenerator = new Random();
+    private static final Random randomGenerator = new Random();
 
     /**
      * Clamp a value to the range 0..255
@@ -42,9 +42,7 @@ public class PixelUtils {
     public static int clamp(int c) {
         if (c < 0)
             return 0;
-        if (c > 255)
-            return 255;
-        return c;
+        return Math.min(c, 255);
     }
 
     public static int interpolate(int v1, int v2, float f) {
@@ -68,8 +66,8 @@ public class PixelUtils {
         return Math.abs(r1 - r2) <= tolerance && Math.abs(g1 - g2) <= tolerance && Math.abs(b1 - b2) <= tolerance;
     }
 
-    private final static float hsb1[] = new float[3];//FIXME-not thread safe
-    private final static float hsb2[] = new float[3];//FIXME-not thread safe
+    private final static float[] hsb1 = new float[3];//FIXME-not thread safe
+    private final static float[] hsb2 = new float[3];//FIXME-not thread safe
 
     // Return rgb1 painted onto rgb2
     public static int combinePixels(int rgb1, int rgb2, int op) {

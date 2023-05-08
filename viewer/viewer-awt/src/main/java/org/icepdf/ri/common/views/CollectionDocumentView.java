@@ -22,7 +22,6 @@ import org.icepdf.core.util.Utils;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -87,7 +86,7 @@ public class CollectionDocumentView extends AbstractDocumentView {
                 // get the name and document for
                 // file name and file specification pairs.
                 String fileName = Utils.convertStringObject(library, (StringObject) filePairs.get(i));
-                HashMap tmp = (HashMap) library.getObject((Reference) filePairs.get(i + 1));
+                DictionaryEntries tmp = (DictionaryEntries) library.getObject((Reference) filePairs.get(i + 1));
 
                 // file specification has the document stream
                 FileSpecification fileSpec = new FileSpecification(library, tmp);

@@ -26,8 +26,8 @@ import java.util.ResourceBundle;
 
 public class AnnotationSummaryFrame extends JFrame implements MutableDocument {
 
-    protected Controller controller;
-    protected ResourceBundle messageBundle;
+    protected final Controller controller;
+    protected final ResourceBundle messageBundle;
     protected AnnotationSummaryPanel annotationSummaryPanel;
 
     public AnnotationSummaryFrame(Controller controller) {

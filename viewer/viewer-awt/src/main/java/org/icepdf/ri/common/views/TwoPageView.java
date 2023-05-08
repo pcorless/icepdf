@@ -38,12 +38,12 @@ import static org.icepdf.ri.common.views.TwoPageViewLayout.PAGE_SPACING_HORIZONT
 @SuppressWarnings("serial")
 public class TwoPageView extends AbstractDocumentView {
 
-    protected int viewAlignment;
+    protected final int viewAlignment;
 
     // specialized listeners for different gui operations
-    protected Object pageChangerListener;
-    protected KeyListenerPageChanger keyListenerPageChanger;
-    protected CurrentPageChanger currentPageChanger;
+    protected final Object pageChangerListener;
+    protected final KeyListenerPageChanger keyListenerPageChanger;
+    protected final CurrentPageChanger currentPageChanger;
 
     public TwoPageView(DocumentViewController documentDocumentViewController,
                        JScrollPane documentScrollpane,

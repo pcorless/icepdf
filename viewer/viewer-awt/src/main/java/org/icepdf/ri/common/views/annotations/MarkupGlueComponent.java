@@ -36,8 +36,8 @@ import java.awt.geom.Rectangle2D;
  */
 public class MarkupGlueComponent extends JComponent implements PageViewAnnotationComponent, ComponentListener {
 
-    protected MarkupAnnotationComponent markupAnnotationComponent;
-    protected PopupAnnotationComponent popupAnnotationComponent;
+    protected final MarkupAnnotationComponent markupAnnotationComponent;
+    protected final PopupAnnotationComponent popupAnnotationComponent;
 
     protected Rectangle adjustedMarkupAnnotationBounds;
 

@@ -46,9 +46,8 @@ import java.util.ResourceBundle;
  */
 public class ImplicitDestinationPanel extends JPanel implements ItemListener, AnnotationProperties {
 
-    private Controller controller;
-    private ResourceBundle messageBundle;
-    private AnnotationComponent currentAnnotation;
+    private final Controller controller;
+    private final ResourceBundle messageBundle;
 
     private JComboBox implicitDestTypeComboBox;
     private JTextField pageNumberTextField;
@@ -74,7 +73,6 @@ public class ImplicitDestinationPanel extends JPanel implements ItemListener, An
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.NONE;
         constraints.weightx = 1.0;
-        constraints.anchor = GridBagConstraints.NORTH;
         constraints.anchor = GridBagConstraints.EAST;
         constraints.insets = new Insets(5, 5, 5, 5);
 
@@ -137,18 +135,17 @@ public class ImplicitDestinationPanel extends JPanel implements ItemListener, An
 
     public void setAnnotationComponent(AnnotationComponent annotation) {
         // get a reference so we can setup a save on dialog close
-        currentAnnotation = annotation;
 
-        org.icepdf.core.pobjects.actions.Action action = currentAnnotation.getAnnotation().getAction();
+        org.icepdf.core.pobjects.actions.Action action = annotation.getAnnotation().getAction();
 
         // get the destination object, doesn't matter where it comes from.
         Destination dest = null;
-        if (action != null && action instanceof GoToAction) {
+        if (action instanceof GoToAction) {
             dest = ((GoToAction) action).getDestination();
         }
         // alternatively we can have a dest field on Link annotations
-        else if (action == null && currentAnnotation.getAnnotation() instanceof LinkAnnotation) {
-            LinkAnnotation linkAnnotation = (LinkAnnotation) currentAnnotation.getAnnotation();
+        else if (action == null && annotation.getAnnotation() instanceof LinkAnnotation) {
+            LinkAnnotation linkAnnotation = (LinkAnnotation) annotation.getAnnotation();
             dest = linkAnnotation.getDestination();
         }
 

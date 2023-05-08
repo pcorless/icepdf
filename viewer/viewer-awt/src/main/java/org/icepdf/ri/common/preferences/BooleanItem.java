@@ -1,8 +1,8 @@
 package org.icepdf.ri.common.preferences;
 
 public class BooleanItem {
-    private String label;
-    private boolean value;
+    private final String label;
+    private final boolean value;
 
     public BooleanItem(String label, boolean enabled) {
         this.label = label;

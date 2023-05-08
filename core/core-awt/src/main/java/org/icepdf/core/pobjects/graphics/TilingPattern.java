@@ -15,10 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
-import org.icepdf.core.io.SeekableInputConstrainedWrapper;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.Resources;
-import org.icepdf.core.pobjects.Stream;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.commands.ColorDrawCmd;
 import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.util.Defs;
@@ -31,7 +28,6 @@ import java.awt.geom.GeneralPath;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -62,7 +58,7 @@ public class TilingPattern extends Stream implements Pattern {
     public static final Name RESOURCES_KEY = new Name("Resources");
 
     // change the the interpolation and anti-aliasing settings.
-    private static RenderingHints renderingHints;
+    private static final RenderingHints renderingHints;
 
     static {
         Object antiAliasing = RenderingHints.VALUE_ANTIALIAS_OFF;
@@ -170,7 +166,6 @@ public class TilingPattern extends Stream implements Pattern {
     // An array of six numbers specifying the pattern matrix. The default value
     // is the identity matrix [1 0 0 1 0 0].
     private AffineTransform matrix;
-    private AffineTransform patternMatrix;
     // Parsed resource data is stored here.
     private Shapes shapes;
 
@@ -188,8 +183,8 @@ public class TilingPattern extends Stream implements Pattern {
         initiParams();
     }
 
-    public TilingPattern(Library l, HashMap h, SeekableInputConstrainedWrapper streamInputWrapper) {
-        super(l, h, streamInputWrapper);
+    public TilingPattern(Library l, DictionaryEntries h, byte[] rawBytes) {
+        super(l, h, rawBytes);
         initiParams();
     }
 
@@ -229,7 +224,7 @@ public class TilingPattern extends Stream implements Pattern {
      * @return affine tansform based on v
      */
     private static AffineTransform getAffineTransform(List v) {
-        float f[] = new float[6];
+        float[] f = new float[6];
         for (int i = 0; i < 6; i++) {
             f[i] = ((Number) v.get(i)).floatValue();
         }
@@ -256,10 +251,8 @@ public class TilingPattern extends Stream implements Pattern {
         // if now shapes then we go with black.
         if (unColored == null) {
             unColored = Color.black;
-            return unColored;
-        } else {
-            return unColored;
         }
+        return unColored;
     }
 
     /**
@@ -289,9 +282,12 @@ public class TilingPattern extends Stream implements Pattern {
         ContentParser cp = new ContentParser(library, resources);
         cp.setGraphicsState(parentGraphicState);
         try {
-            shapes = cp.parse(new byte[][]{getDecodedStreamBytes()}, null).getShapes();
-        } catch (Throwable e) {
-            logger.log(Level.FINE, "Error processing tiling pattern.", e);
+            shapes = cp.parse(
+                    new byte[][]{getDecodedStreamBytes()},
+                    new Reference[]{this.getPObjectReference()},
+                    null).getShapes();
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error processing tiling pattern.", e);
         }
 
         // some encoders set the step to 2^15
@@ -311,7 +307,7 @@ public class TilingPattern extends Stream implements Pattern {
         // bbox is in the pattern coordinate system, so we'll convert it to the current user space.
         // we start off with the base transform of the page or the xobject before any scaling or
         // or other modifications takes place on the CTM.
-        patternMatrix = new AffineTransform();
+        AffineTransform patternMatrix = new AffineTransform();
         patternMatrix.concatenate(matrix);
         GeneralPath tmp = new GeneralPath(bBoxMod);
         bBoxMod = tmp.createTransformedShape(patternMatrix).getBounds2D();
@@ -389,72 +385,64 @@ public class TilingPattern extends Stream implements Pattern {
         }
 
         // create the new image to write too.
-        if (width >= 1 && height >= 1) {
-            final BufferedImage bi = ImageUtility.createTranslucentCompatibleImage((int) Math.round(imageWidth),
-                    (int) Math.round(imageHeight));
-            Graphics2D canvas = bi.createGraphics();
+        final BufferedImage bi = ImageUtility.createTranslucentCompatibleImage((int) Math.round(imageWidth),
+                (int) Math.round(imageHeight));
+        Graphics2D canvas = bi.createGraphics();
 
-            TexturePaint patternPaint = new TexturePaint(bi, new Rectangle2D.Double(
-                    xOffset, yOffset,
-                    width, height));
-            g.setPaint(patternPaint);
+        TexturePaint patternPaint = new TexturePaint(bi, new Rectangle2D.Double(
+                xOffset, yOffset,
+                width, height));
+        g.setPaint(patternPaint);
 
-            // apply current hints
-            canvas.setRenderingHints(renderingHints);
-            // if we have a really small tile we risk paint just black at low zoom levels,  to avoid this we'll set
-            // an alpha composite to avoid obscuring any content.
-            if (imageWidth <= 5 || imageHeight <= 5) {
-                canvas.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.15f));
-            }
-
-            // copy over the rendering hints
-            // get shapes and paint them.
-            final Shapes tilingShapes = getShapes();
-
-            // add clip for bBoxMod, needed for some shapes painting.
-            canvas.setClip(0, 0, (int) imageWidth, (int) imageHeight);
-
-            // paint the pattern
-            try {
-                paintPattern(canvas, tilingShapes, matrix, originalPageSpace, baseScale);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                logger.log(Level.FINER, "Interrupted painting tiling pattern.");
-            }
-
-            // show it in a frame
-            //        final JFrame f = new JFrame(this.toString());
-            //        final int w = (int) bBoxMod.getWidth();
-            //        final int h = (int) bBoxMod.getHeight();
-            //        final double scale = base.getScaleX();
-            //        final AffineTransform tmpPatternMatrix = originalPageSpace;
-            //        f.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-            //        f.getContentPane().add(new JComponent() {
-            //            @Override
-            //            public void paint(Graphics g_) {
-            //                super.paint(g_);
-            //                Graphics2D g2d = (Graphics2D) g_;
-            ////                g2d.scale(scale, scale);
-            ////                g2d.setPaint(patternPaint);
-            ////                g2d.fillRect(0, 0, 1000, 1000);
-            //                g2d.drawImage(bi, 0, 0, null);
-            //                g2d.setColor(Color.GREEN);
-            //                g2d.drawRect(0, 0, w, h);
-            //            }
-            //        });
-            //        f.setTitle(scale + "");
-            //        f.setSize(new Dimension(800, 800));
-            //        f.setVisible(true);
-            // post paint cleanup
-            canvas.dispose();
-            bi.flush();
-        } else {
-            if (paintType == TilingPattern.PAINTING_TYPE_UNCOLORED_TILING_PATTERN) {
-                g.setColor(unColored);
-            } else {
-                g.setColor(getFirstColor());
-            }
+        // apply current hints
+        canvas.setRenderingHints(renderingHints);
+        // if we have a really small tile we risk paint just black at low zoom levels,  to avoid this we'll set
+        // an alpha composite to avoid obscuring any content.
+        if (imageWidth <= 5 || imageHeight <= 5) {
+            canvas.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.15f));
         }
+
+        // copy over the rendering hints
+        // get shapes and paint them.
+        final Shapes tilingShapes = getShapes();
+
+        // add clip for bBoxMod, needed for some shapes painting.
+        canvas.setClip(0, 0, (int) imageWidth, (int) imageHeight);
+
+        // paint the pattern
+        try {
+            paintPattern(canvas, tilingShapes, matrix, originalPageSpace, baseScale);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.log(Level.FINER, "Interrupted painting tiling pattern.");
+        }
+
+        // show it in a frame
+        //        final JFrame f = new JFrame(this.toString());
+        //        final int w = (int) bBoxMod.getWidth();
+        //        final int h = (int) bBoxMod.getHeight();
+        //        final double scale = base.getScaleX();
+        //        final AffineTransform tmpPatternMatrix = originalPageSpace;
+        //        f.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+        //        f.getContentPane().add(new JComponent() {
+        //            @Override
+        //            public void paint(Graphics g_) {
+        //                super.paint(g_);
+        //                Graphics2D g2d = (Graphics2D) g_;
+        ////                g2d.scale(scale, scale);
+        ////                g2d.setPaint(patternPaint);
+        ////                g2d.fillRect(0, 0, 1000, 1000);
+        //                g2d.drawImage(bi, 0, 0, null);
+        //                g2d.setColor(Color.GREEN);
+        //                g2d.drawRect(0, 0, w, h);
+        //            }
+        //        });
+        //        f.setTitle(scale + "");
+        //        f.setSize(new Dimension(800, 800));
+        //        f.setVisible(true);
+        // post paint cleanup
+        canvas.dispose();
+        bi.flush();
     }
 
     private void paintPattern(Graphics2D g2d, Shapes tilingShapes, AffineTransform matrix, AffineTransform base,

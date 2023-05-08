@@ -104,7 +104,7 @@ public class SequenceInputStream extends InputStream {
         }
     }
 
-    public int read(byte buffer[], int off, int len) throws IOException {
+    public int read(byte[] buffer, int off, int len) throws IOException {
         if (buffer == null) {
             throw new NullPointerException();
         } else if ((off < 0) || (off >= buffer.length) ||

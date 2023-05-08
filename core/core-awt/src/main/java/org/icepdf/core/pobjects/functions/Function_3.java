@@ -36,17 +36,17 @@ public class Function_3 extends Function {
     // intervals to which each function from the Functions array applies. Bounds
     // must be in order of increasing value and each value must be with in the
     // domain defined by Domain
-    private float bounds[];
+    private float[] bounds;
 
     // An array of 2xk numbers that, taken in pairs, cMap each subset of the
     // domain defined by Domain and the bounds array to the domain of the
     // corresponding function.
-    private float encode[];
+    private float[] encode;
 
     // An array of k 1--input functions making up the stitching function. The
     // output dimensionality of all functions must be the same, and compatible
     // with the values of the Range if Range is represent.
-    private Function functions[];
+    private Function[] functions;
 
     /**
      * Creates a new instance of a type 2 function.
@@ -167,11 +167,10 @@ public class Function_3 extends Function {
 
             x[0] = interpolate(x[0], b1, b2, encode[2 * i], encode[2 * i + 1]);
 
-            x = function.calculate(x);
         } else {
             x[0] = interpolate(x[0], domain[0], domain[1], encode[2 * i], encode[2 * i + 1]);
-            x = function.calculate(x);
         }
+        x = function.calculate(x);
 
         // Have seen a few corner cases where the bounds are not defined or are null. There is nothing
         // in the spec about how to handle this, so the work around below is experimental.

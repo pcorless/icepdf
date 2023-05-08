@@ -34,10 +34,9 @@ import java.util.prefs.Preferences;
 public class ImagingPreferencesPanel extends JPanel {
 
     // layouts constraint
-    private GridBagConstraints constraints;
+    private final GridBagConstraints constraints;
 
-    private Preferences preferences;
-    private JComboBox<ImageReferenceItem> imageReferenceComboBox;
+    private final Preferences preferences;
 
     public ImagingPreferencesPanel(SwingController controller, ViewerPropertiesManager propertiesManager,
                                    ResourceBundle messageBundle) {
@@ -65,7 +64,7 @@ public class ImagingPreferencesPanel extends JPanel {
                         ImageReferenceFactory.ImageReference.BLURRED)
         };
 
-        imageReferenceComboBox = new JComboBox<>(imageReferenceItems);
+        JComboBox<ImageReferenceItem> imageReferenceComboBox = new JComboBox<>(imageReferenceItems);
         imageReferenceComboBox.setSelectedItem(new ImageReferenceItem("", ImageReferenceFactory.imageReferenceType));
         imageReferenceComboBox.addActionListener(e -> {
             JComboBox cb = (JComboBox) e.getSource();
@@ -113,9 +112,9 @@ public class ImagingPreferencesPanel extends JPanel {
         layout.add(component, constraints);
     }
 
-    class ImageReferenceItem {
-        String label;
-        ImageReferenceFactory.ImageReference value;
+    static class ImageReferenceItem {
+        final String label;
+        final ImageReferenceFactory.ImageReference value;
 
         public ImageReferenceItem(String label, ImageReferenceFactory.ImageReference value) {
             this.label = label;

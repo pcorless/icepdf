@@ -57,7 +57,7 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
     protected static final Logger logger =
             Logger.getLogger(MarkupAnnotationComponent.class.toString());
 
-    protected static boolean isInteractivePopupAnnotationsEnabled;
+    protected static final boolean isInteractivePopupAnnotationsEnabled;
 
     static {
         isInteractivePopupAnnotationsEnabled =
@@ -129,8 +129,7 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
                 // find the component and toggle it's visibility, null check just encase compRef is direct.
                 if (compReference != null && compReference.equals(popupReference)) {
                     if (annotationComponent instanceof PopupAnnotationComponent) {
-                        PopupAnnotationComponent popupComponent = ((PopupAnnotationComponent) annotationComponent);
-                        return popupComponent;
+                        return ((PopupAnnotationComponent) annotationComponent);
                     }
                     break;
                 }

@@ -15,7 +15,6 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
-import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.commands.*;
@@ -27,8 +26,10 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
-import java.util.*;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -51,8 +52,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
     public static final Name SUBTYPE_SQUIGGLY = new Name("Squiggly");
     public static final Name SUBTYPE_STRIKE_OUT = new Name("StrikeOut");
 
-    public static final Set<Name> ALL_SUBTYPES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(SUBTYPE_HIGHLIGHT,
-            SUBTYPE_UNDERLINE, SUBTYPE_SQUIGGLY, SUBTYPE_STRIKE_OUT)));
+    public static final Set<Name> ALL_SUBTYPES = Set.of(SUBTYPE_HIGHLIGHT, SUBTYPE_UNDERLINE, SUBTYPE_SQUIGGLY, SUBTYPE_STRIKE_OUT);
 
     private static Color highlightColor;
     private static Color strikeOutColor;
@@ -130,14 +130,8 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
     private GeneralPath markupPath;
     private ArrayList<Shape> markupBounds;
 
-    /**
-     * Creates a new instance of an TextMarkupAnnotation.
-     *
-     * @param l document library.
-     * @param h dictionary entries.
-     */
-    public TextMarkupAnnotation(Library l, HashMap h) {
-        super(l, h);
+    public TextMarkupAnnotation(Library library, DictionaryEntries dictionaryEntries) {
+        super(library, dictionaryEntries);
     }
 
     @SuppressWarnings("unchecked")
@@ -208,7 +202,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
         StateManager stateManager = library.getStateManager();
 
         // create a new entries to hold the annotation properties
-        HashMap<Name, Object> entries = new HashMap<>();
+        DictionaryEntries entries = new DictionaryEntries();
         // set default link annotation values.
         entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
         entries.put(Dictionary.SUBTYPE_KEY, subType);
@@ -352,9 +346,6 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
             if (subtype != null && SUBTYPE_HIGHLIGHT.equals(subtype)) {
                 g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, .30f));
                 // remove other alpha defs from painting
-                if (shapes != null) {
-                    shapes.setPaintAlpha(false);
-                }
             }
 
             Object tmp = getObject(RECTANGLE_KEY);
@@ -381,9 +372,6 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
             if (subtype != null && SUBTYPE_HIGHLIGHT.equals(subtype)) {
                 g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
                 // remove other alpha defs from painting
-                if (shapes != null) {
-                    shapes.setPaintAlpha(true);
-                }
             }
         }
     }

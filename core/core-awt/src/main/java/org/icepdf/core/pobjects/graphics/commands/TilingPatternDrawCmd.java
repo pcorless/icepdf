@@ -31,7 +31,7 @@ import java.awt.geom.AffineTransform;
  */
 public class TilingPatternDrawCmd extends AbstractDrawCmd {
 
-    private TilingPattern tilingPattern;
+    private final TilingPattern tilingPattern;
 
     public TilingPatternDrawCmd(TilingPattern tilingPattern) {
         this.tilingPattern = tilingPattern;

@@ -17,7 +17,6 @@ package org.icepdf.core.pobjects.acroform.signature.certificates;
 
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.CertificateVerificationException;
-import org.icepdf.core.pobjects.acroform.signature.exceptions.RevocationVerificationException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SelfSignedVerificationException;
 
 import java.security.*;
@@ -60,13 +59,10 @@ public class CertificateVerifier {
      *                                          certificate in the chain is expired or CRL checks are failed)
      * @throws CertificateVerificationException could not verify cert.
      * @throws CertificateExpiredException      cert is expired
-     * @throws SelfSignedVerificationException  self signed cert.
-     * @throws RevocationVerificationException revocation verifcation error.
      */
     public static PKIXCertPathBuilderResult verifyCertificate(X509Certificate signerCert, X509Certificate[] cert,
                                                               Collection<X509Certificate> additionalCerts)
-            throws CertificateVerificationException, CertificateExpiredException, SelfSignedVerificationException,
-            RevocationVerificationException {
+            throws CertificateVerificationException, CertificateExpiredException {
         try {
             // Check for self-signed root certificate
             if (isSelfSigned(signerCert)) {
@@ -104,7 +100,7 @@ public class CertificateVerifier {
             }
             throw new CertificateVerificationException(
                     "Error building certification path: " + signerCert.getSubjectX500Principal(), certPathEx);
-        } catch (CertificateVerificationException | RevocationVerificationException cvex) {
+        } catch (CertificateVerificationException cvex) {
             throw cvex;
         } catch (Exception ex) {
             throw new CertificateVerificationException(

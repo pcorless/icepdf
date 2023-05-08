@@ -34,7 +34,7 @@ public class Viewer {
     public static final String SWING_VIEW_BUILDER_CLASS = "org.icepdf.ri.common.SwingViewBuilder";
     public static final String BUILD_VIEWER_PANEL_METHOD = "buildViewerFrame";
 
-    public static void launchViewer(Result result, CaptureSet captureSet) throws InvocationTargetException, InterruptedException {
+    public static void launchViewer(Result result, CaptureSet captureSet) {
         Platform.runLater(() -> {
                     try {
                         SwingUtilities.invokeAndWait(() -> {
@@ -50,31 +50,31 @@ public class Viewer {
                             } catch (IOException | DirectoryIteratorException x) {
                                 System.err.println(x);
                             }
-                            URLClassLoader classLoader = URLClassLoader.newInstance(classPath.toArray(new URL[classPath.size()]));
+                            URLClassLoader classLoader = URLClassLoader.newInstance(classPath.toArray(new URL[0]));
 
-                            /**
-                             * Create a new instance so we can view the modified file.
+                            /*
+                              Create a new instance so we can view the modified file.
                              */
                             try {
 
                                 // load the font manager
                                 ResourceBundle messageBundle = ResourceBundle.getBundle(MESSAGE_BUNDLE_CLASS,
                                         Locale.ENGLISH, classLoader);
-                                Class propertiesManagerClass = classLoader.loadClass(PROPERTIES_MANAGER_CLASS);
+                                Class<?> propertiesManagerClass = classLoader.loadClass(PROPERTIES_MANAGER_CLASS);
                                 Constructor propertiesManagerConstructor = propertiesManagerClass.getDeclaredConstructor(
                                         Properties.class, ResourceBundle.class);
                                 Object propertiesManagerObject = propertiesManagerConstructor.newInstance(System.getProperties(), messageBundle);
 
-                                Class fontPropertiesManagerClass = classLoader.loadClass(FONT_PROPERTIES_MANAGER_CLASS);
+                                Class<?> fontPropertiesManagerClass = classLoader.loadClass(FONT_PROPERTIES_MANAGER_CLASS);
                                 Constructor fontPropertiesManagerConstructor = fontPropertiesManagerClass.getDeclaredConstructor(
                                         propertiesManagerClass, Properties.class, ResourceBundle.class);
                                 fontPropertiesManagerConstructor.newInstance(propertiesManagerObject, System.getProperties(), messageBundle);
 
-                                Class swingControllerClass = classLoader.loadClass(SWING_CONTROLLER_CLASS);
+                                Class<?> swingControllerClass = classLoader.loadClass(SWING_CONTROLLER_CLASS);
                                 Constructor swingControllerConstructor = swingControllerClass.getDeclaredConstructor();
                                 Object swingControllerObject = swingControllerConstructor.newInstance();
 
-                                Class swingViewBuilderClass = classLoader.loadClass(SWING_VIEW_BUILDER_CLASS);
+                                Class<?> swingViewBuilderClass = classLoader.loadClass(SWING_VIEW_BUILDER_CLASS);
                                 Constructor swingViewBuilderConstructor = swingViewBuilderClass.getDeclaredConstructor(swingControllerClass);
                                 Object swingViewBuilderObject = swingViewBuilderConstructor.newInstance(swingControllerObject);
 
@@ -92,22 +92,13 @@ public class Viewer {
                                 // show the document and the new annotations.
                                 applicationFrame.pack();
                                 applicationFrame.setVisible(true);
-                            } catch (ClassNotFoundException e) {
-                                e.printStackTrace();
-                            } catch (InstantiationException e) {
-                                e.printStackTrace();
-                            } catch (IllegalAccessException e) {
-                                e.printStackTrace();
-                            } catch (InvocationTargetException e) {
-                                e.printStackTrace();
-                            } catch (NoSuchMethodException e) {
+                            } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException |
+                                     IllegalAccessException | InstantiationException e) {
                                 e.printStackTrace();
                             }
 
                         });
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } catch (InvocationTargetException e) {
+                    } catch (InterruptedException | InvocationTargetException e) {
                         e.printStackTrace();
                     }
                 }

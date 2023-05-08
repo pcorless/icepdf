@@ -36,18 +36,18 @@ import static org.icepdf.ri.util.ViewerPropertiesManager.PROPERTY_ANNOTATION_REC
 public class AnnotationColorPropertyPanel extends JPanel implements ActionListener {
 
     // layouts constraint
-    private GridBagConstraints constraints;
+    private final GridBagConstraints constraints;
 
-    protected Controller controller;
-    protected ResourceBundle messageBundle;
+    protected final Controller controller;
+    protected final ResourceBundle messageBundle;
 
     // optional/lazy loaded panels.
-    private JPanel recentColorsPanel;
-    private JPanel labeledColorPanel;
+    private final JPanel recentColorsPanel;
+    private final JPanel labeledColorPanel;
 
     // main controls
-    protected JButton colourPickerButton;
-    protected JButton preferencesButton;
+    protected final JButton colourPickerButton;
+    protected final JButton preferencesButton;
 
     // last selected color;
     protected Color lastColor = Color.RED;
@@ -153,7 +153,7 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
             }
 
         }
-        // if we have one we one we want to check if the new Color is already in the list and remove it.
+        // if we have one we want to check if the new Color is already in the list and remove it.
         if (newColor != null) {
             recentColors.remove(newColor);
         }

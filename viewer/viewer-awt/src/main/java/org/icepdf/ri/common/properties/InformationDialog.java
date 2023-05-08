@@ -32,7 +32,7 @@ import java.util.ResourceBundle;
 public class InformationDialog extends EscapeJDialog {
 
     // layouts constraint
-    private GridBagConstraints constraints;
+    private final GridBagConstraints constraints;
 
     /**
      * Creates the document information  dialog.

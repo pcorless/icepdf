@@ -25,7 +25,7 @@ public class FileTableModel extends AbstractTableModel {
     public static final int COMPRESSION_COLUMN = 4;
     public static final int DATA_COLUMN = 5;
 
-    private String[] columnNames;
+    private final String[] columnNames;
     private Object[][] data;
 
     public FileTableModel(ResourceBundle messageBundle, HashMap<String, FileSpecification> files) {

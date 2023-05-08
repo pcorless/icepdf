@@ -15,6 +15,8 @@
  */
 package org.icepdf.core.pobjects;
 
+import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
+
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -33,11 +35,11 @@ import java.util.logging.Logger;
 public class StateManager {
     private static final Logger logger = Logger.getLogger(StateManager.class.getName());
 
-    // a list is all we might need. 
+    // a list is all we might need.
     private final Map<Reference, Change> changes;
 
     // access to xref size and next revision number.
-    private final PTrailer trailer;
+    private final CrossReferenceRoot crossReferenceRoot;
 
     private final AtomicInteger nextReferenceNumber;
 
@@ -47,20 +49,17 @@ public class StateManager {
     /**
      * Creates a new instance of the state manager.
      *
-     * @param trailer document trailer
+     * @param crossReferenceRoot document cross reference root
      */
-    public StateManager(PTrailer trailer) {
-        this.trailer = trailer;
+    public StateManager(CrossReferenceRoot crossReferenceRoot) {
+        this.crossReferenceRoot = crossReferenceRoot;
         // cache of objects that have changed.
         changes = new HashMap<>();
 
-        // number of objects is always one more then the current size and
+        // number of objects is always one more than the current size and
         // thus the next available number.
         nextReferenceNumber = new AtomicInteger();
-        if (trailer != null) {
-            CrossReference crossReference = trailer.getPrimaryCrossReference();
-            nextReferenceNumber.set(crossReference.getNextAvailableReferenceNumber());
-        }
+        nextReferenceNumber.set(this.crossReferenceRoot.getNextAvailableReferenceNumber());
     }
 
     /**
@@ -72,8 +71,7 @@ public class StateManager {
         // zero revision number for now but technically we can reuse
         // deleted references and increment the rev number.  For no we
         // keep it simple
-        Reference newReference = new Reference(nextReferenceNumber.getAndIncrement(), 0);
-        return newReference;
+        return new Reference(nextReferenceNumber.getAndIncrement(), 0);
     }
 
     /**
@@ -118,7 +116,7 @@ public class StateManager {
      * Returns an instance of the specified reference
      *
      * @param reference reference to look for an existing usage
-     * @return Change of corresponding reference if present, false otherwise.
+     * @return Change of corresponding reference if present
      */
     public Object getChange(Reference reference) {
         Change change = changes.get(reference);
@@ -159,7 +157,7 @@ public class StateManager {
      * Sets a snapshot of the current changes.
      */
     public void setChangesSnapshot() {
-        savedChangesSnapshot = Collections.unmodifiableMap(new HashMap<>(changes));
+        savedChangesSnapshot = Map.copyOf(changes);
     }
 
     /**
@@ -196,10 +194,9 @@ public class StateManager {
         return sortedList.iterator();
     }
 
-    public PTrailer getTrailer() {
-        return trailer;
+    public CrossReferenceRoot getCrossReferenceRoot() {
+        return crossReferenceRoot;
     }
-
 
     private static class PObjectComparatorByReferenceObjectNumber
             implements Comparator<Change> {

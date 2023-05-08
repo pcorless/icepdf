@@ -56,11 +56,9 @@ public class ActionsPanel extends AnnotationPanelAdapter
     private JButton editAction;
     private JButton removeAction;
 
-    // action type descriptions
-    private String destinationLabel;
-    private String uriActionLabel;
-    private String goToActionLabel;
-    private String launchActionLabel;
+    private final String uriActionLabel;
+    private final String goToActionLabel;
+    private final String launchActionLabel;
 
     // Goto action dialog
     private GoToActionDialog goToActionDialog;
@@ -69,7 +67,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
         super(controller);
         setLayout(new GridLayout(2, 1, 5, 5));
 
-        // Setup the basics of the panel
+        // Set up the basics of the panel
         setFocusable(true);
 
         // Add the tabbed pane to the overall panel
@@ -79,7 +77,8 @@ public class ActionsPanel extends AnnotationPanelAdapter
         this.setEnabled(false);
 
         // assign language values for supported action types
-        destinationLabel = messageBundle.getString("viewer.utilityPane.action.type.destination.label");
+        // action type descriptions
+        String destinationLabel = messageBundle.getString("viewer.utilityPane.action.type.destination.label");
         uriActionLabel = messageBundle.getString("viewer.utilityPane.action.type.uriAction.label");
         goToActionLabel = messageBundle.getString("viewer.utilityPane.action.type.goToAction.label");
         launchActionLabel = messageBundle.getString("viewer.utilityPane.action.type.launchAction.label");
@@ -103,7 +102,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
         if (annotation.getAnnotation() != null &&
                 annotation.getAnnotation().getAction() != null) {
             addActionToList(annotation.getAnnotation().getAction());
-            // select first item in list. 
+            // select first item in list.
             if (actionListModel.size() > 0) {
                 actionList.setSelectedIndex(0);
             }
@@ -126,7 +125,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
         }
 
         if (source == addAction) {
-            // does all dialog work for adding new action. 
+            // does all dialog work for adding new action.
             addAction();
         } else if (source == editAction) {
             // show the correct panel for the selected annotation
@@ -162,7 +161,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
                 editAction.setEnabled(false);
                 removeAction.setEnabled(false);
             } else {
-                // we only can add one action to an annotation for now. 
+                // we only can add one action to an annotation for now.
                 refreshActionCrud();
             }
         }
@@ -239,13 +238,16 @@ public class ActionsPanel extends AnnotationPanelAdapter
                                 currentAnnotationComponent.getAnnotation().getLibrary(),
                                 ActionFactory.LAUNCH_ACTION);
                 // get action and add the new action
-                launchAction.setExternalFile(fileString);
-                currentAnnotationComponent.getAnnotation().addAction(launchAction);
-                // add the new action to the list.
-                actionListModel.addElement(new ActionEntry(
-                        messageBundle.getString(
-                                "viewer.utilityPane.action.type.launchAction.label"),
-                        launchAction));
+                if (launchAction != null) {
+                    launchAction.setExternalFile(fileString);
+
+                    currentAnnotationComponent.getAnnotation().addAction(launchAction);
+                    // add the new action to the list.
+                    actionListModel.addElement(new ActionEntry(
+                            messageBundle.getString(
+                                    "viewer.utilityPane.action.type.launchAction.label"),
+                            launchAction));
+                }
             }
         }
     }
@@ -262,7 +264,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
             URIAction uriAction = (URIAction) action;
             String oldURIValue = uriAction.getURI();
             String newURIValue = showURIActionDialog(oldURIValue);
-            // finally do all the lifting to edit a uri change.
+            // finally do all the lifting to edit an uri change.
             if (newURIValue != null &&
                     !oldURIValue.equals(newURIValue)) {
                 // create a new instance of the action type
@@ -462,10 +464,10 @@ public class ActionsPanel extends AnnotationPanelAdapter
     /**
      * Action entries used with the actionList component.
      */
-    class ActionEntry {
+    static class ActionEntry {
 
         // The text to be displayed on the screen for this item.
-        String title;
+        final String title;
 
         // The destination to be displayed when this item is activated
         org.icepdf.core.pobjects.actions.Action action;
@@ -498,13 +500,13 @@ public class ActionsPanel extends AnnotationPanelAdapter
      * An Entry objects for the different action types, used in dialog
      * for creating/adding new actions.
      */
-    class ActionChoice {
+    static class ActionChoice {
 
         // The text to be displayed on the screen for this item.
-        String title;
+        final String title;
 
         // The destination to be displayed when this item is activated
-        int actionType;
+        final int actionType;
 
 
         ActionChoice(String title, int actionType) {

@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
@@ -24,7 +25,6 @@ import java.awt.color.ICC_ColorSpace;
 import java.awt.color.ICC_Profile;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**
@@ -42,7 +42,7 @@ public class DeviceCMYK extends PColorSpace {
 
     private static final DeviceGray DEVICE_GRAY = new DeviceGray(null, null);
     // CMYK ICC color profile.
-    private static ICC_ColorSpace iccCmykColorSpace;
+    private static final ICC_ColorSpace iccCmykColorSpace;
 
     // disable icc color profile lookups as they can be slow. n
     private static boolean disableICCCmykColorSpace;
@@ -54,7 +54,7 @@ public class DeviceCMYK extends PColorSpace {
         iccCmykColorSpace = getIccCmykColorSpace();
     }
 
-    public DeviceCMYK(Library l, HashMap h) {
+    public DeviceCMYK(Library l, DictionaryEntries h) {
         super(l, h);
     }
 
@@ -191,7 +191,7 @@ public class DeviceCMYK extends PColorSpace {
             try {
                 f = iccCmykColorSpace.toRGB(f);
                 return new Color(f[0], f[1], f[2]);
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 logger.warning("Error using iccCmykColorSpace in DeviceCMYK.");
             }
         }
@@ -252,7 +252,7 @@ public class DeviceCMYK extends PColorSpace {
         // we can run into decode issue if we share the profile across
         String customCMYKProfilePath = null;
         try {
-            Object profileStream;
+            InputStream profileStream;
             customCMYKProfilePath = Defs.sysProperty("org.icepdf.core.pobjects.graphics.cmyk");
             if (customCMYKProfilePath == null) {
                 customCMYKProfilePath = "/org/icepdf/core/pobjects/graphics/res/CoatedFOGRA27.icc";
@@ -261,7 +261,7 @@ public class DeviceCMYK extends PColorSpace {
                 profileStream = new FileInputStream(customCMYKProfilePath);
             }
 
-            ICC_Profile icc_profile = ICC_Profile.getInstance((InputStream) profileStream);
+            ICC_Profile icc_profile = ICC_Profile.getInstance(profileStream);
             return new ICC_ColorSpace(icc_profile);
         } catch (Exception exception) {
             logger.warning("Error loading ICC color profile: " + customCMYKProfilePath);

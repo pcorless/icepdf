@@ -16,6 +16,7 @@
 
 package org.icepdf.core.pobjects.actions;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
@@ -23,7 +24,6 @@ import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.util.Library;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 /**
  * Upon invocation of a reset-form action, a conforming processor shall reset
@@ -35,7 +35,7 @@ import java.util.HashMap;
  * of action.
  * <br>
  * The value of the action dictionary’s Flags entry is a non-negative containing
- *
+ * <p>
  * flags specifying various characteristics of the action. Bit positions within
  * the flag word shall be numbered starting from 1 (low-order). Only one flag is
  * defined for this type of action. All undefined flag bits shall be reserved
@@ -52,9 +52,9 @@ public class ResetFormAction extends FormAction {
      * exclude from resetting; that is, all fields in the document’s interactive
      * form shall be reset except those listed in the Fields array.
      */
-    public int INCLUDE_EXCLUDE_BIT = 0X0000001;
+    public final int INCLUDE_EXCLUDE_BIT = 0X0000001;
 
-    public ResetFormAction(Library l, HashMap h) {
+    public ResetFormAction(Library l, DictionaryEntries h) {
         super(l, h);
     }
 
@@ -89,7 +89,7 @@ public class ResetFormAction extends FormAction {
      */
     protected void descendFormTree(Object formNode) {
         if (formNode instanceof AbstractWidgetAnnotation) {
-            ((AbstractWidgetAnnotation) formNode).reset();
+            ((AbstractWidgetAnnotation<?>) formNode).reset();
         } else if (formNode instanceof FieldDictionary) {
             // iterate over the kid's array.
             FieldDictionary child = (FieldDictionary) formNode;
@@ -101,7 +101,7 @@ public class ResetFormAction extends FormAction {
                         kid = library.getObject((Reference) kid);
                     }
                     if (kid instanceof AbstractWidgetAnnotation) {
-                        ((AbstractWidgetAnnotation) kid).reset();
+                        ((AbstractWidgetAnnotation<?>) kid).reset();
                     } else if (kid instanceof FieldDictionary) {
                         descendFormTree(kid);
                     }
@@ -112,8 +112,8 @@ public class ResetFormAction extends FormAction {
     }
 
     /**
-     * @see #INCLUDE_EXCLUDE_BIT
      * @return true if bit is set, otherwise false.
+     * @see #INCLUDE_EXCLUDE_BIT
      */
     public boolean isIncludeExclude() {
         return (getFlags() & INCLUDE_EXCLUDE_BIT) == INCLUDE_EXCLUDE_BIT;

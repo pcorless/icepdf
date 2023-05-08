@@ -41,13 +41,13 @@ import java.util.ResourceBundle;
 public class AnnotationSummaryPanel extends JPanel implements MutableDocument, PropertyChangeListener,
         MouseListener, ComponentListener, ItemListener {
 
-    protected Frame frame;
-    protected Controller controller;
-    protected ResourceBundle messageBundle;
+    protected final Frame frame;
+    protected final Controller controller;
+    protected final ResourceBundle messageBundle;
 
     protected MarkupAnnotation lastSelectedMarkupAnnotation;
 
-    protected GridBagConstraints constraints;
+    protected final GridBagConstraints constraints;
     protected JPanel annotationsPanel;
 
     // font configuration
@@ -162,7 +162,7 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
         ActionMap actionMap = getActionMap();
 
         /// ctrl-- to increase font size.
-        KeyStroke key = KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, InputEvent.CTRL_MASK);
+        KeyStroke key = KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, InputEvent.CTRL_DOWN_MASK);
         inputMap.put(key, "font-size-increase");
         actionMap.put("font-size-increase", new AbstractAction() {
             @Override
@@ -174,7 +174,7 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
         });
 
         // ctrl-0 to dfeault font size.
-        key = KeyStroke.getKeyStroke(KeyEvent.VK_0, InputEvent.CTRL_MASK);
+        key = KeyStroke.getKeyStroke(KeyEvent.VK_0, InputEvent.CTRL_DOWN_MASK);
         inputMap.put(key, "font-size-default");
         actionMap.put("font-size-default", new AbstractAction() {
             @Override
@@ -184,7 +184,7 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
         });
 
         // ctrl-- to decrease font size.
-        key = KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, InputEvent.CTRL_MASK);
+        key = KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, InputEvent.CTRL_DOWN_MASK);
         inputMap.put(key, "font-size-decrease");
         actionMap.put("font-size-decrease", new AbstractAction() {
             @Override
@@ -364,7 +364,7 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
             case PropertyConstants.ANNOTATION_SELECTED:
             case PropertyConstants.ANNOTATION_FOCUS_GAINED:
                 if (newValue instanceof MarkupAnnotationComponent) {
-                    lastSelectedMarkupAnnotation = (MarkupAnnotation) ((MarkupAnnotationComponent) newValue).getAnnotation();
+                    lastSelectedMarkupAnnotation = ((MarkupAnnotationComponent<?>) newValue).getAnnotation();
                 }
                 break;
 

@@ -51,7 +51,7 @@ public interface Pattern {
      */
     int PATTERN_TYPE_SHADING = 2;
 
-    Name TYPE_VALUE = new Name("pattern");
+    Name TYPE_VALUE = new Name("Pattern");
 
     Name getType();
 

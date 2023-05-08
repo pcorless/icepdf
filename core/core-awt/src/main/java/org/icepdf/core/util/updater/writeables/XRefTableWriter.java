@@ -20,13 +20,11 @@ public class XRefTableWriter extends BaseTableWriter {
         zero.setNextDeletedObjectNumber(nextDeletedObjectNumber);
         entries.add(0, zero);
 
-        output.write(NEWLINE);
         long xrefPosition = startingPosition + output.getCount();
         output.write(XREF);
         for (int i = 0; i < entries.size(); ) {
             i += writeXrefSubSection(entries, i, output);
         }
-        output.write(NEWLINE);
         return xrefPosition;
     }
 

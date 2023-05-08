@@ -29,7 +29,7 @@ public abstract class SecurityHandler implements SecurityHandlerInterface {
 
     protected String handlerName = null;
 
-    protected EncryptionDictionary encryptionDictionary = null;
+    protected EncryptionDictionary encryptionDictionary;
 
     protected Permissions permissions = null;
 

@@ -28,10 +28,9 @@ import java.util.Stack;
  */
 public class Procedure extends Operator {
 
-    private Stack<Object> stack;
-    private Procedure previousProcedure;
+    private final Stack<Object> stack;
+    private final Procedure previousProcedure;
 
-    @SuppressWarnings("unchecked")
     public Procedure(Procedure previousProcedure) {
         super(OperatorNames.OP_PROC);
         stack = new Stack<>();

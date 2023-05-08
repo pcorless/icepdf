@@ -15,10 +15,7 @@
  */
 package org.icepdf.core.pobjects.acroform;
 
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.Resources;
-import org.icepdf.core.pobjects.Stream;
-import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.util.Library;
@@ -26,8 +23,6 @@ import org.icepdf.core.util.Utils;
 import org.icepdf.core.util.parser.content.ContentParser;
 
 import java.awt.*;
-import java.util.HashMap;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.icepdf.core.pobjects.acroform.InteractiveForm.DR_KEY;
@@ -76,7 +71,6 @@ public class VariableTextFieldDictionary extends FieldDictionary {
      * Variable text fields.
      */
     private String defaultAppearance;
-    private String defaultStyle;
     private String defaultRichText;
 
     /**
@@ -84,35 +78,34 @@ public class VariableTextFieldDictionary extends FieldDictionary {
      */
     public static final Name RV_KEY = new Name("RV");
 
-    protected Quadding quadding = Quadding.LEFT_JUSTIFIED;
+    protected Quadding quadding;
     protected float size = 12;
     protected float leading = 0;
     protected Name fontName = new Name("Helv");
     protected Font font = null;
     protected Color color = Color.BLACK;
 
-    public VariableTextFieldDictionary(Library library, HashMap entries) {
+    public VariableTextFieldDictionary(Library library, DictionaryEntries entries) {
         super(library, entries);
 
         // parse out quadding
         Number value = library.getInt(entries, Q_KEY);
         int quad = value.intValue();
         switch (quad) {
-            case 0:
-                quadding = Quadding.LEFT_JUSTIFIED;
-                break;
             case 1:
                 quadding = Quadding.CENTERED;
                 break;
             case 2:
                 quadding = Quadding.RIGHT_JUSTIFIED;
                 break;
+            case 0:
             default:
                 quadding = Quadding.LEFT_JUSTIFIED;
                 break;
         }
         // get the default style string
         Object tmp = library.getObject(entries, DS_KEY);
+        String defaultStyle;
         if (tmp != null) {
             defaultStyle = Utils.convertStringObject(library, (StringObject) tmp);
         }
@@ -132,7 +125,7 @@ public class VariableTextFieldDictionary extends FieldDictionary {
         if (tmp instanceof StringObject) {
             defaultAppearance = Utils.convertStringObject(library, (StringObject) tmp);
             Resources resources = library.getResources(entries, DR_KEY);
-            // use the DA and DR dictionary to get a valid graphics state and thus the
+            // use the DA and DR dictionary to get a valid graphics state and thus
             // the font and colour information we need to generate a new content stream
             if (resources != null) {
                 try {
@@ -148,7 +141,7 @@ public class VariableTextFieldDictionary extends FieldDictionary {
                             fontName = gs.getTextState().fontName;
                         }
                     }
-                } catch (Throwable e) {
+                } catch (Exception e) {
                     logger.warning("Could not validate default appearance, defaulting.");
                 }
             }
@@ -158,10 +151,10 @@ public class VariableTextFieldDictionary extends FieldDictionary {
 
     /**
      * If the DA key is present the appearance stream is generated as is,  however if not then the content
-     * is passed and we try to pull the color, size, font, and font name.
+     * is passed, and we try to pull the color, size, font, and font name.
      *
-     * @param content content to parse for general appearance values.
-     * @param resources  parent resource dictionary.
+     * @param content   content to parse for general appearance values.
+     * @param resources parent resource dictionary.
      * @return base postscript encoded default appearance values.
      */
     public String generateDefaultAppearance(String content, Resources resources) {
@@ -178,8 +171,8 @@ public class VariableTextFieldDictionary extends FieldDictionary {
                 resources = library.getCatalog().getInteractiveForm().getResources();
             }
             ContentParser cp = new ContentParser(library, resources);
-            // use full parser so we parse the font color.
-            cp.parse(new byte[][]{possibleContent.getBytes()}, null);
+            // usefull parser so we parse the font color.
+            cp.parse(new byte[][]{possibleContent.getBytes()}, new Reference[]{this.getPObjectReference()}, null);
             GraphicsState gs = cp.getGraphicsState();
             if (gs != null) {
                 if (gs.getFillColor() != null) color = gs.getFillColor();
@@ -200,11 +193,8 @@ public class VariableTextFieldDictionary extends FieldDictionary {
                     if (gs.getTextState().fontName != null) fontName = gs.getTextState().fontName;
                 }
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.warning("Could not generate default appearance stream.");
-            if (logger.isLoggable(Level.FINEST)) {
-                logger.log(Level.FINEST, "Error parsing text feld content stream", e);
-            }
         }
         return color.getRed() / 255.0f + " " + color.getGreen() / 255.0f + " " + color.getBlue() / 255.0f + " rg " +
                 "/" + fontName + " " +

@@ -17,6 +17,7 @@
 package org.icepdf.core.pobjects.security;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
@@ -61,7 +62,7 @@ public class CryptFilter extends Dictionary {
     public HashMap<Name, CryptFilterEntry> cryptFilters;
 
 
-    public CryptFilter(Library library, HashMap entries) {
+    public CryptFilter(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 
@@ -70,16 +71,20 @@ public class CryptFilter extends Dictionary {
      *
      * @param cryptFilterName name of crypt filter to find.
      * @return crypt filter entry specified by the given name.  if not found
-     *         null is returned.
+     * null is returned.
      */
     public CryptFilterEntry getCryptFilterByName(Name cryptFilterName) {
         // check if need to initialize the dictionary
         if (cryptFilters == null) {
             cryptFilters = new HashMap<>(1);
-            Set cryptKeys = entries.keySet();
-            for (Object name : cryptKeys) {
-                cryptFilters.put((Name) name, new CryptFilterEntry(library,
-                        (HashMap) entries.get(name)));
+            Set<Name> cryptKeys = entries.keySet();
+            Object filter;
+            for (Name name : cryptKeys) {
+                filter = entries.get(name);
+                if (filter instanceof DictionaryEntries) {
+                    cryptFilters.put(name, new CryptFilterEntry(library, (DictionaryEntries) filter));
+                }
+
             }
         }
         return cryptFilters.get(cryptFilterName);

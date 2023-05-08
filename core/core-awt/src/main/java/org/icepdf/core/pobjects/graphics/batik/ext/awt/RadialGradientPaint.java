@@ -99,17 +99,17 @@ public final class RadialGradientPaint extends MultipleGradientPaint {
     /**
      * Focus point which defines the 0% gradient stop x coordinate.
      */
-    private Point2D focus;
+    private final Point2D focus;
 
     /**
      * Center of the circle defining the 100% gradient stop x coordinate.
      */
-    private Point2D center;
+    private final Point2D center;
 
     /**
      * Radius of the outermost circle defining the 100% gradient stop.
      */
-    private float radius;
+    private final float radius;
 
     /**
      * <br>

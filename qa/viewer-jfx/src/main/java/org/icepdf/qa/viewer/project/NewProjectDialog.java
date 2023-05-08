@@ -16,8 +16,8 @@ import java.nio.file.Path;
  */
 public class NewProjectDialog extends AbstractDialog<Project> {
 
-    private TextField projectName;
-    private Label errorLabel;
+    private final TextField projectName;
+    private final Label errorLabel;
 
     public NewProjectDialog(Mediator mediator) {
         super(mediator);

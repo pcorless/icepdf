@@ -42,10 +42,10 @@ public abstract class AnnotationPanelAdapter extends JPanel
 
     // action instance that is being edited
     protected AnnotationComponent currentAnnotationComponent;
-    protected DocumentViewController documentViewController;
+    protected final DocumentViewController documentViewController;
 
-    protected Controller controller;
-    protected ResourceBundle messageBundle;
+    protected final Controller controller;
+    protected final ResourceBundle messageBundle;
 
     // border styles types.
     protected static ValueLabelItem[] VISIBLE_TYPE_LIST;
@@ -57,7 +57,7 @@ public abstract class AnnotationPanelAdapter extends JPanel
     protected static final int TRANSPARENCY_MAX = 255;
     protected static final int TRANSPARENCY_INIT = 255;
 
-    protected Preferences preferences;
+    protected final Preferences preferences;
 
     protected AnnotationPanelAdapter(Controller controller) {
         setDoubleBuffered(true);

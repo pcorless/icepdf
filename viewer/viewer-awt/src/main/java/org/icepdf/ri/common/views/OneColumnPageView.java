@@ -39,9 +39,9 @@ import static org.icepdf.ri.common.views.BasePageViewLayout.PAGE_SPACING_HORIZON
 public class OneColumnPageView extends AbstractDocumentView {
 
     // specialized listeners for different gui operations
-    protected CurrentPageChanger currentPageChanger;
+    protected final CurrentPageChanger currentPageChanger;
 
-    protected KeyListenerPageColumnChanger keyListenerPageChanger;
+    protected final KeyListenerPageColumnChanger keyListenerPageChanger;
 
     public OneColumnPageView(DocumentViewController documentDocumentViewController,
                              JScrollPane documentScrollpane,

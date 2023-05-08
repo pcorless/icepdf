@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 
 import java.util.HashMap;
@@ -29,7 +30,7 @@ import java.util.HashMap;
  */
 public class Appearance {
 
-    private HashMap<Name, AppearanceState> appearance;
+    private final HashMap<Name, AppearanceState> appearance;
 
     private Name selectedName = Annotation.APPEARANCE_STREAM_NORMAL_KEY;
     private Name offName = new Name("Off");
@@ -48,7 +49,7 @@ public class Appearance {
 
     public void addAppearance(Name name, AppearanceState appearanceState) {
         appearance.put(name, appearanceState);
-        if (name.getName().toLowerCase().equals("off")) {
+        if (name.getName().equalsIgnoreCase("off")) {
             offName = name;
         } else {
             onName = name;
@@ -72,13 +73,11 @@ public class Appearance {
     }
 
     public AppearanceState getSelectedAppearanceState() {
-        AppearanceState state = appearance.get(selectedName);
-        return state;
+        return appearance.get(selectedName);
     }
 
     public AppearanceState getAppearanceState(Name name) {
-        AppearanceState state = appearance.get(name);
-        return state;
+        return appearance.get(name);
     }
 
     /**
@@ -86,7 +85,7 @@ public class Appearance {
      *
      * @param entries parent annotation dictionary to update.
      */
-    protected void updateAppearanceDictionary(HashMap<Object, Object> entries) {
+    protected void updateAppearanceDictionary(DictionaryEntries entries) {
         entries.put(Annotation.APPEARANCE_STATE_KEY, selectedName);
     }
 }

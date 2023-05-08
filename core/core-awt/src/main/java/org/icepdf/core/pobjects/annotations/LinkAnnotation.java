@@ -20,7 +20,6 @@ import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
-import java.util.HashMap;
 import java.util.logging.Logger;
 
 
@@ -104,7 +103,7 @@ public class LinkAnnotation extends Annotation {
      * @param l document library.
      * @param h dictionary entries.
      */
-    public LinkAnnotation(Library l, HashMap h) {
+    public LinkAnnotation(Library l, DictionaryEntries h) {
         super(l, h);
     }
 
@@ -121,7 +120,7 @@ public class LinkAnnotation extends Annotation {
         StateManager stateManager = library.getStateManager();
 
         // create a new entries to hold the annotation properties
-        HashMap<Name, Object> entries = new HashMap<>();
+        DictionaryEntries entries = new DictionaryEntries();
         // set default link annotation values.
         entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
         entries.put(Dictionary.SUBTYPE_KEY, Annotation.SUBTYPE_LINK);

@@ -29,11 +29,11 @@ import java.util.ResourceBundle;
 public class AnnotationPropertiesDialog extends EscapeJDialog implements AnnotationProperties {
 
     // layouts constraint
-    private GridBagConstraints constraints;
+    private final GridBagConstraints constraints;
 
-    private JTabbedPane propertiesTabbedPane;
-    private Controller controller;
-    private ResourceBundle messageBundle;
+    private final JTabbedPane propertiesTabbedPane;
+    private final Controller controller;
+    private final ResourceBundle messageBundle;
 
     public AnnotationPropertiesDialog(Frame frame, SwingController controller,
                                       ResourceBundle messageBundle) {
@@ -133,8 +133,8 @@ public class AnnotationPropertiesDialog extends EscapeJDialog implements Annotat
         // disable the component if the annotation is readonly.
         if (annotation.getAnnotation().getFlagReadOnly()) {
             if (annotationPropertyPanel != null) annotationPropertyPanel.setEnabled(false);
-            if (actionsPanel != null) actionsPanel.setEnabled(false);
-            if (borderPanel != null) borderPanel.setEnabled(false);
+            actionsPanel.setEnabled(false);
+            borderPanel.setEnabled(false);
             if (flagsPanel != null) flagsPanel.setEnabled(false);
         }
     }

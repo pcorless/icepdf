@@ -30,7 +30,7 @@ import java.awt.geom.AffineTransform;
  */
 public class PaintDrawCmd extends AbstractDrawCmd {
 
-    private Paint paint;
+    private final Paint paint;
 
     public PaintDrawCmd(Paint paint) {
         this.paint = paint;

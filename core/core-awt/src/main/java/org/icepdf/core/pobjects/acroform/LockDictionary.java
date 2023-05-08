@@ -1,12 +1,12 @@
 package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.util.Library;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 /**
  * The signature field lock dictionary (described in Table 233) contains field names from the signature seed value
@@ -46,7 +46,7 @@ public class LockDictionary extends Dictionary {
 
     private ArrayList<StringObject> fields;
 
-    public LockDictionary(Library library, HashMap entries) {
+    public LockDictionary(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 

@@ -139,7 +139,7 @@ public class AnnotationComponentFactory {
                             (AbstractWidgetAnnotation) annotation, documentViewController, pageViewComponent);
                 }
             } else {
-                return new AbstractAnnotationComponent<Annotation>(annotation, documentViewController, pageViewComponent) {
+                return new AbstractAnnotationComponent<>(annotation, documentViewController, pageViewComponent) {
                     private static final long serialVersionUID = 409696785049691125L;
 
                     @Override

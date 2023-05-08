@@ -63,7 +63,7 @@ public class PInfo extends Dictionary {
      * @param library document library
      * @param entries entries for this object dictionary.
      */
-    public PInfo(final Library library, final HashMap entries) {
+    public PInfo(final Library library, final DictionaryEntries entries) {
         super(library, entries);
         securityManager = library.getSecurityManager();
     }

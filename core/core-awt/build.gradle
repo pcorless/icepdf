@@ -34,11 +34,11 @@ publishing {
                     asNode().appendNode('url', 'https://github.com/pcorless/icepdf')
                     asNode().appendNode('scm')
                             .appendNode('connection', 'scm:git:https://github.com/pcorless/icepdf').parent()
-                            .appendNode('url', 'http://www.apache.org/licenses/LICENSE-2.0.txt').parent()
+                            .appendNode('url', 'https://www.apache.org/licenses/LICENSE-2.0.txt').parent()
                             .appendNode('tag', 'icepdf-' + version + '-maven')
                     asNode().appendNode('licenses').appendNode('license').with {
                         appendNode('name', 'Apache License, Version 2.0')
-                        appendNode('url', 'http://www.apache.org/licenses/LICENSE-2.0.html')
+                        appendNode('url', 'https://www.apache.org/licenses/LICENSE-2.0.html')
                         appendNode('distribution', 'repo')
                     }
                     asNode().appendNode('issueManagement').with {

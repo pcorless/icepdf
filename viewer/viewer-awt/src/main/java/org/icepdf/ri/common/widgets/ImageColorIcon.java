@@ -26,7 +26,7 @@ import java.net.URL;
  */
 public class ImageColorIcon extends ImageIcon {
 
-    protected PaintButtonBase paintButtonBase;
+    protected final PaintButtonBase paintButtonBase;
 
     public ImageColorIcon(URL location) {
         super(location);

@@ -215,7 +215,7 @@ public class GraphicsState {
 
     // allow over paint support for fill and stroke.  Still experimental
     // enabled buy default but can be turned off if required.
-    private static boolean enabledOverpaint;
+    private static final boolean enabledOverpaint;
 
     static {
         enabledOverpaint =
@@ -227,8 +227,8 @@ public class GraphicsState {
     // Current transformation matrix.
     private AffineTransform CTM;
 
-    private static ClipDrawCmd clipDrawCmd = new ClipDrawCmd();
-    private static NoClipDrawCmd noClipDrawCmd = new NoClipDrawCmd();
+    private static final ClipDrawCmd clipDrawCmd = new ClipDrawCmd();
+    private static final NoClipDrawCmd noClipDrawCmd = new NoClipDrawCmd();
 
     // Specifies the shape of the endpoint for any open path.
     private int lineCap;
@@ -579,7 +579,7 @@ public class GraphicsState {
             try {
                 afInverse = af.createInverse();
             } catch (Exception e) {
-                logger.log(Level.FINER, "Error generating clip inverse.", e);
+                logger.log(Level.WARNING, "Error generating clip inverse.", e);
             }
 
             // transform the clip.
@@ -648,9 +648,8 @@ public class GraphicsState {
 
     public void setLineWidth(float lineWidth) {
         // Automatic Stroke Adjustment
-        if (lineWidth <= Float.MIN_VALUE || lineWidth >= Float.MAX_VALUE ||
-                lineWidth == 0) {
-            // set line width to a very small none zero number. 
+        if (lineWidth <= Float.MIN_VALUE || lineWidth >= Float.MAX_VALUE) {
+            // set line width to a very small none zero number.
             this.lineWidth = 0.001f;
         } else {
             this.lineWidth = lineWidth;

@@ -16,10 +16,9 @@
 
 package org.icepdf.core.pobjects.acroform;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
-
-import java.util.HashMap;
 
 /**
  * Text field (field type Tx) is a box or space for text fill-in data typically
@@ -121,14 +120,14 @@ public class TextFieldDictionary extends VariableTextFieldDictionary {
      * of the field dictionary (Table 222) shall specify the rich text string.
      */
     public static final int RICH_TEXT_BIT_FLAG = 0x2000000;
-    protected TextFieldType textFieldType;
+    protected final TextFieldType textFieldType;
     protected int maxLength = 0;
 
-    public TextFieldDictionary(Library library, HashMap entries) {
+    public TextFieldDictionary(Library library, DictionaryEntries entries) {
         super(library, entries);
         // parse out max length.
         Object value = library.getObject(entries, MAX_LENGTH_KEY);
-        if (value != null && value instanceof Number) {
+        if (value instanceof Number) {
             maxLength = ((Number) value).intValue();
         }
         // determine the text type

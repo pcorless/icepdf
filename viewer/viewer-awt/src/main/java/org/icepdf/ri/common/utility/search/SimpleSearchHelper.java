@@ -26,23 +26,23 @@ import java.beans.PropertyChangeListener;
 
 public class SimpleSearchHelper implements PropertyChangeListener {
 
-    private Controller controller;
-    private DocumentViewControllerImpl documentViewController;
-    private DocumentSearchController searchController;
-    private String pattern;
+    private final Controller controller;
+    private final DocumentViewControllerImpl documentViewController;
+    private final DocumentSearchController searchController;
+    private final String pattern;
     private int currentPage;
-    private int startPage;
-    private int pageCount;
+    private final int startPage;
+    private final int pageCount;
 
     private int wordHits;
     private int wordIndex;
     private int commentHits;
     private int commentIndex;
 
-    private SearchMode searchMode;
-    private boolean commentsEnabled;
-    private boolean wholeWord;
-    private boolean caseSensitive;
+    private final SearchMode searchMode;
+    private final boolean commentsEnabled;
+    private final boolean wholeWord;
+    private final boolean caseSensitive;
 
     private SimpleSearchHelper(Builder builder) {
         controller = builder.controller;
@@ -71,10 +71,8 @@ public class SimpleSearchHelper implements PropertyChangeListener {
     public void propertyChange(PropertyChangeEvent evt) {
         Object newValue = evt.getNewValue();
         String propertyName = evt.getPropertyName();
-        switch (propertyName) {
-            case PropertyConstants.DOCUMENT_CURRENT_PAGE:
-                currentPage = (int) newValue;
-                break;
+        if (propertyName.equals(PropertyConstants.DOCUMENT_CURRENT_PAGE)) {
+            currentPage = (int) newValue;
         }
     }
 

@@ -25,7 +25,7 @@ import java.awt.*;
  */
 public class ColorButton extends JButton implements PaintButtonInterface {
 
-    protected PaintButtonBase paintButtonBase;
+    protected final PaintButtonBase paintButtonBase;
 
     public ColorButton() {
         paintButtonBase = new PaintButtonBase(this);

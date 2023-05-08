@@ -16,11 +16,11 @@
 package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 /**
  * The FieldMDP transform method shall be used to detect changes to the values of a list of form fields.
@@ -74,7 +74,7 @@ public class FieldMDPTransferParam extends Dictionary implements TransformParams
      */
     public static final Name FIELDS_KEY = new Name("Fields");
 
-    public FieldMDPTransferParam(Library library, HashMap entries) {
+    public FieldMDPTransferParam(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 
@@ -91,7 +91,7 @@ public class FieldMDPTransferParam extends Dictionary implements TransformParams
     /**
      * (Required if Action is Include or Exclude) An array of text strings containing field names.
      *
-     * @return array of text string,  null if not set.
+     * @return ArrayList of text strings,  null if not set.
      */
     public ArrayList<Name> getFields() {
         return (ArrayList) library.getArray(entries, FIELDS_KEY);

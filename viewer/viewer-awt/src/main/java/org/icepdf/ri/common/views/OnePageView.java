@@ -36,9 +36,9 @@ import static org.icepdf.ri.common.views.BasePageViewLayout.PAGE_SPACING_HORIZON
 @SuppressWarnings("serial")
 public class OnePageView extends AbstractDocumentView {
 
-    protected Object pageChangerListener;
+    protected final Object pageChangerListener;
 
-    protected KeyListenerPageChanger keyListenerPageChanger;
+    protected final KeyListenerPageChanger keyListenerPageChanger;
 
 
     public OnePageView(DocumentViewController documentDocumentViewController,

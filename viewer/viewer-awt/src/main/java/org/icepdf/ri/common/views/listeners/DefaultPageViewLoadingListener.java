@@ -17,9 +17,9 @@ import java.awt.*;
  */
 public class DefaultPageViewLoadingListener extends PageViewLoadingListener {
 
-    private JComponent pageComponent;
+    private final JComponent pageComponent;
     private DocumentViewController documentViewController;
-    private Cursor previousCursor;
+    private final Cursor previousCursor;
 
     public DefaultPageViewLoadingListener(JComponent pageComponent,
                                           DocumentViewController documentViewController) {

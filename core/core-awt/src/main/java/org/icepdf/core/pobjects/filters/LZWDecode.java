@@ -16,11 +16,11 @@
 package org.icepdf.core.pobjects.filters;
 
 import org.icepdf.core.io.BitStream;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Stack;
 
 /**
@@ -44,11 +44,11 @@ public class LZWDecode extends ChunkingInputStream {
     private Code[] codes;
 
 
-    public LZWDecode(BitStream inb, Library library, HashMap entries) {
+    public LZWDecode(BitStream inb, Library library, DictionaryEntries entries) {
         this.inb = inb;
 
         this.earlyChange = 1; // Default value
-        HashMap decodeParmsDictionary = library.getDictionary(entries, DECODEPARMS_KEY);
+        DictionaryEntries decodeParmsDictionary = library.getDictionary(entries, DECODEPARMS_KEY);
         if (decodeParmsDictionary != null) {
             Number earlyChangeNumber = library.getNumber(decodeParmsDictionary, EARLYCHANGE_KEY);
             if (earlyChangeNumber != null) {
@@ -60,7 +60,7 @@ public class LZWDecode extends ChunkingInputStream {
         old_code = 0;
         firstTime = true;
         initCodeTable();
-        setBufferSize(4096);
+        setBufferSize(8 * 1024);
     }
 
     protected int fillInternalBuffer() throws IOException {
@@ -165,8 +165,8 @@ public class LZWDecode extends ChunkingInputStream {
      * Utility class for decode methods.
      */
     private static class Code {
-        Code prefix;
-        byte c;
+        final Code prefix;
+        final byte c;
 
         Code(Code p, byte cc) {
             prefix = p;

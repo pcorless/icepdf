@@ -18,8 +18,6 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
-import java.util.HashMap;
-
 /**
  * An optional content group is a dictionary representing a collection of graphics
  * that can be made visible or invisible dynamically by users of conforming
@@ -47,7 +45,7 @@ public class OptionalContentGroup extends Dictionary implements OptionalContents
      * the group based on outside factors. See 8.11.4.4, "Usage and Usage
      * Application Dictionaries" for more information
      */
-    private HashMap usage;
+    private DictionaryEntries usage;
 
     /**
      * Indicates if this content groups and its child shapes should be displayed.
@@ -62,7 +60,7 @@ public class OptionalContentGroup extends Dictionary implements OptionalContents
         this.visible = visible;
     }
 
-    public OptionalContentGroup(Library library, HashMap entries) {
+    public OptionalContentGroup(Library library, DictionaryEntries entries) {
         super(library, entries);
         // build from Parser
         isOCG = true;
@@ -80,7 +78,7 @@ public class OptionalContentGroup extends Dictionary implements OptionalContents
         return name;
     }
 
-    public HashMap getUsage() {
+    public DictionaryEntries getUsage() {
         if (usage == null) {
             usage = library.getDictionary(entries, USAGE_KEY);
         }

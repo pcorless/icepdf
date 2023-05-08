@@ -14,7 +14,7 @@ import java.awt.image.WritableRaster;
  */
 public class YCbCrARasterOp implements RasterOp {
 
-    private RenderingHints hints = null;
+    private final RenderingHints hints;
 
     public YCbCrARasterOp(RenderingHints hints) {
         this.hints = hints;
@@ -54,12 +54,11 @@ public class YCbCrARasterOp implements RasterOp {
                 byte rByte = (rVal < 0) ? (byte) 0 : (rVal > 255) ? (byte) 0xFF : (byte) rVal;
                 byte gByte = (gVal < 0) ? (byte) 0 : (gVal > 255) ? (byte) 0xFF : (byte) gVal;
                 byte bByte = (bVal < 0) ? (byte) 0 : (bVal > 255) ? (byte) 0xFF : (byte) bVal;
-                float alpha = K;
 
                 rgbaValues[0] = rByte;
                 rgbaValues[1] = gByte;
                 rgbaValues[2] = bByte;
-                rgbaValues[3] = (int) alpha;
+                rgbaValues[3] = (int) K;
 
                 dest.setPixel(x, y, rgbaValues);
             }

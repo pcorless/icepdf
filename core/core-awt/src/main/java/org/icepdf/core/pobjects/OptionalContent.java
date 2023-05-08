@@ -33,7 +33,7 @@ import java.util.*;
  */
 public class OptionalContent extends Dictionary {
 
-    private Map<Reference, OptionalContentGroup> groups;
+    private final Map<Reference, OptionalContentGroup> groups;
 
     public static final Name OCGs_KEY = new Name("OCGs");
     public static final Name OC_KEY = new Name("OC");
@@ -63,7 +63,7 @@ public class OptionalContent extends Dictionary {
      * shall indicate the set of all intents, including those not yet defined.
      * Default value: View. The value shall be View for the document’s default configuration.
      */
-    private List<Name> intent = Arrays.asList(VIEW_VALUE);
+    private List<Name> intent = Collections.singletonList(VIEW_VALUE);
 
 
     /**
@@ -103,9 +103,9 @@ public class OptionalContent extends Dictionary {
     // properties may no longer be valid.
     private boolean emptyDefinition;
 
-    public OptionalContent(Library l, HashMap h) {
+    public OptionalContent(Library l, DictionaryEntries h) {
         super(l, h);
-        groups = new HashMap<Reference, OptionalContentGroup>();
+        groups = new HashMap<>();
     }
 
     @Override
@@ -140,13 +140,13 @@ public class OptionalContent extends Dictionary {
 
         // The default viewing optional content configuration dictionary.
         Object dObj = library.getObject(entries, D_KEY);
-        if (dObj instanceof HashMap) {
-            HashMap configurationDictionary = (HashMap) dObj;
+        if (dObj instanceof DictionaryEntries) {
+            DictionaryEntries configurationDictionary = (DictionaryEntries) dObj;
 
             // apply the base state ON|OFF|Unchanged
-            Object tmp = library.getName(configurationDictionary, BASE_STATE_KEY);
-            if (tmp != null && tmp instanceof Name) {
-                baseState = (Name) tmp;
+            Name baseSate = library.getName(configurationDictionary, BASE_STATE_KEY);
+            if (baseSate != null) {
+                this.baseState = baseSate;
             }
 
             // If the BaseState entry is ON, then we only need to look at the OFF
@@ -165,21 +165,17 @@ public class OptionalContent extends Dictionary {
                 for (Object obj : toggle) {
                     OptionalContentGroup ocg = groups.get(obj);
                     if (ocg != null) {
-                        if (isBaseOn) {
-                            // remove the off entries
-                            ocg.setVisible(false);
-                        } else {
-                            // otherwise we add the on entries.
-                            ocg.setVisible(true);
-                        }
+                        // remove the off entries
+                        // otherwise we add the on entries.
+                        ocg.setVisible(!isBaseOn);
                     }
                 }
             }
             // check for an intent entry
-            tmp = library.getName(configurationDictionary, INTENT_KEY);
+            Object tmp = library.getObject(configurationDictionary, INTENT_KEY);
             if (tmp != null) {
                 if (tmp instanceof Name) {
-                    intent = Arrays.asList(new Name[]{(Name) tmp});
+                    intent = List.of((Name) tmp);
                 } else if (tmp instanceof List) {
                     intent = (List) tmp;
                 }
@@ -197,20 +193,20 @@ public class OptionalContent extends Dictionary {
             // get the ordering information used by the UI. resolve the ref
             //
             tmp = library.getObject(configurationDictionary, ORDER_KEY);
-            if (tmp != null && tmp instanceof List) {
+            if (tmp instanceof List) {
                 List orderedOCs = (List) tmp;
                 if (orderedOCs.size() > 0) {
-                    order = new ArrayList<Object>(orderedOCs.size());
+                    order = new ArrayList<>(orderedOCs.size());
                     order = parseOrderArray(orderedOCs, null);
                 }
             }
 
             // get the radio button group data for correct UI behavior .
             tmp = library.getObject(configurationDictionary, RBGROUPS_KEY);
-            if (tmp != null && tmp instanceof List) {
+            if (tmp instanceof List) {
                 List orderedOCs = (List) tmp;
                 if (orderedOCs.size() > 0) {
-                    rbGroups = new ArrayList<Object>(orderedOCs.size());
+                    rbGroups = new ArrayList<>(orderedOCs.size());
                     rbGroups = parseOrderArray(orderedOCs, null);
                 }
             }
@@ -222,13 +218,13 @@ public class OptionalContent extends Dictionary {
 
     @SuppressWarnings("unchecked")
     private List<Object> parseOrderArray(List<Object> rawOrder, OptionalContentGroup parent) {
-        List<Object> order = new ArrayList<Object>(5);
+        List<Object> order = new ArrayList<>(5);
         OptionalContentGroup group = null;
         for (Object obj : rawOrder) {
             if (obj instanceof Reference) {
-                Object refObject = getOCGs((Reference) obj);
+                OptionalContentGroup refObject = getOCGs((Reference) obj);
                 if (refObject != null) {
-                    group = (OptionalContentGroup) refObject;
+                    group = refObject;
                     if (parent != null && !parent.isVisible()) {
                         group.setVisible(false);
                     }

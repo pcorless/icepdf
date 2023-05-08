@@ -16,10 +16,9 @@
 
 package org.icepdf.core.pobjects.acroform;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
-
-import java.util.HashMap;
 
 /**
  * The FieldDictionaryFactory is responsible for building out the interactive form field tree.  When a none terminal
@@ -44,8 +43,8 @@ public class FieldDictionaryFactory {
      * @return new field dictionary object of the specified field type.
      */
     public static FieldDictionary buildField(Library library,
-                                             HashMap entries) {
-        FieldDictionary fieldDictionary = null;
+                                             DictionaryEntries entries) {
+        FieldDictionary fieldDictionary;
         Name fieldType = library.getName(entries, FieldDictionary.FT_KEY);
         if (TYPE_BUTTON.equals(fieldType)) {
             fieldDictionary = new ButtonFieldDictionary(library, entries);

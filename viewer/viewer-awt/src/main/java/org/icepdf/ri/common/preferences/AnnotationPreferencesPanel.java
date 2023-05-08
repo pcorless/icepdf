@@ -144,6 +144,7 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
                 .getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_SELECTION_TYPE, 0);
         autoselectCbb.setSelectedItem(Arrays.stream(tools).filter(t -> t.toolIdx == toolIdx).findAny().orElse(tools[0]));
         autoselectCbb.addActionListener(actionEvent -> {
+            //noinspection unchecked
             final JComboBox<ToolItem> box = (JComboBox<ToolItem>) actionEvent.getSource();
             final ToolItem selected = box.getItemAt(box.getSelectedIndex());
             ViewerPropertiesManager.ALL_SELECTION_PROPERTIES.forEach(p ->
@@ -206,7 +207,6 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
         constraints.weighty = 1.0;
         addGB(panel, colorButton, 0, 1, 1, 1);
 
-        constraints.fill = GridBagConstraints.NONE;
         constraints.insets = new Insets(5, 1, 5, 1);
         constraints.weightx = 1.0;
         constraints.fill = GridBagConstraints.BOTH;

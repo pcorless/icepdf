@@ -14,7 +14,6 @@ package org.icepdf.examples.print;
  * governing permissions and limitations under the License.
  */
 
-import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.util.Defs;
@@ -76,7 +75,7 @@ public class PrintServices {
         Defs.setProperty("org.icepdf.core.print.stroke", "VALUE_STROKE_PURE");
     }
 
-    public static PrintHelperFactory printHelperFactory = PrintHelperFactoryImpl.getInstance();
+    public static final PrintHelperFactory printHelperFactory = PrintHelperFactoryImpl.getInstance();
 
     /**
      * Attempts to Print PDF documents which are specified as application
@@ -89,8 +88,8 @@ public class PrintServices {
         // setup for input from command line
         BufferedReader stdin =
                 new BufferedReader(new InputStreamReader(System.in));
-        /**
-         * Find Available printers
+        /*
+          Find Available printers
          */
         PrintService[] services =
                 PrintServiceLookup.lookupPrintServices(
@@ -99,7 +98,7 @@ public class PrintServices {
         int selectedPrinter = 0;
         // ask the user which printer they want, only quite when they type
         // q, otherwise just keep asking them which printer to use.
-        while (!(selectedPrinter > 0 && selectedPrinter <= services.length)) {
+        while (true) {
             System.out.println(
                     "Please select the printer number your wish to print to (q to quit):");
             int printerIndex = 1;
@@ -119,7 +118,7 @@ public class PrintServices {
             if (input.length() == 0) {
                 System.out.println("Please select a valid printer number.");
                 System.out.println();
-            } else if (input.toLowerCase().equals("q")) {
+            } else if (input.equalsIgnoreCase("q")) {
                 System.exit(0);
             } else {
                 try {
@@ -136,13 +135,13 @@ public class PrintServices {
             }
         }
 
-        /**
-         * Selected Printer, via user input
+        /*
+          Selected Printer, via user input
          */
         PrintService selectedService = services[selectedPrinter - 1];
 
-        /**
-         * Show selected Printer default attributes.
+        /*
+          Show selected Printer default attributes.
          */
         System.out.println(
                 "Supported Job Properties for printer: " +
@@ -185,8 +184,6 @@ public class PrintServices {
         } catch (PDFSecurityException e) {
             logger.log(Level.WARNING,
                     "PDF security exception, unspported encryption type.", e);
-        } catch (PDFException e) {
-            logger.log(Level.WARNING, "Error loading PDF document.", e);
         } catch (PrintException e) {
             logger.log(Level.WARNING, "Error Printing document.", e);
         } finally {

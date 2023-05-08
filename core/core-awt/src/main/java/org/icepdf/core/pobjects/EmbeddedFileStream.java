@@ -3,9 +3,7 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.Library;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 
 /**
  * If a PDF file contains file specifications that refer to an external file and the PDF file is archived or
@@ -63,8 +61,8 @@ public class EmbeddedFileStream extends Dictionary {
      */
     public static final Name PARAMS_CHECK_SUM_KEY = new Name("CheckSum");
 
-    protected Stream fileStream;
-    private SecurityManager securityManager;
+    protected final Stream fileStream;
+    private final SecurityManager securityManager;
 
     public EmbeddedFileStream(Library library, Stream fileStream) {
         super(library, fileStream.getEntries());
@@ -100,14 +98,14 @@ public class EmbeddedFileStream extends Dictionary {
      *
      * @return the raw dictionary.
      */
-    public HashMap getParams() {
+    public DictionaryEntries getParams() {
         return library.getDictionary(entries, PARAMS_KEY);
     }
 
     /**
      * (Optional) The size of the uncompressed embedded file, in bytes.
      *
-     * @return uncompressed size in bytes,  null if not specified.
+     * @return uncompressed size in bytes.
      */
     public int getParamUncompressedSize() {
         int size = library.getInt(getParams(), PARAMS_SIZE_KEY);
@@ -131,9 +129,8 @@ public class EmbeddedFileStream extends Dictionary {
      * file handler.
      *
      * @return decoded byte array input stream.
-     * @throws IOException io exception during stream decoding.
      */
-    public InputStream getDecodedStreamData() throws IOException {
+    public InputStream getDecodedStreamData() {
         return fileStream.getDecodedByteArrayInputStream();
     }
 
@@ -144,7 +141,7 @@ public class EmbeddedFileStream extends Dictionary {
      */
     public PDate getParamCreationData() {
         Object value = library.getObject(getParams(), PARAMS_CREATION_DATE_KEY);
-        if (value != null && value instanceof StringObject) {
+        if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
             return new PDate(securityManager, text.getDecryptedLiteralString(securityManager));
         }
@@ -158,7 +155,7 @@ public class EmbeddedFileStream extends Dictionary {
      */
     public PDate getParamLastModifiedData() {
         Object value = library.getObject(getParams(), PARAMS_MOD_DATE_KEY);
-        if (value != null && value instanceof StringObject) {
+        if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
             return new PDate(securityManager, text.getDecryptedLiteralString(securityManager));
         }
@@ -170,7 +167,7 @@ public class EmbeddedFileStream extends Dictionary {
      *
      * @return mac sub dictionary, or null if not set.
      */
-    public HashMap getMacDictionary() {
+    public DictionaryEntries getMacDictionary() {
         return library.getDictionary(getParams(), PARAMS_MAC_KEY);
     }
 
@@ -183,7 +180,7 @@ public class EmbeddedFileStream extends Dictionary {
      */
     public String getCheckSum() {
         Object value = library.getObject(getParams(), PARAMS_CHECK_SUM_KEY);
-        if (value != null && value instanceof StringObject) {
+        if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
             return text.getDecryptedLiteralString(securityManager);
         }

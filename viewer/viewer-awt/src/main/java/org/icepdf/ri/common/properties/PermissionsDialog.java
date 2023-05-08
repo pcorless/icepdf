@@ -32,7 +32,7 @@ import java.util.ResourceBundle;
 public class PermissionsDialog extends EscapeJDialog {
 
     // layouts constraint
-    private GridBagConstraints constraints;
+    private final GridBagConstraints constraints;
 
     /**
      * Creates the permissions dialog.

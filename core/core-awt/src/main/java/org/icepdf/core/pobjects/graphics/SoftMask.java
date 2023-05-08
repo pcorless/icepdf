@@ -16,12 +16,12 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Form;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.functions.Function;
 import org.icepdf.core.util.Library;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -64,7 +64,7 @@ public class SoftMask extends Dictionary {
 
     private Form softMask;
 
-    public SoftMask(Library library, HashMap dictionary) {
+    public SoftMask(Library library, DictionaryEntries dictionary) {
         super(library, dictionary);
     }
 
@@ -99,7 +99,7 @@ public class SoftMask extends Dictionary {
             return softMask;
         }
         Object GKey = library.getObject(entries, G_KEY);
-        if (GKey != null && GKey instanceof Form) {
+        if (GKey instanceof Form) {
             try {
                 softMask = (Form) GKey;
                 softMask.init();
@@ -142,7 +142,7 @@ public class SoftMask extends Dictionary {
      * it shall be forced to the nearest valid value. The name Identitymay be
      * specified in place of a function object to designate the identity
      * function. Default value: Identity.
-     *
+     * <p>
      * Type: function or name.
      * @return TR function objec.t
      */

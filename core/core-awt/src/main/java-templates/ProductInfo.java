@@ -81,9 +81,4 @@ public class ProductInfo {
         return info.toString();
     }
 
-    public static void main(String[] args) {
-        ProductInfo app = new ProductInfo();
-        System.out.println( app.toString() );
-    }
-
 }

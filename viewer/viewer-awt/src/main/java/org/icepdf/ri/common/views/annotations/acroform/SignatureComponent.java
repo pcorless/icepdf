@@ -46,8 +46,8 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
     private static final Logger logger =
             Logger.getLogger(SignatureComponent.class.toString());
 
-    protected JPopupMenu contextMenu;
-    protected Controller controller;
+    protected final JPopupMenu contextMenu;
+    protected final Controller controller;
 
     public SignatureComponent(SignatureWidgetAnnotation annotation, DocumentViewController documentViewController,
                               AbstractPageViewComponent pageViewComponent) {
@@ -167,11 +167,11 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
     private SignatureWidgetAnnotation getSignatureWidgetAnnotation() {
         SignatureWidgetAnnotation widget = null;
         if (annotation instanceof SignatureWidgetAnnotation) {
-            widget = (SignatureWidgetAnnotation) annotation;
+            widget = annotation;
         } else {
-            // corner case for PDF that aren't well formed
+            // corner case for PDF that aren't well-formed
             try {
-                widget = new SignatureWidgetAnnotation(annotation);
+                widget = new SignatureWidgetAnnotation(null);
                 widget.init();
                 annotation = widget;
             } catch (InterruptedException e) {

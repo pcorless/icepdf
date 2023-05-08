@@ -54,10 +54,6 @@ public interface ViewBuilderFactory {
      * Creates a ViewBuilder for the given controller and arguments
      *
      * @param c                   The controller
-     * @param bf
-     * @param bt
-     * @param ts
-     * @param zl
      * @param documentViewType    The initial view type
      * @param documentPageFitMode The initial fit mode
      * @return The viewbuilder
@@ -71,10 +67,6 @@ public interface ViewBuilderFactory {
      *
      * @param c                   The controller
      * @param properties          The initial properties
-     * @param bf
-     * @param bt
-     * @param ts
-     * @param zl
      * @param documentViewType    The initial view type
      * @param documentPageFitMode The initial fit mode
      * @param rotation            The initial document rotation

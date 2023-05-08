@@ -41,7 +41,7 @@ public class BareBonesBrowserLaunch {
 
     public static final String FILE_PREFIX = "file://";
 
-    private static String os;
+    private static final String os;
 
     static {
         os = SystemProperties.OS_NAME.toLowerCase();

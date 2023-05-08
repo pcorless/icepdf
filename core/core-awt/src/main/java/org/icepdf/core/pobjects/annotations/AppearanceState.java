@@ -23,7 +23,6 @@ import org.icepdf.core.util.parser.content.ContentParser;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,7 +46,7 @@ public class AppearanceState extends Dictionary {
     protected String originalContentStream;
     protected Resources resources;
 
-    public AppearanceState(Library library, HashMap entries, Object streamOrDictionary) {
+    public AppearanceState(Library library, DictionaryEntries entries, Object streamOrDictionary) {
         super(library, entries);
         if (streamOrDictionary instanceof Reference) {
             streamOrDictionary = library.getObject((Reference) streamOrDictionary);
@@ -57,7 +56,9 @@ public class AppearanceState extends Dictionary {
             try {
                 Form form = (Form) streamOrDictionary;
                 form.init();
-                originalContentStream = new String(((Form) streamOrDictionary).getDecodedStreamBytes());
+                byte[] streamBytes = ((Form) streamOrDictionary).getDecodedStreamBytes();
+                originalContentStream = streamBytes != null ?
+                        new String(((Form) streamOrDictionary).getDecodedStreamBytes()) : "";
                 resources = form.getResources();
                 shapes = form.getShapes();
                 matrix = form.getMatrix();
@@ -77,21 +78,24 @@ public class AppearanceState extends Dictionary {
             originalContentStream = new String(stream.getDecodedStreamBytes());
             try {
                 ContentParser cp = new ContentParser(library, resources);
-                shapes = cp.parse(new byte[][]{stream.getDecodedStreamBytes()}, null).getShapes();
+                shapes = cp.parse(
+                        new byte[][]{stream.getDecodedStreamBytes()},
+                        new Reference[]{this.getPObjectReference()},
+                        null).getShapes();
             } catch (Exception e) {
                 shapes = new Shapes();
-                logger.log(Level.FINE, "Error initializing Page.", e);
+                logger.log(Level.WARNING, "Error initializing AppearanceState.", e);
             }
         }
     }
 
-    public AppearanceState(Library library, HashMap entries) {
+    public AppearanceState(Library library, DictionaryEntries entries) {
         super(library, entries);
         matrix = new AffineTransform();
         bbox = (Rectangle2D) library.getObject(entries, Annotation.BBOX_VALUE);
         InteractiveForm form = library.getCatalog().getInteractiveForm();
         // assign parent resource if not found in current appearance.
-        if (form != null){
+        if (form != null) {
             resources = form.getResources();
         }
     }
@@ -135,13 +139,16 @@ public class AppearanceState extends Dictionary {
         return originalContentStream;
     }
 
-    public void setContentStream(byte[] contentBytes){
+    public void setContentStream(byte[] contentBytes) {
         try {
             ContentParser cp = new ContentParser(library, resources);
-            shapes = cp.parse(new byte[][]{contentBytes}, null).getShapes();
+            shapes = cp.parse(
+                    new byte[][]{contentBytes},
+                    new Reference[]{this.getPObjectReference()},
+                    null).getShapes();
         } catch (Exception e) {
             shapes = new Shapes();
-            logger.log(Level.FINE, "Error initializing Page.", e);
+            logger.log(Level.WARNING, "Error initializing AppearanceState.", e);
         }
     }
 
