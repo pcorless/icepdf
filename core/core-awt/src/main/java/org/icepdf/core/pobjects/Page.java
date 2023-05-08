@@ -353,6 +353,9 @@ public class Page extends Dictionary {
                             // add any found annotations to the vector.
                             annotations.add(a);
                         }
+                        // create synthetic annotation to paint the glue between a markup annotation and the popup
+                        // this is only used for print purposes.  A similar pattern is also used in the Viewer RI
+                        createPrintableMarkupAnnotationGlue(a);
                     }
                 } catch (IllegalStateException e) {
                     Annotation finalA = a;
@@ -809,6 +812,24 @@ public class Page extends Dictionary {
         return path.createTransformedShape(at);
     }
 
+    private void createPrintableMarkupAnnotationGlue(Annotation annotation) {
+        // create synthetic annotation to paint the glue between a markup annotation and the popup
+        // this is only used for print purposes.  A similar pattern is also used in the Viewer RI
+        if (annotation instanceof PopupAnnotation) {
+            PopupAnnotation popupAnnotation = (PopupAnnotation) annotation;
+            MarkupAnnotation markupAnnotation = popupAnnotation.getParent();
+            // insert glue before popup is painted, so we don't over paint
+            Annotation annot;
+            for (int i = 0; i < annotations.size(); i++) {
+                annot = annotations.get(i);
+                if (annot instanceof PopupAnnotation && annot.equals(popupAnnotation)) {
+                    annotations.add(i, new MarkupGlueAnnotation(library, markupAnnotation, popupAnnotation));
+                    break;
+                }
+            }
+        }
+    }
+
     /**
      * Adds an annotation that was previously added to the document.  It is
      * assumed that the annotation has a valid object reference.  This
@@ -816,8 +837,8 @@ public class Page extends Dictionary {
      * the method @link{#createAnnotation} for creating new annotations.
      *
      * @param newAnnotation annotation object to add
-     * @param isNew annotation is new and should be added to stateManager, otherwise change will be part of the document
-     *              but not yet added to the stateManager as the change was likely a missing content stream or popup.
+     * @param isNew         annotation is new and should be added to stateManager, otherwise change will be part of the document
+     *                      but not yet added to the stateManager as the change was likely a missing content stream or popup.
      * @return reference to annotation that was added.
      */
     @SuppressWarnings("unchecked")
@@ -882,6 +903,9 @@ public class Page extends Dictionary {
 
         // add the annotations to the parsed annotations list
         this.annotations.add(newAnnotation);
+
+        // add visual glue for markup annotation
+        createPrintableMarkupAnnotationGlue(newAnnotation);
 
         // add the new annotations to the library
         library.addObject(newAnnotation, newAnnotation.getPObjectReference());
@@ -970,6 +994,30 @@ public class Page extends Dictionary {
         // remove the annotations form the annotation cache in the page object
         if (annotations != null) {
             annotations.remove(annot);
+        }
+        // todo clean up orphaned popup annotations
+        // remove any corresponding popup annotation.
+        if (annot instanceof MarkupAnnotation) {
+            MarkupAnnotation markupAnnotation = (MarkupAnnotation) annot;
+            for (Annotation annotation : annotations) {
+                if (annotation instanceof PopupAnnotation &&
+                        annotation.equals(markupAnnotation.getPopupAnnotation())) {
+                    annotations.remove(annotation);
+                    break;
+                }
+            }
+        }
+        // remove any markupGlue so that it doesn't get painted.  Glue is never added to the document, it created
+        // dynamically for print purposes.
+        if (annot instanceof MarkupAnnotation) {
+            MarkupAnnotation markupAnnotation = (MarkupAnnotation) annot;
+            for (Annotation annotation : annotations) {
+                if (annotation instanceof MarkupGlueAnnotation &&
+                        ((MarkupGlueAnnotation) annotation).getMarkupAnnotation().equals(markupAnnotation)) {
+                    annotations.remove(annotation);
+                    break;
+                }
+            }
         }
         // finally remove it from the library to free up the memory
         library.removeObject(annot.getPObjectReference());

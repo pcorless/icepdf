@@ -52,8 +52,6 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.List;
 import java.util.*;
@@ -382,8 +380,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         refreshCreationLabel();
         // title, user name.
         String title = selectedMarkupAnnotation != null ?
-                selectedMarkupAnnotation.getTitleText() != null ?
-                        selectedMarkupAnnotation.getTitleText() : "" : "";
+                selectedMarkupAnnotation.getFormattedTitleText() : "";
         titleLabel = new JLabel(title);
 
         // Setup color appearance values.
@@ -790,13 +787,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     }
 
     private void refreshCreationLabel() {
-        if (selectedMarkupAnnotation != null &&
-                selectedMarkupAnnotation.getCreationDate() != null && creationLabel != null) {
-            LocalDateTime creationDate = selectedMarkupAnnotation.getCreationDate().asLocalDateTime();
-            DateTimeFormatter formatter = DateTimeFormatter
-                    .ofLocalizedDateTime(FormatStyle.MEDIUM)
-                    .withLocale(Locale.getDefault());
-            creationLabel.setText(creationDate.format(formatter));
+        if (selectedMarkupAnnotation != null && creationLabel != null) {
+            creationLabel.setText(selectedMarkupAnnotation.getFormattedCreationDate(FormatStyle.MEDIUM));
         }
     }
 
@@ -1103,7 +1095,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     }
 
     protected void resetComponentColors() {
-        Color contrastColor = calculateContrastHighLowColor(popupBackgroundColor.getRGB());
+        Color contrastColor = annotation.calculateContrastHighLowColor(popupBackgroundColor.getRGB());
         minimizeButton.setForeground(contrastColor);
         minimizeButton.setBackground(popupBackgroundColor);
         minimizeButton.setBackground(popupBackgroundColor);
@@ -1229,18 +1221,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             return new Color((0x7F7F7F + rgb) & 0xFFFFFF);
         } else {
             return new Color(rgb ^ 0xFFFFFF);
-        }
-
-    }
-
-    protected Color calculateContrastHighLowColor(int rgb) {
-        int tolerance = 120;
-        if ((rgb & 0xFF) <= tolerance &&
-                (rgb >> 8 & 0xFF) <= tolerance ||
-                (rgb >> 16 & 0xFF) <= tolerance) {
-            return Color.WHITE;
-        } else {
-            return Color.BLACK;
         }
 
     }
