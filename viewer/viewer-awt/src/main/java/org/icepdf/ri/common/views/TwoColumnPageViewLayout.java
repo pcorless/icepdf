@@ -17,7 +17,6 @@ public class TwoColumnPageViewLayout extends TwoPageViewLayout{
         int maxWidth = parent.getWidth() - (insets.left + insets.right);
         int maxHeight = parent.getHeight() - (insets.top + insets.bottom);
         int xCord = 0, yCord = 0;
-        int previousHeight = 0;
 
         if (sizeUnknown) {
             setSizes(parent);
@@ -40,54 +39,66 @@ public class TwoColumnPageViewLayout extends TwoPageViewLayout{
                         xCord = ((maxWidth - preferredWidth) / 2) + d.width + PAGE_SPACING_HORIZONTAL + insets.left;
                     } else {
                         xCord = (maxWidth - preferredWidth) / 2;
-                        previousDimension = d;
                         count++;
                     }
                     if (preferredHeight < maxHeight){
                         yCord = (maxHeight - preferredHeight) / 2;
                     }
+                    xCord += insets.left;
                     yCord += insets.top;
                 } else if (count == 0) {
                     // start layout left to right
                     xCord = (maxWidth - preferredWidth) / 2;
                     xCord += insets.left;
-                    yCord += previousHeight + PAGE_SPACING_VERTICAL;
-                    previousDimension = d;
+                    yCord += previousDimension.height + PAGE_SPACING_VERTICAL;
                     count++;
                 } else {
                     count = 0;
                     xCord += previousDimension.width + PAGE_SPACING_HORIZONTAL;
                 }
-                previousHeight = d.height;
+                previousDimension = d;
                 pageViewDecorator.setBounds(xCord, yCord, d.width, d.height);
                 updatePopupAnnotationComponents(pageViewDecorator);
             }
         }
-        // needs some love;
         else {
-            PageViewDecorator pageViewDecorator;
-            for (int i = pages.length - 1; i >= 0; i--) {
+            PageViewDecorator pageViewDecorator, nexPageViewDecorator;
+            for (int i = 0; i < pages.length; i++) {
                 pageViewDecorator = pages[i];
                 int pageIndex = pageViewDecorator.getPageViewComponent().getPageIndex();
-                Dimension d = pageViewDecorator.getPreferredSize();
+                Dimension currentPageDimension = pageViewDecorator.getPreferredSize();
                 // apply right to left reading
-                if ((pageIndex == 0 && pages.length == 1) || count == 0) {
-                    // left side
-                    xCord += (maxWidth - preferredWidth) / 2;
-                    previousDimension = d;
+                if ((pageIndex == 0)) {
+                    if (minWidth < maxWidth){
+                        xCord = (maxWidth - preferredWidth) / 2;
+                    }
+                    if (minHeight < maxHeight){
+                        yCord = (maxHeight - preferredHeight) / 2;
+                    }
+                    if (xCord < 0) xCord = 0;
+                    if (yCord < 0) yCord = 0;
+
+                    xCord += insets.left;
+                    yCord += insets.top;
+
+                    // otherwise move to right
+                    if (pages.length == 2){
+                        xCord += currentPageDimension.width + PAGE_SPACING_HORIZONTAL;
+                        count++;
+                    }
+
+                } else if (count == 0) {
+                    xCord += previousDimension.width + PAGE_SPACING_HORIZONTAL;
+                    yCord += previousDimension.height + PAGE_SPACING_VERTICAL;
                     count++;
                 } else {
-                    xCord += previousDimension.width + PAGE_SPACING_HORIZONTAL;
+                    xCord -= currentPageDimension.width + PAGE_SPACING_HORIZONTAL;
+                    count = 0;
                 }
-                yCord = (maxHeight - d.height) / 2;
 
-                if (xCord < 0) xCord = 0;
-                if (yCord < 0) yCord = 0;
+                previousDimension = currentPageDimension;
 
-                xCord += insets.left;
-                yCord += insets.top;
-
-                pageViewDecorator.setBounds(xCord, yCord, d.width, d.height);
+                pageViewDecorator.setBounds(xCord, yCord, currentPageDimension.width, currentPageDimension.height);
             }
         }
     }
