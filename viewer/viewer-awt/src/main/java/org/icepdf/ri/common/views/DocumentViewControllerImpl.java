@@ -625,12 +625,11 @@ public class DocumentViewControllerImpl
             Object oldValue = evt.getOldValue();
             // propagate the even to each page.
             if (PropertyConstants.DOCUMENT_VIEW_REFRESH_CHANGE.equals(prop) ||
-                    PropertyConstants.DOCUMENT_VIEW_DEMO_MODE_CHANGE.equals(prop) ||
                     PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE.equals(prop) ||
                     PropertyConstants.DOCUMENT_VIEW_ROTATION_CHANGE.equals(prop)) {
                 List<AbstractPageViewComponent> pageComponents = documentViewModel.getPageComponents();
                 for (AbstractPageViewComponent pageViewComponent : pageComponents) {
-                    // pass in zoom, rotation etc, or get form model....
+                    // pass in zoom, rotation etc. or get form model....
                     pageViewComponent.updateView(prop, oldValue, newValue);
                 }
             }
@@ -1106,9 +1105,10 @@ public class DocumentViewControllerImpl
         boolean changed = documentViewModel.setViewZoom(zoom);
 
         if (changed) {
+            // send it to each individual page
             firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE, oldZoom, zoom);
-            ((JComponent) documentView).invalidate();
-            // send out the property change event.
+
+            // send the zoom chance to the document page view
             ((JComponent) documentView).firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE, oldZoom, zoom);
             // get the view port validate the viewport and shift the components
             ((JComponent) documentView).revalidate();

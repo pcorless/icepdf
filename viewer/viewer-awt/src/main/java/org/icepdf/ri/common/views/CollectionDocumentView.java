@@ -36,6 +36,8 @@ public class CollectionDocumentView extends AbstractDocumentView {
 
     private static final long serialVersionUID = 7220521612114533227L;
 
+    protected JPanel pagesPanel;
+
 
     public CollectionDocumentView(DocumentViewController documentViewController,
                                   JScrollPane documentScrollpane, DocumentViewModel documentViewModel) {
@@ -108,6 +110,11 @@ public class CollectionDocumentView extends AbstractDocumentView {
             pagesPanel.revalidate();
             documentScrollpane.validate();
         }
+    }
+
+    public void invalidate() {
+        super.invalidate();
+        if (pagesPanel != null) pagesPanel.invalidate();
     }
 
     @Override

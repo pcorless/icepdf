@@ -15,51 +15,112 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
+import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.MarkupGluePainter;
+import org.icepdf.ri.common.views.AbstractPageViewComponent;
+import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.DocumentViewModel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.GeneralPath;
+import java.awt.geom.Rectangle2D;
 
 /**
- * MarkupGlueComponent allows for a visual associating between a markup annotation and it's popup annotation
+ * MarkupGlueComponent allows for a visual associating between a markup annotation, and it's popup annotation
  * when open.
  *
  * @since 6.3
  */
-public class MarkupGlueComponent extends JComponent {
+public class MarkupGlueComponent extends JComponent implements PageViewAnnotationComponent, ComponentListener {
 
     protected final MarkupAnnotationComponent markupAnnotationComponent;
     protected final PopupAnnotationComponent popupAnnotationComponent;
 
-    public MarkupGlueComponent(MarkupAnnotationComponent markupAnnotationComponent, PopupAnnotationComponent popupAnnotationComponent) {
+    protected Rectangle adjustedMarkupAnnotationBounds;
+
+    private final DocumentViewController documentViewController;
+    protected AbstractPageViewComponent parentPageViewComponent;
+
+    public MarkupGlueComponent(DocumentViewController documentViewController,
+                               MarkupAnnotationComponent markupAnnotationComponent,
+                               PopupAnnotationComponent popupAnnotationComponent) {
+        this.documentViewController = documentViewController;
         this.markupAnnotationComponent = markupAnnotationComponent;
         this.popupAnnotationComponent = popupAnnotationComponent;
+        this.popupAnnotationComponent.addComponentListener(this);
+    }
+
+    public void dispose() {
         if (popupAnnotationComponent != null) {
-            Rectangle bound = markupAnnotationComponent.getBounds().union(popupAnnotationComponent.getBounds());
-            setBounds(bound);
-            setPreferredSize(bound.getSize());
-            setSize(bound.getSize());
+            popupAnnotationComponent.removeComponentListener(this);
         }
     }
 
-    public MarkupAnnotationComponent getMarkupAnnotationComponent() {
-        return markupAnnotationComponent;
+    public PopupAnnotationComponent getPopupAnnotationComponent() {
+        return popupAnnotationComponent;
+    }
+
+    private Rectangle recalculateAnnotationBounds() {
+        Page currentPage = parentPageViewComponent.getPage();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
+        AffineTransform at = currentPage.getPageTransform(
+                documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(),
+                documentViewModel.getViewZoom());
+        Rectangle2D markupUserSpaceRectangle = markupAnnotationComponent.getAnnotation().getUserSpaceRectangle();
+        Rectangle annotationPageSpaceBounds =
+                AbstractAnnotationComponent.commonBoundsNormalization(new GeneralPath(markupUserSpaceRectangle), at);
+        Rectangle pageBounds = parentPageViewComponent.getParent().getBounds();
+        annotationPageSpaceBounds.x += pageBounds.x;
+        annotationPageSpaceBounds.y += pageBounds.y;
+        return annotationPageSpaceBounds;
+    }
+
+    public void refreshDirtyBounds() {
+        adjustedMarkupAnnotationBounds = recalculateAnnotationBounds();
+        Rectangle popupBounds = popupAnnotationComponent.getBounds();
+        Rectangle markupBounds = adjustedMarkupAnnotationBounds;
+        Rectangle bound = markupBounds.union(popupBounds);
+        setBounds(bound);
     }
 
     @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        if (popupAnnotationComponent.getAnnotation().isOpen()) {
+    public void paintComponent(Graphics g) {
+        if (popupAnnotationComponent.isVisible()) {
             Rectangle popupBounds = popupAnnotationComponent.getBounds();
-            Rectangle markupBounds = markupAnnotationComponent.getBounds();
-            Rectangle glueBounds = markupAnnotationComponent.getBounds().union(popupAnnotationComponent.getBounds());
-            setBounds(glueBounds);
-            setPreferredSize(glueBounds.getSize());
-            setSize(glueBounds.getSize());
-
-            MarkupGluePainter.paintGlue(
-                    g, markupBounds, popupBounds, glueBounds,
+            Rectangle markupBounds = adjustedMarkupAnnotationBounds;
+            MarkupGluePainter.paintGlue(g,
+                    markupBounds, popupBounds, getBounds(),
                     markupAnnotationComponent.getAnnotation().getColor());
         }
     }
+
+    @Override
+    public void componentResized(ComponentEvent componentEvent) {
+
+    }
+
+    @Override
+    public void componentMoved(ComponentEvent componentEvent) {
+        this.refreshDirtyBounds();
+    }
+
+    @Override
+    public void componentShown(ComponentEvent componentEvent) {
+
+    }
+
+    @Override
+    public void componentHidden(ComponentEvent componentEvent) {
+
+    }
+
+    public void setParentPageComponent(AbstractPageViewComponent pageViewComponent) {
+        parentPageViewComponent = pageViewComponent;
+    }
+
 }

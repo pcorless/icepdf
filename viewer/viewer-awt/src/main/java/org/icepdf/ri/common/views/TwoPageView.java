@@ -20,7 +20,10 @@ import org.icepdf.ri.common.KeyListenerPageChanger;
 import org.icepdf.ri.common.MouseWheelListenerPageChanger;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
+
+import static org.icepdf.ri.common.views.TwoPageViewLayout.PAGE_SPACING_HORIZONTAL;
 
 /**
  * <p>Constructs a two page view as defined in the PDF specification.
@@ -74,27 +77,13 @@ public class TwoPageView extends AbstractDocumentView {
 
 
     private void buildGUI() {
-        // add all page components to gridlayout panel
-        pagesPanel = new JPanel();
-        pagesPanel.setBackground(backgroundColour);
-        // one column equals single page view continuous
-        GridLayout gridLayout = new GridLayout(0, 2, horizontalSpace, verticalSpace);
-        pagesPanel.setLayout(gridLayout);
-
-        // use a gridbag to center the page component panel
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.weighty = 1.0;                  // allows vertical resizing
-        gbc.weightx = 1.0;                  // allows horizontal resizing
-        gbc.insets =  // component spacer [top, left, bottom, right]
-                new Insets(layoutInserts, layoutInserts, layoutInserts, layoutInserts);
-        gbc.gridwidth = GridBagConstraints.REMAINDER;      // one component per row
+        this.setLayout(new TwoPageViewLayout(viewAlignment, documentViewModel));
+        this.setBackground(backgroundColour);
+        this.setBorder(new EmptyBorder(layoutInserts, layoutInserts, layoutInserts, layoutInserts));
 
         // finally add all the components
         // add components for every page in the document
         updateDocumentView();
-
-        this.setLayout(new GridBagLayout());
-        this.add(pagesPanel, gbc);
     }
 
     public void updateDocumentView() {
@@ -104,39 +93,38 @@ public class TwoPageView extends AbstractDocumentView {
 
         if (pageComponents != null) {
             // remove old component
-            pagesPanel.removeAll();
-            pagesPanel.validate();
+            this.removeAll();
+
             AbstractPageViewComponent pageViewComponent;
             int count = 0;
             int index = documentViewModel.getViewCurrentPageIndex();
             int docLength = pageComponents.size();
 
-
+            // adjust for 2 up view, so we don't page again to the 3 pages...
             if (viewAlignment == RIGHT_VIEW &&
                     ((index > 0 && index % 2 == 0) || (index > 0 && docLength == 2))) {
                 index--;
             }
 
             for (int i = index; i < docLength && count < 2; i++) {
-                // save for facing page
+                // skip for facing page
                 if (i == 0 && docLength > 2 && viewAlignment == RIGHT_VIEW) {
-                    // should be adding spacer
-                    pagesPanel.add(new JLabel());
                     count++;
                 }
                 pageViewComponent = pageComponents.get(i);
                 if (pageViewComponent != null) {
-                    pageViewComponent.setDocumentViewCallback(this);
                     // add component to layout
-                    pagesPanel.add(new PageViewDecorator(pageViewComponent));
-                    pageViewComponent.invalidate();
-                    pageViewComponent.validate();
+                    JComponent pageViewDecorator = new PageViewDecorator(pageViewComponent);
+                    setLayer(pageViewDecorator, JLayeredPane.DEFAULT_LAYER);
+                    add(pageViewDecorator);
+                    addPopupAnnotationAndGlue(pageViewComponent);
                     count++;
                 }
             }
-            documentViewModel.getDocumentViewScrollPane().validate();
+            revalidate();
+            repaint();
 
-            // make sure we have setup all pages with callback call.
+            // make sure we have set up all pages with callback call.
             for (PageViewComponent pageViewCom : pageComponents) {
                 if (pageViewCom != null) {
                     pageViewCom.setDocumentViewCallback(this);
@@ -160,7 +148,6 @@ public class TwoPageView extends AbstractDocumentView {
     }
 
     public void dispose() {
-        disposing = true;
         // remove utilities
         if (pageChangerListener != null) {
             JScrollPane documentScrollpane = documentViewModel.getDocumentViewScrollPane();
@@ -174,8 +161,8 @@ public class TwoPageView extends AbstractDocumentView {
         }
 
         // trigger a re-layout
-        pagesPanel.removeAll();
-        pagesPanel.invalidate();
+        removeAll();
+        invalidate();
 
         // make sure we call super.
         super.dispose();
@@ -184,19 +171,16 @@ public class TwoPageView extends AbstractDocumentView {
     public Dimension getDocumentSize() {
         float pageViewWidth = 0;
         float pageViewHeight = 0;
-        if (pagesPanel != null) {
-            int count = pagesPanel.getComponentCount();
-            Component comp;
-            // should only have one page view decorator for single page view.
-            for (int i = 0; i < count; i++) {
-                comp = pagesPanel.getComponent(i);
-                if (comp instanceof PageViewDecorator) {
-                    PageViewDecorator pvd = (PageViewDecorator) comp;
-                    Dimension dim = pvd.getPreferredSize();
-                    pageViewWidth = dim.width;
-                    pageViewHeight = dim.height;
-                    break;
-                }
+        int count = getComponentCount();
+        Component comp;
+        for (int i = 0; i < count; i++) {
+            comp = getComponent(i);
+            if (comp instanceof PageViewDecorator) {
+                PageViewDecorator pvd = (PageViewDecorator) comp;
+                Dimension dim = pvd.getPreferredSize();
+                pageViewWidth = dim.width;
+                pageViewHeight = dim.height;
+                break;
             }
         }
         // normalize the dimensions to a zoom level of zero.
@@ -209,8 +193,8 @@ public class TwoPageView extends AbstractDocumentView {
         pageViewWidth *= 2;
 
         // add any horizontal padding from layout manager
-        pageViewWidth += AbstractDocumentView.horizontalSpace * 4;
-        pageViewHeight += AbstractDocumentView.verticalSpace * 2;
+        pageViewWidth += PAGE_SPACING_HORIZONTAL;
+        pageViewHeight += PAGE_SPACING_HORIZONTAL * 2;
 
         return new Dimension((int) pageViewWidth, (int) pageViewHeight);
     }

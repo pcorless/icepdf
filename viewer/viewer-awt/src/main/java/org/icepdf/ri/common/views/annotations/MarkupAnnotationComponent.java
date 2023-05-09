@@ -174,8 +174,10 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
             PopupAnnotationComponent comp = (PopupAnnotationComponent)
                     AnnotationComponentFactory.buildAnnotationComponent(
                             popupAnnotation, documentViewController, pageViewComponent);
+            comp.setParentPageComponent(pageViewComponent);
             // set the bounds and refresh the userSpace rectangle
-            comp.setBounds(bBox);
+
+            comp.refreshDirtyBounds();
             // resets user space rectangle to match bbox converted to page space
             comp.refreshAnnotationRect();
             // not new, which means the popup wasn't part of the document, we don't want to save it at this time
@@ -210,23 +212,6 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
                 popupComponent.setVisible(popup.isOpen());
                 if (popupComponent.isVisible()) {
                     popupComponent.focusTextArea();
-                }
-                // make sure the popup is drawn on the page and
-                // not outside the page clip.
-                Rectangle popupBounds = popupComponent.getBounds();
-                Rectangle pageBounds = pageViewComponent.getBounds();
-                if (!pageBounds.contains(popupBounds.getX(), popupBounds.getY(),
-                        popupBounds.getWidth(), popupBounds.getHeight())) {
-                    int x = popupBounds.x;
-                    int y = popupBounds.y;
-                    if (x + popupBounds.width > pageBounds.width) {
-                        x = x - (popupBounds.width - (pageBounds.width - popupBounds.x));
-                    }
-                    if (y + popupBounds.height > pageBounds.height) {
-                        y = y - (popupBounds.height - (pageBounds.height - popupBounds.y));
-                    }
-                    popupBounds.setLocation(x, y);
-                    popupComponent.setBounds(popupBounds);
                 }
             }
             // no markupAnnotation so we need to create one and display for the addition comments.

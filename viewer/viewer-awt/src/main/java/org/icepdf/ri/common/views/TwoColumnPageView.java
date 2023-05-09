@@ -19,6 +19,7 @@ import org.icepdf.ri.common.CurrentPageChanger;
 import org.icepdf.ri.common.KeyListenerPageColumnChanger;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 
@@ -68,23 +69,11 @@ public class TwoColumnPageView extends AbstractDocumentView {
     }
 
     private void buildGUI() {
-        // add all page components to gridlayout panel
-        pagesPanel = new JPanel();
-        pagesPanel.setBackground(backgroundColour);
-        // two column equals facing page view continuous
-        GridLayout gridLayout = new GridLayout(0, 2, horizontalSpace, verticalSpace);
-        pagesPanel.setLayout(gridLayout);
-
-        // use a gridbag to center the page component panel
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.weighty = 1.0;                  // allows vertical resizing
-        gbc.weightx = 1.0;                  // allows horizontal resizing
-        gbc.insets =  // component spacer [top, left, bottom, right]
-                new Insets(layoutInserts, layoutInserts, layoutInserts, layoutInserts);
-        gbc.gridwidth = GridBagConstraints.REMAINDER;      // one component per row
-
-        this.setLayout(new GridBagLayout());
-        this.add(pagesPanel, gbc);
+        this.setLayout(new TwoColumnPageViewLayout(viewAlignment, documentViewModel));
+        this.setBackground(backgroundColour);
+        this.setBorder(new EmptyBorder(layoutInserts, layoutInserts, layoutInserts, layoutInserts));
+        // remove old component
+        this.removeAll();
 
         // finally add all the components
         // add components for every page in the document
@@ -93,20 +82,23 @@ public class TwoColumnPageView extends AbstractDocumentView {
 
         if (pageComponents != null) {
             AbstractPageViewComponent pageViewComponent;
-            for (int i = 0, max = pageComponents.size(), max2 = pageComponents.size();
-                 i < max; i++) {
+            for (int i = 0, max = pageComponents.size(); i < max; i++) {
                 // save for facing page
-                if (i == 0 && max2 > 2 && viewAlignment == RIGHT_VIEW) {
+                if (i == 0 && max > 2 && viewAlignment == RIGHT_VIEW) {
                     // should be adding spacer
-                    pagesPanel.add(new JLabel());
+                    add(new JLabel());
                 }
                 pageViewComponent = pageComponents.get(i);
                 if (pageViewComponent != null) {
                     pageViewComponent.setDocumentViewCallback(this);
-                    pagesPanel.add(new PageViewDecorator(
-                            pageViewComponent));
+                    PageViewDecorator pageViewDecorator = new PageViewDecorator(pageViewComponent);
+                    setLayer(pageViewDecorator, JLayeredPane.DEFAULT_LAYER);
+                    add(pageViewDecorator);
+                    addPopupAnnotationAndGlue(pageViewComponent);
                 }
             }
+            revalidate();
+            repaint();
         }
     }
 
@@ -135,8 +127,6 @@ public class TwoColumnPageView extends AbstractDocumentView {
     }
 
     public void dispose() {
-        disposing = true;
-
         // remove utilities
         if (currentPageChanger != null) {
             currentPageChanger.dispose();
@@ -146,8 +136,8 @@ public class TwoColumnPageView extends AbstractDocumentView {
         }
 
         // trigger a relayout
-        pagesPanel.removeAll();
-        pagesPanel.invalidate();
+        removeAll();
+        invalidate();
 
         // make sure we call super.
         super.dispose();
@@ -156,50 +146,48 @@ public class TwoColumnPageView extends AbstractDocumentView {
     public Dimension getDocumentSize() {
         float pageViewWidth = 0;
         float pageViewHeight = 0;
-        if (pagesPanel != null) {
-            // The page index and corresponding component index are approximately equal
-            // If the first page is on the right, then there's a spacer on the left,
-            //  bumping indexes up by one.
-            int currPageIndex = documentViewController.getCurrentPageIndex();
-            int currCompIndex = currPageIndex;
-            int numComponents = pagesPanel.getComponentCount();
-            boolean foundCurrent = false;
-            while (currCompIndex >= 0 && currCompIndex < numComponents) {
-                Component comp = pagesPanel.getComponent(currCompIndex);
+        // The page index and corresponding component index are approximately equal
+        // If the first page is on the right, then there's a spacer on the left,
+        //  bumping indexes up by one.
+        int currPageIndex = documentViewController.getCurrentPageIndex();
+        int currCompIndex = currPageIndex;
+        int numComponents = getComponentCount();
+        boolean foundCurrent = false;
+        while (currCompIndex >= 0 && currCompIndex < numComponents) {
+            Component comp = getComponent(currCompIndex);
+            if (comp instanceof PageViewDecorator) {
+                PageViewDecorator pvd = (PageViewDecorator) comp;
+                PageViewComponent pvc = pvd.getPageViewComponent();
+                if (pvc.getPageIndex() == currPageIndex) {
+                    Dimension dim = pvd.getPreferredSize();
+                    pageViewWidth = dim.width;
+                    pageViewHeight = dim.height;
+                    foundCurrent = true;
+                    break;
+                }
+            }
+            currCompIndex++;
+        }
+        if (foundCurrent) {
+            // Determine if the page at (currPageIndex,currCompIndex) was
+            //  on the left or right, so that if there's a page next to
+            //  it, whether it's earlier or later in the component list,
+            //  so we can get it's pageViewHeight and use that for our pageViewHeight
+            //  calculation.
+            // If the other component is past the ends of the component
+            //  list, or not a PageViewDecorator, then current was either
+            //  the first or last page in the document
+            boolean evenPageIndex = ((currPageIndex & 0x1) == 0);
+            boolean bumpedIndex = (currCompIndex != currPageIndex);
+            boolean onLeft = evenPageIndex ^ bumpedIndex; // XOR
+            int otherCompIndex = onLeft ? (currCompIndex + 1) : (currCompIndex - 1);
+            if (otherCompIndex >= 0 && otherCompIndex < numComponents) {
+                Component comp = getComponent(otherCompIndex);
                 if (comp instanceof PageViewDecorator) {
                     PageViewDecorator pvd = (PageViewDecorator) comp;
-                    PageViewComponent pvc = pvd.getPageViewComponent();
-                    if (pvc.getPageIndex() == currPageIndex) {
-                        Dimension dim = pvd.getPreferredSize();
-                        pageViewWidth = dim.width;
-                        pageViewHeight = dim.height;
-                        foundCurrent = true;
-                        break;
-                    }
-                }
-                currCompIndex++;
-            }
-            if (foundCurrent) {
-                // Determine if the page at (currPageIndex,currCompIndex) was
-                //  on the left or right, so that if there's a page next to
-                //  it, whether it's earlier or later in the component list,
-                //  so we can get it's pageViewHeight and use that for our pageViewHeight
-                //  calculation.
-                // If the other component is past the ends of the component
-                //  list, or not a PageViewDecorator, then current was either
-                //  the first or last page in the document
-                boolean evenPageIndex = ((currPageIndex & 0x1) == 0);
-                boolean bumpedIndex = (currCompIndex != currPageIndex);
-                boolean onLeft = evenPageIndex ^ bumpedIndex; // XOR
-                int otherCompIndex = onLeft ? (currCompIndex + 1) : (currCompIndex - 1);
-                if (otherCompIndex >= 0 && otherCompIndex < numComponents) {
-                    Component comp = pagesPanel.getComponent(otherCompIndex);
-                    if (comp instanceof PageViewDecorator) {
-                        PageViewDecorator pvd = (PageViewDecorator) comp;
-                        Dimension dim = pvd.getPreferredSize();
-                        pageViewWidth = dim.width;
-                        pageViewHeight = dim.height;
-                    }
+                    Dimension dim = pvd.getPreferredSize();
+                    pageViewWidth = dim.width;
+                    pageViewHeight = dim.height;
                 }
             }
         }

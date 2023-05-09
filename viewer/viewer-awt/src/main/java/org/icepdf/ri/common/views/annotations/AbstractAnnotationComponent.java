@@ -228,9 +228,6 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
     }
 
     protected void resize() {
-        if (getParent() != null) {
-            getParent().validate();
-        }
         resized = true;
     }
 
@@ -245,8 +242,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
-        setBounds(commonBoundsNormalization(new GeneralPath(
-                annotation.getUserSpaceRectangle()), at));
+        setBounds(commonBoundsNormalization(new GeneralPath(annotation.getUserSpaceRectangle()), at));
     }
 
     /**
@@ -276,7 +272,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
      * @param at        transform to apply to shapePath
      * @return bound value of the shape path.
      */
-    protected Rectangle commonBoundsNormalization(GeneralPath shapePath,
+    public static Rectangle commonBoundsNormalization(GeneralPath shapePath,
                                                   AffineTransform at) {
         shapePath.transform(at);
         Rectangle2D pageSpaceBound = shapePath.getBounds2D();
@@ -288,6 +284,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
     }
 
     public void validate() {
+        super.validate();
         DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         if (currentZoom != documentViewModel.getViewZoom() ||
                 currentRotation != documentViewModel.getViewRotation()) {

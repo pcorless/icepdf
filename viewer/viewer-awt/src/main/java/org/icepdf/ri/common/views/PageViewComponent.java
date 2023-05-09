@@ -17,6 +17,8 @@ package org.icepdf.ri.common.views;
 
 import org.icepdf.core.pobjects.Page;
 
+import java.awt.*;
+
 /**
  * <p>The <code>PageViewComponent</code> interfaces should be used by any page view
  * implementation to represent a single page view.  The methods defined in this
@@ -47,6 +49,8 @@ public interface PageViewComponent {
      * Called to free resources used by this component.
      */
     void dispose();
+
+    Component getParent();
 
     /**
      * Called from parent controls when a UI control has manipulated the view, property

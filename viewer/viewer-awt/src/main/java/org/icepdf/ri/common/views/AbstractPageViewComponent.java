@@ -179,6 +179,10 @@ public abstract class AbstractPageViewComponent
         documentViewController = this.parentDocumentView.getParentViewController();
     }
 
+    public DocumentView getParentDocumentView() {
+        return parentDocumentView;
+    }
+
     public static boolean isAnnotationTool(final int displayTool) {
         return displayTool == DocumentViewModel.DISPLAY_TOOL_SELECTION ||
                 displayTool == DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION ||
@@ -209,12 +213,6 @@ public abstract class AbstractPageViewComponent
             pageZoom = (Float) newValue;
         } else if (PropertyConstants.DOCUMENT_VIEW_REFRESH_CHANGE.equals(propertyConstant)) {
             // nothing to do but repaint
-        } else if (PropertyConstants.DOCUMENT_VIEW_DEMO_MODE_CHANGE.equals(propertyConstant)) {
-            // re-initialized the page.
-            pageBufferStore.setDirty(true);
-            Page page = getPage();
-            page.getLibrary().disposeFontResources();
-            page.resetInitializedState();
         }
         calculatePageSize(pageSize, pageRotation, pageZoom);
         pageBufferStore.setDirty(true);
@@ -399,6 +397,7 @@ public abstract class AbstractPageViewComponent
 
         public Object call() {
             if (!isPageIntersectViewport()) {
+                // page teardown when out of view.
                 pageTeardownCallback();
                 return null;
             }

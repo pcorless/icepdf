@@ -291,7 +291,10 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                             searchHitComponents.forEach(this::remove);
                             searchHitComponents = newSearchHitComponents;
                             //In front of annotations, behind popups
-                            searchHitComponents.forEach(comp -> this.add(comp, JLayeredPane.MODAL_LAYER));
+                            searchHitComponents.forEach(comp -> {
+                                this.setLayer(comp, JLayeredPane.MODAL_LAYER);
+                                this.add(comp);
+                            });
                             validate();
                         }
                     }
@@ -432,24 +435,23 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
      */
     public void addAnnotation(AnnotationComponent annotation) {
         // delegate to handler.
-        synchronized (annotationComponentsLock) {
-            if (annotationComponents == null) {
-                annotationComponents = new ArrayList<>();
-                annotationToComponent = new HashMap<>();
-            }
-            annotationComponents.add((AbstractAnnotationComponent) annotation);
-            annotationToComponent.put(annotation.getAnnotation(), annotation);
-            if (annotation instanceof PopupAnnotationComponent) {
-                this.add((AbstractAnnotationComponent) annotation, JLayeredPane.POPUP_LAYER);
-            } else if (annotation instanceof MarkupAnnotationComponent) {
-                MarkupAnnotationComponent markupAnnotationComponent = (MarkupAnnotationComponent) annotation;
-                PopupAnnotationComponent popupAnnotationComponent = markupAnnotationComponent.getPopupAnnotationComponent();
-                this.add(new MarkupGlueComponent(markupAnnotationComponent, popupAnnotationComponent),
-                        JLayeredPane.DEFAULT_LAYER);
-                this.add((AbstractAnnotationComponent) annotation, JLayeredPane.PALETTE_LAYER);
-            } else {
-                this.add((AbstractAnnotationComponent) annotation, JLayeredPane.PALETTE_LAYER);
-            }
+        if (annotationComponents == null) {
+            annotationComponents = new ArrayList<>();
+            annotationToComponent = new HashMap<>();
+        }
+        annotationComponents.add((AbstractAnnotationComponent) annotation);
+        annotationToComponent.put(annotation.getAnnotation(), annotation);
+        if (annotation instanceof PopupAnnotationComponent) {
+            addPopupAnnotationComponent((PopupAnnotationComponent) annotation);
+        } else if (annotation instanceof MarkupAnnotationComponent) {
+            MarkupAnnotationComponent markupAnnotationComponent = (MarkupAnnotationComponent) annotation;
+            PopupAnnotationComponent popupAnnotationComponent = markupAnnotationComponent.getPopupAnnotationComponent();
+            addPopupAnnotationComponentGlue(markupAnnotationComponent, popupAnnotationComponent);
+            this.setLayer((AbstractAnnotationComponent) annotation, JLayeredPane.PALETTE_LAYER);
+            this.add((AbstractAnnotationComponent) annotation);
+        } else {
+            this.setLayer((AbstractAnnotationComponent) annotation, JLayeredPane.PALETTE_LAYER);
+            this.add((AbstractAnnotationComponent) annotation);
         }
     }
 
@@ -459,27 +461,17 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
      * @param annotationComp annotation to be removed.
      */
     public void removeAnnotation(AnnotationComponent annotationComp) {
-        synchronized (annotationComponentsLock) {
-            annotationComponents.remove(annotationComp);
-            if (annotationComp.getAnnotation() != null) {
-                annotationToComponent.remove(annotationComp.getAnnotation());
-            } else {
-                annotationToComponent.entrySet().stream().filter(e -> e.getValue().equals(annotationComp)).findFirst()
-                        .ifPresent(e -> annotationToComponent.remove(e.getKey()));
-            }
+        annotationComponents.remove(annotationComp);
+        if (annotationComp.getAnnotation() != null) {
+            annotationToComponent.remove(annotationComp.getAnnotation());
+        } else {
+            annotationToComponent.entrySet().stream().filter(e -> e.getValue().equals(annotationComp)).findFirst()
+                    .ifPresent(e -> annotationToComponent.remove(e.getKey()));
+        }
+        if (annotationComp instanceof PopupAnnotationComponent) {
+            removePopupAnnotationComponent((PopupAnnotationComponent) annotationComp);
+        } else {
             this.remove((AbstractAnnotationComponent) annotationComp);
-            // make sure we remove the glue
-            if (annotationComp instanceof MarkupAnnotationComponent) {
-                synchronized (this.getTreeLock()) {
-                    Component[] components = this.getComponents();
-                    for (Component component : components) {
-                        if (component instanceof MarkupGlueComponent &&
-                                ((MarkupGlueComponent) component).getMarkupAnnotationComponent().equals(annotationComp)) {
-                            this.remove(component);
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -496,8 +488,18 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
 
     public void pageTeardownCallback() {
         SwingUtilities.invokeLater(() -> {
-            // we're cleaning up the page which may involve awt component manipulations o we queue
-            // callback on the awt thread so we don't try and paint something we just removed
+            // remove popups from layout, so we can cleanly re-initialize if viewed again.
+            ArrayList<PageViewAnnotationComponent> components = documentViewModel.getDocumentViewAnnotationComponents(this);
+            if (components != null) {
+                for (PageViewAnnotationComponent component : components) {
+                    parentDocumentView.remove((JComponent) component);
+                    if (component instanceof MarkupGlueComponent) {
+                        ((MarkupGlueComponent)component).dispose();
+                    }
+                }
+            }
+            documentViewModel.removeAllFloatingAnnotationComponent(this);
+
             annotationComponents = null;
             annotationToComponent = null;
         });
@@ -543,56 +545,90 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
             // we don't want to re-initialize the component as we'll
             // get duplicates if the page has been gc'd
             if (annotationComponents == null) {
-                synchronized (annotationComponentsLock) {
-                    annotationComponents = new ArrayList<>(annotations.size());
-                    annotationToComponent = new HashMap<>(annotations.size());
-                    Annotation annotation;
-                    // is possible that a Popup annotation is added to the page during initialization but the component
-                    // creation will be handled during that creation process.
-                    for (int i = 0; i < annotations.size(); i++) {
-                        annotation = annotations.get(i);
-                        // parser can sometimes return an empty array depending on the PDF syntax being used.
-                        if (annotation != null) {
-                            final AbstractAnnotationComponent comp =
-                                    AnnotationComponentFactory.buildAnnotationComponent(
-                                            annotation, documentViewController, parent);
-                            if (comp != null) {
-                                // add for painting
-                                annotationComponents.add(comp);
-                                annotationToComponent.put(annotation, comp);
-                                // add to layout
-                                if (comp instanceof PopupAnnotationComponent) {
-                                    PopupAnnotationComponent popupAnnotationComponent = (PopupAnnotationComponent) comp;
-                                    // check if we have created the parent markup,  if so add the glue
-                                    MarkupAnnotationComponent markupAnnotationComponent =
-                                            popupAnnotationComponent.getMarkupAnnotationComponent();
-                                    if (markupAnnotationComponent != null) {
-                                        parent.add(new MarkupGlueComponent(markupAnnotationComponent,
-                                                popupAnnotationComponent), JLayeredPane.DEFAULT_LAYER);
-                                    }
-                                    parent.add(popupAnnotationComponent, JLayeredPane.POPUP_LAYER);
-                                } else if (comp instanceof MarkupAnnotationComponent) {
-                                    MarkupAnnotationComponent markupAnnotationComponent =
-                                            (MarkupAnnotationComponent) comp;
-                                    PopupAnnotationComponent popupAnnotationComponent =
-                                            markupAnnotationComponent.getPopupAnnotationComponent();
-                                    // we may or may not have create the popup, if so we create the glue
-                                    if (popupAnnotationComponent != null) {
-                                        parent.add(new MarkupGlueComponent(markupAnnotationComponent,
-                                                popupAnnotationComponent), JLayeredPane.DEFAULT_LAYER);
-                                    }
-                                    parent.add(markupAnnotationComponent, JLayeredPane.PALETTE_LAYER);
-                                } else {
-                                    parent.add(comp, JLayeredPane.PALETTE_LAYER);
+                annotationComponents = new ArrayList<>(annotations.size());
+                annotationToComponent = new HashMap<>(annotations.size());
+                Annotation annotation;
+                // is possible that a Popup annotation is added to the page during initialization but the component
+                // creation will be handled during that creation process.
+                for (int i = 0; i < annotations.size(); i++) {
+                    annotation = annotations.get(i);
+                    // parser can sometimes return an empty array depending on the PDF syntax being used.
+                    if (annotation != null) {
+                        final AbstractAnnotationComponent comp =
+                                AnnotationComponentFactory.buildAnnotationComponent(
+                                        annotation, documentViewController, parent);
+                        if (comp != null) {
+                            // add for painting
+                            annotationComponents.add(comp);
+                            annotationToComponent.put(annotation, comp);
+                            // add to layout
+                            if (comp instanceof PopupAnnotationComponent) {
+                                PopupAnnotationComponent popupAnnotationComponent = (PopupAnnotationComponent) comp;
+                                // check if we have created the parent markup, if so add the glue
+                                MarkupAnnotationComponent markupAnnotationComponent =
+                                        popupAnnotationComponent.getMarkupAnnotationComponent();
+                                if (markupAnnotationComponent != null) {
+                                    addPopupAnnotationComponentGlue(markupAnnotationComponent, popupAnnotationComponent);
                                 }
-                                comp.revalidate();
-                                comp.repaint();
+                                addPopupAnnotationComponent(popupAnnotationComponent);
+                            } else if (comp instanceof MarkupAnnotationComponent) {
+                                MarkupAnnotationComponent markupAnnotationComponent = (MarkupAnnotationComponent) comp;
+                                // will create popup if not already created.
+                                PopupAnnotationComponent popupAnnotationComponent =
+                                        markupAnnotationComponent.getPopupAnnotationComponent();
+                                // we may or may not have created the popup, if so we create the glue
+                                if (popupAnnotationComponent != null) {
+                                    addPopupAnnotationComponentGlue(markupAnnotationComponent, popupAnnotationComponent);
+                                }
+                                parent.setLayer(comp, JLayeredPane.PALETTE_LAYER);
+                                parent.add(markupAnnotationComponent);
+                            } else {
+                                parent.setLayer(comp, JLayeredPane.PALETTE_LAYER);
+                                parent.add(comp);
                             }
+                            comp.revalidate();
+                            comp.repaint();
                         }
                     }
                 }
             }
+        }
+    }
 
+    private void addPopupAnnotationComponent(PopupAnnotationComponent popupAnnotationComponent) {
+        // assign parent so we can properly place the popup relative to its parent page.
+        popupAnnotationComponent.setParentPageComponent(this);
+        popupAnnotationComponent.refreshDirtyBounds();
+        documentViewModel.addDocumentViewAnnotationComponent(this, popupAnnotationComponent);
+        // won't show up on the right layer if layer isn't set first.
+        ((JLayeredPane)parentDocumentView).setLayer(popupAnnotationComponent, JLayeredPane.POPUP_LAYER);
+        parentDocumentView.add(popupAnnotationComponent);
+    }
+
+    private void addPopupAnnotationComponentGlue(MarkupAnnotationComponent markupAnnotationComponent,
+                                                 PopupAnnotationComponent popupAnnotationComponent) {
+        MarkupGlueComponent markupGlueComponent =
+                new MarkupGlueComponent(documentViewController,
+                        markupAnnotationComponent, popupAnnotationComponent);
+        // assign parent so we can properly place the popup relative to its parent page.
+        markupGlueComponent.setParentPageComponent(this);
+        markupGlueComponent.refreshDirtyBounds();
+        // won't show up on the right layer if layer isn't set first.
+        documentViewModel.addDocumentViewAnnotationComponent(this, markupGlueComponent);
+        ((JLayeredPane)parentDocumentView).setLayer(markupGlueComponent, JLayeredPane.MODAL_LAYER);
+        parentDocumentView.add(markupGlueComponent);
+    }
+
+    private void removePopupAnnotationComponent(PopupAnnotationComponent popupAnnotationComponent) {
+        parentDocumentView.remove(popupAnnotationComponent);
+        documentViewModel.removeDocumentViewAnnotationComponent(this, popupAnnotationComponent);
+        ArrayList<PageViewAnnotationComponent> components = documentViewModel.getDocumentViewAnnotationComponents(this);
+        // don't forget to remove the glue component
+        for (PageViewAnnotationComponent component : components) {
+            if (component instanceof MarkupGlueComponent &&
+                    ((MarkupGlueComponent) component).getPopupAnnotationComponent().equals(popupAnnotationComponent)) {
+                parentDocumentView.remove((JComponent)component);
+            }
         }
     }
 
@@ -609,7 +645,8 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                     // create the destination
                     for (Destination dest : destinations) {
                         DestinationComponent comp = new DestinationComponent(dest, documentViewController, this);
-                        parent.add(comp, JLayeredPane.PALETTE_LAYER);
+                        parent.setLayer(comp, JLayeredPane.PALETTE_LAYER);
+                        parent.add(comp);
                         destinationComponents.add(comp);
                         comp.revalidate();
                         comp.repaint();
