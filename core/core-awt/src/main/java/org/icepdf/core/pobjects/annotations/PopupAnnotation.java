@@ -23,7 +23,6 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.time.format.FormatStyle;
-import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**
@@ -166,7 +165,9 @@ public class PopupAnnotation extends Annotation {
 
         popupPaintablesPanel = new JPanel();
 
-        Color color = getParent().getColor();
+        Color color = getParent().getColor() != null ?
+                getParent().getColor() :
+                new Color(Integer.parseInt("ffff00", 16));
         Color contrastColor = calculateContrastHighLowColor(color.getRGB());
         popupPaintablesPanel.setBackground(color);
         popupPaintablesPanel.setBounds(popupBoundsNormalized);

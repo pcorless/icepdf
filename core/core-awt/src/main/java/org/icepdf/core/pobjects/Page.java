@@ -818,13 +818,15 @@ public class Page extends Dictionary {
         if (annotation instanceof PopupAnnotation) {
             PopupAnnotation popupAnnotation = (PopupAnnotation) annotation;
             MarkupAnnotation markupAnnotation = popupAnnotation.getParent();
-            // insert glue before popup is painted, so we don't over paint
-            Annotation annot;
-            for (int i = 0; i < annotations.size(); i++) {
-                annot = annotations.get(i);
-                if (annot instanceof PopupAnnotation && annot.equals(popupAnnotation)) {
-                    annotations.add(i, new MarkupGlueAnnotation(library, markupAnnotation, popupAnnotation));
-                    break;
+            if (markupAnnotation != null) {
+                // insert glue before popup is painted, so we don't over paint
+                Annotation annot;
+                for (int i = 0; i < annotations.size(); i++) {
+                    annot = annotations.get(i);
+                    if (annot instanceof PopupAnnotation && annot.equals(popupAnnotation)) {
+                        annotations.add(i, new MarkupGlueAnnotation(library, markupAnnotation, popupAnnotation));
+                        break;
+                    }
                 }
             }
         }
