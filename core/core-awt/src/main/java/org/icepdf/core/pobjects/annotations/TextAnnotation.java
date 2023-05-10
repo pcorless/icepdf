@@ -190,7 +190,7 @@ public class TextAnnotation extends MarkupAnnotation {
             // set default flags.
             textAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
             textAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, true);
-            textAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, true);
+            textAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
             textAnnotation.setFlag(Annotation.FLAG_PRINT, true);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

@@ -1293,7 +1293,8 @@ public abstract class Annotation extends Dictionary {
         }
 
         boolean noZoom = getFlagNoZoom();
-        if (noZoom) {
+        // avoid static scaling of popups, disregarding zoom flag for now
+        if (noZoom && !(this instanceof PopupAnnotation)) {
             double scaleY = Math.abs(at.getScaleY());
             if (scaleY != 1.0) {
                 double scaleX = Math.abs(at.getScaleX());

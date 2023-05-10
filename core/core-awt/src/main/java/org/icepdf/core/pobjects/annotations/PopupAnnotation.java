@@ -112,7 +112,7 @@ public class PopupAnnotation extends Annotation {
             popupAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
             popupAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
             popupAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
-            popupAnnotation.setFlag(Annotation.FLAG_PRINT, false);
+            popupAnnotation.setFlag(Annotation.FLAG_PRINT, true);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.finer("Popup Annotation initialization was interrupted");
