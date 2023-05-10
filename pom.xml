@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.pcorless.icepdf</groupId>
     <artifactId>icepdf</artifactId>
-    <version>7.1.0-SNAPSHOT</version>
+    <version>7.1.0</version>
     <packaging>pom</packaging>
     <name>ICEpdf</name>
     <description>
@@ -23,10 +23,10 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <bouncy.version>1.70</bouncy.version>
-        <twelve-monkey.version>3.8.2</twelve-monkey.version>
+        <twelve-monkey.version>3.9.4</twelve-monkey.version>
         <jai-imageio.version>1.4.0</jai-imageio.version>
         <jbig2.version>3.0.4</jbig2.version>
-        <font-box.version>2.0.26</font-box.version>
+        <font-box.version>2.0.27</font-box.version>
         <commons-logging.version>1.2</commons-logging.version>
     </properties>
 
