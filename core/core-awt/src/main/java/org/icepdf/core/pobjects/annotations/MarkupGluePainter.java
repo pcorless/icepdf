@@ -1,7 +1,5 @@
 package org.icepdf.core.pobjects.annotations;
 
-import org.icepdf.core.pobjects.MarkupGlueAnnotation;
-
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;

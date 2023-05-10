@@ -1,9 +1,6 @@
-package org.icepdf.core.pobjects;
+package org.icepdf.core.pobjects.annotations;
 
-import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
-import org.icepdf.core.pobjects.annotations.MarkupGluePainter;
-import org.icepdf.core.pobjects.annotations.PopupAnnotation;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;

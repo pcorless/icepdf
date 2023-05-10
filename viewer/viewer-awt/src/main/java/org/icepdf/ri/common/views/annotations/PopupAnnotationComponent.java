@@ -86,7 +86,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     public static final int DEFAULT_WIDTH = 215;
     public static final int DEFAULT_HEIGHT = 150;
     public static final Color backgroundColor = new Color(252, 253, 227);
-    public static final Color borderColor = new Color(153, 153, 153);
     public static final Dimension BUTTON_SIZE = new Dimension(22, 22);
 
     // layouts constraint
@@ -266,7 +265,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         // borderColor
         g.setColor(popupBackgroundColor);
         g.fillRect(0, 0, getWidth(), getHeight());
-        g.setColor(borderColor);
+        g.setColor(PopupAnnotation.BORDER_COLOR);
         g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
     }
 
@@ -338,7 +337,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         minimizeButton.setToolTipText(messageBundle.getString(
                 "viewer.annotation.popup.mimimize.tooltip.label"));
         minimizeButton.setContentAreaFilled(false);
-        minimizeButton.setBorder(BorderFactory.createLineBorder(borderColor));
+        minimizeButton.setBorder(BorderFactory.createLineBorder(PopupAnnotation.BORDER_COLOR));
         minimizeButton.setBorderPainted(true);
         minimizeButton.setFocusPainted(false);
         minimizeButton.addActionListener(this);
@@ -357,7 +356,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         privateToggleButton.setSize(BUTTON_SIZE);
         privateToggleButton.addActionListener(this);
         privateToggleButton.setContentAreaFilled(false);
-        privateToggleButton.setBorder(BorderFactory.createLineBorder(borderColor));
+        privateToggleButton.setBorder(BorderFactory.createLineBorder(PopupAnnotation.BORDER_COLOR));
         privateToggleButton.setBorderPainted(true);
 
         // text area edited the selected annotation markup contents.
@@ -366,7 +365,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         textArea = new JTextArea(contents != null ? contents : "");
         textArea.setFont(new JLabel().getFont());
         textArea.setWrapStyleWord(true);
-        textArea.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(borderColor),
+        textArea.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(PopupAnnotation.BORDER_COLOR),
                 BorderFactory.createEmptyBorder(2, 2, 2, 2)));
 
         textArea.setLineWrap(true);

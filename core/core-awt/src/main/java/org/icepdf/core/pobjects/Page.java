@@ -17,10 +17,7 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.events.*;
 import org.icepdf.core.io.SeekableInput;
-import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
-import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
-import org.icepdf.core.pobjects.annotations.PopupAnnotation;
+import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.WatermarkCallback;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;

@@ -47,6 +47,8 @@ public class PopupAnnotation extends Annotation {
     private static final Logger logger =
             Logger.getLogger(PopupAnnotation.class.toString());
 
+    public static final Color BORDER_COLOR = new Color(153, 153, 153);
+
     /**
      * (Optional; shall be an indirect reference) The parent annotation with
      * which this pop-up annotation shall be associated.
@@ -143,14 +145,15 @@ public class PopupAnnotation extends Annotation {
     private void paintPopupPaintables(Graphics2D g2d) {
 
         Rectangle2D.Float popupBounds = getUserSpaceRectangle();
+        Dimension popupSize = popupBounds.getBounds().getSize();
 
         AffineTransform oldTransform = g2d.getTransform();
         g2d.scale(1, -1);
-        g2d.translate(0, -popupBounds.getBounds().getSize().height);
+        g2d.translate(0, -popupSize.height);
 
-        popupPaintablesPanel.invalidate();
-        popupPaintablesPanel.revalidate();
         popupPaintablesPanel.print(g2d);
+        g2d.setColor(BORDER_COLOR);
+        g2d.drawRect(0, 0, popupSize.width - 1, popupSize.height - 1);
 
         g2d.setTransform(oldTransform);
     }
