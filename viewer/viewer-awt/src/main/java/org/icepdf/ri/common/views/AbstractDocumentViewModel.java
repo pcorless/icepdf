@@ -298,7 +298,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     public Rectangle getPageBounds(int pageIndex) {
         if (pageComponents != null && pageIndex < pageComponents.size()) {
             Component pageViewComponentImpl = pageComponents.get(pageIndex);
-            if (pageViewComponentImpl != null) {
+            if (pageViewComponentImpl != null && pageViewComponentImpl.getParent() != null) {
                 Rectangle pageBounds = pageViewComponentImpl.getParent().getBounds();
                 return pageBounds;
             }

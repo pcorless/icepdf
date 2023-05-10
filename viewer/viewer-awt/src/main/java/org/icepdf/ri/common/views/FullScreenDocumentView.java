@@ -87,7 +87,7 @@ public class FullScreenDocumentView extends OnePageView implements WindowListene
 
     @Override
     protected JComponent buildPageDecoration(AbstractPageViewComponent pageViewComponent) {
-        return pageViewComponent;
+        return new FullScreenPageViewDecorator(pageViewComponent);
     }
 
     private void buildFullScreenDocumentView() {
@@ -114,7 +114,7 @@ public class FullScreenDocumentView extends OnePageView implements WindowListene
 
         super.dispose();
         try {
-            // change the view before we close full screen so we don't get a flicker
+            // change the view before we close full screen, so we don't get a flicker
             controller.revertViewType();
             // get out of full screen mode
             defaultScreenDevice.setFullScreenWindow(null);
@@ -168,4 +168,14 @@ public class FullScreenDocumentView extends OnePageView implements WindowListene
     public void windowActivated(WindowEvent e) {
     }
 
+    private static class FullScreenPageViewDecorator extends PageViewDecorator {
+        public FullScreenPageViewDecorator(JComponent pageViewComponent) {
+            super(pageViewComponent);
+        }
+        protected void paintBorder(Graphics2D g2d, Dimension size){
+        }
+
+        protected void paintShadow(Graphics2D g2d, Dimension size){
+        }
+    }
 }
