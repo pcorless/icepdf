@@ -273,7 +273,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
      * @return bound value of the shape path.
      */
     public static Rectangle commonBoundsNormalization(GeneralPath shapePath,
-                                                  AffineTransform at) {
+                                                      AffineTransform at) {
         shapePath.transform(at);
         Rectangle2D pageSpaceBound = shapePath.getBounds2D();
         return new Rectangle(
@@ -550,6 +550,29 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
             }
             validate();
         }
+    }
+
+    @Override
+    public void setBounds(int x, int y, int width, int height) {
+        Rectangle boundRectangle = limitAnnotationPosition(x, y, width, height);
+        super.setBounds(boundRectangle.x, boundRectangle.y, boundRectangle.width, boundRectangle.height);
+    }
+
+    protected Rectangle limitAnnotationPosition(int x, int y, int width, int height) {
+        Rectangle currentBounds = new Rectangle(x, y, width, height);
+        Rectangle pageBounds = pageViewComponent.getBounds();
+        if (!pageBounds.contains(currentBounds)) {
+            currentBounds.x = Math.max(currentBounds.x, pageBounds.x);
+            currentBounds.y = Math.max(currentBounds.y, pageBounds.y);
+            if (currentBounds.x + currentBounds.width > pageBounds.width) {
+                currentBounds.x = pageBounds.width - currentBounds.width;
+            }
+            if (currentBounds.y + currentBounds.height > pageBounds.height) {
+                currentBounds.y = pageBounds.height - currentBounds.height;
+            }
+            return currentBounds;
+        }
+        return currentBounds;
     }
 
     public void mouseReleased(MouseEvent mouseEvent) {
