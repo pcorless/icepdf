@@ -52,6 +52,7 @@ public class MarkupGlueComponent extends JComponent implements PageViewAnnotatio
         this.markupAnnotationComponent = markupAnnotationComponent;
         this.popupAnnotationComponent = popupAnnotationComponent;
         this.popupAnnotationComponent.addComponentListener(this);
+        this.popupAnnotationComponent.setMarkupGlueComponent(this);
     }
 
     public void dispose() {

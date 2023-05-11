@@ -203,6 +203,19 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
         }
     }
 
+    @Override
+    public void mouseDragged(MouseEvent me) {
+        super.mouseDragged(me);
+        PopupAnnotation popup = annotation.getPopupAnnotation();
+        if (popup != null) {
+            PopupAnnotationComponent popupComponent = getPopupAnnotationComponent();
+            if (popupComponent != null) {
+                MarkupGlueComponent glueComponent = popupComponent.getMarkupGlueComponent();
+                glueComponent.refreshDirtyBounds();
+            }
+        }
+    }
+
     public void togglePopupAnnotationVisibility() {
         if (annotation != null) {
             PopupAnnotation popup = annotation.getPopupAnnotation();

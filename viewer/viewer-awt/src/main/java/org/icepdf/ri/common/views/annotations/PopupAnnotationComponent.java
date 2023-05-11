@@ -105,6 +105,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     protected JScrollPane commentTreeScrollPane;
     protected MarkupAnnotation selectedMarkupAnnotation;
 
+    protected MarkupGlueComponent markupGlueComponent;
+
     protected final boolean disableSpellCheck;
 
     protected AbstractPageViewComponent parentPageViewComponent;
@@ -152,6 +154,10 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
     public void setParentPageComponent(AbstractPageViewComponent pageViewComponent) {
         parentPageViewComponent = pageViewComponent;
+    }
+
+    protected Rectangle limitAnnotationPosition(int x, int y, int width, int height){
+        return new Rectangle(x, y, width, height);
     }
 
     /**
@@ -1234,6 +1240,13 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
     }
 
+    public MarkupGlueComponent getMarkupGlueComponent() {
+        return markupGlueComponent;
+    }
+
+    public void setMarkupGlueComponent(MarkupGlueComponent markupGlueComponent) {
+        this.markupGlueComponent = markupGlueComponent;
+    }
 
     public void setFontSize(float size) {
         Font font = textArea.getFont().deriveFont(size);

@@ -273,7 +273,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
      * @return bound value of the shape path.
      */
     public static Rectangle commonBoundsNormalization(GeneralPath shapePath,
-                                                  AffineTransform at) {
+                                                      AffineTransform at) {
         shapePath.transform(at);
         Rectangle2D pageSpaceBound = shapePath.getBounds2D();
         return new Rectangle(
@@ -550,6 +550,38 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
             }
             validate();
         }
+    }
+
+    @Override
+    public void setBounds(int x, int y, int width, int height) {
+        Rectangle boundRectangle = limitAnnotationPosition(x, y, width, height);
+        super.setBounds(boundRectangle.x, boundRectangle.y, boundRectangle.width, boundRectangle.height);
+    }
+
+    protected Rectangle limitAnnotationPosition(int x, int y, int width, int height) {
+        Rectangle currentBounds = new Rectangle(x, y, width, height);
+        Rectangle pageBounds = pageViewComponent.getBounds();
+        // todo fix dx/dy offset as they are only need by line and ink which should be reworked.
+        if (!pageBounds.contains(currentBounds)) {
+            if (currentBounds.x <  pageBounds.x){
+                currentBounds.x = pageBounds.x;
+                dx = 0;
+            }
+            if (currentBounds.y <  pageBounds.y){
+                currentBounds.y = pageBounds.y;
+                dy = 0;
+            }
+            if (currentBounds.x + currentBounds.width > pageBounds.width) {
+                currentBounds.x = pageBounds.width - currentBounds.width;
+                dx = 0;
+            }
+            if (currentBounds.y + currentBounds.height > pageBounds.height) {
+                currentBounds.y = pageBounds.height - currentBounds.height;
+                dy = 0;
+            }
+            return currentBounds;
+        }
+        return currentBounds;
     }
 
     public void mouseReleased(MouseEvent mouseEvent) {
