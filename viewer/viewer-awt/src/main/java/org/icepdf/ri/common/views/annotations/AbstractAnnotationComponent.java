@@ -561,14 +561,23 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
     protected Rectangle limitAnnotationPosition(int x, int y, int width, int height) {
         Rectangle currentBounds = new Rectangle(x, y, width, height);
         Rectangle pageBounds = pageViewComponent.getBounds();
+        // todo fix dx/dy offset as they are only need by line and ink which should be reworked.
         if (!pageBounds.contains(currentBounds)) {
-            currentBounds.x = Math.max(currentBounds.x, pageBounds.x);
-            currentBounds.y = Math.max(currentBounds.y, pageBounds.y);
+            if (currentBounds.x <  pageBounds.x){
+                currentBounds.x = pageBounds.x;
+                dx = 0;
+            }
+            if (currentBounds.y <  pageBounds.y){
+                currentBounds.y = pageBounds.y;
+                dy = 0;
+            }
             if (currentBounds.x + currentBounds.width > pageBounds.width) {
                 currentBounds.x = pageBounds.width - currentBounds.width;
+                dx = 0;
             }
             if (currentBounds.y + currentBounds.height > pageBounds.height) {
                 currentBounds.y = pageBounds.height - currentBounds.height;
+                dy = 0;
             }
             return currentBounds;
         }
