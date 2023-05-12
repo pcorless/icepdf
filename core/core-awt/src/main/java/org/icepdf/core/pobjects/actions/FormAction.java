@@ -16,10 +16,9 @@
 
 package org.icepdf.core.pobjects.actions;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
-
-import java.util.HashMap;
 
 /**
  * Execute interface for Form actions.
@@ -55,7 +54,7 @@ public abstract class FormAction extends Action {
      */
     public static final Name FLAGS_KEY = new Name("Flags");
 
-    public FormAction(Library l, HashMap h) {
+    public FormAction(Library l, DictionaryEntries h) {
         super(l, h);
     }
 

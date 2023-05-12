@@ -15,14 +15,10 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.Reference;
-import org.icepdf.core.pobjects.Stream;
-import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -33,8 +29,8 @@ public class Indexed extends PColorSpace {
     public static final Name INDEXED_KEY = new Name("Indexed");
     public static final Name I_KEY = new Name("I");
 
-    private PColorSpace colorSpace;
-    private int hival;
+    private final PColorSpace colorSpace;
+    private final int hival;
     byte[] colors = {
             -1, -1, -1, 0, 0, 0
     };
@@ -53,7 +49,7 @@ public class Indexed extends PColorSpace {
      * @param entries    dictionary entries.
      * @param dictionary indexed colour dictionary.
      */
-    Indexed(Library library, HashMap entries, List dictionary) {
+    Indexed(Library library, DictionaryEntries entries, List dictionary) {
         super(library, entries);
         // get the base colour space
         colorSpace = getColorSpace(library, dictionary.get(1));
@@ -77,14 +73,14 @@ public class Indexed extends PColorSpace {
             if (tmp instanceof Stream) {
                 Stream lookup = (Stream) tmp;
                 byte[] colorStream = lookup.getDecodedStreamBytes(0);
-                int length = colors.length < colorStream.length ? colors.length : colorStream.length;
+                int length = Math.min(colors.length, colorStream.length);
                 System.arraycopy(colorStream, 0, colors, 0, length);
             } else if (tmp instanceof StringObject) {
                 // treating as raw unencrypted string
                 StringBuilder stringData = ((StringObject) tmp).getHexStringBuffer();
                 int colorStreamLength = stringData.length();
                 byte[] colorStream = new byte[colorStreamLength / 2];
-                int length = colors.length < colorStream.length ? colors.length : colorStream.length;
+                int length = Math.min(colors.length, colorStream.length);
                 for (int i = 0, j = 0, max = colorStreamLength / 2; i < max; i++, j += 2) {
                     colorStream[i] = (byte) Integer.parseInt(stringData.substring(j, j + 2), 16);
                 }

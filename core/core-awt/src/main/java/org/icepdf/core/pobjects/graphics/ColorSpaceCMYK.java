@@ -120,7 +120,7 @@ public class ColorSpaceCMYK extends ColorSpace {
         return rgbValues;
     }
 
-    private float[] _rgbValues = new float[4];
+    private final float[] _rgbValues = new float[4];
 
     public float[] fromCIEXYZ(float[] colorvalue) {
         return fromRGB(COLOR_SPACE_sRGB.fromCIEXYZ(colorvalue));

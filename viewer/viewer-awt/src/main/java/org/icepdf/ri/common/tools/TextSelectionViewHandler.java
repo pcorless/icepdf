@@ -46,7 +46,7 @@ public class TextSelectionViewHandler extends TextSelection
     protected static final Logger logger =
             Logger.getLogger(TextSelectionViewHandler.class.toString());
 
-    protected JComponent parentComponent;
+    protected final JComponent parentComponent;
 
     protected boolean isDragging;
     protected boolean isSelecting;
@@ -217,7 +217,7 @@ public class TextSelectionViewHandler extends TextSelection
             Component target = documentViewController.getViewPort().getView();
             Point p = SwingUtilities.convertPoint(e.getComponent(), e.getPoint(), target);
             MouseEvent m = new MouseEvent(target,
-                    0, e.getWhen(), e.getModifiers(),
+                    0, e.getWhen(), e.getModifiersEx(),
                     p.x, p.y,
                     e.getClickCount(), e.isPopupTrigger(), e.getButton());
             mouseDragged(m);
@@ -284,11 +284,6 @@ public class TextSelectionViewHandler extends TextSelection
 
     public void paintTool(Graphics g) {
 //        paintSelectionBox(g, rectToDraw);
-    }
-
-    @Override
-    public void setSelectionRectangle(Point cursorLocation, Rectangle selection) {
-
     }
 
     public void installTool() {

@@ -35,10 +35,10 @@ import java.util.ResourceBundle;
 public class FontsPreferencesPanel extends JPanel implements ActionListener {
 
     // layouts constraint
-    private GridBagConstraints constraints;
+    private final GridBagConstraints constraints;
 
     // clear and rescan system for fonts and rewrite file.
-    private JButton resetFontCacheButton;
+    private final JButton resetFontCacheButton;
 
     public FontsPreferencesPanel(SwingController controller, ViewerPropertiesManager propertiesManager,
                                  ResourceBundle messageBundle) {

@@ -95,7 +95,7 @@ public final class BlendComposite implements Composite {
     // System property to disable blending modes other than AlphaComposite.  Oracle's MacOS Java implementation is
     // throwing a not implemented exception on JDK 1.8.0_131 when a custom blend composite is set on the graphics
     // context.
-    private static boolean disableBlendComposite;
+    private static final boolean disableBlendComposite;
 
     static {
         disableBlendComposite = Defs.booleanProperty(
@@ -117,7 +117,7 @@ public final class BlendComposite implements Composite {
     public static final Name EXCLUSION_VALUE = new Name("Exclusion");
 
     private float alpha;
-    private BlendingMode mode;
+    private final BlendingMode mode;
 
     private BlendComposite(BlendingMode mode) {
         this(mode, 1.0f);
@@ -775,13 +775,12 @@ public final class BlendComposite implements Composite {
                             }
                             // screening any colour with white, produces white.
                             if ((dst[0] != 255 && dst[1] != 255 && dst[2] != 255)) {
-                                int[] value = new int[]{
+                                return new int[]{
                                         255 - ((255 - src[0]) * (255 - dst[0]) >> 8),
                                         255 - ((255 - src[1]) * (255 - dst[1]) >> 8),
                                         255 - ((255 - src[2]) * (255 - dst[2]) >> 8),
                                         Math.min(255, src[3] + (dst[3]))
                                 };
-                                return value;
                             }
                             return src;
                         }

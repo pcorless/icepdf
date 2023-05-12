@@ -30,9 +30,9 @@ import org.icepdf.core.pobjects.Page;
 @SuppressWarnings("serial")
 public class PageImageEvent extends PageInitializingEvent {
 
-    private int index;
-    private int total;
-    private long duration;
+    private final int index;
+    private final int total;
+    private final long duration;
 
     /**
      * Construct a new PageImageEvent

@@ -88,14 +88,14 @@ public class AnnotationCellRender extends DefaultTreeCellRenderer {
      */
     public static final ImageIcon ANNOTATION_LINK_ICON = new ImageIcon(Images.get("annot_link_tree.png"));
 
-    public static GeneralPath squareColorOutline;
-    public static GeneralPath circleColorOutline;
-    public static GeneralPath textColorOutline;
-    public static GeneralPath highlightColorOutline;
-    public static GeneralPath inkColorOutline;
-    public static GeneralPath strikeOutColorOutline;
-    public static GeneralPath underlineColorOutline;
-    public static GeneralPath lineColorOutline;
+    public static final GeneralPath squareColorOutline;
+    public static final GeneralPath circleColorOutline;
+    public static final GeneralPath textColorOutline;
+    public static final GeneralPath highlightColorOutline;
+    public static final GeneralPath inkColorOutline;
+    public static final GeneralPath strikeOutColorOutline;
+    public static final GeneralPath underlineColorOutline;
+    public static final GeneralPath lineColorOutline;
 
     static {
         squareColorOutline = new GeneralPath();

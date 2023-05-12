@@ -82,7 +82,7 @@ public class Reference implements Serializable {
     public boolean equals(Object obj) {
         if (obj == this)
             return true;
-        if (obj != null && obj instanceof Reference) {
+        if (obj instanceof Reference) {
             Reference tmp = (Reference) obj;
             return (tmp.objf == objf) && (tmp.genf == genf);
         }

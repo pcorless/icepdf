@@ -24,7 +24,7 @@ import java.awt.*;
 public class ColorIcon implements Icon {
 
     private final static int size = 15;
-    private Color color;
+    private final Color color;
 
     public ColorIcon(Color color) {
         this.color = color;

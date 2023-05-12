@@ -17,10 +17,7 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.events.*;
 import org.icepdf.core.io.SeekableInput;
-import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
-import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
-import org.icepdf.core.pobjects.annotations.PopupAnnotation;
+import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.WatermarkCallback;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
@@ -215,9 +212,9 @@ public class Page extends Dictionary {
      * a page entity and all of it child elements that are associated with it.
      *
      * @param l pointer to default library containing all document objects
-     * @param h HashMap containing all of the dictionary entries
+     * @param h DictionaryEntries containing all of the dictionary entries
      */
-    public Page(Library l, HashMap h) {
+    public Page(Library l, DictionaryEntries h) {
         super(l, h);
     }
 
@@ -241,7 +238,7 @@ public class Page extends Dictionary {
             List conts = (List) pageContent;
             int sz = conts.size();
             contents = new ArrayList<>(Math.max(sz, 1));
-            // pull all of the page content references from the library
+            // pull all the page content references from the library
             for (Object cont : conts) {
                 if (Thread.currentThread().isInterrupted()) {
                     throw new InterruptedException("Page Content initialization thread interrupted");
@@ -250,7 +247,7 @@ public class Page extends Dictionary {
                 if (tmp instanceof Stream) {
                     Stream tmpStream = (Stream) tmp;
                     // prune any zero length streams,
-                    if (tmpStream != null && tmpStream.getRawBytes().length > 0) {
+                    if (tmpStream.getRawBytes().length > 0) {
                         tmpStream.setPObjectReference((Reference) cont);
                         contents.add(tmpStream);
                     }
@@ -286,7 +283,7 @@ public class Page extends Dictionary {
      */
     public List<Reference> getAnnotationReferences() {
         Object annots = library.getObject(entries, ANNOTS_KEY);
-        if (annots != null && annots instanceof ArrayList) {
+        if (annots instanceof ArrayList) {
             final List<Object> list = (List<Object>) annots;
             return list.stream().filter(Reference.class::isInstance).map(Reference.class::cast).collect(Collectors.toList());
         }
@@ -296,7 +293,7 @@ public class Page extends Dictionary {
     private void initPageAnnotations() throws InterruptedException {
         // find annotations in main library for our pages dictionary
         Object annots = library.getObject(entries, ANNOTS_KEY);
-        if (annots != null && annots instanceof List) {
+        if (annots instanceof List) {
             List v = (List) annots;
             annotations = new ArrayList<>(v.size() + 1);
             // add annotations
@@ -322,8 +319,8 @@ public class Page extends Dictionary {
                     a = (Annotation) annotObj;
                 }
                 // or build annotations from dictionary.
-                else if (annotObj instanceof HashMap) { // HashMap lacks "Type"->"Annot" entry
-                    a = Annotation.buildAnnotation(library, (HashMap) annotObj);
+                else if (annotObj instanceof DictionaryEntries) { // HashMap lacks "Type"->"Annot" entry
+                    a = Annotation.buildAnnotation(library, (DictionaryEntries) annotObj);
                 } else {
                     a = null;
                 }
@@ -353,10 +350,13 @@ public class Page extends Dictionary {
                             // add any found annotations to the vector.
                             annotations.add(a);
                         }
+                        // create synthetic annotation to paint the glue between a markup annotation and the popup
+                        // this is only used for print purposes.  A similar pattern is also used in the Viewer RI
+                        createPrintableMarkupAnnotationGlue(a);
                     }
                 } catch (IllegalStateException e) {
-                    logger.warning("Malformed annotation could not be initialized. " +
-                            a != null ? " " + a.getPObjectReference() + a.getEntries() : "");
+                    Annotation finalA = a;
+                    logger.log(Level.WARNING, e, () -> " " + finalA.getPObjectReference() + finalA.getEntries());
                 }
             }
             //The popup annotations may not be referenced in the page annotations entry, we have to add them manually.
@@ -424,10 +424,12 @@ public class Page extends Dictionary {
                     ContentParser cp = new ContentParser(library, resources);
                     byte[][] streams = new byte[contents.size()][];
                     byte[] stream;
+                    Reference[] references = new Reference[contents.size()];
                     for (int i = 0, max = contents.size(); i < max; i++) {
                         stream = contents.get(i).getDecodedStreamBytes();
                         if (stream != null) {
                             streams[i] = stream;
+                            references[i] = contents.get(i).pObjectReference;
                         }
                     }
                     // get any optional groups from the catalog, which control
@@ -440,7 +442,7 @@ public class Page extends Dictionary {
 
                     // pass in option group references into parse.
                     if (streams.length > 0) {
-                        shapes = cp.parse(streams, this).getShapes();
+                        shapes = cp.parse(streams, references, this).getShapes();
                     }
                     // set the initiated flag, first as there are couple corner
                     // cases where the content parsing can call page.init() again
@@ -478,7 +480,7 @@ public class Page extends Dictionary {
      */
     public Thumbnail getThumbnail() {
         Object thumb = library.getObject(entries, THUMB_KEY);
-        if (thumb != null && thumb instanceof Stream) {
+        if (thumb instanceof Stream) {
             return new Thumbnail(library, entries);
         } else {
             return null;
@@ -807,6 +809,26 @@ public class Page extends Dictionary {
         return path.createTransformedShape(at);
     }
 
+    private void createPrintableMarkupAnnotationGlue(Annotation annotation) {
+        // create synthetic annotation to paint the glue between a markup annotation and the popup
+        // this is only used for print purposes.  A similar pattern is also used in the Viewer RI
+        if (annotation instanceof PopupAnnotation) {
+            PopupAnnotation popupAnnotation = (PopupAnnotation) annotation;
+            MarkupAnnotation markupAnnotation = popupAnnotation.getParent();
+            if (markupAnnotation != null) {
+                // insert glue before popup is painted, so we don't over paint
+                Annotation annot;
+                for (int i = 0; i < annotations.size(); i++) {
+                    annot = annotations.get(i);
+                    if (annot instanceof PopupAnnotation && annot.equals(popupAnnotation)) {
+                        annotations.add(i, new MarkupGlueAnnotation(library, markupAnnotation, popupAnnotation));
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Adds an annotation that was previously added to the document.  It is
      * assumed that the annotation has a valid object reference.  This
@@ -814,8 +836,8 @@ public class Page extends Dictionary {
      * the method @link{#createAnnotation} for creating new annotations.
      *
      * @param newAnnotation annotation object to add
-     * @param isNew annotation is new and should be added to stateManager, otherwise change will be part of the document
-     *              but not yet added to the stateManager as the change was likely a missing content stream or popup.
+     * @param isNew         annotation is new and should be added to stateManager, otherwise change will be part of the document
+     *                      but not yet added to the stateManager as the change was likely a missing content stream or popup.
      * @return reference to annotation that was added.
      */
     @SuppressWarnings("unchecked")
@@ -880,6 +902,9 @@ public class Page extends Dictionary {
 
         // add the annotations to the parsed annotations list
         this.annotations.add(newAnnotation);
+
+        // add visual glue for markup annotation
+        createPrintableMarkupAnnotationGlue(newAnnotation);
 
         // add the new annotations to the library
         library.addObject(newAnnotation, newAnnotation.getPObjectReference());
@@ -962,12 +987,36 @@ public class Page extends Dictionary {
         // removed the annotations from the annots vector
         if (annots instanceof List) {
             // update annots dictionary with new annotations reference,
-            ((List) annots).remove(annot.getPObjectReference());
+            ((List<?>) annots).remove(annot.getPObjectReference());
         }
 
         // remove the annotations form the annotation cache in the page object
         if (annotations != null) {
             annotations.remove(annot);
+        }
+        // todo clean up orphaned popup annotations
+        // remove any corresponding popup annotation.
+        if (annot instanceof MarkupAnnotation) {
+            MarkupAnnotation markupAnnotation = (MarkupAnnotation) annot;
+            for (Annotation annotation : annotations) {
+                if (annotation instanceof PopupAnnotation &&
+                        annotation.equals(markupAnnotation.getPopupAnnotation())) {
+                    annotations.remove(annotation);
+                    break;
+                }
+            }
+        }
+        // remove any markupGlue so that it doesn't get painted.  Glue is never added to the document, it created
+        // dynamically for print purposes.
+        if (annot instanceof MarkupAnnotation) {
+            MarkupAnnotation markupAnnotation = (MarkupAnnotation) annot;
+            for (Annotation annotation : annotations) {
+                if (annotation instanceof MarkupGlueAnnotation &&
+                        ((MarkupGlueAnnotation) annotation).getMarkupAnnotation().equals(markupAnnotation)) {
+                    annotations.remove(annotation);
+                    break;
+                }
+            }
         }
         // finally remove it from the library to free up the memory
         library.removeObject(annot.getPObjectReference());
@@ -1060,8 +1109,8 @@ public class Page extends Dictionary {
         Object tmp = library.getObject(entries, PARENT_KEY);
         if (tmp instanceof PageTree) {
             return (PageTree) tmp;
-        } else if (tmp instanceof HashMap) {
-            return new PageTree(library, (HashMap) tmp);
+        } else if (tmp instanceof DictionaryEntries) {
+            return new PageTree(library, (DictionaryEntries) tmp);
         } else {
             return null;
         }
@@ -1340,7 +1389,7 @@ public class Page extends Dictionary {
      * @return annotation associated with page; null, if there are no annotations.
      */
     public List<Annotation> getAnnotations() {
-        if (!inited) {
+        if (annotations == null) {
             try {
                 initPageAnnotations();
             } catch (InterruptedException e) {
@@ -1619,7 +1668,7 @@ public class Page extends Dictionary {
                     }
                 }
             } catch (Exception e) {
-                logger.log(Level.FINE, "Error getting page text.", e);
+                logger.log(Level.WARNING, "Error getting page text.", e);
             }
         }
         if (textBlockShapes.getPageText() != null) {

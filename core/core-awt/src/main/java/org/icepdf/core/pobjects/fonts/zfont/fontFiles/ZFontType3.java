@@ -1,9 +1,6 @@
 package org.icepdf.core.pobjects.fonts.zfont.fontFiles;
 
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.PRectangle;
-import org.icepdf.core.pobjects.Resources;
-import org.icepdf.core.pobjects.Stream;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
@@ -18,7 +15,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +32,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
     public static final Name RESOURCES_KEY = new Name("Resources");
 
     private final Library library;
-    protected HashMap entries;
+    protected final DictionaryEntries entries;
     private HashMap charProcedures;
     private HashMap<Name, SoftReference<Shapes>> charShapesCache;
     private HashMap<Name, PRectangle> charBBoxes;
@@ -48,7 +44,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
 
     private Resources parentResource;
 
-    public ZFontType3(Library library, HashMap properties) {
+    public ZFontType3(Library library, DictionaryEntries properties) {
         this.library = library;
         entries = properties;
 
@@ -83,8 +79,8 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
 
         // CharProcs resources, contains glyph name/stream pairs.
         o = library.getObject(properties, CHAR_PROCS_KEY);
-        if (o instanceof HashMap) {
-            charProcedures = (HashMap) o;
+        if (o instanceof DictionaryEntries) {
+            charProcedures = (DictionaryEntries) o;
             int length = charProcedures.size();
             charShapesCache = new HashMap<>(length);
             charBBoxes = new HashMap<>(length);
@@ -196,9 +192,9 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
         }
 
         if (width == 0.0f && charWidths.size() > 0) {
-            Object tmp = charWidths.get(charName);
+            Point2D.Float tmp = charWidths.get(charName);
             if (tmp != null) {
-                width = (float) (((Point2D.Float) tmp).x * fontMatrix.getScaleX());
+                width = (float) (tmp.x * fontMatrix.getScaleX());
             }
         }
 
@@ -344,16 +340,17 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
                     gs.setFillColor(fillColor);
                     cp.setGraphicsState(gs);
                     cp.setGlyph2UserSpaceScale((float) glyph2user.getScaleX());
-                    Shapes charShapes = cp.parse(new byte[][]{stream.getDecodedStreamBytes()}, null).getShapes();
+                    Shapes charShapes = cp.parse(
+                            new byte[][]{stream.getDecodedStreamBytes()},
+                            new Reference[]{stream.getPObjectReference()},
+                            null).getShapes();
                     TextState textState = cp.getGraphicsState().getTextState();
                     setBBox(charName, textState.getType3BBox());
                     setHorDisplacement(charName, textState.getType3HorizontalDisplacement());
-                    charShapesCache.put(charKey, new SoftReference<Shapes>(charShapes));
+                    charShapesCache.put(charKey, new SoftReference<>(charShapes));
                     // one could add a bbox clip here, but no example where it is needed
                     // not adding it should speed things up a bit
                     return charShapes;
-                } catch (IOException e) {
-                    logger.log(Level.FINE, "Error loading Type3 stream data.", e);
                 } catch (InterruptedException e) {
                     logger.log(Level.FINE, "Thread Interrupted while parsing Type3 stream data.", e);
                 }

@@ -50,8 +50,6 @@ public class AnnotationSummaryBox extends PopupAnnotationComponent implements Fo
         setFocusable(false);
         removeFocusListener(this);
 
-        adjustBounds = false;
-
         commentPanel.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
         // hides a bunch of the controls.
         commentPanel.removeMouseListener(popupListener);

@@ -35,13 +35,13 @@ import java.util.ResourceBundle;
 public class AnnotationSelectionHandler extends CommonToolHandler
         implements ToolHandler, ActionListener {
 
-    protected DocumentViewController documentViewController;
+    protected final DocumentViewController documentViewController;
 
-    protected AbstractPageViewComponent pageViewComponent;
+    protected final AbstractPageViewComponent pageViewComponent;
 
-    private JPopupMenu contextMenu;
-    private JMenuItem addDestinationMenuItem;
-    private JMenuItem freeTextMenuItem;
+    private final JPopupMenu contextMenu;
+    private final JMenuItem addDestinationMenuItem;
+    private final JMenuItem freeTextMenuItem;
     private int x, y;
 
     public AnnotationSelectionHandler(DocumentViewController documentViewController,

@@ -48,12 +48,12 @@ public class MyAnnotationCallback implements AnnotationCallback {
     private static final Logger logger =
             Logger.getLogger(MyAnnotationCallback.class.toString());
 
-    private DocumentViewController documentViewController;
+    private final DocumentViewController documentViewController;
 
     // annotation History map similar to browser link history.  This is weak
     // hash map to avoid any potential memory issue for a large document.  As
     // this class lives for as long as the document is open.
-    private WeakHashMap<String, AnnotationState> annotationHistory;
+    private final WeakHashMap<String, AnnotationState> annotationHistory;
 
     private static final Color ANNOTATION = Color.red;
     private static final Color ANNOTATION_VISITED = Color.blue;
@@ -61,7 +61,7 @@ public class MyAnnotationCallback implements AnnotationCallback {
     public MyAnnotationCallback(DocumentViewController documentViewController) {
         this.documentViewController = documentViewController;
         // annotations click on history
-        annotationHistory = new WeakHashMap<String, AnnotationState>();
+        annotationHistory = new WeakHashMap<>();
     }
 
     /**
@@ -169,8 +169,8 @@ public class MyAnnotationCallback implements AnnotationCallback {
                 }
             }
         }
-        /**
-         * Mark the annotation as visited.
+        /*
+          Mark the annotation as visited.
          */
         // get our history cache reference if any
         AnnotationState annotationState =
@@ -227,8 +227,8 @@ public class MyAnnotationCallback implements AnnotationCallback {
         }
         // otherwise we loop though the annotation and add our default border
         Annotation annotation;
-        for (int i = 0, max = annotations.size(); i < max; i++) {
-            processNullAnnotationDecoration(annotations.get(i));
+        for (Annotation value : annotations) {
+            processNullAnnotationDecoration(value);
         }
     }
 
@@ -281,7 +281,7 @@ public class MyAnnotationCallback implements AnnotationCallback {
     /**
      * Helper class for storing visited state information for annotations.
      */
-    protected class AnnotationState {
+    protected static class AnnotationState {
         private Color color;
         private BorderStyle borderStyle;
 

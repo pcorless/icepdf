@@ -116,4 +116,10 @@ public interface DocumentView extends AdjustmentListener, FocusListener {
      * Component repaint call.
      */
     void repaint();
+
+    Component add(Component comp);
+
+    Component add(Component comp, int index);
+
+    void remove(Component comp);
 }

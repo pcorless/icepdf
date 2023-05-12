@@ -46,7 +46,7 @@ public class PdfFXViewer extends Application {
     }
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
+    public void start(Stage primaryStage) {
         BorderPane borderPane = new BorderPane();
         Scene scene = new Scene(borderPane);
 
@@ -69,21 +69,17 @@ public class PdfFXViewer extends Application {
     }
 
     private void createResizeListeners(Scene scene, JComponent viewerPanel) {
-        scene.widthProperty().addListener((observable, oldValue, newValue) -> {
-            SwingUtilities.invokeLater(() -> {
-                viewerPanel.setSize(new Dimension(newValue.intValue(), (int) scene.getHeight()));
-                viewerPanel.setPreferredSize(new Dimension(newValue.intValue(), (int) scene.getHeight()));
-                viewerPanel.repaint();
-            });
-        });
+        scene.widthProperty().addListener((observable, oldValue, newValue) -> SwingUtilities.invokeLater(() -> {
+            viewerPanel.setSize(new Dimension(newValue.intValue(), (int) scene.getHeight()));
+            viewerPanel.setPreferredSize(new Dimension(newValue.intValue(), (int) scene.getHeight()));
+            viewerPanel.repaint();
+        }));
 
-        scene.heightProperty().addListener((observable, oldValue, newValue) -> {
-            SwingUtilities.invokeLater(() -> {
-                viewerPanel.setSize(new Dimension((int) scene.getWidth(), newValue.intValue()));
-                viewerPanel.setPreferredSize(new Dimension((int) scene.getWidth(), newValue.intValue()));
-                viewerPanel.repaint();
-            });
-        });
+        scene.heightProperty().addListener((observable, oldValue, newValue) -> SwingUtilities.invokeLater(() -> {
+            viewerPanel.setSize(new Dimension((int) scene.getWidth(), newValue.intValue()));
+            viewerPanel.setPreferredSize(new Dimension((int) scene.getWidth(), newValue.intValue()));
+            viewerPanel.repaint();
+        }));
     }
 
     private void createViewer(BorderPane borderPane) {
@@ -145,19 +141,15 @@ public class PdfFXViewer extends Application {
 
 
             });
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
+        } catch (InterruptedException | InvocationTargetException e) {
             e.printStackTrace();
         }
     }
 
     private void openDocument(String document) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                swingController.openDocument(document);
-                viewerPanel.revalidate();
-            }
+        SwingUtilities.invokeLater(() -> {
+            swingController.openDocument(document);
+            viewerPanel.revalidate();
         });
 
     }

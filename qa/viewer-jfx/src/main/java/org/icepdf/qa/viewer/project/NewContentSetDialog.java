@@ -21,12 +21,12 @@ import java.nio.file.Paths;
  */
 public class NewContentSetDialog extends AbstractDialog<ContentSet> {
 
-    private TextField contentSetNameTextField;
-    private TextField contentSetPathTextFeild;
-    private Label errorLabel;
+    private final TextField contentSetNameTextField;
+    private final TextField contentSetPathTextFeild;
+    private final Label errorLabel;
     private ContentSet contentSet;
 
-    private ButtonType buttonTypeOk;
+    private final ButtonType buttonTypeOk;
     private boolean skipFileNameCheck = false;
 
     public NewContentSetDialog(Mediator mediator) {

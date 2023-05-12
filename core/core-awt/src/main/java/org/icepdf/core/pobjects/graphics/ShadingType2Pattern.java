@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.functions.Function;
 import org.icepdf.core.pobjects.graphics.batik.ext.awt.LinearGradientPaint;
 import org.icepdf.core.pobjects.graphics.batik.ext.awt.MultipleGradientPaint;
@@ -23,8 +24,9 @@ import org.icepdf.core.util.Library;
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -58,7 +60,7 @@ public class ShadingType2Pattern extends ShadingPattern {
     // linear gradient paint describing the gradient.
     private LinearGradientPaint linearGradientPaint;
 
-    public ShadingType2Pattern(Library library, HashMap entries) {
+    public ShadingType2Pattern(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 
@@ -79,7 +81,7 @@ public class ShadingType2Pattern extends ShadingPattern {
         colorSpace = PColorSpace.getColorSpace(library,
                 library.getObject(shadingDictionary, COLORSPACE_KEY));
         Object tmp = library.getObject(shadingDictionary, BACKGROUND_KEY);
-        if (tmp != null && tmp instanceof List) {
+        if (tmp instanceof List) {
             background = (java.util.List) tmp;
         }
         antiAlias = library.getBoolean(shadingDictionary, ANTIALIAS_KEY);
@@ -153,7 +155,7 @@ public class ShadingType2Pattern extends ShadingPattern {
                     matrix);
             inited = true;
         } catch (Exception e) {
-            logger.finer("Failed ot initialize gradient paint type 2.");
+            logger.log(Level.WARNING, "Failed ot initialize gradient paint type 2.", e);
         }
     }
 
@@ -166,7 +168,7 @@ public class ShadingType2Pattern extends ShadingPattern {
      * @param endPoint       end of line segment.
      * @param t0             domain min
      * @param t1             domain max
-     * @return list of points found on line
+     * @return array of colour points found on the line
      */
     protected Color[] calculateColorPoints(int numberOfPoints,
                                            Point2D.Float startPoint,
@@ -326,6 +328,6 @@ public class ShadingType2Pattern extends ShadingPattern {
                 "\n                    domain: " + domain +
                 "\n                    coords: " + coords +
                 "\n                    extend: " + extend +
-                "\n                 function: " + function;
+                "\n                 function: " + Arrays.toString(function);
     }
 }

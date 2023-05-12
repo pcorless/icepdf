@@ -8,7 +8,7 @@ import org.icepdf.qa.viewer.common.Mediator;
  */
 public abstract class ComparatorPane extends BorderPane implements ComparatorPaneInterface {
 
-    protected Mediator mediator;
+    protected final Mediator mediator;
 
     public ComparatorPane(Mediator mediator) {
         this.mediator = mediator;

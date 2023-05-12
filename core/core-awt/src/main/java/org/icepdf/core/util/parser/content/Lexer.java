@@ -1,13 +1,9 @@
 package org.icepdf.core.util.parser.content;
 
-import org.icepdf.core.pobjects.HexStringObject;
-import org.icepdf.core.pobjects.LiteralStringObject;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -370,10 +366,10 @@ public class Lexer {
         return Operands.OP;
     }
 
-    private HashMap startDictionary() throws IOException {
+    private DictionaryEntries startDictionary() throws IOException {
         startTokenPos = pos;
 
-        HashMap<Object, Object> h = new HashMap<Object, Object>();
+        DictionaryEntries dictionaryEntries = new DictionaryEntries();
 
         // skip past the starting <<
         pos += 2;
@@ -383,18 +379,19 @@ public class Lexer {
         Object key = null;
         Object value;
         int count = 1;
-        while (!(streamBytes[pos] == '>' && streamBytes[pos + 1] == '>')) {
+        while (pos < streamBytes.length &&
+                !(streamBytes[pos] == '>' && streamBytes[pos + 1] == '>')) {
             if (count == 1) {
                 key = next();
                 // double check we don't have an empty dictionary << >>
                 if (key instanceof Integer &&
                         ((Integer) key) == Operands.OP) {
-                    return h;
+                    return dictionaryEntries;
                 }
                 count++;
             } else if (count == 2) {
                 value = next();
-                h.put(key, value);
+                dictionaryEntries.put((Name)key, value);
                 count = 1;
             }
 
@@ -412,7 +409,7 @@ public class Lexer {
         }
         // skip the trailing >>
         pos += 2;
-        return h;
+        return dictionaryEntries;
     }
 
     private void checkLength() {
@@ -448,7 +445,7 @@ public class Lexer {
             }
         }
         Object token;
-        while (streamBytes[pos] != ']' && pos < numRead) {
+        while (pos < numRead && streamBytes[pos] != ']') {
             // add the tokens as we get them.
             token = next();
             if (token instanceof Integer) {
@@ -504,10 +501,6 @@ public class Lexer {
         }
         if (pos <= numRead && pos > startTokenPos) {
             int[] tmp = Operands.parseOperand(streamBytes, startTokenPos, pos - startTokenPos);
-            // check for 'null' token which maybe picked up as an operator.
-            if (tmp == null) {
-                return null;
-            }
             // adjust for any potential parsing compensation.
             if (tmp[1] > 0) {
                 pos -= tmp[1];
@@ -537,7 +530,6 @@ public class Lexer {
                     numRead = streamBytes.length;
                     continue;
                 } else {
-                    tokenType = NO_MORE;
                     break;
                 }
             }

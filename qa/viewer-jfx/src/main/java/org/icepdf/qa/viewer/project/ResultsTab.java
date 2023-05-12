@@ -14,7 +14,6 @@ import org.icepdf.qa.config.Result;
 import org.icepdf.qa.viewer.common.Mediator;
 import org.icepdf.qa.viewer.common.Viewer;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,11 +22,11 @@ import java.util.List;
  */
 public class ResultsTab extends Tab {
 
-    private TextField filterTextField;
+    private final TextField filterTextField;
 
-    private ContextMenu openFileContextMenu;
-    private TableView<Result> resultsTable;
-    private ObservableList<Result> data;
+    private final ContextMenu openFileContextMenu;
+    private final TableView<Result> resultsTable;
+    private final ObservableList<Result> data;
 
     public ResultsTab(String title, Mediator mediator) {
         super(title);
@@ -38,14 +37,14 @@ public class ResultsTab extends Tab {
         resultsTable = new TableView<>();
         resultsTable.setEditable(false);
 
-        data = FXCollections.observableArrayList(new ArrayList<Result>());
+        data = FXCollections.observableArrayList(new ArrayList<>());
 
         TableColumn<Result, String> fileNameColumn = new TableColumn<>("File");
         fileNameColumn.setSortType(TableColumn.SortType.ASCENDING);
-        fileNameColumn.setCellValueFactory(new PropertyValueFactory<Result, String>("documentFileName"));
+        fileNameColumn.setCellValueFactory(new PropertyValueFactory<>("documentFileName"));
 
         TableColumn<Result, String> captureNameColumn = new TableColumn<>("Capture ");
-        captureNameColumn.setCellValueFactory(new PropertyValueFactory<Result, String>("fileNameA"));
+        captureNameColumn.setCellValueFactory(new PropertyValueFactory<>("fileNameA"));
 
         TableColumn<Result, Double> compareColumn = new TableColumn<>("Compare");
         compareColumn.setCellValueFactory(new PropertyValueFactory<>("difference"));
@@ -58,13 +57,7 @@ public class ResultsTab extends Tab {
         openClassPathA.setOnAction(e -> {
             Result result = resultsTable.getSelectionModel().getSelectedItem();
             if (result != null) {
-                try {
-                    Viewer.launchViewer(result, mediator.getCurrentProject().getCaptureSetA());
-                } catch (InvocationTargetException e1) {
-                    e1.printStackTrace();
-                } catch (InterruptedException e1) {
-                    e1.printStackTrace();
-                }
+                Viewer.launchViewer(result, mediator.getCurrentProject().getCaptureSetA());
             }
 
         });
@@ -72,13 +65,7 @@ public class ResultsTab extends Tab {
         openClassPathB.setOnAction(e -> {
             Result result = resultsTable.getSelectionModel().getSelectedItem();
             if (result != null) {
-                try {
-                    Viewer.launchViewer(result, mediator.getCurrentProject().getCaptureSetB());
-                } catch (InvocationTargetException e1) {
-                    e1.printStackTrace();
-                } catch (InterruptedException e1) {
-                    e1.printStackTrace();
-                }
+                Viewer.launchViewer(result, mediator.getCurrentProject().getCaptureSetB());
             }
         });
         openFileContextMenu.getItems().addAll(openClassPathA, openClassPathB);
@@ -97,25 +84,18 @@ public class ResultsTab extends Tab {
             return row;
         });
 
-        resultsTable.getSelectionModel().selectedItemProperty().addListener((observable, oldSelection, newSelection) -> {
-            mediator.openResult(newSelection);
-        });
+        resultsTable.getSelectionModel().selectedItemProperty().addListener((observable, oldSelection, newSelection) -> mediator.openResult(newSelection));
 
         FilteredList<Result> filteredData = new FilteredList<>(data, p -> true);
 
-        filterTextField.textProperty().addListener((observable, oldValue, newValue) -> {
-            filteredData.setPredicate(result -> {
-                // If filter text is empty, display all persons.
-                if (newValue == null || newValue.isEmpty()) {
-                    return true;
-                }
+        filterTextField.textProperty().addListener((observable, oldValue, newValue) -> filteredData.setPredicate(result -> {
+            // If filter text is empty, display all persons.
+            if (newValue == null || newValue.isEmpty()) {
+                return true;
+            }
 
-                if (result.getDifference() <= Double.parseDouble(newValue)) {
-                    return true;
-                }
-                return false; // Does not match.
-            });
-        });
+            return result.getDifference() <= Double.parseDouble(newValue);// Does not match.
+        }));
         filterTextField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (!newValue.matches("\\d+(?:\\.\\d+)?")) {
                 filterTextField.setText(newValue.replaceAll("[^\\d.]", ""));
@@ -124,10 +104,7 @@ public class ResultsTab extends Tab {
 
         filteredData.setPredicate(result -> {
             // If filter text is empty, display all persons.
-            if (result.getDifference() < Double.parseDouble(filterTextField.getText())) {
-                return true;
-            }
-            return false;
+            return result.getDifference() < Double.parseDouble(filterTextField.getText());
         });
 
         SortedList<Result> sortedData = new SortedList<>(filteredData);

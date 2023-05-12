@@ -56,11 +56,11 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
 
     protected final static float DEFAULT_STROKE_WIDTH = 3.0f;
 
-    private static BasicStroke stroke;
-    private static float strokeWidth;
+    private static final BasicStroke stroke;
+    private static final float strokeWidth;
     private static Color lineColor;
     private static Color internalColor;
-    private static boolean useInternalColor;
+    private static final boolean useInternalColor;
     private static int defaultOpacity;
 
     static {
@@ -116,7 +116,7 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
     // start and end point
     protected Rectangle rectangle;
 
-    protected BorderStyle borderStyle = new BorderStyle();
+    protected final BorderStyle borderStyle = new BorderStyle();
 
     /**
      * New Text selection handler.  Make sure to correctly and and remove

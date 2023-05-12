@@ -39,7 +39,7 @@ public class MyAnnotationCallback implements AnnotationCallback {
     private static final Logger logger =
             Logger.getLogger(MyAnnotationCallback.class.toString());
 
-    private DocumentViewController documentViewController;
+    private final DocumentViewController documentViewController;
 
 
     public MyAnnotationCallback(DocumentViewController documentViewController) {

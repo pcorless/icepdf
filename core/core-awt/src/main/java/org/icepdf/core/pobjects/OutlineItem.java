@@ -20,7 +20,6 @@ import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -83,16 +82,9 @@ public class OutlineItem extends Dictionary {
 
     private boolean loadedSubItems;
 
-    private List<OutlineItem> subItems;
+    private final List<OutlineItem> subItems;
 
-
-    /**
-     * Creates a new instance of an OutlineItem.
-     *
-     * @param l document library.
-     * @param h OutlineItem dictionary entries.
-     */
-    public OutlineItem(Library l, HashMap h) {
+    public OutlineItem(Library l, DictionaryEntries h) {
         super(l, h);
         loadedSubItems = false;
         subItems = new ArrayList<>(Math.max(Math.abs(getCount()), 16));
@@ -142,8 +134,8 @@ public class OutlineItem extends Dictionary {
         // grab the action attribute
         if (action == null) {
             Object obj = library.getObject(entries, A_KEY);
-            if (obj instanceof HashMap) {
-                action = new org.icepdf.core.pobjects.actions.Action(library, (HashMap) obj);
+            if (obj instanceof DictionaryEntries) {
+                action = new org.icepdf.core.pobjects.actions.Action(library, (DictionaryEntries) obj);
             }
         }
         return action;
@@ -287,16 +279,16 @@ public class OutlineItem extends Dictionary {
             Reference nextReference = getFirst();
             Reference oldNextReference;
             OutlineItem outLineItem;
-            HashMap dictionary;
+            DictionaryEntries dictionary;
             Object tmp;
-            // iterate through children and see if then have children. 
+            // iterate through children and see if then have children.
             while (nextReference != null) {
                 // result the outline dictionary
                 tmp = library.getObject(nextReference);
-                if (tmp == null || !(tmp instanceof HashMap)) {
+                if (!(tmp instanceof DictionaryEntries)) {
                     break;
                 } else {
-                    dictionary = (HashMap) tmp;
+                    dictionary = (DictionaryEntries) tmp;
                 }
                 // create the new outline
                 outLineItem = new OutlineItem(library, dictionary);

@@ -36,9 +36,9 @@ public class ZoomOutPageHandler implements ToolHandler {
     private static final Logger logger =
             Logger.getLogger(ZoomOutPageHandler.class.toString());
 
-    private AbstractPageViewComponent pageViewComponent;
-    private DocumentViewController documentViewController;
-    private DocumentViewModel documentViewModel;
+    private final AbstractPageViewComponent pageViewComponent;
+    private final DocumentViewController documentViewController;
+    private final DocumentViewModel documentViewModel;
 
     public ZoomOutPageHandler(DocumentViewController documentViewController,
                               AbstractPageViewComponent pageViewComponent,
@@ -50,8 +50,8 @@ public class ZoomOutPageHandler implements ToolHandler {
 
 
     public void mouseClicked(MouseEvent e) {
-        if ((e.getModifiers() & MouseEvent.MOUSE_PRESSED) != 0) {
-            if ((e.getModifiers() & InputEvent.BUTTON1_MASK) != 0) {
+        if ((e.getModifiersEx() & MouseEvent.MOUSE_PRESSED) != 0) {
+            if ((e.getModifiersEx() & InputEvent.BUTTON1_DOWN_MASK) != 0) {
                 // zoom in
                 Point pageOffset = documentViewModel.getPageBounds(
                         pageViewComponent.getPageIndex()).getLocation();

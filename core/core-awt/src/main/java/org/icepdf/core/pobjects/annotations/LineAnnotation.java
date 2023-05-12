@@ -24,7 +24,6 @@ import java.awt.*;
 import java.awt.geom.*;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -176,8 +175,8 @@ public class LineAnnotation extends MarkupAnnotation {
     protected Name startArrow = LINE_END_NONE;
     protected Name endArrow = LINE_END_NONE;
 
-    public LineAnnotation(Library l, HashMap h) {
-        super(l, h);
+    public LineAnnotation(Library library, DictionaryEntries dictionaryEntries) {
+        super(library, dictionaryEntries);
     }
 
     /**
@@ -193,7 +192,7 @@ public class LineAnnotation extends MarkupAnnotation {
         StateManager stateManager = library.getStateManager();
 
         // create a new entries to hold the annotation properties
-        HashMap<Name, Object> entries = new HashMap<>();
+        DictionaryEntries entries = new DictionaryEntries();
         // set default link annotation values.
         entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
         entries.put(Dictionary.SUBTYPE_KEY, Annotation.SUBTYPE_LINE);

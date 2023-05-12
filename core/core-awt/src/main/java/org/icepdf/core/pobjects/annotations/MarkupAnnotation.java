@@ -19,8 +19,11 @@ import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.util.Library;
 
-import java.util.HashMap;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -169,8 +172,8 @@ public abstract class MarkupAnnotation extends Annotation {
     protected Name intent;
     // exData not implemented
 
-    public MarkupAnnotation(Library l, HashMap h) {
-        super(l, h);
+    public MarkupAnnotation(Library library, DictionaryEntries dictionaryEntries) {
+        super(library, dictionaryEntries);
     }
 
     public synchronized void init() throws InterruptedException {
@@ -186,13 +189,13 @@ public abstract class MarkupAnnotation extends Annotation {
 
         // creation date
         Object value = library.getObject(entries, CREATION_DATE_KEY);
-        if (value != null && value instanceof StringObject) {
+        if (value instanceof StringObject) {
             creationDate = new PDate(securityManager, getString(CREATION_DATE_KEY));
         }
 
         // popup child
         value = library.getObject(entries, POPUP_KEY);
-        if (value != null && value instanceof PopupAnnotation) {
+        if (value instanceof PopupAnnotation) {
             popupAnnotation = (PopupAnnotation) value;
         }
 
@@ -204,7 +207,7 @@ public abstract class MarkupAnnotation extends Annotation {
 
         // in reply to annotation
         value = library.getObject(entries, IRT_KEY);
-        if (value != null && value instanceof MarkupAnnotation) {
+        if (value instanceof MarkupAnnotation) {
             inReplyToAnnotation = (MarkupAnnotation) value;
         }
 
@@ -237,8 +240,8 @@ public abstract class MarkupAnnotation extends Annotation {
         // add the transparency graphic context settings.
         if (form != null) {
             Resources resources = form.getResources();
-            HashMap<Object, Object> graphicsProperties = new HashMap<>(2);
-            HashMap<Object, Object> graphicsState = new HashMap<>(1);
+            DictionaryEntries graphicsProperties = new DictionaryEntries(2);
+            DictionaryEntries graphicsState = new DictionaryEntries(1);
             graphicsProperties.put(GraphicsState.CA_STROKING_KEY, opacity);
             graphicsProperties.put(GraphicsState.CA_NON_STROKING_KEY, opacity);
             graphicsState.put(EXT_GSTATE_NAME, graphicsProperties);
@@ -300,6 +303,25 @@ public abstract class MarkupAnnotation extends Annotation {
             creationDate = getModifiedDate();
         }
         return creationDate;
+    }
+
+    /**
+     * Format the creation date using the given FormatStyle
+     * @param formatStyle date output style used by DateTimeFormatter
+     * @return formatted creation date if available, empty String otherwise
+     */
+    public String getFormattedCreationDate(FormatStyle formatStyle) {
+        LocalDateTime creationDate = getCreationDate().asLocalDateTime();
+        if (creationDate == null) return "";
+        DateTimeFormatter formatter = DateTimeFormatter
+                .ofLocalizedDateTime(formatStyle)
+                .withLocale(Locale.getDefault());
+        return creationDate.format(formatter);
+    }
+
+    public String getFormattedTitleText() {
+        String titleText = getTitleText();
+        return titleText != null ? titleText : "";
     }
 
     public boolean isInReplyTo() {

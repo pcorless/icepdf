@@ -20,7 +20,6 @@ import org.icepdf.core.util.Library;
 
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -69,14 +68,8 @@ public class FontDescriptor extends Dictionary {
 
     private boolean embeddedFontDamaged;
 
-    /**
-     * Creates a new instance of a FontDescriptor.
-     *
-     * @param l Libaray of all objects in PDF
-     * @param h hash of parsed FontDescriptor attributes
-     */
-    public FontDescriptor(Library l, HashMap h) {
-        super(l, h);
+    public FontDescriptor(Library library, DictionaryEntries dictionaryEntries) {
+        super(library, dictionaryEntries);
     }
 
     /**
@@ -88,7 +81,7 @@ public class FontDescriptor extends Dictionary {
      * @return new instance of a <code>FontDescriptor</code>
      */
     public static FontDescriptor createDescriptor(Library library, AFM afm) {
-        HashMap<Name, Object> properties = new HashMap<>(7);
+        DictionaryEntries properties = new DictionaryEntries(7);
         properties.put(FONT_NAME, afm.getFontName());
         properties.put(FONT_FAMILY, afm.getFamilyName());
         properties.put(FONT_BBOX, afm.getFontBBox());
@@ -231,11 +224,11 @@ public class FontDescriptor extends Dictionary {
     public Rectangle2D getFontBBox() {
         Object value = library.getObject(entries, FONT_BBOX);
         if (value instanceof List) {
-            List rectangle = (List) value;
-            return new PRectangle(rectangle).getOriginalPoints();
+            List<Float> coordinates = library.getFloatList((List<Object>)value);
+            return new PRectangle(coordinates).getOriginalPoints();
         } else if (value instanceof int[]) {
             int[] ints = (int[]) value;
-            List<Integer> intList = new ArrayList<Integer>(ints.length);
+            List<Integer> intList = new ArrayList<>(ints.length);
             for (int i : ints) {
                 intList.add(i);
             }
@@ -317,8 +310,8 @@ public class FontDescriptor extends Dictionary {
         }
         // catch everything, we can fall back to font substitution if a failure
         // occurs.
-        catch (Throwable e) {
-            logger.log(Level.FINE, "Error Reading Embedded Font ", e);
+        catch (Exception e) {
+            logger.log(Level.WARNING, "Error Reading Embedded Font ", e);
             embeddedFontDamaged = true;
         }
 

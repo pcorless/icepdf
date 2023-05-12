@@ -1,10 +1,11 @@
 package org.icepdf.core.pobjects.annotations;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
-import java.util.*;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -22,8 +23,7 @@ public class PolyAnnotation extends MarkupAnnotation {
     public static final Name SUBTYPE_POLYLINE = new Name("PolyLine");
     public static final Name SUBTYPE_POLYGON = new Name("Polygon");
 
-    public static final Set<Name> ALL_SUBTYPES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(SUBTYPE_POLYLINE, SUBTYPE_POLYGON)));
+    public static final Set<Name> ALL_SUBTYPES = Set.of(SUBTYPE_POLYLINE, SUBTYPE_POLYGON);
 
     /**
      * (Required) An array of numbers (see Table 174) specifying the width and
@@ -79,7 +79,7 @@ public class PolyAnnotation extends MarkupAnnotation {
     public static final Name MEASURE_KEY = new Name("Measure");
 
 
-    public PolyAnnotation(Library l, HashMap h) {
+    public PolyAnnotation(Library l, DictionaryEntries h) {
         super(l, h);
     }
 

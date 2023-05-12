@@ -93,6 +93,7 @@ public class ChoiceComboComponent extends AbstractChoiceComponent implements Foc
         }
         comboBoxList.setFont(new Font(fontName, Font.PLAIN,
                 (int) (choiceFieldDictionary.getSize() * documentViewModel.getViewZoom())));
+        super.validate();
     }
 
     public void propertyChange(PropertyChangeEvent evt) {

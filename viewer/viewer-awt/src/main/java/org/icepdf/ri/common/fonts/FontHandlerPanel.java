@@ -29,10 +29,10 @@ import java.text.MessageFormat;
 @SuppressWarnings("serial")
 public class FontHandlerPanel extends AbstractWorkerPanel {
 
-    private MessageFormat typeMessageForm;
-    private MessageFormat encodingMessageForm;
-    private MessageFormat actualTypeMessageForm;
-    private MessageFormat actualFontMessageForm;
+    private final MessageFormat typeMessageForm;
+    private final MessageFormat encodingMessageForm;
+    private final MessageFormat actualTypeMessageForm;
+    private final MessageFormat actualFontMessageForm;
 
     public FontHandlerPanel(Controller controller) {
         super(controller);

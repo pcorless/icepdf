@@ -45,17 +45,17 @@ public class GeneralPreferencesPanel extends JPanel implements PropertyChangeLis
     // layouts constraint
     private GridBagConstraints constraints;
 
-    private Preferences preferences;
+    private final Preferences preferences;
 
-    private ColorChooserButton highlightColorChooserButton;
-    private ColorChooserButton selectionColorChooserButton;
+    private final ColorChooserButton highlightColorChooserButton;
+    private final ColorChooserButton selectionColorChooserButton;
 
-    private ColorChooserButton paperShadowColorChooserButton;
-    private ColorChooserButton paperColorChooserButton;
-    private ColorChooserButton paperBorderColorChooserButton;
-    private ColorChooserButton viewBackgroundColorChooserButton;
+    private final ColorChooserButton paperShadowColorChooserButton;
+    private final ColorChooserButton paperColorChooserButton;
+    private final ColorChooserButton paperBorderColorChooserButton;
+    private final ColorChooserButton viewBackgroundColorChooserButton;
 
-    private JComboBox<ValueLabelItem> iconSizeComboBox;
+    private final JComboBox<ValueLabelItem> iconSizeComboBox;
 
     public GeneralPreferencesPanel(SwingController controller, ViewerPropertiesManager propertiesManager,
                                    ResourceBundle messageBundle) {
@@ -235,9 +235,6 @@ public class GeneralPreferencesPanel extends JPanel implements PropertyChangeLis
         } else if (source == paperBorderColorChooserButton) {
             PageViewDecorator.pageBorderColor = paperBorderColorChooserButton.getBackground();
             preferences.putInt(ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, PageViewDecorator.pageBorderColor.getRGB());
-        } else if (source == viewBackgroundColorChooserButton) {
-            AbstractDocumentView.backgroundColour = viewBackgroundColorChooserButton.getBackground();
-            preferences.putInt(ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, AbstractDocumentView.backgroundColour.getRGB());
         } else if (source == viewBackgroundColorChooserButton) {
             AbstractDocumentView.backgroundColour = viewBackgroundColorChooserButton.getBackground();
             preferences.putInt(ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, AbstractDocumentView.backgroundColour.getRGB());

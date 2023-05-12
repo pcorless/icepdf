@@ -70,7 +70,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
     private static final int MULTI_CLICK_INTERVAL =
             (int) Toolkit.getDefaultToolkit().getDesktopProperty("awt.multiClickInterval");
     private MouseEvent lastMouseClickEvent;
-    private Timer mouseClickTimer;
+    private final Timer mouseClickTimer;
 
     static {
         try {

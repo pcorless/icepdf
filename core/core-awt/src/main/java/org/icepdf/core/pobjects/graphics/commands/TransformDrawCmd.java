@@ -30,7 +30,7 @@ import java.awt.geom.AffineTransform;
  */
 public class TransformDrawCmd extends AbstractDrawCmd {
 
-    private AffineTransform affineTransform;
+    private final AffineTransform affineTransform;
 
     public TransformDrawCmd(AffineTransform affineTransform) {
         this.affineTransform = affineTransform;

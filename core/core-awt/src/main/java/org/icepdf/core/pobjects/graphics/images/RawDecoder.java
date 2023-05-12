@@ -63,8 +63,8 @@ public class RawDecoder extends AbstractImageDecoder {
         // Max value used to represent a colour,  usually 255, min is 0
         int maxColourValue = ((1 << bitsPerComponent) - 1);
 
-        int f[] = new int[colorSpaceCompCount];
-        float ff[] = new float[colorSpaceCompCount];
+        int[] f = new int[colorSpaceCompCount];
+        float[] ff = new float[colorSpaceCompCount];
 
         // image mask from
         float imageMaskValue = decode[0];

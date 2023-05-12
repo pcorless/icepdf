@@ -41,8 +41,8 @@ public final class WindowsRegistry {
     }
 
     static class StreamReader extends Thread {
-        private InputStream is;
-        private StringWriter sw = new StringWriter();
+        private final InputStream is;
+        private final StringWriter sw = new StringWriter();
 
         public StreamReader(InputStream is) {
             this.is = is;

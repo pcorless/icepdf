@@ -51,7 +51,7 @@ public class OFont implements FontFile {
     private Rectangle2D maxCharBounds = new Rectangle2D.Double(0.0, 0.0, 1.0, 1.0);
 
     // text layout map, very expensive to create, so we'll cache them.
-    private HashMap<String, Point2D.Float> echarAdvanceCache;
+    private final HashMap<String, Point2D.Float> echarAdvanceCache;
 
     protected float[] widths;
     protected Map<Integer, Float> cidWidths;
@@ -381,7 +381,7 @@ public class OFont implements FontFile {
         if (log.isLoggable(Level.FINER)) {
             if (!awtFont.canDisplay(c)) {
                 log.finer(
-                        ((int) c1) + " " + Character.toString(c1) + " " +
+                        ((int) c1) + " " + c1 + " " +
                                 (int) c + " " + c + " " + awtFont);
                 //+ " " + textState.font.font + " " + textState.font.font.getNumGlyphs());
             }

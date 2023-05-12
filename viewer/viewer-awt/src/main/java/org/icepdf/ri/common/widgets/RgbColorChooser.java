@@ -57,7 +57,7 @@ public class RgbColorChooser {
             if (defaultLF.contains("GTK")) {
                 UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.warning("Could not set metal look and feel.");
         }
 
@@ -69,12 +69,8 @@ public class RgbColorChooser {
             // removed the none rgb colour space reference panels
             switch (displayName) {
                 case "HSV":
-                    colorChooser.removeChooserPanel(p);
-                    break;
-                case "HSL":
-                    colorChooser.removeChooserPanel(p);
-                    break;
                 case "CMYK":
+                case "HSL":
                     colorChooser.removeChooserPanel(p);
                     break;
             }
@@ -92,7 +88,7 @@ public class RgbColorChooser {
         try {
             String defaultLF = UIManager.getSystemLookAndFeelClassName();
             UIManager.setLookAndFeel(defaultLF);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.warning("Could not set " + UIManager.getSystemLookAndFeelClassName());
         }
 
@@ -100,7 +96,7 @@ public class RgbColorChooser {
     }
 
     private static class ColorTracker implements ActionListener, Serializable {
-        private JColorChooser chooser;
+        private final JColorChooser chooser;
         private Color color;
 
         ColorTracker(JColorChooser c) {

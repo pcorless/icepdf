@@ -99,7 +99,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
     public static final int resizeBoxSize = 4;
 
     // reusable border
-    protected static ResizableBorder resizableBorder =
+    protected static final ResizableBorder resizableBorder =
             new ResizableBorder(resizeBoxSize);
 
     protected PageViewComponentImpl pageViewComponent;
@@ -228,15 +228,12 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
     }
 
     protected void resize() {
-        if (getParent() != null) {
-            getParent().validate();
-        }
         resized = true;
     }
 
     /**
      * Refreshes the components bounds for the current page transformation.
-     * Bounds have are already in user space.
+     * Bounds are already in user space.
      */
     public void refreshDirtyBounds() {
         Page currentPage = pageViewComponent.getPage();
@@ -245,8 +242,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
-        setBounds(commonBoundsNormalization(new GeneralPath(
-                annotation.getUserSpaceRectangle()), at));
+        setBounds(commonBoundsNormalization(new GeneralPath(annotation.getUserSpaceRectangle()), at));
     }
 
     /**
@@ -276,8 +272,8 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
      * @param at        transform to apply to shapePath
      * @return bound value of the shape path.
      */
-    protected Rectangle commonBoundsNormalization(GeneralPath shapePath,
-                                                  AffineTransform at) {
+    public static Rectangle commonBoundsNormalization(GeneralPath shapePath,
+                                                      AffineTransform at) {
         shapePath.transform(at);
         Rectangle2D pageSpaceBound = shapePath.getBounds2D();
         return new Rectangle(
@@ -288,6 +284,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
     }
 
     public void validate() {
+        super.validate();
         DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         if (currentZoom != documentViewModel.getViewZoom() ||
                 currentRotation != documentViewModel.getViewRotation()) {
@@ -445,7 +442,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
 
     protected void initiateMouseMoved(MouseEvent e) {
         Border border = getBorder();
-        if (border != null && border instanceof ResizableBorder) {
+        if (border instanceof ResizableBorder) {
             cursor = ((ResizableBorder) border).getCursor(e);
         }
         startPos = e.getPoint();
@@ -553,6 +550,38 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
             }
             validate();
         }
+    }
+
+    @Override
+    public void setBounds(int x, int y, int width, int height) {
+        Rectangle boundRectangle = limitAnnotationPosition(x, y, width, height);
+        super.setBounds(boundRectangle.x, boundRectangle.y, boundRectangle.width, boundRectangle.height);
+    }
+
+    protected Rectangle limitAnnotationPosition(int x, int y, int width, int height) {
+        Rectangle currentBounds = new Rectangle(x, y, width, height);
+        Rectangle pageBounds = pageViewComponent.getBounds();
+        // todo fix dx/dy offset as they are only need by line and ink which should be reworked.
+        if (!pageBounds.contains(currentBounds)) {
+            if (currentBounds.x <  pageBounds.x){
+                currentBounds.x = pageBounds.x;
+                dx = 0;
+            }
+            if (currentBounds.y <  pageBounds.y){
+                currentBounds.y = pageBounds.y;
+                dy = 0;
+            }
+            if (currentBounds.x + currentBounds.width > pageBounds.width) {
+                currentBounds.x = pageBounds.width - currentBounds.width;
+                dx = 0;
+            }
+            if (currentBounds.y + currentBounds.height > pageBounds.height) {
+                currentBounds.y = pageBounds.height - currentBounds.height;
+                dy = 0;
+            }
+            return currentBounds;
+        }
+        return currentBounds;
     }
 
     public void mouseReleased(MouseEvent mouseEvent) {

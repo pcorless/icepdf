@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics.commands;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Form;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
@@ -26,7 +27,6 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.util.HashMap;
 
 
 /**
@@ -38,12 +38,12 @@ import java.util.HashMap;
  */
 public class FormDrawCmd extends AbstractDrawCmd {
 
-    private Form xForm;
+    private final Form xForm;
 
     private BufferedImage xFormBuffer;
     private int x, y;
 
-    private static boolean disableXObjectSMask;
+    private static final boolean disableXObjectSMask;
 
     // Used to use Max_value but we have a few corner cases where the dimension is +-5 of Short.MAX_VALUE, but
     // realistically we seldom have enough memory to load anything bigger then 8000px.  4k+ image are big!
@@ -239,7 +239,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 && !new Name("Normal").equals(xForm.getExtGState().getBlendingMode())
                 ) {
             if (xForm.getGroup() != null) {
-                HashMap tmp = xForm.getGroup();
+                DictionaryEntries tmp = xForm.getGroup();
                 Object cs = xForm.getLibrary().getObject(tmp, new Name("CS"));
                 // looking for additive colour spaces, if so we paint an background.
                 if (cs == null || cs instanceof ICCBased || cs instanceof Name &&
@@ -262,8 +262,6 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 if (!xForm.isShading()) {
                     canvas.translate(-(int) bBox.getX(), -(int) bBox.getY());
                     canvas.setClip(bBox);
-                    xFormShapes.paint(canvas);
-                    xFormShapes.setPageParent(null);
                 }
                 // basic support for gradient fills,  still have a few corners cases to work on.
                 else {
@@ -275,9 +273,9 @@ public class FormDrawCmd extends AbstractDrawCmd {
                     }
                     canvas.translate(-x, -y);
                     canvas.setClip(bBox.getBounds2D());
-                    xFormShapes.paint(canvas);
-                    xFormShapes.setPageParent(null);
                 }
+                xFormShapes.paint(canvas);
+                xFormShapes.setPageParent(null);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -292,6 +290,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
         for (DrawCmd cmd : xform.getShapes().getShapes()) {
             if (cmd instanceof ShapeDrawCmd && ((ShapeDrawCmd) cmd).getShape() == null) {
                 found = true;
+                break;
             }
         }
         return found;

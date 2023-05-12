@@ -36,7 +36,7 @@ public class OperatorNames {
      * @return integer representing the operand found as described in class
      *         constants.
      */
-    public static int getType(char ch[], int offset, int length) {
+    public static int getType(char[] ch, int offset, int length) {
         char c1, c2;
         char c = ch[offset];
         // quickly switch though possible operands to find matching operands
@@ -134,7 +134,7 @@ public class OperatorNames {
             case 'N':
                 if (length == 2) return OP_NE;
                 c1 = ch[offset + 1];
-                if (c1 == 'e' || c1 == 'e') {
+                if (c1 == 'e' || c1 == 'E') {
                     return OP_NEG;
                 } else if (c1 == 'o' || c1 == 'O') {
                     return OP_NOT;

@@ -19,7 +19,10 @@ import org.icepdf.ri.common.KeyListenerPageChanger;
 import org.icepdf.ri.common.MouseWheelListenerPageChanger;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
+
+import static org.icepdf.ri.common.views.BasePageViewLayout.PAGE_SPACING_HORIZONTAL;
 
 /**
  * <p>Constructs a one  page view as defined in the PDF specification. A one
@@ -33,9 +36,9 @@ import java.awt.*;
 @SuppressWarnings("serial")
 public class OnePageView extends AbstractDocumentView {
 
-    protected Object pageChangerListener;
+    protected final Object pageChangerListener;
 
-    protected KeyListenerPageChanger keyListenerPageChanger;
+    protected final KeyListenerPageChanger keyListenerPageChanger;
 
 
     public OnePageView(DocumentViewController documentDocumentViewController,
@@ -58,57 +61,40 @@ public class OnePageView extends AbstractDocumentView {
 
     }
 
+
     private void buildGUI() {
-        // add all page components to gridlayout panel
-        pagesPanel = new JPanel();
-        pagesPanel.setBackground(backgroundColour);
-        // one column equals single page view continuous
-        GridLayout gridLayout = new GridLayout(0, 1, horizontalSpace, verticalSpace);
-        pagesPanel.setLayout(gridLayout);
+        this.setLayout(new OnePageViewLayout(documentViewModel));
+        this.setBackground(backgroundColour);
+        this.setBorder(new EmptyBorder(layoutInserts, layoutInserts, layoutInserts, layoutInserts));
 
-        // use a gridBag to center the page component panel
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.weighty = 1.0;                  // allows vertical resizing
-        gbc.weightx = 1.0;                  // allows horizontal resizing
-        gbc.insets =  // component spacer [top, left, bottom, right]
-                new Insets(layoutInserts, layoutInserts, layoutInserts, layoutInserts);
-        gbc.gridwidth = GridBagConstraints.REMAINDER;      // one component per row
-
-        // finally add all the components
-        // add components for every page in the document
         updateDocumentView();
-
-        this.setLayout(new GridBagLayout());
-        this.add(pagesPanel, gbc);
-
     }
 
     public void updateDocumentView() {
-
         DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         java.util.List<AbstractPageViewComponent> pageComponents = documentViewModel.getPageComponents();
         if (pageComponents != null) {
-
-            PageViewComponent pageViewComponent =
-                    pageComponents.get(documentViewModel.getViewCurrentPageIndex());
+            AbstractPageViewComponent pageViewComponent = pageComponents.get(documentViewModel.getViewCurrentPageIndex());
             if (pageViewComponent != null) {
-
                 // remove old component
-                pagesPanel.removeAll();
+                this.removeAll();
 
-                pageViewComponent.setDocumentViewCallback(this);
                 // add component to layout
-                pagesPanel.add(buildPageDecoration((AbstractPageViewComponent) pageViewComponent));
-                ((AbstractPageViewComponent) pageViewComponent).revalidate();
-                ((AbstractPageViewComponent) pageViewComponent).repaint();
+                JComponent page = buildPageDecoration(pageViewComponent);
+                setLayer(page, JLayeredPane.DEFAULT_LAYER);
+                add(page);
+                addPopupAnnotationAndGlue(pageViewComponent);
             }
 
-            // make sure we have setup all pages with callback call.
+            // make sure we have set up all pages with callback call.
             for (PageViewComponent pageViewCom : pageComponents) {
                 if (pageViewCom != null) {
                     pageViewCom.setDocumentViewCallback(this);
                 }
             }
+
+            revalidate();
+            repaint();
         }
     }
 
@@ -131,7 +117,6 @@ public class OnePageView extends AbstractDocumentView {
     }
 
     public void dispose() {
-        disposing = true;
         // remove utilities
         if (pageChangerListener != null) {
             JScrollPane documentScrollpane = documentViewModel.getDocumentViewScrollPane();
@@ -142,10 +127,6 @@ public class OnePageView extends AbstractDocumentView {
             keyListenerPageChanger.uninstall();
         }
 
-        // trigger a re-layout
-        pagesPanel.removeAll();
-        pagesPanel.invalidate();
-
         // make sure we call super.
         super.dispose();
     }
@@ -153,29 +134,20 @@ public class OnePageView extends AbstractDocumentView {
     public Dimension getDocumentSize() {
         float pageViewWidth = 0;
         float pageViewHeight = 0;
-        if (pagesPanel != null) {
-            int count = pagesPanel.getComponentCount();
-            Component comp;
-            // should only have one page view decorator for single page view.
-            for (int i = 0; i < count; i++) {
-                comp = pagesPanel.getComponent(i);
-                if (comp instanceof PageViewDecorator) {
-                    PageViewDecorator pvd = (PageViewDecorator) comp;
-                    Dimension dim = pvd.getPreferredSize();
-                    pageViewWidth = dim.width;
-                    pageViewHeight = dim.height;
-                    break;
-                }
-            }
+        int currCompIndex = documentViewController.getCurrentPageIndex();
+        Rectangle bounds = documentViewModel.getPageBounds(currCompIndex);
+        if (bounds != null) {
+            pageViewWidth = bounds.width;
+            pageViewHeight = bounds.height;
         }
-        // normalize the dimensions to a zoom level of zero. 
+        // normalize the dimensions to a zoom level of zero.
         float currentZoom = documentViewController.getDocumentViewModel().getViewZoom();
         pageViewWidth = Math.abs(pageViewWidth / currentZoom);
         pageViewHeight = Math.abs(pageViewHeight / currentZoom);
 
         // add any horizontal padding from layout manager
-        pageViewWidth += AbstractDocumentView.horizontalSpace * 2;
-        pageViewHeight += AbstractDocumentView.verticalSpace * 2;
+        pageViewWidth += PAGE_SPACING_HORIZONTAL;
+        pageViewHeight += PAGE_SPACING_HORIZONTAL * 2;
         return new Dimension((int) pageViewWidth, (int) pageViewHeight);
     }
 

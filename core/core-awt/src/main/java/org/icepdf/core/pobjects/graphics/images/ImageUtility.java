@@ -31,6 +31,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,7 +41,6 @@ import java.util.logging.Logger;
  *
  * @since 5.0
  */
-@SuppressWarnings("serial")
 public class ImageUtility {
 
     static final Logger logger =
@@ -80,17 +80,18 @@ public class ImageUtility {
             0xFFFFFFFF
     };
 
-    private static boolean scaleQuality;
-    private static int scaleWidth, scaleHeight;
+    private static final boolean scaleQuality;
+    private static final int scaleWidth;
+    private static final int scaleHeight;
 
     private static GraphicsConfiguration configuration;
-    private static int compatibleImageType;
+    private static final int compatibleImageType;
 
     static {
         try {
             configuration = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
                     .getDefaultConfiguration();
-        } catch (Throwable e) {
+        } catch (Exception e) {
             // intentionally left blank
         }
 
@@ -185,7 +186,7 @@ public class ImageUtility {
                 if (alpha != 0xFF) {
                     argb = bi.getRGB(x, y);
                     argb &= 0x00FFFFFF;
-                    argb |= ((alpha << 24) & 0xFF000000);
+                    argb |= (0);
                     bi.setRGB(x, y, argb);
                 }
             }
@@ -263,9 +264,7 @@ public class ImageUtility {
     private BufferedImage makeRGBABufferedImage(WritableRaster wr, final int transparency) {
         ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
         int[] bits = new int[4];
-        for (int i = 0; i < bits.length; i++) {
-            bits[i] = 8;
-        }
+        Arrays.fill(bits, 8);
         ColorModel cm = new ComponentColorModel(
                 cs, bits, true, false,
                 transparency,
@@ -276,7 +275,7 @@ public class ImageUtility {
     private static BufferedImage makeBufferedImage(Raster raster) {
 
         // create a generic colour model and reuse the wraster,  intent
-        // is that this should save quite bit of memory
+        // is that this should save quite a bit of memory
         DirectColorModel colorModel = new DirectColorModel(24,
                 0x00ff0000,    // Red
                 0x0000ff00,    // Green
@@ -292,8 +291,7 @@ public class ImageUtility {
     static BufferedImage makeRGBBufferedImage(WritableRaster wr) {
         ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
         int[] bits = new int[3];
-        for (int i = 0; i < bits.length; i++)
-            bits[i] = 8;
+        Arrays.fill(bits, 8);
         ColorModel cm = new ComponentColorModel(
                 cs, bits, false, false,
                 ColorModel.OPAQUE,
@@ -304,8 +302,7 @@ public class ImageUtility {
     static BufferedImage makeGrayBufferedImage(WritableRaster wr) {
         ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_GRAY);
         int[] bits = new int[1];
-        for (int i = 0; i < bits.length; i++)
-            bits[i] = 8;
+        Arrays.fill(bits, 8);
         ColorModel cm = new ComponentColorModel(
                 cs, bits, false, false,
                 ColorModel.OPAQUE,
@@ -535,7 +532,7 @@ public class ImageUtility {
             maskImage.getRGB(0, i, baseWidth, 1, maskBnd, 0, baseWidth);
             // apply the soft mask blending
             for (int j = 0; j < baseWidth; j++) {
-                if (maskBnd[j] == 0 || maskBnd[j] == mask) {
+                if (maskBnd[j] == 0 || maskBnd[j] == mask || maskBnd[j] == -1 || maskBnd[j] == 0xffffff) {
                     //  set the pixel as transparent
                     maskBnd[j] = 0xff;
                 } else {
@@ -631,7 +628,7 @@ public class ImageUtility {
         if (hasAlpha) {
             argbImage = baseImage;
         } else {
-            // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
+            // always create a new buffer as we need leave the pevioius image un change for some type of masks.
             argbImage = createTranslucentCompatibleImage(baseWidth, baseHeight);
         }
         int[] srcBand = new int[baseWidth];
@@ -900,7 +897,6 @@ public class ImageUtility {
             // convert it to rgb
             IccCmykRasterOp cmykToRgb = new IccCmykRasterOp(null);
             cmykToRgb.filter(cmykRaster, rgbRaster);
-            return rgbImage;
         } else {
             WritableRaster rgbRaster = rgbImage.getRaster();
 
@@ -911,8 +907,8 @@ public class ImageUtility {
             // convert it to rgb
             CMYKRasterOp cmykRasterOp = new CMYKRasterOp(null);
             cmykRasterOp.filter(cmykRaster, rgbRaster);
-            return rgbImage;
         }
+        return rgbImage;
     }
 
     static BufferedImage convertYCbCrToRGB(Raster yCbCrRaster, float[] decode) {
@@ -942,7 +938,6 @@ public class ImageUtility {
             // convert it to rgb
             IccCmykRasterOp cmykToRgb = new IccCmykRasterOp(null);
             cmykToRgb.filter(ycckRaster, rgbRaster);
-            return rgbImage;
         } else {
             WritableRaster rgbRaster = rgbImage.getRaster();
             // apply the decode filter
@@ -955,8 +950,8 @@ public class ImageUtility {
             // convert it to rgb
             CMYKRasterOp cmykRasterOp = new CMYKRasterOp(null);
             cmykRasterOp.filter(ycckRaster, rgbRaster);
-            return rgbImage;
         }
+        return rgbImage;
     }
 
     static BufferedImage makeImageWithRasterFromBytes(byte[] data, GraphicsState graphicsState, ImageParams imageParams) {
@@ -1064,7 +1059,7 @@ public class ImageUtility {
             }
         } else if (colourSpace instanceof DeviceCMYK) {
             // this is slow and doesn't do decode properly,  push off parseImage()
-            // as its quick and we can do the generic decode and masking.
+            // as its quick, and we can do the generic decode and masking.
             if (false && bitsPerComponent == 8) {
                 DataBuffer db = new DataBufferByte(data, dataLength);
                 int[] bandOffsets = new int[colorSpaceCompCount];
@@ -1293,15 +1288,14 @@ public class ImageUtility {
                 // calculate scale factors.
                 maskImage = scale(width, height, maskWidth, maskHeight, maskImage);
             }
-            return new BufferedImage[]{baseImage, maskImage};
         } else {
             // scale the mask to match the smaller image.
             if (width < maskWidth || height < maskHeight) {
                 // calculate scale factors.
                 maskImage = scale(width, height, maskWidth, maskHeight, maskImage);
             }
-            return new BufferedImage[]{baseImage, maskImage};
         }
+        return new BufferedImage[]{baseImage, maskImage};
     }
 
     private static BufferedImage scale(int width, int height, int width2, int height2, BufferedImage image) {

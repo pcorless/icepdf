@@ -2,8 +2,6 @@ package org.icepdf.examples.svg;
 
 import org.apache.batik.dom.GenericDOMImplementation;
 import org.apache.batik.svggen.SVGGraphics2D;
-import org.icepdf.core.exceptions.PDFException;
-import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
@@ -11,10 +9,14 @@ import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.ri.util.FontPropertiesManager;
 import org.w3c.dom.DOMImplementation;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 
 /**
- * The <code>org.icepdf.examples.SvgCapture</code> class is an example of how to save a PDF page as an SVG document.
+ * The <code>org.icepdf.os.examples.SvgCapture</code> class is an example of how to save a PDF page as an SVG document.
  * This examples leverages Java2D and the Batik library to convert Java2D operations into SVG.
  * <p>
  * A file specified at the command line and the first page is capture to a SVG document.
@@ -22,9 +24,6 @@ import java.io.*;
  * @since 1.0
  */
 public class SvgCapture {
-
-    // Enable SVG CSS style attribute
-    private static boolean SVG_CSS = true;
 
     public static void main(String[] args) {
 
@@ -68,21 +67,13 @@ public class SvgCapture {
 
             File file = new File("svgCapture_" + pageNumber + ".svg");
             // Finally, stream out SVG to the standard output using UTF-8character to byte encoding
-            Writer fileWriter = new OutputStreamWriter(new FileOutputStream(file), "UTF-8");
+            Writer fileWriter = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8);
+            // Enable SVG CSS style attribute
+            boolean SVG_CSS = true;
             svgGenerator.stream(fileWriter, SVG_CSS);
 
-        } catch (org.apache.batik.svggen.SVGGraphics2DIOException ex) {
-            System.out.println("Error creating svg document." + ex);
-        } catch (PDFException ex) {
-            System.out.println("Error parsing PDF document " + ex);
-        } catch (PDFSecurityException ex) {
-            System.out.println("Error encryption not supported " + ex);
-        } catch (FileNotFoundException ex) {
-            System.out.println("Error file not found " + ex);
-        } catch (IOException ex) {
-            System.out.println("Error handling PDF document " + ex);
-        } catch (InterruptedException ex) {
-            System.out.println("Error handling PDF document " + ex);
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
     }
 

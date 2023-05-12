@@ -166,6 +166,9 @@ public class TextState {
         tlmatrix = new AffineTransform(ts.tlmatrix);
         rmode = ts.rmode;
         trise = ts.trise;
+        fontName = ts.fontName;
+        type3BBox = ts.type3BBox;
+        type3HorizontalDisplacement = ts.type3HorizontalDisplacement;
     }
 
     public PRectangle getType3BBox() {

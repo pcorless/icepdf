@@ -69,10 +69,10 @@ public class WordText extends AbstractText implements TextSelect {
     }
 
     private GlyphText currentGlyph;
-    private ArrayList<GlyphText> glyphs;
+    private final ArrayList<GlyphText> glyphs;
 
     // cached text values.
-    private StringBuilder text;
+    private final StringBuilder text;
     // is glyph white space.
     private boolean isWhiteSpace;
     // reference to last added text.

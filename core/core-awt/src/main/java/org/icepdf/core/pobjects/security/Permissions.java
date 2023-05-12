@@ -15,6 +15,8 @@
  */
 package org.icepdf.core.pobjects.security;
 
+import java.util.Arrays;
+
 /**
  * <p>Standard encryption has permissions associated with it which is defined
  * by a key in the encryption dictionary.  It is up to the viewer application
@@ -166,12 +168,12 @@ public class Permissions {
 
 
     // Permission values, indexes are mapped to constant values
-    private boolean[] permissions = new boolean[10];
+    private final boolean[] permissions = new boolean[10];
     // original permission integer from encrypt dictionary
     // not permission bits and revered bits. 11111111111111111111000011000000
-    private int permissionFlags = 0xFFFFF0C0;
+    private final int permissionFlags;
     // Revision of standard encryption algorithms
-    private int revision = 2;
+    private final int revision;
 
     // Initiated flag
     boolean isInit = false;
@@ -192,9 +194,7 @@ public class Permissions {
      */
     public void init() {
 
-        for (int i = 0; i < permissions.length; i++) {
-            permissions[i] = false;
-        }
+        Arrays.fill(permissions, false);
 
         // Create permissions based on Revision 2 rules
         if (revision == 2) {
@@ -299,7 +299,7 @@ public class Permissions {
         if (!isInit) {
             init();
         }
-        // return false if the permission index is out of bounds. 
+        // return false if the permission index is out of bounds.
         return !(permissionIndex < 0 || permissionIndex > permissions.length)
                 && permissions[permissionIndex];
     }

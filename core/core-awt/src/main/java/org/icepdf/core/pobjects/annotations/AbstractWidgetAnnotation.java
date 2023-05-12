@@ -16,6 +16,7 @@
 
 package org.icepdf.core.pobjects.annotations;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
@@ -27,7 +28,6 @@ import org.icepdf.core.util.Library;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
-import java.util.HashMap;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -86,7 +86,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
 
     protected Name highlightMode;
 
-    public AbstractWidgetAnnotation(Library l, HashMap h) {
+    public AbstractWidgetAnnotation(Library l, DictionaryEntries h) {
         super(l, h);
         Object possibleName = getObject(LinkAnnotation.HIGHLIGHT_MODE_KEY);
         if (possibleName instanceof Name) {
@@ -147,9 +147,8 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
 
     private Rectangle2D getRectangle() {
         Rectangle2D origRect = getBbox() != null ? getBbox() : getUserSpaceRectangle();
-        Rectangle2D.Float jrect = new Rectangle2D.Float(0, 0,
+        return new Rectangle2D.Float(0, 0,
                 (float) origRect.getWidth(), (float) origRect.getHeight());
-        return jrect;
     }
 
     public abstract T getFieldDictionary();
@@ -164,7 +163,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
     protected Rectangle2D.Float findBoundRectangle(String markedContent) {
         int selectionStart = markedContent.indexOf("q") + 1;
         int selectionEnd = markedContent.indexOf("re");
-        if (selectionStart < selectionEnd && selectionEnd > 0) {
+        if (selectionStart < selectionEnd) {
             String potentialNumbers = markedContent.substring(selectionStart, selectionEnd);
             float[] points = parseRectanglePoints(potentialNumbers);
             if (points != null) {
@@ -319,7 +318,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
      * null value is returned.
      *
      * @param potentialNumbers space separated string of four numbers.
-     * @return list of four numbers, null if string can not be converted.
+     * @return float[] of four numbers, null if string can not be converted.
      */
     protected float[] parseRectanglePoints(String potentialNumbers) {
         StringTokenizer toker = new StringTokenizer(potentialNumbers);

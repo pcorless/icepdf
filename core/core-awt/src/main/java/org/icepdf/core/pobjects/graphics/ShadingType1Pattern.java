@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.functions.Function;
 import org.icepdf.core.pobjects.graphics.batik.ext.awt.LinearGradientPaint;
 import org.icepdf.core.pobjects.graphics.batik.ext.awt.MultipleGradientPaint;
@@ -23,8 +24,9 @@ import org.icepdf.core.util.Library;
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -50,20 +52,7 @@ public class ShadingType1Pattern extends ShadingType2Pattern {
      */
 //    protected java.util.List<Number> domain;
 
-    /**
-     * (Required) A 2-in, n-out function or an array of n 2-in, 1-out functions
-     * (where n is the number of colour components in the shading dictionary’s
-     * colour space). Each function’s domain shall be a superset of that of the
-     * shading dictionary. If the value returned by the function for a given
-     * colour component is out of range, it shall be adjusted to the nearest
-     * valid value.
-     */
-//    protected Function[] function;
-
-    // linear gradient paint describing the gradient.
-    private LinearGradientPaint linearGradientPaint;
-
-    public ShadingType1Pattern(Library library, HashMap entries) {
+    public ShadingType1Pattern(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 
@@ -128,14 +117,24 @@ public class ShadingType1Pattern extends ShadingType2Pattern {
             Color[] colors = calculateColorPoints(numberOfPoints, startPoint, endPoint, t0, t1);
             float[] dist = calculateDomainEntries(numberOfPoints, t0, t1);
 
-            linearGradientPaint = new LinearGradientPaint(
+            /*
+              (Required) A 2-in, n-out function or an array of n 2-in, 1-out functions
+              (where n is the number of colour components in the shading dictionary’s
+              colour space). Each function’s domain shall be a superset of that of the
+              shading dictionary. If the value returned by the function for a given
+              colour component is out of range, it shall be adjusted to the nearest
+              valid value.
+             */
+            //    protected Function[] function;
+            // linear gradient paint describing the gradient.
+            LinearGradientPaint linearGradientPaint = new LinearGradientPaint(
                     startPoint, endPoint, dist, colors,
                     MultipleGradientPaint.NO_CYCLE,
                     MultipleGradientPaint.LINEAR_RGB,
                     matrix);
             inited = true;
         } catch (Exception e) {
-            logger.finer("Failed ot initialize gradient paint type 1.");
+            logger.log(Level.WARNING, "Failed ot initialize gradient paint type 1.", e);
         }
     }
 
@@ -153,6 +152,6 @@ public class ShadingType1Pattern extends ShadingType2Pattern {
         return super.toString() +
                 "\n                    domain: " + domain +
                 "\n                    matrix: " + matrix +
-                "\n                 function: " + function;
+                "\n                 function: " + Arrays.toString(function);
     }
 }

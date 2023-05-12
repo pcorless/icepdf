@@ -16,6 +16,7 @@
 
 package org.icepdf.core.pobjects.annotations;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.StateManager;
@@ -24,7 +25,6 @@ import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
-import java.util.HashMap;
 
 /**
  * Represents a Acroform Button widget and manages the appearance streams
@@ -34,11 +34,11 @@ import java.util.HashMap;
  */
 public class ButtonWidgetAnnotation extends AbstractWidgetAnnotation<ButtonFieldDictionary> {
 
-    private ButtonFieldDictionary fieldDictionary;
+    private final ButtonFieldDictionary fieldDictionary;
 
     protected Name originalAppearance;
 
-    public ButtonWidgetAnnotation(Library l, HashMap h) {
+    public ButtonWidgetAnnotation(Library l, DictionaryEntries h) {
         super(l, h);
         fieldDictionary = new ButtonFieldDictionary(library, entries);
     }

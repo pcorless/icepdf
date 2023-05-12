@@ -18,8 +18,6 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
-import java.util.HashMap;
-
 /**
  * <p>The File Specification diction provides more flexibility then the string
  * form.  allowing different files to be specified for different file systems or
@@ -148,7 +146,7 @@ public class FileSpecification extends Dictionary {
      * @param l document library.
      * @param h dictionary entries.
      */
-    public FileSpecification(Library l, HashMap h) {
+    public FileSpecification(Library l, DictionaryEntries h) {
         super(l, h);
     }
 
@@ -281,7 +279,7 @@ public class FileSpecification extends Dictionary {
      *
      * @return embbed file stream properties.
      */
-    public HashMap getEmbeddedFileDictionary() {
+    public DictionaryEntries getEmbeddedFileDictionary() {
         return library.getDictionary(entries, EF_KEY);
     }
 
@@ -293,7 +291,7 @@ public class FileSpecification extends Dictionary {
      * @return associated EmbeddedFileStream object if present, null otherwise.
      */
     public EmbeddedFileStream getEmbeddedFileStream(){
-        HashMap fileDictionary = getEmbeddedFileDictionary();
+        DictionaryEntries fileDictionary = getEmbeddedFileDictionary();
         Reference fileRef = (Reference) fileDictionary.get(FileSpecification.F_KEY);
         if (fileRef != null) {
             Stream fileStream = (Stream) library.getObject(fileRef);
@@ -312,7 +310,7 @@ public class FileSpecification extends Dictionary {
      *
      * @return related files dictionary.
      */
-    public HashMap getRelatedFilesDictionary() {
+    public DictionaryEntries getRelatedFilesDictionary() {
         return library.getDictionary(entries, RF_KEY);
     }
 
@@ -338,7 +336,7 @@ public class FileSpecification extends Dictionary {
      *
      * @return related files dictionary.
      */
-    public HashMap getCollectionItemDictionary() {
+    public DictionaryEntries getCollectionItemDictionary() {
         return library.getDictionary(entries, CI_KEY);
     }
 }

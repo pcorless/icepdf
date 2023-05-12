@@ -19,6 +19,9 @@ import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.tools.*;
+import org.icepdf.ri.common.views.annotations.MarkupGlueComponent;
+import org.icepdf.ri.common.views.annotations.PageViewAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
 
 import javax.swing.*;
@@ -26,6 +29,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -38,7 +42,7 @@ import java.util.logging.Logger;
  * @since 2.5
  */
 public abstract class AbstractDocumentView
-        extends JComponent
+        extends JLayeredPane
         implements DocumentView, PropertyChangeListener, MouseListener, MouseMotionListener, ActionListener {
 
     private static final Logger logger =
@@ -73,18 +77,16 @@ public abstract class AbstractDocumentView
         }
     }
 
-    private Timer autoScrollTimer;
+    private final Timer autoScrollTimer;
     private Point lastMouseLocation;
 
     // general layout of page component spacing.
-    public static int verticalSpace = 2;
-    public static int horizontalSpace = 1;
-    public static int layoutInserts = 0;
+    public static final int verticalSpace = 2;
+    public static final int horizontalSpace = 1;
+    public static final int layoutInserts = 2;
 
     protected DocumentViewController documentViewController;
     protected DocumentViewModel documentViewModel;
-    protected JPanel pagesPanel;
-    protected boolean disposing;
 
     // current page view tool.
     protected ToolHandler currentTool;
@@ -146,32 +148,17 @@ public abstract class AbstractDocumentView
                     logger.fine("Selected Annotation " + newValue);
                 }
                 documentViewController.firePropertyChange(
-                        PropertyConstants.ANNOTATION_FOCUS_GAINED, evt.getOldValue(), evt.getNewValue());
+                        PropertyConstants.ANNOTATION_FOCUS_GAINED, oldValue, newValue);
             } else if (newValue instanceof DestinationComponent) {
                 if (logger.isLoggable(Level.FINE)) {
                     logger.fine("Selected destination " + newValue);
                 }
                 documentViewController.firePropertyChange(
                         PropertyConstants.DESTINATION_FOCUS_GAINED,
-                        evt.getOldValue(),
-                        evt.getNewValue());
+                        oldValue,
+                        newValue);
             }
 
-        } else if ("focusOwner".equals(prop)) {
-            DocumentViewController documentViewController = getParentViewController();
-            if (oldValue instanceof AnnotationComponent) {
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.fine("Deselected Annotation " + oldValue);
-                }
-                documentViewController.firePropertyChange(
-                        PropertyConstants.ANNOTATION_FOCUS_LOST, evt.getOldValue(), evt.getNewValue());
-            } else if (oldValue instanceof AnnotationComponent) {
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.fine("Deselected destination " + oldValue);
-                }
-                documentViewController.firePropertyChange(
-                        PropertyConstants.DESTINATION_FOCUS_LOST, evt.getOldValue(), evt.getNewValue());
-            }
         }
     }
 
@@ -183,9 +170,24 @@ public abstract class AbstractDocumentView
         return documentViewController.getDocumentViewModel();
     }
 
-    public void invalidate() {
-        super.invalidate();
-        pagesPanel.invalidate();
+    protected void addPopupAnnotationAndGlue(AbstractPageViewComponent pageViewComponent) {
+        // grab any popups from the view model as they'll need to be re attached to the document view
+        ArrayList<PageViewAnnotationComponent> popupComponentsAndGlue =
+                documentViewModel.getDocumentViewAnnotationComponents(pageViewComponent);
+        if (popupComponentsAndGlue != null) {
+            for (PageViewAnnotationComponent component : popupComponentsAndGlue) {
+                if (component instanceof MarkupGlueComponent) {
+                    MarkupGlueComponent markupGlueComponent = (MarkupGlueComponent) component;
+                    this.setLayer(markupGlueComponent, JLayeredPane.MODAL_LAYER);
+                    this.add(markupGlueComponent);
+                }
+                if (component instanceof PopupAnnotationComponent) {
+                    PopupAnnotationComponent popupAnnotationComponent = (PopupAnnotationComponent) component;
+                    this.setLayer(popupAnnotationComponent, JLayeredPane.POPUP_LAYER);
+                    this.add(popupAnnotationComponent);
+                }
+            }
+        }
     }
 
     public void dispose() {
@@ -203,6 +205,7 @@ public abstract class AbstractDocumentView
         documentViewModel.getDocumentViewScrollPane().removeMouseWheelListener(mouseWheelZoom);
         removeMouseListener(this);
         removeMouseMotionListener(this);
+
         // stop the auto scroll timer
         autoScrollTimer.stop();
 
@@ -212,6 +215,9 @@ public abstract class AbstractDocumentView
         KeyboardFocusManager focusManager =
                 KeyboardFocusManager.getCurrentKeyboardFocusManager();
         focusManager.removePropertyChangeListener(this);
+
+        this.removeAll();
+        this.invalidate();
     }
 
     /**

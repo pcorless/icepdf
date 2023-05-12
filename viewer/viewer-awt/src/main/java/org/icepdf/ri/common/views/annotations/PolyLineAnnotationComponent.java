@@ -43,11 +43,6 @@ public class PolyLineAnnotationComponent extends MarkupAnnotationComponent {
     }
 
     @Override
-    public void resetAppearanceShapes() {
-        super.resetAppearanceShapes();
-    }
-
-    @Override
     public void paintComponent(Graphics g) {
 
     }

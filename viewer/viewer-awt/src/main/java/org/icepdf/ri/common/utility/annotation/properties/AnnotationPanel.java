@@ -35,7 +35,7 @@ import java.awt.*;
 @SuppressWarnings("serial")
 public class AnnotationPanel extends AnnotationPanelAdapter {
 
-    private ViewerPropertiesManager propertiesManager;
+    private final ViewerPropertiesManager propertiesManager;
 
     private JPanel annotationPanel;
     private AnnotationPanelAdapter annotationPropertyPanel;
@@ -71,21 +71,21 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
         if (annotationComp != null) {
             // check action type
             Annotation annotation = annotationComp.getAnnotation();
-            if (annotation != null && annotation instanceof LinkAnnotation) {
+            if (annotation instanceof LinkAnnotation) {
                 return new LinkAnnotationPanel(controller);
-            } else if (annotation != null && annotation instanceof TextMarkupAnnotation) {
+            } else if (annotation instanceof TextMarkupAnnotation) {
                 return new TextMarkupAnnotationPanel(controller);
-            } else if (annotation != null && annotation instanceof LineAnnotation) {
+            } else if (annotation instanceof LineAnnotation) {
                 return new LineAnnotationPanel(controller);
-            } else if (annotation != null && annotation instanceof SquareAnnotation) {
+            } else if (annotation instanceof SquareAnnotation) {
                 return new SquareAnnotationPanel(controller);
-            } else if (annotation != null && annotation instanceof CircleAnnotation) {
+            } else if (annotation instanceof CircleAnnotation) {
                 return new CircleAnnotationPanel(controller);
-            } else if (annotation != null && annotation instanceof InkAnnotation) {
+            } else if (annotation instanceof InkAnnotation) {
                 return new InkAnnotationPanel(controller);
-            } else if (annotation != null && annotation instanceof TextAnnotation) {
+            } else if (annotation instanceof TextAnnotation) {
                 return new TextAnnotationPanel(controller);
-            } else if (annotation != null && annotation instanceof FreeTextAnnotation) {
+            } else if (annotation instanceof FreeTextAnnotation) {
                 return new FreeTextAnnotationPanel(controller);
             }
         }
@@ -120,16 +120,12 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
         borderPanel.setAnnotationComponent(annotation);
 
         // hide border panel for line components
-        if (annotationPropertyPanel instanceof LineAnnotationPanel ||
-                annotationPropertyPanel instanceof SquareAnnotationPanel ||
-                annotationPropertyPanel instanceof CircleAnnotationPanel ||
-                annotationPropertyPanel instanceof InkAnnotationPanel ||
-                annotationPropertyPanel instanceof FreeTextAnnotationPanel ||
-                annotation instanceof PopupAnnotationComponent) {
-            borderPanel.setVisible(false);
-        } else {
-            borderPanel.setVisible(true);
-        }
+        borderPanel.setVisible(!(annotationPropertyPanel instanceof LineAnnotationPanel) &&
+                !(annotationPropertyPanel instanceof SquareAnnotationPanel) &&
+                !(annotationPropertyPanel instanceof CircleAnnotationPanel) &&
+                !(annotationPropertyPanel instanceof InkAnnotationPanel) &&
+                !(annotationPropertyPanel instanceof FreeTextAnnotationPanel) &&
+                !(annotation instanceof PopupAnnotationComponent));
 
         // hide actions panel for the popup annotation
         if (annotation instanceof PopupAnnotationComponent) {
@@ -155,12 +151,10 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.weightx = 1.0;
-        constraints.anchor = GridBagConstraints.NORTH;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(5, 1, 5, 1);
 
         // add everything back again.
-        annotationPropertyPanel = buildAnnotationPropertyPanel(null, controller);
         actionsPanel = new ActionsPanel(controller);
         borderPanel = new BorderPanel(controller);
 

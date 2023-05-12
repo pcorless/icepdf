@@ -26,9 +26,9 @@ import java.io.InputStream;
  */
 public class SizeInputStream extends InputStream {
 
-    private InputStream in = null;
+    private final InputStream in;
 
-    private int size = 0;
+    private final int size;
 
     private int bytesRead = 0;
 

@@ -16,6 +16,7 @@
 package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.PDate;
+import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
@@ -45,13 +46,12 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.dnd.*;
 import java.awt.event.*;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.GeneralPath;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.List;
 import java.util.*;
@@ -73,7 +73,7 @@ import static org.icepdf.core.util.SystemProperties.INTERACTIVE_ANNOTATIONS;
  * for editing, replying and deleting TextAnnotation comments.
  * appearance stream.
  * <br>
- * Font size can be change via a wheel mouse or crt-0 (reset), ctr--(zoom out) and crt-+ (zoom in).
+ * Font size can be changed via a wheel mouse or crt-0 (reset), ctr--(zoom out) and crt-+ (zoom in).
  *
  * @see FreeTextAnnotationPanel
  * @since 5.0
@@ -81,13 +81,12 @@ import static org.icepdf.core.util.SystemProperties.INTERACTIVE_ANNOTATIONS;
 @SuppressWarnings("serial")
 public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupAnnotation>
         implements TreeSelectionListener, ActionListener, DocumentListener, PropertyChangeListener, MouseWheelListener,
-        DropTargetListener {
+        DropTargetListener, PageViewAnnotationComponent {
 
-    public static int DEFAULT_WIDTH = 215;
-    public static int DEFAULT_HEIGHT = 150;
-    public static Color backgroundColor = new Color(252, 253, 227);
-    public static Color borderColor = new Color(153, 153, 153);
-    public static Dimension BUTTON_SIZE = new Dimension(22, 22);
+    public static final int DEFAULT_WIDTH = 215;
+    public static final int DEFAULT_HEIGHT = 150;
+    public static final Color backgroundColor = new Color(252, 253, 227);
+    public static final Dimension BUTTON_SIZE = new Dimension(22, 22);
 
     // layouts constraint
     private GridBagConstraints constraints;
@@ -106,8 +105,11 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     protected JScrollPane commentTreeScrollPane;
     protected MarkupAnnotation selectedMarkupAnnotation;
 
-    protected boolean disableSpellCheck;
-    protected boolean adjustBounds = true;
+    protected MarkupGlueComponent markupGlueComponent;
+
+    protected final boolean disableSpellCheck;
+
+    protected AbstractPageViewComponent parentPageViewComponent;
 
     private final String userName = SystemProperties.USER_NAME;
 
@@ -150,6 +152,53 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 this); // DropTargetListener
     }
 
+    public void setParentPageComponent(AbstractPageViewComponent pageViewComponent) {
+        parentPageViewComponent = pageViewComponent;
+    }
+
+    protected Rectangle limitAnnotationPosition(int x, int y, int width, int height){
+        return new Rectangle(x, y, width, height);
+    }
+
+    /**
+     * Refreshes the components bounds for the current page transformation.
+     * Bounds are already in user space.
+     */
+    public void refreshDirtyBounds() {
+        Page currentPage = pageViewComponent.getPage();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
+        AffineTransform at = currentPage.getPageTransform(
+                documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(),
+                documentViewModel.getViewZoom());
+        Rectangle annotationPageSpaceBounds = commonBoundsNormalization(new GeneralPath(annotation.getUserSpaceRectangle()), at);
+        Rectangle pageBounds = parentPageViewComponent.getParent().getBounds();
+        annotationPageSpaceBounds.x += pageBounds.x;
+        annotationPageSpaceBounds.y += pageBounds.y;
+        setBounds(annotationPageSpaceBounds);
+    }
+
+    /**
+     * Refreshes/transforms the page space bounds back to user space.  This
+     * must be done in order refresh the annotation user space rectangle after
+     * UI manipulation, otherwise the annotation will be incorrectly located
+     * on the next repaint.
+     */
+    public void refreshAnnotationRect() {
+        Page currentPage = pageViewComponent.getPage();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
+        AffineTransform at = currentPage.getToPageSpaceTransform(
+                documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(),
+                documentViewModel.getViewZoom());
+        Rectangle pageBounds = parentPageViewComponent.getParent().getBounds();
+        Rectangle bounds = getBounds();
+        bounds.x -= pageBounds.x;
+        bounds.y -= pageBounds.y;
+        Rectangle annotationPageSpaceBounds = commonBoundsNormalization(new GeneralPath(bounds), at);
+        annotation.syncBBoxToUserSpaceRectangle(annotationPageSpaceBounds);
+    }
+
     @Override
     public void dispose() {
         super.dispose();
@@ -182,29 +231,29 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
         // check to make sure the new bounds will be visible, if not we correct them
         // this reads, ugly, sorry...
-        if (adjustBounds) {
+        if (isMousePressed) {
             Rectangle currentBounds = getBounds();
-            Dimension pageSize = pageViewComponent.getSize();
+            Dimension documentSize = ((JComponent)pageViewComponent.getParentDocumentView()).getSize();
             if (currentBounds.x != x || currentBounds.y != y) {
                 if (x < 0) {
                     if (currentBounds.width != width) width += x;
                     x = 0;
-                } else if (x + width > pageSize.width) {
-                    x = pageSize.width - currentBounds.width;
+                } else if (x + width > documentSize.width) {
+                    x = documentSize.width - currentBounds.width;
                 }
                 if (y < 0) {
                     if (currentBounds.height != height) height += y;
                     y = 0;
-                } else if (y + height > pageSize.height) {
-                    y = pageSize.height - currentBounds.height;
+                } else if (y + height > documentSize.height) {
+                    y = documentSize.height - currentBounds.height;
                 }
             }
             if (currentBounds.width != width || currentBounds.height != height) {
                 // we have a resize, make sure the component is contained in the page.
-                if (x + width > pageSize.width) {
-                    width = pageSize.width - x;
-                } else if (y + height > pageSize.height) {
-                    height = pageSize.height - y;
+                if (x + width > documentSize.width) {
+                    width = documentSize.width - x;
+                } else if (y + height > documentSize.height) {
+                    height = documentSize.height - y;
                 }
             }
         }
@@ -222,7 +271,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         // borderColor
         g.setColor(popupBackgroundColor);
         g.fillRect(0, 0, getWidth(), getHeight());
-        g.setColor(borderColor);
+        g.setColor(PopupAnnotation.BORDER_COLOR);
         g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
     }
 
@@ -234,20 +283,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         if (bounds.width < DEFAULT_WIDTH || bounds.height < DEFAULT_HEIGHT) {
             setBounds(bounds.x, bounds.y, DEFAULT_WIDTH, DEFAULT_HEIGHT);
         }
-        // scrub the bounds to make sure they are visible.
-        bounds = getBounds();
-        Rectangle pageBounds = pageViewComponent.getBounds();
-        if (!pageBounds.contains(bounds)) {
-            int x = bounds.x;
-            int y = bounds.y;
-            int width = bounds.width;
-            int height = bounds.height;
-            if (width <= 0) width = DEFAULT_WIDTH;
-            if (height <= 0) height = DEFAULT_HEIGHT;
-            if (x + width > pageBounds.width) x = pageBounds.width - width;
-            if (y + height > pageBounds.height) y = pageBounds.height - height;
-            setBounds(x, y, bounds.width, bounds.height);
-        }
         if (getParent() != null) getParent().repaint();
         if (aFlag) {
             textArea.requestFocusInWindow();
@@ -258,11 +293,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     public void mouseEntered(MouseEvent e) {
         super.mouseEntered(e);
         setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-    }
-
-    @Override
-    public org.icepdf.core.pobjects.Document getDocument() {
-        return super.getDocument();
     }
 
     private void buildGUI() {
@@ -313,7 +343,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         minimizeButton.setToolTipText(messageBundle.getString(
                 "viewer.annotation.popup.mimimize.tooltip.label"));
         minimizeButton.setContentAreaFilled(false);
-        minimizeButton.setBorder(BorderFactory.createLineBorder(borderColor));
+        minimizeButton.setBorder(BorderFactory.createLineBorder(PopupAnnotation.BORDER_COLOR));
         minimizeButton.setBorderPainted(true);
         minimizeButton.setFocusPainted(false);
         minimizeButton.addActionListener(this);
@@ -332,7 +362,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         privateToggleButton.setSize(BUTTON_SIZE);
         privateToggleButton.addActionListener(this);
         privateToggleButton.setContentAreaFilled(false);
-        privateToggleButton.setBorder(BorderFactory.createLineBorder(borderColor));
+        privateToggleButton.setBorder(BorderFactory.createLineBorder(PopupAnnotation.BORDER_COLOR));
         privateToggleButton.setBorderPainted(true);
 
         // text area edited the selected annotation markup contents.
@@ -341,7 +371,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         textArea = new JTextArea(contents != null ? contents : "");
         textArea.setFont(new JLabel().getFont());
         textArea.setWrapStyleWord(true);
-        textArea.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(borderColor),
+        textArea.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(PopupAnnotation.BORDER_COLOR),
                 BorderFactory.createEmptyBorder(2, 2, 2, 2)));
 
         textArea.setLineWrap(true);
@@ -355,8 +385,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         refreshCreationLabel();
         // title, user name.
         String title = selectedMarkupAnnotation != null ?
-                selectedMarkupAnnotation.getTitleText() != null ?
-                        selectedMarkupAnnotation.getTitleText() : "" : "";
+                selectedMarkupAnnotation.getFormattedTitleText() : "";
         titleLabel = new JLabel(title);
 
         // Setup color appearance values.
@@ -379,10 +408,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         /*
          * Build search GUI
          */
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.weightx = 1.0;
         constraints.weighty = 0;
-        constraints.anchor = GridBagConstraints.NORTH;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(1, 1, 1, 1);
 
@@ -405,7 +431,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         }
         constraints.insets = new Insets(1, 1, 1, 1);
         addGB(commentPanel, minimizeButton, 3, 0, 1, 1);
-        constraints.insets = new Insets(1, 5, 1, 5);
 
         // add comment tree if there are any IRT's
         constraints.fill = GridBagConstraints.BOTH;
@@ -445,23 +470,19 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     }
 
     public void setBoundsRelativeToParent(int x, int y, AffineTransform pageInverseTransform) {
-        Rectangle pageBounds = pageViewComponent.getBounds();
+        Rectangle pageBounds = pageViewComponent.getParent().getBounds();
         // position the new popup on the icon center.
         Rectangle bBox2 = new Rectangle(x, y,
                 (int) Math.abs(DEFAULT_WIDTH * pageInverseTransform.getScaleX()),
                 (int) Math.abs(DEFAULT_HEIGHT * pageInverseTransform.getScaleY()));
 
-        // make sure the popup stays within the page bounds.
-        if (!pageBounds.contains(bBox2.getX(), bBox2.getY(),
-                bBox2.getWidth(), bBox2.getHeight())) {
-            // center on the icon as before but take into account height width
-            // and it will be drawn more or less on the page.
-            // todo: need to improve coordinate adjustment
-            bBox2.setLocation(bBox2.x - bBox2.width, bBox2.y - bBox2.height);
-        }
+        // add page offset
+        bBox2.x += pageBounds.x;
+        bBox2.y += pageBounds.y;
         // set the bounds and refresh the userSpace rectangle
         setBounds(bBox2);
         // resets user space rectangle to match bbox converted to page space
+        // todo likely need to override for document level painting
         refreshAnnotationRect();
     }
 
@@ -552,7 +573,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         ActionMap actionMap = getActionMap();
 
         /// ctrl-- to increase font size.
-        KeyStroke key = KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, InputEvent.CTRL_MASK);
+        KeyStroke key = KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, InputEvent.CTRL_DOWN_MASK);
         inputMap.put(key, "font-size-increase");
         actionMap.put("font-size-increase", new AbstractAction() {
             @Override
@@ -564,7 +585,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         });
 
         // ctrl-0 to dfeault font size.
-        key = KeyStroke.getKeyStroke(KeyEvent.VK_0, InputEvent.CTRL_MASK);
+        key = KeyStroke.getKeyStroke(KeyEvent.VK_0, InputEvent.CTRL_DOWN_MASK);
         inputMap.put(key, "font-size-default");
         actionMap.put("font-size-default", new AbstractAction() {
             @Override
@@ -576,7 +597,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         });
 
         // ctrl-- to decrease font size.
-        key = KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, InputEvent.CTRL_MASK);
+        key = KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, InputEvent.CTRL_DOWN_MASK);
         inputMap.put(key, "font-size-decrease");
         actionMap.put("font-size-decrease", new AbstractAction() {
             @Override
@@ -771,13 +792,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     }
 
     private void refreshCreationLabel() {
-        if (selectedMarkupAnnotation != null &&
-                selectedMarkupAnnotation.getCreationDate() != null && creationLabel != null) {
-            LocalDateTime creationDate = selectedMarkupAnnotation.getCreationDate().asLocalDateTime();
-            DateTimeFormatter formatter = DateTimeFormatter
-                    .ofLocalizedDateTime(FormatStyle.MEDIUM)
-                    .withLocale(Locale.getDefault());
-            creationLabel.setText(creationDate.format(formatter));
+        if (selectedMarkupAnnotation != null && creationLabel != null) {
+            creationLabel.setText(selectedMarkupAnnotation.getFormattedCreationDate(FormatStyle.MEDIUM));
         }
     }
 
@@ -888,7 +904,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 final TreeNode tn = (TreeNode) node;
                 if (node instanceof MarkupAnnotationTreeNode) {
                     final Annotation annot = (MarkupAnnotation) ((MarkupAnnotationTreeNode) node).getUserObject();
-                    if (refs.contains(annot.getPObjectReference())) {
+                    if (refs != null && refs.contains(annot.getPObjectReference())) {
                         return true;
                     }
                 }
@@ -998,7 +1014,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         MarkupAnnotation currentMarkup = (MarkupAnnotation) root.getUserObject();
         Reference reference = currentMarkup.getPObjectReference();
         for (Annotation annotation : annotations) {
-            if (annotation != null && annotation instanceof MarkupAnnotation) {
+            if (annotation instanceof MarkupAnnotation) {
                 MarkupAnnotation markupAnnotation = (MarkupAnnotation) annotation;
                 MarkupAnnotation inReplyToAnnotation =
                         markupAnnotation.getInReplyToAnnotation();
@@ -1084,7 +1100,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     }
 
     protected void resetComponentColors() {
-        Color contrastColor = calculateContrastHighLowColor(popupBackgroundColor.getRGB());
+        Color contrastColor = annotation.calculateContrastHighLowColor(popupBackgroundColor.getRGB());
         minimizeButton.setForeground(contrastColor);
         minimizeButton.setBackground(popupBackgroundColor);
         minimizeButton.setBackground(popupBackgroundColor);
@@ -1214,18 +1230,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
     }
 
-    protected Color calculateContrastHighLowColor(int rgb) {
-        int tolerance = 120;
-        if ((rgb & 0xFF) <= tolerance &&
-                (rgb >> 8 & 0xFF) <= tolerance ||
-                (rgb >> 16 & 0xFF) <= tolerance) {
-            return Color.WHITE;
-        } else {
-            return Color.BLACK;
-        }
-
-    }
-
     public void changeFontSize(float changeValue) {
         final Font areaFont = textArea.getFont();
         final Font titleFont = titleLabel.getFont();
@@ -1236,6 +1240,13 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
     }
 
+    public MarkupGlueComponent getMarkupGlueComponent() {
+        return markupGlueComponent;
+    }
+
+    public void setMarkupGlueComponent(MarkupGlueComponent markupGlueComponent) {
+        this.markupGlueComponent = markupGlueComponent;
+    }
 
     public void setFontSize(float size) {
         Font font = textArea.getFont().deriveFont(size);
@@ -1268,7 +1279,11 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         @Override
         public String toString() {
             final MarkupAnnotation annot = (MarkupAnnotation) userObject;
-            return annot.getTitleText() + " - " + annot.getContents();
+            if (annot != null) {
+                return annot.getTitleText() + " - " + annot.getContents();
+            } else {
+                return "";
+            }
         }
 
         @Override

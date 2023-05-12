@@ -49,8 +49,8 @@ public abstract class AbstractPageViewComponent
     protected static final int PAGE_BOUNDARY_BOX = Page.BOUNDARY_CROPBOX;
 
     private static Color pageColor;
-    protected static int pageBufferPadding = 250;
-    protected static boolean progressivePaint = true;
+    protected static int pageBufferPadding;
+    protected static boolean progressivePaint;
 
     static {
         try {
@@ -71,7 +71,7 @@ public abstract class AbstractPageViewComponent
 
     // flags for painting annotations and text highlights.
     protected boolean paintAnnotations = true;
-    protected boolean paintSearchHighlight = false;
+    protected final boolean paintSearchHighlight = false;
 
     // view mvc parents
     protected DocumentView parentDocumentView;
@@ -111,7 +111,7 @@ public abstract class AbstractPageViewComponent
             pageBoundaryBox = PAGE_BOUNDARY_BOX;
         }
 
-        // setup the store for the pageBufferPadding and current clip
+        // set up the store for the pageBufferPadding and current clip
         pageBufferStore = new PageBufferStore();
 
         // initialize page size
@@ -149,7 +149,7 @@ public abstract class AbstractPageViewComponent
     /**
      * Sets the text that is contained in the specified rectangle and the
      * given mouse pointer.  The cursor and selection rectangle must be in
-     * in page space.
+     * page space.
      *
      * @param cursorLocation location of cursor or mouse.
      * @param selection      rectangle of text to include in selection.
@@ -179,6 +179,10 @@ public abstract class AbstractPageViewComponent
         documentViewController = this.parentDocumentView.getParentViewController();
     }
 
+    public DocumentView getParentDocumentView() {
+        return parentDocumentView;
+    }
+
     public static boolean isAnnotationTool(final int displayTool) {
         return displayTool == DocumentViewModel.DISPLAY_TOOL_SELECTION ||
                 displayTool == DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION ||
@@ -193,7 +197,7 @@ public abstract class AbstractPageViewComponent
      * change is picked up and the view is updated accordingly. Responds to
      * PropertyConstants.DOCUMENT_VIEW_ROTATION_CHANGE and
      * PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE.  If the worker is currently working
-     * is is cancel with interrupts.
+     * is cancel with interrupts.
      *
      * @param propertyConstant document view change property.
      * @param oldValue         old value
@@ -209,12 +213,6 @@ public abstract class AbstractPageViewComponent
             pageZoom = (Float) newValue;
         } else if (PropertyConstants.DOCUMENT_VIEW_REFRESH_CHANGE.equals(propertyConstant)) {
             // nothing to do but repaint
-        } else if (PropertyConstants.DOCUMENT_VIEW_DEMO_MODE_CHANGE.equals(propertyConstant)) {
-            // re-initialized the page.
-            pageBufferStore.setDirty(true);
-            Page page = getPage();
-            page.getLibrary().disposeFontResources();
-            page.resetInitializedState();
         }
         calculatePageSize(pageSize, pageRotation, pageZoom);
         pageBufferStore.setDirty(true);
@@ -253,11 +251,11 @@ public abstract class AbstractPageViewComponent
 
     @Override
     protected void paintComponent(Graphics g) {
-        // create a copy so we can set our own state with out affecting the parent graphics content.
+        // create a copy, so we can set our own state without affecting the parent graphics content.
         Graphics2D g2d = (Graphics2D) g.create(0, 0, pageSize.width, pageSize.height);
         GraphicsRenderingHints grh = GraphicsRenderingHints.getDefault();
         g2d.setRenderingHints(grh.getRenderingHints(GraphicsRenderingHints.SCREEN));
-        // page location in the the entire view.
+        // page location in the entire view.
         calculateBufferLocation();
 
         // paint the paper
@@ -282,8 +280,8 @@ public abstract class AbstractPageViewComponent
     }
 
     /**
-     * Calculates where we should be painting the new buffer and kicks off the the worker if the buffer
-     * is deemed dirty. The Parent scrollpane viewport is taken into account to setup the clipping.
+     * Calculates where we should be painting the new buffer and kicks off the worker if the buffer
+     * is deemed dirty. The Parent scrollpane viewport is taken into account to set up the clipping.
      */
     protected void calculateBufferLocation() {
 
@@ -292,17 +290,17 @@ public abstract class AbstractPageViewComponent
         // it sometimes return null.
         graphicsConfiguration = parentScrollPane.getGraphicsConfiguration();
 
-        // update page size as we may have a page that's larger then the average document size.
+        // update page size as we may have a page that's larger than the average document size.
         calculatePageSize(pageSize, pageRotation, pageZoom);
 
-        // page location in the the entire view.
+        // page location in the entire view.
         Rectangle pageLocation = documentViewModel != null ?
                 documentViewModel.getPageBounds(pageIndex) : new Rectangle(pageSize);
         Rectangle viewPort = parentScrollPane.getViewport().getViewRect();
         Rectangle imageLocation;
         Rectangle imageClipLocation;
         if (pageLocation.width < viewPort.width || pageLocation.height < viewPort.height) {
-            // if page is smaller then viewport then we use the full page size.
+            // if page is smaller than viewport then we use the full page size.
             imageLocation = new Rectangle(0, 0, pageLocation.width, pageLocation.height);
             imageClipLocation = new Rectangle(imageLocation);
         } else {
@@ -376,17 +374,17 @@ public abstract class AbstractPageViewComponent
 
     /**
      * The worker of any successful page paint.  The worker takes a snapshot of the given page state
-     * and paint the desired image to buffer.  One completed the the new buffer is stuffed into
+     * and paint the desired image to buffer.  One completed the new buffer is stuffed into
      * the pageBufferStore instance with properties so that it can be painted in the correct thread
      * when the component is repainted.
      */
     public class PageImageCaptureTask implements Callable<Object>, PaintPageListener {
 
-        private float zoom;
-        private float rotation;
-        private Rectangle imageLocation;
-        private Rectangle imageClipLocation;
-        private JComponent parent;
+        private final float zoom;
+        private final float rotation;
+        private final Rectangle imageLocation;
+        private final Rectangle imageClipLocation;
+        private final JComponent parent;
 
         public PageImageCaptureTask(JComponent parent, Rectangle imageLocation, Rectangle imageClipLocation,
                                     float zoom, float rotation) {
@@ -397,8 +395,9 @@ public abstract class AbstractPageViewComponent
             this.imageClipLocation = imageClipLocation;
         }
 
-        public Object call() throws Exception {
+        public Object call() {
             if (!isPageIntersectViewport()) {
+                // page teardown when out of view.
                 pageTeardownCallback();
                 return null;
             }
@@ -440,7 +439,7 @@ public abstract class AbstractPageViewComponent
                 logger.finer("Interrupted page capture task: " + e.getMessage() + " " + pageIndex);
                 // flush the buffer if this is our first paint.
                 if (isFirstProgressivePaint) pageBufferStore.setImageReference(null);
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 logger.log(Level.WARNING, "Error during page capture task: " + e.getMessage() + " " + pageIndex, e);
                 // avoid a repaint as we'll likely get caught in an infinite loop.
             } finally {
@@ -462,11 +461,11 @@ public abstract class AbstractPageViewComponent
     /**
      * Synchronized page buffer property store, insures that a page capture occurs using the correct properties.
      */
-    protected class PageBufferStore {
+    protected static class PageBufferStore {
 
         // last page buffer store,
         private SoftReference<BufferedImage> imageReference;
-        // paint location if buffer is clipped to be smaller then the page size.
+        // paint location if buffer is clipped to be smaller than the page size.
         private Rectangle imageLocation;
         // location of the current clip,  generally the viewport intersection with the page bounds.
         private Rectangle imageClipLocation;

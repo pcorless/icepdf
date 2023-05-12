@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ZFontTrueType extends ZSimpleFont implements Cloneable {
+public class ZFontTrueType extends ZSimpleFont {
 
     private static final Logger logger =
             Logger.getLogger(ZFontTrueType.class.toString());
@@ -44,8 +44,8 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
 
     }
 
-    public ZFontTrueType(URL url) throws Exception {
-        this(url.openStream().readAllBytes());
+    public ZFontTrueType(byte[] fontBytes, URL url) throws Exception {
+        this(fontBytes);
         source = url;
     }
 
@@ -64,9 +64,9 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
                 extractMetricsTable();
                 extractHeadTable();
             }
-        } catch (Throwable e) {
-            logger.log(Level.FINE, "Error reading font file with", e);
-            throw new Exception(e);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error reading font file with", e);
+            throw e;
         }
     }
 
@@ -191,7 +191,9 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
         // go with the PDF define bounds if we have width
         if (widths != null && widths.length > 0) {
             font.widths = widths;
-            font.bbox = bbox;
+            if (bbox != null) {
+                font.bbox = bbox;
+            }
         }
         font.cMap = diff;
         font.maxCharBounds = null;
@@ -342,8 +344,8 @@ public class ZFontTrueType extends ZSimpleFont implements Cloneable {
                     }
                 }
             }
-        } catch (Throwable e) {
-            logger.log(Level.FINE, "Error deriving codeToGID", e);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error deriving codeToGID", e);
         }
 
         return gid;

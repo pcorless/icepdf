@@ -18,7 +18,6 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.util.Library;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -66,7 +65,7 @@ public class OptionalContentMembership extends Dictionary implements OptionalCon
      * null or deleted objects, the membership dictionary shall have no effect
      * on the visibility of any content.
      */
-    private List<OptionalContentGroup> ocgs = new ArrayList<OptionalContentGroup>();
+    private final List<OptionalContentGroup> ocgs = new ArrayList<>();
 
     /**
      * An array specifying a visibility expression, used to compute visibility
@@ -74,7 +73,7 @@ public class OptionalContentMembership extends Dictionary implements OptionalCon
      */
     private List visibilityExpression;
 
-    public OptionalContentMembership(Library library, HashMap entries) {
+    public OptionalContentMembership(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 
@@ -84,15 +83,21 @@ public class OptionalContentMembership extends Dictionary implements OptionalCon
             return;
         }
         // build out the OCG entries.
+        OptionalContent optionalContent = library.getCatalog().getOptionalContent();
         Object ocgObj = library.getObject(entries, OCGs_KEY);
         if (ocgObj instanceof OptionalContentGroup) {
-            ocgs.add((OptionalContentGroup) ocgObj);
+            // make sure we get the same reference as in the optional content dictionary.
+            Reference ocgReference = library.getReference(entries, OCGs_KEY);
+            OptionalContentGroup optionalContentGroup = optionalContent.getOCGs(ocgReference);
+            if (optionalContentGroup != null) {
+                ocgs.add(optionalContentGroup);
+            }
         } else if (ocgObj instanceof List) {
-            List ocgList = (List) ocgObj;
-            for (Object object : ocgList) {
-                Object ocg = library.getObject(object);
-                if (ocg instanceof OptionalContentGroup) {
-                    ocgs.add((OptionalContentGroup) ocg);
+            List<Reference> ocgList = (List) ocgObj;
+            for (Reference reference : ocgList) {
+                OptionalContentGroup optionalContentGroup = optionalContent.getOCGs(reference);
+                if (optionalContentGroup != null) {
+                    ocgs.add(optionalContentGroup);
                 }
             }
 
@@ -123,7 +128,7 @@ public class OptionalContentMembership extends Dictionary implements OptionalCon
         return policy.isVisible(ocgs);
     }
 
-    public static enum VisibilityPolicy {
+    public enum VisibilityPolicy {
         ALL_ON {
             @Override
             boolean isVisible(List<OptionalContentGroup> ocgs) {

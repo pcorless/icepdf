@@ -33,7 +33,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -247,8 +246,8 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     protected FontFile fontFile;
     protected boolean fontPropertyChanged;
 
-    public FreeTextAnnotation(Library l, HashMap h) {
-        super(l, h);
+    public FreeTextAnnotation(Library library, DictionaryEntries dictionaryEntries) {
+        super(library, dictionaryEntries);
     }
 
     public void init() throws InterruptedException {
@@ -289,7 +288,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         }
         // find rich text string
         Object tmp = library.getObject(entries, RC_KEY);
-        if (tmp != null && tmp instanceof StringObject) {
+        if (tmp instanceof StringObject) {
             StringObject tmpRichText = (StringObject) tmp;
             richText = tmpRichText.getDecryptedLiteralString(library.getSecurityManager());
         }
@@ -328,7 +327,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         StateManager stateManager = library.getStateManager();
 
         // create a new entries to hold the annotation properties
-        HashMap<Name, Object> entries = new HashMap<>();
+        DictionaryEntries entries = new DictionaryEntries();
         // set default link annotation values.
         entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
         entries.put(Dictionary.SUBTYPE_KEY, Annotation.SUBTYPE_FREE_TEXT);
@@ -511,7 +510,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             // update the AP's stream bytes so contents can be written out
             form.setRawBytes(
                     PostScriptEncoder.generatePostScript(shapes.getShapes()));
-            HashMap<Object, Object> appearanceRefs = new HashMap<>();
+            DictionaryEntries appearanceRefs = new DictionaryEntries();
             appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
             entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
 
@@ -523,7 +522,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             }
 
             // create the font
-            HashMap<Object, Object> fontDictionary = new HashMap<>();
+            DictionaryEntries fontDictionary = new DictionaryEntries();
             fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.TYPE_KEY,
                     org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY);
             fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY,
@@ -544,10 +543,10 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                         library, fontDictionary);
                 newFont.setPObjectReference(stateManager.getNewReferenceNumber());
                 // create font entry
-                HashMap<Object, Object> fontResources = new HashMap<>();
+                DictionaryEntries fontResources = new DictionaryEntries();
                 fontResources.put(EMBEDDED_FONT_NAME, newFont.getPObjectReference());
                 // add the font resource entry.
-                HashMap<Object, Object> resources = new HashMap<>();
+                DictionaryEntries resources = new DictionaryEntries();
                 resources.put(new Name("Font"), fontResources);
                 // and finally add it to the form.
                 form.getEntries().put(new Name("Resources"), resources);
@@ -778,7 +777,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     }
 
     public static final String BODY_START =
-            "<?xml version=\"1.0\"?><body xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xfa=\"http://www.xfa.org/schema/xfa-data/1.0/\" xfa:APIVersion=\"Acrobat:11.0.0\" xfa:spec=\"2.0.2\"  " +
+            "<?xml version=\"1.0\"?><body xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xfa=\"https://www.xfa.org/schema/xfa-data/1.0/\" xfa:APIVersion=\"Acrobat:11.0.0\" xfa:spec=\"2.0.2\"  " +
                     "style=\"{0}\">";
 
     public static final String BODY_END = "</body>";

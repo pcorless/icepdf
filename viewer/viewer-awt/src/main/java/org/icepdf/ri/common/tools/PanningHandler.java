@@ -33,11 +33,11 @@ public class PanningHandler implements ToolHandler {
 
 
     // page mouse event manipulation
-    private Point lastMousePosition = new Point();
+    private final Point lastMousePosition = new Point();
 
-    private DocumentViewController documentViewController;
-    private DocumentViewModel documentViewModel;
-    private AbstractDocumentView parentComponent;
+    private final DocumentViewController documentViewController;
+    private final DocumentViewModel documentViewModel;
+    private final AbstractDocumentView parentComponent;
 
     public PanningHandler(DocumentViewController documentViewController,
                           DocumentViewModel documentViewModel,

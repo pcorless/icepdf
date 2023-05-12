@@ -30,7 +30,7 @@ public class ASCII85Decode extends ChunkingInputStream {
         super();
 
         setInputStream(input);
-        setBufferSize(4);
+        setBufferSize(8 * 1024);
     }
 
     protected int fillInternalBuffer() throws IOException {

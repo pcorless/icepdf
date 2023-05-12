@@ -66,19 +66,16 @@ public class Utils {
     /**
      * Read long with varying bytes length
      *
-     * @param in       InputStream to read from
-     * @param numBytes number of bytes to read to make integral value from [0, 8]
+     * @param byteBuffer byteBuffer to read from
+     * @param numBytes   number of bytes to read to make integral value from [0, 8]
      * @return Integral value, which is composed of numBytes bytes, read using big-endian rules from in
-     * @throws IOException error reading input stream.
      */
-    public static long readLongWithVaryingBytesBE(InputStream in, int numBytes) throws IOException {
-        long val = 0;
+    public static int readIntWithVaryingBytesBE(ByteBuffer byteBuffer, int numBytes) {
+        int val = 0;
         for (int i = 0; i < numBytes; i++) {
-            int curr = in.read();
-            if (curr < 0)
-                throw new EOFException();
+            int curr = byteBuffer.get();
             val <<= 8;
-            val |= (((long) curr) & ((long) 0xFF));
+            val |= (curr & 0xFF);
         }
         return val;
     }
@@ -86,19 +83,16 @@ public class Utils {
     /**
      * Read long with varying bytes length
      *
-     * @param in       InputStream to read from
+     * @param byteBuffer       byteBuffer to read from
      * @param numBytes number of bytes to read to make integral value from [0, 4]
      * @return Integral value, which is composed of numBytes bytes, read using big-endian rules from in
-     * @throws IOException error reading int value
      */
-    public static int readIntWithVaryingBytesBE(InputStream in, int numBytes) throws IOException {
-        int val = 0;
+    public static long readLongWithVaryingBytesBE(ByteBuffer byteBuffer, int numBytes) {
+        long val = 0;
         for (int i = 0; i < numBytes; i++) {
-            int curr = in.read();
-            if (curr < 0)
-                throw new EOFException();
+            int curr = byteBuffer.get();
             val <<= 8;
-            val |= (curr & 0xFF);
+            val |= (((long) curr) & ((long) 0xFF));
         }
         return val;
     }
@@ -160,8 +154,7 @@ public class Utils {
             int currValue = 0;
             currValue |= (0xff & ((int) buffer[index]));
             String s = Integer.toHexString(currValue);
-            for (int i = s.length(); i < 2; i++)
-                sb.append('0');
+            sb.append("0".repeat(2 - s.length()));
             sb.append(s);
             if (addSpaceSeparator)
                 sb.append(' ');
@@ -205,10 +198,8 @@ public class Utils {
                 content = Utils.convertByteArrayToHexString(data, true);
             else
                 content = new String(data);
-        } catch (IOException ioe) {
-            logger.log(Level.FINE, "Problem getting debug string", ioe);
-        } catch (Throwable e) {
-            logger.log(Level.FINE, "Problem getting content stream, skipping");
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Problem extracting content stream");
         }
         return content;
     }
@@ -337,7 +328,7 @@ public class Utils {
      * none is specified, then String(byte[]) will use the platform's
      * default encoding. This method is for when encoding is not relevant,
      * when the String simply holds byte values in each char.
-     *
+     * <p>
      * {@link org.icepdf.core.pobjects.LiteralStringObject}
      * {@link org.icepdf.core.pobjects.HexStringObject}
      * @param  bytes to convert.
@@ -352,6 +343,7 @@ public class Utils {
         }
         return sb.toString();
     }
+
 
     /**
      * Utility method for decrypting a String object found in a dictionary
@@ -432,5 +424,24 @@ public class Utils {
         } else {
             return literalString;
         }
+    }
+
+    /**
+     * White space characters defined by ' ', '\t', '\r', '\n', '\f'
+     *
+     * @param c true if character is white space
+     * @return true if char is whitespace, false otherwise.
+     */
+    public static boolean isWhitespace(char c) {
+        return ((c == ' ') || (c == '\t') || (c == '\r') ||
+                (c == '\n') || (c == '\f') || (c == 0));
+    }
+
+    public static boolean isDelimiter(char c) {
+        return ((c == '[') || (c == ']') ||
+                (c == '(') || (c == ')') ||
+                (c == '<') || (c == '>') ||
+                (c == '{') || (c == '}') ||
+                (c == '/') || (c == '%'));
     }
 }

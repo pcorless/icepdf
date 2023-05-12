@@ -32,7 +32,7 @@ public class Lexer {
 
     // stream reader pointers.
     private Reader reader;
-    private char[] buf = new char[2056];
+    private final char[] buf = new char[2056];
     private int pos = 0, numRead = 0, startTokenPos = 0;
     private int tokenType = 0;
     // expression depth count used to properly differ if and elseif operands.
@@ -46,7 +46,7 @@ public class Lexer {
             TOKEN_BOOLEAN = 5;
 
     // procedure isa any {expression...}
-    private Procedure procedures;
+    private final Procedure procedures;
     private Procedure currentProcedure;
 
     public Lexer() {
@@ -93,7 +93,7 @@ public class Lexer {
         while (!done) {
 
             // Did we reach the end of the buffer, if so copy the next block
-            // of data into the buffer.
+            // of data into the buffer
             if (pos == buf.length) {
                 // Copy the start of the token to the beginning
                 System.arraycopy(buf, startTokenPos, buf, 0, pos - startTokenPos);

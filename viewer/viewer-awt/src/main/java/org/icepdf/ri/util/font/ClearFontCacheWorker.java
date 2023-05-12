@@ -27,7 +27,7 @@ import java.awt.*;
  */
 public class ClearFontCacheWorker extends SwingWorker<Void, Void> {
 
-    private JComponent callingComponent;
+    private final JComponent callingComponent;
 
     public ClearFontCacheWorker(JComponent callingComponent) {
         this.callingComponent = callingComponent;

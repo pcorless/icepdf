@@ -53,7 +53,6 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     // named destination fields.
     private JLabel destinationName;
     private JButton viewNamedDesButton;
-    private NameTreeDialog nameTreeDialog;
 
     // appearance properties to take care of.
     private Name highlightStyle;
@@ -105,7 +104,7 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
 
         // check for  destination key
         Object dest = linkAnnotation.getEntries().get(LinkAnnotation.DESTINATION_KEY);
-        if (dest != null && dest instanceof LiteralStringObject) {
+        if (dest instanceof LiteralStringObject) {
             destinationName.setText(((LiteralStringObject) dest).getDecryptedLiteralString(
                     controller.getDocument().getSecurityManager()));
         }
@@ -134,7 +133,7 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
             NameTree nameTree = controller.getDocument().getCatalog().getNames().getDestsNameTree();
             if (nameTree != null) {
                 // create new dialog instance.
-                nameTreeDialog = new NameTreeDialog(
+                NameTreeDialog nameTreeDialog = new NameTreeDialog(
                         controller,
                         true, nameTree);
                 nameTreeDialog.setDestinationName(destinationName.getText());
@@ -169,7 +168,6 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.weightx = 1.0;
-        constraints.anchor = GridBagConstraints.NORTH;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(1, 2, 1, 2);
 

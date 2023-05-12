@@ -38,35 +38,35 @@ public interface StringObject {
      *
      * @return a string representing the object.
      */
-    public String toString();
+    String toString();
 
     /**
      * <p>Gets a literal StringBuffer representation of this object's data.</p>
      *
      * @return a StringBuffer representing the objects data.
      */
-    public StringBuilder getLiteralStringBuffer();
+    StringBuilder getLiteralStringBuffer();
 
     /**
      * <p>Gets a literal String representation of this object's data.
      *
      * @return a String representation of the object's data.
      */
-    public String getLiteralString();
+    String getLiteralString();
 
     /**
      * <p>Gets a hexadecimal StringBuffer representation of this objects data.</p>
      *
      * @return a StringBufffer representation of the objects data.
      */
-    public StringBuilder getHexStringBuffer();
+    StringBuilder getHexStringBuffer();
 
     /**
      * <p>Gets a hexadecimal String representation of this object's data. </p>
      *
      * @return a String representation of the object's data.
      */
-    public String getHexString();
+    String getHexString();
 
     /**
      * Gets the unsigned integer value of this object's data specified by
@@ -76,7 +76,7 @@ public interface StringObject {
      * @param offset the number of string characters to read.
      * @return integer value of the specified range of characters.
      */
-    public int getUnsignedInt(int start, int offset);
+    int getUnsignedInt(int start, int offset);
 
     /**
      * Gets a literal String representation of this objects data using the
@@ -89,28 +89,28 @@ public interface StringObject {
      * @return StringBuffer which contains all renderaable characters for the
      *         given font.
      */
-    public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font);
+    StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font);
 
     /**
      * The length of the underlying objects data.
      *
      * @return length of objct's data.
      */
-    public int getLength();
+    int getLength();
 
     /**
      * Sets the parent PDF object's reference.
      *
      * @param reference parent object reference.
      */
-    public void setReference(Reference reference);
+    void setReference(Reference reference);
 
     /**
      * Sets the parent PDF object's reference.
      *
      * @return returns the reference used for encryption.
      */
-    public Reference getReference();
+    Reference getReference();
 
     /**
      * Gets the decrypted literal string value of the data using the key provided by the
@@ -119,6 +119,6 @@ public interface StringObject {
      * @param securityManager security manager associated with parent document.
      * @return decrypted stream.
      */
-    public String getDecryptedLiteralString(SecurityManager securityManager);
+    String getDecryptedLiteralString(SecurityManager securityManager);
 
 }

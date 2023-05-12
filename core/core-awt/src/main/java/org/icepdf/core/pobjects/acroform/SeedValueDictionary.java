@@ -15,13 +15,9 @@
  */
 package org.icepdf.core.pobjects.acroform;
 
-import org.icepdf.core.pobjects.Dictionary;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.Names;
-import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -177,9 +173,9 @@ public class SeedValueDictionary extends Dictionary {
     public static final Name ADD_REV_INFO_KEY = new Name("AddRevInfo");
 
 
-    private int flags;
+    private final int flags;
 
-    public SeedValueDictionary(Library library, HashMap entries) {
+    public SeedValueDictionary(Library library, DictionaryEntries entries) {
         super(library, entries);
 
         flags = library.getInt(entries, Ff_KEY);
@@ -199,11 +195,7 @@ public class SeedValueDictionary extends Dictionary {
      * @see #FILTER_KEY
      */
     public List<Names> getSubFilter() {
-        List tmp = library.getArray(entries, FILTER_KEY);
-        if (tmp != null) {
-            return tmp;
-        }
-        return null;
+        return library.getArray(entries, FILTER_KEY);
     }
 
     /**
@@ -211,11 +203,7 @@ public class SeedValueDictionary extends Dictionary {
      * @see #DIGEST_METHOD_KEY
      */
     public List<Names> getDigestMethod() {
-        List tmp = library.getArray(entries, FILTER_KEY);
-        if (tmp != null) {
-            return tmp;
-        }
-        return null;
+        return library.getArray(entries, FILTER_KEY);
     }
 
     /**
@@ -232,55 +220,47 @@ public class SeedValueDictionary extends Dictionary {
      */
     public CertSeedValueDictionary getCert() {
         Object tmp = library.getObject(entries, CERT_KEY);
-        if (tmp instanceof HashMap) {
-            return new CertSeedValueDictionary(library, (HashMap) tmp);
+        if (tmp instanceof DictionaryEntries) {
+            return new CertSeedValueDictionary(library, (DictionaryEntries) tmp);
         } else {
             return null;
         }
     }
 
     /**
-     * @return an array of text strings the specify possible reasons for singing.
+     * @return a list of text strings that specify possible reasons for singing.
      * @see #REASONS_KEY
      */
     public List<StringObject> getReasons() {
-        List tmp = library.getArray(entries, REASONS_KEY);
-        if (tmp != null) {
-            return tmp;
-        }
-        return null;
+        return library.getArray(entries, REASONS_KEY);
     }
 
     // todo consider class for dictionary def.
-    public HashMap getMDP() {
+    public DictionaryEntries getMDP() {
         Object tmp = library.getObject(entries, MDP_KEY);
-        if (tmp instanceof HashMap) {
-            return (HashMap) tmp;
+        if (tmp instanceof DictionaryEntries) {
+            return (DictionaryEntries) tmp;
         } else {
             return null;
         }
     }
 
     // todo consider class for dictionary def.
-    public HashMap getTimeStamp() {
+    public DictionaryEntries getTimeStamp() {
         Object tmp = library.getObject(entries, TIME_STAMP_KEY);
-        if (tmp instanceof HashMap) {
-            return (HashMap) tmp;
+        if (tmp instanceof DictionaryEntries) {
+            return (DictionaryEntries) tmp;
         } else {
             return null;
         }
     }
 
     /**
-     * @return an array of text strings the specify possible legal attestations.
+     * @return a list of text strings that specify possible legal attestations.
      * @see #LEGAL_ATTESTATION_KEY
      */
     public List<StringObject> getLegalAttestation() {
-        List tmp = library.getArray(entries, LEGAL_ATTESTATION_KEY);
-        if (tmp != null) {
-            return tmp;
-        }
-        return null;
+        return library.getArray(entries, LEGAL_ATTESTATION_KEY);
     }
 
     /**

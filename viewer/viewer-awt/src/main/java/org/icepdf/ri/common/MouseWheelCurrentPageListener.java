@@ -23,8 +23,7 @@ import java.awt.event.MouseWheelListener;
  *
  */
 public class MouseWheelCurrentPageListener implements MouseWheelListener {
-    private JScrollPane scrollpane;
-    private CurrentPageChanger currentPageChanger;
+    private final CurrentPageChanger currentPageChanger;
 
     /**
      * KeyEvents can queue up, if the user holds down a key,
@@ -52,15 +51,13 @@ public class MouseWheelCurrentPageListener implements MouseWheelListener {
     }
 
     public static void uninstall(JScrollPane scrollpane, Object listener) {
-        if (scrollpane != null && listener != null &&
-                listener instanceof MouseWheelCurrentPageListener) {
+        if (scrollpane != null && listener instanceof MouseWheelCurrentPageListener) {
             scrollpane.removeMouseWheelListener((MouseWheelCurrentPageListener) listener);
         }
     }
 
     protected MouseWheelCurrentPageListener(JScrollPane scrollpane,
                                             CurrentPageChanger currentPageChanger) {
-        this.scrollpane = scrollpane;
         this.currentPageChanger = currentPageChanger;
         calculatingCurrentPage = false;
     }

@@ -224,7 +224,7 @@ public class PostScriptEncoder {
                                 }
                                 postScript.append(BEGIN_ARRAY).append(BEGIN_STRING)
                                         // use literal string to make sure string is escaped correctly
-                                        .append(new LiteralStringObject(line.toString()).toString())
+                                        .append(new LiteralStringObject(line.toString()))
                                         .append(END_STRING)
                                         .append(END_ARRAY).append(SPACE)
                                         .append(PdfOps.TJ_TOKEN).append(NEWLINE);
@@ -241,11 +241,11 @@ public class PostScriptEncoder {
                     }
                 }
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.log(Level.WARNING, "Error encoding PostScript notation ", e);
         }
         if (logger.isLoggable(Level.FINER)) {
-            logger.finer("PostEncoding: " + postScript.toString());
+            logger.finer("PostEncoding: " + postScript);
         }
         return postScript.toString().getBytes();
     }
