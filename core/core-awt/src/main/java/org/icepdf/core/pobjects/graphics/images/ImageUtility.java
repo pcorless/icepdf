@@ -41,7 +41,6 @@ import java.util.logging.Logger;
  *
  * @since 5.0
  */
-@SuppressWarnings("serial")
 public class ImageUtility {
 
     static final Logger logger =
@@ -276,7 +275,7 @@ public class ImageUtility {
     private static BufferedImage makeBufferedImage(Raster raster) {
 
         // create a generic colour model and reuse the wraster,  intent
-        // is that this should save quite bit of memory
+        // is that this should save quite a bit of memory
         DirectColorModel colorModel = new DirectColorModel(24,
                 0x00ff0000,    // Red
                 0x0000ff00,    // Green
@@ -533,7 +532,7 @@ public class ImageUtility {
             maskImage.getRGB(0, i, baseWidth, 1, maskBnd, 0, baseWidth);
             // apply the soft mask blending
             for (int j = 0; j < baseWidth; j++) {
-                if (maskBnd[j] == 0 || maskBnd[j] == mask) {
+                if (maskBnd[j] == 0 || maskBnd[j] == mask || maskBnd[j] == -1 || maskBnd[j] == 0xffffff) {
                     //  set the pixel as transparent
                     maskBnd[j] = 0xff;
                 } else {
@@ -629,7 +628,7 @@ public class ImageUtility {
         if (hasAlpha) {
             argbImage = baseImage;
         } else {
-            // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
+            // always create a new buffer as we need leave the pevioius image un change for some type of masks.
             argbImage = createTranslucentCompatibleImage(baseWidth, baseHeight);
         }
         int[] srcBand = new int[baseWidth];
@@ -1060,7 +1059,7 @@ public class ImageUtility {
             }
         } else if (colourSpace instanceof DeviceCMYK) {
             // this is slow and doesn't do decode properly,  push off parseImage()
-            // as its quick and we can do the generic decode and masking.
+            // as its quick, and we can do the generic decode and masking.
             if (false && bitsPerComponent == 8) {
                 DataBuffer db = new DataBufferByte(data, dataLength);
                 int[] bandOffsets = new int[colorSpaceCompCount];

@@ -78,7 +78,7 @@ public class ImageStream extends Stream {
         ImageDecoder imageDecoder = ImageDecoderFactory.createDecoder(this, graphicsState);
         BufferedImage decodedImage = imageDecoder.decode();
 
-        // Fallback image cod the will use pixel primitives to build out the image.
+        // Fallback image code that will use pixel primitives to build out the image.
         if (decodedImage == null) {
             decodedImage = new RawDecoder(this, graphicsState).decode();
         }
