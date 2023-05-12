@@ -10,11 +10,11 @@ import org.icepdf.qa.viewer.common.Mediator;
  */
 public class ProjectTab extends Tab {
 
-    protected Mediator mediator;
+    protected final Mediator mediator;
 
-    private ProjectTitledPane projectPane;
-    private CaptureSetPropertyPane captureSetAPane;
-    private CaptureSetPropertyPane captureSetBPane;
+    private final ProjectTitledPane projectPane;
+    private final CaptureSetPropertyPane captureSetAPane;
+    private final CaptureSetPropertyPane captureSetBPane;
 
 
     public ProjectTab(String title, Mediator mediator) {

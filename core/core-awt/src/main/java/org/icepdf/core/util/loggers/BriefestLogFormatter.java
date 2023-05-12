@@ -30,9 +30,6 @@ public class BriefestLogFormatter extends Formatter {
      */
     public String format(LogRecord record) {
         String loggerName = record.getLoggerName();
-        if (loggerName == null) {
-            loggerName = "root";
-        }
         return record.getMessage() + lineSep;
     }
 

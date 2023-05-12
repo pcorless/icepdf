@@ -84,7 +84,8 @@ public final class LinearGradientPaint extends MultipleGradientPaint {
     /**
      * Gradient start and end points.
      */
-    private Point2D start, end;
+    private final Point2D start;
+    private final Point2D end;
 
     /**
      * Constructs an <code>LinearGradientPaint</code> with the default

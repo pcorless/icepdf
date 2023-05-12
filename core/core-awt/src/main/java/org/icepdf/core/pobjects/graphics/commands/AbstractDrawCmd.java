@@ -40,7 +40,7 @@ public abstract class AbstractDrawCmd implements DrawCmd {
     protected static final Logger logger =
             Logger.getLogger(AbstractDrawCmd.class.toString());
 
-    protected static boolean disableClipping;
+    protected static final boolean disableClipping;
 
     static {
 

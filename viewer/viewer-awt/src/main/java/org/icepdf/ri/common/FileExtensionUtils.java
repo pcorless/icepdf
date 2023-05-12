@@ -56,8 +56,8 @@ public class FileExtensionUtils {
     }
 
     private static class ExtensionFileFilter extends FileFilter {
-        private String description;
-        private String extension;
+        private final String description;
+        private final String extension;
 
         ExtensionFileFilter(String desc, String ext) {
             description = desc;

@@ -33,9 +33,9 @@ import java.util.logging.Logger;
 
 /**
  * The SmoothScaledImageReference scales large images using the
- * bufferedImage.getScaledInstance() method for colour imges and the
- * a custom trilinear scale for black and white images.  The scaled instance
- * uses a minimum of memory and can improve clarity of some CCITTFax images.
+ * bufferedImage.getScaledInstance() method for colour images and the
+ * custom trilinear scale for black and white images.  The scaled instance
+ * uses a bit more memory but can improve clarity of some images.
  *
  * @since 5.0
  */
@@ -62,8 +62,8 @@ public class SmoothScaledImageReference extends CachedImageReference {
     }
 
     // scaled image size.
-    private int width;
-    private int height;
+    private final int width;
+    private final int height;
 
     protected SmoothScaledImageReference(ImageStream imageStream, GraphicsState graphicsState,
                                          Resources resources, int imageIndex,
@@ -97,11 +97,9 @@ public class SmoothScaledImageReference extends CachedImageReference {
         long start = System.nanoTime();
         try {
             // get the stream image if need, otherwise scale what you have.
-            if (image == null) {
-                image = imageStream.getImage(graphicsState, resources);
-                if (width > maxImageWidth || height > maxImageHeight) {
-                    return image;
-                }
+            image = imageStream.getImage(graphicsState, resources);
+            if (width > maxImageWidth || height > maxImageHeight) {
+                return image;
             }
             if (image != null) {
                 // update the width height encase it as scaled during masking.
@@ -122,30 +120,28 @@ public class SmoothScaledImageReference extends CachedImageReference {
                     }
                     // smooth out everything else.
                     else {
-                        imageScale = 0.99;
+                        imageScale = 1.5;
                     }
-                    if (imageScale != 1.0) {
-                        image = (BufferedImage) getTrilinearScaledInstance(image,
-                                (int) Math.ceil(width * imageScale),
-                                (int) Math.ceil(height * imageScale));
-                    }
+                    image = (BufferedImage) getTrilinearScaledInstance(image,
+                            (int) Math.ceil(width * imageScale),
+                            (int) Math.ceil(height * imageScale));
                 }
                 // normal rgb scale as before, as the trilinear scale causes excessive blurring.
                 else {
                     if ((width >= 250 || height >= 250) && (width < 500 || height < 500)) {
-                        imageScale = 0.90;
-                    } else if ((width >= 500 || height >= 500) && (width < 1000 || height < 1000)) {
-                        imageScale = 0.80;
-                    } else if ((width >= 1000 || height >= 1000) && (width < 1500 || height < 1500)) {
-                        imageScale = 0.70;
-                    } else if ((width >= 1500 || height >= 1500) && (width < 2000 || height < 2000)) {
-                        imageScale = 0.60;
-                    } else if ((width >= 2000 || height >= 2000) && (width < 2500 || height < 2500)) {
-                        imageScale = 0.50;
-                    } else if ((width >= 2500 || height >= 2500) && (width < 3000 || height < 3000)) {
-                        imageScale = 0.40;
-                    } else if ((width >= 3000 || height >= 3000)) {
-                        imageScale = 0.30;
+                        imageScale = 5.0;
+                    } else if (width >= 500 && (width < 1000 || height < 1000)) {
+                        imageScale = 4.0;
+                    } else if (width >= 1000 && (width < 1500 || height < 1500)) {
+                        imageScale = 3.0;
+                    } else if (width >= 1500 && (width < 2000 || height < 2000)) {
+                        imageScale = 2.0;
+                    } else if (width >= 2000 && (width < 2500 || height < 2500)) {
+                        imageScale = 1.5;
+                    } else if (width >= 2500 && (width < 3000 || height < 3000)) {
+                        imageScale = 1.0;
+                    } else if (width >= 3000) {
+                        imageScale = 0.99;
                     }
                     if (imageScale != 1.0) {
                         AffineTransform tx = new AffineTransform();
@@ -157,7 +153,7 @@ public class SmoothScaledImageReference extends CachedImageReference {
                     }
                 }
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.warning("Error loading image: " + imageStream.getPObjectReference() +
                     " " + imageStream.toString());
         }

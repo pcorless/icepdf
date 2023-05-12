@@ -17,10 +17,12 @@ package org.icepdf.ri.common.views;
 
 import org.icepdf.core.Memento;
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.ri.common.views.annotations.PageViewAnnotationComponent;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -175,6 +177,27 @@ public interface DocumentViewModel {
      * @return vector of page components.
      */
     List<AbstractPageViewComponent> getPageComponents();
+
+    HashMap<AbstractPageViewComponent, ArrayList<PageViewAnnotationComponent>> getDocumentViewAnnotationComponents();
+
+    /**
+     * Gets all the annotation components that float in the DocumentView and are not bound by page dimensions.
+     * @return list of annotation components that should be added the document view
+     */
+    ArrayList<PageViewAnnotationComponent> getDocumentViewAnnotationComponents(AbstractPageViewComponent pageViewComponent);
+
+    /**
+     * Adds an annotation component the list of floating annotation components that are painted in the DocumentView.
+     * @param annotationComponent annotation component to add
+     */
+    void addDocumentViewAnnotationComponent(AbstractPageViewComponent pageViewComponent, PageViewAnnotationComponent annotationComponent);
+
+    /**
+     * Removes an annotation component the list of floating annotation components that are painted in the DocumentView.
+     * @param annotationComponent annotation component to remove
+     */
+    void removeDocumentViewAnnotationComponent(AbstractPageViewComponent pageViewComponent, PageViewAnnotationComponent annotationComponent);
+    void removeAllFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent);
 
     /**
      * Sets the view model current page index.

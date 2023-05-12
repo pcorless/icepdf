@@ -18,6 +18,20 @@ ICEpdf is an open source project and is always looking for more contributors.  T
  [Wiki](https://github.com/pcorless/icepdf/wiki) pages.  Create a pull requests and use the issue tracker, the more 
  help and feedback we get the better we an make the project. 
  
+ ### Getting the jars, javadoc and source from maven central 
+ ```xml
+ <dependency>
+     <groupId>com.github.pcorless.icepdf</groupId>
+     <artifactId>icepdf-core</artifactId>
+     <version>7.1.0</version>
+ </dependency>
+ <dependency>
+     <groupId>com.github.pcorless.icepdf</groupId>
+     <artifactId>icepdf-viewer</artifactId>
+     <version>7.1.0</version>
+ </dependency>
+ ```
+ 
  ## Getting the Code
  To get a local copy of the current code, clone it using git:
  ```
@@ -30,8 +44,29 @@ $ cd icepdf
  component you'll also need to build the Viewer library.  The project can be built with Gradle or Maven, we have 
  no preference,  pick which ever one makes you more happy. 
  
- Builds as they are currently written work best with Java 8 but they can also be easily configured to work with JDK 11+. 
- 
+ Builds as they are currently configured target Java 11.
+
+#### Building With Maven
+```
+# core module
+~$ mvn -pl :icepdf-core package
+
+# viewer module, -am insures dependencies are build 
+~$ mvn -pl :icepdf-viewer -am package
+
+# Viewer jar with all dependences in one self executing jar
+~$ mvn -pl :icepdf-viewer -am package -P assembly 
+
+# examples module, -am insures dependencies are build 
+~$ mvn -pl :png-capture -am package
+# or with full group id. 
+~$ mvn -pl org.icepdf.examples:png-capture -am package
+~$ java -jar icepdf-viewer-7.0.0-SNAPSHOT-jar-with-dependencies.jar
+
+# Whole project hierarchy can be built with or with full group id. 
+~$ mvn package
+
+ ```
 #### Building With Gradle
 
 Build the core jar using the following Gradle command
@@ -54,24 +89,6 @@ Build the distribution zip and tar archives
 # or one can use the full task list 
 ~$ gradle projectReport, sourcesJar, genPomFileForCoreJarPub, genPomFileForViewerJarPub, osDistZip, osDistTar
 ```
-
-#### Building With Maven
-```
-# core module
-~$ mvn -pl :icepdf-core package
-
-# viewer module, -am insures dependencies are build 
-~$ mvn -pl :icepdf-viewer -am package
-
-# examples module, -am insures dependencies are build 
-~$ mvn -pl :png-capture -am package
-# or with full group id. 
-~$ mvn -pl org.icepdf.os.examples:png-capture -am package
-
-# Whole project hierarchy can be built with or with full group id. 
-~$ mvn package
-
- ```
 
  ## Using ICEpdf Viewer Component
  The `org.icepdf.core.ri.common.SwingController` class provides convenience methods for the most common UI actions, 
@@ -153,14 +170,14 @@ window.setVisible(true);
 controller.openDocument(filePath);
 ```
  
- Make sure to take a look at the [Wiki](https://github.com/pcorless/icepdf/wiki/Examples) for more examples of extracting content.  
+ Make sure to take a look at the [Wiki](https://github.com/pcorless/icepdf/wiki/Usage-Examples)) for more examples of extracting content.  
  
  ## Learning
   
  ### Examples
 
 There are bunch of examples located in the root of the project grouped by common usage scenarios.  Similarly the 
-Wiki contains [example](https://github.com/pcorless/icepdf/wiki/Examples) information. 
+Wiki contains [example](https://github.com/pcorless/icepdf/wiki/Usage-Examples) information. 
 
  ### API Documentation
  

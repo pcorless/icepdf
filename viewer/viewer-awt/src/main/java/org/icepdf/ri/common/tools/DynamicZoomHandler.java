@@ -35,8 +35,8 @@ public class DynamicZoomHandler implements ToolHandler, MouseWheelListener {
     private static final Logger logger =
             Logger.getLogger(ZoomOutPageHandler.class.toString());
 
-    private DocumentViewController documentViewController;
-    protected JScrollPane documentScrollPane;
+    private final DocumentViewController documentViewController;
+    protected final JScrollPane documentScrollPane;
 
     public DynamicZoomHandler(DocumentViewController documentViewController,
                               JScrollPane documentScrollPane) {

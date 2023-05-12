@@ -17,11 +17,11 @@ public class ConvolveFilter extends AbstractBufferedImageOp {
     static final long serialVersionUID = 2239251672685254626L;
 
     public static int ZERO_EDGES = 0;
-    public static int CLAMP_EDGES = 1;
-    public static int WRAP_EDGES = 2;
+    public static final int CLAMP_EDGES = 1;
+    public static final int WRAP_EDGES = 2;
 
-    protected Kernel kernel = null;
-    public boolean alpha = true;
+    protected Kernel kernel;
+    public final boolean alpha = true;
     private int edgeAction = CLAMP_EDGES;
 
     /**
@@ -193,9 +193,8 @@ public class ConvolveFilter extends AbstractBufferedImageOp {
             int ioffset = y * width;
             for (int x = 0; x < width; x++) {
                 float r = 0, g = 0, b = 0, a = 0;
-                int moffset = cols2;
                 for (int col = -cols2; col <= cols2; col++) {
-                    float f = matrix[moffset + col];
+                    float f = matrix[cols2 + col];
 
                     if (f != 0) {
                         int ix = x + col;

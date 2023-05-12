@@ -16,10 +16,9 @@
 
 package org.icepdf.core.pobjects.acroform;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
-
-import java.util.HashMap;
 
 /**
  * Signature field (PDF 1.3) is a form field that contains a digital signature (see 12.8, "Digital Signatures"). The field
@@ -66,24 +65,24 @@ public class SignatureFieldDictionary extends FieldDictionary {
     // not optional
     private SignatureDictionary signatureDictionary;
 
-    public SignatureFieldDictionary(Library library, HashMap entries) {
+    public SignatureFieldDictionary(Library library, DictionaryEntries entries) {
         super(library, entries);
 
         // get the lock, todo currently no examples of this
         Object tmp = library.getObject(entries, LOCK_KEY);
-        if (tmp instanceof HashMap) {
-            lockDictionary = new LockDictionary(library, (HashMap) tmp);
+        if (tmp instanceof DictionaryEntries) {
+            lockDictionary = new LockDictionary(library, (DictionaryEntries) tmp);
         }
         // get the seeds, todo currently no examples of this
         tmp = library.getObject(entries, SV_KEY);
-        if (tmp instanceof HashMap) {
-            seedValueDictionary = new SeedValueDictionary(library, (HashMap) tmp);
+        if (tmp instanceof DictionaryEntries) {
+            seedValueDictionary = new SeedValueDictionary(library, (DictionaryEntries) tmp);
         }
         // get the sig dictionary
         if (hasFieldValue()) {
             tmp = library.getObject(entries, V_KEY);
-            if (tmp instanceof HashMap) {
-                signatureDictionary = new SignatureDictionary(library, (HashMap) tmp);
+            if (tmp instanceof DictionaryEntries) {
+                signatureDictionary = new SignatureDictionary(library, (DictionaryEntries) tmp);
             }
         }
 

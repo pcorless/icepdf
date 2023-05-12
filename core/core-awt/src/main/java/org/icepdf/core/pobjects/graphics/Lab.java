@@ -15,11 +15,11 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -31,38 +31,35 @@ public class Lab extends PColorSpace {
     public static final Name WHITE_POINT_KEY = new Name("WhitePoint");
     public static final Name RANGE_KEY = new Name("Range");
 
-    private float[] whitePoint = {
-            0.95047f, 1.0f, 1.08883f
-    };
-    private float[] blackPoint = {
-            0f, 0f, 0f
-    };
-    private float[] range = {
-            -100, 100, -100, 100
-    };
-    private float lBase;
-    private float lSpread;
-    private float aBase;
-    private float aSpread;
-    private float bBase;
-    private float bSpread;
+    private final float lBase;
+    private final float lSpread;
+    private final float aBase;
+    private final float aSpread;
+    private final float bBase;
+    private final float bSpread;
 
-    private float xBase;
-    private float xSpread;
-    private float yBase;
-    private float ySpread;
-    private float zBase;
-    private float zSpread;
+    private final float xBase;
+    private final float xSpread;
+    private final float yBase;
+    private final float ySpread;
+    private final float zBase;
+    private final float zSpread;
 
-    Lab(Library l, HashMap h) {
+    Lab(Library l, DictionaryEntries h) {
         super(l, h);
         List v = (java.util.List) l.getObject(h, WHITE_POINT_KEY);
+        float[] whitePoint = {
+                0.95047f, 1.0f, 1.08883f
+        };
         if (v != null) {
             whitePoint[0] = ((Number) v.get(0)).floatValue();
             whitePoint[1] = ((Number) v.get(1)).floatValue();
             whitePoint[2] = ((Number) v.get(2)).floatValue();
         }
         v = (List) l.getObject(h, RANGE_KEY);
+        float[] range = {
+                -100, 100, -100, 100
+        };
         if (v != null) {
             range[0] = ((Number) v.get(0)).floatValue();
             range[1] = ((Number) v.get(1)).floatValue();
@@ -77,6 +74,9 @@ public class Lab extends PColorSpace {
         bBase = range[2];
         bSpread = range[3] - bBase;
 
+        float[] blackPoint = {
+                0f, 0f, 0f
+        };
         xBase = blackPoint[0];
         xSpread = whitePoint[0] - xBase;
         yBase = blackPoint[1];

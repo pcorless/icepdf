@@ -78,7 +78,7 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
     protected JMenu changeColorMenu;
 
     // delete root annotation and all child popup annotations.
-    protected boolean deleteRoot;
+    protected final boolean deleteRoot;
 
     public MarkupAnnotationPopupMenu(MarkupAnnotationComponent markupAnnotationComponent, Controller controller,
                                      AbstractPageViewComponent pageViewComponent, boolean deleteRoot) {

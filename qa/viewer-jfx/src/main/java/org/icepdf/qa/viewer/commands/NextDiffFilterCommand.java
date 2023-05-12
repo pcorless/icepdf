@@ -7,7 +7,7 @@ import org.icepdf.qa.viewer.common.Mediator;
 
 public class NextDiffFilterCommand implements EventHandler<ActionEvent>, Command {
 
-    private Mediator mediator;
+    private final Mediator mediator;
 
     public NextDiffFilterCommand(Mediator mediator) {
         this.mediator = mediator;

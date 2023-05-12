@@ -30,7 +30,7 @@ import java.util.ArrayList;
 public class UndoCaretaker {
 
     // max number of object to store in undo list.
-    private static int maxHistorySize;
+    private static final int maxHistorySize;
 
     static {
         // enables interactive annotation support.
@@ -39,7 +39,7 @@ public class UndoCaretaker {
                         "org.icepdf.ri.viewer.undo.size", 25);
     }
 
-    private ArrayList<Memento> mementoStateHistory;
+    private final ArrayList<Memento> mementoStateHistory;
     private int cursor;
 
     public UndoCaretaker() {

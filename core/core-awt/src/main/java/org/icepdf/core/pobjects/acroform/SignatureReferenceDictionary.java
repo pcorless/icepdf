@@ -1,10 +1,9 @@
 package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
-
-import java.util.HashMap;
 
 /**
  * Signature reference dictionary.
@@ -69,7 +68,7 @@ public class SignatureReferenceDictionary extends Dictionary {
      * @param library document library.
      * @param entries dictionary entries.
      */
-    public SignatureReferenceDictionary(Library library, HashMap entries) {
+    public SignatureReferenceDictionary(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 

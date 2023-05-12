@@ -38,7 +38,7 @@ public class AnnotationState implements Memento {
     protected Rectangle2D.Float userSpaceRectangle;
 
     // original rectangle reference.
-    protected AnnotationComponent annotationComponent;
+    protected final AnnotationComponent annotationComponent;
 
     /**
      * Stores the annotation state associated with the AnnotationComponents

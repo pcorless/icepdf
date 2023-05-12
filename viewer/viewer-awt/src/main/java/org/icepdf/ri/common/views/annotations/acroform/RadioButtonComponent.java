@@ -89,7 +89,7 @@ public class RadioButtonComponent extends AbstractButtonComponent implements Pro
             }
             else {
                 if (fieldDictionary.getParent() != null && fieldDictionary.getParent().getKids() != null) {
-                    ArrayList kids = parentFieldDictionary.getKids();
+                    ArrayList<Object> kids = parentFieldDictionary.getKids();
                     for (Object childWidget : kids) {
                         if (childWidget instanceof ButtonWidgetAnnotation) {
                             ((ButtonWidgetAnnotation) childWidget).turnOff();

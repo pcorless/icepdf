@@ -16,7 +16,6 @@
 
 package org.icepdf.core.io;
 
-import java.io.IOException;
 import java.io.InputStream;
 
 /**
@@ -35,9 +34,9 @@ public class ByteDoubleArrayInputStream extends InputStream {
      * stream;  element <code>buf[pos]</code> is
      * the next byte to be read.
      */
-    protected byte buf[][];
+    protected final byte[][] buf;
 
-    protected int bufOffset[];
+    protected final int[] bufOffset;
 
     /**
      * The index of the next character to read from the input stream buffer.
@@ -89,7 +88,7 @@ public class ByteDoubleArrayInputStream extends InputStream {
      *
      * @param buf the input buffer.
      */
-    public ByteDoubleArrayInputStream(byte buf[][]) {
+    public ByteDoubleArrayInputStream(byte[][] buf) {
         this.buf = buf;
         this.pos = 0;
         this.posIndex = 0;
@@ -116,13 +115,11 @@ public class ByteDoubleArrayInputStream extends InputStream {
     public synchronized int read() {
         float posOffset = bufOffset[posIndex] + pos;
         if (posOffset < count) {
-            if (posOffset < bufOffset[posIndex] + buf[posIndex].length) {
-                return (buf[posIndex][pos++] & 0xff);
-            } else {
+            if (!(posOffset < bufOffset[posIndex] + buf[posIndex].length)) {
                 posIndex++;
                 pos = 0;
-                return (buf[posIndex][pos++] & 0xff);
             }
+            return (buf[posIndex][pos++] & 0xff);
         } else {
             return -1;
         }
@@ -153,7 +150,7 @@ public class ByteDoubleArrayInputStream extends InputStream {
      *         <code>-1</code> if there is no more data because the end of
      *         the stream has been reached.
      */
-    public synchronized int read(byte b[], int off, int len) {
+    public synchronized int read(byte[] b, int off, int len) {
         if (b == null) {
             throw new NullPointerException();
         } else if ((off < 0) || (off > b.length) || (len < 0) ||
@@ -296,7 +293,7 @@ public class ByteDoubleArrayInputStream extends InputStream {
      * generating an <tt>IOException</tt>.
      * <br>
      */
-    public void close() throws IOException {
+    public void close() {
     }
 
 }

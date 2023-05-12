@@ -35,6 +35,8 @@ import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * CertificatePropertiesDialog takes a certificate chain and displays each certificate in a summery view. Certificates
@@ -42,8 +44,11 @@ import java.util.ResourceBundle;
  */
 public class CertificatePropertiesDialog extends EscapeJDialog {
 
+    private static final Logger logger =
+            Logger.getLogger(CertificatePropertiesDialog.class.toString());
+
     protected static ResourceBundle messageBundle;
-    private Collection<? extends Certificate> certs;
+    private final Collection<? extends Certificate> certs;
 
     public CertificatePropertiesDialog(Frame parent, ResourceBundle messageBundle, Collection<? extends Certificate> certs) {
         super(parent, true);
@@ -177,7 +182,7 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
     /**
      * Method to reflect certificate chain in the tree view
      */
-    private JTree buildCertChainTree(Certificate cert[]) {
+    private JTree buildCertChainTree(Certificate[] cert) {
         DefaultMutableTreeNode root = null;
         DefaultMutableTreeNode currentNode = null;
         for (Certificate aCert : cert) {
@@ -185,11 +190,10 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
                     new CertificateInfo((X509Certificate) aCert, messageBundle));
             if (root == null) {
                 root = childNode;
-                currentNode = childNode;
             } else {
                 currentNode.add(childNode);
-                currentNode = childNode;
             }
+            currentNode = childNode;
         }
         JTree tree = new JTree(root);
         // Disable HTML to disable anchor click out.
@@ -280,8 +284,8 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
             md5 = formatter.format(new Object[]{getCertFingerPrint("MD5", cert)});
             formatter.applyPattern(messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.sha1.value"));
             sha1 = formatter.format(new Object[]{getCertFingerPrint("SHA1", cert)});
-        } catch (Throwable e) {
-            // eat any errors.
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Failed to get cert fingerprint", e);
         }
         Object[][] data = {
                 {messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.version.label"), certVersion},
@@ -312,8 +316,8 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
 }
 
 class CertificateInfo {
-    private X509Certificate cert;
-    private ResourceBundle messageBundle;
+    private final X509Certificate cert;
+    private final ResourceBundle messageBundle;
 
     CertificateInfo(X509Certificate cert, ResourceBundle messageBundle) {
         this.cert = cert;
@@ -340,20 +344,8 @@ class CertificateInfo {
 
             // Extract subject name
             subjectName = CertificatePropertiesDialog.parseRelativeDistinguishedName(principal, BCStyle.CN);
-            if (subjectName == null) {
-                subjectName = CertificatePropertiesDialog.parseRelativeDistinguishedName(principal, BCStyle.O);
-            }
-            if (subjectName == null) {
-                subjectName = messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.unknownSubject.label");
-            }
             // Extract issuer name
             issuerName = CertificatePropertiesDialog.parseRelativeDistinguishedName(principalIssuer, BCStyle.CN);
-            if (issuerName == null) {
-                issuerName = CertificatePropertiesDialog.parseRelativeDistinguishedName(principalIssuer, BCStyle.O);
-            }
-            if (issuerName == null) {
-                issuerName = messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.unknownIssuer.label");
-            }
         } catch (Exception e) {
             e.printStackTrace();
         }

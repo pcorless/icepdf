@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.filters;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.graphics.images.ImageParams;
 import org.icepdf.core.util.Defs;
@@ -23,7 +24,6 @@ import org.icepdf.core.util.Utils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
@@ -35,7 +35,7 @@ import java.util.zip.InflaterInputStream;
 public class FlateDecode extends ChunkingInputStream {
 
 
-    private static int DEFAULT_BUFFER_SIZE;
+    private static final int DEFAULT_BUFFER_SIZE;
 
     static {
         DEFAULT_BUFFER_SIZE = Defs.sysPropertyInt("org.icepdf.core.flateDecode.bufferSize",
@@ -50,22 +50,20 @@ public class FlateDecode extends ChunkingInputStream {
     public static final Name BITS_PER_COMPONENT_VALUE = new Name("BitsPerComponent");
 
 
-    private InputStream originalInputKeptSolelyForDebugging;
-    // default values for non image streams.
-    private int width = 1;
+    private final InputStream originalInputKeptSolelyForDebugging;
     private int numComponents = 1;
     private int bitsPerComponent = 8;
     private int predictor;
 
 
-    public FlateDecode(Library library, HashMap props, InputStream input) {
+    public FlateDecode(Library library, DictionaryEntries props, InputStream input) {
         super();
         originalInputKeptSolelyForDebugging = input;
 
         int intermediateBufferSize = DEFAULT_BUFFER_SIZE;
 
         // get decode parameters from stream properties
-        HashMap decodeParmsDictionary = ImageParams.getDecodeParams(library, props);
+        DictionaryEntries decodeParmsDictionary = ImageParams.getDecodeParams(library, props);
         predictor = library.getInt(decodeParmsDictionary, PREDICTOR_VALUE);
         if (predictor != PredictorDecode.PREDICTOR_NONE &&
                 predictor != PredictorDecode.PREDICTOR_TIFF_2 &&
@@ -79,6 +77,8 @@ public class FlateDecode extends ChunkingInputStream {
         }
         if (predictor != PredictorDecode.PREDICTOR_NONE) {
             Number widthNumber = library.getNumber(props, WIDTH_VALUE);
+            // default values for non image streams.
+            int width = 1;
             if (widthNumber != null) {
                 width = widthNumber.intValue();
             }
@@ -160,7 +160,7 @@ public class FlateDecode extends ChunkingInputStream {
         if (originalInputKeptSolelyForDebugging == null)
             sb.append("null");
         else
-            sb.append(originalInputKeptSolelyForDebugging.toString());
+            sb.append(originalInputKeptSolelyForDebugging);
         return sb.toString();
     }
 }

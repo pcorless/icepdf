@@ -4,9 +4,7 @@ import javafx.application.Platform;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.PixelReader;
 import org.icepdf.qa.config.*;
-import org.icepdf.qa.tests.exceptions.AnalyzeException;
 import org.icepdf.qa.tests.exceptions.ConfigurationException;
-import org.icepdf.qa.tests.exceptions.TestException;
 import org.icepdf.qa.tests.exceptions.ValidationException;
 import org.icepdf.qa.utilities.TimeTestWatcher;
 import org.icepdf.qa.viewer.common.Mediator;
@@ -46,7 +44,7 @@ public class ImageCompareTask extends AbstractTestTask {
     public static final String PAGE_CAPTURE_METHOD = "capture";
     public static final String PAGE_CAPTURE_DISPOSE_METHOD = "dispose";
 
-    private Mediator mediator;
+    private final Mediator mediator;
 
     private Project project;
     private CaptureSet captureSetA;
@@ -63,7 +61,7 @@ public class ImageCompareTask extends AbstractTestTask {
     }
 
     @Override
-    protected List<Result> call() throws TestException, AnalyzeException, ConfigurationException, ValidationException {
+    protected List<Result> call()  {
         try {
             TimeTestWatcher timeTestWatcher = new TimeTestWatcher();
             timeTestWatcher.starting("Image Compare");
@@ -77,8 +75,6 @@ public class ImageCompareTask extends AbstractTestTask {
             System.out.println("There was a validation error: " + e.getMessage());
         } catch (ConfigurationException e) {
             System.out.println("There was a configuration error: " + e.getMessage());
-        } catch (TestException e) {
-            System.out.println("There was a test error: " + e.getMessage());
         } finally {
             teardown();
         }
@@ -107,7 +103,7 @@ public class ImageCompareTask extends AbstractTestTask {
     public void setup() {
 
         // disable project level config controls.
-        Platform.runLater(() -> mediator.setStartTestTaskGuiState());
+        Platform.runLater(mediator::setStartTestTaskGuiState);
 
         // setup pointers to project and each capture set.
         project = mediator.getCurrentProject();
@@ -149,11 +145,7 @@ public class ImageCompareTask extends AbstractTestTask {
     public void config() throws ConfigurationException {
         System.out.println("---- Configuration started -----");
         // create union of content sets that will be used in the compare
-        if (captureSetA.getCapturePageCount() < captureSetB.getCapturePageCount()) {
-            commonPageCount = captureSetA.getCapturePageCount();
-        } else {
-            commonPageCount = captureSetB.getCapturePageCount();
-        }
+        commonPageCount = Math.min(captureSetA.getCapturePageCount(), captureSetB.getCapturePageCount());
         if (commonPageCount == 0) {
             throw new ConfigurationException("Capture page count must be at least one.");
         }
@@ -162,13 +154,13 @@ public class ImageCompareTask extends AbstractTestTask {
         // have valid classes.
         try {
             getTestInstance(captureSetA);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new ConfigurationException("Capture set A classpath does not contain ICEpdf or is invalid.");
         }
         try {
             getTestInstance(captureSetB);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             throw new ConfigurationException("Capture set B classpath does not contain ICEpdf or is invalid.");
         }
 
@@ -210,11 +202,11 @@ public class ImageCompareTask extends AbstractTestTask {
     }
 
     @Override
-    public void testAndAnalyze() throws TestException {
+    public void testAndAnalyze() {
         System.out.println("---- Test and Analyze started -----");
         try {
             List<Result> results = new ArrayList<>(commonContentSets.size() * commonPageCount);
-            Platform.runLater(() -> mediator.resetProjectResults());
+            Platform.runLater(mediator::resetProjectResults);
 
             int testSize = filePaths.size();
             int i = 1;
@@ -268,15 +260,13 @@ public class ImageCompareTask extends AbstractTestTask {
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
-        } catch (Throwable e) {
-            e.printStackTrace();
         }
     }
 
     @Override
     public void teardown() {
         // do and cleanup.
-        Platform.runLater(() -> mediator.setStopTestTaskGuiState());
+        Platform.runLater(mediator::setStopTestTaskGuiState);
         executorService.shutdownNow();
     }
 
@@ -309,20 +299,12 @@ public class ImageCompareTask extends AbstractTestTask {
             }
 
             // open the file
-            Class pageCaptureClass = classLoader.loadClass(PAGE_CAPTURE_CLASS);
+            Class<?> pageCaptureClass = classLoader.loadClass(PAGE_CAPTURE_CLASS);
             Constructor fontClassConstructor = pageCaptureClass.getDeclaredConstructor();
-            Object pageCaptureObject = fontClassConstructor.newInstance();
 
-            return pageCaptureObject;
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
+            return fontClassConstructor.newInstance();
+        } catch (ClassNotFoundException | InvocationTargetException | IllegalAccessException | InstantiationException |
+                 NoSuchMethodException e) {
             e.printStackTrace();
         }
         return null;
@@ -330,22 +312,16 @@ public class ImageCompareTask extends AbstractTestTask {
 
     private int loadTestInstance(CaptureSet captureSet, Object testInstance, Path filePath, int documentIndex, int captureSetTotal) {
         if (filePath != null) {
-            System.err.format("File [%d/%d]=%s\n", documentIndex, captureSetTotal, filePath.toString());
+            System.err.format("File [%d/%d]=%s\n", documentIndex, captureSetTotal, filePath);
 
             // call setup on the test which returns total number of pages.
             try {
                 URLClassLoader classLoader = captureSet.getClassLoader();
-                Class pageCaptureClass = classLoader.loadClass(PAGE_CAPTURE_CLASS);
+                Class<?> pageCaptureClass = classLoader.loadClass(PAGE_CAPTURE_CLASS);
                 Method setFileMethod = pageCaptureClass.getMethod(PAGE_CAPTURE_SETUP_METHOD, Path.class);
-                Integer pageCount = (Integer) setFileMethod.invoke(testInstance, filePath);
-                return pageCount;
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            } catch (NoSuchMethodException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
+                return (Integer) setFileMethod.invoke(testInstance, filePath);
+            } catch (ClassNotFoundException | InvocationTargetException | IllegalAccessException |
+                     NoSuchMethodException e) {
                 e.printStackTrace();
             }
         }
@@ -395,15 +371,13 @@ public class ImageCompareTask extends AbstractTestTask {
         return results;
     }
 
-    public class CapturePage implements Callable<Void> {
-        private Object pageCaptureTest;
-        private int pageNumber;
-        private float scale = 1f;
-        private float rotation = 0f;
-        private String fileName;
-        private int numberOfPage;
+    public static class CapturePage implements Callable<Void> {
+        private final Object pageCaptureTest;
+        private final int pageNumber;
+        private final String fileName;
+        private final int numberOfPage;
 
-        private CaptureSet captureSet;
+        private final CaptureSet captureSet;
 
         private CapturePage(Object pageCaptureTest, CaptureSet captureSet, Path filePath, int pageNumber, int numberOfPage) {
             this.pageCaptureTest = pageCaptureTest;
@@ -416,7 +390,7 @@ public class ImageCompareTask extends AbstractTestTask {
         public Void call() {
             try {
                 URLClassLoader classLoader = captureSet.getClassLoader();
-                Class pageCaptureClass = classLoader.loadClass(PAGE_CAPTURE_CLASS);
+                Class<?> pageCaptureClass = classLoader.loadClass(PAGE_CAPTURE_CLASS);
 
                 if (pageNumber < numberOfPage) {
 
@@ -430,6 +404,8 @@ public class ImageCompareTask extends AbstractTestTask {
                         // paint the page.
                         Method captureMethod = pageCaptureClass.getMethod(PAGE_CAPTURE_METHOD,
                                 int.class, int.class, int.class, float.class, float.class);
+                        float rotation = 0f;
+                        float scale = 1f;
                         BufferedImage image = (BufferedImage) captureMethod.invoke(pageCaptureTest, pageNumber, 2, 2, rotation, scale);
 
                         File file = Files.createFile(imageCapture).toFile();
@@ -437,15 +413,8 @@ public class ImageCompareTask extends AbstractTestTask {
                         image.flush();
                     }
                 }
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                e.printStackTrace();
-            } catch (NoSuchMethodException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (ClassNotFoundException e) {
+            } catch (IllegalAccessException | ClassNotFoundException | IOException | NoSuchMethodException |
+                     InvocationTargetException e) {
                 e.printStackTrace();
             }
             return null;
@@ -456,11 +425,11 @@ public class ImageCompareTask extends AbstractTestTask {
     /**
      * closes the two documents and compares, followed by adding a new results ot the results tab.
      */
-    public class DocumentImageCompare implements Callable<Result> {
+    public static class DocumentImageCompare implements Callable<Result> {
 
-        private Path fileName;
-        private int pageNumber;
-        private CaptureSet[] captureSets;
+        private final Path fileName;
+        private final int pageNumber;
+        private final CaptureSet[] captureSets;
 
         private DocumentImageCompare(Path filePath, int pageNumber, CaptureSet... captureSets) {
             this.captureSets = captureSets;
@@ -498,8 +467,6 @@ public class ImageCompareTask extends AbstractTestTask {
                 // silently move on if the page wasn't created.
             } catch (IOException e) {
                 e.printStackTrace();
-            } catch (Throwable e) {
-                e.printStackTrace();
             }
             return null;
         }
@@ -508,9 +475,9 @@ public class ImageCompareTask extends AbstractTestTask {
     /**
      * Disposes the pageCaptureTest.
      */
-    public class DocumentCloser implements Callable<Void> {
-        private Object pageCaptureTest;
-        private CaptureSet captureSet;
+    public static class DocumentCloser implements Callable<Void> {
+        private final Object pageCaptureTest;
+        private final CaptureSet captureSet;
 
         private DocumentCloser(CaptureSet captureSet, Object pageCaptureTest) {
             this.pageCaptureTest = pageCaptureTest;
@@ -520,19 +487,12 @@ public class ImageCompareTask extends AbstractTestTask {
         public Void call() {
             try {
                 URLClassLoader classLoader = captureSet.getClassLoader();
-                Class pageCaptureClass = classLoader.loadClass(PAGE_CAPTURE_CLASS);
+                Class<?> pageCaptureClass = classLoader.loadClass(PAGE_CAPTURE_CLASS);
                 Method disposeMethod = pageCaptureClass.getMethod(PAGE_CAPTURE_DISPOSE_METHOD);
                 disposeMethod.invoke(pageCaptureTest);
 
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                e.printStackTrace();
-            } catch (NoSuchMethodException e) {
-                e.printStackTrace();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            } catch (Throwable e) {
+            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException |
+                     ClassNotFoundException e) {
                 e.printStackTrace();
             }
             return null;

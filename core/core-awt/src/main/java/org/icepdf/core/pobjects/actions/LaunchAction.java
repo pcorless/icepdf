@@ -15,13 +15,8 @@
  */
 package org.icepdf.core.pobjects.actions;
 
-import org.icepdf.core.pobjects.FileSpecification;
-import org.icepdf.core.pobjects.LiteralStringObject;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
-
-import java.util.HashMap;
 
 /**
  * <p>The launch action launches an applicaiton or opens or prints a
@@ -54,10 +49,10 @@ public class LaunchAction extends Action {
     private Boolean isNewWindow;
 
     // launch parameters specific to Windows.
-    private WindowsLaunchParameters winLaunchParameters;
+    private final WindowsLaunchParameters winLaunchParameters;
 
     // mac and unix are not defined by the specification and thus not here
-    // either. 
+    // either.
 
     /**
      * Creates a new instance of a Action.
@@ -65,7 +60,7 @@ public class LaunchAction extends Action {
      * @param l document library.
      * @param h Action dictionary entries.
      */
-    public LaunchAction(Library l, HashMap h) {
+    public LaunchAction(Library l, DictionaryEntries h) {
         super(l, h);
         winLaunchParameters = new WindowsLaunchParameters();
     }
@@ -133,8 +128,8 @@ public class LaunchAction extends Action {
      */
     public FileSpecification getFileSpecification() {
         Object value = getObject(FILE_KEY);
-        if (value instanceof HashMap) {
-            fileSpecification = new FileSpecification(library, (HashMap) value);
+        if (value instanceof DictionaryEntries) {
+            fileSpecification = new FileSpecification(library, (DictionaryEntries) value);
         }
         return fileSpecification;
     }
@@ -147,11 +142,6 @@ public class LaunchAction extends Action {
      * @since 2.6
      */
     public class WindowsLaunchParameters {
-
-        private final Name FILE_KEY = new Name("F");
-        private final Name DIRECTORY_KEY = new Name("D");
-        private final Name OPEN_KEY = new Name("O");
-        private final Name PARAMETER_KEY = new Name("P");
 
         private FileSpecification launchFileSpecification;
 
@@ -172,24 +162,28 @@ public class LaunchAction extends Action {
         public WindowsLaunchParameters() {
 
 //            HashMap winLaunch = library.getDictionary(entries, "Win");
+            Name FILE_KEY = new Name("F");
             Object value = getObject(FILE_KEY);
-            if (value instanceof HashMap) {
+            if (value instanceof DictionaryEntries) {
                 launchFileSpecification = new FileSpecification(library,
-                        (HashMap) value);
+                        (DictionaryEntries) value);
             } else if (value instanceof StringObject) {
                 launchFile = ((StringObject) value).getDecryptedLiteralString(
                         library.getSecurityManager());
             }
+            Name DIRECTORY_KEY = new Name("D");
             value = getObject(DIRECTORY_KEY);
             if (value instanceof StringObject) {
                 defaultDirectory = ((StringObject) value)
                         .getDecryptedLiteralString(library.getSecurityManager());
             }
+            Name OPEN_KEY = new Name("O");
             value = getObject(OPEN_KEY);
             if (value instanceof StringObject) {
                 operation = ((StringObject) value)
                         .getDecryptedLiteralString(library.getSecurityManager());
             }
+            Name PARAMETER_KEY = new Name("P");
             value = getObject(PARAMETER_KEY);
             if (value instanceof StringObject) {
                 parameters =

@@ -36,15 +36,15 @@ public class PreferencesController {
 
     private static final String HOME = System.getProperties().getProperty("user.home");
     private static String defaultApplicationHome = HOME + "/.icepdf/icepdf-qa/";
-    private static String captureSetBasePath = defaultApplicationHome + "captures/";
-    private static String contentSetBasePath = defaultApplicationHome + "contentSets/";
-    private static String projectBasePath = defaultApplicationHome + "projects/";
-    private static String lastContentSetFilesDirectory = HOME + "/dev/pdf-qa/metrics/";
-    private static String productClassPathDirectory = HOME + "/dev/products/";
+    private static final String captureSetBasePath = defaultApplicationHome + "captures/";
+    private static final String contentSetBasePath = defaultApplicationHome + "contentSets/";
+    private static final String projectBasePath = defaultApplicationHome + "projects/";
+    private static final String lastContentSetFilesDirectory = HOME + "/dev/pdf-qa/metrics/";
+    private static final String productClassPathDirectory = HOME + "/dev/products/";
     // folder for each content set file name.
-    private static String resultsPathDirectory = HOME + "/dev/pdf-qa/results/";
+    private static final String resultsPathDirectory = HOME + "/dev/pdf-qa/results/";
 
-    private static Preferences prefs = Preferences.userNodeForPackage(PreferencesController.class);
+    private static final Preferences prefs = Preferences.userNodeForPackage(PreferencesController.class);
 
     private static PreferencesController preferencesController;
 

@@ -61,29 +61,7 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
     public static final CMap IDENTITY_H = new CMapIdentityH();
     public static final CMap IDENTITY_V = new CMapIdentityV();
 
-    private static HashMap<Name, CMap> cMapCache = new HashMap<>();
-
-    /**
-     * Dictionary containing entries that define the character collection  for
-     * the CIDFont or CIDFonts associate with the CMap.  Specifically the
-     * character collections registry, ordering and supplement is defined.
-     */
-    private HashMap cIdSystemInfo;
-
-    /**
-     * PostScript name of the CMap.
-     */
-    private String cMapName;
-
-    /**
-     * defines changes to the internal organization of CMap files or the
-     * semantics of CMap operators. The CMapType of CMaps described in
-     * this document.
-     * cMapType = 2 - indicates a ToUnicode cmap
-     * cMapType = 1 - indicates a CMap object
-     * cMapType = 0 - not sure yet, maybe CMap with external CMap reference
-     */
-    private float cMapType;
+    private static final HashMap<Name, CMap> cMapCache = new HashMap<>();
 
     /**
      * The name of a predefined CMap, or a stream containing a CMap, that
@@ -158,9 +136,10 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
      * Type, CMapName and CIDSystemInfo which are also repeated in the CMap
      * file itself. If the CMap file was created from a Font object then they
      * previously mentioned keys values must be parsed from the CMap file.
+     * <p>
+     * with this object.  The HashMap will be empty if this object
+     * was created via a Font objects ToUnicode key.
      *
-     *                   with this object.  The HashMap will be empty if this object
-     *                   was created via a Font objects ToUnicode key.
      * @param cMapStream stream containing CMap data.
      */
     public CMap(Stream cMapStream) {
@@ -188,7 +167,7 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
             // parse the cidToGid stream out, arranging the high bit,
             // each character position that has a value > 0 is a valid
             // entry in the CFF.
-            while (character != -1 && i < length) {
+            while (i < length) {
                 character = cidStream.read();
                 character = (char) ((character << 8) | cidStream.read());
                 cidToGid[i] = (char) character;
@@ -316,7 +295,12 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
                     // always be hash by definition and our parser result
                     token = parser.getStreamObject();
                     if (token instanceof HashMap) {
-                        cIdSystemInfo = (HashMap) token;
+                        /*
+                          Dictionary containing entries that define the character collection  for
+                          the CIDFont or CIDFonts associate with the CMap.  Specifically the
+                          character collections registry, ordering and supplement is defined.
+                         */
+                        HashMap cIdSystemInfo = (HashMap) token;
                         // always followed by a def token;
                         token = parser.getStreamObject();
                     }
@@ -329,7 +313,10 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
                     if (nameString.toLowerCase().contains("cmapname")) {
                         // cmapname will always be a Name object
                         token = parser.getStreamObject();
-                        cMapName = token.toString();
+                        /*
+                          PostScript name of the CMap.
+                         */
+                        String cMapName = token.toString();
                         // always followed by a def token;
                         token = parser.getStreamObject();
                     }
@@ -337,7 +324,15 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
                     if (nameString.toLowerCase().contains("cmaptype")) {
                         // cmapname will always be a float
                         token = parser.getStreamObject();
-                        cMapType = Float.parseFloat(token.toString());
+                        /*
+                          defines changes to the internal organization of CMap files or the
+                          semantics of CMap operators. The CMapType of CMaps described in
+                          this document.
+                          cMapType = 2 - indicates a ToUnicode cmap
+                          cMapType = 1 - indicates a CMap object
+                          cMapType = 0 - not sure yet, maybe CMap with external CMap reference
+                         */
+                        float cMapType = Float.parseFloat(token.toString());
                         // always followed by a def token;
                         token = parser.getStreamObject();
                     }
@@ -377,7 +372,7 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
                     if (stringToken.equalsIgnoreCase("beginbfchar")) {
                         // before beginbfchar, the number of ranges is defined
                         int numberOfbfChar = (int) Float.parseFloat(previousToken.toString());
-                        // there can be multiple char maps so we don't want to override previous values. 
+                        // there can be multiple char maps so we don't want to override previous values.
                         if (bfChars == null) {
                             bfChars = new HashMap<>(numberOfbfChar);
                         }
@@ -407,8 +402,8 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
                             bfRange = new ArrayList<>(numberOfbfRanges);
                         }
                         StringObject hexToken;
-                        Integer startRange;
-                        Integer endRange;
+                        int startRange;
+                        int endRange;
                         // work through each range
                         for (int i = 0; i < numberOfbfRanges; i++) {
                             // look for start range.
@@ -438,7 +433,7 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
                                         (List) token));
                             } else {
                                 hexToken = (StringObject) token;
-                                Integer offset = hexToken.getUnsignedInt(0, hexToken.getLength());
+                                int offset = hexToken.getUnsignedInt(0, hexToken.getLength());
                                 bfRange.add(new CMapBfRange(startRange,
                                         endRange,
                                         offset));
@@ -463,8 +458,8 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
                             cIdRange = new ArrayList<>(numberOfbfRanges);
                         }
                         StringObject hexToken;
-                        Integer startRange;
-                        Integer endRange;
+                        int startRange;
+                        int endRange;
                         // work through each range
                         for (int i = 0; i < numberOfbfRanges; i++) {
                             // look for start range.
@@ -621,9 +616,9 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
     class CMapBfRange implements CMapRange {
 
         // start value for a bfrange
-        int startRange = 0;
+        int startRange;
         // end value for a bfrange
-        int endRange = 0;
+        int endRange;
         // offset mapping
         int offsetValue = 0;
         // offset vector
@@ -663,7 +658,7 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
          *
          * @param value value to check for containment
          * @return true if the cmap falls inside one of the bfranges, false
-         *         otherwise.
+         * otherwise.
          */
         public boolean inRange(int value) {
             return (value >= startRange && value <= endRange);
@@ -676,7 +671,7 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
          *
          * @param value value to find corresponding CMap for
          * @return the mapped CMap value for <code>value</code>, -1 if the
-         *         <code>value</code> can not be mapped.
+         * <code>value</code> can not be mapped.
          */
         public char[] getCMapValue(int value) {
 
@@ -687,20 +682,19 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
                 // value - startRange will give the index in the vector of the desired
                 // mapping value
                 StringObject hexToken = (StringObject) offsetVecor.get(value - startRange);
-                char[] test = convertToString(hexToken.getLiteralStringBuffer());
-                return test;
+                return convertToString(hexToken.getLiteralStringBuffer());
             }
         }
     }
 
-    class CMapCidRange implements CMapRange {
+    static class CMapCidRange implements CMapRange {
 
         // start value for a bfrange
-        int startRange = 0;
+        int startRange;
         // end value for a bfrange
-        int endRange = 0;
+        int endRange;
         // offset mapping
-        int offsetValue = 0;
+        int offsetValue;
 
         /**
          * Create a new instance of a CMapRange, when it is a simple range

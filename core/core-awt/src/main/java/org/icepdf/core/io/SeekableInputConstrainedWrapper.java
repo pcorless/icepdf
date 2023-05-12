@@ -23,9 +23,9 @@ import java.io.InputStream;
  * @since 2.0
  */
 public class SeekableInputConstrainedWrapper extends InputStream {
-    private SeekableInput streamDataInput;
-    private long filePositionOfStreamData;
-    private long lengthOfStreamData;
+    private final SeekableInput streamDataInput;
+    private final long filePositionOfStreamData;
+    private final long lengthOfStreamData;
     private long filePositionBeforeUse;
     private boolean usedYet;
 
@@ -79,7 +79,7 @@ public class SeekableInputConstrainedWrapper extends InputStream {
 
         if (remain <= 0)
             return -1;
-        length = (int) Math.min(Math.min(remain, (long) length), (long) Integer.MAX_VALUE);
+        length = (int) Math.min(Math.min(remain, length), Integer.MAX_VALUE);
         return streamDataInput.read(buffer, offset, length);
     }
 
@@ -94,7 +94,7 @@ public class SeekableInputConstrainedWrapper extends InputStream {
         return false;
     }
 
-    public void reset() throws IOException {
+    public void reset() {
     }
 
     public long skip(long n) throws IOException {
@@ -102,7 +102,7 @@ public class SeekableInputConstrainedWrapper extends InputStream {
         long remain = getBytesRemaining();
         if (remain <= 0)
             return -1;
-        n = (int) Math.min(Math.min(remain, n), (long) Integer.MAX_VALUE);
+        n = (int) Math.min(Math.min(remain, n), Integer.MAX_VALUE);
         return streamDataInput.skip(n);
     }
 
@@ -137,13 +137,6 @@ public class SeekableInputConstrainedWrapper extends InputStream {
         streamDataInput.seekAbsolute(filePositionOfStreamData + lengthOfStreamData);
     }
 
-    public long getAbsolutePosition() throws IOException {
-        ensureReadyOnFirstUse();
-        long absolutePosition = getAbsolutePosition();
-        absolutePosition -= filePositionOfStreamData;
-        return absolutePosition;
-    }
-
     public long getLength() {
         return lengthOfStreamData;
     }
@@ -166,7 +159,7 @@ public class SeekableInputConstrainedWrapper extends InputStream {
         if (streamDataInput == null)
             sb.append("null ");
         else
-            sb.append(streamDataInput.toString());
+            sb.append(streamDataInput);
         return sb.toString();
     }
 }

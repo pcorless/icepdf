@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.fonts;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.zfont.*;
@@ -22,8 +23,8 @@ import org.icepdf.core.pobjects.fonts.zfont.fontFiles.*;
 import org.icepdf.core.util.Library;
 
 import java.io.File;
+import java.io.InputStream;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -76,7 +77,7 @@ public class FontFactory {
     private FontFactory() {
     }
 
-    public Font getFont(Library library, HashMap entries) {
+    public Font getFont(Library library, DictionaryEntries entries) {
 
         Font font = null;
 
@@ -103,7 +104,7 @@ public class FontFactory {
             font = new TypeCidType2Font(library, entries);
         }
         if (font == null) {
-            // create OFont implementation. 
+            // create OFont implementation.
             font = new org.icepdf.core.pobjects.fonts.ofont.Font(library, entries);
         }
         return font;
@@ -127,7 +128,7 @@ public class FontFactory {
             } else if (FONT_CID_TYPE_2 == fontType) {
                 fontFile = new ZFontType2(fontStream);
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.log(Level.WARNING, "Error reading font file type " + FONT_OPEN_TYPE, e);
         }
         return fontFile;
@@ -136,22 +137,23 @@ public class FontFactory {
     public FontFile createFontFile(File file, int fontType, String fontSubType) {
         try {
             return createFontFile(file.toURI().toURL(), fontType, fontSubType);
-        } catch (Throwable e) {
-            logger.log(Level.FINE, "Could not create instance of font file " + fontType, e);
+        } catch (Exception e) {
+            logger.log(Level.FINE, e, () -> "Could not create instance of font file " + fontType);
         }
         return null;
     }
 
     public FontFile createFontFile(URL url, int fontType, String fontSubType) {
         FontFile fontFile = null;
-        try {
+        try (InputStream inputStream = url.openStream()) {
+            byte[] fontBytes = inputStream.readAllBytes();
             if (FONT_TRUE_TYPE == fontType || FONT_OPEN_TYPE == fontType) {
-                fontFile = new ZFontTrueType(url);
+                fontFile = new ZFontTrueType(fontBytes, url);
             } else if (FONT_TYPE_1 == fontType) {
-                fontFile = new ZFontType1(url);
+                fontFile = new ZFontType1(fontBytes, url);
             }
-        } catch (Throwable e) {
-            logger.log(Level.FINE, "Could not create instance of font file " + fontType, e);
+        } catch (Exception e) {
+            logger.log(Level.FINE, e, () -> "Could not create instance of font file " + fontType);
         }
         return fontFile;
     }

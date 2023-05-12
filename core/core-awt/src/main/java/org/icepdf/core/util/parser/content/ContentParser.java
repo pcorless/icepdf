@@ -1,7 +1,6 @@
 package org.icepdf.core.util.parser.content;
 
-import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.GlyphOutlineClip;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.Shapes;
@@ -30,15 +29,15 @@ public class ContentParser extends AbstractContentParser {
      * Inline image cache,  for heavily tiled background images.  Can be cleared
      * between document parses if needed.
      */
-    public static Map<String, ImageReference> inlineImageCache =
+    public static final Map<String, ImageReference> inlineImageCache =
             Collections.synchronizedMap(new WeakHashMap<>());
 
     public ContentParser(Library l, Resources r) {
         super(l, r);
     }
 
-    public ContentParser parse(byte[][] streamBytes, Page page)
-            throws InterruptedException, IOException {
+    public ContentParser parse(byte[][] streamBytes, Reference[] references, Page page)
+            throws InterruptedException {
         if (shapes == null) {
             shapes = new Shapes();
             if (graphicState == null) {
@@ -66,11 +65,13 @@ public class ContentParser extends AbstractContentParser {
 
         if (logger.isLoggable(Level.FINER)) {
             logger.finer("Page content streams: " + streamBytes.length);
+            int i = 0;
             for (byte[] streamByte : streamBytes) {
                 if (streamByte != null) {
                     String tmp = new String(streamByte, StandardCharsets.ISO_8859_1);
-                    logger.finer("Content = " + tmp);
+                    logger.finer("Content " + references[i].toString() + " = " + tmp);
                 }
+                i++;
             }
         }
         int count = 0;
@@ -244,7 +245,7 @@ public class ContentParser extends AbstractContentParser {
                         // the XObject's Subtype entry, which may be Image , Form, or PS
                         case Operands.Do:
                             graphicState = consume_Do(graphicState, stack, shapes,
-                                    resources, true, imageIndex, page);
+                                    resources, true, imageIndex, page, false);
                             break;
 
                         // Fill the path, using the even-odd rule to determine the
@@ -568,7 +569,7 @@ public class ContentParser extends AbstractContentParser {
         } catch (InterruptedException e) {
             logger.log(Level.FINE, "ContentParser thread interrupted");
             throw new InterruptedException("ContentParser thread interrupted");
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.log(Level.WARNING, "Error parsing content stream. ", e);
         }
         return this;
@@ -627,7 +628,7 @@ public class ContentParser extends AbstractContentParser {
                             stack.clear();
                             break;
                         case Operands.Do:
-                            consume_Do(graphicState, stack, shapes, resources, false, null, null);
+                            consume_Do(graphicState, stack, shapes, resources, false, imageIndex, null, true);
                             stack.clear();
                             break;
                         case Operands.BI:
@@ -942,6 +943,10 @@ public class ContentParser extends AbstractContentParser {
                         consume_double_quote(graphicState, stack, shapes, textMetrics,
                                 glyphOutlineClip, oCGs);
                         break;
+                    // not supposed to have a Do in text block but hey so be it. .
+                    case Operands.Do:
+                        consume_Do(graphicState, stack, shapes, resources, true, imageIndex, null, true);
+                        break;
                 }
             }
             // push everything else on the stack for consumptions
@@ -965,7 +970,7 @@ public class ContentParser extends AbstractContentParser {
             shapes.add(new GlyphOutlineDrawCmd(glyphOutlineClip));
         }
         graphicState.set(textBlockBase);
-        if (nextToken instanceof Integer && (Integer) nextToken == Operands.ET) {
+        if (nextToken instanceof Integer) {
             inTextBlock = false;
         }
 
@@ -975,7 +980,7 @@ public class ContentParser extends AbstractContentParser {
     private void parseInlineImage(Lexer p, Shapes shapes, Page page) throws IOException {
         try {
             Object tok;
-            HashMap<Object, Object> iih = new HashMap<>();
+            DictionaryEntries iih = new DictionaryEntries();
             tok = p.next();
             while (!tok.equals(Operands.ID)) {
                 if (ImageParams.BPC_KEY.equals(tok)) {
@@ -998,7 +1003,7 @@ public class ContentParser extends AbstractContentParser {
                     tok = ImageParams.WIDTH_KEY;
                 }
                 Object tok1 = p.next();
-                iih.put(tok, tok1);
+                iih.put((Name) tok, tok1);
                 tok = p.next();
             }
             // For inline images in content streams, we have to use

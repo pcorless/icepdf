@@ -17,8 +17,6 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.util.Library;
 
-import java.util.HashMap;
-
 /**
  * The ViewerPreferences class is used to represent and provide access to the
  * ViewerPreference keys and values from the PDF Specification, such as HideToolbar
@@ -34,7 +32,7 @@ public class ViewerPreferences extends Dictionary {
      * @param l document library.
      * @param h NameTree dictionary entries.
      */
-    public ViewerPreferences(Library l, HashMap h) {
+    public ViewerPreferences(Library l, DictionaryEntries h) {
         super(l, h);
     }
 

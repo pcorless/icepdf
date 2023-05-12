@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.functions.Function;
 import org.icepdf.core.pobjects.graphics.batik.ext.awt.MultipleGradientPaint;
 import org.icepdf.core.pobjects.graphics.batik.ext.awt.RadialGradientPaint;
@@ -23,8 +24,9 @@ import org.icepdf.core.util.Library;
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -56,11 +58,11 @@ public class ShadingType3Pattern extends ShadingPattern {
     // beyond the starting and ending points of the axis, Default [false, false].
     protected List<Boolean> extend;
 
-    // radial gradient paint that is used by java for paint. 
+    // radial gradient paint that is used by java for paint.
     protected RadialGradientPaint radialGradientPaint;
 
 
-    public ShadingType3Pattern(Library library, HashMap entries) {
+    public ShadingType3Pattern(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
 
@@ -123,7 +125,7 @@ public class ShadingType3Pattern extends ShadingPattern {
 
         float t0 = domain.get(0).floatValue();
         float t1 = domain.get(1).floatValue();
-        float s[] = new float[]{0.0f, 0.25f, 0.5f, 0.75f, 1.0f};
+        float[] s = new float[]{0.0f, 0.25f, 0.5f, 0.75f, 1.0f};
 
         Point2D.Float center = new Point2D.Float(
                 ((Number) coords.get(0)).floatValue(),
@@ -137,7 +139,7 @@ public class ShadingType3Pattern extends ShadingPattern {
         float radius2 = ((Number) coords.get(5)).floatValue();
 
         // approximation, as we don't full support radial point via the paint
-        // class. 
+        // class.
         if (radius2 > radius) {
             radius = radius2;
         }
@@ -168,7 +170,7 @@ public class ShadingType3Pattern extends ShadingPattern {
             // get type 3 specific data.
             inited = true;
         } catch (Exception e) {
-            logger.finer("Failed ot initialize gradient paint type 3.");
+            logger.log(Level.WARNING, "Failed ot initialize gradient paint type 3.", e);
         }
     }
 
@@ -177,7 +179,7 @@ public class ShadingType3Pattern extends ShadingPattern {
 
         // find colour at point 1
         float t = parametrixValue(s, t0, t1, extend);
-        // find colour at point 
+        // find colour at point
         float[] input = new float[1];
         input[0] = t;
         if (function != null) {
@@ -218,6 +220,6 @@ public class ShadingType3Pattern extends ShadingPattern {
                 "\n                    domain: " + domain +
                 "\n                    coords: " + coords +
                 "\n                    extend: " + extend +
-                "\n                 function: " + function;
+                "\n                 function: " + Arrays.toString(function);
     }
 }

@@ -42,17 +42,16 @@ import java.util.Optional;
  */
 public class CaptureSetPropertyPane extends TitledPane implements EventHandler<ActionEvent> {
 
-    private Mediator mediator;
-    private Project currentProject;
+    private final Mediator mediator;
     private CaptureSet captureSet;
 
-    private TextField captureCountTextField;
-    private TextField captureSetNameTextField;
-    private ChoiceBox<CaptureSet.Type> captureSetTypes;
-    private TextField classPathTextField;
-    private ListView<String> contentList;
+    private final TextField captureCountTextField;
+    private final TextField captureSetNameTextField;
+    private final ChoiceBox<CaptureSet.Type> captureSetTypes;
+    private final TextField classPathTextField;
+    private final ListView<String> contentList;
 
-    private Button addButton;
+    private final Button addButton;
     private Button editButton;
     private Button removeButton;
 
@@ -169,16 +168,8 @@ public class CaptureSetPropertyPane extends TitledPane implements EventHandler<A
         contentList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         contentList.getSelectionModel().selectedIndexProperty().addListener(observable -> {
             List<String> selectedItems = contentList.getSelectionModel().getSelectedItems();
-            if (selectedItems.size() > 0) {
-                removeButton.setDisable(false);
-            } else {
-                removeButton.setDisable(true);
-            }
-            if (selectedItems.size() == 1) {
-                editButton.setDisable(false);
-            } else {
-                editButton.setDisable(true);
-            }
+            removeButton.setDisable(selectedItems.size() == 0);
+            editButton.setDisable(selectedItems.size() != 1);
         });
         GridPane.setMargin(contentSetLabel, labelInsets);
         GridPane.setMargin(contentList, inputInsets);
@@ -217,7 +208,6 @@ public class CaptureSetPropertyPane extends TitledPane implements EventHandler<A
     }
 
     public void setProject(Project project, CaptureSet captureSet) {
-        currentProject = project;
         this.captureSet = captureSet;
         // data injections
         if (captureSet != null) {
@@ -251,7 +241,7 @@ public class CaptureSetPropertyPane extends TitledPane implements EventHandler<A
             ContentSetSelectorDialog dialog = new ContentSetSelectorDialog(mediator, contentList.getItems());
             Optional<ObservableList<ContentSet>> result = dialog.showAndWait();
             // load the project data and enable the ui
-            result.ifPresent(contentSet -> addContent(contentSet));
+            result.ifPresent(this::addContent);
         } else if (source.equals(removeButton)) {
             List<String> selectedItems = contentList.getSelectionModel().getSelectedItems();
             contentList.getItems().removeAll(selectedItems);

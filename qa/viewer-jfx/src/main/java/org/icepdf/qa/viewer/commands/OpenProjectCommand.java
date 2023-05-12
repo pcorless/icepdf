@@ -17,7 +17,7 @@ import java.nio.file.Paths;
  */
 public class OpenProjectCommand implements EventHandler<ActionEvent>, Command {
 
-    private Mediator mediator;
+    private final Mediator mediator;
 
     public OpenProjectCommand(Mediator mediator) {
         this.mediator = mediator;

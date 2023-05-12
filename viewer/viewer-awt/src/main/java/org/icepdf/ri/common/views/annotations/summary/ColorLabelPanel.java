@@ -33,9 +33,9 @@ import java.util.List;
  */
 public class ColorLabelPanel extends JPanel implements PropertyChangeListener {
 
-    private Controller controller;
-    private DragDropColorList.ColorLabel colorLabel;
-    private DraggableAnnotationPanel draggableAnnotationPanel;
+    private final Controller controller;
+    private final DragDropColorList.ColorLabel colorLabel;
+    private final DraggableAnnotationPanel draggableAnnotationPanel;
 
     public ColorLabelPanel(Frame frame, Controller controller, DragDropColorList.ColorLabel colorLabel) {
         super();
@@ -106,17 +106,15 @@ public class ColorLabelPanel extends JPanel implements PropertyChangeListener {
         Object newValue = evt.getNewValue();
         Object oldValue = evt.getOldValue();
         String propertyName = evt.getPropertyName();
-        switch (propertyName) {
-            case PropertyConstants.ANNOTATION_SUMMARY_BOX_FONT_SIZE_CHANGE:
-                Component[] comps = draggableAnnotationPanel.getComponents();
-                Component comp;
-                for (int i = 0; i < comps.length; i++) {
-                    comp = comps[i];
-                    if (comp instanceof AnnotationSummaryBox) {
-                        ((AnnotationSummaryBox) comp).setFontSize((int) newValue);
-                    }
+        if (propertyName.equals(PropertyConstants.ANNOTATION_SUMMARY_BOX_FONT_SIZE_CHANGE)) {
+            Component[] comps = draggableAnnotationPanel.getComponents();
+            Component comp;
+            for (Component component : comps) {
+                comp = component;
+                if (comp instanceof AnnotationSummaryBox) {
+                    ((AnnotationSummaryBox) comp).setFontSize((int) newValue);
                 }
-                break;
+            }
         }
     }
 

@@ -22,7 +22,6 @@ import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -163,13 +162,12 @@ public class FieldDictionary extends Dictionary {
     protected Object defaultFieldValue;
     protected AdditionalActionsDictionary additionalActionsDictionary;
 
-    @SuppressWarnings("unchecked")
-    public FieldDictionary(Library library, HashMap entries) {
+    public FieldDictionary(Library library, DictionaryEntries entries) {
         super(library, entries);
 
         // field name
         Object value = library.getObject(entries, T_KEY);
-        if (value != null && value instanceof StringObject) {
+        if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
             partialFieldName = Utils.convertStringObject(library, text);
         } else if (value instanceof String) {
@@ -177,7 +175,7 @@ public class FieldDictionary extends Dictionary {
         }
         // alternate field name.
         value = library.getObject(entries, TU_KEY);
-        if (value != null && value instanceof StringObject) {
+        if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
             alternativeFieldName = Utils.convertStringObject(library, text);
         } else if (value instanceof String) {
@@ -185,7 +183,7 @@ public class FieldDictionary extends Dictionary {
         }
         // mapping name for data export.
         value = library.getObject(entries, TM_KEY);
-        if (value != null && value instanceof StringObject) {
+        if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
             exportMappingName = Utils.convertStringObject(library, text);
         } else if (value instanceof String) {
@@ -201,8 +199,8 @@ public class FieldDictionary extends Dictionary {
         }
 
         value = library.getObject(entries, AA_KEY);
-        if (value != null && value instanceof HashMap) {
-            additionalActionsDictionary = new AdditionalActionsDictionary(library, (HashMap)value);
+        if (value instanceof DictionaryEntries) {
+            additionalActionsDictionary = new AdditionalActionsDictionary(library, (DictionaryEntries) value);
         }
 
     }
@@ -219,18 +217,18 @@ public class FieldDictionary extends Dictionary {
         // find some kids.
         if (kids == null) {
             Object value = library.getObject(entries, KIDS_KEY);
-            if (value != null && value instanceof List) {
+            if (value instanceof List) {
                 List<Reference> children = (List<Reference>) value;
-                kids = new ArrayList(children.size());
+                kids = new ArrayList<>(children.size());
                 Object tmp;
                 for (Reference aChildren : children) {
                     tmp = library.getObject(aChildren);
                     // have a deeper structure,  shouldn't happen though or at least no examples yet.
-                    if (tmp instanceof PObject){
-                        tmp = ((PObject)tmp).getObject();
+                    if (tmp instanceof PObject) {
+                        tmp = ((PObject) tmp).getObject();
                     }
-                    if (tmp instanceof HashMap) {
-                        kids.add(FieldDictionaryFactory.buildField(library, (HashMap) tmp));
+                    if (tmp instanceof DictionaryEntries) {
+                        kids.add(FieldDictionaryFactory.buildField(library, (DictionaryEntries) tmp));
                     } else if (tmp instanceof AbstractWidgetAnnotation) {
                         kids.add(tmp);
                     }
@@ -245,11 +243,9 @@ public class FieldDictionary extends Dictionary {
         // if the widget annotation and dictionary have been flattened.
         if (parentField == null) {
             Object value = library.getObject(entries, PARENT_KEY);
-            if (value instanceof HashMap) {
-                parentField = FieldDictionaryFactory.buildField(library, (HashMap) value);
-                if (parentField != null) {
-                    parentField.setPObjectReference((Reference) entries.get(PARENT_KEY));
-                }
+            if (value instanceof DictionaryEntries) {
+                parentField = FieldDictionaryFactory.buildField(library, (DictionaryEntries) value);
+                parentField.setPObjectReference((Reference) entries.get(PARENT_KEY));
             }
         }
         return parentField;
@@ -258,9 +254,9 @@ public class FieldDictionary extends Dictionary {
     public Name getFieldType() {
         // get teh field type.
         if (fieldType == null) {
-            Object value = library.getName(entries, FT_KEY);
+            Name value = library.getName(entries, FT_KEY);
             if (value != null) {
-                fieldType = (Name) value;
+                fieldType = value;
             } else {
                 if (getParent() != null) {
                     fieldType = parentField.getFieldType();

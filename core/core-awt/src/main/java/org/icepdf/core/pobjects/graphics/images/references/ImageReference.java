@@ -84,7 +84,7 @@ public abstract class ImageReference implements Callable<BufferedImage> {
         if (image != null) {
             try {
                 aG.drawImage(image, aX, aY, aW, aH, null);
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 logger.warning("There was a problem painting image, falling back to scaled instance " +
                         imageStream.getPObjectReference() +
                         "(" + imageStream.getImageParams().getWidth() + "x" + imageStream.getImageParams().getHeight() + ")");
@@ -127,7 +127,7 @@ public abstract class ImageReference implements Callable<BufferedImage> {
             logger.fine("Image loading interrupted");
             throw new InterruptedException(e.getMessage());
         } catch (Exception e) {
-            logger.log(Level.FINE, "Image loading execution exception", e);
+            logger.log(Level.WARNING, "Image loading execution exception", e);
         }
         return image;
     }

@@ -75,12 +75,12 @@ public class ResizableBorder extends AbstractBorder {
         }
     }
 
-    private static final int locations[] = {
+    private static final int[] locations = {
             SwingConstants.NORTH, SwingConstants.SOUTH, SwingConstants.WEST,
             SwingConstants.EAST, SwingConstants.NORTH_WEST,
             SwingConstants.NORTH_EAST, SwingConstants.SOUTH_WEST,
             SwingConstants.SOUTH_EAST};
-    private static final int cursors[] = {
+    private static final int[] cursors = {
             Cursor.N_RESIZE_CURSOR, Cursor.S_RESIZE_CURSOR, Cursor.W_RESIZE_CURSOR,
             Cursor.E_RESIZE_CURSOR, Cursor.NW_RESIZE_CURSOR, Cursor.NE_RESIZE_CURSOR,
             Cursor.SW_RESIZE_CURSOR, Cursor.SE_RESIZE_CURSOR};
@@ -129,7 +129,6 @@ public class ResizableBorder extends AbstractBorder {
 
             isEditable = annot.isEditable();
             isRollover = annot.isRollover();
-            isMovable = annot.isMovable();
             isResizable = annot.isResizable();
             isShowInvisibleBorder = annot.isShowInvisibleBorder();
         }
@@ -222,7 +221,7 @@ public class ResizableBorder extends AbstractBorder {
         if (isMovable) {
             return Cursor.MOVE_CURSOR;
         }
-        // other wise just show the move. 
+        // other wise just show the move.
         return Cursor.DEFAULT_CURSOR;
     }
 }

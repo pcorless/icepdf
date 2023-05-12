@@ -45,11 +45,11 @@ public class DocumentSearchModelImpl {
 
     // cache to detect page dispose/initialize cycle so that we can research when
     // needed.
-    private Map<Integer, WeakReference<PageText>> searchResultCache;
+    private final Map<Integer, WeakReference<PageText>> searchResultCache;
 
     // list of terms that made up the full search, usually just one, but
     // you never know.
-    private ArrayList<SearchTerm> searchTerms;
+    private final ArrayList<SearchTerm> searchTerms;
 
     //cursor for next/previous word
     private int searchPageCursor = -1;
@@ -182,7 +182,7 @@ public class DocumentSearchModelImpl {
      * @param page page index to clear search results from.
      */
     public void clearSearchResults(int page) {
-        // clear highlighted state for this page index. 
+        // clear highlighted state for this page index.
         WeakReference<PageText> pageReference = searchResultCache.get(page);
         if (pageReference != null) {
             PageText currentPageText = pageReference.get();

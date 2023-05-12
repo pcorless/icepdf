@@ -87,7 +87,7 @@ public class PDate {
     private static final String DATE_PREFIX = "D:";
 
     // Month Names, 1 indexed based
-    private static String[] monthNames = {"",
+    private static final String[] monthNames = {"",
             "January",
             "February",
             "March",
@@ -267,7 +267,7 @@ public class PDate {
                 else {
                     sb.append(" (UTC ").append(timeZoneOffset);
                     if (timeZoneHour.length() > 0)
-                        sb.append("").append(timeZoneHour);
+                        sb.append(timeZoneHour);
                     if (timeZoneMinute.length() > 0)
                         sb.append(":").append(timeZoneMinute);
                     sb.append(")");
@@ -366,7 +366,7 @@ public class PDate {
 
         // total offset count
         int totalOffset = 0;
-        int currentOffset = 0;
+        int currentOffset;
 
         // start peeling of values from string
         if (totalOffset + OFFSET_YYYY <= date.length()) {
@@ -467,12 +467,12 @@ public class PDate {
             if (offsetHour < 10) {
                 sb.append('0');
             }
-            sb.append(Integer.toString(offsetHour));
+            sb.append(offsetHour);
             sb.append('\'');
             if (offsetMinutes < 10) {
                 sb.append('0');
             }
-            sb.append(Integer.toString(offsetMinutes));
+            sb.append(offsetMinutes);
             sb.append('\'');
         }
         return sb.toString();

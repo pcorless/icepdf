@@ -65,9 +65,6 @@ public abstract class AbstractChoiceComponent extends AbstractAnnotationComponen
     }
 
     @Override
-    public abstract void validate();
-
-    @Override
     public void dispose() {
         super.dispose();
         KeyboardFocusManager focusManager =

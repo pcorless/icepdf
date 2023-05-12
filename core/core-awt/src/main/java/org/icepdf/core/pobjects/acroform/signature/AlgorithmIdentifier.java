@@ -83,11 +83,10 @@ public class AlgorithmIdentifier {
      * @param algorithm algorithm reference number as a string.
      * @param provider  provider, optional, can be null.
      * @return message digest
-     * @throws NoSuchProviderException  provider could not be found associated with a MD.
-     * @throws NoSuchAlgorithmException algorithm could not be found associated with a MD.
+     * @throws NoSuchAlgorithmException algorithm could not be found associated with an MD.
      */
     public static MessageDigest getDigestInstance(String algorithm, String provider)
-            throws NoSuchProviderException, NoSuchAlgorithmException {
+            throws NoSuchAlgorithmException {
         if (provider != null) {
             try {
                 return MessageDigest.getInstance(algorithm, provider);

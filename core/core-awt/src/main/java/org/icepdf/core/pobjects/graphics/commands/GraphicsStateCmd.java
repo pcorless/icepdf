@@ -32,7 +32,7 @@ import java.awt.geom.AffineTransform;
  */
 public class GraphicsStateCmd extends AbstractDrawCmd {
 
-    private Name graphicStateName;
+    private final Name graphicStateName;
 
     public GraphicsStateCmd(Name graphicStateName) {
         this.graphicStateName = graphicStateName;

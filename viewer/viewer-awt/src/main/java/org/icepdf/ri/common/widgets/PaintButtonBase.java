@@ -28,8 +28,8 @@ public class PaintButtonBase {
     protected Color color = Color.YELLOW;
     protected Shape colorBound;
     protected float alpha = 0.35f;
-    protected float alphaDisabled = 0.10f;
-    protected AbstractButton button;
+    protected final float alphaDisabled = 0.10f;
+    protected final AbstractButton button;
     protected boolean fill = true;
     protected boolean back = true;
 

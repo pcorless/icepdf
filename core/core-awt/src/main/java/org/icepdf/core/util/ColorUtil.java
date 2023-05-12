@@ -186,7 +186,7 @@ public class ColorUtil {
      * @return name of converted string, the same name is returned if their was
      *         a conversion failure.
      */
-    public static final String convertColorNameToRGB(String name) {
+    public static String convertColorNameToRGB(String name) {
         int c = convertNamedColor(name.toLowerCase());
         if (c >= 0) {
             //int rgb = c.getRGB();
@@ -209,7 +209,7 @@ public class ColorUtil {
      * @return name of converted string, the same name is returned if their was
      *         a conversion failure.
      */
-    public static final String convertColorToRGB(Color color) {
+    public static String convertColorToRGB(Color color) {
         int c = color.getRGB();
         return String.format("#%06X", (0xFFFFFF & c));
     }
@@ -243,7 +243,7 @@ public class ColorUtil {
      * @return integer &gt;= 0 if named colour was converted successfully, -1
      *         otherwise.
      */
-    public static final int convertNamedColor(String name) {
+    public static int convertNamedColor(String name) {
         int index = getDefaultColorIndex(name);
 
         if (index >= 0) {
@@ -260,7 +260,7 @@ public class ColorUtil {
         //return (index >= 0) ? defaultColors[index] : ((Integer)colors.get(name)).intValue();
     }
 
-    private static final int getDefaultColorIndex(String s) {
+    private static int getDefaultColorIndex(String s) {
         int id;
         final int
 // #string_id_map#
@@ -489,14 +489,9 @@ public class ColorUtil {
                             break L;
                         case 'y':
                             c = s.charAt(2);
-                            if (c == 'a') {
+                            if (c == 'a' || c == 'e') {
                                 if (s.charAt(0) == 'g' && s.charAt(1) == 'r') {
                                     id = Id_gray;
-                                    break L0;
-                                }
-                            } else if (c == 'e') {
-                                if (s.charAt(0) == 'g' && s.charAt(1) == 'r') {
-                                    id = Id_grey;
                                     break L0;
                                 }
                             } else if (c == 'v') {
@@ -1128,7 +1123,7 @@ public class ColorUtil {
                     id = Id_lightgoldenrodyellow;
                     break;
             }
-            if (X != null && X != s && !X.equals(s)) id = 0;
+            if (X != null && !X.equals(s)) id = 0;
         }
 // #/generated#
 // #/string_id_map#

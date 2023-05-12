@@ -36,13 +36,13 @@ import java.awt.geom.Rectangle2D;
 public abstract class AbstractText implements Text {
 
     // Bounds of text converted to page space.
-    protected Rectangle2D.Float bounds;
+    protected Rectangle2D.Double bounds;
 
     // original bounds as plotted by the PDF,  can be used for space and
     // line break detection.  Once normalized to page space (bounds instance var)
-    // it may not be possible to make the formatting detection.  However normalized
+    // it may not be possible to make the formatting detection.  However, normalized
     // bounds are used for text selection.
-    protected Rectangle2D.Float textExtractionBounds;
+    protected Rectangle2D.Double textExtractionBounds;
 
     // selected states
     protected boolean selected;
@@ -64,7 +64,7 @@ public abstract class AbstractText implements Text {
      *
      * @return bounds of text object.
      */
-    public abstract Rectangle2D.Float getBounds();
+    public abstract Rectangle2D.Double getBounds();
 
     public void clearBounds() {
         bounds = null;
@@ -109,7 +109,7 @@ public abstract class AbstractText implements Text {
     }
 
     /**
-     * Sets the AbstractText as selected, if it child AbstractText object they
+     * Sets the AbstractText as selected, if its child AbstractText object they
      * must also be selected.
      *
      * @param selected selected state.
@@ -145,7 +145,7 @@ public abstract class AbstractText implements Text {
     }
 
     /**
-     * Sets the AbstractText as highlighted, if it child AbstractText object they
+     * Sets the AbstractText as highlighted, if its child AbstractText object they
      * must also be highlighted.
      *
      * @param highlight selected state.
@@ -180,7 +180,7 @@ public abstract class AbstractText implements Text {
      * Set the highlighted state, meaning that this instance or one of the child
      * AbstractText objects has a highlighted state.
      *
-     * @param hasHighlight true to indicates a highlighted states.
+     * @param hasHighlight true to indicate a highlighted states.
      */
     public void setHasHighlight(boolean hasHighlight) {
         this.hasHighlight = hasHighlight;
@@ -190,7 +190,7 @@ public abstract class AbstractText implements Text {
      * Set the selected state, meaning that this instance or one of the child
      * AbstractText objects has a selected state.
      *
-     * @param hasSelected true to indicates a selected states.
+     * @param hasSelected true to indicate a selected states.
      */
     public void setHasSelected(boolean hasSelected) {
         this.hasSelected = hasSelected;
@@ -220,7 +220,7 @@ public abstract class AbstractText implements Text {
      *
      * @return text bounds.
      */
-    public Rectangle2D.Float getTextExtractionBounds() {
+    public Rectangle2D.Double getTextExtractionBounds() {
         return textExtractionBounds;
     }
 }

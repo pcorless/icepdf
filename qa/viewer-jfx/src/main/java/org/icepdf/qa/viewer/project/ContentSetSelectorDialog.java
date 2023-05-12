@@ -17,7 +17,7 @@ import java.util.List;
  */
 public class ContentSetSelectorDialog extends AbstractDialog<ObservableList<ContentSet>> {
 
-    private ListView<ContentSet> contentList;
+    private final ListView<ContentSet> contentList;
 
     public ContentSetSelectorDialog(Mediator mediator, List<String> selectedContent) {
         super(mediator);

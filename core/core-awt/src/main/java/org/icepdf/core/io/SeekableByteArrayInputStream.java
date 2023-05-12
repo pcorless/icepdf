@@ -29,16 +29,16 @@ public class SeekableByteArrayInputStream extends ByteArrayInputStream implement
     private static final Logger log =
             Logger.getLogger(SeekableByteArrayInputStream.class.toString());
 
-    private int m_iBeginningOffset;
+    private final int m_iBeginningOffset;
 
     private final ReentrantLock lock = new ReentrantLock();
 
-    public SeekableByteArrayInputStream(byte buf[]) {
+    public SeekableByteArrayInputStream(byte[] buf) {
         super(buf);
         m_iBeginningOffset = 0;
     }
 
-    public SeekableByteArrayInputStream(byte buf[], int offset, int length) {
+    public SeekableByteArrayInputStream(byte[] buf, int offset, int length) {
         super(buf, offset, length);
         m_iBeginningOffset = offset;
     }
@@ -66,13 +66,11 @@ public class SeekableByteArrayInputStream extends ByteArrayInputStream implement
     }
 
     public long getAbsolutePosition() {
-        int absPos = pos - m_iBeginningOffset;
-        return (((long) absPos));
+        return pos - m_iBeginningOffset;
     }
 
     public long getLength() {
-        int len = count - m_iBeginningOffset;
-        return (((long) len));
+        return count - m_iBeginningOffset;
     }
 
     public InputStream getInputStream() {

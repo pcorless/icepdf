@@ -3,11 +3,11 @@ package org.icepdf.core.util.updater.writeables;
 import org.icepdf.core.io.CountingOutputStream;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.security.SecurityManager;
+import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -23,7 +23,7 @@ public class BaseWriter {
     protected static final byte[] REFERENCE = "R".getBytes();
 
     protected static final byte[] BEGIN_OBJECT = "obj\r\n".getBytes();
-    protected static final byte[] END_OBJECT = "\r\nendobj\r\n".getBytes();
+    protected static final byte[] END_OBJECT = "endobj\r\n".getBytes();
 
     private static NameWriter nameWriter;
     private static DictionaryWriter dictionaryWriter;
@@ -41,7 +41,7 @@ public class BaseWriter {
 
     private CountingOutputStream output;
     private SecurityManager securityManager;
-    private PTrailer trailer;
+    private CrossReferenceRoot crossReferenceRoot;
     private long startingPosition;
     private List<Entry> entries;
     private long xrefPosition;
@@ -50,10 +50,10 @@ public class BaseWriter {
 
     }
 
-    public BaseWriter(PTrailer trailer, SecurityManager securityManager, CountingOutputStream output,
+    public BaseWriter(CrossReferenceRoot crossReferenceRoot, SecurityManager securityManager, CountingOutputStream output,
                       long startingPosition) {
         this.output = output;
-        this.trailer = trailer;
+        this.crossReferenceRoot = crossReferenceRoot;
         this.securityManager = securityManager;
         this.startingPosition = startingPosition;
         entries = new ArrayList<>(256);
@@ -100,11 +100,11 @@ public class BaseWriter {
     }
 
     public void writeTrailer() throws IOException {
-        trailerWriter.writeTrailer(trailer, xrefPosition, entries, output);
+        trailerWriter.writeTrailer(crossReferenceRoot, xrefPosition, entries, output);
     }
 
     public void writeCompressedXrefTable() throws IOException {
-        compressedXrefTableWriter.writeCompressedXrefTable(trailer, securityManager, entries, startingPosition, output);
+        compressedXrefTableWriter.writeCompressedXrefTable(crossReferenceRoot, securityManager, entries, startingPosition, output);
     }
 
     public void writeNewLine() throws IOException {
@@ -133,11 +133,12 @@ public class BaseWriter {
         } else if (val instanceof HexStringObject) {
             hexStringObjectWriter.write((HexStringObject) val, output);
         } else if (val instanceof List) {
-            arrayWriter.write((List) val, output);
+            //noinspection unchecked
+            arrayWriter.write((List<Object>) val, output);
         } else if (val instanceof Dictionary) {
             writeDictionary((Dictionary) val, output);
-        } else if (val instanceof HashMap) {
-            dictionaryWriter.write((HashMap) val, output);
+        } else if (val instanceof DictionaryEntries) {
+            dictionaryWriter.write((DictionaryEntries) val, output);
         } else if (val instanceof AffineTransform) {
             affineTransformWriter.write((AffineTransform) val, output);
         } else {

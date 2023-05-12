@@ -2,10 +2,10 @@ package org.icepdf.core.util.updater.writeables;
 
 import org.icepdf.core.io.CountingOutputStream;
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Set;
 
 public class DictionaryWriter extends BaseWriter {
@@ -15,16 +15,16 @@ public class DictionaryWriter extends BaseWriter {
 
 
     public void write(Dictionary dictionary, CountingOutputStream output) throws IOException {
-        HashMap<Object, Object> dictEntries = dictionary.getEntries();
+        DictionaryEntries dictEntries = dictionary.getEntries();
         write(dictEntries, output);
     }
 
-    public void write(HashMap<Object, Object> dictEntries, CountingOutputStream output) throws IOException {
+    public void write(DictionaryEntries dictEntries, CountingOutputStream output) throws IOException {
         output.write(BEGIN_DICTIONARY);
-        Set<Object> keys = dictEntries.keySet();
-        for (Object key : keys) {
+        Set<Name> keys = dictEntries.keySet();
+        for (Name key : keys) {
             Object val = dictEntries.get(key);
-            writeName((Name) key, output);
+            writeName(key, output);
             output.write(SPACE);
             writeValue(val, output);
             output.write(SPACE);

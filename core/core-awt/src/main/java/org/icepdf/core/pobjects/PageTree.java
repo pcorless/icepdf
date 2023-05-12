@@ -85,7 +85,7 @@ public class PageTree extends Dictionary {
      * @param l document library.
      * @param h PageTree dictionary entries.
      */
-    public PageTree(Library l, HashMap h) {
+    public PageTree(Library l, DictionaryEntries h) {
         super(l, h);
     }
 
@@ -305,8 +305,8 @@ public class PageTree extends Dictionary {
                 globalIndexSoFar += numChildPages;
             }
             // corner case where pages didn't have "pages" key.
-            else if (pageOrPages instanceof HashMap) {
-                HashMap dictionary = (HashMap) pageOrPages;
+            else if (pageOrPages instanceof DictionaryEntries) {
+                DictionaryEntries dictionary = (DictionaryEntries) pageOrPages;
                 if (dictionary.containsKey(new Name("Kids"))) {
                     PageTree childPageTree = new PageTree(library, dictionary);
                     childPageTree.init();

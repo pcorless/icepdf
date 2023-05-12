@@ -32,9 +32,9 @@ import java.awt.event.MouseWheelListener;
  * @since 2.0
  */
 public class MouseWheelListenerPageChanger implements MouseWheelListener {
-    private org.icepdf.ri.common.views.Controller controller;
-    private JScrollPane scrollpane;
-    private AbstractDocumentView documentView;
+    private final org.icepdf.ri.common.views.Controller controller;
+    private final JScrollPane scrollpane;
+    private final AbstractDocumentView documentView;
 
     /**
      * KeyEvents can queue up, if the user holds down a key,
@@ -71,8 +71,7 @@ public class MouseWheelListenerPageChanger implements MouseWheelListener {
     }
 
     public static void uninstall(JScrollPane scrollpane, Object listener) {
-        if (scrollpane != null && listener != null &&
-                listener instanceof MouseWheelListenerPageChanger) {
+        if (scrollpane != null && listener instanceof MouseWheelListenerPageChanger) {
             scrollpane.removeMouseWheelListener((MouseWheelListenerPageChanger) listener);
         }
     }
@@ -89,7 +88,7 @@ public class MouseWheelListenerPageChanger implements MouseWheelListener {
                         : null;
 
         // Scrolling down but only if the ctrl mask isn't present.
-        if (!((e.getModifiers() & InputEvent.CTRL_MASK) == InputEvent.CTRL_MASK ||
+        if (!((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) == InputEvent.CTRL_DOWN_MASK ||
                 documentView.getCurrentToolHandler() instanceof DynamicZoomHandler)) {
             int amount = e.getScrollAmount();
             int rotation = e.getWheelRotation();

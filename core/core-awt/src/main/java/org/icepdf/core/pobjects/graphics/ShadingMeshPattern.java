@@ -1,6 +1,7 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.io.BitStream;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.functions.Function;
@@ -10,7 +11,6 @@ import org.icepdf.core.util.Library;
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**
@@ -35,24 +35,24 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
     // (Required) The number of bits used to represent the edge flag for each vertex (see below). The value of
     // BitsPerFlag shall be 2, 4, or 8, but only the least significant 2 bits in each flag value shall be used.
     // The value for the edge flag shall be 0, 1, or 2.
-    protected int bitsPerFlag;
+    protected final int bitsPerFlag;
     // (Required) The number of bits used to represent each vertex coordinate.
     // The value shall be 1, 2, 4, 8, 12, 16, 24, or 32.
-    protected int bitsPerCoordinate;
+    protected final int bitsPerCoordinate;
     // (Required) The number of bits used to represent each colour component.
     // The value shall be 1, 2, 4, 8, 12, or 16.
-    protected int bitsPerComponent;
+    protected final int bitsPerComponent;
     // colour space component count.
-    protected int colorSpaceCompCount;
+    protected final int colorSpaceCompCount;
 
     // vertex data
-    protected BitStream vertexBitStream;
-    protected Stream meshDataStream;
+    protected final BitStream vertexBitStream;
+    protected final Stream meshDataStream;
 
     // converted decode data to simply process later on, taken from our DecodeRasterOp class.
-    protected float[] decode;
+    protected final float[] decode;
 
-    public ShadingMeshPattern(Library l, HashMap h, Stream meshDataStream) {
+    public ShadingMeshPattern(Library l, DictionaryEntries h, Stream meshDataStream) {
         super(l, h);
         this.meshDataStream = meshDataStream;
         shadingDictionary = meshDataStream.getEntries();
@@ -80,7 +80,7 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
         vertexBitStream = new BitStream(meshDataStream.getDecodedByteArrayInputStream());
     }
 
-    public abstract Paint getPaint() throws InterruptedException;
+    public abstract Paint getPaint();
 
     /**
      * An array of numbers specifying how to map vertex coordinates and colour components into the

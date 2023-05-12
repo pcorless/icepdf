@@ -20,6 +20,8 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.ri.common.UndoCaretaker;
+import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.PageViewAnnotationComponent;
 
 import javax.swing.*;
 import java.awt.*;
@@ -45,17 +47,20 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
             Logger.getLogger(AbstractDocumentViewModel.class.toString());
 
     // document that model is associated.
-    protected Document currentDocument;
+    protected final Document currentDocument;
+
+    protected DocumentView documentView;
 
     // Pages that have selected text.
     private HashMap<Integer, AbstractPageViewComponent> selectedPageText;
     // select all state flag, optimization for painting select all state lazily
     private boolean selectAll;
     protected List<AbstractPageViewComponent> pageComponents;
+    protected HashMap<AbstractPageViewComponent, ArrayList<PageViewAnnotationComponent>> documentViewAnnotationComponents;
     // scroll pane used to contain the view
     protected JScrollPane documentViewScrollPane;
     // annotation memento caretaker
-    protected UndoCaretaker undoCaretaker;
+    protected final UndoCaretaker undoCaretaker;
     // currently selected annotation
     protected AnnotationComponent currentAnnotation;
     // page view settings
@@ -66,7 +71,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     // page tool settings
     protected int userToolModeFlag, oldUserToolModeFlag;
 
-    // 10 pages doesn't take to long to look at, any more and people will notice
+    // 10 pages doesn't take to long to look at, anymore and people will notice
     // the rest of the page sizes will be figured out later.
     protected static final int MAX_PAGE_SIZE_READ_AHEAD = 10;
 
@@ -74,6 +79,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         this.currentDocument = currentDocument;
         // create new instance of the undoCaretaker
         undoCaretaker = new UndoCaretaker();
+        documentViewAnnotationComponents = new HashMap<>();
     }
 
     protected abstract AbstractPageViewComponent buildPageViewComponent(DocumentViewModel documentViewModel,
@@ -86,6 +92,43 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     public List<AbstractPageViewComponent> getPageComponents() {
         return pageComponents;
+    }
+
+
+    public HashMap<AbstractPageViewComponent, ArrayList<PageViewAnnotationComponent>> getDocumentViewAnnotationComponents() {
+        return documentViewAnnotationComponents;
+    }
+    @Override
+    public ArrayList<PageViewAnnotationComponent> getDocumentViewAnnotationComponents(AbstractPageViewComponent pageViewComponent) {
+        return documentViewAnnotationComponents.get(pageViewComponent);
+    }
+
+    @Override
+    public void addDocumentViewAnnotationComponent(AbstractPageViewComponent pageViewComponent, PageViewAnnotationComponent annotationComponent) {
+        if (!documentViewAnnotationComponents.containsKey(pageViewComponent)) {
+            documentViewAnnotationComponents.put(pageViewComponent, new ArrayList<>());
+        }
+        List<PageViewAnnotationComponent> components = documentViewAnnotationComponents.get(pageViewComponent);
+        components.add(annotationComponent);
+    }
+
+    @Override
+    public void removeDocumentViewAnnotationComponent(AbstractPageViewComponent pageViewComponent, PageViewAnnotationComponent annotationComponent) {
+        if (!documentViewAnnotationComponents.containsKey(pageViewComponent)) {
+            List<PageViewAnnotationComponent> components = documentViewAnnotationComponents.get(pageViewComponent);
+            components.remove(annotationComponent);
+        }
+    }
+
+    public void removeAllFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent) {
+        if (!documentViewAnnotationComponents.containsKey(pageViewComponent)) {
+            documentViewAnnotationComponents.remove(pageViewComponent);
+        }
+    }
+
+    //todo clean up name and why this isn't called.
+    public void removeFloatingAnnotationComponent(AbstractAnnotationComponent annotationComponent) {
+        documentViewAnnotationComponents.remove(annotationComponent);
     }
 
     public boolean setViewCurrentPageIndex(int pageIndex) {
@@ -101,8 +144,8 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     /**
      * Gets the list of components that have a selected state.  The
-     * WeakReference must be check to make sure the page was not disposed of
-     * for for some reason by the the memory manager.
+     * WeakReference must be checked to make sure the page was not disposed of
+     * for some reason by the memory manager.
      *
      * @return list of pages that are in a selected state.
      */
@@ -133,7 +176,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
      * document text is all selected; otherwise, false. This is only a flag
      * and must be interpreted by the pages and page view components.
      *
-     * @param selectAll to to specify all text is selected, false to specify
+     * @param selectAll to specify all text is selected, false to specify
      *                  no text is selected
      */
     public void setSelectAll(boolean selectAll) {
@@ -142,7 +185,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     /**
      * Adds the specified page to selected page cache.  No checking is done
-     * to make sure of selected text.  The caches is used as an optimization
+     * to make sure of selected text.  The caches are used as an optimization
      * to make sure selected text can be cleared quickly.
      *
      * @param pageComponent pageView component to add to list.
@@ -156,7 +199,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     /**
      * Removes the specified page to selected page cache.  No checking is done
-     * to make sure of selected text.  The caches is used as an optimization
+     * to make sure of selected text.  The caches are used as an optimization
      * to make sure selected text can be cleared quickly.
      *
      * @param pageComponent pageView component to add to list.
@@ -253,21 +296,14 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     }
 
     public Rectangle getPageBounds(int pageIndex) {
-        Rectangle pageBounds = new Rectangle();
         if (pageComponents != null && pageIndex < pageComponents.size()) {
             Component pageViewComponentImpl = pageComponents.get(pageIndex);
-            if (pageViewComponentImpl != null) {
-                Component parentComponent = pageViewComponentImpl;
-                Dimension size = pageViewComponentImpl.getPreferredSize();
-                pageBounds.setSize(size.width, size.height);
-                while (parentComponent != null && !(parentComponent instanceof DocumentView)) {
-                    pageBounds.x += parentComponent.getBounds().x;
-                    pageBounds.y += parentComponent.getBounds().y;
-                    parentComponent = parentComponent.getParent();
-                }
+            if (pageViewComponentImpl != null && pageViewComponentImpl.getParent() != null) {
+                Rectangle pageBounds = pageViewComponentImpl.getParent().getBounds();
+                return pageBounds;
             }
         }
-        return pageBounds;
+        return new Rectangle();
     }
 
     public void dispose() {
@@ -279,6 +315,9 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
                 }
             }
             pageComponents.clear();
+        }
+        if (documentViewAnnotationComponents != null) {
+            documentViewAnnotationComponents.clear();
         }
     }
 
@@ -308,6 +347,14 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         if (this.currentAnnotation != null) {
             this.currentAnnotation.setSelected(true);
         }
+    }
+
+    public DocumentView getDocumentView() {
+        return documentView;
+    }
+
+    public void setDocumentView(DocumentView documentView) {
+        this.documentView = documentView;
     }
 
     /**

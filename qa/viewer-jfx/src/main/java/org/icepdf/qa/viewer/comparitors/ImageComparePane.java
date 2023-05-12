@@ -93,7 +93,7 @@ public class ImageComparePane extends ComparatorPane {
             enableBlendingMode();
 
 
-        } catch (Throwable e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

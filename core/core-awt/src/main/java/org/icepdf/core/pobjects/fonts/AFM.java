@@ -48,7 +48,7 @@ public class AFM {
     public static final int SYMBOL = 13;
 
 
-    public static String[] AFMnames = {
+    public static final String[] AFMnames = {
             "Courier.afm",
             "Courier-Bold.afm",
             "Courier-Oblique.afm",
@@ -135,7 +135,7 @@ public class AFM {
      * Bit Position    name    Meaning
      */
 
-    private static int[] AFMFlags = {
+    private static final int[] AFMFlags = {
             35, //  0x100011   "Courier.afm",
             35, //  0x100011   "Courier-Bold.afm",
             99, //  0x1100011  "Courier-Oblique.afm",
@@ -162,8 +162,8 @@ public class AFM {
     private String fontName;
     private String familyName;
     private String fullName;
-    private float[] widths = new float[255];
-    private int[] fontBBox = new int[4];
+    private final float[] widths = new float[255];
+    private final int[] fontBBox = new int[4];
     private float italicAngle = 0;
     private float maxWidth = 0;
     private int avgWidth = 0;
@@ -278,7 +278,7 @@ public class AFM {
                 fontBBox[2] = Integer.parseInt(st.nextToken());
                 fontBBox[3] = Integer.parseInt(st.nextToken());
             } else if (s1.equalsIgnoreCase("ItalicAngle")) {
-                italicAngle = new Float(st.nextToken());
+                italicAngle = Float.parseFloat(st.nextToken());
             }
             // font width data
             else if (s1.equalsIgnoreCase("C")) {

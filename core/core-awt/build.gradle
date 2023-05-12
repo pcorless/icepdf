@@ -10,15 +10,14 @@ repositories {
 
 dependencies {
     // signature validation.
-    implementation 'org.bouncycastle:bcprov-jdk15on:' + "${BOUNCY_VERSION}"
     implementation 'org.bouncycastle:bcprov-ext-jdk15on:' + "${BOUNCY_VERSION}"
     implementation 'org.bouncycastle:bcpkix-jdk15on:' + "${BOUNCY_VERSION}"
     // tiff, jpeg2000 and jbig decoding
     implementation 'com.twelvemonkeys.imageio:imageio-tiff:'  + "${MONKEY_VERSION}"
-    implementation 'com.github.jai-imageio:jai-imageio-jpeg2000:' + "${JAI_VERSION}"
     implementation 'org.apache.pdfbox:jbig2-imageio:' + "${JBIG2_VERSION}"
     implementation 'org.apache.pdfbox:fontbox:' + "${FONT_BOX_VERSION}"
     implementation 'commons-logging:commons-logging:1.2'
+    runtimeOnly 'com.github.jai-imageio:jai-imageio-jpeg2000:' + "${JAI_VERSION}"
 }
 
 // generatePomFileForCoreJarPublication
@@ -35,11 +34,11 @@ publishing {
                     asNode().appendNode('url', 'https://github.com/pcorless/icepdf')
                     asNode().appendNode('scm')
                             .appendNode('connection', 'scm:git:https://github.com/pcorless/icepdf').parent()
-                            .appendNode('url', 'http://www.apache.org/licenses/LICENSE-2.0.txt').parent()
+                            .appendNode('url', 'https://www.apache.org/licenses/LICENSE-2.0.txt').parent()
                             .appendNode('tag', 'icepdf-' + version + '-maven')
                     asNode().appendNode('licenses').appendNode('license').with {
                         appendNode('name', 'Apache License, Version 2.0')
-                        appendNode('url', 'http://www.apache.org/licenses/LICENSE-2.0.html')
+                        appendNode('url', 'https://www.apache.org/licenses/LICENSE-2.0.html')
                         appendNode('distribution', 'repo')
                     }
                     asNode().appendNode('issueManagement').with {

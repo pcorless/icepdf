@@ -25,7 +25,7 @@ import java.io.File;
  */
 public abstract class FileDropHandler {
 
-    private String extension;
+    private final String extension;
 
     public FileDropHandler(String fileExtension) {
         this.extension = fileExtension.toLowerCase();

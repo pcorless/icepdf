@@ -31,17 +31,16 @@ public class ScalablePasswordField extends JPasswordField implements ScalableFie
 
 
     private static final long serialVersionUID = 3832310978215996618L;
-    private DocumentViewModel documentViewModel;
     private boolean active;
 
     public ScalablePasswordField(final DocumentViewModel documentViewModel) {
         super();
-        this.documentViewModel = documentViewModel;
         // enable more precise painting of glyphs.
         getDocument().putProperty("i18n", Boolean.TRUE.toString());
         putClientProperty("i18n", Boolean.TRUE.toString());
-        LayerUI<JComponent> layerUI = new LayerUI<JComponent>() {
+        LayerUI<JComponent> layerUI = new LayerUI<>() {
             private static final long serialVersionUID = 1155416379916442519L;
+
             @SuppressWarnings("unchecked")
             @Override
             public void installUI(JComponent c) {
@@ -65,7 +64,7 @@ public class ScalablePasswordField extends JPasswordField implements ScalableFie
                 // transform the point in MouseEvent using the current zoom factor
                 float zoom = documentViewModel.getViewZoom();
                 MouseEvent newEvent = new MouseEvent((Component) e.getSource(),
-                        e.getID(), e.getWhen(), e.getModifiers(),
+                        e.getID(), e.getWhen(), e.getModifiersEx(),
                         (int) (e.getX() / zoom), (int) (e.getY() / zoom),
                         e.getClickCount(), e.isPopupTrigger(), e.getButton());
                 // consume the MouseEvent and then process the modified event

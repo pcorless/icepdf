@@ -16,12 +16,12 @@
 
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.color.ColorSpace;
-import java.util.HashMap;
 
 /**
  * A CalGray colour space (PDF 1.1) is a special case of a single-component
@@ -40,14 +40,14 @@ public class CalGray extends PColorSpace {
     public static final Name MATRIX_KEY = new Name("Matrix");
     public static final Name CAL_GRAY_KEY = new Name("CalGray");
 
-    private static ColorSpace grayCS = ColorSpace.getInstance(ColorSpace.CS_GRAY);
+    private static final ColorSpace grayCS = ColorSpace.getInstance(ColorSpace.CS_GRAY);
 
-    protected float[] whitepoint = {
+    protected final float[] whitepoint = {
             1, 1, 1
     };
     protected float gamma = 1.0f;
 
-    public CalGray(Library l, HashMap h) {
+    public CalGray(Library l, DictionaryEntries h) {
         super(l, h);
 
         java.util.List m = (java.util.List) h.get(WHITE_POINT_KEY);
@@ -89,8 +89,7 @@ public class CalGray extends PColorSpace {
         if (Z > 1) {
             Z = 1;
         }
-        Color tmp = new Color(grayCS, new float[]{Z, Y, Z}, 1.0f);
-        return tmp;
+        return new Color(grayCS, new float[]{Z, Y, Z}, 1.0f);
     }
 
     @Override

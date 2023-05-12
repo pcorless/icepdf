@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.fonts.ofont;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Stream;
@@ -75,7 +76,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
     private HashMap<Integer, Float> cidWidths;
 
     // Base character mapping of 256 chars
-    private char[] cMap;
+    private final char[] cMap;
 
     // ToUnicode CMap object stores any mapping information
     private CMap toUnicodeCMap;
@@ -84,14 +85,14 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
     protected AFM afm;
 
     // awt font style reference, ITALIC or BOLD|ITALIC
-    protected int style;
+    protected final int style;
 
     // get list of all available fonts.
     private static final java.awt.Font[] fonts =
             GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
 
     // Array of type1 font differences based on family names.
-    static final String type1Diff[][] =
+    static final String[][] type1Diff =
             {{"Bookman-Demi", "URWBookmanL-DemiBold", "Arial"}, {
                     "Bookman-DemiItalic", "URWBookmanL-DemiBoldItal", "Arial"}, {
                     "Bookman-Light", "URWBookmanL-Ligh", "Arial"}, {
@@ -181,7 +182,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                     "ZapfDingbats", "Dingbats", "Dingbats"}
             };
 
-    public Font(Library library, HashMap entries) {
+    public Font(Library library, DictionaryEntries entries) {
         super(library, entries);
 
         // initialize cMap array with base characters
@@ -258,7 +259,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
 
         // ToUnicode indicates that we now have CMap stream that need to be parsed
         Object objectUnicode = library.getObject(entries, TOUNICODE_KEY);
-        if (objectUnicode != null && objectUnicode instanceof Stream) {
+        if (objectUnicode instanceof Stream) {
             toUnicodeCMap = new CMap((Stream) objectUnicode);
             toUnicodeCMap.init();
         }
@@ -266,8 +267,8 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         // Find any special encoding information, not used very often
         Object o = library.getObject(entries, ENCODING_KEY);
         if (o != null) {
-            if (o instanceof HashMap) {
-                HashMap encoding = (HashMap) o;
+            if (o instanceof DictionaryEntries) {
+                DictionaryEntries encoding = (DictionaryEntries) o;
                 setBaseEncoding(library.getName(encoding, BASE_ENCODING_KEY));
                 List differences = (List) library.getObject(encoding, DIFFERENCES_KEY);
                 if (differences != null) {
@@ -336,11 +337,10 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         // font.
         if (fontDescriptor == null && basefont != null) {
             // see if the baseFont name matches one of the AFM names
-            Object afm = AFM.AFMs.get(basefont.toLowerCase());
-            if (afm != null && afm instanceof AFM) {
-                AFM fontMetrix = (AFM) afm;
+            AFM afm = AFM.AFMs.get(basefont.toLowerCase());
+            if (afm instanceof AFM) {
                 // finally create a fontDescriptor based on AFM data.
-                fontDescriptor = FontDescriptor.createDescriptor(library, fontMetrix);
+                fontDescriptor = FontDescriptor.createDescriptor(library, afm);
                 fontDescriptor.init(subtype);
             }
         }
@@ -418,7 +418,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         isFontSubstitution = true;
 //        isAFMFont = true;
         // awt font reference just for debugging purposes.
-        java.awt.Font awtFont = null;
+        java.awt.Font awtFont;
 
         // get most types of embedded fonts from here
         if (fontDescriptor != null && fontDescriptor.getEmbeddedFont() != null) {
@@ -518,13 +518,13 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                 font = new OFont(awtFont);
                 basefont = "sansserif";
             }
-            // see if we working with a mono spaced font
+            // see if we are working with a monospaced font
             else if ((font.getName().toLowerCase().contains("courier") ||
                     font.getName().toLowerCase().contains("courier new") ||
                     font.getName().toLowerCase().contains("couriernew") ||
                     font.getName().toLowerCase().contains("prestige") ||
                     font.getName().toLowerCase().contains("eversonmono") ||
-                    font.getName().toLowerCase().contains("Everson Mono"))) {
+                    font.getName().toLowerCase().contains("everson mono"))) {
                 awtFont = new java.awt.Font("monospaced", font.getStyle(), (int) font.getSize());
                 font = new OFont(awtFont);
                 basefont = "monospaced";

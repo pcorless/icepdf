@@ -15,13 +15,12 @@
  */
 package org.icepdf.core.pobjects.actions;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
-
-import java.util.HashMap;
 
 /**
  * Upon invocation of a JavaScript action, a conforming processor shall execute a script that is written in the
@@ -39,14 +38,14 @@ public class JavaScriptAction extends Action{
 
     private String javaScript;
 
-    public JavaScriptAction(Library l, HashMap h) {
+    public JavaScriptAction(Library l, DictionaryEntries h) {
         super(l, h);
         Object value = library.getObject(entries, JS_KEY);
         if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
             javaScript = Utils.convertStringObject(library, text);
-        }else if (value instanceof Stream){
-            Stream jsStream = (Stream)value;
+        } else if (value instanceof Stream) {
+            Stream jsStream = (Stream) value;
             javaScript = new String(jsStream.getDecodedStreamBytes());
         }
     }

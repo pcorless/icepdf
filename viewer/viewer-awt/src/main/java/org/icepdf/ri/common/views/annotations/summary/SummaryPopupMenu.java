@@ -40,11 +40,11 @@ public class SummaryPopupMenu extends AnnotationPopup<MarkupAnnotationComponent>
     private static final Logger logger =
             Logger.getLogger(SummaryPopupMenu.class.toString());
 
-    protected AnnotationSummaryBox annotationSummaryBox;
-    protected MarkupAnnotation markupAnnotation;
-    protected Frame frame;
+    protected final AnnotationSummaryBox annotationSummaryBox;
+    protected final MarkupAnnotation markupAnnotation;
+    protected final Frame frame;
     protected JCheckBoxMenuItem showHideTextBlockMenuItem;
-    protected DraggableAnnotationPanel.MouseHandler mouseHandler;
+    protected final DraggableAnnotationPanel.MouseHandler mouseHandler;
 
     public SummaryPopupMenu(AnnotationSummaryBox annotationSummaryBox, MarkupAnnotation markupAnnotation, MarkupAnnotationComponent annotationComponent,
                             Controller controller, Frame frame, DraggableAnnotationPanel.MouseHandler mouseHandler) {

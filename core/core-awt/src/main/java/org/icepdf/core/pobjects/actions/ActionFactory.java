@@ -18,8 +18,6 @@ package org.icepdf.core.pobjects.actions;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 
-import java.util.HashMap;
-
 /**
  * Factory for build actions
  *
@@ -36,7 +34,7 @@ public class ActionFactory {
 
     /**
      * Creates a new ACTION object of the type specified by the type constant.
-     * Currently there are only two supporte action types; GoTo, Launch and URI.
+     * Currently, there are only two supported action types; GoTo, Launch and URI.
      * <br>
      * This call adds the new action object to the document library as well
      * as the document StateManager.
@@ -51,7 +49,7 @@ public class ActionFactory {
         StateManager stateManager = library.getStateManager();
 
         // create a new entries to hold the annotation properties
-        HashMap<Name, Object> entries = new HashMap<>();
+        DictionaryEntries entries = new DictionaryEntries();
         if (GOTO_ACTION == type) {
             // set default link annotation values.
             entries.put(Dictionary.TYPE_KEY, Action.ACTION_TYPE);

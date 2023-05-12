@@ -10,7 +10,6 @@ import javax.print.attribute.standard.*;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,7 +22,7 @@ public abstract class PrintHelper {
     public static final PrintService[] EMPTY_PRINTSERVICE_ARRAY = new PrintService[0];
     private static final Pattern END_NEWLINE_PATTERN = Pattern.compile("[\r\n]+$");
     private static final Pattern CARET_COLON_PATTERN = Pattern.compile("[^:]*?[:]");
-    public static String PRINTER_NAME_ATTRIBUTE = "printer-name";
+    public static final String PRINTER_NAME_ATTRIBUTE = "printer-name";
     // private final as we execute this on teh host system and it must be immutable.
     private static final String PRINTER_STATUS_COMMAND = "lpstat -d";
     protected static final boolean CLIPPING_FIX_ENABLED =
@@ -442,7 +441,7 @@ public abstract class PrintHelper {
             }
             ret = new StringBuilder(END_NEWLINE_PATTERN.matcher(ret.toString()).replaceAll(""));
             ret = new StringBuilder(CARET_COLON_PATTERN.matcher(ret.toString()).replaceAll("").trim());
-        } catch (final IOException | AccessControlException e) {
+        } catch (final IOException | SecurityException e) {
             // ignore as we may be ona non unix system,  and life goes on.
         }
         ret = new StringBuilder(END_NEWLINE_PATTERN.matcher(ret.toString()).replaceAll(""));

@@ -27,11 +27,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class OperatorFactory {
 
-    private static ConcurrentHashMap<Integer, Operator> operatorCache =
+    private static final ConcurrentHashMap<Integer, Operator> operatorCache =
             new ConcurrentHashMap<>();
 
     @SuppressWarnings(value = "unchecked")
-    public static Operator getOperator(char ch[], int offset, int length) {
+    public static Operator getOperator(char[] ch, int offset, int length) {
 
         // get the operator int value.
         final int operatorType = OperatorNames.getType(ch, offset, length);
@@ -705,9 +705,7 @@ public class OperatorFactory {
         }
 
         // add the new operator to the cache
-        if (operator != null) {
-            operatorCache.put(operator.getType(), operator);
-        }
+        operatorCache.put(operator.getType(), operator);
         return operator;
     }
 }

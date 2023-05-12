@@ -36,14 +36,13 @@ import java.util.prefs.Preferences;
 public class AdvancedPreferencesPanel extends JPanel {
 
     // layouts constraint
-    private GridBagConstraints constraints;
+    private final GridBagConstraints constraints;
 
-    private Preferences preferences;
+    private final Preferences preferences;
 
-    private JComboBox<BooleanItem> enableImageProxyComboBox;
     private JTextField imageProxyThreadCountField;
 
-    private JTextField commonThreadCountField;
+    private final JTextField commonThreadCountField;
 
     public AdvancedPreferencesPanel(Controller controller, ViewerPropertiesManager propertiesManager,
                                     ResourceBundle messageBundle) {
@@ -63,7 +62,7 @@ public class AdvancedPreferencesPanel extends JPanel {
                 new BooleanItem(messageBundle.getString(
                         "viewer.dialog.viewerPreferences.section.advanced.imageProxyDisabled.label"),
                         false)};
-        enableImageProxyComboBox = new JComboBox<>(fontHintingOptions);
+        JComboBox<BooleanItem> enableImageProxyComboBox = new JComboBox<>(fontHintingOptions);
         enableImageProxyComboBox.setSelectedItem(new BooleanItem("", imageProxyEnabled));
         enableImageProxyComboBox.addActionListener(e -> {
             JComboBox cb = (JComboBox) e.getSource();

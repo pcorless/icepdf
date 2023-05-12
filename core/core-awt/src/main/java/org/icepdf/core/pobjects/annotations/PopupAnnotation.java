@@ -15,15 +15,14 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
-import org.icepdf.core.pobjects.Dictionary;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.PRectangle;
-import org.icepdf.core.pobjects.StateManager;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
-import java.util.HashMap;
+import java.awt.geom.Rectangle2D;
+import java.time.format.FormatStyle;
 import java.util.logging.Logger;
 
 /**
@@ -48,6 +47,8 @@ public class PopupAnnotation extends Annotation {
     private static final Logger logger =
             Logger.getLogger(PopupAnnotation.class.toString());
 
+    public static final Color BORDER_COLOR = new Color(153, 153, 153);
+
     /**
      * (Optional; shall be an indirect reference) The parent annotation with
      * which this pop-up annotation shall be associated.
@@ -65,8 +66,11 @@ public class PopupAnnotation extends Annotation {
 
     protected MarkupAnnotation parent;
 
-    public PopupAnnotation(Library l, HashMap h) {
-        super(l, h);
+    protected JPanel popupPaintablesPanel;
+    private boolean resetPopupPaintables = true;
+
+    public PopupAnnotation(Library library, DictionaryEntries dictionaryEntries) {
+        super(library, dictionaryEntries);
     }
 
     public synchronized void init() throws InterruptedException {
@@ -86,7 +90,7 @@ public class PopupAnnotation extends Annotation {
         StateManager stateManager = library.getStateManager();
 
         // create a new entries to hold the annotation properties
-        HashMap<Name, Object> entries = new HashMap<>();
+        DictionaryEntries entries = new DictionaryEntries();
         // set default link annotation values.
         entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
         entries.put(Dictionary.SUBTYPE_KEY, Annotation.SUBTYPE_POPUP);
@@ -110,13 +114,122 @@ public class PopupAnnotation extends Annotation {
             popupAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
             popupAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
             popupAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
-            popupAnnotation.setFlag(Annotation.FLAG_PRINT, false);
+            popupAnnotation.setFlag(Annotation.FLAG_PRINT, true);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.finer("Popup Annotation initialization was interrupted");
         }
 
         return popupAnnotation;
+    }
+
+    @Override
+    protected void renderAppearanceStream(Graphics2D g2d) {
+        GraphicsConfiguration graphicsConfiguration = g2d.getDeviceConfiguration();
+        boolean isPrintingAllowed = getParent().getFlagPrint();
+        if (graphicsConfiguration.getDevice().getType() == GraphicsDevice.TYPE_PRINTER &&
+                isOpen() &&
+                isPrintingAllowed) {
+            if (resetPopupPaintables) {
+                buildPopupPaintables();
+            }
+            paintPopupPaintables(g2d);
+        }
+    }
+
+    public boolean allowPrintNormalMode() {
+        boolean isParentPrintable = parent != null && parent.getFlagPrint();
+        return allowScreenOrPrintRenderingOrInteraction() && isParentPrintable;
+    }
+
+    private void paintPopupPaintables(Graphics2D g2d) {
+
+        Rectangle2D.Float popupBounds = getUserSpaceRectangle();
+        Dimension popupSize = popupBounds.getBounds().getSize();
+
+        AffineTransform oldTransform = g2d.getTransform();
+        g2d.scale(1, -1);
+        g2d.translate(0, -popupSize.height);
+
+        popupPaintablesPanel.print(g2d);
+        g2d.setColor(BORDER_COLOR);
+        g2d.drawRect(0, 0, popupSize.width - 1, popupSize.height - 1);
+
+        g2d.setTransform(oldTransform);
+    }
+
+    /**
+     * Builds a JPanel representing the popup annotation that can be printed.
+     */
+    private void buildPopupPaintables() {
+
+        Rectangle2D.Float popupBounds = getUserSpaceRectangle();
+        Rectangle popupBoundsNormalized = new Rectangle2D.Double(0, 0, popupBounds.width, popupBounds.height).getBounds();
+
+        popupPaintablesPanel = new JPanel();
+
+        Color color = getParent().getColor() != null ?
+                getParent().getColor() :
+                new Color(Integer.parseInt("ffff00", 16));
+        Color contrastColor = calculateContrastHighLowColor(color.getRGB());
+        popupPaintablesPanel.setBackground(color);
+        popupPaintablesPanel.setBounds(popupBoundsNormalized);
+        popupPaintablesPanel.setSize(popupBoundsNormalized.getSize());
+        popupPaintablesPanel.setPreferredSize(popupBoundsNormalized.getSize());
+
+        MarkupAnnotation markupAnnotation = getParent();
+        // user
+        String title = markupAnnotation.getFormattedTitleText();
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setForeground(contrastColor);
+        popupPaintablesPanel.add(titleLabel);
+
+        // creation date
+        JLabel creationLabel = new JLabel();
+        creationLabel.setText(markupAnnotation.getFormattedCreationDate(FormatStyle.MEDIUM));
+        creationLabel.setForeground(contrastColor);
+        popupPaintablesPanel.add(creationLabel);
+
+        // text area
+        String contents = getParent() != null ? getParent().getContents() : "";
+        JTextArea textArea = new JTextArea(contents);
+        textArea.setFont(new JLabel().getFont());
+        textArea.setWrapStyleWord(true);
+        textArea.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(color),
+                BorderFactory.createEmptyBorder(2, 2, 2, 2)));
+        popupPaintablesPanel.add(textArea);
+
+        // basic layout
+        Component[] components = popupPaintablesPanel.getComponents();
+        int yOffset = 0;
+        int padding = 2;
+        for (Component comp : components) {
+            Dimension size = comp.getPreferredSize();
+            comp.setSize(size);
+            comp.setPreferredSize(size);
+            comp.setLocation(padding, yOffset);
+            yOffset += comp.getHeight() + padding;
+        }
+        // stretch text area.
+        textArea.setSize((int) (popupBounds.width - (padding * 2)), (int) (popupBounds.height + textArea.getHeight() - yOffset));
+        resetPopupPaintables = false;
+    }
+
+    public Color calculateContrastHighLowColor(int rgb) {
+        int tolerance = 120;
+        if ((rgb & 0xFF) <= tolerance &&
+                (rgb >> 8 & 0xFF) <= tolerance ||
+                (rgb >> 16 & 0xFF) <= tolerance) {
+            return Color.WHITE;
+        } else {
+            return Color.BLACK;
+        }
+
+    }
+
+    public void setContents(String content) {
+        super.setString(CONTENTS_KEY, content);
+        resetPopupPaintables = true;
     }
 
     @Override
@@ -135,7 +248,7 @@ public class PopupAnnotation extends Annotation {
     public MarkupAnnotation getParent() {
         Object tmp = library.getObject(entries, PARENT_KEY);
         // should normally be a text annotation type.
-        if (tmp != null && tmp instanceof MarkupAnnotation) {
+        if (tmp instanceof MarkupAnnotation) {
             parent = (MarkupAnnotation) tmp;
         }
         return parent;
