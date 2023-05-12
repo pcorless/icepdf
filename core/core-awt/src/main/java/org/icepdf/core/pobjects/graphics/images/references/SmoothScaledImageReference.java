@@ -33,9 +33,9 @@ import java.util.logging.Logger;
 
 /**
  * The SmoothScaledImageReference scales large images using the
- * bufferedImage.getScaledInstance() method for colour imges and the
- * a custom trilinear scale for black and white images.  The scaled instance
- * uses a minimum of memory and can improve clarity of some CCITTFax images.
+ * bufferedImage.getScaledInstance() method for colour images and the
+ * custom trilinear scale for black and white images.  The scaled instance
+ * uses a bit more memory but can improve clarity of some images.
  *
  * @since 5.0
  */
@@ -120,7 +120,7 @@ public class SmoothScaledImageReference extends CachedImageReference {
                     }
                     // smooth out everything else.
                     else {
-                        imageScale = 0.99;
+                        imageScale = 1.5;
                     }
                     image = (BufferedImage) getTrilinearScaledInstance(image,
                             (int) Math.ceil(width * imageScale),
@@ -129,19 +129,19 @@ public class SmoothScaledImageReference extends CachedImageReference {
                 // normal rgb scale as before, as the trilinear scale causes excessive blurring.
                 else {
                     if ((width >= 250 || height >= 250) && (width < 500 || height < 500)) {
-                        imageScale = 0.90;
+                        imageScale = 5.0;
                     } else if (width >= 500 && (width < 1000 || height < 1000)) {
-                        imageScale = 0.80;
+                        imageScale = 4.0;
                     } else if (width >= 1000 && (width < 1500 || height < 1500)) {
-                        imageScale = 0.70;
+                        imageScale = 3.0;
                     } else if (width >= 1500 && (width < 2000 || height < 2000)) {
-                        imageScale = 0.60;
+                        imageScale = 2.0;
                     } else if (width >= 2000 && (width < 2500 || height < 2500)) {
-                        imageScale = 0.50;
+                        imageScale = 1.5;
                     } else if (width >= 2500 && (width < 3000 || height < 3000)) {
-                        imageScale = 0.40;
+                        imageScale = 1.0;
                     } else if (width >= 3000) {
-                        imageScale = 0.30;
+                        imageScale = 0.99;
                     }
                     if (imageScale != 1.0) {
                         AffineTransform tx = new AffineTransform();
