@@ -48,7 +48,7 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
     public static Encoding macRomanEncoding;
 
     /**
-     * Windows Code Page 1252, often called the “Windows ANSI” encoding.
+     * Windows Code Page 1252, often called the "Windows ANSI" encoding.
      * This is the standard Windows encoding for Latin text in Western writing
      * systems. Conforming readers shall have a predefined encoding named
      * WinAnsiEncoding that may be used with both Type 1 and TrueType
