@@ -17,10 +17,7 @@ package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.Reference;
-import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
-import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
-import org.icepdf.core.pobjects.annotations.TextAnnotation;
+import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.tools.DestinationHandler;
@@ -239,7 +236,10 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
                     .map(cl -> {
                                 final JMenuItem item = new JMenuItem(cl.getLabel());
                                 item.setForeground(Color.BLACK);
-                                item.setBackground(cl.getColor());
+                                //Display color has less opacity
+                                final Color color = new Color(cl.getColor().getRed(), cl.getColor().getGreen(),
+                                        cl.getColor().getBlue(), TextMarkupAnnotation.HIGHLIGHT_ALPHA);
+                                item.setBackground(color);
                                 item.setOpaque(true);
                                 item.addActionListener(e -> {
                                     final Annotation annotation = annotationComponent.getAnnotation();
