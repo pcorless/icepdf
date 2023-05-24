@@ -32,6 +32,8 @@ import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.updater.DocumentBuilder;
 import org.icepdf.core.util.updater.WriteMode;
+import org.icepdf.core.util.updater.modifiers.ModifierFactory;
+import org.icepdf.core.util.updater.modifiers.PageRemovalModifier;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -118,7 +120,7 @@ public class Document {
         // sets if file caching is enabled or disabled.
         isCachingEnabled =
                 Defs.sysPropertyBoolean("org.icepdf.core.streamcache.enabled",
-                        false);
+                        true);
     }
 
     /**
@@ -731,6 +733,16 @@ public class Document {
         if (pTrailer == null)
             return null;
         return pTrailer.getInfo();
+    }
+
+    public void removePage(Page page) {
+        if (page == null) {
+            throw new IllegalStateException("Page must not be null");
+        }
+        PageRemovalModifier pageRemovalModifier = (PageRemovalModifier) ModifierFactory.getModifier(page);
+        if (pageRemovalModifier != null) {
+            pageRemovalModifier.modify(page);
+        }
     }
 
     /**

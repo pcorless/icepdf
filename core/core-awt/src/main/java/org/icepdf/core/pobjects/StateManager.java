@@ -101,6 +101,10 @@ public class StateManager {
         }
     }
 
+    public void addDeletion(Reference reference) {
+        changes.put(reference, new Change(reference, true));
+    }
+
     /**
      * Checks the state manager to see if an instance of the specified reference
      * already exists in the cache.
@@ -231,11 +235,18 @@ public class StateManager {
      */
     public static class Change {
         private final PObject pObject;
-        private final boolean isNew;
+        private boolean isNew;
+
+        private boolean delete;
 
         public Change(final PObject pObject, final boolean isNew) {
             this.pObject = pObject;
             this.isNew = isNew;
+        }
+
+        public Change(final Reference reference, final boolean delete) {
+            this.pObject = new PObject(null, reference);
+            this.delete = delete;
         }
 
         public PObject getPObject() {
@@ -244,6 +255,10 @@ public class StateManager {
 
         public boolean isNew() {
             return isNew;
+        }
+
+        public boolean isDelete() {
+            return delete;
         }
 
         @Override

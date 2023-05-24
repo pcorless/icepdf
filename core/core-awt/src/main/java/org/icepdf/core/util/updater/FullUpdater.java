@@ -18,6 +18,7 @@ public class FullUpdater {
     public long writeDocument(
             Document document, OutputStream outputStream)
             throws IOException {
+        // todo write some data
         return 0;
     }
 }
