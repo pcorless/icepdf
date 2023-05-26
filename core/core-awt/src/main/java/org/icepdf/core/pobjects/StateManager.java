@@ -91,7 +91,7 @@ public class StateManager {
      *                was added but because the object wasn't present for rendering and was created by the core library.
      */
     public void addChange(PObject pObject, boolean isNew) {
-        changes.put(pObject.getReference(), new Change(pObject, isNew));
+        changes.put(pObject.getReference(), new Change(pObject, isNew ? Type.CHANGE : Type.SYNTHETIC));
         int objectNumber = pObject.getReference().getObjectNumber();
         // check the reference numbers
         synchronized (this) {
@@ -102,7 +102,11 @@ public class StateManager {
     }
 
     public void addDeletion(Reference reference) {
-        changes.put(reference, new Change(reference, true));
+        changes.put(reference, new Change(reference, Type.DELETE));
+    }
+
+    public void addDeletion(PObject pObject) {
+        changes.put(pObject.getReference(), new Change(pObject, Type.DELETE));
     }
 
     /**
@@ -122,10 +126,10 @@ public class StateManager {
      * @param reference reference to look for an existing usage
      * @return Change of corresponding reference if present
      */
-    public Object getChange(Reference reference) {
+    public Change getChange(Reference reference) {
         Change change = changes.get(reference);
         if (change != null) {
-            return change.getPObject();
+            return change;
         } else {
             logger.warning("No change object was found for " + reference);
             return null;
@@ -145,7 +149,7 @@ public class StateManager {
      * @return If there are any changes from objects that were manipulated by user interaction
      */
     public boolean isChange() {
-        return changes.values().stream().anyMatch(c -> c.isNew);
+        return changes.values().stream().anyMatch(c -> c.type != Type.SYNTHETIC);
     }
 
     /**
@@ -229,36 +233,37 @@ public class StateManager {
         }
     }
 
+    protected enum Type {
+        SYNTHETIC,
+        CHANGE,
+        DELETE
+    }
+
     /**
      * Wrapper class of a pObject and how it was created.  The newFlag differentiates if the object was created
      * by a user action vs the core library creating an object that isn't in the source file but needed for rendering.
      */
     public static class Change {
+
         private final PObject pObject;
-        private boolean isNew;
+        private Type type;
 
-        private boolean delete;
-
-        public Change(final PObject pObject, final boolean isNew) {
+        public Change(final PObject pObject, final Type type) {
             this.pObject = pObject;
-            this.isNew = isNew;
+            this.type = type;
         }
 
-        public Change(final Reference reference, final boolean delete) {
+        public Change(final Reference reference, final Type type) {
             this.pObject = new PObject(null, reference);
-            this.delete = delete;
+            this.type = type;
         }
 
         public PObject getPObject() {
             return pObject;
         }
 
-        public boolean isNew() {
-            return isNew;
-        }
-
-        public boolean isDelete() {
-            return delete;
+        public Type getType() {
+            return type;
         }
 
         @Override
@@ -266,12 +271,12 @@ public class StateManager {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             final Change change = (Change) o;
-            return isNew == change.isNew && Objects.equals(pObject, change.pObject);
+            return type == change.type && Objects.equals(pObject, change.pObject);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(pObject, isNew);
+            return Objects.hash(pObject, type);
         }
     }
 }

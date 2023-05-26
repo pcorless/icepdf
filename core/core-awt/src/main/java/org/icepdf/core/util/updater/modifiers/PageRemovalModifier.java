@@ -7,6 +7,7 @@ import java.util.List;
 
 import static org.icepdf.core.pobjects.Page.CONTENTS_KEY;
 import static org.icepdf.core.pobjects.Page.RESOURCES_KEY;
+import static org.icepdf.core.pobjects.PageTree.COUNT_KEY;
 import static org.icepdf.core.pobjects.PageTree.KIDS_KEY;
 import static org.icepdf.core.pobjects.Resources.XOBJECT_KEY;
 
@@ -53,7 +54,7 @@ public class PageRemovalModifier implements Modifier<Page> {
                 if (tmp instanceof Stream) {
                     Stream tmpStream = (Stream) tmp;
                     Reference reference = tmpStream.getPObjectReference();
-                    stateManager.addDeletion(reference);
+                    stateManager.addDeletion(new PObject(tmpStream, reference));
                 }
             }
         } else if (entries instanceof DictionaryEntries) {
@@ -99,7 +100,8 @@ public class PageRemovalModifier implements Modifier<Page> {
         DictionaryEntries dictionaryEntries = pageTree.getEntries();
         kidsReferences.remove(kid);
         dictionaryEntries.put(KIDS_KEY, kidsReferences);
-        stateManager.addChange(new PObject(pageTree, pageTree.getPObjectReference()), false);
+        dictionaryEntries.put(COUNT_KEY, kidsReferences.size());
+        stateManager.addChange(new PObject(pageTree, pageTree.getPObjectReference()));
         if (kid instanceof Reference) {
             stateManager.addDeletion((Reference) kid);
         }
