@@ -131,7 +131,6 @@ public class StateManager {
         if (change != null) {
             return change;
         } else {
-            logger.warning("No change object was found for " + reference);
             return null;
         }
     }
@@ -233,7 +232,7 @@ public class StateManager {
         }
     }
 
-    protected enum Type {
+    public enum Type {
         SYNTHETIC,
         CHANGE,
         DELETE

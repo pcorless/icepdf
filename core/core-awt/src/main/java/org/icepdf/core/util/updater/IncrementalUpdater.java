@@ -52,7 +52,7 @@ public class IncrementalUpdater {
             writer.writeCompressedXrefTable();
         } else {
             writer.writeXRefTable();
-            writer.writeTrailer();
+            writer.writeIncrementalUpdateTrailer();
         }
         output.close();
 

@@ -29,7 +29,7 @@ public class CrossReferenceRoot {
 
     private final ArrayList<CrossReference> crossReferences;
 
-    private boolean lazyInitializationFailed;
+    private boolean initializationFailed;
 
     public CrossReferenceRoot(Library library) {
         this.library = library;
@@ -115,12 +115,12 @@ public class CrossReferenceRoot {
         return null;
     }
 
-    public void setLazyInitializationFailed(boolean failed) {
-        lazyInitializationFailed = failed;
+    public void setInitializationFailed(boolean failed) {
+        initializationFailed = failed;
     }
 
-    public boolean isLazyInitializationFailed() {
-        return lazyInitializationFailed;
+    public boolean isInitializationFailed() {
+        return initializationFailed;
     }
 
     public void addCrossReference(CrossReference crossReferenceTable) {

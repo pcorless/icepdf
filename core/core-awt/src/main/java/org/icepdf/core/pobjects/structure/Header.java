@@ -41,7 +41,7 @@ public class Header {
         if (matchPosition == matchLength) {
             version = parseVersion(headerBuffer);
         } else {
-            version = 0;
+            version = 1.0;
         }
 
         // check for some bad bytes
@@ -69,7 +69,7 @@ public class Header {
         } catch (NumberFormatException e) {
             // quite for now.
         }
-        return 0;
+        return 1.0;
     }
 
 }

@@ -4,11 +4,10 @@ package org.icepdf.core.util.updater;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.util.Library;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -25,16 +24,13 @@ public class ObjectUpdateTests {
 
             Page page = document.getPageTree().getPage(0);
             document.removePage(page);
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream(200000);
-            document.saveToOutputStream(outputStream, WriteMode.FULL_UPDATE);
+            FileOutputStream fileOutputStream = new FileOutputStream("./src/test/out/ObjectUpdateTest.pdf");
+            document.saveToOutputStream(fileOutputStream, WriteMode.FULL_UPDATE);
 
             // check file length
-            outputStream.flush();
-            outputStream.size();
+            fileOutputStream.close();
 
-            // make sure the following object are no longer present in file
-            Library library = document.getCatalog().getLibrary();
-            /// library.getObject();
+            // open the output and check for the missing objcts
 
 
         } catch (PDFSecurityException e) {

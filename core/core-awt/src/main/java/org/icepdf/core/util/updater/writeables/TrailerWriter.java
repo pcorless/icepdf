@@ -11,7 +11,7 @@ import java.util.List;
 
 public class TrailerWriter extends BaseTableWriter {
 
-    public void writeTrailer(CrossReferenceRoot crossReferenceRoot, long xrefPosition, List<Entry> entries, CountingOutputStream output)
+    public void writeIncrementalUpdateTrailer(CrossReferenceRoot crossReferenceRoot, long xrefPosition, List<Entry> entries, CountingOutputStream output)
             throws IOException {
         PTrailer prevTrailer = crossReferenceRoot.getTrailerDictionary();
         DictionaryEntries newTrailer = (DictionaryEntries) prevTrailer.getDictionary().clone();
@@ -22,6 +22,23 @@ public class TrailerWriter extends BaseTableWriter {
         if (previousTrailerPosition == 0) {
             throw new IllegalStateException("Cannot write trailer to an PDF with an invalid object offset");
         }
+
+        output.write(TRAILER);
+        this.writeDictionary(new Dictionary(null, newTrailer), output);
+        output.write(STARTXREF);
+        this.writeLong(xrefPosition, output);
+        output.write(COMMENT_EOF);
+    }
+
+    public void writeFullTrailer(CrossReferenceRoot crossReferenceRoot, long xrefPosition, List<Entry> entries, CountingOutputStream output)
+            throws IOException {
+        PTrailer prevTrailer = crossReferenceRoot.getTrailerDictionary();
+        DictionaryEntries newTrailer = (DictionaryEntries) prevTrailer.getDictionary().clone();
+        this.setTrailerSize(newTrailer, prevTrailer, entries);
+        newTrailer.remove(PTrailer.XREF_STRM_KEY);
+        newTrailer.remove(PTrailer.PREV_KEY);
+
+        // todo update the ID with something fun.
 
         output.write(TRAILER);
         this.writeDictionary(new Dictionary(null, newTrailer), output);

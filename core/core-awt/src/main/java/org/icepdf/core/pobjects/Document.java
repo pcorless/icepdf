@@ -347,7 +347,7 @@ public class Document {
             input = header.parseHeader(input);
 
             library.setDocumentByteBuffer(input);
-            library.setFileVersion(header.getVersion());
+            library.setFileHeader(header);
 
             // create instance of CrossReferenceRoot as we may need it the trailer can't be correctly decoded.
             crossReferenceRoot = new CrossReferenceRoot(library);
@@ -366,13 +366,13 @@ public class Document {
                     crossReferenceRoot.initialize(input);
                     library.setCrossReferenceRoot(crossReferenceRoot);
                 } catch (Exception e) {
-                    crossReferenceRoot.setLazyInitializationFailed(true);
+                    crossReferenceRoot.setInitializationFailed(true);
                     logger.log(Level.WARNING, "Cross reference loading failed, reindexing file.", e);
                 }
             }
 
             // linear traversal of file.
-            if (trailer.isLazyInitializationFailed() || crossReferenceRoot.isLazyInitializationFailed()) {
+            if (trailer.isLazyInitializationFailed() || crossReferenceRoot.isInitializationFailed()) {
                 crossReferenceRoot = library.rebuildCrossReferenceTable();
                 library.setCrossReferenceRoot(crossReferenceRoot);
             }

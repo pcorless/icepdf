@@ -4,10 +4,12 @@ import org.icepdf.core.io.CountingOutputStream;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
+import org.icepdf.core.pobjects.structure.Header;
 
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -25,6 +27,7 @@ public class BaseWriter {
     protected static final byte[] BEGIN_OBJECT = "obj\r\n".getBytes();
     protected static final byte[] END_OBJECT = "endobj\r\n".getBytes();
 
+    private static HeaderWriter headerWriter;
     private static NameWriter nameWriter;
     private static DictionaryWriter dictionaryWriter;
     private static ReferenceWriter referenceWriter;
@@ -43,10 +46,11 @@ public class BaseWriter {
     private SecurityManager securityManager;
     private CrossReferenceRoot crossReferenceRoot;
     private long startingPosition;
-    private List<Entry> entries;
+    private ArrayList<Entry> entries;
+    private HashMap<Reference, Entry> entriesMap;
     private long xrefPosition;
 
-    public BaseWriter(){
+    public BaseWriter() {
 
     }
 
@@ -56,12 +60,14 @@ public class BaseWriter {
         this.crossReferenceRoot = crossReferenceRoot;
         this.securityManager = securityManager;
         this.startingPosition = startingPosition;
-        entries = new ArrayList<>(256);
+        entries = new ArrayList<>(512);
+        entriesMap = new HashMap<>(512);
     }
 
     public void initializeWriters() {
         // reuse instances of primitive pdf types.
         streamWriter = new StreamWriter();
+        headerWriter = new HeaderWriter();
         nameWriter = new NameWriter();
         dictionaryWriter = new DictionaryWriter();
         referenceWriter = new ReferenceWriter();
@@ -75,12 +81,18 @@ public class BaseWriter {
         compressedXrefTableWriter = new CompressedXrefTableWriter();
     }
 
+    public boolean hasNotWrittenReference(Reference reference) {
+        return !entriesMap.containsKey(reference);
+    }
+
     public long getBytesWritten() {
         return output.getCount();
     }
 
     public void writePObject(PObject pobject) throws IOException {
-        entries.add(new Entry(pobject.getReference(), startingPosition + output.getCount()));
+        Entry entry = new Entry(pobject.getReference(), startingPosition + output.getCount());
+        entries.add(entry);
+        entriesMap.put(pobject.getReference(), entry);
         if (pobject.getObject() instanceof Stream) {
             Stream stream = (Stream) pobject.getObject();
             Reference reference = stream.getPObjectReference();
@@ -89,7 +101,6 @@ public class BaseWriter {
                 return;
             }
             streamWriter.write((Stream) pobject.getObject(), securityManager, output);
-
         } else {
             pObjectWriter.write(pobject, output);
         }
@@ -99,8 +110,12 @@ public class BaseWriter {
         xrefPosition = xRefTableWriter.writeXRefTable(entries, startingPosition, output);
     }
 
-    public void writeTrailer() throws IOException {
-        trailerWriter.writeTrailer(crossReferenceRoot, xrefPosition, entries, output);
+    public void writeIncrementalUpdateTrailer() throws IOException {
+        trailerWriter.writeIncrementalUpdateTrailer(crossReferenceRoot, xrefPosition, entries, output);
+    }
+
+    public void writeFullTrailer() throws IOException {
+        trailerWriter.writeFullTrailer(crossReferenceRoot, xrefPosition, entries, output);
     }
 
     public void writeCompressedXrefTable() throws IOException {
@@ -109,6 +124,10 @@ public class BaseWriter {
 
     public void writeNewLine() throws IOException {
         output.write(NEWLINE);
+    }
+
+    public void writeHeader(Header header) throws IOException {
+        headerWriter.write(header, output);
     }
 
     protected void writeValue(Object val, CountingOutputStream output) throws IOException {
