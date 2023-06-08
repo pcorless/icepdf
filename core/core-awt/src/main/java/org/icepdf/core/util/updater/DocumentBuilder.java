@@ -25,22 +25,22 @@ public class DocumentBuilder {
             OutputStream out,
             long documentLength) throws IOException {
 
-        long appendedLength;
         try (WritableByteChannel channel = Channels.newChannel(out)) {
             if (writeMode == WriteMode.FULL_UPDATE) {
                 // kick of a full rewrite of the document, replacing any updates objects with new data
-                appendedLength = new FullUpdater().writeDocument(
+                long newLength = new FullUpdater().writeDocument(
                         document,
                         out);
-                return documentLength + appendedLength;
+                return newLength;
             } else if (writeMode == WriteMode.INCREMENT_UPDATE) {
                 // copy original file data
                 channel.write(documentByteBuffer);
                 // append the data from the incremental updater
-                appendedLength = new IncrementalUpdater().appendIncrementalUpdate(
+                long appendedLength = new IncrementalUpdater().appendIncrementalUpdate(
                         document,
                         out,
                         documentLength);
+
                 return documentLength + appendedLength;
             }
         } catch (IOException e) {

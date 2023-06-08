@@ -118,8 +118,12 @@ public class BaseWriter {
         trailerWriter.writeFullTrailer(crossReferenceRoot, xrefPosition, entries, output);
     }
 
-    public void writeCompressedXrefTable() throws IOException {
-        compressedXrefTableWriter.writeCompressedXrefTable(crossReferenceRoot, securityManager, entries, startingPosition, output);
+    public void writeIncrementalCompressedXrefTable() throws IOException {
+        compressedXrefTableWriter.writeIncrementalCompressedXrefTable(crossReferenceRoot, securityManager, entries, startingPosition, output);
+    }
+
+    public void writeFullCompressedXrefTable() throws IOException {
+        compressedXrefTableWriter.writeFullCompressedXrefTable(crossReferenceRoot, securityManager, entries, startingPosition, output);
     }
 
     public void writeNewLine() throws IOException {

@@ -13,7 +13,7 @@ public class HeaderWriter extends BaseWriter {
 
     public void write(Header header, CountingOutputStream output) throws IOException {
         output.write(commentMarker);
-        writeReal(header.getVersion(), output);
+        output.write(header.getWriterVersion().getBytes());
         output.write(NEWLINE);
         output.write(commentMarker);
         output.write(FOUR_BYTES);

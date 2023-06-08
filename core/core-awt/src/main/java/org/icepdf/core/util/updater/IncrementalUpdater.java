@@ -49,7 +49,7 @@ public class IncrementalUpdater {
         // todo may need updating as I don't think it handles hybrid mode
         PTrailer trailer = crossReferenceRoot.getTrailerDictionary();
         if (trailer.isCompressedXref()) {
-            writer.writeCompressedXrefTable();
+            writer.writeIncrementalCompressedXrefTable();
         } else {
             writer.writeXRefTable();
             writer.writeIncrementalUpdateTrailer();

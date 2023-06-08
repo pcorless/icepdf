@@ -7,9 +7,7 @@ import org.icepdf.core.pobjects.Page;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 
 public class ObjectUpdateTests {
 
@@ -22,15 +20,22 @@ public class ObjectUpdateTests {
             InputStream fileUrl = ObjectUpdateTests.class.getResourceAsStream("/updater/R&D-05-Carbon.pdf");
             document.setInputStream(fileUrl, "R&D-05-Carbon.pdf");
 
-            Page page = document.getPageTree().getPage(0);
+            Page page = document.getPageTree().getPage(2);
             document.removePage(page);
-            FileOutputStream fileOutputStream = new FileOutputStream("./src/test/out/ObjectUpdateTest.pdf");
-            document.saveToOutputStream(fileOutputStream, WriteMode.FULL_UPDATE);
+
+            File out = new File("./src/test/out/ObjectUpdateTest.pdf");
+
+            BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 8192);
+
+            long length = document.saveToOutputStream(stream, WriteMode.FULL_UPDATE);
+
+            System.out.println("length: " + length);
 
             // check file length
-            fileOutputStream.close();
+            stream.close();
 
-            // open the output and check for the missing objcts
+            // open the output and check for the removed objects
+            OutputStreamWriter test = new OutputStreamWriter(stream);
 
 
         } catch (PDFSecurityException e) {

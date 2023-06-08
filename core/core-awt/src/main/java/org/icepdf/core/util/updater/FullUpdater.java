@@ -31,6 +31,7 @@ public class FullUpdater {
         library = catalog.getLibrary();
         stateManager = library.getStateManager();
         CrossReferenceRoot crossReferenceRoot = library.getCrossReferenceRoot();
+        PTrailer pTrailer = crossReferenceRoot.getTrailerDictionary();
 
         SecurityManager securityManager = library.getSecurityManager();
         CountingOutputStream output = new CountingOutputStream(outputStream);
@@ -43,12 +44,14 @@ public class FullUpdater {
             // write header
             writer.writeHeader(library.getFileHeader());
 
-            // use the document root/catalog to iterate over the object tree writing out each object.
+            // use the document root to iterate over the object tree writing out each object.
             // and keep track of each
-            writeDictionary(writer, catalog);
+            writeDictionary(writer, pTrailer);
 
-            writer.writeXRefTable();
-            writer.writeFullTrailer();
+//            writer.writeXRefTable();
+//            writer.writeFullTrailer();
+
+            writer.writeFullCompressedXrefTable();
 
         }
 
@@ -58,7 +61,7 @@ public class FullUpdater {
 
     private void writeDictionary(BaseWriter writer, Dictionary dictionary) throws IOException {
         Reference dictionaryReference = dictionary.getPObjectReference();
-        if (writer.hasNotWrittenReference(dictionaryReference)) {
+        if (dictionaryReference != null && writer.hasNotWrittenReference(dictionaryReference)) {
             StateManager.Change change = stateManager.getChange(dictionaryReference);
             if (change != null) {
                 if (change.getType() == StateManager.Type.CHANGE) {
@@ -69,49 +72,46 @@ public class FullUpdater {
             }
         }
         DictionaryEntries entries = dictionary.getEntries();
-        findChildDictionaries(writer, entries);
+        writeDictionaryEntries(writer, entries);
     }
 
-    private void findChildDictionaries(BaseWriter writer, DictionaryEntries entries) throws IOException {
+    private void writePObject(BaseWriter writer, Object object) throws IOException {
+        if (object instanceof Reference && writer.hasNotWrittenReference((Reference) object)) {
+            Object objectReferenceValue = library.getObject(object);
+            StateManager.Change change = stateManager.getChange((Reference) object);
+            if (change != null) {
+                if (change.getType() == StateManager.Type.CHANGE) {
+                    writer.writePObject(change.getPObject());
+                }
+            } else {
+                writer.writePObject(new PObject(objectReferenceValue, (Reference) object));
+            }
+            if (objectReferenceValue instanceof Dictionary) {
+                writeDictionary(writer, (Dictionary) objectReferenceValue);
+            } else if (objectReferenceValue instanceof DictionaryEntries) {
+                writeDictionaryEntries(writer, (DictionaryEntries) objectReferenceValue);
+            } else if (objectReferenceValue instanceof List) {
+                writeList(writer, (List) objectReferenceValue);
+            }
+        }
+    }
+
+    private void writeDictionaryEntries(BaseWriter writer, DictionaryEntries entries) throws IOException {
         for (Name name : entries.keySet()) {
             Object value = entries.get(name);
             if (value instanceof Reference && writer.hasNotWrittenReference((Reference) value)) {
-                Object object = library.getObject(value);
-                StateManager.Change change = stateManager.getChange((Reference) value);
-                if (change != null) {
-                    if (change.getType() == StateManager.Type.CHANGE) {
-                        writer.writePObject(change.getPObject());
-                    }
-                } else {
-                    writer.writePObject(new PObject(object, (Reference) value));
-                }
-                if (object instanceof Dictionary) {
-                    writeDictionary(writer, (Dictionary) object);
-                } else if (object instanceof DictionaryEntries) {
-                    findChildDictionaries(writer, (DictionaryEntries) object);
-                }
+                writePObject(writer, value);
             } else if (value instanceof List) {
-                for (Object object : (List) value) {
-                    if (object instanceof Reference && writer.hasNotWrittenReference((Reference) object)) {
-                        Object objectReferenceValue = library.getObject(object);
-                        StateManager.Change change = stateManager.getChange((Reference) object);
-                        if (change != null) {
-                            if (change.getType() == StateManager.Type.CHANGE) {
-                                writer.writePObject(change.getPObject());
-                            }
-                        } else {
-                            writer.writePObject(new PObject(objectReferenceValue, (Reference) object));
-                        }
-                        if (objectReferenceValue instanceof Dictionary) {
-                            writeDictionary(writer, (Dictionary) objectReferenceValue);
-                        } else if (objectReferenceValue instanceof DictionaryEntries) {
-                            findChildDictionaries(writer, (DictionaryEntries) objectReferenceValue);
-                        }
-                    }
-                }
+                writeList(writer, (List) value);
             } else if (value instanceof DictionaryEntries) {
-                findChildDictionaries(writer, (DictionaryEntries) value);
+                writeDictionaryEntries(writer, (DictionaryEntries) value);
             }
+        }
+    }
+
+    private void writeList(BaseWriter writer, List values) throws IOException {
+        for (Object object : values) {
+            writePObject(writer, object);
         }
     }
 }

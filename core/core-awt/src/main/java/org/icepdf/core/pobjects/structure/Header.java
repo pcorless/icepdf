@@ -60,6 +60,10 @@ public class Header {
         return version;
     }
 
+    public String getWriterVersion() {
+        return "PDF-" + version;
+    }
+
     private static double parseVersion(ByteBuffer buffer) {
         byte[] versionBytes = new byte[3];
         buffer.get(versionBytes);
