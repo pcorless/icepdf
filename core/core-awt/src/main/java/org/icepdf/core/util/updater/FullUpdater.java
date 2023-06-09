@@ -4,6 +4,7 @@ import org.icepdf.core.io.CountingOutputStream;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
+import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.updater.writeables.BaseWriter;
 
@@ -13,8 +14,19 @@ import java.util.List;
 
 public class FullUpdater {
 
+    public static boolean compressXrefTable = Defs.booleanProperty(
+            "org.icepdf.core.utils.fullUpdater.compressXref", true);
+
     private Library library;
     private StateManager stateManager;
+
+    public static boolean isCompressXrefTable() {
+        return compressXrefTable;
+    }
+
+    public static void setCompressXrefTable(boolean compressXrefTable) {
+        FullUpdater.compressXrefTable = compressXrefTable;
+    }
 
     /**
      * Write a new document inserted and updating modified objects to the specified output stream.
@@ -45,17 +57,16 @@ public class FullUpdater {
             writer.writeHeader(library.getFileHeader());
 
             // use the document root to iterate over the object tree writing out each object.
-            // and keep track of each
             writeDictionary(writer, pTrailer);
 
-//            writer.writeXRefTable();
-//            writer.writeFullTrailer();
-
-            writer.writeFullCompressedXrefTable();
-
+            if (compressXrefTable) {
+                writer.writeFullCompressedXrefTable();
+            } else {
+                writer.writeXRefTable();
+                writer.writeFullTrailer();
+            }
         }
 
-        // todo pass
         return writer.getBytesWritten();
     }
 

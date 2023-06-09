@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CompressedXrefTableWriter extends BaseTableWriter {
 
@@ -37,11 +38,17 @@ public class CompressedXrefTableWriter extends BaseTableWriter {
                                              long startingPosition, CountingOutputStream output) throws IOException {
         PTrailer prevTrailer = crossReferenceRoot.getTrailerDictionary();
         DictionaryEntries newTrailer = (DictionaryEntries) prevTrailer.getDictionary().clone();
-        int newTrailerSize = entries.size();
-        newTrailer.put(PTrailer.SIZE_KEY, newTrailerSize);
-        long xrefPos = output.getCount();
+
+        long xrefPos = startingPosition + output.getCount();
+        // clear filter
         newTrailer.remove(Stream.DECODEPARAM_KEY);
         newTrailer.put(Stream.FILTER_KEY, Stream.FILTER_FLATE_DECODE);
+        // size, find max object reference in entries.
+        int newTrailerSize = entries.stream().sorted(
+                (r1, r2) -> r2.getReference().getObjectNumber() - r1.getReference().getObjectNumber()
+        ).collect(Collectors.toList()).get(0).getReference().getObjectNumber();
+        newTrailer.put(PTrailer.SIZE_KEY, newTrailerSize + 1);
+
         writeCompressedXrefTable(securityManager, newTrailer, entries, newTrailerSize, xrefPos, output);
     }
 

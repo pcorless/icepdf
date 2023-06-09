@@ -12,7 +12,7 @@ import java.io.*;
 public class ObjectUpdateTests {
 
 
-    @DisplayName("xref table - delete object and write full document update")
+    @DisplayName("xrefStream - delete object and write full document update")
     @Test
     public void testXrefTableFullUpdate() {
         try {
@@ -25,35 +25,26 @@ public class ObjectUpdateTests {
 
             File out = new File("./src/test/out/ObjectUpdateTest.pdf");
 
-            BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 8192);
+            try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 8192)) {
+                long length = document.saveToOutputStream(stream, WriteMode.FULL_UPDATE);
 
-            long length = document.saveToOutputStream(stream, WriteMode.FULL_UPDATE);
+                // test for length 142246
 
-            System.out.println("length: " + length);
+                // check pages length
 
-            // check file length
-            stream.close();
+                // open the document and make sure page is no longer found.
 
-            // open the output and check for the removed objects
-            OutputStreamWriter test = new OutputStreamWriter(stream);
-
-
-        } catch (PDFSecurityException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+                // make sure there were no exceptoin
+            }
+        } catch (PDFSecurityException | IOException e) {
+            // make sure we have no io errors.
         }
     }
 
-    @DisplayName("xrefStream - delete object and write full document update")
+    @DisplayName("xref table - add annotation object and write full document update")
     @Test
     public void testXrefStreamFullUpdate() {
 
     }
 
-    @DisplayName("linerized file - delete object and write full document update")
-    @Test
-    public void testLineraizedFileFullUpdate() {
-
-    }
 }

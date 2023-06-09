@@ -1,6 +1,5 @@
 package org.icepdf.core.util.parser.object;
 
-
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.fonts.CMap;
