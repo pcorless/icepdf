@@ -615,6 +615,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         if (hasFocus() || textArea.hasFocus()) {
             if (findComponentAt(e.getPoint()) == textArea) {
                 float newFontSize = textArea.getFont().getSize() - e.getWheelRotation();
+                annotation.setFontSize(newFontSize);
                 textArea.setFont(textArea.getFont().deriveFont(newFontSize));
             } else {
                 changeFontSize(-e.getWheelRotation());
@@ -1234,10 +1235,14 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         final Font areaFont = textArea.getFont();
         final Font titleFont = titleLabel.getFont();
         final Font creationFont = creationLabel.getFont();
-        textArea.setFont(areaFont.deriveFont(areaFont.getSize() + changeValue));
+
+        float fontSize = areaFont.getSize() + changeValue;
+
+        textArea.setFont(areaFont.deriveFont(fontSize));
         titleLabel.setFont(titleFont.deriveFont(titleFont.getSize() + changeValue));
         creationLabel.setFont(creationFont.deriveFont(creationFont.getSize() + changeValue));
 
+        annotation.setFontSize(fontSize);
     }
 
     public MarkupGlueComponent getMarkupGlueComponent() {
@@ -1253,6 +1258,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         textArea.setFont(font);
         titleLabel.setFont(font);
         creationLabel.setFont(font);
+        annotation.setFontSize(size);
     }
 
     public int getFontSize() {

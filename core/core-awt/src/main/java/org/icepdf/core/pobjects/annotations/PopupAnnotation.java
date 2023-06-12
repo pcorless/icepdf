@@ -66,6 +66,8 @@ public class PopupAnnotation extends Annotation {
 
     protected MarkupAnnotation parent;
 
+    protected float fontSize = new JLabel().getFont().getSize();
+
     protected JPanel popupPaintablesPanel;
     private boolean resetPopupPaintables = true;
 
@@ -193,7 +195,9 @@ public class PopupAnnotation extends Annotation {
         // text area
         String contents = getParent() != null ? getParent().getContents() : "";
         JTextArea textArea = new JTextArea(contents);
-        textArea.setFont(new JLabel().getFont());
+        Font font = new JLabel().getFont();
+        font = font.deriveFont(fontSize);
+        textArea.setFont(font);
         textArea.setWrapStyleWord(true);
         textArea.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(color),
                 BorderFactory.createEmptyBorder(2, 2, 2, 2)));
@@ -230,6 +234,11 @@ public class PopupAnnotation extends Annotation {
     public void setContents(String content) {
         super.setString(CONTENTS_KEY, content);
         resetPopupPaintables = true;
+    }
+
+    public void setFontSize(float fontSize) {
+        resetPopupPaintables = true;
+        this.fontSize = fontSize;
     }
 
     @Override
