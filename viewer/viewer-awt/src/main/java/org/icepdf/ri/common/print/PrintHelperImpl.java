@@ -18,6 +18,7 @@ package org.icepdf.ri.common.print;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
+import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.util.GraphicsRenderingHints;
 
 import javax.print.*;
@@ -28,10 +29,13 @@ import javax.print.attribute.standard.PageRanges;
 import javax.print.attribute.standard.PrintQuality;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -69,7 +73,6 @@ public class PrintHelperImpl extends PrintHelper implements Printable {
         this(container, pageTree, rotation, createDocAttributeSet(paperSizeName),
                 createPrintRequestAttributeSet(printQuality, paperSizeName));
     }
-
 
 
     /**
@@ -160,12 +163,12 @@ public class PrintHelperImpl extends PrintHelper implements Printable {
             Point imageablePrintLocation = new Point();
 
             // detect if page is being drawn in landscape, if so then we should
-            // should be rotating the page so that it prints correctly
+            // be rotating the page so that it prints correctly
             float rotation = userRotation;
             boolean isDefaultRotation = true;
             if ((pageWidth > pageHeight &&
                     pageFormat.getOrientation() == PageFormat.PORTRAIT)
-                // auto rotation for landscape.
+                // autorotation for landscape.
 //            (pageHeight > pageFormat.getImageableWidth() &&
 //                pageFormat.getOrientation() == PageFormat.LANDSCAPE )
             ) {
@@ -174,13 +177,22 @@ public class PrintHelperImpl extends PrintHelper implements Printable {
                 rotation -= 90;
             }
 
-            // if true, we want to shrink out page to the new area.
+            Rectangle pageBoundaryClip = null;
             if (isPrintFitToMargin()) {
+                // find page size including any popup annotations.
+                Dimension dim = pageDim.toDimension();
+                Rectangle2D.Float rect = new Rectangle2D.Float(0, 0, dim.width, dim.height);
+                List<Annotation> annotations = currentPage.getAnnotations();
+                for (Annotation annot : annotations) {
+                    Rectangle2D.union(
+                            rect,
+                            annot.calculatePageSpaceRectangle(currentPage, Page.BOUNDARY_MEDIABOX, rotation, zoomFactor),
+                            rect);
+                }
 
                 // Get location of imageable area from PageFormat object
                 Dimension imageablePrintSize;
-                // correct scale to fit calculation for a possible automatic
-                // rotation.
+                // correct scale to fit calculation for a possible automatic rotation.
                 if (isDefaultRotation) {
                     imageablePrintSize = new Dimension(
                             (int) pageFormat.getImageableWidth(),
@@ -189,17 +201,23 @@ public class PrintHelperImpl extends PrintHelper implements Printable {
                     imageablePrintSize = new Dimension(
                             (int) pageFormat.getImageableHeight(),
                             (int) pageFormat.getImageableWidth());
-
                 }
-                float zw = imageablePrintSize.width / pageWidth;
-                float zh = imageablePrintSize.height / pageHeight;
+                float zw = imageablePrintSize.width / rect.width;
+                float zh = imageablePrintSize.height / rect.height;
                 zoomFactor = Math.min(zw, zh);
-                imageablePrintLocation.x = (int) pageFormat.getImageableX();
-                imageablePrintLocation.y = (int) pageFormat.getImageableY();
+
+                AffineTransform zoomAf = new AffineTransform();
+                zoomAf.setToScale(zoomFactor, zoomFactor);
+                pageBoundaryClip = zoomAf.createTransformedShape(rect).getBounds();
+
+                imageablePrintLocation.x = -(int) (pageBoundaryClip.x);
+                imageablePrintLocation.y = -(int) (pageBoundaryClip.y);
+
             }
             // apply imageablePrintLocation, normally (0,0)
-            printGraphics.translate(imageablePrintLocation.x,
-                    imageablePrintLocation.y);
+            printGraphics.translate(imageablePrintLocation.x, imageablePrintLocation.y);
+            // apply the new clip is popup printing is active
+            printGraphics.setClip(pageBoundaryClip);
 
             // Paint the page content
             currentPage.paint(printGraphics,

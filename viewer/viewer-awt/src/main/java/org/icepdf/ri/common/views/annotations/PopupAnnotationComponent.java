@@ -156,7 +156,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         parentPageViewComponent = pageViewComponent;
     }
 
-    protected Rectangle limitAnnotationPosition(int x, int y, int width, int height){
+    protected Rectangle limitAnnotationPosition(int x, int y, int width, int height) {
         return new Rectangle(x, y, width, height);
     }
 
@@ -167,11 +167,11 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     public void refreshDirtyBounds() {
         Page currentPage = pageViewComponent.getPage();
         DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-        AffineTransform at = currentPage.getPageTransform(
+        Rectangle annotationPageSpaceBounds = annotation.calculatePageSpaceRectangle(
+                currentPage,
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
-        Rectangle annotationPageSpaceBounds = commonBoundsNormalization(new GeneralPath(annotation.getUserSpaceRectangle()), at);
         Rectangle pageBounds = parentPageViewComponent.getParent().getBounds();
         annotationPageSpaceBounds.x += pageBounds.x;
         annotationPageSpaceBounds.y += pageBounds.y;
@@ -195,7 +195,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         Rectangle bounds = getBounds();
         bounds.x -= pageBounds.x;
         bounds.y -= pageBounds.y;
-        Rectangle annotationPageSpaceBounds = commonBoundsNormalization(new GeneralPath(bounds), at);
+        Rectangle annotationPageSpaceBounds = Annotation.commonBoundsNormalization(new GeneralPath(bounds), at);
         annotation.syncBBoxToUserSpaceRectangle(annotationPageSpaceBounds);
     }
 
@@ -233,7 +233,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         // this reads, ugly, sorry...
         if (isMousePressed) {
             Rectangle currentBounds = getBounds();
-            Dimension documentSize = ((JComponent)pageViewComponent.getParentDocumentView()).getSize();
+            Dimension documentSize = ((JComponent) pageViewComponent.getParentDocumentView()).getSize();
             if (currentBounds.x != x || currentBounds.y != y) {
                 if (x < 0) {
                     if (currentBounds.width != width) width += x;
