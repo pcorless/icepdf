@@ -150,7 +150,14 @@ public class BaseWriter {
         } else if (val instanceof Number) {
             writeReal((Number) val, output);
         } else if (val instanceof String) {
-            literalObjectWriter.write((String) val, output);
+            String value = (String) val;
+            // We need to unwrap null as we special case it in the object parser, not ideal
+            if (value.equals("null")) {
+                output.write(NULL);
+            } else {
+                literalObjectWriter.write(value, output);
+            }
+
         } else if (val instanceof LiteralStringObject) {
             literalObjectWriter.write(((LiteralStringObject) val), output);
         } else if (val instanceof HexStringObject) {

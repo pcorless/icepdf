@@ -12,8 +12,19 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 
+/**
+ * Writes a document stream in its entirety.  The document's root object is used ot traverse the page tree
+ * checking each object's state in the state manager and writing any modifications.  Any object that is marked
+ * as deleted will not be written to the new stream.
+ *
+ * @since 7.2.0
+ */
 public class FullUpdater {
 
+    /**
+     * Write the xrefTable in a compressed format by default.  Can be disabled if to aid in debugging or to
+     * support old PDF versions.
+     */
     public static boolean compressXrefTable = Defs.booleanProperty(
             "org.icepdf.core.utils.fullUpdater.compressXref", true);
 
@@ -29,7 +40,7 @@ public class FullUpdater {
     }
 
     /**
-     * Write a new document inserted and updating modified objects to the specified output stream.
+     * Write a new document inserting and updating modified objects to the specified output stream.
      *
      * @param document     The Document that is being saved
      * @param outputStream OutputStream to write the incremental update to

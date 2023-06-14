@@ -62,7 +62,7 @@ public class Stream extends Dictionary {
     protected DictionaryEntries decodeParams;
 
     // default compression state for a file loaded stream,  for re-saving
-    // of form data we want to avoid re-compressing the data.
+    // of form data we want to avoid re-compressing the data or re-encrypting it.
     protected boolean compressed = true;
 
     public Stream(Library library, DictionaryEntries dictionaryEntries, byte[] rawBytes) {
