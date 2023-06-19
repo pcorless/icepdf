@@ -47,7 +47,6 @@ import java.util.regex.Pattern;
  *
  * @since 2.5
  */
-@SuppressWarnings("serial")
 public class DocumentViewControllerImpl
         implements DocumentViewController, ComponentListener, PropertyChangeListener {
 
@@ -58,11 +57,11 @@ public class DocumentViewControllerImpl
     private static final Pattern DASH_NEWLINE_PATTERN = Pattern.compile("- *\n");
 
     /**
-     * Displays a one page at a time view.
+     * Displays a one page at a time.
      */
     public static final int ONE_PAGE_VIEW = 1;
     /**
-     * Displays a the pages in one column.
+     * Displays all pages in a single column.
      */
     public static final int ONE_COLUMN_VIEW = 2;
     /**
@@ -74,15 +73,15 @@ public class DocumentViewControllerImpl
      */
     public static final int TWO_COLUMN_LEFT_VIEW = 4;
     /**
-     * Displays the pages two at a time, with event-numbered pages on the left.
+     * Displays the pages two at a time, with odd-numbered pages on the right.
      */
     public static final int TWO_PAGE_RIGHT_VIEW = 5;
     /**
-     * Displays the pages in two columns, with even-numbered pages on the left.
+     * Displays the pages in two columns, with odd-numbered pages on the right.
      */
     public static final int TWO_COLUMN_RIGHT_VIEW = 6;
     /**
-     * Displays the pages in two columns, with even-numbered pages on the left.
+     * Displays document using the attachment view,  showing thumbnails for each child document.
      */
     public static final int USE_ATTACHMENTS_VIEW = 7;
     /**
@@ -90,11 +89,11 @@ public class DocumentViewControllerImpl
      */
     public static final int FULL_SCREEN_VIEW = 8;
     /**
-     * Zoom factor used when zooming in or out.
+     * Zoom factor multiplier when zooming in or out.
      */
     public static final float ZOOM_FACTOR = 1.2F;
     /**
-     * Rotation factor used with rotating document.
+     * Rotation factor multiplier when rotating document.
      */
     public static final float ROTATION_FACTOR = 90F;
 
@@ -1420,7 +1419,7 @@ public class DocumentViewControllerImpl
                         }
                     }
                 }
-                // else we need to to remove the old component and add the new destination component.
+                // else we need to remove the old component and add the new destination component.
                 else {
                     // remove the old component
                     Page oldPage = (Page) library.getObject(oldDestination.getPageReference());
