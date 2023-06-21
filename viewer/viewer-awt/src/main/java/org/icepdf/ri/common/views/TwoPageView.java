@@ -104,6 +104,8 @@ public class TwoPageView extends AbstractDocumentView {
             if (viewAlignment == RIGHT_VIEW &&
                     ((index > 0 && index % 2 == 0) || (index > 0 && docLength == 2))) {
                 index--;
+            } else if ((index > 0 && index % 2 != 0) || (index > 0 && docLength == 2)) {
+                index--;
             }
 
             for (int i = index; i < docLength && count < 2; i++) {
