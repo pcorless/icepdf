@@ -176,6 +176,9 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         annotationPageSpaceBounds.x += pageBounds.x;
         annotationPageSpaceBounds.y += pageBounds.y;
         setBounds(annotationPageSpaceBounds);
+        // updates font size for latest scale factor
+        setTextAreaFontSize(annotation.getTextAreaFontsize());
+        setHeaderLabelsFontSize(annotation.getHeaderLabelsFontSize());
     }
 
     /**
@@ -584,7 +587,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             }
         });
 
-        // ctrl-0 to dfeault font size.
+        // ctrl-0 to default font size.
         key = KeyStroke.getKeyStroke(KeyEvent.VK_0, InputEvent.CTRL_DOWN_MASK);
         inputMap.put(key, "font-size-default");
         actionMap.put("font-size-default", new AbstractAction() {
@@ -614,9 +617,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     public void mouseWheelMoved(MouseWheelEvent e) {
         if (hasFocus() || textArea.hasFocus()) {
             if (findComponentAt(e.getPoint()) == textArea) {
-                float newFontSize = textArea.getFont().getSize() - e.getWheelRotation();
-                annotation.setFontSize(newFontSize);
-                textArea.setFont(textArea.getFont().deriveFont(newFontSize));
+                setTextAreaFontSize(annotation.getTextAreaFontsize() - e.getWheelRotation());
             } else {
                 changeFontSize(-e.getWheelRotation());
             }
@@ -741,25 +742,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             }
         } catch (BadLocationException ex) {
             logger.log(Level.FINE, "Error updating markup annotation content", ex);
-        }
-    }
-
-    public void updateContent(String content) {
-        // get the next text and save it to the selected markup annotation.
-        if (content != null && content.length() > 0) {
-            // update the annotations internals.
-            selectedMarkupAnnotation.setModifiedDate(PDate.formatDateTime(new Date()));
-            selectedMarkupAnnotation.setContents(content);
-            documentViewController.updateAnnotation(getMarkupAnnotationComponent());
-            // should already be on the awt thread but just encase,  we update the textArea too.
-            SwingUtilities.invokeLater(() -> {
-                textArea.getDocument().removeDocumentListener(PopupAnnotationComponent.this);
-                textArea.setText(content);
-                textArea.getDocument().addDocumentListener(PopupAnnotationComponent.this);
-            });
-
-            // add them to the container, using absolute positioning.
-            documentViewController.updateAnnotation(this);
         }
     }
 
@@ -1231,18 +1213,24 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
     }
 
+    public void setTextAreaFontSize(float size) {
+        float textAreaFontSize = annotation.getTextAreaFontsize();
+        annotation.setTextAreaFontsize(size);
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
+        PopupAnnotation.updateTextAreaFontSize(textArea, textAreaFontSize, documentViewModel.getViewZoom());
+    }
+
+    public void setHeaderLabelsFontSize(float size) {
+        float headerLabelsFontSize = annotation.getHeaderLabelsFontSize();
+        annotation.setHeaderLabelsFontSize(size);
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
+        PopupAnnotation.updateTextAreaFontSize(titleLabel, headerLabelsFontSize, documentViewModel.getViewZoom());
+        PopupAnnotation.updateTextAreaFontSize(creationLabel, headerLabelsFontSize, documentViewModel.getViewZoom());
+    }
+
     public void changeFontSize(float changeValue) {
-        final Font areaFont = textArea.getFont();
-        final Font titleFont = titleLabel.getFont();
-        final Font creationFont = creationLabel.getFont();
-
-        float fontSize = areaFont.getSize() + changeValue;
-
-        textArea.setFont(areaFont.deriveFont(fontSize));
-        titleLabel.setFont(titleFont.deriveFont(titleFont.getSize() + changeValue));
-        creationLabel.setFont(creationFont.deriveFont(creationFont.getSize() + changeValue));
-
-        annotation.setFontSize(fontSize);
+        setTextAreaFontSize(annotation.getTextAreaFontsize() + changeValue);
+        setHeaderLabelsFontSize(annotation.getHeaderLabelsFontSize() + changeValue);
     }
 
     public MarkupGlueComponent getMarkupGlueComponent() {
@@ -1254,11 +1242,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     }
 
     public void setFontSize(float size) {
-        Font font = textArea.getFont().deriveFont(size);
-        textArea.setFont(font);
-        titleLabel.setFont(font);
-        creationLabel.setFont(font);
-        annotation.setFontSize(size);
+        setTextAreaFontSize(size);
+        setHeaderLabelsFontSize(size);
     }
 
     public int getFontSize() {

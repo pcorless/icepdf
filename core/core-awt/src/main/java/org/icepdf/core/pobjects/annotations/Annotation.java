@@ -1314,7 +1314,7 @@ public abstract class Annotation extends Dictionary {
             origG.clip(deriveDrawingRectangle());
         }
 
-        renderAppearanceStream(origG);
+        renderAppearanceStream(origG, totalRotation, userZoom);
 
         origG.setTransform(at);
         origG.setClip(preAppearanceStreamClip);
@@ -1338,7 +1338,7 @@ public abstract class Annotation extends Dictionary {
 //origG.fill( topLeft );
     }
 
-    protected void renderAppearanceStream(Graphics2D g) {
+    protected void renderAppearanceStream(Graphics2D g, float rotation, float zoom) {
         Appearance appearance = appearances.get(currentAppearance);
         if (appearance == null) return;
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();

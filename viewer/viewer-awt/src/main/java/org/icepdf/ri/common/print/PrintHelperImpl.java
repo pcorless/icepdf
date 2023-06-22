@@ -210,8 +210,9 @@ public class PrintHelperImpl extends PrintHelper implements Printable {
                 zoomAf.setToScale(zoomFactor, zoomFactor);
                 pageBoundaryClip = zoomAf.createTransformedShape(rect).getBounds();
 
-                imageablePrintLocation.x = -(int) (pageBoundaryClip.x);
-                imageablePrintLocation.y = -(int) (pageBoundaryClip.y);
+                // adjust for new size but also the imageable area of the printer
+                imageablePrintLocation.x = (int) pageFormat.getImageableX() - pageBoundaryClip.x;
+                imageablePrintLocation.y = (int) pageFormat.getImageableY() - pageBoundaryClip.y;
 
             }
             // apply imageablePrintLocation, normally (0,0)

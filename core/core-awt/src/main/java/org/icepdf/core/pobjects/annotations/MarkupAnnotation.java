@@ -236,6 +236,13 @@ public abstract class MarkupAnnotation extends Annotation {
         return popupAnnotation;
     }
 
+    public void setContents(String content) {
+        super.setContents(content);
+        if (popupAnnotation != null) {
+            popupAnnotation.updatePaintables();
+        }
+    }
+
     protected static void generateExternalGraphicsState(Form form, float opacity) {
         // add the transparency graphic context settings.
         if (form != null) {

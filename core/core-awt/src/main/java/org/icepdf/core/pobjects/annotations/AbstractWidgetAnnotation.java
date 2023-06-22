@@ -121,7 +121,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
     public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew);
 
     @Override
-    protected void renderAppearanceStream(Graphics2D g) {
+    protected void renderAppearanceStream(Graphics2D g, float rotation, float zoom) {
 
         Appearance appearance = appearances.get(currentAppearance);
         if (appearance != null) {
@@ -129,7 +129,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
             if (appearanceState != null &&
                     appearanceState.getShapes() != null) {
                 // render the main annotation content
-                super.renderAppearanceStream(g);
+                super.renderAppearanceStream(g, rotation, zoom);
             }
         }
         // check the highlight widgetAnnotation field and if true we draw a light background colour to mark

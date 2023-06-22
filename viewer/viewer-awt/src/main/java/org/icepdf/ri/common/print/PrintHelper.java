@@ -73,16 +73,15 @@ public abstract class PrintHelper {
         final MediaSize mediaSize =
                 MediaSize.getMediaSizeForName(paperSizeName);
         final float[] size = mediaSize.getSize(MediaSize.INCH);
-        docAttributeSet.add(new MediaPrintableArea(0, 0, size[0], size[1],
-                MediaPrintableArea.INCH));
+        docAttributeSet.add(new MediaPrintableArea(0, 0, size[0], size[1], MediaPrintableArea.INCH));
         return docAttributeSet;
     }
 
     protected static PrintRequestAttributeSet createPrintRequestAttributeSet(final PrintQuality printQuality,
                                                                              final MediaSizeName paperSizeName) {
         // default printing properties.
-        final PrintRequestAttributeSet printRequestAttributeSet =
-                new HashPrintRequestAttributeSet();
+        final PrintRequestAttributeSet printRequestAttributeSet = new HashPrintRequestAttributeSet();
+
         // assign print quality.
         printRequestAttributeSet.add(printQuality);
 
@@ -92,9 +91,7 @@ public abstract class PrintHelper {
         final MediaSize mediaSize =
                 MediaSize.getMediaSizeForName(paperSizeName);
         final float[] size = mediaSize.getSize(MediaSize.INCH);
-        printRequestAttributeSet
-                .add(new MediaPrintableArea(0, 0, size[0], size[1],
-                        MediaPrintableArea.INCH));
+        printRequestAttributeSet.add(new MediaPrintableArea(0, 0, size[0], size[1], MediaPrintableArea.INCH));
         return printRequestAttributeSet;
     }
 

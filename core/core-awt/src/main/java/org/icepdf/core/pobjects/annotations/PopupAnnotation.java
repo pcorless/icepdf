@@ -66,9 +66,15 @@ public class PopupAnnotation extends Annotation {
 
     protected MarkupAnnotation parent;
 
-    protected float fontSize = new JLabel().getFont().getSize();
+    protected final float fontSize = new JLabel().getFont().getSize();
+    protected float textAreaFontsize = fontSize;
+    protected float headerLabelsFontSize = fontSize;
+
 
     protected JPanel popupPaintablesPanel;
+    protected JLabel creationLabel;
+    protected JLabel titleLabel;
+    protected JTextArea textArea;
     private boolean resetPopupPaintables = true;
 
     public PopupAnnotation(Library library, DictionaryEntries dictionaryEntries) {
@@ -126,7 +132,7 @@ public class PopupAnnotation extends Annotation {
     }
 
     @Override
-    protected void renderAppearanceStream(Graphics2D g2d) {
+    protected void renderAppearanceStream(Graphics2D g2d, float rotation, float zoom) {
         GraphicsConfiguration graphicsConfiguration = g2d.getDeviceConfiguration();
         boolean isPrintingAllowed = getParent().getFlagPrint();
         if (graphicsConfiguration.getDevice().getType() == GraphicsDevice.TYPE_PRINTER &&
@@ -135,6 +141,7 @@ public class PopupAnnotation extends Annotation {
             if (resetPopupPaintables) {
                 buildPopupPaintables();
             }
+            applyFontScaling(zoom);
             paintPopupPaintables(g2d);
         }
     }
@@ -160,6 +167,12 @@ public class PopupAnnotation extends Annotation {
         g2d.setTransform(oldTransform);
     }
 
+    private void applyFontScaling(float zoom) {
+        PopupAnnotation.updateTextAreaFontSize(titleLabel, headerLabelsFontSize, zoom);
+        PopupAnnotation.updateTextAreaFontSize(creationLabel, headerLabelsFontSize, zoom);
+        PopupAnnotation.updateTextAreaFontSize(textArea, textAreaFontsize, zoom);
+    }
+
     /**
      * Builds a JPanel representing the popup annotation that can be printed.
      */
@@ -182,19 +195,19 @@ public class PopupAnnotation extends Annotation {
         MarkupAnnotation markupAnnotation = getParent();
         // user
         String title = markupAnnotation.getFormattedTitleText();
-        JLabel titleLabel = new JLabel(title);
+        titleLabel = new JLabel(title);
         titleLabel.setForeground(contrastColor);
         popupPaintablesPanel.add(titleLabel);
 
         // creation date
-        JLabel creationLabel = new JLabel();
+        creationLabel = new JLabel();
         creationLabel.setText(markupAnnotation.getFormattedCreationDate(FormatStyle.MEDIUM));
         creationLabel.setForeground(contrastColor);
         popupPaintablesPanel.add(creationLabel);
 
         // text area
         String contents = getParent() != null ? getParent().getContents() : "";
-        JTextArea textArea = new JTextArea(contents);
+        textArea = new JTextArea(contents);
         Font font = new JLabel().getFont();
         font = font.deriveFont(fontSize);
         textArea.setFont(font);
@@ -231,14 +244,35 @@ public class PopupAnnotation extends Annotation {
 
     }
 
-    public void setContents(String content) {
-        super.setString(CONTENTS_KEY, content);
+    public void updatePaintables() {
         resetPopupPaintables = true;
     }
 
-    public void setFontSize(float fontSize) {
+    public void setUserSpaceRectangle(Rectangle2D.Float rect) {
+        super.setUserSpaceRectangle(rect);
         resetPopupPaintables = true;
-        this.fontSize = fontSize;
+    }
+
+    public float getTextAreaFontsize() {
+        return textAreaFontsize;
+    }
+
+    public void setTextAreaFontsize(float textAreaFontsize) {
+        this.textAreaFontsize = textAreaFontsize;
+    }
+
+    public float getHeaderLabelsFontSize() {
+        return headerLabelsFontSize;
+    }
+
+    public void setHeaderLabelsFontSize(float headerLabelsFontSize) {
+        this.headerLabelsFontSize = headerLabelsFontSize;
+    }
+
+    public static void updateTextAreaFontSize(Component component, float fontSize, float zoom) {
+        final float scaledFontSize = fontSize * zoom;
+        final Font font = component.getFont();
+        component.setFont(font.deriveFont(scaledFontSize));
     }
 
     @Override
