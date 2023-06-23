@@ -118,21 +118,9 @@ public class MouseWheelListenerPageChanger implements MouseWheelListener {
         if (deltaPage == 0)
             return;
 
-        int newPage = controller.getCurrentPageNumber() + deltaPage;
         if (controller.getDocument() == null) {
             return;
         }
-        if (newPage < 0) {
-            deltaPage = -controller.getCurrentPageNumber();
-        }
-        if (newPage >= controller.getDocument().getNumberOfPages()) {
-            deltaPage = controller.getDocument().getNumberOfPages() - controller.getCurrentPageNumber() - 1;
-        }
-
-        if (deltaPage == 0) {
-            return;
-        }
-//        System.out.println("Delta " + deltaPage + " " + controller.getCurrentPageNumber() + " " + visibleVerticalScrollBar);
 
         changingPage = true;
         final int dp = deltaPage;

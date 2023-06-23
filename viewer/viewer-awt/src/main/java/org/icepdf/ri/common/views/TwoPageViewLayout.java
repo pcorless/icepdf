@@ -39,58 +39,33 @@ public class TwoPageViewLayout extends BasePageViewLayout implements LayoutManag
 
         int count = 0;
         int previousWidth = 0;
-        if (viewType == DocumentView.RIGHT_VIEW) {
-            for (PageViewDecorator pageViewDecorator : pages) {
-                int pageIndex = pageViewDecorator.getPageViewComponent().getPageIndex();
-                Dimension d = pageViewDecorator.getPreferredSize();
-                // apply left to right reading
-                if (pageIndex == 0 && pages.length == 1) {
-                    // offset to the right side
-                    xCord = ((maxWidth - preferredWidth) / 2) + d.width + PAGE_SPACING_HORIZONTAL;
-                    xCord += insets.left;
-                } else if (count == 0) {
-                    // start layout left to right
-                    xCord += PAGE_SPACING_HORIZONTAL + (maxWidth - preferredWidth) / 2;
-                    previousWidth = d.width;
-                    count++;
-                } else {
-                    xCord += previousWidth + PAGE_SPACING_HORIZONTAL;
-                }
-                yCord = (maxHeight - d.height) / 2;
-
-                if (xCord < 0) xCord = 0;
-                if (yCord < 0) yCord = 0;
-
-                yCord += insets.top;
-
-                pageViewDecorator.setBounds(xCord, yCord, d.width, d.height);
-                updatePopupAnnotationComponents(pageViewDecorator);
+        for (PageViewDecorator pageViewDecorator : pages) {
+            int pageIndex = pageViewDecorator.getPageViewComponent().getPageIndex();
+            Dimension d = pageViewDecorator.getPreferredSize();
+            // apply odd pages right offset
+            if (viewType == DocumentView.RIGHT_VIEW &&
+                    pageIndex == 0 && pages.length == 1) {
+                // offset to the right side
+                xCord = ((maxWidth - preferredWidth) / 2) + d.width + PAGE_SPACING_HORIZONTAL;
+                xCord += insets.left;
+            } else if (count == 0) {
+                // regular layout
+                xCord += (maxWidth - preferredWidth) / 2;
+                xCord += insets.left;
+                previousWidth = d.width;
+                count++;
+            } else {
+                xCord += previousWidth + PAGE_SPACING_HORIZONTAL;
             }
-        } else {
-            PageViewDecorator pageViewDecorator;
-            for (int i = pages.length - 1; i >= 0; i--) {
-                pageViewDecorator = pages[i];
-                int pageIndex = pageViewDecorator.getPageViewComponent().getPageIndex();
-                Dimension d = pageViewDecorator.getPreferredSize();
-                // apply right to left reading
-                if ((pageIndex == 0 && pages.length == 1) || count == 0) {
-                    // left side
-                    xCord += PAGE_SPACING_HORIZONTAL + (maxWidth - preferredWidth) / 2;
-                    previousWidth = d.width;
-                    count++;
-                } else {
-                    xCord += previousWidth + PAGE_SPACING_HORIZONTAL;
-                }
-                yCord = (maxHeight - d.height) / 2;
+            yCord = (maxHeight - d.height) / 2;
 
-                if (xCord < 0) xCord = 0;
-                if (yCord < 0) yCord = 0;
+            if (xCord < 0) xCord = 0;
+            if (yCord < 0) yCord = 0;
 
-                yCord += insets.top;
+            yCord += insets.top;
 
-                pageViewDecorator.setBounds(xCord, yCord, d.width, d.height);
-                updatePopupAnnotationComponents(pageViewDecorator);
-            }
+            pageViewDecorator.setBounds(xCord, yCord, d.width, d.height);
+            updatePopupAnnotationComponents(pageViewDecorator);
         }
     }
 
