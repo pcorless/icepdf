@@ -17,10 +17,13 @@ public class PageRemovalModifier implements Modifier<Page> {
     private Catalog catalog;
     private StateManager stateManager;
 
+    public PageRemovalModifier(Object parent) {
+        this.catalog = (Catalog) parent;
+    }
+
     @Override
     public void modify(Page page) {
         library = page.getLibrary();
-        catalog = library.getCatalog();
         stateManager = library.getStateManager();
         Reference pageReference = page.getPObjectReference();
 

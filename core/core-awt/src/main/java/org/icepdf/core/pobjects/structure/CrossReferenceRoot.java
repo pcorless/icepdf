@@ -97,11 +97,6 @@ public class CrossReferenceRoot {
             int size = library.getInt(entries, PTrailer.SIZE_KEY);
             maxSize = Math.max(maxSize, size);
         }
-        Object shouldNotExist = library.getObject(new Reference(maxSize, 0));
-        if (shouldNotExist != null) {
-            log.warning("Cross reference size specifies an object that already exists.");
-            maxSize += 1000;
-        }
         return maxSize;
     }
 

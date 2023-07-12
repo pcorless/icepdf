@@ -735,11 +735,11 @@ public class Document {
         return pTrailer.getInfo();
     }
 
-    public void removePage(Page page) {
+    public void deletePage(Page page) {
         if (page == null) {
             throw new IllegalStateException("Page must not be null");
         }
-        PageRemovalModifier pageRemovalModifier = (PageRemovalModifier) ModifierFactory.getModifier(page);
+        PageRemovalModifier pageRemovalModifier = (PageRemovalModifier) ModifierFactory.getModifier(catalog, page);
         if (pageRemovalModifier != null) {
             pageRemovalModifier.modify(page);
         }

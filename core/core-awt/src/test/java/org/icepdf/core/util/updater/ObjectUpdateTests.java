@@ -30,7 +30,7 @@ public class ObjectUpdateTests {
 
             Page page = document.getPageTree().getPage(2);
             Reference deletedPageReference = page.getPObjectReference();
-            document.removePage(page);
+            document.deletePage(page);
 
             File out = new File("./src/test/out/ObjectUpdateTest-1.pdf");
 
