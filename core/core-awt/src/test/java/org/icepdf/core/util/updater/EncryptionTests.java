@@ -22,7 +22,7 @@ public class EncryptionTests {
             InputStream fileUrl = ObjectUpdateTests.class.getResourceAsStream("/updater/DSCP73_om_en.pdf");
             document.setInputStream(fileUrl, "DSCP73_om_en.pdf");
 
-            File out = new File("./src/test/out/ObjectUpdateTest-3.pdf");
+            File out = new File("./src/test/out/EncryptionTest_testXrefTableFullUpdate.pdf");
             try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 8192)) {
                 long length = document.saveToOutputStream(stream, WriteMode.FULL_UPDATE);
 

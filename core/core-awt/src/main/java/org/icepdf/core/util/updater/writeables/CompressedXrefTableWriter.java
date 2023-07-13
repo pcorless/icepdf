@@ -47,7 +47,9 @@ public class CompressedXrefTableWriter extends BaseTableWriter {
         int newTrailerSize = entries.stream().sorted(
                 (r1, r2) -> r2.getReference().getObjectNumber() - r1.getReference().getObjectNumber()
         ).collect(Collectors.toList()).get(0).getReference().getObjectNumber();
-        newTrailer.put(PTrailer.SIZE_KEY, newTrailerSize + 1);
+        // one more for the xref object to be written below
+        newTrailerSize += 1;
+        newTrailer.put(PTrailer.SIZE_KEY, newTrailerSize);
 
         writeCompressedXrefTable(securityManager, newTrailer, entries, newTrailerSize, xrefPos, output);
     }

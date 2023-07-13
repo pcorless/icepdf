@@ -83,19 +83,8 @@ public class AnnotationRemovalModifier implements Modifier<Annotation> {
         if (annotations != null) {
             annotations.remove(annot);
         }
-        // remove any corresponding popup annotation.
-        if (annot instanceof MarkupAnnotation) {
-            MarkupAnnotation markupAnnotation = (MarkupAnnotation) annot;
-            for (Annotation annotation : annotations) {
-                if (annotation instanceof PopupAnnotation &&
-                        annotation.equals(markupAnnotation.getPopupAnnotation())) {
-                    annotations.remove(annotation);
-                    stateManager.addDeletion(annotation.getPObjectReference());
-                    break;
-                }
-            }
-        }
-        // remove any markupGlue so that it doesn't get painted.  Glue is never added to the document, it created
+
+        // remove any markupGlue so that it doesn't get written.  Glue is never added to the document, it created
         // dynamically for print purposes.
         if (annot instanceof MarkupAnnotation) {
             MarkupAnnotation markupAnnotation = (MarkupAnnotation) annot;
@@ -103,9 +92,23 @@ public class AnnotationRemovalModifier implements Modifier<Annotation> {
                 if (annotation instanceof MarkupGlueAnnotation &&
                         ((MarkupGlueAnnotation) annotation).getMarkupAnnotation().equals(markupAnnotation)) {
                     annotations.remove(annotation);
+                    // no need to add to state manager as it was never part of the document.
                     break;
                 }
             }
+            for (Annotation annotation : annotations) {
+                if (annotation instanceof PopupAnnotation &&
+                        ((PopupAnnotation) annotation).getParent().equals(markupAnnotation)) {
+                    annotations.remove(annotation);
+                    ((List<?>) annots).remove(annotation.getPObjectReference());
+                    stateManager.addDeletion(annotation.getPObjectReference());
+                    break;
+                }
+            }
+        }
+        if (annotations.size() == 0) {
+            parentPage.getEntries().remove(ANNOTS_KEY);
+            // change should already be registered
         }
         // finally remove it from the library to free up the memory
         library.removeObject(annot.getPObjectReference());

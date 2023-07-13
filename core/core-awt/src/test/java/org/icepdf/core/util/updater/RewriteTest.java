@@ -21,7 +21,7 @@ public class RewriteTest {
             InputStream fileUrl = ObjectUpdateTests.class.getResourceAsStream("/updater/annotation_popup.pdf");
             document.setInputStream(fileUrl, "annotation_popup.pdf");
 
-            File out = new File("./src/test/out/rewriteTest-1.pdf");
+            File out = new File("./src/test/out/RewriteTest_testFullUpdate.pdf");
 
 
             try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 8192)) {
@@ -54,7 +54,7 @@ public class RewriteTest {
             InputStream fileUrl = ObjectUpdateTests.class.getResourceAsStream("/updater/annotation_popup_full.pdf");
             document.setInputStream(fileUrl, "annotation_popup_full.pdf");
 
-            File out = new File("./src/test/out/rewriteTest-2.pdf");
+            File out = new File("./src/test/out/RewriteTest_testAnnotationDeleteFullUpdate.pdf");
 
             Page page = document.getPageTree().getPage(0);
             page.deleteAnnotation(page.getAnnotations().get(0));
@@ -63,7 +63,7 @@ public class RewriteTest {
                 long length = document.saveToOutputStream(stream, WriteMode.FULL_UPDATE);
 
                 // test for length 142246
-                assertEquals(133591, length);
+                assertEquals(133542, length);
             }
             Document modifiedDocument = new Document();
             modifiedDocument.setFile(out.getAbsolutePath());

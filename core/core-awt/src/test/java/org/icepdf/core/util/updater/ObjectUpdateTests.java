@@ -32,7 +32,7 @@ public class ObjectUpdateTests {
             Reference deletedPageReference = page.getPObjectReference();
             document.deletePage(page);
 
-            File out = new File("./src/test/out/ObjectUpdateTest-1.pdf");
+            File out = new File("./src/test/out/ObjectUpdateTest_testXrefTableFullUpdate.pdf");
 
             try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 8192)) {
                 long length = document.saveToOutputStream(stream, WriteMode.FULL_UPDATE);
@@ -75,11 +75,11 @@ public class ObjectUpdateTests {
 
             page.addAnnotation(textAnnotation, true);
 
-            File out = new File("./src/test/out/ObjectUpdateTest-2.pdf");
+            File out = new File("./src/test/out/ObjectUpdateTest_testXrefStreamFullUpdate.pdf");
             try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 8192)) {
                 long length = document.saveToOutputStream(stream, WriteMode.FULL_UPDATE);
                 // test for length 142246
-                assertEquals(8814058, length);
+                assertEquals(8812459, length);
             }
             Document modifiedDocument = new Document();
             modifiedDocument.setFile(out.getAbsolutePath());
