@@ -273,6 +273,7 @@ public class PopupAnnotation extends Annotation {
         final float scaledFontSize = fontSize * zoom;
         final Font font = component.getFont();
         component.setFont(font.deriveFont(scaledFontSize));
+        component.revalidate();
     }
 
     @Override
