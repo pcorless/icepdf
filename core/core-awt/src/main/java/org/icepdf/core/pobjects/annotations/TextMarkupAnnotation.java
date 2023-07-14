@@ -329,14 +329,14 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
     }
 
     @Override
-    protected void renderAppearanceStream(Graphics2D g) {
+    protected void renderAppearanceStream(Graphics2D g, float rotation, float zoom) {
         Appearance appearance = appearances.get(currentAppearance);
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
         Shapes shapes = appearanceState.getShapes();
 
         // Appearance stream takes precedence over the quad points.
         if (shapes != null) {
-            super.renderAppearanceStream(g);
+            super.renderAppearanceStream(g, rotation, zoom);
         }
         // draw the quad points.
         else if (quadrilaterals != null) {

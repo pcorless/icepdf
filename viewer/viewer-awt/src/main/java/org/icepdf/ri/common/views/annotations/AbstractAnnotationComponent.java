@@ -38,7 +38,6 @@ import java.awt.event.FocusListener;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
-import java.awt.geom.Rectangle2D;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -242,7 +241,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
-        setBounds(commonBoundsNormalization(new GeneralPath(annotation.getUserSpaceRectangle()), at));
+        setBounds(annotation.commonBoundsNormalization(new GeneralPath(annotation.getUserSpaceRectangle()), at));
     }
 
     /**
@@ -260,27 +259,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
                 documentViewModel.getViewZoom());
         // store the new annotation rectangle in its original user space
         Rectangle bounds = getBounds();
-        annotation.syncBBoxToUserSpaceRectangle(commonBoundsNormalization(new GeneralPath(bounds), at));
-    }
-
-    /**
-     * Normalizes and the given path with the specified transform.  The method
-     * also rounds the Rectangle2D bounds values when creating a new rectangle
-     * instead of truncating the values.
-     *
-     * @param shapePath path to apply transform to
-     * @param at        transform to apply to shapePath
-     * @return bound value of the shape path.
-     */
-    public static Rectangle commonBoundsNormalization(GeneralPath shapePath,
-                                                      AffineTransform at) {
-        shapePath.transform(at);
-        Rectangle2D pageSpaceBound = shapePath.getBounds2D();
-        return new Rectangle(
-                (int) Math.round(pageSpaceBound.getX()),
-                (int) Math.round(pageSpaceBound.getY()),
-                (int) Math.round(pageSpaceBound.getWidth()),
-                (int) Math.round(pageSpaceBound.getHeight()));
+        annotation.syncBBoxToUserSpaceRectangle(Annotation.commonBoundsNormalization(new GeneralPath(bounds), at));
     }
 
     public void validate() {
