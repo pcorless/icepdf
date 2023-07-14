@@ -128,7 +128,7 @@ public class CertSeedValueDictionary extends Dictionary {
      * be present in the signing certificate.
      * <br>
      * EXAMPLE 2<br>
-     * An example of such a string is: (2.16.840.1.113733.1.7.1.1).
+     * An example of such a string is: (2.16.840.1.113733.1.7.2.0-SNAPSHOT).
      * <br>
      * This field shall only be used if the value of Issuer is not empty. The certificate policies extension is
      * described in RFC 3280 (see the Bibliography). The value of the corresponding flag in the Ff entry indicates
