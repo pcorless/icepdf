@@ -567,9 +567,11 @@ public class Page extends Dictionary {
         if (oldClip == null) {
             g2.setClip(rect);
         } else {
-            Area area = new Area(oldClip);
-            area.intersect(new Area(rect));
-            g2.setClip(area);
+            // pages/paper are generally rectangular, so we'll drop the shape
+            // the union insures we respect the parent clip, mainly for printing popup outside of the page clip
+            Rectangle currentClip = oldClip.getBounds();
+            Rectangle.union(currentClip, rect, rect);
+            g2.setClip(rect);
         }
 
         paintPageContent(g2, renderHintType, userRotation, userZoom, paintAnnotations, paintSearchHighlight);

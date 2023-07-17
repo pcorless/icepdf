@@ -56,7 +56,7 @@ public class TwoColumnPageView extends AbstractDocumentView {
         // put all the gui elements together
         buildGUI();
 
-        // add the first of many tools need for this views and others like it.
+        // add the first of many tools needed for this view and others like it.
         currentPageChanger =
                 new CurrentPageChanger(documentScrollpane, this,
                         documentViewModel.getPageComponents());
@@ -83,11 +83,6 @@ public class TwoColumnPageView extends AbstractDocumentView {
         if (pageComponents != null) {
             AbstractPageViewComponent pageViewComponent;
             for (int i = 0, max = pageComponents.size(); i < max; i++) {
-                // save for facing page
-                if (i == 0 && max > 2 && viewAlignment == RIGHT_VIEW) {
-                    // should be adding spacer
-                    add(new JLabel());
-                }
                 pageViewComponent = pageComponents.get(i);
                 if (pageViewComponent != null) {
                     pageViewComponent.setDocumentViewCallback(this);
@@ -216,26 +211,4 @@ public class TwoColumnPageView extends AbstractDocumentView {
         // paint selection box
         super.paintComponent(g);
     }
-
-//    public void adjustmentValueChanged(AdjustmentEvent e){
-//
-////        System.out.println("Adjusting " + e.getAdjustable().getValue());
-//          if (e.getAdjustable().getOrientation() == Adjustable.HORIZONTAL){
-////              System.out.println("horizontal");
-//          }
-//          else if (e.getAdjustable().getOrientation() == Adjustable.VERTICAL){
-////              System.out.println("vertical");
-////              int newValue = e.getAdjustable().getValue();
-////              System.out.println("value " + newValue);
-////              e.getAdjustable().setValue(0);
-//          }
-//    }
-
-//    public void mouseDragged(MouseEvent e) {
-//        Point point = e.getPoint();
-//        super.mouseDragged(e);
-//        Point currentLocation = getLocation();
-//        pageViewComponentImpl.setBounds(point.x,
-//                                        point.y, 640,480);
-//    }
 }

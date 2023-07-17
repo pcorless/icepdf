@@ -1314,7 +1314,7 @@ public abstract class Annotation extends Dictionary {
             origG.clip(deriveDrawingRectangle());
         }
 
-        renderAppearanceStream(origG);
+        renderAppearanceStream(origG, totalRotation, userZoom);
 
         origG.setTransform(at);
         origG.setClip(preAppearanceStreamClip);
@@ -1338,7 +1338,7 @@ public abstract class Annotation extends Dictionary {
 //origG.fill( topLeft );
     }
 
-    protected void renderAppearanceStream(Graphics2D g) {
+    protected void renderAppearanceStream(Graphics2D g, float rotation, float zoom) {
         Appearance appearance = appearances.get(currentAppearance);
         if (appearance == null) return;
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
@@ -1978,6 +1978,34 @@ public abstract class Annotation extends Dictionary {
                 sb.deleteCharAt(i);
         }
         return sb.toString();
+    }
+
+    public Rectangle calculatePageSpaceRectangle(Page page, final int boundary, final float rotation, final float zoom) {
+        AffineTransform at = page.getPageTransform(
+                boundary,
+                rotation,
+                zoom);
+        Rectangle annotationPageSpaceBounds = commonBoundsNormalization(new GeneralPath(getUserSpaceRectangle()), at);
+        return annotationPageSpaceBounds;
+    }
+
+    /**
+     * Normalizes and the given path with the specified transform.  The method
+     * also rounds the Rectangle2D bounds values when creating a new rectangle
+     * instead of truncating the values.
+     *
+     * @param shapePath path to apply transform to
+     * @param at        transform to apply to shapePath
+     * @return bound value of the shape path.
+     */
+    public static Rectangle commonBoundsNormalization(GeneralPath shapePath, AffineTransform at) {
+        shapePath.transform(at);
+        Rectangle2D pageSpaceBound = shapePath.getBounds2D();
+        return new Rectangle(
+                (int) Math.round(pageSpaceBound.getX()),
+                (int) Math.round(pageSpaceBound.getY()),
+                (int) Math.round(pageSpaceBound.getWidth()),
+                (int) Math.round(pageSpaceBound.getHeight()));
     }
 
     public void syncBBoxToUserSpaceRectangle(Rectangle2D bbox) {

@@ -22,7 +22,7 @@ public class MarkupGlueAnnotation extends Annotation {
         this.popupAnnotation = popupAnnotation;
     }
 
-    protected void renderAppearanceStream(Graphics2D g2d) {
+    protected void renderAppearanceStream(Graphics2D g2d, float rotation, float zoom) {
         if (this.popupAnnotation == null || this.markupAnnotation == null) return;
 
         GraphicsConfiguration graphicsConfiguration = g2d.getDeviceConfiguration();

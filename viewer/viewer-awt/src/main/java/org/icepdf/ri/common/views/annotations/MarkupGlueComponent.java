@@ -16,6 +16,7 @@
 package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupGluePainter;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -74,7 +75,7 @@ public class MarkupGlueComponent extends JComponent implements PageViewAnnotatio
                 documentViewModel.getViewZoom());
         Rectangle2D markupUserSpaceRectangle = markupAnnotationComponent.getAnnotation().getUserSpaceRectangle();
         Rectangle annotationPageSpaceBounds =
-                AbstractAnnotationComponent.commonBoundsNormalization(new GeneralPath(markupUserSpaceRectangle), at);
+                Annotation.commonBoundsNormalization(new GeneralPath(markupUserSpaceRectangle), at);
         Rectangle pageBounds = parentPageViewComponent.getParent().getBounds();
         annotationPageSpaceBounds.x += pageBounds.x;
         annotationPageSpaceBounds.y += pageBounds.y;

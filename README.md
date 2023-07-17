@@ -22,13 +22,13 @@ ICEpdf is an open source project and is always looking for more contributors.  T
  ```xml
  <dependency>
      <groupId>com.github.pcorless.icepdf</groupId>
-     <artifactId>icepdf-core</artifactId>
-     <version>7.1.0</version>
- </dependency>
+ <artifactId>icepdf-core</artifactId>
+ <version>7.1.1</version>
+</dependency>
  <dependency>
      <groupId>com.github.pcorless.icepdf</groupId>
      <artifactId>icepdf-viewer</artifactId>
-     <version>7.1.0</version>
+     <version>7.1.1</version>
  </dependency>
  ```
  
