@@ -591,6 +591,8 @@ public class SwingViewBuilder implements ViewBuilder {
         addToMenu(fileMenu, buildCloseMenuItem());
         addToMenu(fileMenu, buildSaveFileMenuItem());
         addToMenu(fileMenu, buildSaveAsFileMenuItem());
+        fileMenu.addSeparator();
+        addToMenu(fileMenu, buildExportDocumentFileMenuItem());
         addToMenu(fileMenu, buildExportTextMenuItem());
         addToMenu(fileMenu, buildSendByMailMenuItem());
         fileMenu.addSeparator();
@@ -633,7 +635,7 @@ public class SwingViewBuilder implements ViewBuilder {
     public JMenuItem buildSendByMailMenuItem() {
         final JMenuItem mi = makeMenuItem(messageBundle.getString("viewer.menu.sendMail.label"), null, iconSize,
                 buildKeyStroke(KeyEventConstants.KEY_CODE_SEND_MAIL, KeyEventConstants.MODIFIER_SEND_MAIL));
-        if (viewerController!=null && mi!=null){
+        if (viewerController != null && mi != null) {
             viewerController.setSendMailMenuItem(mi);
         }
         return mi;
@@ -666,13 +668,22 @@ public class SwingViewBuilder implements ViewBuilder {
             viewerController.setSaveFileMenuItem(mi);
         return mi;
     }
+
     public JMenuItem buildSaveAsFileMenuItem() {
         JMenuItem mi = makeMenuItem(
-                messageBundle.getString("viewer.menu.saveAs.label"), "save",
-                Images.SIZE_SMALL,
+                messageBundle.getString("viewer.menu.saveAs.label"), null, null,
                 buildKeyStroke(KeyEventConstants.KEY_CODE_SAVE_AS, KeyEventConstants.MODIFIER_SAVE_AS, false));
         if (viewerController != null && mi != null)
             viewerController.setSaveAsFileMenuItem(mi);
+        return mi;
+    }
+
+    public JMenuItem buildExportDocumentFileMenuItem() {
+        JMenuItem mi = makeMenuItem(
+                messageBundle.getString("viewer.menu.exportDocument.label"), null, null,
+                buildKeyStroke(KeyEventConstants.KEY_CODE_EXPORT_DOCUMENT, KeyEventConstants.MODIFIER_EXPORT_DOCUMENT, false));
+        if (viewerController != null && mi != null)
+            viewerController.setExportDocumentFileMenuItem(mi);
         return mi;
     }
 
@@ -2350,6 +2361,7 @@ public class SwingViewBuilder implements ViewBuilder {
         return new IconAnnotationColorToggleButton(viewerController, messageBundle, title, toolTip,
                 colorPreferenceKey, imageName, imageSize, font, alpha);
     }
+
     /**
      * Utility method for creating toggle buttons.
      *

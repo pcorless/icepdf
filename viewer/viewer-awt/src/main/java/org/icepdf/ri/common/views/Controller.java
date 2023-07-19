@@ -40,6 +40,25 @@ import java.util.ResourceBundle;
  */
 public interface Controller extends PropertyChangeListener {
 
+    enum SaveMode {
+        /**
+         * Saves document in place overwriting the original file.  All changes are appended
+         * to the end of the file using an incremental update write mode.
+         */
+        SAVE,
+        /**
+         * Saves document and any changes to a new file.  All changes are appended
+         * to the end of the file using an incremental update write mode.
+         */
+        SAVE_AS,
+        /**
+         * Exports document and any changes to a new file.  Document is completely rewritten, removing
+         * all previously modified object that may have occurred during an incremental update(s)
+         * full update write mode.
+         */
+        EXPORT,
+    }
+
     /**
      * @return The PrintHelperFactory used to create print helpers
      */

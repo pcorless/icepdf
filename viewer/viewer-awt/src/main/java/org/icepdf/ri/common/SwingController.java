@@ -28,6 +28,7 @@ import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.*;
+import org.icepdf.core.util.updater.WriteMode;
 import org.icepdf.ri.common.preferences.PreferencesDialog;
 import org.icepdf.ri.common.print.PrintHelper;
 import org.icepdf.ri.common.print.PrintHelperFactory;
@@ -148,6 +149,7 @@ public class SwingController extends ComponentAdapter
     private JMenuItem closeMenuItem;
     private JMenuItem saveFileMenuItem;
     private JMenuItem saveAsFileMenuItem;
+    private JMenuItem exportDocumentFileMenuItem;
     private JMenuItem sendMailMenuItem;
     private JMenuItem exportTextMenuItem;
     private JMenuItem propertiesMenuItem;
@@ -457,6 +459,11 @@ public class SwingController extends ComponentAdapter
      */
     public void setSaveAsFileMenuItem(JMenuItem mi) {
         saveAsFileMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    public void setExportDocumentFileMenuItem(JMenuItem mi) {
+        exportDocumentFileMenuItem = mi;
         mi.addActionListener(this);
     }
 
@@ -1599,7 +1606,8 @@ public class SwingController extends ComponentAdapter
         // menu items.
         setEnabled(closeMenuItem, opened);
         setEnabled(saveFileMenuItem, opened && !IS_READONLY);
-        setEnabled(saveAsFileMenuItem, opened && !IS_READONLY);
+        setEnabled(saveAsFileMenuItem, opened);
+        setEnabled(exportDocumentFileMenuItem, opened);
         setEnabled(sendMailMenuItem, opened);
         setEnabled(exportTextMenuItem, opened && canExtract && !pdfCollection);
         setEnabled(propertiesMenuItem, opened);
@@ -3432,11 +3440,11 @@ public class SwingController extends ComponentAdapter
                 }
             } else {
                 //Probably got loaded from an InputStream, can't simply save
-                saveFileAs();
+                saveFileAs(SaveMode.SAVE);
             }
         } else {
             // show saveAs dialog as this was legacy behaviour for the save button on the toolbar
-            saveFileAs();
+            saveFileAs(SaveMode.SAVE);
         }
     }
 
@@ -3447,54 +3455,65 @@ public class SwingController extends ComponentAdapter
      * save the file to, and what name to give it.
      */
     public void saveFileAs() {
+        saveFileAs(SaveMode.SAVE_AS);
+    }
 
-        if (!IS_READONLY) {
-            String originalFileName = getOriginalFileName();
-            String newFileName = originalFileName == null || originalFileName.isEmpty() ? null : generateNewSaveName(originalFileName);
+    /**
+     * Utility method for saving a document using a full document write. The file will
+     * be rewritten and indexed.  All deleted objects will be removed.  Any incremental
+     * updates will be flattened and only the current object version will be written.
+     * No previous document state will persist.
+     * A save dialog will be shown will not be possible to overwrite the original
+     * document.
+     */
+    public void exportDocument() {
+        saveFileAs(SaveMode.EXPORT);
+    }
 
-            // Create and display a file saving dialog
-            if (!USE_JFILECHOOSER) {
-                final FileDialog fileDialog = new FileDialog(getViewerFrame());
-                fileDialog.setTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
-                fileDialog.setMultipleMode(false);
-                fileDialog.setMode(FileDialog.SAVE);
-                fileDialog.setFilenameFilter((file, s) -> s.endsWith(FileExtensionUtils.pdf));
-                if (ViewModel.getDefaultFile() != null) {
-                    fileDialog.setDirectory(ViewModel.getDefaultFile().getParentFile().getAbsolutePath());
-                }
-                if (newFileName != null) {
-                    fileDialog.setFile(newFileName);
-                }
-                // show the dialog
-                fileDialog.setVisible(true);
-                final String filePath = fileDialog.getFile();
-                final String dirPath = fileDialog.getDirectory();
-                if (filePath != null && dirPath != null) {
-                    saveFileChecks(originalFileName, new File(dirPath + filePath));
-                }
-            } else {
-                final JFileChooser fileChooser = new JFileChooser();
-                fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
-                fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-                fileChooser.addChoosableFileFilter(FileExtensionUtils.getPDFFileFilter());
-                if (ViewModel.getDefaultFile() != null) {
-                    fileChooser.setCurrentDirectory(ViewModel.getDefaultFile());
-                }
-                if (newFileName != null) {
-                    fileChooser.setSelectedFile(new File(newFileName));
-                }
-                // show the dialog
-                if (fileChooser.showSaveDialog(viewer) == JFileChooser.APPROVE_OPTION) {
-                    saveFileChecks(originalFileName, fileChooser.getSelectedFile());
-                }
+    protected void saveFileAs(SaveMode saveMode) {
+        String originalFileName = getOriginalFileName();
+        String newFileName = originalFileName == null || originalFileName.isEmpty() ? null : generateNewSaveName(originalFileName);
+
+        // Create and display a file saving dialog
+        if (!USE_JFILECHOOSER) {
+            final FileDialog fileDialog = new FileDialog(getViewerFrame());
+            fileDialog.setTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
+            fileDialog.setMultipleMode(false);
+            fileDialog.setMode(FileDialog.SAVE);
+            fileDialog.setFilenameFilter((file, s) -> s.endsWith(FileExtensionUtils.pdf));
+            if (ViewModel.getDefaultFile() != null) {
+                fileDialog.setDirectory(ViewModel.getDefaultFile().getParentFile().getAbsolutePath());
+            }
+            if (newFileName != null) {
+                fileDialog.setFile(newFileName);
+            }
+            // show the dialog
+            fileDialog.setVisible(true);
+            final String filePath = fileDialog.getFile();
+            final String dirPath = fileDialog.getDirectory();
+            if (filePath != null && dirPath != null) {
+                saveFileChecks(saveMode, originalFileName, new File(dirPath + filePath));
+            }
+        } else {
+            final JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            fileChooser.addChoosableFileFilter(FileExtensionUtils.getPDFFileFilter());
+            if (ViewModel.getDefaultFile() != null) {
+                fileChooser.setCurrentDirectory(ViewModel.getDefaultFile());
+            }
+            if (newFileName != null) {
+                fileChooser.setSelectedFile(new File(newFileName));
+            }
+            // show the dialog
+            if (fileChooser.showSaveDialog(viewer) == JFileChooser.APPROVE_OPTION) {
+                saveFileChecks(saveMode, originalFileName, fileChooser.getSelectedFile());
             }
         }
     }
 
     private String getOriginalFileName() {
         String origin = document.getDocumentOrigin();
-        String originalFileName = null;
-        String newFileName = null;
         if (origin != null) {
             int lastSeparator = Math.max(
                     Math.max(
@@ -3509,7 +3528,7 @@ public class SwingController extends ComponentAdapter
         return null;
     }
 
-    protected void saveFileChecks(String originalFileName, File file) {
+    protected void saveFileChecks(SaveMode saveMode, String originalFileName, File file) {
         if (file != null) {
             if (Files.isWritable(file.getParentFile().toPath())) {
                 // make sure file path being saved to is valid
@@ -3521,7 +3540,7 @@ public class SwingController extends ComponentAdapter
                             messageBundle,
                             "viewer.dialog.saveAs.noExtensionError.title",
                             "viewer.dialog.saveAs.noExtensionError.msg");
-                    saveFileAs();
+                    saveFileAs(saveMode);
                 } else if (!extension.equals(FileExtensionUtils.pdf)) {
                     org.icepdf.ri.util.Resources.showMessageDialog(
                             viewer,
@@ -3530,7 +3549,7 @@ public class SwingController extends ComponentAdapter
                             "viewer.dialog.saveAs.extensionError.title",
                             "viewer.dialog.saveAs.extensionError.msg",
                             file.getName());
-                    saveFileAs();
+                    saveFileAs(saveMode);
                 } else if (originalFileName != null &&
                         originalFileName.equalsIgnoreCase(file.getName())) {
                     // Ensure a unique filename
@@ -3541,7 +3560,7 @@ public class SwingController extends ComponentAdapter
                             "viewer.dialog.saveAs.noneUniqueName.title",
                             "viewer.dialog.saveAs.noneUniqueName.msg",
                             file.getName());
-                    saveFileAs();
+                    saveFileAs(saveMode);
                 } else {
                     // save file stream
                     // If we don't know where the file came from, it's because we
@@ -3558,9 +3577,9 @@ public class SwingController extends ComponentAdapter
                          final BufferedOutputStream buf = new BufferedOutputStream(fileOutputStream, 8192)) {
 
                         // We want 'save as' or 'save a copy to always occur
-                        if (!document.getStateManager().isChange()) {
+                        if (saveMode == SaveMode.EXPORT) {
                             // save as copy
-                            document.writeToOutputStream(buf);
+                            document.writeToOutputStream(buf, WriteMode.FULL_UPDATE);
                         } else {
                             // save as will append changes.
                             document.saveToOutputStream(buf);
@@ -4810,6 +4829,8 @@ public class SwingController extends ComponentAdapter
                 }
             } else if (source == saveFileMenuItem || source == saveFileButton) {
                 saveFile();
+            } else if (source == exportDocumentFileMenuItem) {
+                exportDocument();
             } else if (source == saveAsFileMenuItem) {
                 saveFileAs();
             } else if (source == sendMailMenuItem) {
