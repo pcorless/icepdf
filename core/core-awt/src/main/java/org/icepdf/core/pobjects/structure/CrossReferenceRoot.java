@@ -71,11 +71,11 @@ public class CrossReferenceRoot {
     }
 
     public PTrailer getTrailerDictionary() {
-        if (pTrailer == null ){
+        if (pTrailer == null) {
             // find the trailer dictionary, this should only happen if the file needed to reindex the file.
             for (CrossReference crossReference : crossReferences) {
                 if (crossReference.getDictionaryEntries() != null &&
-                        crossReference.getDictionaryEntries().get(ROOT_KEY) != null){
+                        crossReference.getDictionaryEntries().get(ROOT_KEY) != null) {
                     pTrailer = new PTrailer(library, crossReference.getDictionaryEntries());
                     return pTrailer;
                 }

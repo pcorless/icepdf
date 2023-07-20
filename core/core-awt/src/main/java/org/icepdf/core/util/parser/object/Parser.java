@@ -121,11 +121,12 @@ public class Parser {
                 }
             }
             // update position to end of object
-            byteBuffer.position(byteBuffer.position() + streamLength);
-            boolean foundEndObjMarker = ByteBufferUtil.findString(byteBuffer, END_OBJ_MARKER);
-            if (!foundEndObjMarker) {
-                throw new IllegalStateException("couldn't find enobj");
-            }
+            // xxx removing for now as this is change will require quite a bit of regression testing.
+//            byteBuffer.position(byteBuffer.position() + streamLength);
+//            boolean foundEndObjMarker = ByteBufferUtil.findString(byteBuffer, END_OBJ_MARKER);
+//            if (!foundEndObjMarker) {
+//                throw new IllegalStateException("couldn't find enobj");
+//            }
 
         } else {
             streamByteBuffer = null;

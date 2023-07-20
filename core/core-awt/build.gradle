@@ -18,7 +18,7 @@ dependencies {
     implementation 'org.apache.pdfbox:fontbox:' + "${FONT_BOX_VERSION}"
     implementation 'commons-logging:commons-logging:1.2'
     runtimeOnly 'com.github.jai-imageio:jai-imageio-jpeg2000:' + "${JAI_VERSION}"
-    // test, yes we have some formal test now
+    // tests
     testImplementation(platform("org.junit:junit-bom:${JUNIT_BOM_VERSION}"))
     testImplementation('org.junit.jupiter:junit-jupiter')
 }

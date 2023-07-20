@@ -54,7 +54,8 @@ public class BaseWriter {
 
     }
 
-    public BaseWriter(CrossReferenceRoot crossReferenceRoot, SecurityManager securityManager, CountingOutputStream output,
+    public BaseWriter(CrossReferenceRoot crossReferenceRoot, SecurityManager securityManager,
+                      CountingOutputStream output,
                       long startingPosition) {
         this.output = output;
         this.crossReferenceRoot = crossReferenceRoot;
@@ -119,11 +120,13 @@ public class BaseWriter {
     }
 
     public void writeIncrementalCompressedXrefTable() throws IOException {
-        compressedXrefTableWriter.writeIncrementalCompressedXrefTable(crossReferenceRoot, securityManager, entries, startingPosition, output);
+        compressedXrefTableWriter.writeIncrementalCompressedXrefTable(crossReferenceRoot, securityManager, entries,
+                startingPosition, output);
     }
 
     public void writeFullCompressedXrefTable() throws IOException {
-        compressedXrefTableWriter.writeFullCompressedXrefTable(crossReferenceRoot, securityManager, entries, startingPosition, output);
+        compressedXrefTableWriter.writeFullCompressedXrefTable(crossReferenceRoot, securityManager, entries,
+                startingPosition, output);
     }
 
     public void writeNewLine() throws IOException {

@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  *
  */
-public abstract class CrossReferenceBase<T extends Dictionary> implements CrossReference{
+public abstract class CrossReferenceBase<T extends Dictionary> implements CrossReference {
 
     public final T crossReference;
 
@@ -38,7 +38,8 @@ public abstract class CrossReferenceBase<T extends Dictionary> implements CrossR
         return null;
     }
 
-    public CrossReferenceEntry getEntry(Reference reference) throws ObjectStateException, CrossReferenceStateException, IOException {
+    public CrossReferenceEntry getEntry(Reference reference) throws ObjectStateException,
+            CrossReferenceStateException, IOException {
         CrossReferenceEntry crossReferenceEntry = indirectObjectReferences.get(reference);
         DictionaryEntries entries = crossReference.getEntries();
         Library library = crossReference.getLibrary();
@@ -62,7 +63,8 @@ public abstract class CrossReferenceBase<T extends Dictionary> implements CrossR
     }
 
     public HashMap<Reference, CrossReferenceEntry> getEntries() {
-        HashMap<Reference, CrossReferenceEntry> completeIndirectReferences = new HashMap<>(indirectObjectReferences.size());
+        HashMap<Reference, CrossReferenceEntry> completeIndirectReferences =
+                new HashMap<>(indirectObjectReferences.size());
         if (prevCrossReference != null) {
             completeIndirectReferences.putAll(prevCrossReference.getEntries());
         }
@@ -83,7 +85,7 @@ public abstract class CrossReferenceBase<T extends Dictionary> implements CrossR
         this.xrefStartPos = xrefStartPos;
     }
 
-    public DictionaryEntries getDictionaryEntries(){
+    public DictionaryEntries getDictionaryEntries() {
         return crossReference.getEntries();
     }
 

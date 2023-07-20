@@ -528,7 +528,8 @@ public class Page extends Dictionary {
      *                             for search terms.
      * @throws InterruptedException thread interrupted.
      */
-    public void paint(Graphics g, int renderHintType, final int boundary, float userRotation, float userZoom, boolean paintAnnotations, boolean paintSearchHighlight) throws InterruptedException {
+    public void paint(Graphics g, int renderHintType, final int boundary, float userRotation, float userZoom,
+                      boolean paintAnnotations, boolean paintSearchHighlight) throws InterruptedException {
         if (!inited) {
             // make sure we don't do a page init on the awt thread in the viewer
             // ri, let the
@@ -609,15 +610,18 @@ public class Page extends Dictionary {
      *                             for search terms.
      * @throws InterruptedException thread interrupted.
      */
-    public void paintPageContent(Graphics g, int renderHintType, float userRotation, float userZoom, boolean paintAnnotations, boolean paintSearchHighlight) throws InterruptedException {
+    public void paintPageContent(Graphics g, int renderHintType, float userRotation, float userZoom,
+                                 boolean paintAnnotations, boolean paintSearchHighlight) throws InterruptedException {
         if (!inited) {
             init();
         }
 
-        paintPageContent(((Graphics2D) g), renderHintType, userRotation, userZoom, paintAnnotations, paintSearchHighlight);
+        paintPageContent(((Graphics2D) g), renderHintType, userRotation, userZoom, paintAnnotations,
+                paintSearchHighlight);
     }
 
-    private void paintPageContent(Graphics2D g2, int renderHintType, float userRotation, float userZoom, boolean paintAnnotations, boolean paintSearchHighlight) throws InterruptedException {
+    private void paintPageContent(Graphics2D g2, int renderHintType, float userRotation, float userZoom,
+                                  boolean paintAnnotations, boolean paintSearchHighlight) throws InterruptedException {
         // draw page content
         if (shapes != null) {
             pagePainted = false;
@@ -817,8 +821,10 @@ public class Page extends Dictionary {
      * the method @link{#createAnnotation} for creating new annotations.
      *
      * @param newAnnotation annotation object to add
-     * @param isNew         annotation is new and should be added to stateManager, otherwise change will be part of the document
-     *                      but not yet added to the stateManager as the change was likely a missing content stream or popup.
+     * @param isNew         annotation is new and should be added to stateManager, otherwise change will be part of
+     *                      the document
+     *                      but not yet added to the stateManager as the change was likely a missing content stream
+     *                      or popup.
      * @return reference to annotation that was added.
      */
     @SuppressWarnings("unchecked")
@@ -1829,7 +1835,8 @@ public class Page extends Dictionary {
      * @param userZoom     Zoom factor to be applied to the rendered page
      * @return rectangle converted to page space.
      */
-    public Rectangle2D convertToPageSpace(Rectangle2D rectangle, final int boundary, float userRotation, float userZoom) {
+    public Rectangle2D convertToPageSpace(Rectangle2D rectangle, final int boundary, float userRotation,
+                                          float userZoom) {
         AffineTransform affineTransform = getToPageSpaceTransform(boundary, userRotation, userZoom);
         return Page.convertTo(rectangle, affineTransform);
     }

@@ -2508,11 +2508,17 @@ public class SwingController extends ComponentAdapter
                 saveFilePath = getTempSaveFileName(pathname);
                 File tmpFile = new File(saveFilePath);
                 if (tmpFile.exists() && new File(pathname).exists()) {
-                    String[] options = {messageBundle.getString("viewer.button.yes.label"), messageBundle.getString("viewer.button.no.label")};
-                    int ret = JOptionPane.showOptionDialog(viewer, MessageFormat.format(messageBundle.getString("viewer.dialog.restore.label"), new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(tmpFile.lastModified())), messageBundle.getString("viewer.dialog.restore.title"), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+                    String[] options = {messageBundle.getString("viewer.button.yes.label"), messageBundle.getString(
+                            "viewer.button.no.label")};
+                    int ret = JOptionPane.showOptionDialog(viewer, MessageFormat.format(messageBundle.getString(
+                                            "viewer.dialog.restore.label"),
+                                    new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(tmpFile.lastModified())),
+                            messageBundle.getString("viewer.dialog.restore.title"), JOptionPane.YES_NO_OPTION,
+                            JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
                     if (ret == JOptionPane.YES_OPTION) {
                         try {
-                            Files.copy(tmpFile.toPath(), new File(pathname).toPath(), StandardCopyOption.REPLACE_EXISTING);
+                            Files.copy(tmpFile.toPath(), new File(pathname).toPath(),
+                                    StandardCopyOption.REPLACE_EXISTING);
                         } catch (IOException e) {
                             org.icepdf.ri.util.Resources.showMessageDialog(
                                     viewer,
@@ -2520,7 +2526,8 @@ public class SwingController extends ComponentAdapter
                                     messageBundle,
                                     "viewer.dialog.restore.exception.title",
                                     "viewer.dialog.restore.exception.label",
-                                    e.getMessage() != null && !e.getMessage().isEmpty() ? e.getMessage() : e.toString());
+                                    e.getMessage() != null && !e.getMessage().isEmpty() ? e.getMessage() :
+                                            e.toString());
                         }
                     } else {
                         try {
@@ -3128,7 +3135,8 @@ public class SwingController extends ComponentAdapter
             String filename = f.exists() ? f.getName() : fileDescription;
             Object[] messageArguments = title == null ? new String[]{filename} : new String[]{title, filename};
             String titleResource = title == null ? "notitle" : "default";
-            MessageFormat formatter = new MessageFormat(messageBundle.getString("viewer.window.title.open." + titleResource));
+            MessageFormat formatter =
+                    new MessageFormat(messageBundle.getString("viewer.window.title.open." + titleResource));
             viewer.setTitle(formatter.format(messageArguments));
         }
 
@@ -3472,7 +3480,8 @@ public class SwingController extends ComponentAdapter
 
     protected void saveFileAs(SaveMode saveMode) {
         String originalFileName = getOriginalFileName();
-        String newFileName = originalFileName == null || originalFileName.isEmpty() ? null : generateNewSaveName(originalFileName);
+        String newFileName = originalFileName == null || originalFileName.isEmpty() ? null :
+                generateNewSaveName(originalFileName);
 
         // Create and display a file saving dialog
         if (!USE_JFILECHOOSER) {
@@ -5138,12 +5147,14 @@ public class SwingController extends ComponentAdapter
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_LINE_ARROW_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINE_ARROW_ANNOTATION);
                 }
-            } else if (checkAnnotationButton(source, squareAnnotationToolButton, squareAnnotationPropertiesToolButton)) {
+            } else if (checkAnnotationButton(source, squareAnnotationToolButton,
+                    squareAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_SQUARE_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SQUARE_ANNOTATION);
                 }
-            } else if (checkAnnotationButton(source, circleAnnotationToolButton, circleAnnotationPropertiesToolButton)) {
+            } else if (checkAnnotationButton(source, circleAnnotationToolButton,
+                    circleAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_CIRCLE_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_CIRCLE_ANNOTATION);
@@ -5309,7 +5320,8 @@ public class SwingController extends ComponentAdapter
                 try {
                     File tmpFile = new File(saveFilePath);
                     if (tmpFile.exists()) {
-                        Files.move(tmpFile.toPath(), new File(origFilePath).toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        Files.move(tmpFile.toPath(), new File(origFilePath).toPath(),
+                                StandardCopyOption.REPLACE_EXISTING);
                     }
                 } catch (IOException ex) {
                     logger.log(Level.FINE, "IO Exception ", e);
@@ -5484,14 +5496,16 @@ public class SwingController extends ComponentAdapter
                 new BaseAction(() -> showPage(getPageTree().getNumberOfPages() - 1)));
         addKeyAction(component, KEY_CODE_SEARCH, MODIFIER_SEARCH, new BaseAction(this::showSearch));
         addKeyAction(component, KEY_CODE_SEARCH, MODIFIER_ADVANCED_SEARCH, new BaseAction(this::showSearchPanel));
-        addKeyAction(component, KEY_CODE_SEARCH_PREVIOUS, MODIFIER_SEARCH_PREVIOUS, new BaseAction(this::previousSearchResult));
+        addKeyAction(component, KEY_CODE_SEARCH_PREVIOUS, MODIFIER_SEARCH_PREVIOUS,
+                new BaseAction(this::previousSearchResult));
         addKeyAction(component, KEY_CODE_SEARCH_NEXT, MODIFIER_SEARCH_NEXT, new BaseAction(this::nextSearchResult));
         addKeyAction(component, KEY_CODE_GOTO, MODIFIER_GOTO, new BaseAction(this::showPageSelectionDialog));
         addKeyAction(component, KEY_CODE_PREFERENCES, MODIFIER_PREFERENCES,
                 new BaseAction(this::showViewerPreferences));
     }
 
-    protected final void addKeyAction(final JComponent component, final int keyCode, final int modifier, final BaseAction action) {
+    protected final void addKeyAction(final JComponent component, final int keyCode, final int modifier,
+                                      final BaseAction action) {
         final InputMap inputMap = component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         final ActionMap actionMap = component.getActionMap();
         final String key = keyCode + "-" + modifier;
@@ -5714,11 +5728,14 @@ public class SwingController extends ComponentAdapter
     }
 
     private Collection<AnnotationColorToggleButton> getColorButtons() {
-        return new HashSet<>(Arrays.asList(highlightAnnotationToolButton, strikeOutAnnotationToolButton, underlineAnnotationToolButton, lineAnnotationToolButton,
-                lineArrowAnnotationToolButton, squareAnnotationToolButton, circleAnnotationToolButton, inkAnnotationToolButton, textAnnotationToolButton));
+        return new HashSet<>(Arrays.asList(highlightAnnotationToolButton, strikeOutAnnotationToolButton,
+                underlineAnnotationToolButton, lineAnnotationToolButton,
+                lineArrowAnnotationToolButton, squareAnnotationToolButton, circleAnnotationToolButton,
+                inkAnnotationToolButton, textAnnotationToolButton));
     }
 
-    public void changeAnnotationsVisibility(final AnnotationFilter filter, final boolean visible, final boolean execInvert) {
+    public void changeAnnotationsVisibility(final AnnotationFilter filter, final boolean visible,
+                                            final boolean execInvert) {
         callOnFilteredAnnotations(a -> a instanceof MarkupAnnotation && filter.filter(a), a -> {
             a.setFlag(Annotation.FLAG_HIDDEN, !visible);
             a.setFlag(Annotation.FLAG_INVISIBLE, !visible);
@@ -5778,7 +5795,8 @@ public class SwingController extends ComponentAdapter
             for (int i = 0; i < pt.getNumberOfPages(); ++i) {
                 final Page p = pt.getPage(i);
                 if (p.getAnnotations() != null) {
-                    final List<Annotation> annotations = p.getAnnotations().stream().filter(filter::filter).collect(Collectors.toList());
+                    final List<Annotation> annotations =
+                            p.getAnnotations().stream().filter(filter::filter).collect(Collectors.toList());
                     annotations.forEach(toExecute);
                 }
             }

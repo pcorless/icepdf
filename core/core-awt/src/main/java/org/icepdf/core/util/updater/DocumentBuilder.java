@@ -11,7 +11,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Simple builder to handle the multiple ways to write document changes to an output stream.
+ * Simple builder to handle the multiple ways of writing document changes to an output stream.
  */
 public class DocumentBuilder {
 

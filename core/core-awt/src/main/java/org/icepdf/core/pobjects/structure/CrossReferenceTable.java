@@ -18,7 +18,8 @@ public class CrossReferenceTable extends CrossReferenceBase<Dictionary> {
         int generation;
         if (crossReferenceEntry instanceof CrossReferenceUsedEntry) {
             generation = ((CrossReferenceUsedEntry) crossReferenceEntry).getGenerationNumber();
-            indirectObjectReferences.put(new Reference(crossReferenceEntry.objectNumber, generation), crossReferenceEntry);
+            indirectObjectReferences.put(new Reference(crossReferenceEntry.objectNumber, generation),
+                    crossReferenceEntry);
         }
     }
 
