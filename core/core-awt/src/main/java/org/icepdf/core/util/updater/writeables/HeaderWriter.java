@@ -5,6 +5,12 @@ import org.icepdf.core.pobjects.structure.Header;
 
 import java.io.IOException;
 
+/**
+ * Writes out the head of the document.  Nothing fancy uses the overused âãÏÓ marker and the version
+ * specified in the original document.
+ *
+ * @since 7.2
+ */
 public class HeaderWriter extends BaseWriter {
 
     private static final byte[] commentMarker = "%".getBytes();

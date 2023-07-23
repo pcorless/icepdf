@@ -2,6 +2,8 @@ package org.icepdf.core.util.updater;
 
 /**
  * Specifies which write mode to use when saving change to a PDF document.
+ *
+ * @since 7.2
  */
 public enum WriteMode {
     /**

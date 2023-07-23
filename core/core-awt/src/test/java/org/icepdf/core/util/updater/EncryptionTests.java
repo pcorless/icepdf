@@ -11,8 +11,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class EncryptionTests {
-
-
     @DisplayName("encryption - document rewrite should still be encrypted")
     @Test
     public void testXrefTableFullUpdate() {

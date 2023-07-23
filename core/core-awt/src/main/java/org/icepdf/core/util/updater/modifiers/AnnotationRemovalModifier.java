@@ -9,6 +9,11 @@ import java.util.List;
 import static org.icepdf.core.pobjects.Page.ANNOTS_KEY;
 import static org.icepdf.core.pobjects.Page.RESOURCES_KEY;
 
+/**
+ * Takes care of removing all traces of an annotation and its dependencies.
+ *
+ * @since 7.2
+ */
 public class AnnotationRemovalModifier implements Modifier<Annotation> {
 
     private Page parentPage;

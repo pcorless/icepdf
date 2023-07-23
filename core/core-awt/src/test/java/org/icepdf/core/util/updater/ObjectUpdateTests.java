@@ -18,8 +18,6 @@ import java.io.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ObjectUpdateTests {
-
-
     @DisplayName("xrefStream - delete object and write full document update")
     @Test
     public void testXrefTableFullUpdate() {

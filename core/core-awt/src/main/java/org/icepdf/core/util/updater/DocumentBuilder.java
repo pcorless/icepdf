@@ -11,7 +11,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Simple builder to handle the multiple ways of writing document changes to an output stream.
+ * Simple builder to handle the multiple ways of writing document changes to an output stream.  Which are
+ * incremental and full rewrites.
+ *
+ * @since 7.2
  */
 public class DocumentBuilder {
 

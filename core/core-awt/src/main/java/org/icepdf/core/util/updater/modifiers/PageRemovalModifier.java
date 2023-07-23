@@ -11,6 +11,12 @@ import static org.icepdf.core.pobjects.PageTree.COUNT_KEY;
 import static org.icepdf.core.pobjects.PageTree.KIDS_KEY;
 import static org.icepdf.core.pobjects.Resources.XOBJECT_KEY;
 
+/**
+ * Removes a page and all of direct resources.  Fonts are not touched as they can be shared but images
+ * are removed.
+ *
+ * @since 7.2
+ */
 public class PageRemovalModifier implements Modifier<Page> {
 
     private Library library;
