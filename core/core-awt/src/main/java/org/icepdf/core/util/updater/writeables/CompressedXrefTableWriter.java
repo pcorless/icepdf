@@ -1,13 +1,11 @@
 package org.icepdf.core.util.updater.writeables;
 
 import org.icepdf.core.io.CountingOutputStream;
-import org.icepdf.core.pobjects.DictionaryEntries;
-import org.icepdf.core.pobjects.PTrailer;
-import org.icepdf.core.pobjects.Reference;
-import org.icepdf.core.pobjects.Stream;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceEntry;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
+import org.icepdf.core.pobjects.structure.CrossReferenceStream;
 import org.icepdf.core.util.Utils;
 
 import java.io.ByteArrayOutputStream;
@@ -15,13 +13,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CompressedXrefTableWriter extends BaseTableWriter {
 
     private static final List<Integer> WIDTHS = Arrays.asList(4, 8, 4);
 
-    public void writeCompressedXrefTable(CrossReferenceRoot crossReferenceRoot, SecurityManager securityManager, List<Entry> entries,
-                                         long startingPosition, CountingOutputStream output) throws IOException {
+    public void writeIncrementalCompressedXrefTable(CrossReferenceRoot crossReferenceRoot,
+                                                    SecurityManager securityManager, List<Entry> entries,
+                                                    long startingPosition, CountingOutputStream output) throws IOException {
         PTrailer prevTrailer = crossReferenceRoot.getTrailerDictionary();
         DictionaryEntries newTrailer = (DictionaryEntries) prevTrailer.getDictionary().clone();
         this.setPreviousTrailer(newTrailer, crossReferenceRoot);
@@ -30,6 +30,33 @@ public class CompressedXrefTableWriter extends BaseTableWriter {
         newTrailer.remove(Stream.DECODEPARAM_KEY);
         newTrailer.put(Stream.FILTER_KEY, Stream.FILTER_FLATE_DECODE);
 
+        writeCompressedXrefTable(securityManager, newTrailer, entries, newTrailerSize, xrefPos, output);
+    }
+
+    public void writeFullCompressedXrefTable(CrossReferenceRoot crossReferenceRoot,
+                                             SecurityManager securityManager, List<Entry> entries,
+                                             long startingPosition, CountingOutputStream output) throws IOException {
+        PTrailer prevTrailer = crossReferenceRoot.getTrailerDictionary();
+        DictionaryEntries newTrailer = (DictionaryEntries) prevTrailer.getDictionary().clone();
+
+        long xrefPos = startingPosition + output.getCount();
+        // clear filter
+        newTrailer.remove(Stream.DECODEPARAM_KEY);
+        newTrailer.put(Stream.FILTER_KEY, Stream.FILTER_FLATE_DECODE);
+        // size, find max object reference in entries.
+        int newTrailerSize = entries.stream().sorted(
+                (r1, r2) -> r2.getReference().getObjectNumber() - r1.getReference().getObjectNumber()
+        ).collect(Collectors.toList()).get(0).getReference().getObjectNumber();
+        // one more for the xref object to be written below
+        newTrailerSize += 1;
+        newTrailer.put(PTrailer.SIZE_KEY, newTrailerSize);
+
+        writeCompressedXrefTable(securityManager, newTrailer, entries, newTrailerSize, xrefPos, output);
+    }
+
+    private void writeCompressedXrefTable(SecurityManager securityManager, DictionaryEntries newTrailer,
+                                          List<Entry> entries, int newTrailerSize, long xrefPos,
+                                          CountingOutputStream output) throws IOException {
         this.closeTableEntries(entries);
 
         newTrailer.put(PTrailer.W_KEY, WIDTHS);
@@ -39,6 +66,8 @@ public class CompressedXrefTableWriter extends BaseTableWriter {
             i += createIndexArray(entries, i, index);
         }
         newTrailer.put(PTrailer.INDEX_KEY, index);
+
+        newTrailer.put(Dictionary.TYPE_KEY, CrossReferenceStream.TYPE);
 
         Stream crossReferenceStream = new Stream(newTrailer, new byte[0]);
         crossReferenceStream.setPObjectReference(new Reference(newTrailerSize, 0));

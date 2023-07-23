@@ -114,7 +114,7 @@ public class AnnotationState implements Memento {
             // refresh bounds for any resizes
             annotationComponent.refreshDirtyBounds();
         }
-        // special case for an undelete as we need to to make the component
+        // special case for an undelete as we need to make the component
         // visible again.
         else {
             // mark it as not deleted

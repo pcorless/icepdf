@@ -17,7 +17,10 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.events.*;
 import org.icepdf.core.io.SeekableInput;
-import org.icepdf.core.pobjects.annotations.*;
+import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
+import org.icepdf.core.pobjects.annotations.MarkupGlueAnnotation;
+import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.WatermarkCallback;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
@@ -26,6 +29,8 @@ import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.*;
 import org.icepdf.core.util.parser.content.ContentParser;
+import org.icepdf.core.util.updater.modifiers.AnnotationRemovalModifier;
+import org.icepdf.core.util.updater.modifiers.ModifierFactory;
 
 import java.awt.*;
 import java.awt.geom.*;
@@ -64,8 +69,7 @@ import java.util.stream.Collectors;
  */
 public class Page extends Dictionary {
 
-    private static final Logger logger =
-            Logger.getLogger(Page.class.toString());
+    private static final Logger logger = Logger.getLogger(Page.class.toString());
 
     /**
      * Transparency value used to simulate text highlighting.
@@ -78,12 +82,9 @@ public class Page extends Dictionary {
     static {
         // sets the shadow colour of the decorator.
         try {
-            String color = Defs.sysProperty(
-                    "org.icepdf.core.views.page.text.selectionColor", "#0077FF"); //#99c1da
+            String color = Defs.sysProperty("org.icepdf.core.views.page.text.selectionColor", "#0077FF"); //#99c1da
             int colorValue = ColorUtil.convertColor(color);
-            selectionColor =
-                    new Color(colorValue >= 0 ? colorValue :
-                            Integer.parseInt("0077FF", 16));
+            selectionColor = new Color(colorValue >= 0 ? colorValue : Integer.parseInt("0077FF", 16));
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
                 logger.warning("Error reading text selection colour");
@@ -97,12 +98,9 @@ public class Page extends Dictionary {
     static {
         // sets the shadow colour of the decorator.
         try {
-            String color = Defs.sysProperty(
-                    "org.icepdf.core.views.page.text.highlightColor", "#CC00FF");//ff99ff
+            String color = Defs.sysProperty("org.icepdf.core.views.page.text.highlightColor", "#CC00FF");//ff99ff
             int colorValue = ColorUtil.convertColor(color);
-            highlightColor =
-                    new Color(colorValue >= 0 ? colorValue :
-                            Integer.parseInt("CC00FF", 16));
+            highlightColor = new Color(colorValue >= 0 ? colorValue : Integer.parseInt("CC00FF", 16));
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
                 logger.warning("Error reading text highlight colour");
@@ -116,12 +114,9 @@ public class Page extends Dictionary {
     static {
         // sets the shadow colour of the decorator.
         try {
-            String color = Defs.sysProperty(
-                    "org.icepdf.core.views.page.text.highlightCursorColor", "#FF6600");
+            String color = Defs.sysProperty("org.icepdf.core.views.page.text.highlightCursorColor", "#FF6600");
             int colorValue = ColorUtil.convertColor(color);
-            highlightCursorColor =
-                    new Color(colorValue >= 0 ? colorValue :
-                            Integer.parseInt("FF6600", 16));
+            highlightCursorColor = new Color(colorValue >= 0 ? colorValue : Integer.parseInt("FF6600", 16));
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
                 logger.warning("Error reading text highlight cursor colour");
@@ -229,8 +224,7 @@ public class Page extends Dictionary {
         if (pageContent instanceof Stream) {
             contents = new ArrayList<>(1);
             Stream tmpStream = (Stream) pageContent;
-            tmpStream.setPObjectReference(
-                    library.getObjectReference(entries, CONTENTS_KEY));
+            tmpStream.setPObjectReference(library.getObjectReference(entries, CONTENTS_KEY));
             contents.add(tmpStream);
         }
         // if a vector, process it as needed
@@ -302,8 +296,7 @@ public class Page extends Dictionary {
             for (Object aV : v) {
 
                 if (Thread.currentThread().isInterrupted()) {
-                    throw new InterruptedException(
-                            "Page Annotation initialization thread interrupted");
+                    throw new InterruptedException("Page Annotation initialization thread interrupted");
                 }
 
                 annotObj = aV;
@@ -434,8 +427,7 @@ public class Page extends Dictionary {
                     }
                     // get any optional groups from the catalog, which control
                     // visibility
-                    OptionalContent optionalContent =
-                            library.getCatalog().getOptionalContent();
+                    OptionalContent optionalContent = library.getCatalog().getOptionalContent();
                     if (optionalContent != null) {
                         optionalContent.init();
                     }
@@ -512,8 +504,7 @@ public class Page extends Dictionary {
      * @param userZoom       Zoom factor to be applied to the rendered page
      * @throws InterruptedException thread interrupted.
      */
-    public void paint(Graphics g, int renderHintType, final int boundary,
-                      float userRotation, float userZoom) throws InterruptedException {
+    public void paint(Graphics g, int renderHintType, final int boundary, float userRotation, float userZoom) throws InterruptedException {
         paint(g, renderHintType, boundary, userRotation, userZoom, true, true);
     }
 
@@ -537,8 +528,7 @@ public class Page extends Dictionary {
      *                             for search terms.
      * @throws InterruptedException thread interrupted.
      */
-    public void paint(Graphics g, int renderHintType, final int boundary,
-                      float userRotation, float userZoom,
+    public void paint(Graphics g, int renderHintType, final int boundary, float userRotation, float userZoom,
                       boolean paintAnnotations, boolean paintSearchHighlight) throws InterruptedException {
         if (!inited) {
             // make sure we don't do a page init on the awt thread in the viewer
@@ -564,10 +554,7 @@ public class Page extends Dictionary {
         Color backgroundColor = grh.getPageBackgroundColor(renderHintType);
         if (backgroundColor != null) {
             g2.setColor(backgroundColor);
-            g2.fillRect((int) (0 - x),
-                    (int) (0 - y),
-                    (int) pageBoundary.width,
-                    (int) pageBoundary.height);
+            g2.fillRect((int) (0 - x), (int) (0 - y), (int) pageBoundary.width, (int) pageBoundary.height);
         }
 
         // We have to impose a page clip because some documents don't separate
@@ -596,8 +583,7 @@ public class Page extends Dictionary {
         // apply old graphics context state, to more accurately paint water mark
         g2.setTransform(prePagePaintState);
         if (watermarkCallback != null) {
-            watermarkCallback.paintWatermark(g, this, renderHintType,
-                    boundary, userRotation, userZoom);
+            watermarkCallback.paintWatermark(g, this, renderHintType, boundary, userRotation, userZoom);
         }
 
     }
@@ -630,7 +616,8 @@ public class Page extends Dictionary {
             init();
         }
 
-        paintPageContent(((Graphics2D) g), renderHintType, userRotation, userZoom, paintAnnotations, paintSearchHighlight);
+        paintPageContent(((Graphics2D) g), renderHintType, userRotation, userZoom, paintAnnotations,
+                paintSearchHighlight);
     }
 
     private void paintPageContent(Graphics2D g2, int renderHintType, float userRotation, float userZoom,
@@ -666,9 +653,7 @@ public class Page extends Dictionary {
             PageText pageText = getViewText();
             if (pageText != null) {
                 //g2.setComposite(BlendComposite.getInstance(BlendComposite.BlendingMode.MULTIPLY, 1.0f));
-                g2.setComposite(AlphaComposite.getInstance(
-                        AlphaComposite.SRC_OVER,
-                        SELECTION_ALPHA));
+                g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, SELECTION_ALPHA));
                 // paint the sprites
                 GeneralPath textPath;
                 // iterate over the data structure.
@@ -726,9 +711,7 @@ public class Page extends Dictionary {
      * @return AffineTransform for translating from the rotated and zoomed PDF
      * coordinate system to the Java Graphics coordinate system
      */
-    public AffineTransform getPageTransform(final int boundary,
-                                            float userRotation,
-                                            float userZoom) {
+    public AffineTransform getPageTransform(final int boundary, float userRotation, float userZoom) {
         AffineTransform at = new AffineTransform();
 
         Rectangle2D.Double boundingBox = getBoundingBox(boundary, userRotation, userZoom);
@@ -838,8 +821,10 @@ public class Page extends Dictionary {
      * the method @link{#createAnnotation} for creating new annotations.
      *
      * @param newAnnotation annotation object to add
-     * @param isNew         annotation is new and should be added to stateManager, otherwise change will be part of the document
-     *                      but not yet added to the stateManager as the change was likely a missing content stream or popup.
+     * @param isNew         annotation is new and should be added to stateManager, otherwise change will be part of
+     *                      the document
+     *                      but not yet added to the stateManager as the change was likely a missing content stream
+     *                      or popup.
      * @return reference to annotation that was added.
      */
     @SuppressWarnings("unchecked")
@@ -873,8 +858,7 @@ public class Page extends Dictionary {
             // update annots dictionary with new annotations reference,
             annotations.add(newAnnotation.getPObjectReference());
             // add the annotations reference dictionary as state has changed
-            stateManager.addChange(
-                    new PObject(annotations, library.getObjectReference(entries, ANNOTS_KEY)), isNew);
+            stateManager.addChange(new PObject(annotations, library.getObjectReference(entries, ANNOTS_KEY)), isNew);
         }
         // we need to add the a new annots reference
         else {
@@ -882,8 +866,7 @@ public class Page extends Dictionary {
             annotsVector.add(newAnnotation.getPObjectReference());
 
             // create a new Dictionary of annotations using an external reference
-            PObject annotsPObject = new PObject(annotsVector,
-                    stateManager.getNewReferenceNumber());
+            PObject annotsPObject = new PObject(annotsVector, stateManager.getNewReferenceNumber());
 
             // add the new dictionary to the page
             entries.put(ANNOTS_KEY, annotsPObject.getReference());
@@ -891,16 +874,14 @@ public class Page extends Dictionary {
             library.addObject(annotsVector, annotsPObject.getReference());
 
             // add the page and the new dictionary to the state change
-            stateManager.addChange(
-                    new PObject(this, this.getPObjectReference()), isNew);
+            stateManager.addChange(new PObject(this, this.getPObjectReference()), isNew);
             stateManager.addChange(annotsPObject, isNew);
 
             this.annotations = new ArrayList<>();
         }
 
         // update parent page reference.
-        newAnnotation.getEntries().put(Annotation.PARENT_PAGE_KEY,
-                this.getPObjectReference());
+        newAnnotation.getEntries().put(Annotation.PARENT_PAGE_KEY, this.getPObjectReference());
 
         // add the annotations to the parsed annotations list
         this.annotations.add(newAnnotation);
@@ -934,94 +915,15 @@ public class Page extends Dictionary {
             try {
                 initPageAnnotations();
             } catch (InterruptedException e) {
-                logger.warning("Annotation Initialization interupted");
+                logger.warning("Annotation Initialization interrupted");
             }
         }
 
-        StateManager stateManager = library.getStateManager();
-
-        Object annots = getObject(ANNOTS_KEY);
-        boolean isAnnotAReference =
-                library.isReference(entries, ANNOTS_KEY);
-
-        // mark the item as deleted so the state manager can clean up the reference.
-        annot.setDeleted(true);
-        Stream nAp = annot.getAppearanceStream();
-        if (nAp != null) {
-            nAp.setDeleted(true);
-            // find the xobjects font resources.
-            Object tmp = library.getObject(nAp.entries, RESOURCES_KEY);
-            if (tmp instanceof Resources) {
-                Resources resources = (Resources) tmp;
-                // only remove our font instance, if we remove another font we would have
-                // to check the document to see if it was used anywhere else.
-                Dictionary font = resources.getFont(FreeTextAnnotation.EMBEDDED_FONT_NAME);
-                if (font != null) {
-                    font.setDeleted(true);
-                }
-            }
+        AnnotationRemovalModifier annotationRemovalModifier =
+                (AnnotationRemovalModifier) ModifierFactory.getModifier(this, annot);
+        if (annotationRemovalModifier != null) {
+            annotationRemovalModifier.modify(annot);
         }
-
-        // check to see if this is an existing annotations, if the annotations
-        // is existing then we have to mark either the page or annot ref as changed.
-        if (!annot.isNew() && !isAnnotAReference) {
-            // add the page as state change
-            stateManager.addChange(
-                    new PObject(this, this.getPObjectReference()));
-        }
-        // if not new and annot is a ref, we have to add annot ref as changed.
-        else if (!annot.isNew() && isAnnotAReference) {
-            stateManager.addChange(
-                    new PObject(annots, library.getObjectReference(
-                            entries, ANNOTS_KEY)));
-        }
-        // if new annotation, then we can remove it from the state manager.
-        else if (annot.isNew()) {
-            stateManager.removeChange(
-                    new PObject(annot, annot.getPObjectReference()));
-            // check for an appearance stream which also needs to be removed.
-            if (nAp != null) {
-                stateManager.removeChange(new PObject(
-                        nAp, nAp.getPObjectReference()));
-                library.removeObject(nAp.getPObjectReference());
-            }
-        }
-        // removed the annotations from the annots vector
-        if (annots instanceof List) {
-            // update annots dictionary with new annotations reference,
-            ((List<?>) annots).remove(annot.getPObjectReference());
-        }
-
-        // remove the annotations form the annotation cache in the page object
-        if (annotations != null) {
-            annotations.remove(annot);
-        }
-        // todo clean up orphaned popup annotations
-        // remove any corresponding popup annotation.
-        if (annot instanceof MarkupAnnotation) {
-            MarkupAnnotation markupAnnotation = (MarkupAnnotation) annot;
-            for (Annotation annotation : annotations) {
-                if (annotation instanceof PopupAnnotation &&
-                        annotation.equals(markupAnnotation.getPopupAnnotation())) {
-                    annotations.remove(annotation);
-                    break;
-                }
-            }
-        }
-        // remove any markupGlue so that it doesn't get painted.  Glue is never added to the document, it created
-        // dynamically for print purposes.
-        if (annot instanceof MarkupAnnotation) {
-            MarkupAnnotation markupAnnotation = (MarkupAnnotation) annot;
-            for (Annotation annotation : annotations) {
-                if (annotation instanceof MarkupGlueAnnotation &&
-                        ((MarkupGlueAnnotation) annotation).getMarkupAnnotation().equals(markupAnnotation)) {
-                    annotations.remove(annotation);
-                    break;
-                }
-            }
-        }
-        // finally remove it from the library to free up the memory
-        library.removeObject(annot.getPObjectReference());
     }
 
     /**
@@ -1067,15 +969,13 @@ public class Page extends Dictionary {
         if (stateManager.contains(annotation.getPObjectReference())) {
             // if found we just have to re add the object, foot work around
             // page and annotations creation has already been done.
-            stateManager.addChange(
-                    new PObject(annotation, annotation.getPObjectReference()));
+            stateManager.addChange(new PObject(annotation, annotation.getPObjectReference()));
             return true;
         }
         // we have to do the checks for page and annot dictionary entry.
         else {
             // update parent page reference.
-            annotation.getEntries().put(Annotation.PARENT_PAGE_KEY,
-                    this.getPObjectReference());
+            annotation.getEntries().put(Annotation.PARENT_PAGE_KEY, this.getPObjectReference());
 
             // add the annotations to the parsed annotations list
             this.annotations.add(annotation);
@@ -1339,19 +1239,14 @@ public class Page extends Dictionary {
         // correct to keep in rotation in 360 range.
         totalRotation %= 360;
 
-        if (totalRotation < 0)
-            totalRotation += 360;
+        if (totalRotation < 0) totalRotation += 360;
 
         // If they calculated the degrees from radians or whatever,
         // then we need to make our even rotation comparisons work
-        if (totalRotation >= -0.001f && totalRotation <= 0.001f)
-            return 0.0f;
-        else if (totalRotation >= 89.99f && totalRotation <= 90.001f)
-            return 90.0f;
-        else if (totalRotation >= 179.99f && totalRotation <= 180.001f)
-            return 180.0f;
-        else if (totalRotation >= 269.99f && totalRotation <= 270.001f)
-            return 270.0f;
+        if (totalRotation >= -0.001f && totalRotation <= 0.001f) return 0.0f;
+        else if (totalRotation >= 89.99f && totalRotation <= 90.001f) return 90.0f;
+        else if (totalRotation >= 179.99f && totalRotation <= 180.001f) return 180.0f;
+        else if (totalRotation >= 269.99f && totalRotation <= 270.001f) return 270.0f;
 
         return totalRotation;
     }
@@ -1787,8 +1682,7 @@ public class Page extends Dictionary {
     }
 
     private void notifyPageLoadingStarted(int contentCount, int imageCount) {
-        PageLoadingEvent pageLoadingEvent =
-                new PageLoadingEvent(this, contentCount, imageCount);
+        PageLoadingEvent pageLoadingEvent = new PageLoadingEvent(this, contentCount, imageCount);
         PageLoadingListener client;
         for (int i = pageLoadingListeners.size() - 1; i >= 0; i--) {
             client = pageLoadingListeners.get(i);
@@ -1797,8 +1691,7 @@ public class Page extends Dictionary {
     }
 
     private void notifyPageInitializationStarted() {
-        PageInitializingEvent pageLoadingEvent =
-                new PageInitializingEvent(this, false);
+        PageInitializingEvent pageLoadingEvent = new PageInitializingEvent(this, false);
         PageLoadingListener client;
         for (int i = pageLoadingListeners.size() - 1; i >= 0; i--) {
             client = pageLoadingListeners.get(i);
@@ -1807,8 +1700,7 @@ public class Page extends Dictionary {
     }
 
     private void notifyPagePaintingStarted(int shapesCount) {
-        PagePaintingEvent pageLoadingEvent =
-                new PagePaintingEvent(this, shapesCount);
+        PagePaintingEvent pageLoadingEvent = new PagePaintingEvent(this, shapesCount);
         PageLoadingListener client;
         for (int i = pageLoadingListeners.size() - 1; i >= 0; i--) {
             client = pageLoadingListeners.get(i);
@@ -1818,8 +1710,7 @@ public class Page extends Dictionary {
 
     private void notifyPagePaintingEnded(boolean interrupted) {
         pagePainted = true;
-        PagePaintingEvent pageLoadingEvent =
-                new PagePaintingEvent(this, interrupted);
+        PagePaintingEvent pageLoadingEvent = new PagePaintingEvent(this, interrupted);
         PageLoadingListener client;
         for (int i = pageLoadingListeners.size() - 1; i >= 0; i--) {
             client = pageLoadingListeners.get(i);
@@ -1829,8 +1720,7 @@ public class Page extends Dictionary {
 
     private void notifyPageInitializationEnded(boolean interrupted) {
         pageInitialized = true;
-        PageInitializingEvent pageLoadingEvent =
-                new PageInitializingEvent(this, interrupted);
+        PageInitializingEvent pageLoadingEvent = new PageInitializingEvent(this, interrupted);
         PageLoadingListener client;
         for (int i = pageLoadingListeners.size() - 1; i >= 0; i--) {
             client = pageLoadingListeners.get(i);
@@ -1840,8 +1730,7 @@ public class Page extends Dictionary {
 
     protected void notifyPageLoadingEnded() {
 
-        PageLoadingEvent pageLoadingEvent =
-                new PageLoadingEvent(this, inited);
+        PageLoadingEvent pageLoadingEvent = new PageLoadingEvent(this, inited);
         PageLoadingListener client;
         for (int i = pageLoadingListeners.size() - 1; i >= 0; i--) {
             client = pageLoadingListeners.get(i);
@@ -1946,7 +1835,8 @@ public class Page extends Dictionary {
      * @param userZoom     Zoom factor to be applied to the rendered page
      * @return rectangle converted to page space.
      */
-    public Rectangle2D convertToPageSpace(Rectangle2D rectangle, final int boundary, float userRotation, float userZoom) {
+    public Rectangle2D convertToPageSpace(Rectangle2D rectangle, final int boundary, float userRotation,
+                                          float userZoom) {
         AffineTransform affineTransform = getToPageSpaceTransform(boundary, userRotation, userZoom);
         return Page.convertTo(rectangle, affineTransform);
     }

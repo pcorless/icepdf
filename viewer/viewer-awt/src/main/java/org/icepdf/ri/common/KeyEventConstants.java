@@ -38,6 +38,8 @@ public class KeyEventConstants {
     public static final int KEY_CODE_SAVE = KeyEvent.VK_S;
     public static final int MODIFIER_SAVE = MENU_SHORTCUT_KEY_MASK;
     public static final int KEY_CODE_SAVE_AS = KeyEvent.VK_S;
+    public static final int KEY_CODE_EXPORT_DOCUMENT = KeyEvent.VK_E;
+    public static final int MODIFIER_EXPORT_DOCUMENT = MENU_SHORTCUT_KEY_MASK;
     public static final int MODIFIER_SAVE_AS = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_DOWN_MASK;
     public static final int KEY_CODE_EXPORT_TEXT = KeyEvent.VK_T;
     public static final int MODIFIER_EXPORT_TEXT = MENU_SHORTCUT_KEY_MASK;

@@ -9,6 +9,7 @@ import org.icepdf.core.pobjects.structure.exceptions.ObjectStateException;
 import org.icepdf.core.util.parser.object.ObjectLoader;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 public interface CrossReference {
 
@@ -17,6 +18,8 @@ public interface CrossReference {
 
     CrossReferenceEntry getEntry(Reference reference)
             throws ObjectStateException, CrossReferenceStateException, IOException;
+
+    HashMap<Reference, CrossReferenceEntry> getEntries();
 
     int getXrefStartPos();
 

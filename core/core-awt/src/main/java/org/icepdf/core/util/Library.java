@@ -29,6 +29,7 @@ import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.graphics.images.references.ImagePool;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
+import org.icepdf.core.pobjects.structure.Header;
 import org.icepdf.core.pobjects.structure.Indexer;
 import org.icepdf.core.pobjects.structure.exceptions.CrossReferenceStateException;
 import org.icepdf.core.pobjects.structure.exceptions.ObjectStateException;
@@ -57,8 +58,7 @@ import java.util.logging.Logger;
  */
 public class Library {
 
-    private static final Logger logger =
-            Logger.getLogger(Library.class.toString());
+    private static final Logger logger = Logger.getLogger(Library.class.toString());
 
     protected static ThreadPoolExecutor commonThreadPool;
     protected static ThreadPoolExecutor imageThreadPool;
@@ -95,7 +95,7 @@ public class Library {
     private final ConcurrentHashMap<Reference, WeakReference<ICCBased>> lookupReference2ICCBased =
             new ConcurrentHashMap<>(256);
 
-    private double fileVersion = 1.0;
+    private Header fileHeader;
     private String fileOrigin;
 
     private ByteBuffer mappedFileByteBuffer;
@@ -153,8 +153,8 @@ public class Library {
         if (stateManager != null) {
             if (stateManager.contains(reference)) {
                 obj = stateManager.getChange(reference);
-                if (obj instanceof PObject) {
-                    return ((PObject) obj).getObject();
+                if (obj != null) {
+                    return ((StateManager.Change) obj).getPObject().getObject();
                 }
                 return obj;
             }
@@ -194,7 +194,7 @@ public class Library {
             return ((PObject) obj).getObject();
         } else if (obj instanceof Reference) {
             Reference secondReference = (Reference) obj;
-            logger.log(Level.WARNING,  () -> "Found a reference to a reference: " + secondReference);
+            logger.log(Level.WARNING, () -> "Found a reference to a reference: " + secondReference);
             return getObject(secondReference);
         }
         return obj;
@@ -202,7 +202,7 @@ public class Library {
 
     private boolean isSoftReferenceAble(Object object) {
         if (object instanceof Dictionary) {
-            DictionaryEntries entries = ((Dictionary)object).getEntries();
+            DictionaryEntries entries = ((Dictionary) object).getEntries();
             Name type = getName(entries, Dictionary.TYPE_KEY);
             if (type != null) {
                 return type.equals(Font.TYPE) ||
@@ -359,12 +359,12 @@ public class Library {
         return mappedFileByteBufferLock;
     }
 
-    public double getFileVersion() {
-        return fileVersion;
+    public Header getFileHeader() {
+        return fileHeader;
     }
 
-    public void setFileVersion(double fileVersion) {
-        this.fileVersion = fileVersion;
+    public void setFileHeader(Header header) {
+        this.fileHeader = header;
     }
 
     /**
@@ -692,6 +692,7 @@ public class Library {
 
     /**
      * Checks the given values for floats and resolves and References.
+     *
      * @param values list of floats
      * @return list of floats
      */
@@ -711,8 +712,8 @@ public class Library {
     private Float getFloatNumber(Object object) {
         if (object instanceof Number) {
             return ((Number) object).floatValue();
-        } else if (object instanceof  Reference) {
-            return ((Number)getObject((Reference) object)).floatValue();
+        } else if (object instanceof Reference) {
+            return ((Number) getObject((Reference) object)).floatValue();
         } else {
             return null;
         }

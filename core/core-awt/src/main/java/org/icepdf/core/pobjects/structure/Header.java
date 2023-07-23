@@ -41,7 +41,7 @@ public class Header {
         if (matchPosition == matchLength) {
             version = parseVersion(headerBuffer);
         } else {
-            version = 0;
+            version = 1.0;
         }
 
         // check for some bad bytes
@@ -60,6 +60,10 @@ public class Header {
         return version;
     }
 
+    public String getWriterVersion() {
+        return "PDF-" + version;
+    }
+
     private static double parseVersion(ByteBuffer buffer) {
         byte[] versionBytes = new byte[3];
         buffer.get(versionBytes);
@@ -69,7 +73,7 @@ public class Header {
         } catch (NumberFormatException e) {
             // quite for now.
         }
-        return 0;
+        return 1.0;
     }
 
 }

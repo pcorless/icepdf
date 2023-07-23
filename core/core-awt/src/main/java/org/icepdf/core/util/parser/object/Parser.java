@@ -115,11 +115,19 @@ public class Parser {
                 // sometimes there is just garbage too.  If there is no filter assume so.
                 if (streamLength < 10 && library.getName((DictionaryEntries) objectData, Stream.FILTER_KEY) == null) {
                     streamLength = 0;
-                                    streamByteBuffer.position(0);
+                    streamByteBuffer.position(0);
                     streamByteBuffer.limit(streamLength);
                     streamByteBuffer = streamByteBuffer.slice();
                 }
             }
+            // update position to end of object
+            // xxx removing for now as this is change will require quite a bit of regression testing.
+//            byteBuffer.position(byteBuffer.position() + streamLength);
+//            boolean foundEndObjMarker = ByteBufferUtil.findString(byteBuffer, END_OBJ_MARKER);
+//            if (!foundEndObjMarker) {
+//                throw new IllegalStateException("couldn't find enobj");
+//            }
+
         } else {
             streamByteBuffer = null;
         }

@@ -28,6 +28,7 @@ import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.*;
+import org.icepdf.core.util.updater.WriteMode;
 import org.icepdf.ri.common.preferences.PreferencesDialog;
 import org.icepdf.ri.common.print.PrintHelper;
 import org.icepdf.ri.common.print.PrintHelperFactory;
@@ -148,6 +149,7 @@ public class SwingController extends ComponentAdapter
     private JMenuItem closeMenuItem;
     private JMenuItem saveFileMenuItem;
     private JMenuItem saveAsFileMenuItem;
+    private JMenuItem exportDocumentFileMenuItem;
     private JMenuItem sendMailMenuItem;
     private JMenuItem exportTextMenuItem;
     private JMenuItem propertiesMenuItem;
@@ -457,6 +459,11 @@ public class SwingController extends ComponentAdapter
      */
     public void setSaveAsFileMenuItem(JMenuItem mi) {
         saveAsFileMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    public void setExportDocumentFileMenuItem(JMenuItem mi) {
+        exportDocumentFileMenuItem = mi;
         mi.addActionListener(this);
     }
 
@@ -1599,7 +1606,8 @@ public class SwingController extends ComponentAdapter
         // menu items.
         setEnabled(closeMenuItem, opened);
         setEnabled(saveFileMenuItem, opened && !IS_READONLY);
-        setEnabled(saveAsFileMenuItem, opened && !IS_READONLY);
+        setEnabled(saveAsFileMenuItem, opened);
+        setEnabled(exportDocumentFileMenuItem, opened);
         setEnabled(sendMailMenuItem, opened);
         setEnabled(exportTextMenuItem, opened && canExtract && !pdfCollection);
         setEnabled(propertiesMenuItem, opened);
@@ -2500,11 +2508,17 @@ public class SwingController extends ComponentAdapter
                 saveFilePath = getTempSaveFileName(pathname);
                 File tmpFile = new File(saveFilePath);
                 if (tmpFile.exists() && new File(pathname).exists()) {
-                    String[] options = {messageBundle.getString("viewer.button.yes.label"), messageBundle.getString("viewer.button.no.label")};
-                    int ret = JOptionPane.showOptionDialog(viewer, MessageFormat.format(messageBundle.getString("viewer.dialog.restore.label"), new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(tmpFile.lastModified())), messageBundle.getString("viewer.dialog.restore.title"), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+                    String[] options = {messageBundle.getString("viewer.button.yes.label"), messageBundle.getString(
+                            "viewer.button.no.label")};
+                    int ret = JOptionPane.showOptionDialog(viewer, MessageFormat.format(messageBundle.getString(
+                                            "viewer.dialog.restore.label"),
+                                    new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(tmpFile.lastModified())),
+                            messageBundle.getString("viewer.dialog.restore.title"), JOptionPane.YES_NO_OPTION,
+                            JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
                     if (ret == JOptionPane.YES_OPTION) {
                         try {
-                            Files.copy(tmpFile.toPath(), new File(pathname).toPath(), StandardCopyOption.REPLACE_EXISTING);
+                            Files.copy(tmpFile.toPath(), new File(pathname).toPath(),
+                                    StandardCopyOption.REPLACE_EXISTING);
                         } catch (IOException e) {
                             org.icepdf.ri.util.Resources.showMessageDialog(
                                     viewer,
@@ -2512,7 +2526,8 @@ public class SwingController extends ComponentAdapter
                                     messageBundle,
                                     "viewer.dialog.restore.exception.title",
                                     "viewer.dialog.restore.exception.label",
-                                    e.getMessage() != null && !e.getMessage().isEmpty() ? e.getMessage() : e.toString());
+                                    e.getMessage() != null && !e.getMessage().isEmpty() ? e.getMessage() :
+                                            e.toString());
                         }
                     } else {
                         try {
@@ -3120,7 +3135,8 @@ public class SwingController extends ComponentAdapter
             String filename = f.exists() ? f.getName() : fileDescription;
             Object[] messageArguments = title == null ? new String[]{filename} : new String[]{title, filename};
             String titleResource = title == null ? "notitle" : "default";
-            MessageFormat formatter = new MessageFormat(messageBundle.getString("viewer.window.title.open." + titleResource));
+            MessageFormat formatter =
+                    new MessageFormat(messageBundle.getString("viewer.window.title.open." + titleResource));
             viewer.setTitle(formatter.format(messageArguments));
         }
 
@@ -3432,11 +3448,11 @@ public class SwingController extends ComponentAdapter
                 }
             } else {
                 //Probably got loaded from an InputStream, can't simply save
-                saveFileAs();
+                saveFileAs(SaveMode.SAVE);
             }
         } else {
             // show saveAs dialog as this was legacy behaviour for the save button on the toolbar
-            saveFileAs();
+            saveFileAs(SaveMode.SAVE);
         }
     }
 
@@ -3447,54 +3463,66 @@ public class SwingController extends ComponentAdapter
      * save the file to, and what name to give it.
      */
     public void saveFileAs() {
+        saveFileAs(SaveMode.SAVE_AS);
+    }
 
-        if (!IS_READONLY) {
-            String originalFileName = getOriginalFileName();
-            String newFileName = originalFileName == null || originalFileName.isEmpty() ? null : generateNewSaveName(originalFileName);
+    /**
+     * Utility method for saving a document using a full document write. The file will
+     * be rewritten and indexed.  All deleted objects will be removed.  Any incremental
+     * updates will be flattened and only the current object version will be written.
+     * No previous document state will persist.
+     * A save dialog will be shown will not be possible to overwrite the original
+     * document.
+     */
+    public void exportDocument() {
+        saveFileAs(SaveMode.EXPORT);
+    }
 
-            // Create and display a file saving dialog
-            if (!USE_JFILECHOOSER) {
-                final FileDialog fileDialog = new FileDialog(getViewerFrame());
-                fileDialog.setTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
-                fileDialog.setMultipleMode(false);
-                fileDialog.setMode(FileDialog.SAVE);
-                fileDialog.setFilenameFilter((file, s) -> s.endsWith(FileExtensionUtils.pdf));
-                if (ViewModel.getDefaultFile() != null) {
-                    fileDialog.setDirectory(ViewModel.getDefaultFile().getParentFile().getAbsolutePath());
-                }
-                if (newFileName != null) {
-                    fileDialog.setFile(newFileName);
-                }
-                // show the dialog
-                fileDialog.setVisible(true);
-                final String filePath = fileDialog.getFile();
-                final String dirPath = fileDialog.getDirectory();
-                if (filePath != null && dirPath != null) {
-                    saveFileChecks(originalFileName, new File(dirPath + filePath));
-                }
-            } else {
-                final JFileChooser fileChooser = new JFileChooser();
-                fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
-                fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-                fileChooser.addChoosableFileFilter(FileExtensionUtils.getPDFFileFilter());
-                if (ViewModel.getDefaultFile() != null) {
-                    fileChooser.setCurrentDirectory(ViewModel.getDefaultFile());
-                }
-                if (newFileName != null) {
-                    fileChooser.setSelectedFile(new File(newFileName));
-                }
-                // show the dialog
-                if (fileChooser.showSaveDialog(viewer) == JFileChooser.APPROVE_OPTION) {
-                    saveFileChecks(originalFileName, fileChooser.getSelectedFile());
-                }
+    protected void saveFileAs(SaveMode saveMode) {
+        String originalFileName = getOriginalFileName();
+        String newFileName = originalFileName == null || originalFileName.isEmpty() ? null :
+                generateNewSaveName(originalFileName);
+
+        // Create and display a file saving dialog
+        if (!USE_JFILECHOOSER) {
+            final FileDialog fileDialog = new FileDialog(getViewerFrame());
+            fileDialog.setTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
+            fileDialog.setMultipleMode(false);
+            fileDialog.setMode(FileDialog.SAVE);
+            fileDialog.setFilenameFilter((file, s) -> s.endsWith(FileExtensionUtils.pdf));
+            if (ViewModel.getDefaultFile() != null) {
+                fileDialog.setDirectory(ViewModel.getDefaultFile().getParentFile().getAbsolutePath());
+            }
+            if (newFileName != null) {
+                fileDialog.setFile(newFileName);
+            }
+            // show the dialog
+            fileDialog.setVisible(true);
+            final String filePath = fileDialog.getFile();
+            final String dirPath = fileDialog.getDirectory();
+            if (filePath != null && dirPath != null) {
+                saveFileChecks(saveMode, originalFileName, new File(dirPath + filePath));
+            }
+        } else {
+            final JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            fileChooser.addChoosableFileFilter(FileExtensionUtils.getPDFFileFilter());
+            if (ViewModel.getDefaultFile() != null) {
+                fileChooser.setCurrentDirectory(ViewModel.getDefaultFile());
+            }
+            if (newFileName != null) {
+                fileChooser.setSelectedFile(new File(newFileName));
+            }
+            // show the dialog
+            if (fileChooser.showSaveDialog(viewer) == JFileChooser.APPROVE_OPTION) {
+                saveFileChecks(saveMode, originalFileName, fileChooser.getSelectedFile());
             }
         }
     }
 
     private String getOriginalFileName() {
         String origin = document.getDocumentOrigin();
-        String originalFileName = null;
-        String newFileName = null;
         if (origin != null) {
             int lastSeparator = Math.max(
                     Math.max(
@@ -3509,7 +3537,7 @@ public class SwingController extends ComponentAdapter
         return null;
     }
 
-    protected void saveFileChecks(String originalFileName, File file) {
+    protected void saveFileChecks(SaveMode saveMode, String originalFileName, File file) {
         if (file != null) {
             if (Files.isWritable(file.getParentFile().toPath())) {
                 // make sure file path being saved to is valid
@@ -3521,7 +3549,7 @@ public class SwingController extends ComponentAdapter
                             messageBundle,
                             "viewer.dialog.saveAs.noExtensionError.title",
                             "viewer.dialog.saveAs.noExtensionError.msg");
-                    saveFileAs();
+                    saveFileAs(saveMode);
                 } else if (!extension.equals(FileExtensionUtils.pdf)) {
                     org.icepdf.ri.util.Resources.showMessageDialog(
                             viewer,
@@ -3530,7 +3558,7 @@ public class SwingController extends ComponentAdapter
                             "viewer.dialog.saveAs.extensionError.title",
                             "viewer.dialog.saveAs.extensionError.msg",
                             file.getName());
-                    saveFileAs();
+                    saveFileAs(saveMode);
                 } else if (originalFileName != null &&
                         originalFileName.equalsIgnoreCase(file.getName())) {
                     // Ensure a unique filename
@@ -3541,7 +3569,7 @@ public class SwingController extends ComponentAdapter
                             "viewer.dialog.saveAs.noneUniqueName.title",
                             "viewer.dialog.saveAs.noneUniqueName.msg",
                             file.getName());
-                    saveFileAs();
+                    saveFileAs(saveMode);
                 } else {
                     // save file stream
                     // If we don't know where the file came from, it's because we
@@ -3558,9 +3586,9 @@ public class SwingController extends ComponentAdapter
                          final BufferedOutputStream buf = new BufferedOutputStream(fileOutputStream, 8192)) {
 
                         // We want 'save as' or 'save a copy to always occur
-                        if (!document.getStateManager().isChange()) {
+                        if (saveMode == SaveMode.EXPORT) {
                             // save as copy
-                            document.writeToOutputStream(buf);
+                            document.writeToOutputStream(buf, WriteMode.FULL_UPDATE);
                         } else {
                             // save as will append changes.
                             document.saveToOutputStream(buf);
@@ -4810,6 +4838,8 @@ public class SwingController extends ComponentAdapter
                 }
             } else if (source == saveFileMenuItem || source == saveFileButton) {
                 saveFile();
+            } else if (source == exportDocumentFileMenuItem) {
+                exportDocument();
             } else if (source == saveAsFileMenuItem) {
                 saveFileAs();
             } else if (source == sendMailMenuItem) {
@@ -5117,12 +5147,14 @@ public class SwingController extends ComponentAdapter
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_LINE_ARROW_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINE_ARROW_ANNOTATION);
                 }
-            } else if (checkAnnotationButton(source, squareAnnotationToolButton, squareAnnotationPropertiesToolButton)) {
+            } else if (checkAnnotationButton(source, squareAnnotationToolButton,
+                    squareAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_SQUARE_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SQUARE_ANNOTATION);
                 }
-            } else if (checkAnnotationButton(source, circleAnnotationToolButton, circleAnnotationPropertiesToolButton)) {
+            } else if (checkAnnotationButton(source, circleAnnotationToolButton,
+                    circleAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_CIRCLE_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_CIRCLE_ANNOTATION);
@@ -5288,7 +5320,8 @@ public class SwingController extends ComponentAdapter
                 try {
                     File tmpFile = new File(saveFilePath);
                     if (tmpFile.exists()) {
-                        Files.move(tmpFile.toPath(), new File(origFilePath).toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        Files.move(tmpFile.toPath(), new File(origFilePath).toPath(),
+                                StandardCopyOption.REPLACE_EXISTING);
                     }
                 } catch (IOException ex) {
                     logger.log(Level.FINE, "IO Exception ", e);
@@ -5463,14 +5496,16 @@ public class SwingController extends ComponentAdapter
                 new BaseAction(() -> showPage(getPageTree().getNumberOfPages() - 1)));
         addKeyAction(component, KEY_CODE_SEARCH, MODIFIER_SEARCH, new BaseAction(this::showSearch));
         addKeyAction(component, KEY_CODE_SEARCH, MODIFIER_ADVANCED_SEARCH, new BaseAction(this::showSearchPanel));
-        addKeyAction(component, KEY_CODE_SEARCH_PREVIOUS, MODIFIER_SEARCH_PREVIOUS, new BaseAction(this::previousSearchResult));
+        addKeyAction(component, KEY_CODE_SEARCH_PREVIOUS, MODIFIER_SEARCH_PREVIOUS,
+                new BaseAction(this::previousSearchResult));
         addKeyAction(component, KEY_CODE_SEARCH_NEXT, MODIFIER_SEARCH_NEXT, new BaseAction(this::nextSearchResult));
         addKeyAction(component, KEY_CODE_GOTO, MODIFIER_GOTO, new BaseAction(this::showPageSelectionDialog));
         addKeyAction(component, KEY_CODE_PREFERENCES, MODIFIER_PREFERENCES,
                 new BaseAction(this::showViewerPreferences));
     }
 
-    protected final void addKeyAction(final JComponent component, final int keyCode, final int modifier, final BaseAction action) {
+    protected final void addKeyAction(final JComponent component, final int keyCode, final int modifier,
+                                      final BaseAction action) {
         final InputMap inputMap = component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         final ActionMap actionMap = component.getActionMap();
         final String key = keyCode + "-" + modifier;
@@ -5693,11 +5728,14 @@ public class SwingController extends ComponentAdapter
     }
 
     private Collection<AnnotationColorToggleButton> getColorButtons() {
-        return new HashSet<>(Arrays.asList(highlightAnnotationToolButton, strikeOutAnnotationToolButton, underlineAnnotationToolButton, lineAnnotationToolButton,
-                lineArrowAnnotationToolButton, squareAnnotationToolButton, circleAnnotationToolButton, inkAnnotationToolButton, textAnnotationToolButton));
+        return new HashSet<>(Arrays.asList(highlightAnnotationToolButton, strikeOutAnnotationToolButton,
+                underlineAnnotationToolButton, lineAnnotationToolButton,
+                lineArrowAnnotationToolButton, squareAnnotationToolButton, circleAnnotationToolButton,
+                inkAnnotationToolButton, textAnnotationToolButton));
     }
 
-    public void changeAnnotationsVisibility(final AnnotationFilter filter, final boolean visible, final boolean execInvert) {
+    public void changeAnnotationsVisibility(final AnnotationFilter filter, final boolean visible,
+                                            final boolean execInvert) {
         callOnFilteredAnnotations(a -> a instanceof MarkupAnnotation && filter.filter(a), a -> {
             a.setFlag(Annotation.FLAG_HIDDEN, !visible);
             a.setFlag(Annotation.FLAG_INVISIBLE, !visible);
@@ -5757,7 +5795,8 @@ public class SwingController extends ComponentAdapter
             for (int i = 0; i < pt.getNumberOfPages(); ++i) {
                 final Page p = pt.getPage(i);
                 if (p.getAnnotations() != null) {
-                    final List<Annotation> annotations = p.getAnnotations().stream().filter(filter::filter).collect(Collectors.toList());
+                    final List<Annotation> annotations =
+                            p.getAnnotations().stream().filter(filter::filter).collect(Collectors.toList());
                     annotations.forEach(toExecute);
                 }
             }

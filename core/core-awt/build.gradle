@@ -13,11 +13,14 @@ dependencies {
     implementation 'org.bouncycastle:bcprov-ext-jdk15on:' + "${BOUNCY_VERSION}"
     implementation 'org.bouncycastle:bcpkix-jdk15on:' + "${BOUNCY_VERSION}"
     // tiff, jpeg2000 and jbig decoding
-    implementation 'com.twelvemonkeys.imageio:imageio-tiff:'  + "${MONKEY_VERSION}"
+    implementation 'com.twelvemonkeys.imageio:imageio-tiff:' + "${MONKEY_VERSION}"
     implementation 'org.apache.pdfbox:jbig2-imageio:' + "${JBIG2_VERSION}"
     implementation 'org.apache.pdfbox:fontbox:' + "${FONT_BOX_VERSION}"
     implementation 'commons-logging:commons-logging:1.2'
     runtimeOnly 'com.github.jai-imageio:jai-imageio-jpeg2000:' + "${JAI_VERSION}"
+    // tests
+    testImplementation(platform("org.junit:junit-bom:${JUNIT_BOM_VERSION}"))
+    testImplementation('org.junit.jupiter:junit-jupiter')
 }
 
 // generatePomFileForCoreJarPublication
@@ -99,18 +102,25 @@ compileJava {
         def jenkinsBuild = System.getenv("BUILD_NUMBER") ?: "0"
         def jenkinsRevision = System.getenv("SVN_REVISION") ?: "0"
 
-        copy{
+        copy {
             from 'src/main/resources/org/icepdf/core/application/ProductInfo.java'
             into 'src/main/java/org/icepdf/core/application/'
             filter(org.apache.tools.ant.filters.ReplaceTokens,
                     tokens: [company: COMPANY, product: PRODUCT, version: VERSION, type: RELEASE_TYPE,
-                             build: jenkinsBuild, revision: jenkinsRevision])
+                             build  : jenkinsBuild, revision: jenkinsRevision])
         }
     }
 }
 
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
+
 clean {
-    doLast{
+    doLast {
         file("src/main/java/org/icepdf/core/application/ProductInfo.java").delete()
     }
 }

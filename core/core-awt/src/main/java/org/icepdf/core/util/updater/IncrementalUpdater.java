@@ -42,17 +42,20 @@ public class IncrementalUpdater {
         writer.writeNewLine();
         Iterator<StateManager.Change> changes = stateManager.iteratorSortedByObjectNumber();
         while (changes.hasNext()) {
-            PObject pobject = changes.next().getPObject();
-            writer.writePObject(pobject);
+            StateManager.Change change = changes.next();
+            if (change.getType() != StateManager.Type.DELETE) {
+                PObject pobject = change.getPObject();
+                writer.writePObject(pobject);
+            }
         }
 
         // todo may need updating as I don't think it handles hybrid mode
         PTrailer trailer = crossReferenceRoot.getTrailerDictionary();
         if (trailer.isCompressedXref()) {
-            writer.writeCompressedXrefTable();
+            writer.writeIncrementalCompressedXrefTable();
         } else {
             writer.writeXRefTable();
-            writer.writeTrailer();
+            writer.writeIncrementalUpdateTrailer();
         }
         output.close();
 

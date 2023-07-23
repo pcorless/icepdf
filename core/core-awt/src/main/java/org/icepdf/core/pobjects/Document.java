@@ -30,7 +30,10 @@ import org.icepdf.core.pobjects.structure.Header;
 import org.icepdf.core.pobjects.structure.Trailer;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.updater.IncrementalUpdater;
+import org.icepdf.core.util.updater.DocumentBuilder;
+import org.icepdf.core.util.updater.WriteMode;
+import org.icepdf.core.util.updater.modifiers.ModifierFactory;
+import org.icepdf.core.util.updater.modifiers.PageRemovalModifier;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -38,9 +41,7 @@ import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
-import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -119,7 +120,7 @@ public class Document {
         // sets if file caching is enabled or disabled.
         isCachingEnabled =
                 Defs.sysPropertyBoolean("org.icepdf.core.streamcache.enabled",
-                        false);
+                        true);
     }
 
     /**
@@ -346,7 +347,7 @@ public class Document {
             input = header.parseHeader(input);
 
             library.setDocumentByteBuffer(input);
-            library.setFileVersion(header.getVersion());
+            library.setFileHeader(header);
 
             // create instance of CrossReferenceRoot as we may need it the trailer can't be correctly decoded.
             crossReferenceRoot = new CrossReferenceRoot(library);
@@ -365,13 +366,13 @@ public class Document {
                     crossReferenceRoot.initialize(input);
                     library.setCrossReferenceRoot(crossReferenceRoot);
                 } catch (Exception e) {
-                    crossReferenceRoot.setLazyInitializationFailed(true);
+                    crossReferenceRoot.setInitializationFailed(true);
                     logger.log(Level.WARNING, "Cross reference loading failed, reindexing file.", e);
                 }
             }
 
             // linear traversal of file.
-            if (trailer.isLazyInitializationFailed() || crossReferenceRoot.isLazyInitializationFailed()) {
+            if (trailer.isLazyInitializationFailed() || crossReferenceRoot.isInitializationFailed()) {
                 crossReferenceRoot = library.rebuildCrossReferenceTable();
                 library.setCrossReferenceRoot(crossReferenceRoot);
             }
@@ -558,23 +559,32 @@ public class Document {
      * @throws IOException if there is some problem reading or writing the PDF data
      */
     public long writeToOutputStream(OutputStream out) throws IOException {
+        return writeToOutputStream(out, WriteMode.INCREMENT_UPDATE);
+    }
+
+    /**
+     * Takes the internal PDF data, which may be in a file or in RAM,
+     * and write it to the provided OutputStream.
+     * The OutputStream is not flushed or closed, in case this method's
+     * caller requires otherwise.
+     *
+     * @param out OutputStream to which the PDF file bytes are written.
+     * @return The length of the PDF file copied
+     * @throws IOException if there is some problem reading or writing the PDF data
+     */
+    public long writeToOutputStream(OutputStream out, WriteMode writeMode) throws IOException {
         if (documentFileChannel != null) {
             synchronized (library.getMappedFileByteBufferLock()) {
                 ByteBuffer documentByteBuffer = library.getMappedFileByteBuffer();
                 documentByteBuffer.position(0);
                 int documentLength = documentByteBuffer.remaining();
-                long appendedLength;
-                try (WritableByteChannel channel = Channels.newChannel(out)) {
-                    channel.write(documentByteBuffer);
-                    appendedLength = new IncrementalUpdater().appendIncrementalUpdate(
-                            this,
-                            out,
-                            documentLength);
-                } catch (IOException e) {
-                    logger.log(Level.FINE, "Error writing PDF output stream.", e);
-                    throw e;
-                }
-                return documentLength + appendedLength;
+                long newDocumentLength = new DocumentBuilder().createDocument(
+                        writeMode,
+                        this,
+                        library.getMappedFileByteBuffer(),
+                        out,
+                        documentLength);
+                return newDocumentLength;
             }
         } else {
             return 0;
@@ -583,15 +593,27 @@ public class Document {
 
     /**
      * Copies the pre-existing PDF file, and appends an incremental update for
-     * any edits, to the specified OutputStream. For the pre-existing PDF
-     * content copying, writeToOutputStream(OutputStream out) is used.
+     * any edits, to the specified OutputStream.
      *
      * @param out OutputStream to which the PDF file bytes are written.
      * @return The length of the PDF file saved
      * @throws IOException if there is some problem reading or writing the PDF data
      */
     public long saveToOutputStream(OutputStream out) throws IOException {
-        return writeToOutputStream(out);
+        return writeToOutputStream(out, WriteMode.INCREMENT_UPDATE);
+    }
+
+    /**
+     * Copies the pre-existing PDF file, and applies any updates to the specified OutputStream using the specified
+     * write model.
+     *
+     * @param out       OutputStream to which the PDF file bytes are written.
+     * @param writeMode write mode used to update the file with changes.
+     * @return The length of the PDF file saved
+     * @throws IOException if there is some problem reading or writing the PDF data
+     */
+    public long saveToOutputStream(OutputStream out, WriteMode writeMode) throws IOException {
+        return writeToOutputStream(out, writeMode);
     }
 
     /**
@@ -711,6 +733,16 @@ public class Document {
         if (pTrailer == null)
             return null;
         return pTrailer.getInfo();
+    }
+
+    public void deletePage(Page page) {
+        if (page == null) {
+            throw new IllegalStateException("Page must not be null");
+        }
+        PageRemovalModifier pageRemovalModifier = (PageRemovalModifier) ModifierFactory.getModifier(catalog, page);
+        if (pageRemovalModifier != null) {
+            pageRemovalModifier.modify(page);
+        }
     }
 
     /**

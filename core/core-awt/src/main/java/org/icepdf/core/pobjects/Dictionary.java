@@ -161,6 +161,14 @@ public class Dictionary {
         return library.getInt(entries, key);
     }
 
+    public Reference getReference(Name key) {
+        Object o = entries.get(key);
+        if (o instanceof Reference) {
+            return (Reference) o;
+        }
+        return null;
+    }
+
     public List getList(Name key) {
         Object o = getObject(key);
         if (o instanceof List) {

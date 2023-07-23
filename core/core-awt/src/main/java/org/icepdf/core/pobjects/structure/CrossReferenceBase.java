@@ -9,17 +9,18 @@ import org.icepdf.core.util.parser.object.ObjectLoader;
 import org.icepdf.core.util.parser.object.Parser;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *
  */
-public abstract class CrossReferenceBase<T extends Dictionary> implements CrossReference{
+public abstract class CrossReferenceBase<T extends Dictionary> implements CrossReference {
 
     public final T crossReference;
 
     protected final ConcurrentHashMap<Reference, CrossReferenceEntry> indirectObjectReferences;
-    protected CrossReference prefCrossReference;
+    protected CrossReference prevCrossReference;
 
     protected int xrefStartPos;
 
@@ -37,13 +38,14 @@ public abstract class CrossReferenceBase<T extends Dictionary> implements CrossR
         return null;
     }
 
-    public CrossReferenceEntry getEntry(Reference reference) throws ObjectStateException, CrossReferenceStateException, IOException {
+    public CrossReferenceEntry getEntry(Reference reference) throws ObjectStateException,
+            CrossReferenceStateException, IOException {
         CrossReferenceEntry crossReferenceEntry = indirectObjectReferences.get(reference);
         DictionaryEntries entries = crossReference.getEntries();
         Library library = crossReference.getLibrary();
         if (crossReferenceEntry == null && entries.get(PTrailer.PREV_KEY) != null) {
-            if (prefCrossReference != null) {
-                return prefCrossReference.getEntry(reference);
+            if (prevCrossReference != null) {
+                return prevCrossReference.getEntry(reference);
             } else {
                 // try finding the entry in the previous table
                 Parser parser = new Parser(library);
@@ -51,13 +53,24 @@ public abstract class CrossReferenceBase<T extends Dictionary> implements CrossR
                     CrossReference crossReference = parser.getCrossReference(
                             library.getMappedFileByteBuffer(), this.crossReference.getInt(PTrailer.PREV_KEY));
                     if (crossReference != null) {
-                        prefCrossReference = crossReference;
-                        return prefCrossReference.getEntry(reference);
+                        prevCrossReference = crossReference;
+                        return prevCrossReference.getEntry(reference);
                     }
                 }
             }
         }
         return crossReferenceEntry;
+    }
+
+    public HashMap<Reference, CrossReferenceEntry> getEntries() {
+        HashMap<Reference, CrossReferenceEntry> completeIndirectReferences =
+                new HashMap<>(indirectObjectReferences.size());
+        if (prevCrossReference != null) {
+            completeIndirectReferences.putAll(prevCrossReference.getEntries());
+        }
+        // current after previous so we get the most recent object
+        completeIndirectReferences.putAll(indirectObjectReferences);
+        return completeIndirectReferences;
     }
 
     public CrossReferenceEntry getEntryNoDescendents(Reference reference) {
@@ -72,7 +85,7 @@ public abstract class CrossReferenceBase<T extends Dictionary> implements CrossR
         this.xrefStartPos = xrefStartPos;
     }
 
-    public DictionaryEntries getDictionaryEntries(){
+    public DictionaryEntries getDictionaryEntries() {
         return crossReference.getEntries();
     }
 

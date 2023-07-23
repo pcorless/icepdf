@@ -31,28 +31,30 @@ public class StreamWriter extends BaseWriter {
             int compressedDataLength = compressor.deflate(decompressedOutput);
             outputData = new byte[compressedDataLength];
             System.arraycopy(decompressedOutput, 0, outputData, 0, compressedDataLength);
+
+            // check if we need to encrypt the stream
+            if (securityManager != null) {
+                DictionaryEntries decodeParams = null;
+                if (obj.getEntries().get(Stream.DECODEPARAM_KEY) != null) {
+                    decodeParams = obj.getLibrary().getDictionary(obj.getEntries(), Stream.DECODEPARAM_KEY);
+                } else {
+                    // default crypt filter
+                }
+                InputStream decryptedStream = securityManager.encryptInputStream(
+                        obj.getPObjectReference(),
+                        securityManager.getDecryptionKey(),
+                        decodeParams,
+                        new ByteArrayInputStream(outputData), true);
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                int nRead;
+                byte[] data = new byte[16384];
+                while ((nRead = decryptedStream.read(data, 0, data.length)) != -1) {
+                    out.write(data, 0, nRead);
+                }
+                outputData = out.toByteArray();
+            }
         } else {
             outputData = obj.getRawBytes();
-        }
-        if (securityManager != null) {
-            DictionaryEntries decodeParams = null;
-            if (obj.getEntries().get(Stream.DECODEPARAM_KEY) != null) {
-                decodeParams = obj.getLibrary().getDictionary(obj.getEntries(), Stream.DECODEPARAM_KEY);
-            } else {
-                // default crypt filter
-            }
-            InputStream decryptedStream = securityManager.encryptInputStream(
-                    obj.getPObjectReference(),
-                    securityManager.getDecryptionKey(),
-                    decodeParams,
-                    new ByteArrayInputStream(outputData), true);
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            int nRead;
-            byte[] data = new byte[16384];
-            while ((nRead = decryptedStream.read(data, 0, data.length)) != -1) {
-                out.write(data, 0, nRead);
-            }
-            outputData = out.toByteArray();
         }
 
         writeInteger(ref.getObjectNumber(), output);

@@ -64,7 +64,7 @@ public class PObject {
      * Gets the reference information for this PDF object.
      *
      * @return Reference object which contains the PDF objects
-     *         number and generation data
+     * number and generation data
      */
     public Reference getReference() {
         return objectReference;
@@ -117,6 +117,6 @@ public class PObject {
      * @return string representation of this object
      */
     public String toString() {
-        return objectReference.toString() + "  " + object.toString();
+        return objectReference.toString() + "  " + (object != null ? object.toString() : null);
     }
 }

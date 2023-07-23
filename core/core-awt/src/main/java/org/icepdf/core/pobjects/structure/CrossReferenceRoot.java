@@ -29,7 +29,7 @@ public class CrossReferenceRoot {
 
     private final ArrayList<CrossReference> crossReferences;
 
-    private boolean lazyInitializationFailed;
+    private boolean initializationFailed;
 
     public CrossReferenceRoot(Library library) {
         this.library = library;
@@ -71,11 +71,11 @@ public class CrossReferenceRoot {
     }
 
     public PTrailer getTrailerDictionary() {
-        if (pTrailer == null ){
+        if (pTrailer == null) {
             // find the trailer dictionary, this should only happen if the file needed to reindex the file.
             for (CrossReference crossReference : crossReferences) {
                 if (crossReference.getDictionaryEntries() != null &&
-                        crossReference.getDictionaryEntries().get(ROOT_KEY) != null){
+                        crossReference.getDictionaryEntries().get(ROOT_KEY) != null) {
                     pTrailer = new PTrailer(library, crossReference.getDictionaryEntries());
                     return pTrailer;
                 }
@@ -97,11 +97,6 @@ public class CrossReferenceRoot {
             int size = library.getInt(entries, PTrailer.SIZE_KEY);
             maxSize = Math.max(maxSize, size);
         }
-        Object shouldNotExist = library.getObject(new Reference(maxSize, 0));
-        if (shouldNotExist != null) {
-            log.warning("Cross reference size specifies an object that already exists.");
-            maxSize += 1000;
-        }
         return maxSize;
     }
 
@@ -115,12 +110,12 @@ public class CrossReferenceRoot {
         return null;
     }
 
-    public void setLazyInitializationFailed(boolean failed) {
-        lazyInitializationFailed = failed;
+    public void setInitializationFailed(boolean failed) {
+        initializationFailed = failed;
     }
 
-    public boolean isLazyInitializationFailed() {
-        return lazyInitializationFailed;
+    public boolean isInitializationFailed() {
+        return initializationFailed;
     }
 
     public void addCrossReference(CrossReference crossReferenceTable) {

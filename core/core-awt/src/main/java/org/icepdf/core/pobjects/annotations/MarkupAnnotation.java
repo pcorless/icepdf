@@ -318,7 +318,9 @@ public abstract class MarkupAnnotation extends Annotation {
      * @return formatted creation date if available, empty String otherwise
      */
     public String getFormattedCreationDate(FormatStyle formatStyle) {
-        LocalDateTime creationDate = getCreationDate().asLocalDateTime();
+        PDate date = getCreationDate();
+        if (date == null) return "";
+        LocalDateTime creationDate = date.asLocalDateTime();
         if (creationDate == null) return "";
         DateTimeFormatter formatter = DateTimeFormatter
                 .ofLocalizedDateTime(formatStyle)
