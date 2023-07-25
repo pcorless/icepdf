@@ -22,6 +22,7 @@ import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.WindowManagementCallback;
 import org.icepdf.ri.common.print.PrintHelperFactory;
 import org.icepdf.ri.common.utility.outline.OutlineItemTreeNode;
+import org.icepdf.ri.util.DavFileClient;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import java.awt.*;
@@ -270,6 +271,13 @@ public interface Controller extends PropertyChangeListener {
      * @param location location of a valid PDF document
      */
     void openDocument(final URL location);
+
+    /**
+     * Opens a document specified by the given DavFileClient
+     *
+     * @param davFileClient The dav file client
+     */
+    void openDocument(DavFileClient davFileClient);
 
     /**
      * Load the specified file in a new Viewer RI window.

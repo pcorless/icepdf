@@ -512,7 +512,7 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
                 try {
                     cMapInputStream.close();
                 } catch (IOException e) {
-                    logger.log(Level.FINE, "Error clossing cmap stream", e);
+                    logger.log(Level.FINE, "Error closing cmap stream", e);
                 }
             }
         }
