@@ -21,7 +21,9 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.ri.common.UndoCaretaker;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.common.views.annotations.PageViewAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 
 import javax.swing.*;
 import java.awt.*;
@@ -98,6 +100,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     public HashMap<AbstractPageViewComponent, ArrayList<PageViewAnnotationComponent>> getDocumentViewAnnotationComponents() {
         return documentViewAnnotationComponents;
     }
+
     @Override
     public ArrayList<PageViewAnnotationComponent> getDocumentViewAnnotationComponents(AbstractPageViewComponent pageViewComponent) {
         return documentViewAnnotationComponents.get(pageViewComponent);
@@ -386,6 +389,11 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     }
 
     public void addMemento(Memento oldMementoState, Memento newMementoState) {
-        undoCaretaker.addState(oldMementoState, newMementoState);
+        final AnnotationState newState = (AnnotationState) newMementoState;
+        //Don't register add/remove for popups, will be managed by the parent annotation
+        if (newState.getOperation() == AnnotationState.Operation.MOVE ||
+                !(newState.getAnnotationComponent() instanceof PopupAnnotationComponent)) {
+            undoCaretaker.addState(oldMementoState, newMementoState);
+        }
     }
 }
