@@ -22,6 +22,7 @@ import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
 import org.icepdf.ri.images.Images;
@@ -1321,9 +1322,11 @@ public class DocumentViewControllerImpl
                 annotationCallback.newAnnotation(pageComponent, annotationComponent);
             }
 
+            documentViewModel.addMemento(new AnnotationState(annotationComponent, AnnotationState.Operation.DELETE),
+                    new AnnotationState(annotationComponent, AnnotationState.Operation.ADD));
+
             // fire event notification
-            firePropertyChange(PropertyConstants.ANNOTATION_ADDED,
-                    null, annotationComponent);
+            firePropertyChange(PropertyConstants.ANNOTATION_ADDED, null, annotationComponent);
 
             // clear previously selected annotation and fire event.
             assignSelectedAnnotation(null);
@@ -1376,10 +1379,11 @@ public class DocumentViewControllerImpl
                 annotationCallback.removeAnnotation(pageComponent, annotationComponent);
             }
 
+            documentViewModel.addMemento(new AnnotationState(annotationComponent, AnnotationState.Operation.ADD),
+                    new AnnotationState(annotationComponent, AnnotationState.Operation.DELETE));
+
             // fire event notification
-            firePropertyChange(PropertyConstants.ANNOTATION_DELETED,
-                    annotationComponent,
-                    null);
+            firePropertyChange(PropertyConstants.ANNOTATION_DELETED, annotationComponent, null);
 
             // clear previously selected annotation and fire event.
             assignSelectedAnnotation(null);
@@ -1467,13 +1471,33 @@ public class DocumentViewControllerImpl
 
 
     public void undo() {
+        final AnnotationState state = (AnnotationState) documentViewModel.getAnnotationCareTaker().undo();
+        fireEvent(state);
         // repaint the view.
         documentView.repaint();
     }
 
     public void redo() {
+        final AnnotationState state = (AnnotationState) documentViewModel.getAnnotationCareTaker().redo();
+        fireEvent(state);
         // repaint the view.
         documentView.repaint();
+    }
+
+    private void fireEvent(AnnotationState state) {
+        if (state != null) {
+            switch (state.getOperation()) {
+                case ADD:
+                    firePropertyChange(PropertyConstants.ANNOTATION_ADDED, null, state.getAnnotationComponent());
+                    break;
+                case DELETE:
+                    firePropertyChange(PropertyConstants.ANNOTATION_DELETED, state.getAnnotationComponent(), null);
+                    break;
+                case MOVE:
+                    firePropertyChange(PropertyConstants.ANNOTATION_BOUNDS, state.getAnnotationComponent(), state.getAnnotationComponent());
+                    break;
+            }
+        }
     }
 
     public void removePropertyChangeListener(PropertyChangeListener l) {

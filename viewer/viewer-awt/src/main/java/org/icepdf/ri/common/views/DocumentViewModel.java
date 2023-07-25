@@ -17,6 +17,7 @@ package org.icepdf.ri.common.views;
 
 import org.icepdf.core.Memento;
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.ri.common.UndoCaretaker;
 import org.icepdf.ri.common.views.annotations.PageViewAnnotationComponent;
 
 import javax.swing.*;
@@ -322,5 +323,5 @@ public interface DocumentViewModel {
     JScrollPane getDocumentViewScrollPane();
 
     void setDocumentViewScrollPane(JScrollPane documentViewScrollPane);
-
+    UndoCaretaker getAnnotationCareTaker();
 }

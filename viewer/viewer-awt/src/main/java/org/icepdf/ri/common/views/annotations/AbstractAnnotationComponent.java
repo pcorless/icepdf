@@ -425,7 +425,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
             cursor = ((ResizableBorder) border).getCursor(e);
         }
         startPos = e.getPoint();
-        previousAnnotationState = new AnnotationState(this);
+        previousAnnotationState = new AnnotationState(this, AnnotationState.Operation.MOVE);
         // mark annotation as selected.
         documentViewController.assignSelectedAnnotation(this);
     }
@@ -542,11 +542,11 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
         Rectangle pageBounds = pageViewComponent.getBounds();
         // todo fix dx/dy offset as they are only need by line and ink which should be reworked.
         if (!pageBounds.contains(currentBounds)) {
-            if (currentBounds.x <  pageBounds.x){
+            if (currentBounds.x < pageBounds.x) {
                 currentBounds.x = pageBounds.x;
                 dx = 0;
             }
-            if (currentBounds.y <  pageBounds.y){
+            if (currentBounds.y < pageBounds.y) {
                 currentBounds.y = pageBounds.y;
                 dy = 0;
             }
@@ -597,11 +597,12 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
 
             annotation.resetAppearanceStream(dx, -dy, getToPageSpaceTransform(), true);
 
+            documentViewController.getDocumentViewModel().addMemento(previousAnnotationState,
+                    new AnnotationState(this, AnnotationState.Operation.MOVE));
+
             // fire new bounds change event, let the listener handle
             // how to deal with the bound change.
-            documentViewController.firePropertyChange(
-                    PropertyConstants.ANNOTATION_BOUNDS,
-                    previousAnnotationState, new AnnotationState(this));
+            documentViewController.firePropertyChange(PropertyConstants.ANNOTATION_BOUNDS, this, this);
 
             // notify the annotation callback of the annotation resize.
             documentViewController.updateAnnotation(this);
