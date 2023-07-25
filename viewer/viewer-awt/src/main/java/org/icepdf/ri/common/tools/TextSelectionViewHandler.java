@@ -239,7 +239,7 @@ public class TextSelectionViewHandler extends TextSelection
 
             // add selection box to child pages
             java.util.List<AbstractPageViewComponent> pages =
-                    documentViewModel.getPageComponents();
+                    documentViewModel.getFilteredPageComponents();
             for (AbstractPageViewComponent page : pages) {
                 Rectangle tmp = SwingUtilities.convertRectangle(
                         parentComponent, getRectToDraw(), page);

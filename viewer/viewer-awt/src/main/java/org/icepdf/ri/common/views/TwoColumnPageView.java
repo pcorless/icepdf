@@ -59,7 +59,7 @@ public class TwoColumnPageView extends AbstractDocumentView {
         // add the first of many tools needed for this view and others like it.
         currentPageChanger =
                 new CurrentPageChanger(documentScrollpane, this,
-                        documentViewModel.getPageComponents());
+                        documentViewModel.getAllPageComponents());
 
         // add page changing key listeners
         keyListenerPageChanger =
@@ -78,7 +78,7 @@ public class TwoColumnPageView extends AbstractDocumentView {
         // finally add all the components
         // add components for every page in the document
         java.util.List<AbstractPageViewComponent> pageComponents =
-                documentViewController.getDocumentViewModel().getPageComponents();
+                documentViewController.getDocumentViewModel().getFilteredPageComponents();
 
         if (pageComponents != null) {
             AbstractPageViewComponent pageViewComponent;
@@ -100,6 +100,13 @@ public class TwoColumnPageView extends AbstractDocumentView {
     // nothing needs to be done for a column view as all components are already
     // available
     public void updateDocumentView() {
+    }
+
+    @Override
+    public void pagesListChanged() {
+        dispose();
+        disposing=false;
+        buildGUI();
     }
 
     /**

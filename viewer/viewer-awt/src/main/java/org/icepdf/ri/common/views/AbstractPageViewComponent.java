@@ -225,7 +225,7 @@ public abstract class AbstractPageViewComponent
      * @throws NullPointerException if the parent scrollPane is null.
      */
     private boolean isPageIntersectViewport() {
-        Rectangle pageBounds = (documentViewModel != null && documentViewModel.getPageComponents() != null) ?
+        Rectangle pageBounds = (documentViewModel != null && documentViewModel.getFilteredPageComponents() != null) ?
                 documentViewModel.getPageBounds(pageIndex) : getBounds();
         JScrollPane parentScrollPane = documentViewModel.getDocumentViewScrollPane();
         return pageBounds != null && this.isShowing() &&

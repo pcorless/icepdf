@@ -62,7 +62,7 @@ public class ZoomInViewHandler extends SelectionBoxHandler implements ToolHandle
             DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
             if (documentViewModel != null) {
                 java.util.List<AbstractPageViewComponent> pages =
-                        documentViewModel.getPageComponents();
+                        documentViewModel.getFilteredPageComponents();
                 for (AbstractPageViewComponent page : pages) {
                     Rectangle tmp = SwingUtilities.convertRectangle(
                             parentComponent, getRectToDraw(), page);
@@ -129,7 +129,7 @@ public class ZoomInViewHandler extends SelectionBoxHandler implements ToolHandle
             // deselect rectangles on other selected pages.
             // consider only repainting visible pages.
             List<AbstractPageViewComponent> selectedPages =
-                    documentViewController.getDocumentViewModel().getPageComponents();
+                    documentViewController.getDocumentViewModel().getAllPageComponents();
             if (selectedPages != null &&
                     selectedPages.size() > 0) {
                 for (AbstractPageViewComponent pageComp : selectedPages) {

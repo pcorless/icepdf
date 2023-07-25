@@ -71,7 +71,7 @@ public class PageComponentSelector {
         // so we need to do a deep search for the annotation.
         Document document = controller.getDocument();
         java.util.List<AbstractPageViewComponent> pageViewComponentList =
-                controller.getDocumentViewController().getDocumentViewModel().getPageComponents();
+                controller.getDocumentViewController().getDocumentViewModel().getAllPageComponents();
         int pages = controller.getDocument().getPageTree().getNumberOfPages();
         boolean found = false;
         int pageIndex;
@@ -126,7 +126,7 @@ public class PageComponentSelector {
         // so we need to do a deep search for the annotation.
         Document document = controller.getDocument();
         java.util.List<AbstractPageViewComponent> pageViewComponentList =
-                controller.getDocumentViewController().getDocumentViewModel().getPageComponents();
+                controller.getDocumentViewController().getDocumentViewModel().getAllPageComponents();
         Reference pageReference = destination.getPageReference();
         if (pageReference != null) {
             Library library = document.getCatalog().getLibrary();
@@ -155,8 +155,6 @@ public class PageComponentSelector {
 
     public static int AssignAnnotationPage(Controller controller, Annotation widgetAnnotation) {
         Document document = controller.getDocument();
-        java.util.List<AbstractPageViewComponent> pageViewComponentList =
-                controller.getDocumentViewController().getDocumentViewModel().getPageComponents();
         int pages = controller.getDocument().getPageTree().getNumberOfPages();
         int pageIndex;
         for (pageIndex = 0; pageIndex < pages; pageIndex++) {

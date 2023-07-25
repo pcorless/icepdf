@@ -905,7 +905,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         // clear cache and terms list
         searchModel.clearSearchResults(pageIndex);
         PageViewComponentImpl pvc = (PageViewComponentImpl) viewerController.getDocumentViewController().getDocumentViewModel()
-                .getPageComponents().get(pageIndex);
+                .getAllPageComponents().get(pageIndex);
         pvc.clearSearchHighlights();
     }
 
@@ -918,7 +918,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         searchModel.clearSearchResults();
         pageToComponents.forEach((key, shc) -> {
             PageViewComponentImpl pvc = (PageViewComponentImpl) viewerController.getDocumentViewController().getDocumentViewModel()
-                    .getPageComponents().get(key);
+                    .getAllPageComponents().get(key);
             pvc.clearSearchHighlights();
         });
         pageToComponents.clear();

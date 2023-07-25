@@ -122,7 +122,7 @@ public class AnnotationSummaryBox extends PopupAnnotationComponent implements Fo
             int pageIndex = annotation.getParent().getPageIndex();
             PageViewComponentImpl pageViewComponent = (PageViewComponentImpl)
                     documentViewController.getParentController().getDocumentViewController()
-                            .getDocumentViewModel().getPageComponents().get(pageIndex);
+                            .getDocumentViewModel().getAllPageComponents().get(pageIndex);
             pageViewComponent.refreshAnnotationComponents(pageViewComponent.getPage(), false);
             ArrayList<AbstractAnnotationComponent> comps = pageViewComponent.getAnnotationComponents();
             for (AbstractAnnotationComponent abstractComp : comps) {

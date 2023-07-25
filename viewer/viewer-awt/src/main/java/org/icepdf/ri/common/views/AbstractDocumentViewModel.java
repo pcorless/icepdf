@@ -29,7 +29,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * <p>The AbstractDocumentViewModel is responsible for keeping the state of the
@@ -55,8 +57,10 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     private HashMap<Integer, AbstractPageViewComponent> selectedPageText;
     // select all state flag, optimization for painting select all state lazily
     private boolean selectAll;
-    protected List<AbstractPageViewComponent> pageComponents;
+    protected List<AbstractPageViewComponent> allComponents;
+    protected List<AbstractPageViewComponent> filteredComponents;
     protected HashMap<AbstractPageViewComponent, ArrayList<PageViewAnnotationComponent>> documentViewAnnotationComponents;
+
     // scroll pane used to contain the view
     protected JScrollPane documentViewScrollPane;
     // annotation memento caretaker
@@ -90,8 +94,16 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         return currentDocument;
     }
 
-    public List<AbstractPageViewComponent> getPageComponents() {
-        return pageComponents;
+    public List<AbstractPageViewComponent> getFilteredPageComponents() {
+        return filteredComponents;
+    }
+
+    public List<AbstractPageViewComponent> getAllPageComponents() {
+        return allComponents;
+    }
+
+    public void filterPageComponents(final Predicate<AbstractPageViewComponent> filter) {
+        filteredComponents = allComponents.stream().filter(filter).collect(Collectors.toList());
     }
 
 
@@ -296,8 +308,8 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     }
 
     public Rectangle getPageBounds(int pageIndex) {
-        if (pageComponents != null && pageIndex < pageComponents.size()) {
-            Component pageViewComponentImpl = pageComponents.get(pageIndex);
+        if (allComponents != null && pageIndex < allComponents.size()) {
+            Component pageViewComponentImpl = allComponents.get(pageIndex);
             if (pageViewComponentImpl != null && pageViewComponentImpl.getParent() != null) {
                 Rectangle pageBounds = pageViewComponentImpl.getParent().getBounds();
                 return pageBounds;
@@ -308,13 +320,14 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     public void dispose() {
 
-        if (pageComponents != null) {
-            for (AbstractPageViewComponent pageComponent : pageComponents) {
+        if (allComponents != null) {
+            for (AbstractPageViewComponent pageComponent : allComponents) {
                 if (pageComponent != null) {
                     pageComponent.dispose();
                 }
             }
-            pageComponents.clear();
+            allComponents.clear();
+            filteredComponents.clear();
         }
         if (documentViewAnnotationComponents != null) {
             documentViewAnnotationComponents.clear();
