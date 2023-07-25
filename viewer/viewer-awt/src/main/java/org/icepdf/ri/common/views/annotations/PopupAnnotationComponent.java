@@ -86,6 +86,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     public static final int DEFAULT_WIDTH = 215;
     public static final int DEFAULT_HEIGHT = 150;
     public static final Color backgroundColor = new Color(252, 253, 227);
+
     public static final Dimension BUTTON_SIZE = new Dimension(22, 22);
 
     // layouts constraint
@@ -264,11 +265,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     }
 
     @Override
-    public void setBounds(Rectangle r) {
-        setBounds(r.x, r.y, r.width, r.height);
-    }
-
-    @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         // borderColor
@@ -391,14 +387,15 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 selectedMarkupAnnotation.getFormattedTitleText() : "";
         titleLabel = new JLabel(title);
 
-        // Setup color appearance values.
-        resetComponentColors();
-
         // main layout panel
         GridBagLayout layout = new GridBagLayout();
         commentPanel = new JPanel(layout);
         commentPanel.setBackground(popupBackgroundColor);
         this.setLayout(new GridBagLayout());
+
+        // Setup color appearance values.
+        resetComponentColors();
+
         /*
          * Build search GUI
          */
@@ -1244,6 +1241,14 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     public void setFontSize(float size) {
         setTextAreaFontSize(size);
         setHeaderLabelsFontSize(size);
+    }
+
+    public void setFontFamily(String family) {
+        final Font curFont = textArea.getFont();
+        final Font newFont = new Font(family, curFont.getStyle(), curFont.getSize());
+        textArea.setFont(newFont);
+        titleLabel.setFont(newFont);
+        creationLabel.setFont(newFont);
     }
 
     public int getFontSize() {

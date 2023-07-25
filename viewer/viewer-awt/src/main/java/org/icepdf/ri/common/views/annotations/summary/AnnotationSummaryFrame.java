@@ -15,12 +15,14 @@
  */
 package org.icepdf.ri.common.views.annotations.summary;
 
-import org.icepdf.core.pobjects.Document;
 import org.icepdf.ri.common.MutableDocument;
 import org.icepdf.ri.common.views.Controller;
+import org.icepdf.ri.common.views.annotations.summary.mainpanel.AnnotationSummaryPanel;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
@@ -30,39 +32,62 @@ public class AnnotationSummaryFrame extends JFrame implements MutableDocument {
     protected final ResourceBundle messageBundle;
     protected AnnotationSummaryPanel annotationSummaryPanel;
 
-    public AnnotationSummaryFrame(Controller controller) {
+    public AnnotationSummaryFrame(final Controller controller) {
         this.controller = controller;
         messageBundle = controller.getMessageBundle();
-
         setIconImage(new ImageIcon(Images.get("icepdf-app-icon-64x64.png")).getImage());
         setTitle(messageBundle.getString("viewer.window.annotationSummary.title.default"));
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(final WindowEvent e) {
+                saveChanges();
+            }
+        });
+    }
+
+    public void saveChanges() {
+        if (annotationSummaryPanel.getController().hasChanged()) {
+            final MessageFormat formatter = new MessageFormat(
+                    messageBundle.getString("viewer.summary.dialog.saveOnClose.noUpdates.msg").replace("'", "''"));
+            final String dialogMessage = formatter.format(new Object[]{controller.getDocument().getDocumentOrigin()});
+
+            final int res = JOptionPane.showConfirmDialog(this,
+                    dialogMessage,
+                    messageBundle.getString("viewer.summary.dialog.saveOnClose.noUpdates.title"),
+                    JOptionPane.YES_NO_OPTION);
+            if (res == JOptionPane.OK_OPTION) {
+                annotationSummaryPanel.getController().save();
+            }
+            annotationSummaryPanel.getController().setHasManuallyChanged(false);
+        }
     }
 
     @Override
     public void refreshDocumentInstance() {
-        Document document = controller.getDocument();
-        if (document != null) {
-            String title = null;
-            if (document.getInfo() != null) {
-                title = document.getInfo().getTitle();
-            }
-            Object[] messageArguments = {title != null ? title : controller.getViewerFrame().getTitle()};
-            MessageFormat formatter = new MessageFormat(
+        if (controller.getDocument() != null) {
+            final Object[] messageArguments = {controller.getDocument().getDocumentOrigin()};
+            final MessageFormat formatter = new MessageFormat(
                     messageBundle.getString("viewer.window.annotationSummary.title.open.default"));
             setTitle(formatter.format(messageArguments));
-
-            annotationSummaryPanel = new AnnotationSummaryPanel(this, controller);
+            getContentPane().removeAll();
+            annotationSummaryPanel = createAnnotationSummaryPanel(controller);
             getContentPane().add(annotationSummaryPanel);
-            annotationSummaryPanel.refreshDocumentInstance();
+            annotationSummaryPanel.getController().refreshDocumentInstance();
         }
+    }
+
+    protected AnnotationSummaryPanel createAnnotationSummaryPanel(final Controller controller) {
+        return new AnnotationSummaryPanel(this, controller);
     }
 
     public AnnotationSummaryPanel getAnnotationSummaryPanel() {
         return annotationSummaryPanel;
     }
 
+
     @Override
     public void disposeDocument() {
+        saveChanges();
         getContentPane().removeAll();
         invalidate();
         revalidate();

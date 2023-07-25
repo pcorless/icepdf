@@ -22,6 +22,7 @@ import org.icepdf.core.pobjects.Document;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyListener;
+import java.beans.PropertyChangeSupport;
 
 
 /**
@@ -230,4 +231,9 @@ public interface DocumentViewController {
     void firePropertyChange(String event, int oldValue, int newValue);
 
     void firePropertyChange(String event, Object oldValue, Object newValue);
+
+    /**
+     * @return The property change support for this controller
+     */
+    PropertyChangeSupport getPropertyChangeSupport();
 }

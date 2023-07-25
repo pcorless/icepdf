@@ -281,6 +281,8 @@ public final class ViewerPropertiesManager {
     // annotation summary panel font size and name.
     public static final String PROPERTY_ANNOTATION_SUMMARY_FONT_NAME = "application.viewer.annotation.summary.font.name";
     public static final String PROPERTY_ANNOTATION_SUMMARY_FONT_SIZE = "application.viewer.annotation.summary.font.size";
+    public static final String PROPERTY_ANNOTATION_SUMMARY_EXPORT_FILE = "application.viewer.annotation.summary.export.file";
+    public static final String PROPERTY_ANNOTATION_SUMMARY_IMPORT_FILE = "application.viewer.annotation.summary.import.file";
 
     // stored state of last used public/private annotation flag.
     public static final String PROPERTY_ANNOTATION_LAST_USED_PUBLIC_FLAG = "application.viewer.annotation.public.flag";
