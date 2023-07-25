@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.utility.annotation.properties;
 
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.ri.common.EscapeJDialog;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
@@ -131,7 +132,9 @@ public class AnnotationPropertiesDialog extends EscapeJDialog implements Annotat
         }
 
         // disable the component if the annotation is readonly.
-        if (annotation.getAnnotation().getFlagReadOnly()) {
+        if (annotation.getAnnotation().getFlagReadOnly() ||
+                (annotation.getAnnotation() instanceof MarkupAnnotation &&
+                !((MarkupAnnotation) annotation.getAnnotation()).isCurrentUserOwner())) {
             if (annotationPropertyPanel != null) annotationPropertyPanel.setEnabled(false);
             actionsPanel.setEnabled(false);
             borderPanel.setEnabled(false);

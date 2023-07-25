@@ -17,6 +17,7 @@
 package org.icepdf.ri.common.utility.annotation.properties;
 
 import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.Controller;
 
@@ -101,9 +102,8 @@ public class FlagsPanel extends AnnotationPanelAdapter implements ItemListener {
         super.setEnabled(enabled);
         noRotateComboBox.setEnabled(enabled);
         noZoomComboBox.setEnabled(enabled);
-        // leaving this always enabled just so users can change it back in editor mode.
-        // does this make sense?  not sure could argue either way.
-        readOnlyComboBox.setEnabled(true);
+        boolean canModify = ((MarkupAnnotation) currentAnnotationComponent.getAnnotation()).isCurrentUserOwner();
+        readOnlyComboBox.setEnabled(canModify);
         printableComboBox.setEnabled(enabled);
     }
 

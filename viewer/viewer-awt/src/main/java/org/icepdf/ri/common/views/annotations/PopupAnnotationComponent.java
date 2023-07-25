@@ -377,6 +377,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         textArea.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(PopupAnnotation.BORDER_COLOR),
                 BorderFactory.createEmptyBorder(2, 2, 2, 2)));
 
+        textArea.setEditable(selectedMarkupAnnotation.isCurrentUserOwner());
         textArea.setLineWrap(true);
         textArea.getDocument().addDocumentListener(this);
         if (!disableSpellCheck) {
@@ -763,6 +764,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     public void refreshPopupState() {
         if (textArea != null) {
             // update the private/public button.
+            privateToggleButton.setVisible(selectedMarkupAnnotation.isCurrentUserOwner());
             if (privateToggleButton.isVisible()) {
                 privateToggleButton.setSelected(selectedMarkupAnnotation.getFlagPrivateContents());
             }
@@ -770,6 +772,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             textArea.getDocument().removeDocumentListener(this);
             textArea.setText(selectedMarkupAnnotation.getContents());
             textArea.getDocument().addDocumentListener(this);
+            textArea.setEditable(selectedMarkupAnnotation.isCurrentUserOwner());
         }
         refreshCreationLabel();
     }

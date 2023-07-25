@@ -92,23 +92,24 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
     public void buildGui() {
         ViewerPropertiesManager propertiesManager = ViewerPropertiesManager.getInstance();
         boolean modifyDocument = controller.havePermissionToModifyDocument();
-
+        boolean hasEditRights = ((MarkupAnnotation) annotationComponent.getAnnotation()).isCurrentUserOwner();
+        boolean canModify = modifyDocument && hasEditRights;
         // status change commands.
         statusNoneMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.status.none.label"));
-        statusNoneMenuItem.setEnabled(modifyDocument);
+        statusNoneMenuItem.setEnabled(canModify);
         statusAcceptedItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.status.accepted.label"));
-        statusAcceptedItem.setEnabled(modifyDocument);
+        statusAcceptedItem.setEnabled(canModify);
         statusCancelledMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.status.cancelled.label"));
-        statusCancelledMenuItem.setEnabled(modifyDocument);
+        statusCancelledMenuItem.setEnabled(canModify);
         statusCompletedMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.status.completed.label"));
-        statusCompletedMenuItem.setEnabled(modifyDocument);
+        statusCompletedMenuItem.setEnabled(canModify);
         statusRejectedMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.status.rejected.label"));
-        statusRejectedMenuItem.setEnabled(modifyDocument);
+        statusRejectedMenuItem.setEnabled(canModify);
         // generic commands, open/minimize all
         openAllMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.openAll.label"));
@@ -122,23 +123,23 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
             // annotation creation menus.
             addDestinationMenuItem = new JMenuItem(
                     messageBundle.getString("viewer.utilityPane.view.selectionTool.contextMenu.addDestination.label"));
-            addDestinationMenuItem.setEnabled(modifyDocument);
+            addDestinationMenuItem.setEnabled(canModify);
             addDestinationMenuItem.addActionListener(this);
             addDestinationMenuItem.setIcon(new ImageIcon(Images.get("destination_20.png")));
             addFreeTextMenuItem1 = new JMenuItem(
                     messageBundle.getString("viewer.annotation.popup.addAnnotation.freeText.label"));
-            addFreeTextMenuItem1.setEnabled(modifyDocument);
+            addFreeTextMenuItem1.setEnabled(canModify);
             addFreeTextMenuItem1.setIcon(new ImageIcon(Images.get("freetext_annot_a_20.png")));
             addFreeTextMenuItem1.addActionListener(this);
             addFreeTextMenuItem2 = new JMenuItem(
                     messageBundle.getString("viewer.annotation.popup.addAnnotation.freeText.label"));
-            addFreeTextMenuItem2.setEnabled(modifyDocument);
+            addFreeTextMenuItem2.setEnabled(canModify);
             addFreeTextMenuItem2.setIcon(new ImageIcon(Images.get("freetext_annot_a_20.png")));
             addFreeTextMenuItem2.addActionListener(this);
             // addition of set status menu
             JMenu submenu = new JMenu(
                     messageBundle.getString("viewer.annotation.popup.addAnnotation.label"));
-            addDestinationMenuItem.setEnabled(modifyDocument);
+            addDestinationMenuItem.setEnabled(canModify);
             submenu.add(addDestinationMenuItem);
             submenu.addSeparator();
             submenu.add(addFreeTextMenuItem2);
@@ -195,7 +196,7 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
             submenu.add(setAllPublicMenuItem);
             add(submenu);
             addSeparator();
-            submenu.setEnabled(modifyDocument);
+            submenu.setEnabled(canModify);
         }
 
         // generic commands, open/minimize all

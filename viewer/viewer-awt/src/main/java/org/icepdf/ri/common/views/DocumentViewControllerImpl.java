@@ -17,6 +17,7 @@ package org.icepdf.ri.common.views;
 
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
@@ -1305,7 +1306,9 @@ public class DocumentViewControllerImpl
     public void deleteCurrentAnnotation() {
         AbstractAnnotationComponent annotationComponent = (AbstractAnnotationComponent)
                 documentViewModel.getCurrentAnnotation();
-        if (annotationComponent != null && !(annotationComponent instanceof PopupAnnotationComponent)) {
+        if (annotationComponent != null && !(annotationComponent instanceof PopupAnnotationComponent) &&
+        (!(annotationComponent.getAnnotation() instanceof MarkupAnnotation) ||
+                ((MarkupAnnotation) annotationComponent.getAnnotation()).isCurrentUserOwner())) {
             deleteAnnotation(annotationComponent);
         }
     }
