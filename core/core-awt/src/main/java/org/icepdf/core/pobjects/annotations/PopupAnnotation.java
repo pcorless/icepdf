@@ -66,7 +66,7 @@ public class PopupAnnotation extends Annotation {
 
     protected MarkupAnnotation parent;
 
-    protected final float fontSize = new JLabel().getFont().getSize();
+    protected final float fontSize = 12;
     protected float textAreaFontsize = fontSize;
     protected float headerLabelsFontSize = fontSize;
 
