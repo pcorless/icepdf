@@ -212,6 +212,7 @@ public class PopupAnnotation extends Annotation {
         font = font.deriveFont(fontSize);
         textArea.setFont(font);
         textArea.setWrapStyleWord(true);
+        textArea.setLineWrap(true);
         textArea.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(color),
                 BorderFactory.createEmptyBorder(2, 2, 2, 2)));
         popupPaintablesPanel.add(textArea);
