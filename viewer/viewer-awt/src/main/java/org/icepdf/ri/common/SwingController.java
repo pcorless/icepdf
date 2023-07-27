@@ -1245,9 +1245,9 @@ public class SwingController extends ComponentAdapter
             documentViewController.getDocumentViewModel().getPageComponents().forEach(pvc -> {
                 final List<AbstractAnnotationComponent> comps = ((PageViewComponentImpl) pvc).getAnnotationComponents();
                 if (comps != null) {
-                    final Set<AbstractAnnotationComponent> toDelete = comps.stream().filter(comp -> comp instanceof MarkupAnnotationComponent
+                    final Collection<AnnotationComponent> toDelete = comps.stream().filter(comp -> comp instanceof MarkupAnnotationComponent
                             && ((MarkupAnnotation) comp.getAnnotation()).isCurrentUserOwner()).collect(Collectors.toSet());
-                    toDelete.forEach(documentViewController::deleteAnnotation);
+                    documentViewController.deleteAnnotations(toDelete);
                 }
             });
         });
