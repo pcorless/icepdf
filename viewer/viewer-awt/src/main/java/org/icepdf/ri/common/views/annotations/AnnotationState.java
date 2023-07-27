@@ -22,6 +22,7 @@ import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.PageViewComponentImpl;
 
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
@@ -106,6 +107,22 @@ public class AnnotationState implements Memento {
             annotation.setDeleted(false);
             // re-add it to the page
             page.addAnnotation(annotation, true);
+            // re-add to the page view if needed
+            final PageViewComponentImpl pageViewComponent = (PageViewComponentImpl) annotationComponent.getPageViewComponent();
+            if (!pageViewComponent.getAnnotationComponents().contains(annotationComponent)) {
+                if (annotationComponent instanceof MarkupAnnotationComponent) {
+                    final PopupAnnotationComponent popupAnnotationComponent =
+                            ((MarkupAnnotationComponent<?>) annotationComponent).getPopupAnnotationComponent();
+                    if (popupAnnotationComponent == null) {
+                        final PopupAnnotationComponent newPopup =
+                                ((MarkupAnnotationComponent<?>) annotationComponent).createPopupAnnotationComponent(annotation.isNew());
+                        pageViewComponent.addAnnotation(newPopup);
+                    } else {
+                        pageViewComponent.addAnnotation(popupAnnotationComponent);
+                    }
+                }
+                pageViewComponent.addAnnotation(annotationComponent);
+            }
             // finally update the pageComponent so we can see it again.
             ((Component) annotationComponent).setVisible(true);
             // refresh bounds for any resizes
