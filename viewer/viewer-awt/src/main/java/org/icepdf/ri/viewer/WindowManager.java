@@ -22,6 +22,7 @@ import org.icepdf.ri.common.print.PrintHelper;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
+import org.icepdf.ri.util.DavFileClient;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
@@ -139,6 +140,15 @@ public class WindowManager implements WindowManagementCallback {
     private void print(Controller controller, String printer) {
         controller.printAndExit(!PrintHelper.hasPrinter(printer), printer);
         quit(controller, controller.getViewerFrame(), controller.getPropertiesManager().getPreferences());
+    }
+
+    public void newWindow(DavFileClient davFileClient) {
+        commonWindowCreation().openDocument(davFileClient);
+    }
+    public void newWindow(DavFileClient davFileClient, String printer) {
+        Controller controller = commonWindowCreation(false);
+        controller.openDocument(davFileClient);
+        print(controller, printer);
     }
 
     protected Controller commonWindowCreation() {

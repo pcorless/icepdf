@@ -18,11 +18,10 @@ package org.icepdf.ri.viewer;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.ViewModel;
-import org.icepdf.ri.util.FontPropertiesManager;
-import org.icepdf.ri.util.URLAccess;
-import org.icepdf.ri.util.ViewerPropertiesManager;
+import org.icepdf.ri.util.*;
 
 import javax.swing.*;
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -67,6 +66,9 @@ public class Launcher {
 
         String contentURL = "";
         String contentFile = "";
+        String password = null;
+        String contentDav = "";
+        String user = SystemProperties.USER_NAME;
         String printer = null;
         // parse command line arguments
         for (int i = 0; i < argv.length; i++) {
@@ -81,6 +83,15 @@ public class Launcher {
                     break;
                 case "-loadurl":
                     contentURL = argv[++i].trim();
+                    break;
+                case "-loaddav":
+                    contentDav = argv[++i].trim();
+                    break;
+                case "-user":
+                    user = argv[++i].trim();
+                    break;
+                case "-password":
+                    password = argv[++i].trim();
                     break;
                 case "-print":
                     printer = argv[++i].trim();
@@ -101,7 +112,7 @@ public class Launcher {
             System.exit(1);
         }
         // start the viewer
-        run(contentFile, contentURL, printer, messageBundle);
+        run(contentFile, contentURL, contentDav, user, password, printer, messageBundle);
     }
 
     /**
@@ -111,11 +122,17 @@ public class Launcher {
      *                      null.
      * @param contentURL    URL of a file which will be loaded at runtime, can be
      *                      null.
+     * @param contentDav    URL of a file which will be loaded at runtime, can be null
+     * @param user          The dav username
+     * @param password      the dav password
      * @param printer       The name of the printer to use, can be null
      * @param messageBundle messageBundle to pull strings from
      */
     private static void run(String contentFile,
                             String contentURL,
+                            String contentDav,
+                            String user,
+                            String password,
                             String printer,
                             ResourceBundle messageBundle) {
 
@@ -172,10 +189,19 @@ public class Launcher {
             ViewModel.setDefaultURL(urlAccess.urlLocation);
             urlAccess.dispose();
         }
+        if (contentDav != null && !contentDav.isEmpty()) {
+            if (printer != null) {
+                windowManager.newWindow(new DavFileClient(UriUtils.encodePath(contentDav, StandardCharsets.UTF_8), user, password), printer);
+            } else {
+                windowManager.newWindow(new DavFileClient(UriUtils.encodePath(contentDav, StandardCharsets.UTF_8), user, password));
+            }
+        }
+
 
         // Start an empy viewer if there was no command line parameters
         if (((contentFile == null || contentFile.isEmpty()) &&
-                (contentURL == null || contentURL.isEmpty()))
+                (contentURL == null || contentURL.isEmpty()) &&
+                (contentDav == null || contentDav.isEmpty()))
                 || (windowManager.getNumberOfWindows() == 0)
         ) {
             windowManager.newWindow("");

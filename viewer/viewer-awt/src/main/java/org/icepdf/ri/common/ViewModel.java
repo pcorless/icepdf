@@ -36,6 +36,9 @@ public class ViewModel {
     // Store current URL path
     private static String defaultURL = null;
 
+    // Store current DAV path
+    private static String defaultDav = null;
+
     // store for shrink to fit setting for Controller prints.
     private boolean isShrinkToPrintableArea = true;
 
@@ -63,6 +66,10 @@ public class ViewModel {
         return defaultURL;
     }
 
+    public static String getDefaultDav() {
+        return defaultDav;
+    }
+
     public static void setDefaultFile(File f) {
         defaultFile = f;
     }
@@ -79,6 +86,14 @@ public class ViewModel {
             defaultURL = null;
         else
             defaultURL = defURL;
+    }
+
+    public static void setDefaultDav(String defDav) {
+        if (defDav == null || defDav.isEmpty()) {
+            defaultDav = null;
+        } else {
+            defaultDav = defDav;
+        }
     }
 
     public PrintHelper getPrintHelper() {
