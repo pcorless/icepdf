@@ -11,8 +11,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -25,21 +23,21 @@ import java.util.stream.Collectors;
  * Represents a WebDav connection to a file
  */
 public class DavFileClient implements AutoCloseable {
-
     private static final Logger logger = Logger.getLogger(DavFileClient.class.getName());
+    private static final Tika TIKA = new Tika();
     private final Sardine sardine;
     private final String url;
     private final String folderUrl;
     private final String name;
-    private final String ext;
+    private final String extension;
     private final boolean readOnly;
     private String username;
     private String password;
-    private int revision = 0;
+    private int revision;
     private File file;
     private InputStream stream;
     private String mimeType;
-    private String lock = null;
+    private String lock;
 
     /**
      * Instantiates a client with the given url and no credentials
@@ -79,12 +77,20 @@ public class DavFileClient implements AutoCloseable {
         final String[] names = split[split.length - 1].split("\\.");
         name = names[0];
         if (names.length == 1) {
-            ext = "";
+            extension = "";
         } else {
-            ext = names[1];
+            extension = names[1];
         }
         this.readOnly = readOnly;
         setPreemptiveAuthenticationEnabled(true);
+    }
+
+    public void setUsername(final String username) {
+        this.username = username;
+    }
+
+    public void setPassword(final String password) {
+        this.password = password;
     }
 
     /**
@@ -93,6 +99,7 @@ public class DavFileClient implements AutoCloseable {
      *
      * @param enabled true or false
      */
+
     public void setPreemptiveAuthenticationEnabled(final boolean enabled) {
         if (enabled) {
             sardine.enablePreemptiveAuthentication(url);
@@ -105,10 +112,19 @@ public class DavFileClient implements AutoCloseable {
      * @return The contents of the parent folder (including the current file)
      * @throws IOException
      */
-    public List<DavResource> getParentFolderContents() throws IOException {
+    public List<DavResource> getParentFolderResources() throws IOException {
         final String[] split = folderUrl.split("/");
         final String folderName = split[split.length - 1].isEmpty() ? split[split.length - 2] : split[split.length - 1];
         return sardine.list(folderUrl).stream().filter(dr -> !dr.getName().equals(folderName)).collect(Collectors.toList());
+    }
+
+
+    public List<String> getParentFolderContents() throws IOException {
+        final String[] split = folderUrl.split("/");
+        final String folderName = split[split.length - 1].isEmpty() ? split[split.length - 2] : split[split.length - 1];
+        final String slashedFolder = folderName.endsWith("/") ? folderName : folderName + "/";
+        return getParentFolderResources().stream().map(dr -> slashedFolder + dr.getName()).collect(Collectors.toList());
+
     }
 
     /**
@@ -117,7 +133,7 @@ public class DavFileClient implements AutoCloseable {
      */
     public File getFile() throws IOException {
         if (file == null) {
-            file = File.createTempFile(name, ext.isEmpty() ? "" : "." + ext);
+            file = File.createTempFile(name, extension.isEmpty() ? "" : "." + extension);
             try (final InputStream in = sardine.get(url)) {
                 Files.copy(in, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 mimeType = new Tika().detect(file);
@@ -130,7 +146,7 @@ public class DavFileClient implements AutoCloseable {
      * @return The content stream of this connection
      * @throws IOException
      */
-    public InputStream getStream() throws IOException {
+    public InputStream getContent() throws IOException {
         resetStream();
         return stream;
     }
@@ -156,10 +172,10 @@ public class DavFileClient implements AutoCloseable {
     public void save(final InputStream inputStream) throws IOException {
         if (!readOnly) {
             if (inputStream.markSupported() && inputStream.available() > 0) {
-                mimeType = new Tika().detect(inputStream);
+                mimeType = TIKA.detect(inputStream);
             }
             if (mimeType == null || mimeType.equals("application/octet-stream")) {
-                mimeType = new Tika().detect(name + (ext.isEmpty() ? "" : "." + ext));
+                mimeType = TIKA.detect(name + (extension.isEmpty() ? "" : "." + extension));
             }
             createDirectoryHierarchy(folderUrl);
             sardine.put(url, inputStream, mimeType);
@@ -190,14 +206,14 @@ public class DavFileClient implements AutoCloseable {
         }
     }
 
-    /**
-     * Closes the underlying stream
-     *
-     * @throws IOException
-     */
-    public void close() throws IOException {
+    @Override
+    public void close() {
         if (stream != null) {
-            stream.close();
+            try {
+                stream.close();
+            } catch (final IOException e) {
+                logger.log(Level.WARNING, "Error closing stream", e);
+            }
         }
     }
 
@@ -221,71 +237,39 @@ public class DavFileClient implements AutoCloseable {
     }
 
     /**
-     * Renames the remote resource to the given name. No-op if the file doesn't exist.
-     *
-     * @param newName The new name
-     * @return The client managing the resource under the new name
-     * @throws IOException
-     */
-    public DavFileClient rename(final String newName) throws IOException {
-        return move(folderUrl + "/" + newName);
-    }
-
-    /**
      * Moves the remote resource to the given url. No-op if the file doesn't exist.
      *
-     * @param newUrl The new url
+     * @param destinationUrl The new url
+     * @param overwrite      Whether to overwrite the resource or not
      * @return The client managing the resource under the new url
      * @throws IOException
      */
-    public DavFileClient move(final String newUrl) throws IOException {
-        return move(newUrl, true);
-    }
-
-    /**
-     * Moves the remote resource to the given url. No-op if the file doesn't exist.
-     *
-     * @param newUrl    The new url
-     * @param overwrite Whether to overwrite the resource or not
-     * @return The client managing the resource under the new url
-     * @throws IOException
-     */
-    public DavFileClient move(final String newUrl, final boolean overwrite) throws IOException {
+    public DavFileClient move(final String destinationUrl, final boolean overwrite) throws IOException {
         if (!readOnly && exists()) {
-            final String[] split = newUrl.split("/");
+            final String[] split = destinationUrl.split("/");
             createDirectoryHierarchy(Arrays.stream(split).limit(split.length - 1L).collect(Collectors.joining("/")));
-            sardine.move(url, newUrl, overwrite);
-            return new DavFileClient(newUrl, username, password);
+            sardine.move(url, destinationUrl, overwrite);
+            return new DavFileClient(destinationUrl, username, password);
         } else {
             return this;
         }
     }
 
-    /**
-     * Copies the resource to the given url. No-op if the file doesn't exist.
-     *
-     * @param newUrl The new url
-     * @return The client managing the new resource
-     * @throws IOException
-     */
-    public DavFileClient copy(final String newUrl) throws IOException {
-        return copy(newUrl, true);
-    }
 
     /**
      * Copies the resource to the given url. No-op if the file doesn't exist.
      *
-     * @param newUrl    The new url
-     * @param overwrite Whether to overwrite or not
+     * @param destinationUrl The new url
+     * @param overwrite      Whether to overwrite or not
      * @return The client managing the new resource
      * @throws IOException
      */
-    public DavFileClient copy(final String newUrl, final boolean overwrite) throws IOException {
+    public DavFileClient copy(final String destinationUrl, final boolean overwrite) throws IOException {
         if (exists()) {
-            final String[] split = newUrl.split("/");
+            final String[] split = destinationUrl.split("/");
             createDirectoryHierarchy(Arrays.stream(split).limit(split.length - 1L).collect(Collectors.joining("/")));
-            sardine.copy(url, newUrl, overwrite);
-            return new DavFileClient(newUrl, username, password);
+            sardine.copy(url, destinationUrl, overwrite);
+            return new DavFileClient(destinationUrl, username, password);
         } else {
             return this;
         }
@@ -302,81 +286,86 @@ public class DavFileClient implements AutoCloseable {
         }
     }
 
+
+    public boolean isFolder() throws IOException {
+        final String slashedFolder = folderUrl.endsWith("/") ? folderUrl : folderUrl + "/";
+        for (final DavResource dr : getParentFolderResources()) {
+            final String url = slashedFolder + dr.getName();
+            if (url.equals(this.url)) {
+                return dr.isDirectory();
+            }
+        }
+        return false;
+    }
+
+
+    public boolean isFile() throws IOException {
+        final String slashedFolder = folderUrl.endsWith("/") ? folderUrl : folderUrl + "/";
+        for (final DavResource dr : getParentFolderResources()) {
+            final String url = slashedFolder + dr.getName();
+            if (url.equals(this.url)) {
+                return !dr.isDirectory();
+            }
+        }
+        return false;
+    }
+
     /**
      * @return The name of the file
      */
-    public String getName() {
+    public String name() {
         return name;
     }
 
     /**
      * @return The extension of the file
      */
-    public String getExt() {
-        return ext;
+    public String extension() {
+        return extension;
     }
 
     /**
      * @return The revision of the file
      */
-    public int getRevision() {
+    public int revision() {
         return revision;
     }
 
     /**
      * @return The mimetype of the file
      */
-    public String getMimeType() {
+    public String mimetype() {
         return mimeType;
     }
 
     /**
      * @return The parent folder url
      */
-    public String getFolderUrl() {
+    public String folderUrl() {
         return folderUrl;
     }
 
     /**
      * @return The url of the resource
      */
-    public String getUrl() {
+    public String url() {
         return url;
     }
 
     /**
      * @return The username for the connection
      */
-    public String getUsername() {
+    public String username() {
         return username;
-    }
-
-    /**
-     * Sets the username for this connection
-     *
-     * @param username The username
-     */
-    public void setUsername(final String username) {
-        this.username = username;
-        sardine.setCredentials(username, password);
     }
 
     /**
      * @return The password for the connection
      */
-    public String getPassword() {
+    public String password() {
         return password;
     }
 
-    /**
-     * Sets the password for this connection
-     *
-     * @param password The password
-     */
-    public void setPassword(final String password) {
-        this.password = password;
-        sardine.setCredentials(username, password);
-    }
 
     /**
      * @return Whether the connection is readonly or not
@@ -413,29 +402,30 @@ public class DavFileClient implements AutoCloseable {
     /**
      * @return The modification time
      */
-    public LocalDateTime getModificationTime() throws IOException {
-        return getLocalDateTime(DavResource::getModified);
+    public Instant getModificationTime() throws IOException {
+        return getInstant(DavResource::getModified);
     }
 
     /**
      * @return The creation time
      */
-    public LocalDateTime getCreationTime() throws IOException {
-        return getLocalDateTime(DavResource::getCreation);
+    public Instant getCreationTime() throws IOException {
+        return getInstant(DavResource::getCreation);
     }
 
-    private LocalDateTime getLocalDateTime(final Function<DavResource, Date> resourceToDate) throws IOException {
+    private Instant getInstant(final Function<DavResource, Date> resourceToDate) throws IOException {
         final String slashedFolder = folderUrl.endsWith("/") ? folderUrl : folderUrl + "/";
         final List<DavResource> resources = sardine.list(folderUrl);
-        return resources.stream().filter(dr -> (slashedFolder + dr.getName()).equals(url)).findFirst().map(dr -> resourceToLocalDateTime(dr, resourceToDate)).orElse(null);
+        return resources.stream().filter(dr -> (slashedFolder + dr.getName()).equals(url)).findFirst()
+                .map(dr -> resourceToInstant(dr, resourceToDate)).orElse(null);
     }
 
-    private static LocalDateTime resourceToLocalDateTime(final DavResource resource, final Function<DavResource, Date> resourceToDate) {
+    private static Instant resourceToInstant(final DavResource resource, final Function<DavResource, Date> resourceToDate) {
         final Date date = resourceToDate.apply(resource);
-        if (date != null) {
-            return Instant.ofEpochMilli(date.getTime()).atZone(ZoneId.systemDefault()).toLocalDateTime();
-        } else {
+        if (date == null) {
             return null;
+        } else {
+            return Instant.ofEpochMilli(date.getTime());
         }
     }
 }

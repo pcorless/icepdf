@@ -2813,17 +2813,18 @@ public class SwingController extends ComponentAdapter
      */
     public void openDocument(final DavFileClient pdfDavClient) {
         pdfClient = pdfDavClient;
-        if (pdfClient.getUsername() == null || pdfClient.getUsername().isEmpty()) {
+        if (pdfClient.username() == null || pdfClient.username().isEmpty()) {
             pdfClient.setUsername(System.getProperty("user.name"));
         }
-        if (pdfClient.getPassword() == null) {
+        if (pdfClient.password() == null) {
             JPanel panel = new JPanel();
             panel.setLayout(new GridBagLayout());
             GridBagConstraints constraints = new GridBagConstraints(0, 0, 2, 1, 1, 1,
                     GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0);
-            JLabel mainLabel = new JLabel(MessageFormat.format(messageBundle.getString("viewer.dialog.dav.credentials.label"), pdfClient.getName()));
+            JLabel mainLabel = new JLabel(MessageFormat.format(messageBundle.getString("viewer.dialog.dav.credentials" +
+                    ".label"), pdfClient.name()));
             JLabel userLabel = new JLabel(messageBundle.getString("viewer.dialog.dav.user.label"));
-            JTextField userField = new JTextField(pdfClient.getUsername());
+            JTextField userField = new JTextField(pdfClient.username());
             JLabel passwordLabel = new JLabel(messageBundle.getString("viewer.dialog.dav.password.label"));
             JPasswordField passwordField = new JPasswordField();
             panel.add(mainLabel, constraints);
@@ -2881,8 +2882,8 @@ public class SwingController extends ComponentAdapter
 
     protected void openDavDocument() throws IOException, PDFException, PDFSecurityException {
         if (pdfClient.exists()) {
-            final InputStream stream = pdfClient.getStream();
-            openDocument(new BufferedInputStream(stream), pdfClient.getUrl(), pdfClient.getUrl());
+            final InputStream stream = pdfClient.getContent();
+            openDocument(new BufferedInputStream(stream), pdfClient.url(), pdfClient.url());
         } else {
             org.icepdf.ri.util.Resources.showMessageDialog(
                     viewer,
@@ -2890,7 +2891,7 @@ public class SwingController extends ComponentAdapter
                     messageBundle,
                     "viewer.dialog.dav.notfound.title",
                     "viewer.dialog.dav.notfound.msg",
-                    pdfClient.getUrl()
+                    pdfClient.url()
             );
         }
     }
@@ -3279,7 +3280,7 @@ public class SwingController extends ComponentAdapter
                 title = document.getInfo().getTitle();
             }
             String filename = f.exists() ? f.getName() : fileDescription;
-            final String fileTitle = pdfClient == null ? filename : pdfClient.getName();
+            final String fileTitle = pdfClient == null ? filename : pdfClient.name();
 
             Object[] messageArguments = title == null ? new String[]{fileTitle} : new String[]{title, fileTitle};
             String titleResource = title == null ? "notitle" : "default";
@@ -3580,7 +3581,7 @@ public class SwingController extends ComponentAdapter
      * when the window is closed.
      */
     public void saveFile() {
-        if (!IS_READONLY && document.getStateManager().isChange()){
+        if (!IS_READONLY && document.getStateManager().isChange()) {
             if (pdfClient != null) {
                 try {
                     final PipedInputStream in = new PipedInputStream();
