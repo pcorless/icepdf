@@ -15,6 +15,8 @@
  */
 package org.icepdf.ri.common.views;
 
+import org.icepdf.core.CombinedMemento;
+import org.icepdf.core.Memento;
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.search.DocumentSearchController;
@@ -1471,32 +1473,38 @@ public class DocumentViewControllerImpl
 
 
     public void undo() {
-        final AnnotationState state = (AnnotationState) documentViewModel.getAnnotationCareTaker().undo();
-        fireEvent(state);
+        final Memento memento = documentViewModel.getAnnotationCareTaker().undo();
+        fireEvent(memento);
         // repaint the view.
         documentView.repaint();
     }
 
     public void redo() {
-        final AnnotationState state = (AnnotationState) documentViewModel.getAnnotationCareTaker().redo();
-        fireEvent(state);
+        final Memento memento = documentViewModel.getAnnotationCareTaker().redo();
+        fireEvent(memento);
         // repaint the view.
         documentView.repaint();
     }
 
+    private void fireEvent(Memento memento) {
+        if (memento instanceof AnnotationState) {
+            fireEvent((AnnotationState) memento);
+        } else if (memento instanceof CombinedMemento) {
+            ((CombinedMemento) memento).getMementos().forEach(this::fireEvent);
+        }
+    }
+
     private void fireEvent(AnnotationState state) {
-        if (state != null) {
-            switch (state.getOperation()) {
-                case ADD:
-                    firePropertyChange(PropertyConstants.ANNOTATION_ADDED, null, state.getAnnotationComponent());
-                    break;
-                case DELETE:
-                    firePropertyChange(PropertyConstants.ANNOTATION_DELETED, state.getAnnotationComponent(), null);
-                    break;
-                case MOVE:
-                    firePropertyChange(PropertyConstants.ANNOTATION_BOUNDS, state.getAnnotationComponent(), state.getAnnotationComponent());
-                    break;
-            }
+        switch (state.getOperation()) {
+            case ADD:
+                firePropertyChange(PropertyConstants.ANNOTATION_ADDED, null, state.getAnnotationComponent());
+                break;
+            case DELETE:
+                firePropertyChange(PropertyConstants.ANNOTATION_DELETED, state.getAnnotationComponent(), null);
+                break;
+            case MOVE:
+                firePropertyChange(PropertyConstants.ANNOTATION_BOUNDS, state.getAnnotationComponent(), state.getAnnotationComponent());
+                break;
         }
     }
 

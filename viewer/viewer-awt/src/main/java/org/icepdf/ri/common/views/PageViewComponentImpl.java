@@ -442,7 +442,9 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         annotationComponents.add((AbstractAnnotationComponent) annotation);
         annotationToComponent.put(annotation.getAnnotation(), annotation);
         if (annotation instanceof PopupAnnotationComponent) {
-            addPopupAnnotationComponent((PopupAnnotationComponent) annotation);
+            final PopupAnnotationComponent popupAnnotationComponent = (PopupAnnotationComponent) annotation;
+            addPopupAnnotationComponent(popupAnnotationComponent);
+            addPopupAnnotationComponentGlue(popupAnnotationComponent.getMarkupAnnotationComponent(), popupAnnotationComponent);
         } else if (annotation instanceof MarkupAnnotationComponent) {
             MarkupAnnotationComponent markupAnnotationComponent = (MarkupAnnotationComponent) annotation;
             PopupAnnotationComponent popupAnnotationComponent = markupAnnotationComponent.getPopupAnnotationComponent();
@@ -607,29 +609,42 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
 
     private void addPopupAnnotationComponentGlue(MarkupAnnotationComponent markupAnnotationComponent,
                                                  PopupAnnotationComponent popupAnnotationComponent) {
-        MarkupGlueComponent markupGlueComponent =
-                new MarkupGlueComponent(documentViewController,
-                        markupAnnotationComponent, popupAnnotationComponent);
-        // assign parent so we can properly place the popup relative to its parent page.
-        markupGlueComponent.setParentPageComponent(this);
-        markupGlueComponent.refreshDirtyBounds();
-        // won't show up on the right layer if layer isn't set first.
-        documentViewModel.addDocumentViewAnnotationComponent(this, markupGlueComponent);
-        ((JLayeredPane)parentDocumentView).setLayer(markupGlueComponent, JLayeredPane.MODAL_LAYER);
-        parentDocumentView.add(markupGlueComponent);
+        if (markupAnnotationComponent != null && popupAnnotationComponent != null && getGlue(popupAnnotationComponent) == null) {
+            MarkupGlueComponent markupGlueComponent =
+                    new MarkupGlueComponent(documentViewController,
+                            markupAnnotationComponent, popupAnnotationComponent);
+            // assign parent so we can properly place the popup relative to its parent page.
+            markupGlueComponent.setParentPageComponent(this);
+            markupGlueComponent.refreshDirtyBounds();
+            // won't show up on the right layer if layer isn't set first.
+            documentViewModel.addDocumentViewAnnotationComponent(this, markupGlueComponent);
+            ((JLayeredPane) parentDocumentView).setLayer(markupGlueComponent, JLayeredPane.MODAL_LAYER);
+            parentDocumentView.add(markupGlueComponent);
+        }
     }
 
     private void removePopupAnnotationComponent(PopupAnnotationComponent popupAnnotationComponent) {
         parentDocumentView.remove(popupAnnotationComponent);
         documentViewModel.removeDocumentViewAnnotationComponent(this, popupAnnotationComponent);
+        //Don't forget to remove the glue
+        final MarkupGlueComponent glue = getGlue(popupAnnotationComponent);
+        if (glue != null) {
+            parentDocumentView.remove(glue);
+            documentViewModel.removeDocumentViewAnnotationComponent(this, glue);
+        }
+    }
+
+    private MarkupGlueComponent getGlue(final PopupAnnotationComponent popupAnnotationComponent) {
         ArrayList<PageViewAnnotationComponent> components = documentViewModel.getDocumentViewAnnotationComponents(this);
-        // don't forget to remove the glue component
-        for (PageViewAnnotationComponent component : components) {
-            if (component instanceof MarkupGlueComponent &&
-                    ((MarkupGlueComponent) component).getPopupAnnotationComponent().equals(popupAnnotationComponent)) {
-                parentDocumentView.remove((JComponent)component);
+        if (components != null) {
+            for (PageViewAnnotationComponent component : components) {
+                if (component instanceof MarkupGlueComponent &&
+                        ((MarkupGlueComponent) component).getPopupAnnotationComponent().equals(popupAnnotationComponent)) {
+                    return (MarkupGlueComponent) component;
+                }
             }
         }
+        return null;
     }
 
     private void initializeDestinationComponents(Page page) {
