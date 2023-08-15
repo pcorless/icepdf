@@ -136,6 +136,9 @@ public class AnnotationState implements Memento {
         } else if (operation == Operation.MOVE) {
             // Simply update the annotation
             page.updateAnnotation(annotation);
+            if (annotationComponent instanceof MarkupAnnotationComponent) {
+                ((MarkupAnnotationComponent<?>) annotationComponent).getPopupAnnotationComponent().getMarkupGlueComponent().refreshDirtyBounds();
+            }
         }
         annotationComponent.refreshDirtyBounds();
     }
