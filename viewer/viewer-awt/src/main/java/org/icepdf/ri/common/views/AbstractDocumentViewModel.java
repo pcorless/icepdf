@@ -28,8 +28,8 @@ import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -117,16 +117,14 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     @Override
     public void removeDocumentViewAnnotationComponent(AbstractPageViewComponent pageViewComponent, PageViewAnnotationComponent annotationComponent) {
-        if (!documentViewAnnotationComponents.containsKey(pageViewComponent)) {
+        if (documentViewAnnotationComponents.containsKey(pageViewComponent)) {
             List<PageViewAnnotationComponent> components = documentViewAnnotationComponents.get(pageViewComponent);
             components.remove(annotationComponent);
         }
     }
 
     public void removeAllFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent) {
-        if (!documentViewAnnotationComponents.containsKey(pageViewComponent)) {
-            documentViewAnnotationComponents.remove(pageViewComponent);
-        }
+        documentViewAnnotationComponents.remove(pageViewComponent);
     }
 
     //todo clean up name and why this isn't called.
@@ -391,23 +389,29 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     public void addMemento(Memento oldMementoState, Memento newMementoState) {
         final Memento filteredOld = filterMemento(oldMementoState);
         final Memento filteredNew = filterMemento(newMementoState);
-        if (filteredOld != null && filteredNew != null){
+        if (filteredOld != null && filteredNew != null) {
             undoCaretaker.addState(filteredOld, filteredNew);
         }
     }
 
-    private Memento filterMemento(final Memento memento){
-        if (memento instanceof AnnotationState){
+    private Memento filterMemento(final Memento memento) {
+        if (memento instanceof AnnotationState) {
             final AnnotationState state = (AnnotationState) memento;
-            if(state.getOperation() == AnnotationState.Operation.MOVE ||
-                    !(state.getAnnotationComponent() instanceof PopupAnnotationComponent)){
+            if (state.getOperation() == AnnotationState.Operation.MOVE ||
+                    !(state.getAnnotationComponent() instanceof PopupAnnotationComponent)) {
                 return memento;
             } else {
                 return null;
             }
-        } else if (memento instanceof CombinedMemento){
-            return new CombinedMemento(((CombinedMemento) memento).getMementos().stream().map(this::filterMemento)
-                    .filter(Objects::nonNull).collect(Collectors.toList()));
+        } else if (memento instanceof CombinedMemento) {
+            final CombinedMemento newMemento =
+                    new CombinedMemento(((CombinedMemento) memento).getMementos().stream().map(this::filterMemento)
+                            .filter(Objects::nonNull).collect(Collectors.toList()));
+            if (newMemento.getMementos().isEmpty()) {
+                return null;
+            } else {
+                return newMemento;
+            }
         } else {
             return memento;
         }

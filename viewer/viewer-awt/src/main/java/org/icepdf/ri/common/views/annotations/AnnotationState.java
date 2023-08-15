@@ -110,18 +110,20 @@ public class AnnotationState implements Memento {
             // re-add to the page view if needed
             final PageViewComponentImpl pageViewComponent = (PageViewComponentImpl) annotationComponent.getPageViewComponent();
             if (!pageViewComponent.getAnnotationComponents().contains(annotationComponent)) {
-                if (annotationComponent instanceof MarkupAnnotationComponent) {
-                    final PopupAnnotationComponent popupAnnotationComponent =
-                            ((MarkupAnnotationComponent<?>) annotationComponent).getPopupAnnotationComponent();
-                    if (popupAnnotationComponent == null) {
-                        final PopupAnnotationComponent newPopup =
-                                ((MarkupAnnotationComponent<?>) annotationComponent).createPopupAnnotationComponent(annotation.isNew());
-                        pageViewComponent.addAnnotation(newPopup);
-                    } else {
+                pageViewComponent.addAnnotation(annotationComponent);
+            }
+            if (annotationComponent instanceof MarkupAnnotationComponent) {
+                final PopupAnnotationComponent popupAnnotationComponent =
+                        ((MarkupAnnotationComponent<?>) annotationComponent).getPopupAnnotationComponent();
+                if (popupAnnotationComponent == null) {
+                    ((MarkupAnnotationComponent<?>) annotationComponent).createPopupAnnotationComponent(true);
+                } else {
+                    if (!pageViewComponent.getAnnotationComponents().contains(popupAnnotationComponent)) {
                         pageViewComponent.addAnnotation(popupAnnotationComponent);
                     }
+                    popupAnnotationComponent.getAnnotation().setOpen(true);
+                    popupAnnotationComponent.setVisible(true);
                 }
-                pageViewComponent.addAnnotation(annotationComponent);
             }
             // finally update the pageComponent so we can see it again.
             ((Component) annotationComponent).setVisible(true);
@@ -137,7 +139,8 @@ public class AnnotationState implements Memento {
             // Simply update the annotation
             page.updateAnnotation(annotation);
             if (annotationComponent instanceof MarkupAnnotationComponent) {
-                ((MarkupAnnotationComponent<?>) annotationComponent).getPopupAnnotationComponent().getMarkupGlueComponent().refreshDirtyBounds();
+                ((MarkupAnnotationComponent<?>) annotationComponent).getPopupAnnotationComponent()
+                        .getMarkupGlueComponent().refreshDirtyBounds();
             }
         }
         annotationComponent.refreshDirtyBounds();

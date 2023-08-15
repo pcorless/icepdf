@@ -600,7 +600,9 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
             // fire new bounds change event, let the listener handle
             // how to deal with the bound change.
             documentViewController.firePropertyChange(PropertyConstants.ANNOTATION_BOUNDS, this, this);
-
+            documentViewController.getDocumentViewModel().addMemento(previousAnnotationState,
+                    new AnnotationState(this, AnnotationState.Operation.MOVE));
+            previousAnnotationState = null;
             // notify the annotation callback of the annotation resize.
             documentViewController.updateAnnotation(this);
         }
@@ -626,8 +628,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
                 }
             }
         }
-        documentViewController.getDocumentViewModel().addMemento(previousAnnotationState,
-                new AnnotationState(this, AnnotationState.Operation.MOVE));
+
         repaint();
 
     }
