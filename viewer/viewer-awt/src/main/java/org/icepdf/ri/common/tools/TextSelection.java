@@ -209,7 +209,7 @@ public class TextSelection extends SelectionBoxHandler {
     }
 
     public void clearSelectionState() {
-        java.util.List<AbstractPageViewComponent> pages = documentViewController.getDocumentViewModel().getPageComponents();
+        java.util.List<AbstractPageViewComponent> pages = documentViewController.getDocumentViewModel().getAllPageComponents();
         for (AbstractPageViewComponent page : pages) {
             ((PageViewComponentImpl) page).getTextSelectionPageHandler().clearSelection();
         }

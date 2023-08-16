@@ -1224,7 +1224,7 @@ public class SwingViewBuilder implements ViewBuilder {
         if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_TOOL))
             addToToolBar(toolbar, buildToolToolBar());
         if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION))
-            addToToolBar(toolbar, buildAnnotationlToolBar());
+            addToToolBar(toolbar, buildAnnotationToolBar());
         if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_FORMS))
             addToToolBar(toolbar, buildFormsToolBar());
         if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_SEARCH))
@@ -1264,6 +1264,7 @@ public class SwingViewBuilder implements ViewBuilder {
         if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_UTILITY_UPANE))
             addToToolBar(toolbar, buildShowHideUtilityPaneButton());
 
+        addToToolBar(toolbar, buildFilterPagesButton());
         // Don't bother with this toolbar if we don't have any visible buttons
         if (toolbar.getComponentCount() == 0) {
             return null;
@@ -1587,7 +1588,7 @@ public class SwingViewBuilder implements ViewBuilder {
         return toolbar;
     }
 
-    public JToolBar buildAnnotationlToolBar() {
+    public JToolBar buildAnnotationToolBar() {
         JToolBar toolbar = new JToolBar();
         commonToolBarSetup(toolbar, false);
         if (propertiesManager.checkAndStoreBooleanProperty(
@@ -2041,6 +2042,15 @@ public class SwingViewBuilder implements ViewBuilder {
         return btn;
     }
 
+    public JToggleButton buildFilterPagesButton() {
+        JToggleButton btn = makeToolbarToggleButton(
+                messageBundle.getString("viewer.toolbar.tool.filterPages.label"),
+                messageBundle.getString("viewer.toolbar.tool.filterPages.tooltip"),
+                "filter_pages", iconSize, buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setFilterPagesButton(btn);
+        return btn;
+    }
 
     public JSplitPane buildUtilityAndDocumentSplitPane(boolean embeddableComponent) {
         JSplitPane splitpane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);

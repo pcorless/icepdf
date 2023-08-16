@@ -72,9 +72,9 @@ public class OnePageView extends AbstractDocumentView {
 
     public void updateDocumentView() {
         DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-        java.util.List<AbstractPageViewComponent> pageComponents = documentViewModel.getPageComponents();
+        java.util.List<AbstractPageViewComponent> pageComponents = documentViewModel.getFilteredPageComponents();
         if (pageComponents != null) {
-            AbstractPageViewComponent pageViewComponent = pageComponents.get(documentViewModel.getViewCurrentPageIndex());
+            AbstractPageViewComponent pageViewComponent = pageComponents.get(documentViewModel.getFilteredCurrentPageIndex());
             if (pageViewComponent != null) {
                 // remove old component
                 this.removeAll();
@@ -96,6 +96,11 @@ public class OnePageView extends AbstractDocumentView {
             revalidate();
             repaint();
         }
+    }
+
+    @Override
+    public void pagesListChanged() {
+        updateDocumentView();
     }
 
     protected JComponent buildPageDecoration(AbstractPageViewComponent pageViewComponent) {

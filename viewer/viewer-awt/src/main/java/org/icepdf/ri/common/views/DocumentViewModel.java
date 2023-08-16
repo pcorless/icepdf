@@ -24,6 +24,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * The DocumentViewModel interface contains common accessors and modifiers needed
@@ -172,11 +173,26 @@ public interface DocumentViewModel {
     void clearSelectedPageText();
 
     /**
-     * Gets the page components associated with this view model.
+     * Gets the filtered page components associated with this view model.
      *
      * @return vector of page components.
      */
-    List<AbstractPageViewComponent> getPageComponents();
+    List<AbstractPageViewComponent> getFilteredPageComponents();
+
+    /**
+     * Gets all the page components associated with this view model.
+     *
+     * @return vector of page components.
+     */
+    List<AbstractPageViewComponent> getAllPageComponents();
+
+    /**
+     * Filters the page components using the given predicate
+     *
+     * @param filter The predicate to use
+     */
+    void filterPageComponents(final Predicate<AbstractPageViewComponent> filter);
+
 
     HashMap<AbstractPageViewComponent, ArrayList<PageViewAnnotationComponent>> getDocumentViewAnnotationComponents();
 
@@ -213,6 +229,34 @@ public interface DocumentViewModel {
      * @return zero based page page index.
      */
     int getViewCurrentPageIndex();
+
+    /**
+     * @return The index of the current page in the filtered page components
+     */
+    default int getFilteredCurrentPageIndex() {
+        return isFiltered() ? getFilteredPageComponents().indexOf(getAllPageComponents().get(getViewCurrentPageIndex())) : getViewCurrentPageIndex();
+    }
+
+    /**
+     * @return The lower bound of the pages index in the filtered page components
+     */
+    default int getLowerBoundFilteredPages() {
+        return getFilteredPageComponents().isEmpty() ? -1 : getFilteredPageComponents().get(0).getPageIndex();
+    }
+
+    /**
+     * @return The upper bound of the pages index in the filtered page components
+     */
+    default int getUpperBoundFilteredPages() {
+        return getFilteredPageComponents().isEmpty() ? -1 : getFilteredPageComponents().get(getFilteredPageComponents().size() - 1).getPageIndex();
+    }
+
+    /**
+     * @return Whether the page components are currently filtered (i.e. filteredPageComponents != allPageComponents)
+     */
+    default boolean isFiltered() {
+        return getFilteredPageComponents().size() != getAllPageComponents().size();
+    }
 
     /**
      * Sets the models zoom level.

@@ -35,9 +35,11 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * <p>The DocumentViewControllerImpl is responsible for controlling the four
@@ -115,6 +117,8 @@ public class DocumentViewControllerImpl
     protected SecurityCallback securityCallback;
 
     protected final PropertyChangeSupport changes = new PropertyChangeSupport(this);
+
+    private Predicate<AbstractPageViewComponent> pageViewComponentFilter = pvc -> true;
 
     public DocumentViewControllerImpl(final SwingController viewerController) {
 
@@ -207,6 +211,7 @@ public class DocumentViewControllerImpl
         setZoom(1);
         setRotation(0);
         setViewCursor(DocumentViewControllerImpl.CURSOR_DEFAULT);
+        pageViewComponentFilter = pvc -> true;
     }
 
     public Adjustable getHorizontalScrollBar() {
@@ -626,7 +631,7 @@ public class DocumentViewControllerImpl
             if (PropertyConstants.DOCUMENT_VIEW_REFRESH_CHANGE.equals(prop) ||
                     PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE.equals(prop) ||
                     PropertyConstants.DOCUMENT_VIEW_ROTATION_CHANGE.equals(prop)) {
-                List<AbstractPageViewComponent> pageComponents = documentViewModel.getPageComponents();
+                List<AbstractPageViewComponent> pageComponents = documentViewModel.getAllPageComponents();
                 for (AbstractPageViewComponent pageViewComponent : pageComponents) {
                     // pass in zoom, rotation etc. or get form model....
                     pageViewComponent.updateView(prop, oldValue, newValue);
@@ -721,6 +726,13 @@ public class DocumentViewControllerImpl
             pageIndex = document.getNumberOfPages() - 1;
         }
         int oldPageIndex = documentViewModel.getViewCurrentPageIndex();
+        if (documentViewModel.isFiltered()) {
+            final List<Integer> filteredIndexes = documentViewModel.getFilteredPageComponents().stream().map(pvc -> pvc.pageIndex).collect(Collectors.toList());
+            final boolean forward = pageIndex > oldPageIndex;
+            if (!filteredIndexes.contains(pageIndex)) {
+                pageIndex = getClosestAvailablePage(forward, pageIndex);
+            }
+        }
         changed = documentViewModel.setViewCurrentPageIndex(pageIndex);
 
         if (documentView != null) {
@@ -758,12 +770,8 @@ public class DocumentViewControllerImpl
         int increment = 0;
         if (documentViewModel != null) {
             increment = documentView.getNextPageIncrement();
-            int current = documentViewModel.getViewCurrentPageIndex();
-            if ((current + increment) < document.getNumberOfPages()) {
-                documentViewModel.setViewCurrentPageIndex(current + increment);
-            } else {
-                documentViewModel.setViewCurrentPageIndex(document.getNumberOfPages() - 1);
-            }
+            final int current = documentViewModel.getFilteredCurrentPageIndex();
+            documentViewModel.setViewCurrentPageIndex(Math.min((current + increment), documentViewModel.getUpperBoundFilteredPages()));
         }
         return increment;
     }
@@ -772,7 +780,7 @@ public class DocumentViewControllerImpl
         int decrement = 0;
         if (documentViewModel != null) {
             decrement = documentView.getPreviousPageIncrement();
-            int current = documentViewModel.getViewCurrentPageIndex();
+            int current = documentViewModel.getFilteredCurrentPageIndex();
             documentViewModel.setViewCurrentPageIndex(Math.max((current - decrement), 0));
         }
         return decrement;
@@ -895,7 +903,7 @@ public class DocumentViewControllerImpl
 
                 // notify the page components of the tool change.
                 List<AbstractPageViewComponent> pageComponents =
-                        documentViewModel.getPageComponents();
+                        documentViewModel.getAllPageComponents();
                 for (AbstractPageViewComponent page : pageComponents) {
                     ((PageViewComponentImpl) page).setToolMode(viewToolMode);
                 }
@@ -1395,7 +1403,7 @@ public class DocumentViewControllerImpl
             Page page = (Page) library.getObject(destination.getPageReference());
             int pageIndex = page.getPageIndex();
             PageViewComponentImpl pageViewComponent = (PageViewComponentImpl)
-                    documentViewModel.getPageComponents().get(pageIndex);
+                    documentViewModel.getAllPageComponents().get(pageIndex);
             pageViewComponent.refreshDestinationComponents(pageViewComponent.getPage(), false);
         }
     }
@@ -1409,7 +1417,7 @@ public class DocumentViewControllerImpl
                 // page is the same then we just do the update
                 if (oldDestination.getPageReference().equals(destination.getPageReference())) {
                     PageViewComponentImpl pageViewComponent = (PageViewComponentImpl)
-                            documentViewModel.getPageComponents().get(pageIndex);
+                            documentViewModel.getAllPageComponents().get(pageIndex);
                     List<DestinationComponent> destinationComponents = pageViewComponent.getDestinationComponents();
                     for (DestinationComponent destinationComponent : destinationComponents) {
                         if (destinationComponent.getDestination().getNamedDestination()
@@ -1425,7 +1433,7 @@ public class DocumentViewControllerImpl
                     Page oldPage = (Page) library.getObject(oldDestination.getPageReference());
                     int oldPagIndex = oldPage.getPageIndex();
                     PageViewComponentImpl pageViewComponent = (PageViewComponentImpl)
-                            documentViewModel.getPageComponents().get(oldPagIndex);
+                            documentViewModel.getAllPageComponents().get(oldPagIndex);
                     List<DestinationComponent> destinationComponents = pageViewComponent.getDestinationComponents();
                     for (DestinationComponent destinationComponent : destinationComponents) {
                         if (destinationComponent.getDestination().getNamedDestination()
@@ -1451,7 +1459,7 @@ public class DocumentViewControllerImpl
                 Page page = (Page) library.getObject(destination.getPageReference());
                 int pageIndex = page.getPageIndex();
                 PageViewComponentImpl pageViewComponent = (PageViewComponentImpl)
-                        documentViewModel.getPageComponents().get(pageIndex);
+                        documentViewModel.getAllPageComponents().get(pageIndex);
                 List<DestinationComponent> destinationComponents = pageViewComponent.getDestinationComponents();
                 for (DestinationComponent destinationComponent : destinationComponents) {
                     if (destinationComponent.getDestination().getNamedDestination().equals(destination.getNamedDestination())) {
@@ -1479,4 +1487,83 @@ public class DocumentViewControllerImpl
     public void removePropertyChangeListener(PropertyChangeListener l) {
         changes.removePropertyChangeListener(l);
     }
+
+    public void filterPageComponents(final Predicate<AbstractPageViewComponent> filter) {
+        this.pageViewComponentFilter = filter;
+        final List<AbstractPageViewComponent> oldComponents = new ArrayList<>(documentViewModel.getFilteredPageComponents());
+        documentViewModel.filterPageComponents(pageViewComponentFilter);
+        final List<AbstractPageViewComponent> filteredComponents = documentViewModel.getFilteredPageComponents();
+        if (!filteredComponents.equals(oldComponents)) {
+            final int currentIndex = documentViewModel.getViewCurrentPageIndex();
+            if (!filteredComponents.contains(documentViewModel.getAllPageComponents().get(currentIndex))) {
+                fixCurrentViewPageAfterFilter();
+            }
+            ((AbstractDocumentView) documentView).pagesListChanged();
+            ((JComponent) documentView).invalidate();
+            ((JComponent) documentView).firePropertyChange(PropertyConstants.DOCUMENT_VIEW_PAGES_CHANGE, viewType, viewType);
+            ((JComponent) documentView).revalidate();
+            documentView.repaint();
+        }
+    }
+
+    private int getClosestAvailablePage(final boolean forward, final int currentIndex) {
+        final List<AbstractPageViewComponent> allComponents = documentViewModel.getAllPageComponents();
+        final List<AbstractPageViewComponent> filteredComponents = documentViewModel.getFilteredPageComponents();
+        final int upperBound = documentViewModel.getUpperBoundFilteredPages();
+        final int lowerBound = documentViewModel.getLowerBoundFilteredPages();
+        int newIdx = -1;
+        if (forward) {
+            for (int i = currentIndex; i <= upperBound && newIdx == -1; ++i) {
+                if (filteredComponents.contains(allComponents.get(i))) {
+                    newIdx = i;
+                }
+            }
+            if (newIdx == -1 && !filteredComponents.isEmpty()) {
+                newIdx = upperBound;
+            }
+        } else {
+            for (int i = currentIndex; i >= lowerBound && newIdx == -1; --i) {
+                if (filteredComponents.contains(allComponents.get(i))) {
+                    newIdx = i;
+                }
+            }
+            if (newIdx == -1 && !filteredComponents.isEmpty()) {
+                newIdx = lowerBound;
+            }
+        }
+        if (newIdx == -1 && !filteredComponents.isEmpty()) {
+            newIdx = filteredComponents.get(0).getPageIndex();
+        }
+        return newIdx;
+    }
+
+    private void fixCurrentViewPageAfterFilter() {
+        final List<AbstractPageViewComponent> allComponents = documentViewModel.getAllPageComponents();
+        final List<AbstractPageViewComponent> filteredComponents = documentViewModel.getFilteredPageComponents();
+        final int currentIndex = documentViewModel.getViewCurrentPageIndex();
+        final int newIdx;
+        final int upperBound = documentViewModel.getUpperBoundFilteredPages();
+        final int lowerBound = documentViewModel.getLowerBoundFilteredPages();
+        if (upperBound > currentIndex) {
+            int tmpIdx = -1;
+            for (int i = currentIndex; i <= upperBound && tmpIdx == -1; ++i) {
+                if (filteredComponents.contains(allComponents.get(i))) {
+                    tmpIdx = i;
+                }
+            }
+            newIdx = tmpIdx;
+        } else if (lowerBound < currentIndex) {
+            int tmpIdx = -1;
+            for (int i = currentIndex; i >= lowerBound && tmpIdx == -1; --i) {
+                if (filteredComponents.contains(allComponents.get(i))) {
+                    tmpIdx = i;
+                }
+            }
+            newIdx = tmpIdx;
+        } else {
+            newIdx = -1;
+        }
+        documentViewModel.setViewCurrentPageIndex(newIdx);
+    }
+
 }

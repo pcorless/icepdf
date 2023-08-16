@@ -129,6 +129,11 @@ public class CollectionDocumentView extends AbstractDocumentView {
 
     }
 
+    @Override
+    public void pagesListChanged() {
+
+    }
+
     public int getNextPageIncrement() {
         return 0;
     }

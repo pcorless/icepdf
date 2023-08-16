@@ -159,7 +159,7 @@ public class LayersPanel extends JPanel implements MutableDocument {
                 // the current page and repaint
                 DocumentViewController documentViewController = controller.getDocumentViewController();
                 DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-                List<AbstractPageViewComponent> pages = documentViewModel.getPageComponents();
+                List<AbstractPageViewComponent> pages = documentViewModel.getAllPageComponents();
                 AbstractPageViewComponent page = pages.get(documentViewModel.getViewCurrentPageIndex());
                 // resort page text as layer visibility will have changed.
                 try {

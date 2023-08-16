@@ -55,7 +55,7 @@ public class OneColumnPageView extends AbstractDocumentView {
         // add the first of many tools need for this views and others like it.
         currentPageChanger =
                 new CurrentPageChanger(documentScrollpane, this,
-                        documentViewModel.getPageComponents());
+                        documentViewModel.getAllPageComponents());
 
         // add page changing key listeners
         keyListenerPageChanger =
@@ -69,7 +69,7 @@ public class OneColumnPageView extends AbstractDocumentView {
         this.setBorder(new EmptyBorder(layoutInserts, layoutInserts, layoutInserts, layoutInserts));
 
         List<AbstractPageViewComponent> pageComponents =
-                documentViewController.getDocumentViewModel().getPageComponents();
+                documentViewController.getDocumentViewModel().getFilteredPageComponents();
 
         if (pageComponents != null) {
             for (AbstractPageViewComponent pageViewComponent : pageComponents) {
@@ -90,6 +90,13 @@ public class OneColumnPageView extends AbstractDocumentView {
     // nothing needs to be done for a column view as all components are already
     // available
     public void updateDocumentView() {
+    }
+
+    @Override
+    public void pagesListChanged() {
+        dispose();
+        disposing = false;
+        buildGUI();
     }
 
     /**

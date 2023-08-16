@@ -71,7 +71,7 @@ public class TwoPageView extends AbstractDocumentView {
         // add the first of many tools need for this views and others like it.
         currentPageChanger =
                 new CurrentPageChanger(documentScrollpane, this,
-                        documentViewModel.getPageComponents(),
+                        documentViewModel.getAllPageComponents(),
                         false);
     }
 
@@ -89,7 +89,7 @@ public class TwoPageView extends AbstractDocumentView {
     public void updateDocumentView() {
 
         DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-        java.util.List<AbstractPageViewComponent> pageComponents = documentViewModel.getPageComponents();
+        java.util.List<AbstractPageViewComponent> pageComponents = documentViewModel.getFilteredPageComponents();
 
         if (pageComponents != null) {
             // remove old component
@@ -97,7 +97,7 @@ public class TwoPageView extends AbstractDocumentView {
 
             AbstractPageViewComponent pageViewComponent;
             int count = 0;
-            int index = documentViewModel.getViewCurrentPageIndex();
+            int index = documentViewModel.getFilteredCurrentPageIndex();
             int docLength = pageComponents.size();
 
             // adjust for 2 up view, so we don't page again to the 3 pages...
@@ -134,6 +134,11 @@ public class TwoPageView extends AbstractDocumentView {
                 }
             }
         }
+    }
+
+    @Override
+    public void pagesListChanged() {
+        updateDocumentView();
     }
 
     /**

@@ -46,7 +46,7 @@ public class DocumentViewModelImpl extends AbstractDocumentViewModel {
             int avgPageHeight = 0;
 
             // add components for every page in the document
-            pageComponents = new ArrayList<>(numberOfPages);
+            allComponents = new ArrayList<>(numberOfPages);
             for (int i = 0; i < numberOfPages; i++) {
                 // also a way to pass in an average document size.
                 if (i < MAX_PAGE_SIZE_READ_AHEAD) {
@@ -66,8 +66,9 @@ public class DocumentViewModelImpl extends AbstractDocumentViewModel {
                     pageViewComponent = buildPageViewComponent(this, pageTree, i,
                             avgPageWidth, avgPageHeight);
                 }
-                pageComponents.add(pageViewComponent);
+                allComponents.add(pageViewComponent);
             }
+            filteredComponents = new ArrayList<>(allComponents);
         }
     }
 

@@ -225,6 +225,11 @@ public abstract class AbstractDocumentView
      */
     public abstract void updateDocumentView();
 
+    /**
+     * Received when the list of displayed pages has changed
+     */
+    public abstract void pagesListChanged();
+
     public ToolHandler uninstallCurrentTool() {
         if (currentTool != null) {
             currentTool.uninstallTool();

@@ -59,7 +59,7 @@ public class ColorLabelPanel extends JPanel implements PropertyChangeListener {
         PopupAnnotation popupAnnotation = markupAnnotation.getPopupAnnotation();
         if (popupAnnotation != null) {
             List<AbstractPageViewComponent> pageComponents =
-                    controller.getDocumentViewController().getDocumentViewModel().getPageComponents();
+                    controller.getDocumentViewController().getDocumentViewModel().getAllPageComponents();
             int pageIndex = markupAnnotation.getPageIndex();
             if (pageIndex >= 0) {
                 AnnotationSummaryBox popupAnnotationComponent =

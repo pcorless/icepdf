@@ -29,6 +29,9 @@ import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.*;
 import org.icepdf.core.util.updater.WriteMode;
+import org.icepdf.ri.common.filters.DocumentFilter;
+import org.icepdf.ri.common.filters.DocumentFilterListener;
+import org.icepdf.ri.common.filters.EmptyPagesFilter;
 import org.icepdf.ri.common.preferences.PreferencesDialog;
 import org.icepdf.ri.common.print.PrintHelper;
 import org.icepdf.ri.common.print.PrintHelperFactory;
@@ -120,16 +123,13 @@ import static org.icepdf.ri.util.ViewerPropertiesManager.*;
 public class SwingController extends ComponentAdapter
         implements org.icepdf.ri.common.views.Controller, ActionListener, FocusListener, ItemListener,
         TreeSelectionListener, WindowListener, DropTargetListener,
-        PropertyChangeListener {
+        PropertyChangeListener, DocumentFilterListener {
 
     protected static final Logger logger =
             Logger.getLogger(SwingController.class.toString());
 
-    private static final boolean USE_JFILECHOOSER;
-
-    static {
-        USE_JFILECHOOSER = Defs.booleanProperty("org.icepdf.ri.viewer.jfilechooser", false);
-    }
+    private static final boolean USE_JFILECHOOSER = Defs.booleanProperty("org.icepdf.ri.viewer.jfilechooser", false);
+    private static final boolean IS_PREFILTER = Defs.booleanProperty("org.icepdf.ri.viewer.filters.prefilter", false);
 
     private static final boolean IS_READONLY = Defs.booleanProperty("org.icepdf.ri.viewer.readonly", false);
 
@@ -142,6 +142,9 @@ public class SwingController extends ComponentAdapter
     public static final int CURSOR_DEFAULT = 8;
 
     protected static final int MAX_SELECT_ALL_PAGE_COUNT = 250;
+
+    private static final DocumentFilter EMPTY_PAGES_FILTER = getEmptyPagesFilter();
+    private final Map<DocumentFilter, Boolean> filters;
 
     private JMenuItem openFileMenuItem;
     private JMenu recentFilesSubMenu;
@@ -222,6 +225,7 @@ public class SwingController extends ComponentAdapter
     private JToggleButton textSelectToolButton;
     private JToggleButton zoomInToolButton;
     private JToggleButton zoomDynamicToolButton;
+    private JToggleButton filterPagesButton;
     private JToggleButton selectToolButton;
     // main annotation toolbar
     private AnnotationColorToggleButton highlightAnnotationToolButton;
@@ -320,6 +324,9 @@ public class SwingController extends ComponentAdapter
             SwingController.messageBundle = ResourceBundle.getBundle(
                     ViewerPropertiesManager.DEFAULT_MESSAGE_BUNDLE);
         }
+        filters = new HashMap<>();
+        filters.put(EMPTY_PAGES_FILTER, true);
+        filters.keySet().forEach(df -> df.addListener(this));
     }
 
     /**
@@ -1396,6 +1403,39 @@ public class SwingController extends ComponentAdapter
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
      *
+     * @param btn button to assign
+     */
+    public void setFilterPagesButton(JToggleButton btn) {
+        filterPagesButton = btn;
+        btn.addItemListener(this);
+        final JPopupMenu popupMenu = new JPopupMenu();
+        final JCheckBoxMenuItem emptyPagesMenuItem = getFilterMenuItem(messageBundle.getString(
+                "viewer.toolbar.tool.filterEmptyPages.label"), EMPTY_PAGES_FILTER);
+        emptyPagesMenuItem.setSelected(true);
+        popupMenu.add(emptyPagesMenuItem);
+        btn.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(final MouseEvent e) {
+                if (e.getButton() == MouseEvent.BUTTON3 && document != null && !isPdfCollection()) {
+                    popupMenu.show(btn, e.getX(), e.getY());
+                }
+            }
+        });
+    }
+
+    private JCheckBoxMenuItem getFilterMenuItem(final String label, final DocumentFilter filter) {
+        final JCheckBoxMenuItem menuItem = new PersistentJCheckBoxMenuItem(label);
+        menuItem.addItemListener(e -> {
+            filters.put(filter, menuItem.isSelected());
+            setEnabled(filterPagesButton, document != null && !isPdfCollection() && areFiltersReady());
+        });
+        return menuItem;
+    }
+
+
+    /**
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
      * @param toolbar assignment of complete toolbar.
      */
     public void setCompleteToolBar(JToolBar toolbar) {
@@ -1558,7 +1598,7 @@ public class SwingController extends ComponentAdapter
                 if (filePairs != null) {
                     Library library = catalog.getLibrary();
                     // check to see if at least one file is a PDF.
-                    for (int i = 0, max = filePairs.size(); i < max; i += 2) {
+                    for (int i = 0, max = filePairs.size(); i < max; i = 2) {
                         // get the name and document for
                         // file name and file specification pairs.
                         String fileName = Utils.convertStringObject(library, (StringObject) filePairs.get(i));
@@ -1696,6 +1736,7 @@ public class SwingController extends ComponentAdapter
         setEnabled(panToolButton, opened && !pdfCollection);
         setEnabled(zoomInToolButton, opened && !pdfCollection);
         setEnabled(zoomDynamicToolButton, opened && !pdfCollection);
+        setEnabled(filterPagesButton, opened && !pdfCollection && areFiltersReady());
         setEnabled(textSelectToolButton, opened && canExtract && !pdfCollection);
         setEnabled(selectToolButton, opened && canModify && !pdfCollection);
         setEnabled(highlightAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
@@ -1739,6 +1780,10 @@ public class SwingController extends ComponentAdapter
             reflectAnnotationEditModeButtons();
             reflectAnnotationDefaultPrivacy();
         }
+    }
+
+    private boolean areFiltersReady() {
+        return !IS_PREFILTER || getEnabledFilters().stream().allMatch(df -> df.isReady(document));
     }
 
     private boolean hasForms() {
@@ -2901,7 +2946,6 @@ public class SwingController extends ComponentAdapter
     }
 
     public void commonNewDocumentHandling(String fileDescription) {
-
         // utility pane visibility
         boolean showUtilityPane = false;
 
@@ -3148,6 +3192,9 @@ public class SwingController extends ComponentAdapter
         // set the go to page combo box in the mainToolbar
         reflectStateInComponents();
         updateDocumentView();
+        if (IS_PREFILTER) {
+            new Thread(() -> filters.keySet().forEach(f -> f.filterPages(document))).start();
+        }
     }
 
     /**
@@ -3198,6 +3245,7 @@ public class SwingController extends ComponentAdapter
 
         // free the document
         if (document != null) {
+            filters.forEach((f, b) -> f.interrupt(document));
             document.dispose();
             document = null;
         }
@@ -3337,6 +3385,7 @@ public class SwingController extends ComponentAdapter
         panToolButton = null;
         zoomInToolButton = null;
         zoomDynamicToolButton = null;
+        filterPagesButton = null;
         textSelectToolButton = null;
         selectToolButton = null;
         highlightAnnotationToolButton = null;
@@ -3422,6 +3471,7 @@ public class SwingController extends ComponentAdapter
         viewModel = null;
 
         windowManagementCallback = null;
+        filters.keySet().forEach(df -> df.removeListener(this));
     }
 
     /**
@@ -5100,6 +5150,13 @@ public class SwingController extends ComponentAdapter
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_DYNAMIC;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_DYNAMIC);
                 }
+            } else if (source == filterPagesButton) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    filterDocumentPages();
+                } else {
+                    documentViewController.filterPageComponents(pvc -> true);
+                }
+                reflectSelectionInButton(filterPagesButton, filterPagesButton.isSelected());
             } else if (source == textSelectToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION;
@@ -5211,6 +5268,23 @@ public class SwingController extends ComponentAdapter
         } finally {
             setDisplayTool(tool);
         }
+    }
+
+    protected void filterDocumentPages() {
+        final Set<Integer> filteredIndexes = documentViewController.getDocumentViewModel().getAllPageComponents()
+                .stream().map(AbstractPageViewComponent::getPageIndex).collect(Collectors.toSet());
+        logger.info("Filtering with " + getEnabledFilters().stream().map(Object::toString).collect(Collectors.joining(";")));
+        filters.forEach((df, enabled) -> {
+            if (enabled) {
+                final Set<Integer> keptIndexes = df.filterPages(document);
+                filteredIndexes.removeIf(i -> !keptIndexes.contains(i));
+            }
+        });
+        documentViewController.filterPageComponents(pvc -> filteredIndexes.contains(pvc.getPageIndex()));
+    }
+
+    protected Set<DocumentFilter> getEnabledFilters() {
+        return filters.entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey).collect(Collectors.toSet());
     }
 
     private static boolean checkAnnotationButton(final Object source, final AnnotationColorToggleButton button,
@@ -5513,6 +5587,22 @@ public class SwingController extends ComponentAdapter
         actionMap.put(key, action);
     }
 
+    @Override
+    public void documentFilterStarted(final DocumentFilter filter, final Document document) {
+        if (this.document == document) {
+            setEnabled(filterPagesButton, false);
+        }
+    }
+
+    @Override
+    public void documentFilterCompleted(final DocumentFilter filter, final Document document,
+                                        final Set<Integer> filteredPages) {
+        if (this.document == document) {
+            setEnabled(filterPagesButton, !isPdfCollection() && document != null && areFiltersReady());
+        }
+    }
+
+
     @FunctionalInterface
     protected interface ActionMethod {
         void doAction();
@@ -5552,6 +5642,7 @@ public class SwingController extends ComponentAdapter
                     currentPageNumberTextField.setText(modelValue);
             }
         }
+
     }
 
     /**
@@ -5745,7 +5836,7 @@ public class SwingController extends ComponentAdapter
                     pa.setOpen(false);
                     final int idx = pa.getPageIndex();
                     final AbstractAnnotationComponent comp = (AbstractAnnotationComponent) ((PageViewComponentImpl)
-                            documentViewController.getDocumentViewModel().getPageComponents().get(idx)).getComponentFor(pa);
+                            documentViewController.getDocumentViewModel().getAllPageComponents().get(idx)).getComponentFor(pa);
                     if (comp != null) {
                         comp.setVisible(false);
                     }
@@ -5778,7 +5869,7 @@ public class SwingController extends ComponentAdapter
                 pa.setModifiedDate(PDate.formatDateTime(new Date()));
             }
             final PageViewComponentImpl pvc = (PageViewComponentImpl)
-                    documentViewController.getDocumentViewModel().getPageComponents().get(ma.getPageIndex());
+                    documentViewController.getDocumentViewModel().getAllPageComponents().get(ma.getPageIndex());
             final MarkupAnnotationComponent<?> comp = (MarkupAnnotationComponent<?>) pvc.getComponentFor(ma);
             if (comp != null) {
                 if (comp.getPopupAnnotationComponent() != null) {
@@ -5801,5 +5892,11 @@ public class SwingController extends ComponentAdapter
                 }
             }
         }
+    }
+
+    private static EmptyPagesFilter getEmptyPagesFilter() {
+        final double minRatio = Defs.doubleProperty("org.icepdf.ri.viewer.filters.empty.ratio", 0.005);
+        final int whiteFloor = Defs.intProperty("org.icepdf.ri.viewer.filters.empty.white.floor", 240);
+        return new EmptyPagesFilter(minRatio, whiteFloor);
     }
 }
