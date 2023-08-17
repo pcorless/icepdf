@@ -151,7 +151,7 @@ public class TextSelectionViewHandler extends TextSelection
         addHighlightMenuItem.setIcon(new ImageIcon(Images.get("highlight_annot_a_20.png")));
         addHighlightMenuItem.addActionListener(e ->
                 new HighLightAnnotationHandler(controller.getDocumentViewController(), pageComponent)
-                        .createTextMarkupAnnotation(null));
+                        .createMarkupAnnotation(null));
         contextMenu.add(addHighlightMenuItem);
         // underline
         JMenuItem addUnderlineMenuItem = new JMenuItem(
@@ -159,7 +159,7 @@ public class TextSelectionViewHandler extends TextSelection
         addUnderlineMenuItem.setEnabled(modifyDocument);
         addUnderlineMenuItem.setIcon(new ImageIcon(Images.get("underline_a_20.png")));
         addUnderlineMenuItem.addActionListener(e -> new UnderLineAnnotationHandler(controller.getDocumentViewController(), pageComponent)
-                .createTextMarkupAnnotation(null));
+                .createMarkupAnnotation(null));
         contextMenu.add(addUnderlineMenuItem);
         // strikeout.
         JMenuItem addStrikeOutMenuItem = new JMenuItem(
@@ -167,7 +167,7 @@ public class TextSelectionViewHandler extends TextSelection
         addStrikeOutMenuItem.setEnabled(modifyDocument);
         addStrikeOutMenuItem.setIcon(new ImageIcon(Images.get("strikeout_a_20.png")));
         addStrikeOutMenuItem.addActionListener(e -> new StrikeOutAnnotationHandler(controller.getDocumentViewController(), pageComponent)
-                .createTextMarkupAnnotation(null));
+                .createMarkupAnnotation(null));
         contextMenu.add(addStrikeOutMenuItem);
         return contextMenu;
     }

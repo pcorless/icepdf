@@ -225,6 +225,7 @@ public class SwingController extends ComponentAdapter
     private JToggleButton selectToolButton;
     // main annotation toolbar
     private AnnotationColorToggleButton highlightAnnotationToolButton;
+    private JToggleButton redactionAnnotationToolButton;
     private JToggleButton linkAnnotationToolButton;
     private AnnotationColorToggleButton strikeOutAnnotationToolButton;
     private AnnotationColorToggleButton underlineAnnotationToolButton;
@@ -1253,6 +1254,11 @@ public class SwingController extends ComponentAdapter
         btn.addItemListener(this);
     }
 
+    public void setRedactionAnnotationToolButton(JToggleButton btn) {
+        redactionAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
      *
@@ -1699,6 +1705,7 @@ public class SwingController extends ComponentAdapter
         setEnabled(textSelectToolButton, opened && canExtract && !pdfCollection);
         setEnabled(selectToolButton, opened && canModify && !pdfCollection);
         setEnabled(highlightAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(redactionAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(strikeOutAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(underlineAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(lineAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
@@ -1997,6 +2004,11 @@ public class SwingController extends ComponentAdapter
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION);
                 documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
                 setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
+            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_REDACTION_ANNOTATION) {
+                actualToolMayHaveChanged =
+                        documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_REDACTION_ANNOTATION);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION);
@@ -2113,6 +2125,10 @@ public class SwingController extends ComponentAdapter
         reflectSelectionInButton(highlightAnnotationToolButton,
                 documentViewController.isToolModeSelected(
                         DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION
+                ));
+        reflectSelectionInButton(redactionAnnotationToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_REDACTION_ANNOTATION
                 ));
         reflectSelectionInButton(underlineAnnotationToolButton,
                 documentViewController.isToolModeSelected(
@@ -3340,6 +3356,7 @@ public class SwingController extends ComponentAdapter
         textSelectToolButton = null;
         selectToolButton = null;
         highlightAnnotationToolButton = null;
+        redactionAnnotationToolButton = null;
         strikeOutAnnotationToolButton = null;
         underlineAnnotationToolButton = null;
         lineAnnotationToolButton = null;
@@ -5123,6 +5140,11 @@ public class SwingController extends ComponentAdapter
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION);
+                }
+            } else if (source == redactionAnnotationToolButton) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    tool = DocumentViewModelImpl.DISPLAY_TOOL_REDACTION_ANNOTATION;
+                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_REDACTION_ANNOTATION);
                 }
             } else if (checkAnnotationButton(source, strikeOutAnnotationToolButton,
                     strikeOutAnnotationPropertiesToolButton)) {

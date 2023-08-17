@@ -20,6 +20,7 @@ import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.LineText;
@@ -65,7 +66,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
     /**
      * Property when enabled will set the /contents key value to the selected text of the markup annotation.
      */
-    private static boolean enableHighlightContents;
+    protected static boolean enableHighlightContents;
 
     private static final int MULTI_CLICK_INTERVAL =
             (int) Toolkit.getDefaultToolkit().getDesktopProperty("awt.multiClickInterval");
@@ -81,14 +82,14 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
         }
     }
 
-    protected Name highLightType;
-    protected TextMarkupAnnotation annotation;
+    protected Name markupSubType;
+    protected MarkupAnnotation annotation;
 
     public HighLightAnnotationHandler(DocumentViewController documentViewController,
                                       AbstractPageViewComponent pageViewComponent) {
         super(documentViewController, pageViewComponent);
         // default type
-        highLightType = Annotation.SUBTYPE_HIGHLIGHT;
+        markupSubType = Annotation.SUBTYPE_HIGHLIGHT;
         mouseClickTimer = new Timer(MULTI_CLICK_INTERVAL, this);
     }
 
@@ -110,7 +111,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
             return;
         }
         lastMouseClickEvent = evt;
-        // 2 comes before 3 so we do all this lifting to avoid double processing 2 and 3 clicks.
+        // 2 comes before 3, so we do all this lifting to avoid double processing 2 and 3 clicks.
         if (clickCount == 2 && !mouseClickTimer.isRunning()) {
             mouseClickTimer.restart();
         } else if (clickCount == 3) {
@@ -127,14 +128,16 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
             createMarkupAnnotationFromTextSelection(e);
         }
         super.mouseReleased(e);
+        documentViewController.clearSelectedText();
     }
 
-    public void createTextMarkupAnnotation(ArrayList<Shape> highlightBounds) {
+    public void createMarkupAnnotation(ArrayList<Shape> highlightBounds) {
         // mke sure we don't create a highlight annotation for every word in the
         // document when first selecting the tool for highlighted next. .
         DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         if (documentViewModel.isSelectAll()) {
             documentViewController.clearSelectedText();
+            return;
         }
 
         // get the geometric path of the selected text
@@ -147,7 +150,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
         // clear the selected text
         documentViewController.clearSelectedText();
 
-        if (highlightBounds != null && highlightBounds.size() > 0) {
+        if (highlightBounds != null && !highlightBounds.isEmpty()) {
 
             // bound of the selected text
             GeneralPath highlightPath = new GeneralPath();
@@ -161,19 +164,19 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
 
             AffineTransform pageTransform = getToPageSpaceTransform();
 
-            // create annotations types that that are rectangle based;
+            // create annotations types that are rectangle based;
             // which is actually just link annotations
-            annotation = (TextMarkupAnnotation)
+            annotation = (MarkupAnnotation)
                     AnnotationFactory.buildAnnotation(
                             documentViewModel.getDocument().getPageTree().getLibrary(),
-                            highLightType,
+                            markupSubType,
                             tBbox);
             // set the private contents flag.
             ViewModel viewModel = documentViewController.getParentController().getViewModel();
             annotation.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, !viewModel.getAnnotationPrivacy());
 
             // pass outline shapes and bounds to create the highlight shapes
-            annotation.setContents(contents != null && enableHighlightContents ? contents : highLightType.toString());
+            annotation.setContents(contents != null && enableHighlightContents ? contents : markupSubType.toString());
             // before assigning the default colour check to see if there is an entry in the properties manager
             checkAndApplyPreferences();
             annotation.setCreationDate(PDate.formatDateTime(new Date()));
@@ -217,11 +220,8 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
             color = new Color(rgb);
         }
         // apply the settings or system property base colour for the given subtype.
-        if (color == null) {
-            annotation.setColor(annotation.getTextMarkupColor());
-        } else {
+        if (color != null) {
             annotation.setColor(color);
-            annotation.setTextMarkupColor(color);
         }
         annotation.setOpacity(preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_OPACITY,
                 TextMarkupAnnotation.HIGHLIGHT_ALPHA));
@@ -232,7 +232,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
         String selectedText = null;
         try {
             selectedText = currentPage.getViewText().getSelected().toString();
-            // remove line feeds and and 160 long breaking space
+            // remove line feeds and 160 long breaking space
             selectedText = selectedText.replaceAll("[\\s\\p{Z}]", " ");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -245,11 +245,8 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
         // get the selection bounds
         ArrayList<Shape> highlightBounds = getSelectedTextBounds(pageViewComponent, getPageTransform());
 
-        // clear the selection
-        super.mouseReleased(e);
-
-        // create the text markup annotation.
-        createTextMarkupAnnotation(highlightBounds);
+        // create the markup annotation.
+        createMarkupAnnotation(highlightBounds);
 
         // set the annotation tool to the given tool
         documentViewController.getParentController().setDocumentToolMode(

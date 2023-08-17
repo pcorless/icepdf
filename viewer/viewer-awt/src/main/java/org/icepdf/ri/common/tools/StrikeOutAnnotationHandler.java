@@ -40,7 +40,7 @@ public class StrikeOutAnnotationHandler extends HighLightAnnotationHandler {
     public StrikeOutAnnotationHandler(DocumentViewController documentViewController,
                                       AbstractPageViewComponent pageViewComponent) {
         super(documentViewController, pageViewComponent);
-        highLightType = TextMarkupAnnotation.SUBTYPE_STRIKE_OUT;
+        markupSubType = TextMarkupAnnotation.SUBTYPE_STRIKE_OUT;
     }
 
     protected void checkAndApplyPreferences() {
@@ -50,11 +50,8 @@ public class StrikeOutAnnotationHandler extends HighLightAnnotationHandler {
             color = new Color(rgb);
         }
         // apply the settings or system property base colour for the given subtype.
-        if (color == null) {
-            annotation.setColor(annotation.getTextMarkupColor());
-        } else {
+        if (color != null) {
             annotation.setColor(color);
-            annotation.setTextMarkupColor(color);
         }
         annotation.setOpacity(preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_STRIKE_OUT_OPACITY, 255));
     }

@@ -18,10 +18,7 @@ package org.icepdf.ri.common.utility.annotation.markup;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PageTree;
-import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
-import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
-import org.icepdf.core.pobjects.annotations.PopupAnnotation;
+import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.AbstractWorkerPanel;
 import org.icepdf.ri.common.SwingController;
@@ -241,6 +238,10 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel
     }
 
     public void addAnnotation(Annotation annotation, Pattern searchPattern) {
+        // don't display redactions
+        if (annotation instanceof RedactionAnnotation) {
+            return;
+        }
         if (!annotationSet.contains(annotation)) {
             annotationSet.add(annotation);
             if (annotation instanceof MarkupAnnotation) {

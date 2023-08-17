@@ -148,19 +148,27 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                 // handler is responsible for the initial creation of the annotation
                 currentToolHandler = new HighLightAnnotationHandler(
                         documentViewController, this);
-                ((HighLightAnnotationHandler) currentToolHandler).createTextMarkupAnnotation(null);
+                ((HighLightAnnotationHandler) currentToolHandler).createMarkupAnnotation(null);
                 documentViewController.clearSelectedText();
                 break;
+            case DocumentViewModel.DISPLAY_TOOL_REDACTION_ANNOTATION:
+                // handler is responsible for the initial creation of the annotation
+                currentToolHandler = new TextRedactionAnnotationHandler(
+                        documentViewController, this);
+                ((TextRedactionAnnotationHandler) currentToolHandler).createMarkupAnnotation(null);
+                documentViewController.clearSelectedText();
+                break;
+
             case DocumentViewModel.DISPLAY_TOOL_STRIKEOUT_ANNOTATION:
                 currentToolHandler = new StrikeOutAnnotationHandler(
                         documentViewController, this);
-                ((StrikeOutAnnotationHandler) currentToolHandler).createTextMarkupAnnotation(null);
+                ((StrikeOutAnnotationHandler) currentToolHandler).createMarkupAnnotation(null);
                 documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_UNDERLINE_ANNOTATION:
                 currentToolHandler = new UnderLineAnnotationHandler(
                         documentViewController, this);
-                ((UnderLineAnnotationHandler) currentToolHandler).createTextMarkupAnnotation(null);
+                ((UnderLineAnnotationHandler) currentToolHandler).createMarkupAnnotation(null);
                 documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_LINE_ANNOTATION:
@@ -269,7 +277,8 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                         documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) ||
                         documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION) ||
                         documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_STRIKEOUT_ANNOTATION) ||
-                        documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_UNDERLINE_ANNOTATION))
+                        documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_UNDERLINE_ANNOTATION) ||
+                        documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_REDACTION_ANNOTATION))
         ) {
             try {
                 PageText pageText = currentPage.getViewText();

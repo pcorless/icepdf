@@ -1599,6 +1599,10 @@ public class SwingViewBuilder implements ViewBuilder {
             addToToolBar(toolbar, buildHighlightAnnotationToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
+                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_REDACTION)) {
+            addToToolBar(toolbar, buildRedactionAnnotationToolButton(iconSize));
+        }
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_UNDERLINE)) {
             addToToolBar(toolbar, buildUnderlineAnnotationToolButton(iconSize));
         }
@@ -1778,6 +1782,16 @@ public class SwingViewBuilder implements ViewBuilder {
             viewerController.setHighlightAnnotationToolButton(btn);
         }
         // put it all together for a dropdown button
+        return btn;
+    }
+
+    public JToggleButton buildRedactionAnnotationToolButton(final String imageSize) {
+        JToggleButton btn = makeToolbarToggleButton(
+                messageBundle.getString("viewer.toolbar.tool.redaction.label"),
+                messageBundle.getString("viewer.toolbar.tool.redaction.tooltip"),
+                "redaction_annot", imageSize, buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setRedactionAnnotationToolButton(btn);
         return btn;
     }
 

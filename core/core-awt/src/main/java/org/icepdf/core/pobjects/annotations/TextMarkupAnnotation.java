@@ -33,6 +33,9 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.icepdf.core.pobjects.annotations.utils.QuadPoints.buildQuadPoints;
+import static org.icepdf.core.pobjects.annotations.utils.QuadPoints.parseQuadPoints;
+
 /**
  * Text markup annotations shall appear as highlights, underlines, strikeouts
  * (all PDF 1.3), or jagged ("squiggly") underlines (PDF 1.4) in the text of a
@@ -52,7 +55,8 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
     public static final Name SUBTYPE_SQUIGGLY = new Name("Squiggly");
     public static final Name SUBTYPE_STRIKE_OUT = new Name("StrikeOut");
 
-    public static final Set<Name> ALL_SUBTYPES = Set.of(SUBTYPE_HIGHLIGHT, SUBTYPE_UNDERLINE, SUBTYPE_SQUIGGLY, SUBTYPE_STRIKE_OUT);
+    public static final Set<Name> ALL_SUBTYPES = Set.of(SUBTYPE_HIGHLIGHT, SUBTYPE_UNDERLINE, SUBTYPE_SQUIGGLY,
+            SUBTYPE_STRIKE_OUT);
 
     private static Color highlightColor;
     private static Color strikeOutColor;
@@ -102,33 +106,9 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
     }
 
     /**
-     * (Required) An array of 8 × n numbers specifying the coordinates of
-     * n quadrilaterals in default user space. Each quadrilateral shall encompasses
-     * a word or group of contiguous words in the text underlying the annotation.
-     * The coordinates for each quadrilateral shall be given in the order
-     * x1 y1 x2 y2 x3 y3 x4 y4
-     * specifying the quadrilateral’s four vertices in counterclockwise order
-     * (see Figure 64). The text shall be oriented with respect to the edge
-     * connecting points (x1, y1) and (x2, y2).
-     * <br>
-     * The annotation dictionary’s AP entry, if present, shall take precedence
-     * over QuadPoints; see Table 168 and 12.5.5, "Appearance Streams."
-     */
-    public static final Name KEY_QUAD_POINTS = new Name("QuadPoints");
-
-    /**
      * Highlight transparency default
      */
     public static final int HIGHLIGHT_ALPHA = 80;
-
-
-    /**
-     * Converted Quad points.
-     */
-    private Shape[] quadrilaterals;
-
-    private GeneralPath markupPath;
-    private ArrayList<Shape> markupBounds;
 
     public TextMarkupAnnotation(Library library, DictionaryEntries dictionaryEntries) {
         super(library, dictionaryEntries);
@@ -138,21 +118,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
     public void init() throws InterruptedException {
         super.init();
         // collect the quad points.
-        List<Number> quadPoints = library.getArray(entries, KEY_QUAD_POINTS);
-        if (quadPoints != null) {
-            int size = quadPoints.size() / 8;
-            quadrilaterals = new Shape[size];
-            GeneralPath shape;
-            for (int i = 0, count = 0; i < size; i++, count += 8) {
-                shape = new GeneralPath(GeneralPath.WIND_EVEN_ODD, 4);
-                shape.moveTo(quadPoints.get(count + 6).floatValue(), quadPoints.get(count + 7).floatValue());
-                shape.lineTo(quadPoints.get(count + 4).floatValue(), quadPoints.get(count + 5).floatValue());
-                shape.lineTo(quadPoints.get(count).floatValue(), quadPoints.get(count + 1).floatValue());
-                shape.lineTo(quadPoints.get(count + 2).floatValue(), quadPoints.get(count + 3).floatValue());
-                shape.closePath();
-                quadrilaterals[i] = shape;
-            }
-        }
+        quadrilaterals = parseQuadPoints(library, entries);
         if (SUBTYPE_HIGHLIGHT.equals(subtype)) {
             color = getColor() == null ? highlightColor : getColor();
         } else if (SUBTYPE_STRIKE_OUT.equals(subtype)) {
@@ -202,26 +168,13 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
         StateManager stateManager = library.getStateManager();
 
         // create a new entries to hold the annotation properties
-        DictionaryEntries entries = new DictionaryEntries();
-        // set default link annotation values.
-        entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
-        entries.put(Dictionary.SUBTYPE_KEY, subType);
-        entries.put(Annotation.FLAG_KEY, 4);
-        // coordinates
-        if (rect != null) {
-            entries.put(Annotation.RECTANGLE_KEY,
-                    PRectangle.getPRectangleVector(rect));
-        } else {
-            entries.put(Annotation.RECTANGLE_KEY, new Rectangle(10, 10, 50, 100));
-        }
+        DictionaryEntries entries = createCommonMarkupDictionary(subType, rect);
 
-        TextMarkupAnnotation textMarkupAnnotation =
-                null;
+        TextMarkupAnnotation textMarkupAnnotation = null;
         try {
             textMarkupAnnotation = new TextMarkupAnnotation(library, entries);
             textMarkupAnnotation.init();
-            entries.put(NM_KEY,
-                    new LiteralStringObject(String.valueOf(textMarkupAnnotation.hashCode())));
+            entries.put(NM_KEY, new LiteralStringObject(String.valueOf(textMarkupAnnotation.hashCode())));
             textMarkupAnnotation.setPObjectReference(stateManager.getNewReferenceNumber());
             textMarkupAnnotation.setNew(true);
             textMarkupAnnotation.setModifiedDate(PDate.formatDateTime(new Date()));
@@ -231,7 +184,6 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
         }
         return textMarkupAnnotation;
     }
-
 
     public static boolean isTextMarkupAnnotation(Name subType) {
         return ALL_SUBTYPES.contains(subType);
@@ -298,27 +250,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
                 AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f)));
 
         // create the quad points
-        List<Float> quadPoints = new ArrayList<>();
-        if (markupBounds != null) {
-            Rectangle2D bounds;
-            // build out the square in quadrant 1.
-            for (Shape shape : markupBounds) {
-                bounds = shape.getBounds2D();
-
-                quadPoints.add((float) bounds.getX());
-                quadPoints.add((float) (bounds.getY() + bounds.getHeight()));
-
-                quadPoints.add((float) (bounds.getX() + bounds.getWidth()));
-                quadPoints.add((float) (bounds.getY() + bounds.getHeight()));
-
-                quadPoints.add((float) (bounds.getX()));
-                quadPoints.add((float) (bounds.getY()));
-
-                quadPoints.add((float) (bounds.getX() + bounds.getWidth()));
-                quadPoints.add((float) (bounds.getY()));
-            }
-        }
-        entries.put(KEY_QUAD_POINTS, quadPoints);
+        entries.put(KEY_QUAD_POINTS, buildQuadPoints(markupBounds));
         setModifiedDate(PDate.formatDateTime(new Date()));
 
         // update the appearance stream
@@ -374,26 +306,6 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
                 // remove other alpha defs from painting
             }
         }
-    }
-
-    public void setMarkupPath(GeneralPath markupPath) {
-        this.markupPath = markupPath;
-    }
-
-    public GeneralPath getMarkupPath() {
-        return markupPath;
-    }
-
-    public void setMarkupBounds(ArrayList<Shape> markupBounds) {
-        this.markupBounds = markupBounds;
-    }
-
-    public Color getTextMarkupColor() {
-        return color;
-    }
-
-    public void setTextMarkupColor(Color textMarkupColor) {
-        this.color = textMarkupColor;
     }
 
 }

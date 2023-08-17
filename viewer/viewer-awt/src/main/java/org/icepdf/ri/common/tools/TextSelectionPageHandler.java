@@ -46,7 +46,7 @@ public class TextSelectionPageHandler extends TextSelection
     protected boolean isMouseDrag;
 
     /**
-     * New Text selection handler.  Make sure to correctly and and remove
+     * New Text selection handler.  Make sure to correctly and remove
      * this mouse and text listeners.
      *
      * @param pageViewComponent page component that this handler is bound to.
@@ -62,7 +62,7 @@ public class TextSelectionPageHandler extends TextSelection
     }
 
     /**
-     * When mouse is double clicked we select the word the mouse if over.  When
+     * When the mouse is double-clicked we select the word the mouse if over.  When
      * the mouse is triple clicked we select the line of text that the mouse
      * is over.
      */

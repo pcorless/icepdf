@@ -353,6 +353,7 @@ public abstract class Annotation extends Dictionary {
     public static final Name SUBTYPE_POLYGON = new Name("Polygon");
     public static final Name SUBTYPE_POLYLINE = new Name("PolyLine");
     public static final Name SUBTYPE_HIGHLIGHT = new Name("Highlight");
+    public static final Name SUBTYPE_REDACT = new Name("Redact");
     public static final Name SUBTYPE_POPUP = new Name("Popup");
     public static final Name SUBTYPE_WIDGET = new Name("Widget");
     public static final Name SUBTYPE_INK = new Name("Ink");
