@@ -1248,6 +1248,7 @@ public class SwingController extends ComponentAdapter
                     final Collection<AnnotationComponent> toDelete = comps.stream().filter(comp -> comp instanceof MarkupAnnotationComponent
                             && ((MarkupAnnotation) comp.getAnnotation()).isCurrentUserOwner()).collect(Collectors.toSet());
                     documentViewController.deleteAnnotations(toDelete);
+                    reflectUndoCommands();
                 }
             });
         });
