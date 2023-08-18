@@ -21,7 +21,7 @@
         <dependency>
             <groupId>com.github.lookfirst</groupId>
             <artifactId>sardine</artifactId>
-            <version>5.10</version>
+            <version>5.12</version>
         </dependency>
         <dependency>
             <groupId>org.apache.tika</groupId>
