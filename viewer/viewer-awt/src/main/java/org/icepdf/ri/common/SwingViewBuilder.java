@@ -1599,10 +1599,6 @@ public class SwingViewBuilder implements ViewBuilder {
             addToToolBar(toolbar, buildHighlightAnnotationToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_REDACTION)) {
-            addToToolBar(toolbar, buildRedactionAnnotationToolButton(iconSize));
-        }
-        if (propertiesManager.checkAndStoreBooleanProperty(
                 ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_UNDERLINE)) {
             addToToolBar(toolbar, buildUnderlineAnnotationToolButton(iconSize));
         }
@@ -1641,6 +1637,10 @@ public class SwingViewBuilder implements ViewBuilder {
         if (propertiesManager.checkAndStoreBooleanProperty(
                 ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_TEXT)) {
             addToToolBar(toolbar, buildTextAnnotationToolButton(iconSize));
+        }
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_REDACTION)) {
+            addToToolBar(toolbar, buildRedactionAnnotationToolButton(iconSize));
         }
         if (SystemProperties.PRIVATE_PROPERTY_ENABLED && propertiesManager.checkAndStoreBooleanProperty(
                 ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_PERMISSION)) {
