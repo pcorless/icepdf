@@ -102,7 +102,7 @@ public class FullUpdater {
             Object objectReferenceValue = library.getObject(object);
             StateManager.Change change = stateManager.getChange((Reference) object);
             if (change != null) {
-                if (change.getType() == StateManager.Type.CHANGE) {
+                if (change.getType() != StateManager.Type.DELETE) {
                     writer.writePObject(change.getPObject());
                 }
             } else {

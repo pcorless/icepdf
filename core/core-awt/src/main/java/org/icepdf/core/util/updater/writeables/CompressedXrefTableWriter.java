@@ -42,6 +42,10 @@ public class CompressedXrefTableWriter extends BaseTableWriter {
         long xrefPos = startingPosition + output.getCount();
         // clear filter
         newTrailer.remove(Stream.DECODEPARAM_KEY);
+        // previous key is no longer valid
+        newTrailer.remove(PTrailer.PREV_KEY);
+        // remove LibreOffice custom checksum value, should cause trouble but not the PDF specification
+        newTrailer.remove(new Name("DocChecksum"));
         newTrailer.put(Stream.FILTER_KEY, Stream.FILTER_FLATE_DECODE);
         // size, find max object reference in entries.
         int newTrailerSize = entries.stream().sorted(
