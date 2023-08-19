@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects.annotations;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.SystemProperties;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -25,6 +26,7 @@ import java.time.format.FormatStyle;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * As mentioned in 12.5.2, "Annotation Dictionaries," the meaning of an
@@ -160,6 +162,8 @@ public abstract class MarkupAnnotation extends Annotation {
      * Named graphics state name used to store transparency values.
      */
     public static final Name EXT_GSTATE_NAME = new Name("ip1");
+
+    private static final Pattern REPLY_PATTERN = Pattern.compile("(?:Re: ?)+");
 
     protected String titleText;
     protected PopupAnnotation popupAnnotation;
@@ -405,5 +409,9 @@ public abstract class MarkupAnnotation extends Annotation {
 
     public String toString() {
         return getPObjectReference() + " - " + getTitleText() + " - " + getContents();
+    }
+
+    public boolean isCurrentUserOwner() {
+        return REPLY_PATTERN.matcher(getTitleText()).replaceAll("").equals(SystemProperties.USER_NAME);
     }
 }

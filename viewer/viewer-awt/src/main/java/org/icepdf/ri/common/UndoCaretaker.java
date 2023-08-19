@@ -36,7 +36,7 @@ public class UndoCaretaker {
         // enables interactive annotation support.
         maxHistorySize =
                 Defs.sysPropertyInt(
-                        "org.icepdf.ri.viewer.undo.size", 25);
+                        "org.icepdf.ri.viewer.undo.size", 100);
     }
 
     private final ArrayList<Memento> mementoStateHistory;
@@ -44,20 +44,22 @@ public class UndoCaretaker {
 
     public UndoCaretaker() {
         mementoStateHistory = new ArrayList<>(maxHistorySize);
-        cursor = 0;
+        cursor = -1;
     }
 
     /**
      * Undo the last state change.  Only possible if there are items in the
      * undo history list.
      */
-    public void undo() {
+    public Memento undo() {
         if (isUndo()) {
             // move the point reference
-            cursor = cursor - 1;
-            Memento tmp = mementoStateHistory.get(cursor);
-            // restore the old state
-            tmp.restore();
+            cursor -= 1;
+            final Memento ret = restore();
+            cursor -= 1;
+            return ret;
+        } else {
+            return null;
         }
     }
 
@@ -67,21 +69,28 @@ public class UndoCaretaker {
      * @return true if an undo command is possible, false if undo can not be done.
      */
     public boolean isUndo() {
-        return mementoStateHistory.size() > 0 && cursor > 0;
+        return cursor >= 0;
     }
 
     /**
      * Redo the last state change.  ONly possible if there have been previous
      * undo call.
      */
-    public void redo() {
+    public Memento redo() {
         if (isRedo()) {
             // move the pointer
-            cursor = cursor + 1;
-            Memento tmp = mementoStateHistory.get(cursor);
+            cursor += 2;
             // restore the old state
-            tmp.restore();
+            return restore();
+        } else {
+            return null;
         }
+    }
+
+    private Memento restore() {
+        final Memento state = mementoStateHistory.get(cursor);
+        state.restore();
+        return state;
     }
 
     /**
@@ -91,7 +100,7 @@ public class UndoCaretaker {
      */
     public boolean isRedo() {
         // check for at least one history state in the next index.
-        return cursor + 1 < mementoStateHistory.size();
+        return cursor < mementoStateHistory.size() - 1;
     }
 
     /**
@@ -100,32 +109,15 @@ public class UndoCaretaker {
      * @param previousState previous state
      * @param newState      new state.
      */
-    public void addState(Memento previousState, Memento newState) {
-        // first check history bounds, if we are in an none
-        if (cursor >= maxHistorySize) {
-            // get rid of first index.
-            mementoStateHistory.remove(0);
-            mementoStateHistory.remove(1);
-            cursor = mementoStateHistory.size() - 1;
-        }
-        // check to see if we are in a possible redo state, if so we clear
-        // all states from the current pointer.
+    public void addState(final Memento previousState, final Memento newState) {
         if (isRedo()) {
-            for (int i = cursor + 1, max = mementoStateHistory.size(); i < max; i++) {
-                mementoStateHistory.remove(cursor + 1);
-            }
+            mementoStateHistory.subList(cursor + 1, mementoStateHistory.size()).clear();
         }
-        // first entry is special case, add them as is.
-        if (mementoStateHistory.size() == 0) {
-            mementoStateHistory.add(previousState);
-            mementoStateHistory.add(newState);
-            cursor = 1;
+        mementoStateHistory.add(previousState);
+        mementoStateHistory.add(newState);
+        while (mementoStateHistory.size() > maxHistorySize) {
+            mementoStateHistory.remove(0);
         }
-        // we do an offset add
-        else {
-            mementoStateHistory.set(cursor, previousState);
-            mementoStateHistory.add(newState);
-            cursor++;
-        }
+        cursor = mementoStateHistory.size() - 1;
     }
 }
