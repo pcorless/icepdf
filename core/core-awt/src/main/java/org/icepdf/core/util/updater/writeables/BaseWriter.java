@@ -9,6 +9,7 @@ import org.icepdf.core.pobjects.structure.Header;
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -108,6 +109,8 @@ public class BaseWriter {
     }
 
     public void writeXRefTable() throws IOException {
+        // sort entries by object number
+        sortEntries();
         xrefPosition = xRefTableWriter.writeXRefTable(entries, startingPosition, output);
     }
 
@@ -125,6 +128,7 @@ public class BaseWriter {
     }
 
     public void writeFullCompressedXrefTable() throws IOException {
+        sortEntries();
         compressedXrefTableWriter.writeFullCompressedXrefTable(crossReferenceRoot, securityManager, entries,
                 startingPosition, output);
     }
@@ -216,6 +220,19 @@ public class BaseWriter {
             val = ((int) str.charAt(i)) & 0xFF;
             output.write(val);
         }
+    }
+
+    /**
+     * Sort entries by object number,  makes the write a little big more efficient.
+     */
+    protected void sortEntries() {
+        entries.sort(new Comparator<Entry>() {
+            @Override
+            public int compare(Entry entry1, Entry entry2) {
+                return Integer.compare(entry1.getReference().getObjectNumber(),
+                        entry2.getReference().getObjectNumber());
+            }
+        });
     }
 
 }
