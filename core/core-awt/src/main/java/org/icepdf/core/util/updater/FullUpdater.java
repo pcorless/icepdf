@@ -103,14 +103,21 @@ public class FullUpdater {
         writeDictionaryEntries(writer, entries);
     }
 
-    private void writePObject(BaseWriter writer, Object object) throws IOException {
+    private void writePObject(BaseWriter writer, Name name, Object object) throws IOException {
         if (object instanceof Reference && writer.hasNotWrittenReference((Reference) object)) {
-            Object objectReferenceValue = library.getObject(object);
+            PObject pobject = library.getPObject(object);
+            Object objectReferenceValue = pobject.getObject();
             StateManager.Change change = stateManager.getChange((Reference) object);
             if (change != null) {
                 if (change.getType() != StateManager.Type.DELETE) {
                     writer.writePObject(change.getPObject());
                 }
+            } else if (pobject.getReference() != null) {
+                // not happy about this, downside of recursion
+                if (name != null && name.equals("Encrypt")) {
+                    pobject.setDoNotEncrypt(true);
+                }
+                writer.writePObject(pobject);
             } else {
                 writer.writePObject(new PObject(objectReferenceValue, (Reference) object));
             }
@@ -119,7 +126,7 @@ public class FullUpdater {
             } else if (objectReferenceValue instanceof DictionaryEntries) {
                 writeDictionaryEntries(writer, (DictionaryEntries) objectReferenceValue);
             } else if (objectReferenceValue instanceof List) {
-                writeList(writer, (List) objectReferenceValue);
+                writeList(writer, name, (List) objectReferenceValue);
             }
         }
     }
@@ -128,18 +135,18 @@ public class FullUpdater {
         for (Name name : entries.keySet()) {
             Object value = entries.get(name);
             if (value instanceof Reference && writer.hasNotWrittenReference((Reference) value)) {
-                writePObject(writer, value);
+                writePObject(writer, name, value);
             } else if (value instanceof List) {
-                writeList(writer, (List) value);
+                writeList(writer, name, (List) value);
             } else if (value instanceof DictionaryEntries) {
                 writeDictionaryEntries(writer, (DictionaryEntries) value);
             }
         }
     }
 
-    private void writeList(BaseWriter writer, List values) throws IOException {
+    private void writeList(BaseWriter writer, Name name, List values) throws IOException {
         for (Object object : values) {
-            writePObject(writer, object);
+            writePObject(writer, name, object);
         }
     }
 }

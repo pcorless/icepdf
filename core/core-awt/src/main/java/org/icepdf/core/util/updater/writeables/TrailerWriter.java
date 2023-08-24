@@ -3,6 +3,7 @@ package org.icepdf.core.util.updater.writeables;
 import org.icepdf.core.io.CountingOutputStream;
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.DictionaryEntries;
+import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.PTrailer;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 
@@ -24,7 +25,7 @@ public class TrailerWriter extends BaseTableWriter {
         }
 
         output.write(TRAILER);
-        this.writeDictionary(new Dictionary(null, newTrailer), output);
+        this.writeDictionary(new PObject(new Dictionary(null, newTrailer), null), output);
         output.write(STARTXREF);
         this.writeLong(xrefPosition, output);
         output.write(COMMENT_EOF);
@@ -41,7 +42,7 @@ public class TrailerWriter extends BaseTableWriter {
         // todo update the ID with something fun.
 
         output.write(TRAILER);
-        this.writeDictionary(new Dictionary(null, newTrailer), output);
+        this.writeDictionary(new PObject(new Dictionary(null, newTrailer), null, true), output);
         output.write(STARTXREF);
         this.writeLong(xrefPosition, output);
         output.write(COMMENT_EOF);
