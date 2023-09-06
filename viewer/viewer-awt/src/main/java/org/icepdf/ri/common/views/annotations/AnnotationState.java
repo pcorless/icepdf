@@ -41,6 +41,7 @@ public class AnnotationState implements Memento {
     private final Rectangle2D.Float userSpaceRectangle;
     private final Operation operation;
     private final AnnotationComponent annotationComponent;
+    private final boolean popupVisible;
 
     public enum Operation {
         ADD, DELETE, MOVE
@@ -60,6 +61,8 @@ public class AnnotationState implements Memento {
         this.annotationComponent = requireNonNull(annotationComponent);
         this.operation = requireNonNull(operation);
         this.userSpaceRectangle = annotationComponent.getAnnotation().getUserSpaceRectangle();
+        this.popupVisible = annotationComponent instanceof MarkupAnnotationComponent &&
+                ((MarkupAnnotationComponent) annotationComponent).getPopupAnnotationComponent().isVisible();
     }
 
     public AnnotationComponent getAnnotationComponent() {
@@ -121,8 +124,8 @@ public class AnnotationState implements Memento {
                     if (!pageViewComponent.getAnnotationComponents().contains(popupAnnotationComponent)) {
                         pageViewComponent.addAnnotation(popupAnnotationComponent);
                     }
-                    popupAnnotationComponent.getAnnotation().setOpen(true);
-                    popupAnnotationComponent.setVisible(true);
+                    popupAnnotationComponent.getAnnotation().setOpen(popupVisible);
+                    popupAnnotationComponent.setVisible(popupVisible);
                 }
             }
             // finally update the pageComponent so we can see it again.
