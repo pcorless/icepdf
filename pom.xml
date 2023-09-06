@@ -22,11 +22,12 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <bouncy.version>1.70</bouncy.version>
+        <bouncy.version>1.76</bouncy.version>
         <twelve-monkey.version>3.9.4</twelve-monkey.version>
         <jai-imageio.version>1.4.0</jai-imageio.version>
         <jbig2.version>3.0.4</jbig2.version>
         <font-box.version>2.0.27</font-box.version>
+        <commons-logging.version>1.2</commons-logging.version>
         <junit.bom.version>5.9.3</junit.bom.version>
     </properties>
 

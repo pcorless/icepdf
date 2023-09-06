@@ -70,7 +70,13 @@ public class FullUpdater {
             // use the document root to iterate over the object tree writing out each object.
             writeDictionary(writer, pTrailer);
 
-            if (compressXrefTable) {
+            // this can be optimized later, but we can't use a compressed xref table for /encrypt dictionary as there
+            // is no way to decompress the stream as the key is encrypted.  Basically we can't encrypt /encrypt in
+            // a compressed stream,  it needs to go in a xref table and the other objects all go in the compressed
+            // xref stream.
+            if (compressXrefTable && securityManager == null ||
+                    (securityManager != null &&
+                            securityManager.getEncryptionKey() == null)) {
                 writer.writeFullCompressedXrefTable();
             } else {
                 writer.writeXRefTable();
@@ -102,7 +108,7 @@ public class FullUpdater {
             Object objectReferenceValue = library.getObject(object);
             StateManager.Change change = stateManager.getChange((Reference) object);
             if (change != null) {
-                if (change.getType() == StateManager.Type.CHANGE) {
+                if (change.getType() != StateManager.Type.DELETE) {
                     writer.writePObject(change.getPObject());
                 }
             } else {

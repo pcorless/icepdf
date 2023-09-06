@@ -512,8 +512,8 @@ public class ImageUtility {
         baseWidth = baseImage.getWidth();
         baseHeight = baseImage.getHeight();
         int mask = 0xffffff;
-        if (maskImage.getType() == BufferedImage.TYPE_BYTE_INDEXED) {
-            mask = 0xffffffff;
+        if (baseImage.getType() == BufferedImage.TYPE_BYTE_GRAY) {
+            mask = -1;
         }
 
         boolean hasAlpha = hasAlpha(baseImage);
@@ -532,7 +532,7 @@ public class ImageUtility {
             maskImage.getRGB(0, i, baseWidth, 1, maskBnd, 0, baseWidth);
             // apply the soft mask blending
             for (int j = 0; j < baseWidth; j++) {
-                if (maskBnd[j] == 0 || maskBnd[j] == mask || maskBnd[j] == -1 || maskBnd[j] == 0xffffff) {
+                if (maskBnd[j] == 0 || maskBnd[j] == mask || maskBnd[j] == 0xffffff) {
                     //  set the pixel as transparent
                     maskBnd[j] = 0xff;
                 } else {
