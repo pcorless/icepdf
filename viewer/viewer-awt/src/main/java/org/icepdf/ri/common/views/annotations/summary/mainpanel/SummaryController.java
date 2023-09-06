@@ -57,7 +57,6 @@ public class SummaryController implements MutableDocument {
     private final Map<Reference, ColorLabelPanel> annotationToColorPanel;
 
     private final GroupManager groupManager;
-    private final ImportExportHandler ieHandler;
 
     private final MouseListener mouseListener;
     private final ComponentListener componentListener;
@@ -90,7 +89,6 @@ public class SummaryController implements MutableDocument {
         this.yCoordinates = new HashMap<>();
         this.dragManager = createDragAndLinkManager();
         this.groupManager = createGroupManager();
-        this.ieHandler = IMPORT_EXPORT_HANDLER;
         this.mouseListener = new SummaryMouseListener();
         this.componentListener = new SummaryComponentListener();
         this.propertyListener = new PropertiesListener();
@@ -169,7 +167,7 @@ public class SummaryController implements MutableDocument {
     public void exportFormat(final OutputStream output) {
         final ResourceBundle messageBundle = controller.getMessageBundle();
         try {
-            ieHandler.exportFormat(annotationNamedColorPanels, output);
+            getImportExportHandler().exportFormat(annotationNamedColorPanels, output);
         } catch (final Exception e) {
             LOG.log(Level.SEVERE, e, () -> "Couldn't export summary");
             showMessageDialog(MessageFormat.format(messageBundle.getString("viewer.summary.export.failure.label")
@@ -195,7 +193,7 @@ public class SummaryController implements MutableDocument {
     public Map<AnnotationSummaryComponent, Pair<Integer, Integer>> canImport(final InputStream inputStream, final boolean partial) {
         try {
             final Map<AnnotationSummaryComponent, Pair<Integer, Integer>> compToCell =
-                    ieHandler.validateImport(annotationNamedColorPanels, inputStream, partial);
+                    getImportExportHandler().validateImport(annotationNamedColorPanels, inputStream, partial);
             return compToCell != null && (partial || compToCell.keySet().containsAll(
                     new HashSet<>(annotationToBox.values()))) ? compToCell : null;
         } catch (final Exception e) {
@@ -236,7 +234,7 @@ public class SummaryController implements MutableDocument {
         try {
             if (compToCell != null) {
                 clear();
-                ieHandler.importFormat(compToCell, inputStream);
+                getImportExportHandler().importFormat(compToCell, inputStream);
                 refreshCoordinates();
                 refreshLinks();
                 setHasManuallyChanged(false);
