@@ -1888,7 +1888,7 @@ public abstract class Annotation extends Dictionary {
                     (float) bbox.getWidth(), (float) bbox.getHeight());
             form.setAppearance(shapes, matrix, formBbox);
 
-            stateManager.addChange(new PObject(form, form.getPObjectReference()));
+            stateManager.addChange(new PObject(form, form.getPObjectReference()), isNew);
             // update the AP's stream bytes so contents can be written out
             form.setRawBytes(rawBytes);
             DictionaryEntries appearanceRefs = new DictionaryEntries();
