@@ -31,7 +31,10 @@ import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 
+import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
@@ -41,7 +44,7 @@ import java.util.logging.Logger;
 
 /**
  * InkAnnotationHandler tool is responsible for painting representation of
- * a ink on the screen as the mouse is dragged around the page.  The points
+ * an ink on the screen as the mouse is dragged around the page.  The points
  * that make up the mouse path are then used to create the InkAnnotation and
  * respective annotation component.
  * <br>
@@ -50,13 +53,13 @@ import java.util.logging.Logger;
  *
  * @since 5.0
  */
-public class InkAnnotationHandler extends CommonToolHandler implements ToolHandler {
+public class InkAnnotationHandler extends CommonToolHandler implements ToolHandler, ActionListener {
 
     private static final Logger logger =
             Logger.getLogger(LineAnnotationHandler.class.toString());
 
     // need to make the stroke cap, thickness configurable. Or potentially
-    // static from the lineAnnotationHandle so it would look like the last
+    // static from the lineAnnotationHandle, so it would look like the last
     // settings where remembered.
     protected static final BasicStroke stroke = new BasicStroke(1.0f,
             BasicStroke.CAP_BUTT,
@@ -65,6 +68,9 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
 
     protected static Color inkColor;
     protected static int opacity;
+
+    private static int createDelay;
+    private final Timer creationTimer;
 
     static {
 
@@ -82,7 +88,9 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
         // sets annotation opacity
         opacity = Defs.intProperty(
                 "org.icepdf.core.views.page.annotation.ink.line.opacity", 255);
-
+        // create delay
+        createDelay = Defs.intProperty(
+                "org.icepdf.core.views.page.annotation.ink.line.create.delay", 2000);
     }
 
     // start and end point
@@ -91,7 +99,7 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
     protected final BorderStyle borderStyle = new BorderStyle();
 
     /**
-     * New Text selection handler.  Make sure to correctly and and remove
+     * New Text selection handler.  Make sure to correctly and remove
      * this mouse and text listeners.
      *
      * @param pageViewComponent      page component that this handler is bound to.
@@ -100,6 +108,7 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
     public InkAnnotationHandler(DocumentViewController documentViewController,
                                 AbstractPageViewComponent pageViewComponent) {
         super(documentViewController, pageViewComponent);
+        creationTimer = new Timer(createDelay, this);
         checkAndApplyPreferences();
     }
 
@@ -118,6 +127,12 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
         }
     }
 
+    protected void checkAndApplyPreferences() {
+        inkColor = new Color(preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_COLOR,
+                inkColor.getRGB()));
+        opacity = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_OPACITY, opacity);
+    }
+
     public void mouseClicked(MouseEvent e) {
         if (pageViewComponent != null) {
             pageViewComponent.requestFocus();
@@ -132,17 +147,48 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
         }
         inkPath.moveTo(e.getX(), e.getY());
         pageViewComponent.repaint();
-    }
-
-    protected void checkAndApplyPreferences() {
-        inkColor = new Color(preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_COLOR, inkColor.getRGB()));
-        opacity = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_OPACITY, opacity);
+        creationTimer.restart();
     }
 
     public void mouseReleased(MouseEvent e) {
+        creationTimer.restart();
+    }
 
-        inkPath.moveTo(e.getX(), e.getY());
+    public void mouseDragged(MouseEvent e) {
+        if (inkPath != null) {
+            inkPath.lineTo(e.getX(), e.getY());
+            pageViewComponent.repaint();
+            creationTimer.restart();
+        }
+    }
 
+    @Override
+    public void actionPerformed(ActionEvent actionEvent) {
+        creationTimer.stop();
+        buildInkAnnotation();
+    }
+
+    public void mouseMoved(MouseEvent e) {
+
+    }
+
+    public void mouseEntered(MouseEvent e) {
+
+    }
+
+    public void mouseExited(MouseEvent e) {
+
+    }
+
+    public void installTool() {
+
+    }
+
+    public void uninstallTool() {
+
+    }
+
+    protected void buildInkAnnotation() {
         // convert bbox and start and end line points.
         Rectangle bBox = inkPath.getBounds();
         // check to make sure the bbox isn't zero height or width
@@ -152,7 +198,7 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
         // get the ink path in page space then we need to translate it relative to the bbox.
         Shape tInkPath = convertToPageSpace(inkPath);
 
-        // create annotations types that that are rectangle based;
+        // create annotations types that are rectangle based;
         // which is actually just link annotations
         InkAnnotation annotation = (InkAnnotation)
                 AnnotationFactory.buildAnnotation(
@@ -201,30 +247,4 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
         // clear the path
         inkPath = null;
     }
-
-    public void mouseEntered(MouseEvent e) {
-
-    }
-
-    public void mouseExited(MouseEvent e) {
-
-    }
-
-    public void installTool() {
-
-    }
-
-    public void uninstallTool() {
-
-    }
-
-    public void mouseDragged(MouseEvent e) {
-        inkPath.lineTo(e.getX(), e.getY());
-        pageViewComponent.repaint();
-    }
-
-    public void mouseMoved(MouseEvent e) {
-
-    }
-
 }
