@@ -25,7 +25,8 @@ public class LiteralStringWriter extends BaseWriter {
         if (pObject.isDoNotEncrypt()) {
             writeRaw(writeable.getLiteralString(), output);
         } else {
-            write(new LiteralStringObject(writeable.toString(), pObject.getReference(), securityManager).toString(),
+            write(new LiteralStringObject(writeable.toString().replaceAll(LITERAL_REGEX, LITERAL_REPLACEMENT),
+                            pObject.getReference(), securityManager).toString(),
                     output);
         }
     }
@@ -38,7 +39,8 @@ public class LiteralStringWriter extends BaseWriter {
 
     public void writeRaw(String writeable, CountingOutputStream output) throws IOException {
         output.write(BEGIN_LITERAL_STRING);
-        byte[] textBytes = Utils.convertByteCharSequenceToByteArray(writeable);
+        byte[] textBytes = Utils.convertByteCharSequenceToByteArray(
+                writeable.replaceAll(LITERAL_REGEX, LITERAL_REPLACEMENT));
         output.write(textBytes);
         output.write(END_LITERAL_STRING);
     }

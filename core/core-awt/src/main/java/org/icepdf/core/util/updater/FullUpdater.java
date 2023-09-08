@@ -106,6 +106,10 @@ public class FullUpdater {
     private void writePObject(BaseWriter writer, Name name, Object object) throws IOException {
         if (object instanceof Reference && writer.hasNotWrittenReference((Reference) object)) {
             PObject pobject = library.getPObject(object);
+            // possible to have unreferenced object in a file,  todo: file could be corrected
+            if (pobject == null) {
+                return;
+            }
             Object objectReferenceValue = pobject.getObject();
             StateManager.Change change = stateManager.getChange((Reference) object);
             if (change != null) {

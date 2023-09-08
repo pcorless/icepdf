@@ -25,7 +25,8 @@ public class HexStringObjectWriter extends BaseWriter {
         if (pObject.isDoNotEncrypt()) {
             writeRaw(writeable.getHexString(), output);
         } else {
-            write(new HexStringObject(writeable.toString(), pObject.getReference(), securityManager), output);
+            write(new HexStringObject(writeable.toString().replaceAll(HEX_REGEX, HEX_REPLACEMENT),
+                    pObject.getReference(), securityManager), output);
         }
     }
 
@@ -37,7 +38,7 @@ public class HexStringObjectWriter extends BaseWriter {
 
     public void writeRaw(String writeable, CountingOutputStream output) throws IOException {
         output.write(BEGIN_HEX_STRING);
-        byte[] textBytes = Utils.convertByteCharSequenceToByteArray(writeable);
+        byte[] textBytes = Utils.convertByteCharSequenceToByteArray(writeable.replaceAll(HEX_REGEX, HEX_REPLACEMENT));
         output.write(textBytes);
         output.write(END_HEX_STRING);
     }

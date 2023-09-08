@@ -142,7 +142,11 @@ public class Library {
      * object reference can not be found.
      */
     public Object getObject(Reference reference) {
-        return getObject(reference, null).getObject();
+        Object obj = getObject(reference, null);
+        if (obj != null) {
+            return getObject(reference, null).getObject();
+        }
+        return null;
     }
 
     public PObject getPObject(Reference reference) {

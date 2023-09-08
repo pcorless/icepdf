@@ -5,6 +5,7 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.annotations.Annotation;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -124,15 +125,16 @@ public class RewriteTest {
 
     @DisplayName("full write - write and open and fail if there is an exception loading the new file")
     @Test
-//    @Disabled
+    @Disabled
     public void testAnnotationFullUpdate() {
-        String testDirectory = "/home/pcorless/dev/pdf-qa/metrics/full-monty/";
+        String testDirectory = "/test-suite-path/";
         Path contentPath = Paths.get(testDirectory);
         if (Files.isDirectory(contentPath)) {
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(contentPath)) {
+                int count = 0;
                 for (Path entry : stream) {
                     if (entry.getFileName().toString().toLowerCase().endsWith(".pdf")) {
-                        System.out.println("rewriting: " + entry.toString());
+                        System.out.println("rewriting: " + entry.toString() + " " + count++);
                         Document document = new Document();
                         document.setFile(entry.toString());
 
