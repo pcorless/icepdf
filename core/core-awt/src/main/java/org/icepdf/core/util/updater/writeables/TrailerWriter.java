@@ -25,7 +25,7 @@ public class TrailerWriter extends BaseTableWriter {
         }
 
         output.write(TRAILER);
-        this.writeDictionary(new PObject(new Dictionary(null, newTrailer), null), output);
+        this.writeDictionary(new PObject(new Dictionary(null, newTrailer), null, true), output);
         output.write(STARTXREF);
         this.writeLong(xrefPosition, output);
         output.write(COMMENT_EOF);
