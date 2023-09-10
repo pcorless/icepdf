@@ -126,7 +126,7 @@ public class RewriteTest {
     @DisplayName("full write - write and open and fail if there is an exception loading the new file")
     @Test
     @Disabled
-    public void testAnnotationFullUpdate() {
+    public void testBatchFullUpdate() {
         String testDirectory = "/test-suite-path/";
         Path contentPath = Paths.get(testDirectory);
         if (Files.isDirectory(contentPath)) {
