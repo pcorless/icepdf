@@ -69,7 +69,11 @@ public class ContentParser extends AbstractContentParser {
             for (byte[] streamByte : streamBytes) {
                 if (streamByte != null) {
                     String tmp = new String(streamByte, StandardCharsets.ISO_8859_1);
-                    logger.finer("Content " + references[i].toString() + " = " + tmp);
+                    if (references[i] != null) {
+                        logger.finer("Content " + references[i].toString() + " = " + tmp);
+                    } else {
+                        logger.finer("Content = " + tmp);
+                    }
                 }
                 i++;
             }

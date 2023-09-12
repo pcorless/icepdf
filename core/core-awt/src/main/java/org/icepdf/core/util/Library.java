@@ -142,10 +142,18 @@ public class Library {
      * object reference can not be found.
      */
     public Object getObject(Reference reference) {
+        Object obj = getObject(reference, null);
+        if (obj != null) {
+            return getObject(reference, null).getObject();
+        }
+        return null;
+    }
+
+    public PObject getPObject(Reference reference) {
         return getObject(reference, null);
     }
 
-    private Object getObject(Reference reference, Name hint) {
+    private PObject getObject(Reference reference, Name hint) {
         Object obj;
         java.lang.ref.Reference<Object> obRef = objectStore.get(reference);
         // check stateManager first to allow for annotations to be injected
@@ -154,9 +162,9 @@ public class Library {
             if (stateManager.contains(reference)) {
                 obj = stateManager.getChange(reference);
                 if (obj != null) {
-                    return ((StateManager.Change) obj).getPObject().getObject();
+                    return ((StateManager.Change) obj).getPObject();
                 }
-                return obj;
+                return null;
             }
         }
         obj = obRef != null ? obRef.get() : null;
@@ -182,7 +190,7 @@ public class Library {
             }
             if (obj == null) return null;
             // keep expensive like fonts, images, page tree
-            Object object = ((PObject) obj).getObject();
+            PObject object = ((PObject) obj);
             if (isSoftReferenceAble(object)) {
                 objectStore.put(reference, new SoftReference<>(obj));
             } else {
@@ -191,13 +199,13 @@ public class Library {
             return object;
         }
         if (obj instanceof PObject) {
-            return ((PObject) obj).getObject();
+            return (PObject) obj;
         } else if (obj instanceof Reference) {
             Reference secondReference = (Reference) obj;
             logger.log(Level.WARNING, () -> "Found a reference to a reference: " + secondReference);
-            return getObject(secondReference);
+            return getPObject(secondReference);
         }
-        return obj;
+        return new PObject(obj, reference);
     }
 
     private boolean isSoftReferenceAble(Object object) {
@@ -480,6 +488,13 @@ public class Library {
             return getObject((Reference) referenceObject);
         }
         return referenceObject;
+    }
+
+    public PObject getPObject(Object referenceObject) {
+        if (referenceObject instanceof Reference) {
+            return getPObject((Reference) referenceObject);
+        }
+        return null;
     }
 
     /**

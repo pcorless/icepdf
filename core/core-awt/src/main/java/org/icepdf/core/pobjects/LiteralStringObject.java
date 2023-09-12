@@ -91,8 +91,7 @@ public class LiteralStringObject implements StringObject {
         // convert string to octal encoded.
         string = Utils.convertStringToOctal(string);
         // decrypt the string.
-        stringData = new StringBuilder(
-                encryption(string, false, securityManager));
+        stringData = new StringBuilder(encryption(string, false, securityManager));
     }
 
     /**
