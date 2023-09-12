@@ -70,7 +70,13 @@ public class FullUpdater {
             // use the document root to iterate over the object tree writing out each object.
             writeDictionary(writer, pTrailer);
 
-            if (compressXrefTable) {
+            // this can be optimized later, but we can't use a compressed xref table for /encrypt dictionary as there
+            // is no way to decompress the stream as the key is encrypted.  Basically we can't encrypt /encrypt in
+            // a compressed stream,  it needs to go in a xref table and the other objects all go in the compressed
+            // xref stream.
+            if (compressXrefTable && securityManager == null ||
+                    (securityManager != null &&
+                            securityManager.getEncryptionKey() == null)) {
                 writer.writeFullCompressedXrefTable();
             } else {
                 writer.writeXRefTable();
@@ -97,14 +103,25 @@ public class FullUpdater {
         writeDictionaryEntries(writer, entries);
     }
 
-    private void writePObject(BaseWriter writer, Object object) throws IOException {
+    private void writePObject(BaseWriter writer, Name name, Object object) throws IOException {
         if (object instanceof Reference && writer.hasNotWrittenReference((Reference) object)) {
-            Object objectReferenceValue = library.getObject(object);
+            PObject pobject = library.getPObject(object);
+            // possible to have unreferenced object in a file,  todo: file could be corrected
+            if (pobject == null) {
+                return;
+            }
+            Object objectReferenceValue = pobject.getObject();
             StateManager.Change change = stateManager.getChange((Reference) object);
             if (change != null) {
-                if (change.getType() == StateManager.Type.CHANGE) {
+                if (change.getType() != StateManager.Type.DELETE) {
                     writer.writePObject(change.getPObject());
                 }
+            } else if (pobject.getReference() != null) {
+                // not happy about this, downside of recursion
+                if (name != null && name.equals("Encrypt")) {
+                    pobject.setDoNotEncrypt(true);
+                }
+                writer.writePObject(pobject);
             } else {
                 writer.writePObject(new PObject(objectReferenceValue, (Reference) object));
             }
@@ -113,7 +130,7 @@ public class FullUpdater {
             } else if (objectReferenceValue instanceof DictionaryEntries) {
                 writeDictionaryEntries(writer, (DictionaryEntries) objectReferenceValue);
             } else if (objectReferenceValue instanceof List) {
-                writeList(writer, (List) objectReferenceValue);
+                writeList(writer, name, (List) objectReferenceValue);
             }
         }
     }
@@ -122,18 +139,18 @@ public class FullUpdater {
         for (Name name : entries.keySet()) {
             Object value = entries.get(name);
             if (value instanceof Reference && writer.hasNotWrittenReference((Reference) value)) {
-                writePObject(writer, value);
+                writePObject(writer, name, value);
             } else if (value instanceof List) {
-                writeList(writer, (List) value);
+                writeList(writer, name, (List) value);
             } else if (value instanceof DictionaryEntries) {
                 writeDictionaryEntries(writer, (DictionaryEntries) value);
             }
         }
     }
 
-    private void writeList(BaseWriter writer, List values) throws IOException {
+    private void writeList(BaseWriter writer, Name name, List values) throws IOException {
         for (Object object : values) {
-            writePObject(writer, object);
+            writePObject(writer, name, object);
         }
     }
 }

@@ -561,6 +561,7 @@ public abstract class Annotation extends Dictionary {
      */
     public Annotation(Library library, DictionaryEntries entries) {
         super(library, entries);
+        securityManager = library.getSecurityManager();
     }
 
     /**
@@ -634,8 +635,6 @@ public abstract class Annotation extends Dictionary {
         super.init();
         // type of Annotation
         subtype = (Name) getObject(SUBTYPE_KEY);
-
-        securityManager = library.getSecurityManager();
 
         content = getContents();
 

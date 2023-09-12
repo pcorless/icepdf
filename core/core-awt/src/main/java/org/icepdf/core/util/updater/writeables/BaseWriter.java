@@ -9,6 +9,7 @@ import org.icepdf.core.pobjects.structure.Header;
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -43,7 +44,7 @@ public class BaseWriter {
     private static CompressedXrefTableWriter compressedXrefTableWriter;
 
     private CountingOutputStream output;
-    private SecurityManager securityManager;
+    protected SecurityManager securityManager;
     private CrossReferenceRoot crossReferenceRoot;
     private long startingPosition;
     private ArrayList<Entry> entries;
@@ -72,8 +73,8 @@ public class BaseWriter {
         nameWriter = new NameWriter();
         dictionaryWriter = new DictionaryWriter();
         referenceWriter = new ReferenceWriter();
-        hexStringObjectWriter = new HexStringObjectWriter();
-        literalObjectWriter = new LiteralStringWriter();
+        hexStringObjectWriter = new HexStringObjectWriter(securityManager);
+        literalObjectWriter = new LiteralStringWriter(securityManager);
         arrayWriter = new ArrayWriter();
         affineTransformWriter = new AffineTransformWriter();
         pObjectWriter = new PObjectWriter();
@@ -108,6 +109,8 @@ public class BaseWriter {
     }
 
     public void writeXRefTable() throws IOException {
+        // sort entries by object number
+        sortEntries();
         xrefPosition = xRefTableWriter.writeXRefTable(entries, startingPosition, output);
     }
 
@@ -125,6 +128,7 @@ public class BaseWriter {
     }
 
     public void writeFullCompressedXrefTable() throws IOException {
+        sortEntries();
         compressedXrefTableWriter.writeFullCompressedXrefTable(crossReferenceRoot, securityManager, entries,
                 startingPosition, output);
     }
@@ -137,7 +141,8 @@ public class BaseWriter {
         headerWriter.write(header, output);
     }
 
-    protected void writeValue(Object val, CountingOutputStream output) throws IOException {
+    protected void writeValue(PObject pObject, CountingOutputStream output) throws IOException {
+        Object val = pObject.getObject();
         if (val == null) {
             output.write(NULL);
         } else if (val instanceof Name) {
@@ -162,16 +167,15 @@ public class BaseWriter {
             }
 
         } else if (val instanceof LiteralStringObject) {
-            literalObjectWriter.write(((LiteralStringObject) val), output);
+            literalObjectWriter.write(pObject, output);
         } else if (val instanceof HexStringObject) {
-            hexStringObjectWriter.write((HexStringObject) val, output);
+            hexStringObjectWriter.write(pObject, output);
         } else if (val instanceof List) {
-            //noinspection unchecked
-            arrayWriter.write((List<Object>) val, output);
+            arrayWriter.write(pObject, output);
         } else if (val instanceof Dictionary) {
-            writeDictionary((Dictionary) val, output);
+            writeDictionary(pObject, output);
         } else if (val instanceof DictionaryEntries) {
-            dictionaryWriter.write((DictionaryEntries) val, output);
+            dictionaryWriter.write(pObject, output);
         } else if (val instanceof AffineTransform) {
             affineTransformWriter.write((AffineTransform) val, output);
         } else {
@@ -183,8 +187,8 @@ public class BaseWriter {
         nameWriter.write(name, output);
     }
 
-    protected void writeDictionary(Dictionary dictionary, CountingOutputStream output) throws IOException {
-        dictionaryWriter.write(dictionary, output);
+    protected void writeDictionary(PObject pObject, CountingOutputStream output) throws IOException {
+        dictionaryWriter.write(pObject, output);
     }
 
     protected void writeBoolean(boolean bool, CountingOutputStream output) throws IOException {
@@ -216,6 +220,19 @@ public class BaseWriter {
             val = ((int) str.charAt(i)) & 0xFF;
             output.write(val);
         }
+    }
+
+    /**
+     * Sort entries by object number,  makes the write a little big more efficient.
+     */
+    protected void sortEntries() {
+        entries.sort(new Comparator<Entry>() {
+            @Override
+            public int compare(Entry entry1, Entry entry2) {
+                return Integer.compare(entry1.getReference().getObjectNumber(),
+                        entry2.getReference().getObjectNumber());
+            }
+        });
     }
 
 }

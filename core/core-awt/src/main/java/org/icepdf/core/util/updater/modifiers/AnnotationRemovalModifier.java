@@ -31,7 +31,7 @@ public class AnnotationRemovalModifier implements Modifier<Annotation> {
         StateManager stateManager = library.getStateManager();
 
         Object annots = parentPage.getObject(ANNOTS_KEY);
-        boolean isAnnotAReference = library.isReference(entries, ANNOTS_KEY);
+        boolean isAnnotAReference = library.isReference(parentPage.getEntries(), ANNOTS_KEY);
 
         // mark the item as deleted so the state manager can clean up the reference.
         annot.setDeleted(true);
@@ -61,10 +61,10 @@ public class AnnotationRemovalModifier implements Modifier<Annotation> {
                     new PObject(parentPage, parentPage.getPObjectReference()));
         }
         // if not new and annot is a ref, we have to add annot ref as changed.
-        else if (!annot.isNew() && isAnnotAReference) {
+        if (!annot.isNew() && isAnnotAReference) {
             stateManager.addChange(
                     new PObject(annots, library.getObjectReference(
-                            entries, ANNOTS_KEY)));
+                            parentPage.getEntries(), ANNOTS_KEY)));
         }
         // if new annotation, then we can remove it from the state manager.
         else if (annot.isNew()) {

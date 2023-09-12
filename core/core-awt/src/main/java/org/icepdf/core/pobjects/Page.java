@@ -188,13 +188,13 @@ public class Page extends Dictionary {
     // Defines the intended dimension of the finished page after trimming.
     private PRectangle trimBox;
     // Defines the extent of the pages meaningful content as intended by the
-    // pages creator.
+    // page's creator.
     private PRectangle artBox;
 
     // page has default rotation value
     private float pageRotation = 0;
 
-    private int pageIndex;
+    private int pageIndex = -1;
     private int imageCount;
     private boolean pageInitialized;
     private boolean pagePainted;
@@ -207,7 +207,7 @@ public class Page extends Dictionary {
      * a page entity and all of it child elements that are associated with it.
      *
      * @param l pointer to default library containing all document objects
-     * @param h DictionaryEntries containing all of the dictionary entries
+     * @param h DictionaryEntries containing all the dictionary entries
      */
     public Page(Library l, DictionaryEntries h) {
         super(l, h);
@@ -1582,6 +1582,11 @@ public class Page extends Dictionary {
      * @return zero base page index.
      */
     public int getPageIndex() {
+        if (pageIndex < 0) {
+            Reference pageReference = getPObjectReference();
+            PageTree rootPageTree = library.getCatalog().getPageTree();
+            pageIndex = rootPageTree.getPageNumber(pageReference);
+        }
         return pageIndex;
     }
 
@@ -1596,8 +1601,8 @@ public class Page extends Dictionary {
     }
 
     /**
-     * Returns true if the page is initialized, this is different then init(),
-     * as it tracks if the page has started initialization and we don't want to
+     * Returns true if the page is initialized, this is different from init(),
+     * as it tracks if the page has started initialization, and we don't want to
      * do that again,  in this case the init() method has completely finished,
      * minus any image loading threads.
      *
