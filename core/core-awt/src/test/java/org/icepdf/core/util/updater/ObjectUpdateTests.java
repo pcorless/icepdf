@@ -48,7 +48,7 @@ public class ObjectUpdateTests {
             Library library = document.getCatalog().getLibrary();
             Object deletedPage = library.getObject(deletedPageReference);
             assertNull(deletedPage);
-        } catch (PDFSecurityException | IOException e) {
+        } catch (PDFSecurityException | IOException | InterruptedException e) {
             // make sure we have no io errors.
             fail("should not be any exceptions");
         }
@@ -86,7 +86,7 @@ public class ObjectUpdateTests {
             Page modifiedPage = document.getPageTree().getPage(0);
             assertEquals(1, modifiedPage.getAnnotations().size());
 
-        } catch (PDFSecurityException | IOException e) {
+        } catch (PDFSecurityException | IOException | InterruptedException e) {
             // make sure we have no io errors.
             fail("should not be any exceptions");
         }

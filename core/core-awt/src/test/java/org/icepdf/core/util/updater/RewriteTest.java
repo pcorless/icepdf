@@ -46,7 +46,7 @@ public class RewriteTest {
             Page page = document.getPageTree().getPage(0);
             // annot, popup and glue
             assertEquals(3, page.getAnnotations().size());
-        } catch (PDFSecurityException | IOException e) {
+        } catch (PDFSecurityException | IOException | InterruptedException e) {
             // make sure we have no io errors.
             fail("should not be any exceptions");
         }
@@ -82,7 +82,7 @@ public class RewriteTest {
             // check annotation for edit
             assertEquals("This should not be in file if deleted - edited", annotations.get(0).getContents());
 
-        } catch (PDFSecurityException | IOException e) {
+        } catch (PDFSecurityException | IOException | InterruptedException e) {
             // make sure we have no io errors.
             fail("should not be any exceptions");
         }
@@ -117,7 +117,7 @@ public class RewriteTest {
             page = document.getPageTree().getPage(0);
             // annot, popup and glue
             assertEquals(0, page.getAnnotations().size());
-        } catch (PDFSecurityException | IOException e) {
+        } catch (PDFSecurityException | IOException | InterruptedException e) {
             // make sure we have no io errors.
             fail("should not be any exceptions");
         }
@@ -155,7 +155,7 @@ public class RewriteTest {
                         modifiedDocument.dispose();
                     }
                 }
-            } catch (IOException | PDFSecurityException e) {
+            } catch (IOException | PDFSecurityException | InterruptedException e) {
                 // make sure we have no io errors.
                 fail("should not be any exceptions", e);
             }

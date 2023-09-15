@@ -3459,7 +3459,7 @@ public class SwingController extends ComponentAdapter
                         document.saveToOutputStream(stream);
                         stream.flush();
                         document.getStateManager().setChangesSnapshot();
-                    } catch (IOException e) {
+                    } catch (IOException | InterruptedException e) {
                         logger.log(Level.FINE, "IO Exception ", e);
                     }
                 }

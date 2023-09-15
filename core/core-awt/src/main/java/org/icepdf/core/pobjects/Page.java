@@ -17,10 +17,7 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.events.*;
 import org.icepdf.core.io.SeekableInput;
-import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
-import org.icepdf.core.pobjects.annotations.MarkupGlueAnnotation;
-import org.icepdf.core.pobjects.annotations.PopupAnnotation;
+import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.WatermarkCallback;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
@@ -29,6 +26,7 @@ import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.*;
 import org.icepdf.core.util.parser.content.ContentParser;
+import org.icepdf.core.util.updater.callbacks.ContentStreamWriter;
 import org.icepdf.core.util.updater.modifiers.AnnotationRemovalModifier;
 import org.icepdf.core.util.updater.modifiers.ModifierFactory;
 
@@ -380,6 +378,15 @@ public class Page extends Dictionary {
      * child elements.  Once a page has been initialized, it can be painted.
      */
     public synchronized void init() throws InterruptedException {
+        init(null);
+    }
+
+    /**
+     * Initialize the Page object.  This method triggers the parsing of a page's
+     * child elements.  Once a page has been initialized, it can be painted.
+     * @param contentStreamWriter callback use to rewrite content stream
+     */
+    public synchronized void init(ContentStreamWriter contentStreamWriter) throws InterruptedException {
         try {
             // make sure we are not revisiting this method
             if (inited) {
@@ -407,14 +414,14 @@ public class Page extends Dictionary {
             }
 
             /*
-              Finally iterate through the contents vector and concat all of the
-              the resource streams together so that the content parser can
-              go to town and build all of the page's shapes.
+              Finally iterate through the contents vector and concat all the
+              resource streams together so that the content parser can
+              go to town and build all the page's shapes.
              */
             notifyPageInitializationStarted();
             if (contents != null) {
                 try {
-                    ContentParser cp = new ContentParser(library, resources);
+                    ContentParser cp = new ContentParser(library, resources, contentStreamWriter);
                     byte[][] streams = new byte[contents.size()][];
                     byte[] stream;
                     Reference[] references = new Reference[contents.size()];
@@ -1296,9 +1303,24 @@ public class Page extends Dictionary {
         return annotations;
     }
 
+    public List<RedactionAnnotation> getRedactionAnnotations() {
+        if (annotations == null) {
+            try {
+                initPageAnnotations();
+            } catch (InterruptedException e) {
+                logger.finer("Interrupt exception getting annotations. ");
+            }
+        }
+        // todo make this method more generic to any Annotation subtype
+        return annotations.stream()
+                .filter(RedactionAnnotation.class::isInstance)
+                .map(RedactionAnnotation.class::cast)
+                .collect(Collectors.toList());
+    }
+
     /**
      * Returns the decoded content stream for this page instance.  A page instance
-     * can have more then one content stream associated with it.
+     * can have more than one content stream associated with it.
      *
      * @return An array of decoded content stream.  Each index in the array
      * represents one content stream.  Null return and null String array

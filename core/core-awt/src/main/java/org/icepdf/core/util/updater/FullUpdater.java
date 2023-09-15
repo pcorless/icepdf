@@ -1,15 +1,20 @@
 package org.icepdf.core.util.updater;
 
+import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.io.CountingOutputStream;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.redaction.Redactor;
 import org.icepdf.core.util.updater.writeables.BaseWriter;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 /**
@@ -46,10 +51,36 @@ public class FullUpdater {
      * @param outputStream OutputStream to write the incremental update to
      * @return The number of bytes written generating the new document
      * @throws java.io.IOException error writing stream.
+     * @throws InterruptedException
      */
     public long writeDocument(
             Document document, OutputStream outputStream)
-            throws IOException {
+            throws IOException, InterruptedException {
+
+        // creat tmp file and make a copy
+        Path tmpFile = Files.createTempFile(null, null);
+        Path orgFile = Path.of(document.getDocumentLocation());
+        Files.copy(orgFile, tmpFile, StandardCopyOption.REPLACE_EXISTING);
+
+        // open the copy and burn the redactions to the specified outputStream
+        Document tmpDocument = new Document();
+        try {
+            tmpDocument.setFile(tmpFile.toString());
+        } catch (PDFSecurityException e) {
+            throw new RuntimeException(e);
+        }
+        long bytesWritten = writeDocument(tmpDocument, outputStream, true);
+
+        // clean up
+        tmpDocument.dispose();
+        Files.delete(tmpFile);
+
+        return bytesWritten;
+    }
+
+    public long writeDocument(
+            Document document, OutputStream outputStream, boolean redact)
+            throws IOException, InterruptedException {
         Catalog catalog = document.getCatalog();
         library = catalog.getLibrary();
         stateManager = library.getStateManager();
@@ -62,6 +93,12 @@ public class FullUpdater {
         BaseWriter writer = new BaseWriter(crossReferenceRoot, securityManager, output, 0);
         writer.initializeWriters();
         Object mappedFileByteBufferLock = library.getMappedFileByteBufferLock();
+
+        // burn any redaction annotation into the content and image streams
+        // all changes are made to the state manager and will be written out to the new document
+        if (redact) {
+            Redactor.burnRedactions(document);
+        }
 
         synchronized (mappedFileByteBufferLock) {
             // write header

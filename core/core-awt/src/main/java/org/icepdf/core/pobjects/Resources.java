@@ -212,6 +212,10 @@ public class Resources extends Dictionary {
         return library.getObject(xobjects, s);
     }
 
+    public DictionaryEntries getXObjects() {
+        return xobjects;
+    }
+
     /**
      * Gets a rough count of the images resources associated with this page. Does
      * not include inline images.

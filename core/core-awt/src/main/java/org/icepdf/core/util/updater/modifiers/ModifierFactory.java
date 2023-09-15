@@ -7,8 +7,8 @@ import org.icepdf.core.pobjects.annotations.Annotation;
 import java.util.logging.Logger;
 
 /**
- * Modifier factory gets a modifier for a tasks that are rather involved.  Mainly used for removal but could
- * be used for there object operations.
+ * Modifier factory gets a modifier for tasks that are rather involved.  Mainly used for removal but could
+ * be used for other object operations.
  *
  * @since 7.2
  */

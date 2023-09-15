@@ -12,6 +12,7 @@ import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReferenceFactory;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.updater.callbacks.ContentStreamWriter;
 
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
@@ -33,7 +34,11 @@ public class ContentParser extends AbstractContentParser {
             Collections.synchronizedMap(new WeakHashMap<>());
 
     public ContentParser(Library l, Resources r) {
-        super(l, r);
+        super(l, r, null);
+    }
+
+    public ContentParser(Library l, Resources r, ContentStreamWriter contentStreamWriter) {
+        super(l, r, contentStreamWriter);
     }
 
     public ContentParser parse(byte[][] streamBytes, Reference[] references, Page page)
@@ -259,9 +264,9 @@ public class ContentParser extends AbstractContentParser {
                             break;
 
                         // Sets the specified parameters in the graphics state.  The gs operand
-                        // points to a name resource which should be a an ExtGState object.
+                        // points to a name resource which should be an ExtGState object.
                         // The graphics state parameters in the ExtGState must be concatenated
-                        // with the the current graphics state.
+                        // with the current graphics state.
                         case Operands.gs:
                             consume_gs(graphicState, stack, resources, shapes);
                             break;
@@ -337,12 +342,12 @@ public class ContentParser extends AbstractContentParser {
                         // Sets the line dash pattern in the graphics state. A normal line
                         // is [] 0.  See Graphics State -> Line dash patter for more information
                         // in the PDF Reference.  Java 2d uses the same notation so there
-                        // is not much work to be done other then parsing the data.
+                        // is not much work to be done other than parsing the data.
                         case Operands.d:
                             consume_d(graphicState, stack, shapes);
                             break;
 
-                        // Append a cubic Bezier curve to the current path. The curve
+                        // Append a cubic Bézier curve to the current path. The curve
                         // extends from the current point to the point (x3, y3), using
                         // the current point and (x2, y2) as the Bezier control points.
                         // The new current point is (x3, y3).
@@ -355,7 +360,7 @@ public class ContentParser extends AbstractContentParser {
                             consume_j(graphicState, stack, shapes);
                             break;
 
-                        // Append a cubic Bezier curve to the current path. The curve
+                        // Append a cubic Bézier curve to the current path. The curve
                         // extends from the current point to the point (x3, y3), using
                         // (x1, y1) and (x3, y3) as the Bezier control points.
                         // The new current point is (x3, y3).
@@ -600,7 +605,7 @@ public class ContentParser extends AbstractContentParser {
 
             // keeps track of previous text placement so that Compatibility and
             // implementation note 57 is respected.  That is text drawn after a TJ
-            // must not be less then the previous glyphs coords.
+            // must not be less than the previous glyphs coords.
             textBlockBase = new AffineTransform(graphicState.getCTM());
 
             // transformation matrix used to cMap core space to drawing space
@@ -669,7 +674,7 @@ public class ContentParser extends AbstractContentParser {
      * @param lexer           parser containing BT tokens
      * @param shapes          container of all shapes for the page content being parsed
      * @param previousBTStart y offset of previous BT definition.
-     * @return y offset of the this BT definition.
+     * @return y offset of this BT definition.
      * @throws java.io.IOException end of content stream is found
      */
     private float parseText(Lexer lexer, Shapes shapes, double previousBTStart)
@@ -678,7 +683,7 @@ public class ContentParser extends AbstractContentParser {
         inTextBlock = true;
         // keeps track of previous text placement so that Compatibility and
         // implementation note 57 is respected.  That is text drawn after a TJ
-        // must not be less then the previous glyphs coords.
+        // must not be less than the previous glyphs coords.
         TextMetrics textMetrics = new TextMetrics();
         textBlockBase = new AffineTransform(graphicState.getCTM());
 
@@ -787,9 +792,9 @@ public class ContentParser extends AbstractContentParser {
                         break;
 
                     // Sets the specified parameters in the graphics state.  The gs operand
-                    // points to a name resource which should be a an ExtGState object.
+                    // points to a name resource which should be an ExtGState object.
                     // The graphics state parameters in the ExtGState must be concatenated
-                    // with the the current graphics state.
+                    // with the current graphics state.
                     case Operands.gs:
                         consume_gs(graphicState, stack, resources, shapes);
                         break;

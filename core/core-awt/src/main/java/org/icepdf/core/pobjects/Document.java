@@ -558,7 +558,7 @@ public class Document {
      * @return The length of the PDF file copied
      * @throws IOException if there is some problem reading or writing the PDF data
      */
-    public long writeToOutputStream(OutputStream out) throws IOException {
+    public long writeToOutputStream(OutputStream out) throws IOException, InterruptedException {
         return writeToOutputStream(out, WriteMode.INCREMENT_UPDATE);
     }
 
@@ -572,7 +572,7 @@ public class Document {
      * @return The length of the PDF file copied
      * @throws IOException if there is some problem reading or writing the PDF data
      */
-    public long writeToOutputStream(OutputStream out, WriteMode writeMode) throws IOException {
+    public long writeToOutputStream(OutputStream out, WriteMode writeMode) throws IOException, InterruptedException {
         if (documentFileChannel != null) {
             synchronized (library.getMappedFileByteBufferLock()) {
                 ByteBuffer documentByteBuffer = library.getMappedFileByteBuffer();
@@ -599,7 +599,7 @@ public class Document {
      * @return The length of the PDF file saved
      * @throws IOException if there is some problem reading or writing the PDF data
      */
-    public long saveToOutputStream(OutputStream out) throws IOException {
+    public long saveToOutputStream(OutputStream out) throws IOException, InterruptedException {
         return writeToOutputStream(out, WriteMode.INCREMENT_UPDATE);
     }
 
@@ -612,7 +612,7 @@ public class Document {
      * @return The length of the PDF file saved
      * @throws IOException if there is some problem reading or writing the PDF data
      */
-    public long saveToOutputStream(OutputStream out, WriteMode writeMode) throws IOException {
+    public long saveToOutputStream(OutputStream out, WriteMode writeMode) throws IOException, InterruptedException {
         return writeToOutputStream(out, writeMode);
     }
 
