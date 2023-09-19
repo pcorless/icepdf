@@ -26,7 +26,7 @@ import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.*;
 import org.icepdf.core.util.parser.content.ContentParser;
-import org.icepdf.core.util.updater.callbacks.ContentStreamWriter;
+import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorWriter;
 import org.icepdf.core.util.updater.modifiers.AnnotationRemovalModifier;
 import org.icepdf.core.util.updater.modifiers.ModifierFactory;
 
@@ -331,7 +331,7 @@ public class Page extends Dictionary {
                             if (creator.equals(SystemProperties.USER_NAME)) {
                                 annotations.add(a);
                             } else {
-                                // other wise we skip it all together but make sure the popup is hidden.
+                                // otherwise we skip it all together but make sure the popup is hidden.
                                 if (markupAnnotation.getPopupAnnotation() != null) {
                                     markupAnnotation.getPopupAnnotation().setOpen(false);
                                 }
@@ -350,7 +350,7 @@ public class Page extends Dictionary {
                     logger.log(Level.WARNING, e, () -> " " + finalA.getPObjectReference() + finalA.getEntries());
                 }
             }
-            //The popup annotations may not be referenced in the page annotations entry, we have to add them manually.
+            // The popup annotations may not be referenced in the page annotations entry, we have to add them manually.
             final Set<Annotation> annotSet = new HashSet<>(annotations);
             for (final Annotation annot : annotSet) {
                 if (annot instanceof MarkupAnnotation) {
@@ -384,9 +384,9 @@ public class Page extends Dictionary {
     /**
      * Initialize the Page object.  This method triggers the parsing of a page's
      * child elements.  Once a page has been initialized, it can be painted.
-     * @param contentStreamWriter callback use to rewrite content stream
+     * @param contentStreamRedactorWriter callback use to rewrite content stream
      */
-    public synchronized void init(ContentStreamWriter contentStreamWriter) throws InterruptedException {
+    public synchronized void init(ContentStreamRedactorWriter contentStreamRedactorWriter) throws InterruptedException {
         try {
             // make sure we are not revisiting this method
             if (inited) {
@@ -421,27 +421,27 @@ public class Page extends Dictionary {
             notifyPageInitializationStarted();
             if (contents != null) {
                 try {
-                    ContentParser cp = new ContentParser(library, resources, contentStreamWriter);
-                    byte[][] streams = new byte[contents.size()][];
-                    byte[] stream;
+                    ContentParser cp = new ContentParser(library, resources, contentStreamRedactorWriter);
+                    // todo keep Stream object construct, so we can manipulate the object in the redactor
+                    byte[][] streamBytes = new byte[contents.size()][];
+                    byte[] streamByte;
                     Reference[] references = new Reference[contents.size()];
                     for (int i = 0, max = contents.size(); i < max; i++) {
-                        stream = contents.get(i).getDecodedStreamBytes();
-                        if (stream != null) {
-                            streams[i] = stream;
+                        streamByte = contents.get(i).getDecodedStreamBytes();
+                        if (streamByte != null) {
+                            streamBytes[i] = streamByte;
                             references[i] = contents.get(i).pObjectReference;
                         }
                     }
-                    // get any optional groups from the catalog, which control
-                    // visibility
+                    // get any optional groups from the catalog, which control visibility
                     OptionalContent optionalContent = library.getCatalog().getOptionalContent();
                     if (optionalContent != null) {
                         optionalContent.init();
                     }
 
                     // pass in option group references into parse.
-                    if (streams.length > 0) {
-                        shapes = cp.parse(streams, references, this).getShapes();
+                    if (streamBytes.length > 0) {
+                        shapes = cp.parse(streamBytes, references, this).getShapes();
                     }
                     // set the initiated flag, first as there are couple corner
                     // cases where the content parsing can call page.init() again
@@ -462,12 +462,16 @@ public class Page extends Dictionary {
                 logger.log(Level.WARNING, "Error initializing Page, no page content.");
             }
         } catch (InterruptedException e) {
-            // keeps shapes vector so we can paint what we have but make init state as false
-            // so we can try to re parse it later.
+            // keeps shapes vector so that we can paint what we have but make init state as false
+            // so that we can try to reparse it later.
             inited = false;
             throw new InterruptedException(e.getMessage());
         }
         notifyPageInitializationEnded(inited);
+    }
+
+    public List<Stream> getContentStreams() {
+        return contents;
     }
 
     /**

@@ -1,7 +1,9 @@
 package org.icepdf.core.util.redaction;
 
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
+import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorWriter;
 
 import java.util.List;
 import java.util.logging.Logger;
@@ -12,16 +14,16 @@ public class TextBurner {
             Logger.getLogger(TextBurner.class.toString());
 
     public static void burn(Page page,
-                            List<RedactionAnnotation> redactionAnnotations) {
+                            List<RedactionAnnotation> redactionAnnotations) throws InterruptedException {
+        List<Stream> contentStreams = page.getContentStreams();
+        if (contentStreams == null || contentStreams.size() == 0) {
+            logger.fine("Skipping burnText, no content on page: " + page.getPageIndex());
+            return;
+        }
 
-//        if (contentStreams == null || contentStreams.length == 0) {
-//            logger.fine("Skipping burnText, no content");
-//            return contentStreams;
-//        }
-//        ContentParser contentParser;
-//        for (String content: contentStreams) {
-//
-//        }
+        ContentStreamRedactorWriter contentStreamRedactorWriter = new ContentStreamRedactorWriter();
+        page.init(contentStreamRedactorWriter);
+
         // find intersection of text and redaction bounds (this will preserve text stream offsets in order)
 
         // apply char offset adjustment and remove glyphs and update x offset deltas

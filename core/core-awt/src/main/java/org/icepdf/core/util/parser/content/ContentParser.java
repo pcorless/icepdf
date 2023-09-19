@@ -12,7 +12,7 @@ import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReferenceFactory;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.updater.callbacks.ContentStreamWriter;
+import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorWriter;
 
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
@@ -37,8 +37,8 @@ public class ContentParser extends AbstractContentParser {
         super(l, r, null);
     }
 
-    public ContentParser(Library l, Resources r, ContentStreamWriter contentStreamWriter) {
-        super(l, r, contentStreamWriter);
+    public ContentParser(Library l, Resources r, ContentStreamRedactorWriter contentStreamRedactorWriter) {
+        super(l, r, contentStreamRedactorWriter);
     }
 
     public ContentParser parse(byte[][] streamBytes, Reference[] references, Page page)
@@ -85,8 +85,11 @@ public class ContentParser extends AbstractContentParser {
         }
         int count = 0;
         Lexer lexer;
+        // lexer needs to know about the contentStreamRedactorWriter so we can keep track of which stream is in play
         lexer = new Lexer();
         lexer.setContentStream(streamBytes);
+//        contentStreamRedactorWriter.startContentStream();
+//        contentStreamRedactorWriter.endContentStream();
 
         // text block y offset.
         float yBTstart = 0;

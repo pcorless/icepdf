@@ -57,24 +57,24 @@ public class FullUpdater {
             Document document, OutputStream outputStream)
             throws IOException, InterruptedException {
 
-        // creat tmp file and make a copy
+        // creat tmp file and make copy the original document
         Path tmpFile = Files.createTempFile(null, null);
         Path orgFile = Path.of(document.getDocumentLocation());
         Files.copy(orgFile, tmpFile, StandardCopyOption.REPLACE_EXISTING);
 
         // open the copy and burn the redactions to the specified outputStream
         Document tmpDocument = new Document();
+        long bytesWritten = 0;
         try {
             tmpDocument.setFile(tmpFile.toString());
+            bytesWritten = writeDocument(tmpDocument, outputStream, true);
         } catch (PDFSecurityException e) {
             throw new RuntimeException(e);
+        } finally {
+            // clean up
+            tmpDocument.dispose();
+            Files.delete(tmpFile);
         }
-        long bytesWritten = writeDocument(tmpDocument, outputStream, true);
-
-        // clean up
-        tmpDocument.dispose();
-        Files.delete(tmpFile);
-
         return bytesWritten;
     }
 

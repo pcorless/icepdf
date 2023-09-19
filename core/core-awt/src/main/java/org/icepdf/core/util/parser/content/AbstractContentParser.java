@@ -27,7 +27,7 @@ import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.updater.callbacks.ContentStreamWriter;
+import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorWriter;
 
 import java.awt.*;
 import java.awt.geom.*;
@@ -94,7 +94,7 @@ public abstract class AbstractContentParser {
     protected GraphicsState graphicState;
     protected Library library;
     protected Resources resources;
-    protected ContentStreamWriter contentStreamWriter;
+    protected ContentStreamRedactorWriter contentStreamRedactorWriter;
 
     protected Shapes shapes;
     // keep track of embedded marked content
@@ -126,10 +126,10 @@ public abstract class AbstractContentParser {
      * @param l PDF library master object.
      * @param r resources
      */
-    public AbstractContentParser(Library l, Resources r, ContentStreamWriter contentStreamWriter) {
+    public AbstractContentParser(Library l, Resources r, ContentStreamRedactorWriter contentStreamRedactorWriter) {
         library = l;
         resources = r;
-        this.contentStreamWriter = contentStreamWriter;
+        this.contentStreamRedactorWriter = contentStreamRedactorWriter;
     }
 
     /**
