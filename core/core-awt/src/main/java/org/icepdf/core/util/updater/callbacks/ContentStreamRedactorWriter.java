@@ -5,6 +5,7 @@ import org.icepdf.core.pobjects.Stream;
 public class ContentStreamRedactorWriter {
 
     private Stream currentStream;
+    private int lastTokenPosition;
 
     public void startContentStream(Stream stream) {
         currentStream = stream;
@@ -21,11 +22,13 @@ public class ContentStreamRedactorWriter {
         currentStream = null;
     }
 
-    public void setLastTokenPosition() {
-
+    public void setLastTokenPosition(int position) {
+        lastTokenPosition = position;
     }
 
     public void redact() {
+        //
 
+        System.out.println("got some text");
     }
 }

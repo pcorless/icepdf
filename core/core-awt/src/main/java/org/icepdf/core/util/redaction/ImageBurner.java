@@ -1,6 +1,5 @@
 package org.icepdf.core.util.redaction;
 
-import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
 import org.icepdf.core.pobjects.graphics.Shapes;
@@ -14,7 +13,7 @@ public class ImageBurner {
                                      List<RedactionAnnotation> redactionAnnotations) {
         Library library = page.getLibrary();
         Shapes shapes = page.getShapes();
-        DictionaryEntries xObjects = page.getResources().getXObjects();
+//        DictionaryEntries xObjects = page.getResources().getXObjects();
 
         // xobject images intersection
         // work through xobjects as defined in page references

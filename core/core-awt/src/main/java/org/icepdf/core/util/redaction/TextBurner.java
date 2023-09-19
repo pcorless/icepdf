@@ -1,7 +1,6 @@
 package org.icepdf.core.util.redaction;
 
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
 import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorWriter;
 
@@ -15,11 +14,6 @@ public class TextBurner {
 
     public static void burn(Page page,
                             List<RedactionAnnotation> redactionAnnotations) throws InterruptedException {
-        List<Stream> contentStreams = page.getContentStreams();
-        if (contentStreams == null || contentStreams.size() == 0) {
-            logger.fine("Skipping burnText, no content on page: " + page.getPageIndex());
-            return;
-        }
 
         ContentStreamRedactorWriter contentStreamRedactorWriter = new ContentStreamRedactorWriter();
         page.init(contentStreamRedactorWriter);

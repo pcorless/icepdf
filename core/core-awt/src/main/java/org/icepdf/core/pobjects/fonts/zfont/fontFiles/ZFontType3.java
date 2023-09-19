@@ -340,9 +340,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
                     gs.setFillColor(fillColor);
                     cp.setGraphicsState(gs);
                     cp.setGlyph2UserSpaceScale((float) glyph2user.getScaleX());
-                    Shapes charShapes = cp.parse(
-                            new byte[][]{stream.getDecodedStreamBytes()},
-                            new Reference[]{stream.getPObjectReference()},
+                    Shapes charShapes = cp.parse(new Stream[]{stream},
                             null).getShapes();
                     TextState textState = cp.getGraphicsState().getTextState();
                     setBBox(charName, textState.getType3BBox());

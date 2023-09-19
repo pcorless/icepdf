@@ -1,6 +1,7 @@
 package org.icepdf.core.util.parser.content;
 
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorWriter;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ public class Lexer {
             BOOLEAN = 10;
 
     private int streamCount;
-    private byte[][] streamsBytes;
+    private Stream[] streams;
 
     private byte[] streamBytes;
 
@@ -34,12 +35,18 @@ public class Lexer {
 
     private int tokenType = 0;
 
-    public void setContentStream(byte[][] in) {
-        streamsBytes = in;
+    private ContentStreamRedactorWriter contentStreamRedactorWriterCallback;
+
+    public void setContentStream(Stream[] in, ContentStreamRedactorWriter contentStreamRedactorWriter) {
+        streams = in;
         streamCount = 0;
-        streamBytes = streamsBytes[streamCount];
+        streamBytes = streams[streamCount].getDecodedStreamBytes();
         if (streamBytes != null) {
             numRead = streamBytes.length;
+        }
+        contentStreamRedactorWriterCallback = contentStreamRedactorWriter;
+        if (contentStreamRedactorWriterCallback != null) {
+            contentStreamRedactorWriterCallback.startContentStream(streams[streamCount]);
         }
     }
 
@@ -155,6 +162,10 @@ public class Lexer {
         byte[] imageBytes = new byte[length];
         System.arraycopy(streamBytes, startTokenPos, imageBytes, 0, length);
         return imageBytes;
+    }
+
+    public int getPos() {
+        return pos;
     }
 
     private StringObject startHexString() {
@@ -414,19 +425,37 @@ public class Lexer {
 
     private void checkLength() {
         if (pos == numRead) {
-            if (streamCount < streamsBytes.length - 1) {
-                streamCount++;
-                // assign next byte array, but skip over the corner
-                // case of an zero length content stream.
-                if (streamsBytes[streamCount].length == 0 &&
-                        streamCount + 1 < streamsBytes.length) {
-                    streamCount++;
-                }
-                streamBytes = streamsBytes[streamCount];
-                // reset the  pointers.
-                pos = 0;
-                numRead = streamBytes.length;
+            if (streamCount < streams.length - 1) {
+                nextContentStream();
             }
+        }
+    }
+
+    private void nextContentStream() {
+        markContentStreamEnd();
+        streamCount++;
+        // assign next byte array, but skip over the corner
+        // case of a zero length content stream.
+        if (streams[streamCount].getDecompressedBytes().length == 0 &&
+                streamCount + 1 < streams.length) {
+            streamCount++;
+        }
+        streamBytes = streams[streamCount].getDecompressedBytes();
+        markContentStreamStart();
+        // reset the  pointers.
+        pos = 0;
+        numRead = streamBytes.length;
+    }
+
+    private void markContentStreamStart() {
+        if (contentStreamRedactorWriterCallback != null) {
+            contentStreamRedactorWriterCallback.startContentStream(streams[streamCount]);
+        }
+    }
+
+    private void markContentStreamEnd() {
+        if (contentStreamRedactorWriterCallback != null) {
+            contentStreamRedactorWriterCallback.endContentStream();
         }
     }
 
@@ -516,18 +545,8 @@ public class Lexer {
         // skip the white space
         while (pos <= numRead) {
             if (pos == numRead) {
-                if (streamCount < streamsBytes.length - 1) {
-                    streamCount++;
-                    // skip zero length stream
-                    if (streamsBytes[streamCount].length == 0 &&
-                            streamCount + 1 < streamsBytes.length) {
-                        streamCount++;
-                    }
-                    // assign next byte array
-                    streamBytes = streamsBytes[streamCount];
-                    // reset the  pointers.
-                    pos = 0;
-                    numRead = streamBytes.length;
+                if (streamCount < streams.length - 1) {
+                    nextContentStream();
                     continue;
                 } else {
                     break;

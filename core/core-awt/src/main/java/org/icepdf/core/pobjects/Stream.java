@@ -42,8 +42,7 @@ import java.util.logging.Logger;
  */
 public class Stream extends Dictionary {
 
-    private static final Logger logger =
-            Logger.getLogger(Stream.class.toString());
+    private static final Logger logger = Logger.getLogger(Stream.class.toString());
 
     public static final Name FILTER_KEY = new Name("Filter");
     public static final Name DECODEPARAM_KEY = new Name("DecodeParms");
@@ -58,6 +57,7 @@ public class Stream extends Dictionary {
 
     // original byte stream that has not been decoded
     protected byte[] rawBytes;
+    protected byte[] decompressedBytes;
 
     protected DictionaryEntries decodeParams;
 
@@ -81,8 +81,12 @@ public class Stream extends Dictionary {
     }
 
     public void setRawBytes(byte[] rawBytes) {
-        this.rawBytes = rawBytes;
+        this.rawBytes = decompressedBytes = rawBytes;
         compressed = false;
+    }
+
+    public byte[] getDecompressedBytes() {
+        return decompressedBytes;
     }
 
     public boolean isRawBytesCompressed() {
@@ -116,6 +120,11 @@ public class Stream extends Dictionary {
      * @return Object[] { byte[] data, Integer sizeActualData }
      */
     public byte[] getDecodedStreamBytes(int presize) {
+        if (decompressedBytes != null) {
+            // cached decompressed stream and or we have an edited stream which isn't compressed yet, so just return
+            // the raw bytes.
+            return decompressedBytes;
+        }
         // decompress the stream
         if (compressed) {
             try {
@@ -129,28 +138,22 @@ public class Stream extends Dictionary {
                 } else {
                     outLength = Math.max(8192, (int) rawStreamLength);
                 }
-                ConservativeSizingByteArrayOutputStream out = new
-                        ConservativeSizingByteArrayOutputStream(outLength);
+                ConservativeSizingByteArrayOutputStream out = new ConservativeSizingByteArrayOutputStream(outLength);
                 byte[] buffer = new byte[Math.min(outLength, 8 * 1024)];
                 while (true) {
                     int read = input.read(buffer);
-                    if (read <= 0)
-                        break;
+                    if (read <= 0) break;
                     out.write(buffer, 0, read);
                 }
                 input.close();
                 out.flush();
                 out.close();
                 out.trim();
-                return out.relinquishByteArray();
+                decompressedBytes = out.relinquishByteArray();
+                return decompressedBytes;
             } catch (IOException e) {
                 logger.log(Level.FINE, "Problem decoding stream bytes: ", e);
             }
-        }
-        // we have an edited stream which isn't compressed yet, so just return
-        // the raw bytes.
-        else {
-            return rawBytes;
         }
         return null;
     }
@@ -184,7 +187,7 @@ public class Stream extends Dictionary {
 
         InputStream input = streamInput;
 
-        int bufferSize = Math.min((int)streamLength, 8 * 1024);
+        int bufferSize = Math.min((int) streamLength, 8 * 1024);
         input = new java.io.BufferedInputStream(input, bufferSize);
 
         // Search for crypt dictionary entry and decode params so that
@@ -193,16 +196,14 @@ public class Stream extends Dictionary {
 //        System.out.println("Thread " + Thread.currentThread() + " " + pObjectReference);
         if (securityManager != null) {
             // check see of there is a decodeParams for a crypt filter.
-            input = securityManager.decryptInputStream(
-                    pObjectReference, securityManager.getDecryptionKey(),
+            input = securityManager.decryptInputStream(pObjectReference, securityManager.getDecryptionKey(),
                     decodeParams, input, true);
         }
 
         // Get the filter name for the encoding type, which can be either
         // a Name or Vector.
         List<String> filterNames = getFilterNames();
-        if (filterNames == null)
-            return input;
+        if (filterNames == null) return input;
 
         // Decode the stream data based on the filter names.
         // Loop through the filterNames and apply the filters in the order
@@ -286,8 +287,7 @@ public class Stream extends Dictionary {
 
     protected List<String> getNormalisedFilterNames() {
         List<String> filterNames = getFilterNames();
-        if (filterNames == null)
-            return null;
+        if (filterNames == null) return null;
 
         String filterName;
         for (int i = 0; i < filterNames.size(); i++) {
@@ -334,6 +334,21 @@ public class Stream extends Dictionary {
             filterNames.set(i, filterName);
         }
         return filterNames;
+    }
+
+    /**
+     * Creates a stream object composed of the given bytes.  Utility use to feed bytes to the content parse
+     * that aren't specifically stream, but we want to parse some kind of state from the given bytes.
+     *
+     * @param contentBytes decompressed bytes to be treated as a stream
+     * @param reference    parent objects reference, can be null
+     * @return mock stream object
+     */
+    public static Stream[] fromByteArray(byte[] contentBytes, Reference reference) {
+        Stream stream = new Stream(new DictionaryEntries(), null);
+        stream.setRawBytes(contentBytes);
+        stream.setPObjectReference(reference);
+        return new Stream[]{stream};
     }
 
     /**

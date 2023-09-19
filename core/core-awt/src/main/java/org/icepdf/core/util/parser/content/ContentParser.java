@@ -41,14 +41,14 @@ public class ContentParser extends AbstractContentParser {
         super(l, r, contentStreamRedactorWriter);
     }
 
-    public ContentParser parse(byte[][] streamBytes, Reference[] references, Page page)
+    public ContentParser parse(Stream[] streams, Page page)
             throws InterruptedException {
         if (shapes == null) {
             shapes = new Shapes();
             if (graphicState == null) {
                 graphicState = new GraphicsState(shapes);
             }
-            // If not null we have an Form XObject that contains a content stream
+            // If not null we have a Form XObject that contains a content stream,
             // and we must copy the previous graphics states draw settings in order
             // preserve colour and fill data for the XObjects content stream.
             else {
@@ -69,27 +69,19 @@ public class ContentParser extends AbstractContentParser {
         }
 
         if (logger.isLoggable(Level.FINER)) {
-            logger.finer("Page content streams: " + streamBytes.length);
-            int i = 0;
-            for (byte[] streamByte : streamBytes) {
-                if (streamByte != null) {
+            logger.finer("Page content streams: " + streams.length);
+            for (Stream stream : streams) {
+                if (stream != null) {
+                    byte[] streamByte = stream.getDecodedStreamBytes();
                     String tmp = new String(streamByte, StandardCharsets.ISO_8859_1);
-                    if (references[i] != null) {
-                        logger.finer("Content " + references[i].toString() + " = " + tmp);
-                    } else {
-                        logger.finer("Content = " + tmp);
-                    }
+                    logger.finer("Content " + stream.getPObjectReference() + " = " + tmp);
                 }
-                i++;
             }
         }
         int count = 0;
         Lexer lexer;
-        // lexer needs to know about the contentStreamRedactorWriter so we can keep track of which stream is in play
         lexer = new Lexer();
-        lexer.setContentStream(streamBytes);
-//        contentStreamRedactorWriter.startContentStream();
-//        contentStreamRedactorWriter.endContentStream();
+        lexer.setContentStream(streams, contentStreamRedactorWriter);
 
         // text block y offset.
         float yBTstart = 0;
@@ -112,6 +104,7 @@ public class ContentParser extends AbstractContentParser {
                     }
 
                     int operand = (Integer) tok;
+                    markTokenPosition(lexer.getPos());
                     // Append a straight line segment from the current point to the
                     // point (x, y). The new current point is (x, y).
                     switch (operand) {
@@ -593,11 +586,11 @@ public class ContentParser extends AbstractContentParser {
      * @param source content stream source.
      * @return vector where each entry is the text extracted from a text block.
      */
-    public Shapes parseTextBlocks(byte[][] source) throws InterruptedException {
+    public Shapes parseTextBlocks(Stream[] source) throws InterruptedException {
 
         // great a parser to get tokens for stream
         Lexer parser = new Lexer();
-        parser.setContentStream(source);
+        parser.setContentStream(source, contentStreamRedactorWriter);
         Shapes shapes = new Shapes();
 
         if (graphicState == null) {
@@ -708,11 +701,12 @@ public class ContentParser extends AbstractContentParser {
 
             if (nextToken instanceof Integer) {
                 operand = (Integer) nextToken;
+                markTokenPosition(lexer.getPos());
                 switch (operand) {
                     // Normal text token, string, hex
                     case Operands.Tj:
                         consume_Tj(graphicState, stack, shapes,
-                                textMetrics, glyphOutlineClip, oCGs);
+                                textMetrics, glyphOutlineClip, oCGs, contentStreamRedactorWriter);
                         break;
 
                     // Character Spacing
@@ -751,7 +745,7 @@ public class ContentParser extends AbstractContentParser {
                     // TJ marks a vector, where.......
                     case Operands.TJ:
                         consume_TJ(graphicState, stack, shapes,
-                                textMetrics, glyphOutlineClip, oCGs);
+                                textMetrics, glyphOutlineClip, oCGs, contentStreamRedactorWriter);
                         break;
 
                     // Move to the start of the next line, offset from the start of the
@@ -943,7 +937,7 @@ public class ContentParser extends AbstractContentParser {
                     // Move to the next line and show a text string.
                     case Operands.SINGLE_QUOTE:
                         consume_single_quote(graphicState, stack, shapes, textMetrics,
-                                glyphOutlineClip, oCGs);
+                                glyphOutlineClip, oCGs, contentStreamRedactorWriter);
                         break;
                     /*
                      * Move to the next line and show a text string, using aw as the
@@ -953,7 +947,7 @@ public class ContentParser extends AbstractContentParser {
                      */
                     case Operands.DOUBLE_QUOTE:
                         consume_double_quote(graphicState, stack, shapes, textMetrics,
-                                glyphOutlineClip, oCGs);
+                                glyphOutlineClip, oCGs, contentStreamRedactorWriter);
                         break;
                     // not supposed to have a Do in text block but hey so be it. .
                     case Operands.Do:
@@ -972,7 +966,7 @@ public class ContentParser extends AbstractContentParser {
             }
         }
         // during a BT -> ET text parse there is a change that we might be
-        // in MODE_ADD or MODE_Fill_Add which require that the we push the
+        // in MODE_ADD or MODE_Fill_Add which require that we push the
         // shapes that make up the clipping path to the shapes stack.  When
         // encountered the path will be used as the current clip.
         if (!glyphOutlineClip.isEmpty()) {
@@ -987,6 +981,12 @@ public class ContentParser extends AbstractContentParser {
         }
 
         return textMetrics.getyBTStart();
+    }
+
+    private void markTokenPosition(int position) {
+        if (contentStreamRedactorWriter != null) {
+            contentStreamRedactorWriter.setLastTokenPosition(position);
+        }
     }
 
     private void parseInlineImage(Lexer p, Shapes shapes, Page page) throws IOException {

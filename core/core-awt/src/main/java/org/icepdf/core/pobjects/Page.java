@@ -423,14 +423,12 @@ public class Page extends Dictionary {
                 try {
                     ContentParser cp = new ContentParser(library, resources, contentStreamRedactorWriter);
                     // todo keep Stream object construct, so we can manipulate the object in the redactor
-                    byte[][] streamBytes = new byte[contents.size()][];
+                    Stream[] streams = new Stream[contents.size()];
                     byte[] streamByte;
-                    Reference[] references = new Reference[contents.size()];
                     for (int i = 0, max = contents.size(); i < max; i++) {
                         streamByte = contents.get(i).getDecodedStreamBytes();
                         if (streamByte != null) {
-                            streamBytes[i] = streamByte;
-                            references[i] = contents.get(i).pObjectReference;
+                            streams[i] = contents.get(i);
                         }
                     }
                     // get any optional groups from the catalog, which control visibility
@@ -440,8 +438,8 @@ public class Page extends Dictionary {
                     }
 
                     // pass in option group references into parse.
-                    if (streamBytes.length > 0) {
-                        shapes = cp.parse(streamBytes, references, this).getShapes();
+                    if (streams.length > 0) {
+                        shapes = cp.parse(streams, this).getShapes();
                     }
                     // set the initiated flag, first as there are couple corner
                     // cases where the content parsing can call page.init() again
@@ -1316,10 +1314,13 @@ public class Page extends Dictionary {
             }
         }
         // todo make this method more generic to any Annotation subtype
-        return annotations.stream()
-                .filter(RedactionAnnotation.class::isInstance)
-                .map(RedactionAnnotation.class::cast)
-                .collect(Collectors.toList());
+        if (annotations != null) {
+            return annotations.stream()
+                    .filter(RedactionAnnotation.class::isInstance)
+                    .map(RedactionAnnotation.class::cast)
+                    .collect(Collectors.toList());
+        }
+        return null;
     }
 
     /**
@@ -1575,10 +1576,8 @@ public class Page extends Dictionary {
             try {
 
                 ContentParser cp = new ContentParser(library, resources);
-                byte[][] streams = new byte[contents.size()][];
-                for (int i = 0, max = contents.size(); i < max; i++) {
-                    streams[i] = contents.get(i).getDecodedStreamBytes();
-                }
+                Stream[] streams = new Stream[contents.size()];
+                contents.toArray(streams);
                 textBlockShapes = cp.parseTextBlocks(streams);
                 // print off any fuzz left on the stack
                 if (logger.isLoggable(Level.FINER)) {

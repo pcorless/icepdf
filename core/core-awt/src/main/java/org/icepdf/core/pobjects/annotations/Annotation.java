@@ -596,6 +596,8 @@ public abstract class Annotation extends Dictionary {
                 annot = new TextAnnotation(library, entries);
             } else if (subType.equals(Annotation.SUBTYPE_POPUP)) {
                 annot = new PopupAnnotation(library, entries);
+            } else if (subType.equals(Annotation.SUBTYPE_REDACT)) {
+                annot = new RedactionAnnotation(library, entries);
             } else if (PolyAnnotation.isPolyAnnotation(subType)) {
                 annot = new PolyAnnotation(library, entries);
             } else if (subType.equals(Annotation.SUBTYPE_WIDGET)) {
