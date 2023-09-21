@@ -1,7 +1,7 @@
 package org.icepdf.core.util.parser.content;
 
 import org.icepdf.core.pobjects.*;
-import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorWriter;
+import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorCallback;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,18 +35,18 @@ public class Lexer {
 
     private int tokenType = 0;
 
-    private ContentStreamRedactorWriter contentStreamRedactorWriterCallback;
+    private ContentStreamRedactorCallback contentStreamRedactorCallbackCallback;
 
-    public void setContentStream(Stream[] in, ContentStreamRedactorWriter contentStreamRedactorWriter) {
+    public void setContentStream(Stream[] in, ContentStreamRedactorCallback contentStreamRedactorCallback) {
         streams = in;
         streamCount = 0;
         streamBytes = streams[streamCount].getDecodedStreamBytes();
         if (streamBytes != null) {
             numRead = streamBytes.length;
         }
-        contentStreamRedactorWriterCallback = contentStreamRedactorWriter;
-        if (contentStreamRedactorWriterCallback != null) {
-            contentStreamRedactorWriterCallback.startContentStream(streams[streamCount]);
+        contentStreamRedactorCallbackCallback = contentStreamRedactorCallback;
+        if (contentStreamRedactorCallbackCallback != null) {
+            contentStreamRedactorCallbackCallback.startContentStream(streams[streamCount]);
         }
     }
 
@@ -448,14 +448,14 @@ public class Lexer {
     }
 
     private void markContentStreamStart() {
-        if (contentStreamRedactorWriterCallback != null) {
-            contentStreamRedactorWriterCallback.startContentStream(streams[streamCount]);
+        if (contentStreamRedactorCallbackCallback != null) {
+            contentStreamRedactorCallbackCallback.startContentStream(streams[streamCount]);
         }
     }
 
     private void markContentStreamEnd() {
-        if (contentStreamRedactorWriterCallback != null) {
-            contentStreamRedactorWriterCallback.endContentStream();
+        if (contentStreamRedactorCallbackCallback != null) {
+            contentStreamRedactorCallbackCallback.endContentStream();
         }
     }
 

@@ -27,7 +27,7 @@ import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorWriter;
+import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorCallback;
 
 import java.awt.*;
 import java.awt.geom.*;
@@ -94,7 +94,7 @@ public abstract class AbstractContentParser {
     protected GraphicsState graphicState;
     protected Library library;
     protected Resources resources;
-    protected ContentStreamRedactorWriter contentStreamRedactorWriter;
+    protected ContentStreamRedactorCallback contentStreamRedactorCallback;
 
     protected Shapes shapes;
     // keep track of embedded marked content
@@ -126,10 +126,10 @@ public abstract class AbstractContentParser {
      * @param l PDF library master object.
      * @param r resources
      */
-    public AbstractContentParser(Library l, Resources r, ContentStreamRedactorWriter contentStreamRedactorWriter) {
+    public AbstractContentParser(Library l, Resources r, ContentStreamRedactorCallback contentStreamRedactorCallback) {
         library = l;
         resources = r;
-        this.contentStreamRedactorWriter = contentStreamRedactorWriter;
+        this.contentStreamRedactorCallback = contentStreamRedactorCallback;
     }
 
     /**
@@ -917,14 +917,14 @@ public abstract class AbstractContentParser {
                                                TextMetrics textMetrics,
                                                GlyphOutlineClip glyphOutlineClip,
                                                LinkedList<OptionalContents> oCGs,
-                                               ContentStreamRedactorWriter contentStreamRedactorWriter) {
+                                               ContentStreamRedactorCallback contentStreamRedactorCallback) {
         StringObject stringObject = (StringObject) stack.pop();
         graphicState.getTextState().cspace = ((Number) stack.pop()).floatValue();
         graphicState.getTextState().wspace = ((Number) stack.pop()).floatValue();
         // push the string back on, so we can reuse the single quote layout code
         stack.push(stringObject);
         consume_T_star(graphicState, textMetrics, shapes.getPageText(), oCGs);
-        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs, contentStreamRedactorWriter);
+        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs, contentStreamRedactorCallback);
     }
 
     protected static void consume_single_quote(GraphicsState graphicState, Stack<Object> stack,
@@ -932,10 +932,10 @@ public abstract class AbstractContentParser {
                                                TextMetrics textMetrics,
                                                GlyphOutlineClip glyphOutlineClip,
                                                LinkedList<OptionalContents> oCGs,
-                                               ContentStreamRedactorWriter contentStreamRedactorWriter) {
+                                               ContentStreamRedactorCallback contentStreamRedactorCallback) {
         // ' = T* + Tj,  who knew?
         consume_T_star(graphicState, textMetrics, shapes.getPageText(), oCGs);
-        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs, contentStreamRedactorWriter);
+        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs, contentStreamRedactorCallback);
     }
 
     protected static void consume_Td(GraphicsState graphicState, Stack<Object> stack,
@@ -1343,7 +1343,7 @@ public abstract class AbstractContentParser {
                                      TextMetrics textMetrics,
                                      GlyphOutlineClip glyphOutlineClip,
                                      LinkedList<OptionalContents> oCGs,
-                                     ContentStreamRedactorWriter contentStreamRedactorWriter) {
+                                     ContentStreamRedactorCallback contentStreamRedactorCallback) {
         // apply scaling
         AffineTransform tmp = applyTextScaling(graphicState);
         // apply transparency
@@ -1359,7 +1359,7 @@ public abstract class AbstractContentParser {
                 // draw string takes care of PageText extraction
                 if (stringObject.getLength() > 0) {
                     // todo can we do all the lifting in drawString()?
-                    contentStreamRedactorCallback(contentStreamRedactorWriter);
+                    contentStreamRedactorCallback(contentStreamRedactorCallback);
                     drawString(stringObject.getLiteralStringBuffer(
                                     textState.font.getSubTypeFormat(),
                                     textState.font.getFont()),
@@ -1385,7 +1385,7 @@ public abstract class AbstractContentParser {
                                      TextMetrics textMetrics,
                                      GlyphOutlineClip glyphOutlineClip,
                                      LinkedList<OptionalContents> oCGs,
-                                     ContentStreamRedactorWriter contentStreamRedactorWriter) {
+                                     ContentStreamRedactorCallback contentStreamRedactorCallback) {
         if (stack.size() != 0) {
             Object tjValue = stack.pop();
             StringObject stringObject;
@@ -1400,7 +1400,7 @@ public abstract class AbstractContentParser {
                 // draw string will take care of text pageText construction
                 if (stringObject.getLength() > 0) {
                     // todo can we do all the lifting in drawString()?
-                    contentStreamRedactorCallback(contentStreamRedactorWriter);
+                    contentStreamRedactorCallback(contentStreamRedactorCallback);
                     drawString(stringObject.getLiteralStringBuffer(
                                     textState.font.getSubTypeFormat(),
                                     textState.font.getFont()),
@@ -1988,7 +1988,7 @@ public abstract class AbstractContentParser {
         }
     }
 
-    protected static void contentStreamRedactorCallback(ContentStreamRedactorWriter contentStreamRedactorCallback) {
+    protected static void contentStreamRedactorCallback(ContentStreamRedactorCallback contentStreamRedactorCallback) {
         if (contentStreamRedactorCallback != null) {
             contentStreamRedactorCallback.redact();
         }

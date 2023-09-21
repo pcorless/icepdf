@@ -87,17 +87,12 @@ public class TextRedactionAnnotationHandler extends HighLightAnnotationHandler {
             annotation.setMarkupBounds(redactionBounds);
             annotation.setMarkupPath(highlightPath);
             annotation.setBBox(tBbox);
-            // finalized the appearance properties.
             annotation.resetAppearanceStream(pageTransform);
-            // pass outline shapes and bounds to create the highlight shapes
             annotation.setContents(contents != null && enableHighlightContents ? contents : markupSubType.toString());
 
-            // create new annotation given the general path
             RedactionAnnotationComponent comp = (RedactionAnnotationComponent)
                     AnnotationComponentFactory.buildAnnotationComponent(
                             annotation, documentViewController, pageViewComponent);
-
-            // add the main highlight annotation
             documentViewController.addNewAnnotation(comp);
 
             // convert to user rect to page space along with the bounds.

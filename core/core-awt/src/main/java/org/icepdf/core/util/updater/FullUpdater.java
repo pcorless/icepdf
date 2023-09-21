@@ -10,11 +10,11 @@ import org.icepdf.core.util.Library;
 import org.icepdf.core.util.redaction.Redactor;
 import org.icepdf.core.util.updater.writeables.BaseWriter;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 /**
@@ -57,14 +57,15 @@ public class FullUpdater {
             Document document, OutputStream outputStream)
             throws IOException, InterruptedException {
 
-        // creat tmp file and make copy the original document
+        // create a tmp file and write the changed document
         Path tmpFile = Files.createTempFile(null, null);
-        Path orgFile = Path.of(document.getDocumentLocation());
-        Files.copy(orgFile, tmpFile, StandardCopyOption.REPLACE_EXISTING);
+        OutputStream tmpOutputStream = new FileOutputStream(tmpFile.toFile());
+        writeDocument(document, tmpOutputStream, false);
+        tmpOutputStream.close();
 
         // open the copy and burn the redactions to the specified outputStream
         Document tmpDocument = new Document();
-        long bytesWritten = 0;
+        long bytesWritten;
         try {
             tmpDocument.setFile(tmpFile.toString());
             bytesWritten = writeDocument(tmpDocument, outputStream, true);
@@ -177,10 +178,12 @@ public class FullUpdater {
             Object value = entries.get(name);
             if (value instanceof Reference && writer.hasNotWrittenReference((Reference) value)) {
                 writePObject(writer, name, value);
-            } else if (value instanceof List) {
-                writeList(writer, name, (List) value);
+            } else if (value instanceof Dictionary) {
+                writeDictionary(writer, (Dictionary) value);
             } else if (value instanceof DictionaryEntries) {
                 writeDictionaryEntries(writer, (DictionaryEntries) value);
+            } else if (value instanceof List) {
+                writeList(writer, name, (List) value);
             }
         }
     }

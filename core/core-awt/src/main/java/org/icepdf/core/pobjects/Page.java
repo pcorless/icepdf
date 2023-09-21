@@ -26,7 +26,7 @@ import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.*;
 import org.icepdf.core.util.parser.content.ContentParser;
-import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorWriter;
+import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorCallback;
 import org.icepdf.core.util.updater.modifiers.AnnotationRemovalModifier;
 import org.icepdf.core.util.updater.modifiers.ModifierFactory;
 
@@ -384,9 +384,9 @@ public class Page extends Dictionary {
     /**
      * Initialize the Page object.  This method triggers the parsing of a page's
      * child elements.  Once a page has been initialized, it can be painted.
-     * @param contentStreamRedactorWriter callback use to rewrite content stream
+     * @param contentStreamRedactorCallback callback use to rewrite content stream
      */
-    public synchronized void init(ContentStreamRedactorWriter contentStreamRedactorWriter) throws InterruptedException {
+    public synchronized void init(ContentStreamRedactorCallback contentStreamRedactorCallback) throws InterruptedException {
         try {
             // make sure we are not revisiting this method
             if (inited) {
@@ -421,7 +421,7 @@ public class Page extends Dictionary {
             notifyPageInitializationStarted();
             if (contents != null) {
                 try {
-                    ContentParser cp = new ContentParser(library, resources, contentStreamRedactorWriter);
+                    ContentParser cp = new ContentParser(library, resources, contentStreamRedactorCallback);
                     // todo keep Stream object construct, so we can manipulate the object in the redactor
                     Stream[] streams = new Stream[contents.size()];
                     byte[] streamByte;

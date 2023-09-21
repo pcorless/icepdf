@@ -2,7 +2,7 @@ package org.icepdf.core.util.redaction;
 
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
-import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorWriter;
+import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorCallback;
 
 import java.util.List;
 import java.util.logging.Logger;
@@ -15,8 +15,8 @@ public class TextBurner {
     public static void burn(Page page,
                             List<RedactionAnnotation> redactionAnnotations) throws InterruptedException {
 
-        ContentStreamRedactorWriter contentStreamRedactorWriter = new ContentStreamRedactorWriter();
-        page.init(contentStreamRedactorWriter);
+        ContentStreamRedactorCallback contentStreamRedactorCallback = new ContentStreamRedactorCallback();
+        page.init(contentStreamRedactorCallback);
 
         // find intersection of text and redaction bounds (this will preserve text stream offsets in order)
 

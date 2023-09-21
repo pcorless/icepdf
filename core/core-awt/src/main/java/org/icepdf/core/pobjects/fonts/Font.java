@@ -268,7 +268,7 @@ public abstract class Font extends Dictionary {
             lastchar = ((Number) o).intValue();
         }
 
-        // font name, SanSerif is used as it has a a robust CID, and it
+        // font name, SanSerif is used as it has a robust CID, and it
         // is the most commonly used font family for pdfs
         basefont = "Serif";
         Object tmp = entries.get(BASEFONT_KEY);

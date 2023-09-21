@@ -12,7 +12,7 @@ import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReferenceFactory;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorWriter;
+import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorCallback;
 
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
@@ -37,8 +37,8 @@ public class ContentParser extends AbstractContentParser {
         super(l, r, null);
     }
 
-    public ContentParser(Library l, Resources r, ContentStreamRedactorWriter contentStreamRedactorWriter) {
-        super(l, r, contentStreamRedactorWriter);
+    public ContentParser(Library l, Resources r, ContentStreamRedactorCallback contentStreamRedactorCallback) {
+        super(l, r, contentStreamRedactorCallback);
     }
 
     public ContentParser parse(Stream[] streams, Page page)
@@ -81,7 +81,7 @@ public class ContentParser extends AbstractContentParser {
         int count = 0;
         Lexer lexer;
         lexer = new Lexer();
-        lexer.setContentStream(streams, contentStreamRedactorWriter);
+        lexer.setContentStream(streams, contentStreamRedactorCallback);
 
         // text block y offset.
         float yBTstart = 0;
@@ -590,7 +590,7 @@ public class ContentParser extends AbstractContentParser {
 
         // great a parser to get tokens for stream
         Lexer parser = new Lexer();
-        parser.setContentStream(source, contentStreamRedactorWriter);
+        parser.setContentStream(source, contentStreamRedactorCallback);
         Shapes shapes = new Shapes();
 
         if (graphicState == null) {
@@ -706,7 +706,7 @@ public class ContentParser extends AbstractContentParser {
                     // Normal text token, string, hex
                     case Operands.Tj:
                         consume_Tj(graphicState, stack, shapes,
-                                textMetrics, glyphOutlineClip, oCGs, contentStreamRedactorWriter);
+                                textMetrics, glyphOutlineClip, oCGs, contentStreamRedactorCallback);
                         break;
 
                     // Character Spacing
@@ -745,7 +745,7 @@ public class ContentParser extends AbstractContentParser {
                     // TJ marks a vector, where.......
                     case Operands.TJ:
                         consume_TJ(graphicState, stack, shapes,
-                                textMetrics, glyphOutlineClip, oCGs, contentStreamRedactorWriter);
+                                textMetrics, glyphOutlineClip, oCGs, contentStreamRedactorCallback);
                         break;
 
                     // Move to the start of the next line, offset from the start of the
@@ -937,7 +937,7 @@ public class ContentParser extends AbstractContentParser {
                     // Move to the next line and show a text string.
                     case Operands.SINGLE_QUOTE:
                         consume_single_quote(graphicState, stack, shapes, textMetrics,
-                                glyphOutlineClip, oCGs, contentStreamRedactorWriter);
+                                glyphOutlineClip, oCGs, contentStreamRedactorCallback);
                         break;
                     /*
                      * Move to the next line and show a text string, using aw as the
@@ -947,7 +947,7 @@ public class ContentParser extends AbstractContentParser {
                      */
                     case Operands.DOUBLE_QUOTE:
                         consume_double_quote(graphicState, stack, shapes, textMetrics,
-                                glyphOutlineClip, oCGs, contentStreamRedactorWriter);
+                                glyphOutlineClip, oCGs, contentStreamRedactorCallback);
                         break;
                     // not supposed to have a Do in text block but hey so be it. .
                     case Operands.Do:
@@ -984,8 +984,8 @@ public class ContentParser extends AbstractContentParser {
     }
 
     private void markTokenPosition(int position) {
-        if (contentStreamRedactorWriter != null) {
-            contentStreamRedactorWriter.setLastTokenPosition(position);
+        if (contentStreamRedactorCallback != null) {
+            contentStreamRedactorCallback.setLastTokenPosition(position);
         }
     }
 
