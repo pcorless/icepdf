@@ -140,10 +140,12 @@ public class FullUpdater {
             Object value = entries.get(name);
             if (value instanceof Reference && writer.hasNotWrittenReference((Reference) value)) {
                 writePObject(writer, name, value);
-            } else if (value instanceof List) {
-                writeList(writer, name, (List) value);
+            } else if (value instanceof Dictionary) {
+                writeDictionary(writer, (Dictionary) value);
             } else if (value instanceof DictionaryEntries) {
                 writeDictionaryEntries(writer, (DictionaryEntries) value);
+            } else if (value instanceof List) {
+                writeList(writer, name, (List) value);
             }
         }
     }
