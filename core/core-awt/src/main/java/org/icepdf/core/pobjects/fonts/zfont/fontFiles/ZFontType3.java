@@ -15,6 +15,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.List;
@@ -351,6 +352,8 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
                     return charShapes;
                 } catch (InterruptedException e) {
                     logger.log(Level.FINE, "Thread Interrupted while parsing Type3 stream data.", e);
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "IOException while parsing Type3 stream data.", e);
                 }
             }
         } else {

@@ -37,7 +37,7 @@ public class Lexer {
 
     private ContentStreamRedactorCallback contentStreamRedactorCallbackCallback;
 
-    public void setContentStream(Stream[] in, ContentStreamRedactorCallback contentStreamRedactorCallback) {
+    public void setContentStream(Stream[] in, ContentStreamRedactorCallback contentStreamRedactorCallback) throws IOException {
         streams = in;
         streamCount = 0;
         streamBytes = streams[streamCount].getDecodedStreamBytes();
@@ -423,7 +423,7 @@ public class Lexer {
         return dictionaryEntries;
     }
 
-    private void checkLength() {
+    private void checkLength() throws IOException {
         if (pos == numRead) {
             if (streamCount < streams.length - 1) {
                 nextContentStream();
@@ -431,7 +431,7 @@ public class Lexer {
         }
     }
 
-    private void nextContentStream() {
+    private void nextContentStream() throws IOException {
         markContentStreamEnd();
         streamCount++;
         // assign next byte array, but skip over the corner
@@ -447,13 +447,13 @@ public class Lexer {
         numRead = streamBytes.length;
     }
 
-    private void markContentStreamStart() {
+    private void markContentStreamStart() throws IOException {
         if (contentStreamRedactorCallbackCallback != null) {
             contentStreamRedactorCallbackCallback.startContentStream(streams[streamCount]);
         }
     }
 
-    private void markContentStreamEnd() {
+    private void markContentStreamEnd() throws IOException {
         if (contentStreamRedactorCallbackCallback != null) {
             contentStreamRedactorCallbackCallback.endContentStream();
         }
@@ -541,7 +541,7 @@ public class Lexer {
         }
     }
 
-    private void parseNextState() {
+    private void parseNextState() throws IOException {
         // skip the white space
         while (pos <= numRead) {
             if (pos == numRead) {

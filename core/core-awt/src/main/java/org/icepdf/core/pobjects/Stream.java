@@ -139,7 +139,7 @@ public class Stream extends Dictionary {
                     outLength = Math.max(8192, (int) rawStreamLength);
                 }
                 ConservativeSizingByteArrayOutputStream out = new ConservativeSizingByteArrayOutputStream(outLength);
-                byte[] buffer = new byte[Math.min(outLength, 8 * 1024)];
+                byte[] buffer = new byte[Math.min(outLength, 32 * 1024)];
                 while (true) {
                     int read = input.read(buffer);
                     if (read <= 0) break;

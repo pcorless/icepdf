@@ -5,11 +5,12 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 
+import java.io.IOException;
 import java.util.List;
 
 public class Redactor {
 
-    public static void burnRedactions(Document document) throws InterruptedException {
+    public static void burnRedactions(Document document) throws InterruptedException, IOException {
         int pageCount = document.getNumberOfPages();
 
         // work though each page

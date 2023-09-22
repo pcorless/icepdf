@@ -31,6 +31,7 @@ import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorCallback;
 
 import java.awt.*;
 import java.awt.geom.*;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Stack;
@@ -183,7 +184,7 @@ public abstract class AbstractContentParser {
      * @throws InterruptedException if current parse thread is interrupted.
      */
     public abstract ContentParser parse(Stream[] streams, Page page)
-            throws InterruptedException;
+            throws InterruptedException, IOException;
 
     /**
      * Specialized method for extracting text from documents.
@@ -191,7 +192,7 @@ public abstract class AbstractContentParser {
      * @param streams stream page content pObject
      * @return vector where each entry is the text extracted from a text block.
      */
-    public abstract Shapes parseTextBlocks(Stream[] streams) throws InterruptedException;
+    public abstract Shapes parseTextBlocks(Stream[] streams) throws InterruptedException, IOException;
 
     protected static void consume_G(GraphicsState graphicState, Stack<Object> stack,
                                     Library library) {
@@ -1358,14 +1359,12 @@ public abstract class AbstractContentParser {
                 textState = graphicState.getTextState();
                 // draw string takes care of PageText extraction
                 if (stringObject.getLength() > 0) {
-                    // todo can we do all the lifting in drawString()?
-                    contentStreamRedactorCallback(contentStreamRedactorCallback);
                     drawString(stringObject.getLiteralStringBuffer(
                                     textState.font.getSubTypeFormat(),
                                     textState.font.getFont()),
                             textMetrics,
                             graphicState.getTextState(), shapes, glyphOutlineClip,
-                            graphicState, oCGs);
+                            graphicState, oCGs, contentStreamRedactorCallback);
                     // todo pass in ContentStreamWriter
                     // call redaction TJ specific logic,  intersect, remove,  change offset,
                     // callbackWriter.redact(glphText, textMetrics... , hint)
@@ -1399,8 +1398,10 @@ public abstract class AbstractContentParser {
                 setAlpha(shapes, graphicState, AlphaPaintType.ALPHA_FILL);
                 // draw string will take care of text pageText construction
                 if (stringObject.getLength() > 0) {
-                    // todo can we do all the lifting in drawString()?
-                    contentStreamRedactorCallback(contentStreamRedactorCallback);
+                    // todo, pass stringObject and textState
+                    //  we need to capture how many bytes represented a cid to calculate offset
+                    //  font.getSubTypeFormat,  ultimately we need a new data structure to capture
+                    //  what was mapped during the getLiteralStringBuffer() process  char and offsets
                     drawString(stringObject.getLiteralStringBuffer(
                                     textState.font.getSubTypeFormat(),
                                     textState.font.getFont()),
@@ -1408,7 +1409,7 @@ public abstract class AbstractContentParser {
                             graphicState.getTextState(),
                             shapes,
                             glyphOutlineClip,
-                            graphicState, oCGs);
+                            graphicState, oCGs, contentStreamRedactorCallback);
                 }
                 graphicState.set(tmp);
             }
@@ -1437,7 +1438,8 @@ public abstract class AbstractContentParser {
             Shapes shapes,
             GlyphOutlineClip glyphOutlineClip,
             GraphicsState graphicState,
-            LinkedList<OptionalContents> oCGs) {
+            LinkedList<OptionalContents> oCGs,
+            ContentStreamRedactorCallback contentStreamRedactorCallback) {
 
         float advanceX = textMetrics.getAdvance().x;
         float advanceY = textMetrics.getAdvance().y;
@@ -1522,6 +1524,12 @@ public abstract class AbstractContentParser {
                     textState.currentfont.toUnicode(currentChar), // unicode value
                     currentX, currentY, newAdvanceX);
             shapes.getPageText().addGlyph(glyphText, oCGs);
+
+            if (contentStreamRedactorCallback != null) {
+                // todo currentChar = displayText.charAt(i);
+                //  new object that can do .charAt() and offsetAt(), this would be returned by getLiteralStringBuffer
+                contentStreamRedactorCallback.redactText(glyphText, lastx, lasty);
+            }
 
         }
         // append the finally offset of the with of the character
@@ -1985,12 +1993,6 @@ public abstract class AbstractContentParser {
                     AlphaComposite.getInstance(rule,
                             alpha);
             shapes.add(new AlphaDrawCmd(alphaComposite));
-        }
-    }
-
-    protected static void contentStreamRedactorCallback(ContentStreamRedactorCallback contentStreamRedactorCallback) {
-        if (contentStreamRedactorCallback != null) {
-            contentStreamRedactorCallback.redact();
         }
     }
 

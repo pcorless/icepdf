@@ -42,7 +42,7 @@ public class ContentParser extends AbstractContentParser {
     }
 
     public ContentParser parse(Stream[] streams, Page page)
-            throws InterruptedException {
+            throws InterruptedException, IOException {
         if (shapes == null) {
             shapes = new Shapes();
             if (graphicState == null) {
@@ -104,7 +104,7 @@ public class ContentParser extends AbstractContentParser {
                     }
 
                     int operand = (Integer) tok;
-                    markTokenPosition(lexer.getPos());
+                    markTokenPosition(lexer.getPos(), operand);
                     // Append a straight line segment from the current point to the
                     // point (x, y). The new current point is (x, y).
                     switch (operand) {
@@ -586,7 +586,7 @@ public class ContentParser extends AbstractContentParser {
      * @param source content stream source.
      * @return vector where each entry is the text extracted from a text block.
      */
-    public Shapes parseTextBlocks(Stream[] source) throws InterruptedException {
+    public Shapes parseTextBlocks(Stream[] source) throws InterruptedException, IOException {
 
         // great a parser to get tokens for stream
         Lexer parser = new Lexer();
@@ -701,7 +701,7 @@ public class ContentParser extends AbstractContentParser {
 
             if (nextToken instanceof Integer) {
                 operand = (Integer) nextToken;
-                markTokenPosition(lexer.getPos());
+                markTokenPosition(lexer.getPos(), operand);
                 switch (operand) {
                     // Normal text token, string, hex
                     case Operands.Tj:
@@ -719,7 +719,7 @@ public class ContentParser extends AbstractContentParser {
                         consume_Tw(graphicState, stack);
                         break;
 
-                    // move to the start of he next line, offset from the start of the
+                    // move to the start of the next line, offset from the start of the
                     // current line by (tx,ty)*tx
                     case Operands.Td:
                         consume_Td(graphicState, stack, textMetrics, pageText,
@@ -965,6 +965,11 @@ public class ContentParser extends AbstractContentParser {
                 break;
             }
         }
+
+        // make sure we get the last ET token
+        if (nextToken instanceof Integer && (Integer) nextToken == Operands.ET) {
+            markTokenPosition(lexer.getPos(), (Integer) nextToken);
+        }
         // during a BT -> ET text parse there is a change that we might be
         // in MODE_ADD or MODE_Fill_Add which require that we push the
         // shapes that make up the clipping path to the shapes stack.  When
@@ -983,9 +988,9 @@ public class ContentParser extends AbstractContentParser {
         return textMetrics.getyBTStart();
     }
 
-    private void markTokenPosition(int position) {
+    private void markTokenPosition(int position, Integer token) {
         if (contentStreamRedactorCallback != null) {
-            contentStreamRedactorCallback.setLastTokenPosition(position);
+            contentStreamRedactorCallback.setLastTokenPosition(position, token);
         }
     }
 

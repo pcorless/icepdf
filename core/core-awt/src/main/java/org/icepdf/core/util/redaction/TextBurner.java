@@ -4,6 +4,7 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
 import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorCallback;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -13,19 +14,13 @@ public class TextBurner {
             Logger.getLogger(TextBurner.class.toString());
 
     public static void burn(Page page,
-                            List<RedactionAnnotation> redactionAnnotations) throws InterruptedException {
+                            List<RedactionAnnotation> redactionAnnotations) throws InterruptedException, IOException {
 
-        ContentStreamRedactorCallback contentStreamRedactorCallback = new ContentStreamRedactorCallback();
+        ContentStreamRedactorCallback contentStreamRedactorCallback =
+                new ContentStreamRedactorCallback(redactionAnnotations);
         page.init(contentStreamRedactorCallback);
-
-        // find intersection of text and redaction bounds (this will preserve text stream offsets in order)
-
-        // apply char offset adjustment and remove glyphs and update x offset deltas
-        //    should be able to unit test this like the original content parser
-
-        // convert annotation to inline vector drawing
-
-//        return contentStreams;
+        // wrap up, ends the last or only content stream being processed and store the bytes
+        contentStreamRedactorCallback.endContentStream();
     }
 
 }
