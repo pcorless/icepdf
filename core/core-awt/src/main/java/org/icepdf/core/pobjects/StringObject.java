@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.security.SecurityManager;
+import org.icepdf.core.util.StringOffsetBuilder;
 
 /**
  * <p>This class represents a PDF String Object.  A <code>StringObject</code>
@@ -43,7 +44,7 @@ public interface StringObject {
     /**
      * <p>Gets a literal StringBuffer representation of this object's data.</p>
      *
-     * @return a StringBuffer representing the objects data.
+     * @return a StringBuffer representing the object's data.
      */
     StringBuilder getLiteralStringBuffer();
 
@@ -57,7 +58,7 @@ public interface StringObject {
     /**
      * <p>Gets a hexadecimal StringBuffer representation of this objects data.</p>
      *
-     * @return a StringBufffer representation of the objects data.
+     * @return a StringBuffer representation of the object's data.
      */
     StringBuilder getHexStringBuffer();
 
@@ -86,15 +87,15 @@ public interface StringObject {
      *                   the text.  Valid values are CID_FORMAT and SIMPLE_FORMAT for Adobe
      *                   Composite and Simple font types respectively
      * @param font       font used to render the literal string data.
-     * @return StringBuffer which contains all renderaable characters for the
-     *         given font.
+     * @return StringOffsetBuilder which contains all renderable characters for the
+     *         given font and byte offsets.
      */
-    StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font);
+    StringOffsetBuilder getLiteralStringBuffer(final int fontFormat, FontFile font);
 
     /**
      * The length of the underlying objects data.
      *
-     * @return length of objct's data.
+     * @return length of object's data.
      */
     int getLength();
 

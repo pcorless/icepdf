@@ -43,6 +43,8 @@ public class GlyphText extends AbstractText {
     // represented by one or more characters.
     private final String unicode;
 
+    private boolean redacted;
+
     public GlyphText(float x, float y, Rectangle2D.Double bounds,
                      String cid, String unicode) {
         this.x = x;
@@ -81,6 +83,14 @@ public class GlyphText extends AbstractText {
             textExtractionBounds = bounds;
         }
 
+    }
+
+    public boolean isRedacted() {
+        return redacted;
+    }
+
+    public void redact() {
+        this.redacted = true;
     }
 
     public String getCid() {

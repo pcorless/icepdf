@@ -2,7 +2,9 @@ package org.icepdf.core.util.updater.callbacks;
 
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
+import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
+import org.icepdf.core.util.parser.content.TextMetrics;
 
 import java.awt.geom.Rectangle2D;
 import java.io.ByteArrayOutputStream;
@@ -60,20 +62,30 @@ public class ContentStreamRedactorCallback {
         lastTextPosition = position;
     }
 
-    // pass in current text states, so we can calculate offset of text should go if something before it was removed
-    public void redactText(GlyphText glyphText, float lastx, float lasty) {
-        // check for intersection with annotation bounds.
+    public void markAsRedact(GlyphText glyphText) {
         for (RedactionAnnotation annotation : redactionAnnotations) {
             Rectangle2D bbox = annotation.getBbox();
             Rectangle2D glyphBounds = glyphText.getBounds();
             if (glyphBounds.intersects(bbox)) {
-                System.out.println("redact " + glyphText.getCid() + " " + lastx + " " + lasty);
-                // don't write
+                glyphText.redact();
+                System.out.println("redact " + glyphText.getCid());
             }
         }
+    }
 
-        burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
-                (lastTextPosition - lastTokenPosition));
+    // write string/hex Object stored in glyphText, skipping and offsetting for any redacted glyphs.
+    public void writeRedactedContent(TextSprite textSprite, TextMetrics textMetrics, float lastx, float lasty) {
+
+        // Tj - slightly easier as a string would need to be broken up into small strings and offsets
+        //    - but could also be written as []TJ with new offset for missing test.
+        //    -  fully redacted string is simply a xAdvance 0 Td.
+        //
+        // TJ - array would need to be deconstructed
+        //    - tricky part is the int offset as they happen outside of draw string
+        //      - need store this offset so it can be written if a string follows
+
+        int length = lastTextPosition - lastTokenPosition;
+        burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition, length);
         lastTokenPosition = lastTextPosition;
 //        System.out.println("got some text @ " + lastTokenPosition);
     }

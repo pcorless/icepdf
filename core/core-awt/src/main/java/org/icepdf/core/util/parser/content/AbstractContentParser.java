@@ -27,6 +27,7 @@ import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.StringOffsetBuilder;
 import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorCallback;
 
 import java.awt.*;
@@ -1353,6 +1354,7 @@ public abstract class AbstractContentParser {
         Number f;
         StringObject stringObject;
         TextState textState;
+        // todo keep Object[] of TextSprites and Offset,
         for (Object currentObject : v) {
             if (currentObject instanceof StringObject) {
                 stringObject = (StringObject) currentObject;
@@ -1365,9 +1367,6 @@ public abstract class AbstractContentParser {
                             textMetrics,
                             graphicState.getTextState(), shapes, glyphOutlineClip,
                             graphicState, oCGs, contentStreamRedactorCallback);
-                    // todo pass in ContentStreamWriter
-                    // call redaction TJ specific logic,  intersect, remove,  change offset,
-                    // callbackWriter.redact(glphText, textMetrics... , hint)
                 }
             } else if (currentObject instanceof Number) {
                 f = (Number) currentObject;
@@ -1377,6 +1376,7 @@ public abstract class AbstractContentParser {
             textMetrics.setPreviousAdvance(textMetrics.getAdvance().x);
         }
         graphicState.set(tmp);
+        // todo call the redactor with new state gathered during the TJ parse
     }
 
     protected static void consume_Tj(GraphicsState graphicState, Stack<Object> stack,
@@ -1402,6 +1402,8 @@ public abstract class AbstractContentParser {
                     //  we need to capture how many bytes represented a cid to calculate offset
                     //  font.getSubTypeFormat,  ultimately we need a new data structure to capture
                     //  what was mapped during the getLiteralStringBuffer() process  char and offsets
+
+                    // get list of string
                     drawString(stringObject.getLiteralStringBuffer(
                                     textState.font.getSubTypeFormat(),
                                     textState.font.getFont()),
@@ -1410,6 +1412,7 @@ public abstract class AbstractContentParser {
                             shapes,
                             glyphOutlineClip,
                             graphicState, oCGs, contentStreamRedactorCallback);
+                    // pass them back to the redactor,
                 }
                 graphicState.set(tmp);
             }
@@ -1432,7 +1435,7 @@ public abstract class AbstractContentParser {
      * @param shapes           collection of all shapes for page content being parsed.
      */
     private static void drawString(
-            StringBuilder displayText,
+            StringOffsetBuilder displayText,
             TextMetrics textMetrics,
             TextState textState,
             Shapes shapes,
@@ -1448,7 +1451,7 @@ public abstract class AbstractContentParser {
             return;
         }
 
-        // Postion of previous Glyph, all relative to text block
+        // Position of previous Glyph, all relative to text block
         float lastx = 0, lasty = 0;
         // Make sure that the previous advanceX is greater than then where we
         // are going to place the next glyph,  see not 57 in 1.6 spec for more
@@ -1526,13 +1529,12 @@ public abstract class AbstractContentParser {
             shapes.getPageText().addGlyph(glyphText, oCGs);
 
             if (contentStreamRedactorCallback != null) {
-                // todo currentChar = displayText.charAt(i);
-                //  new object that can do .charAt() and offsetAt(), this would be returned by getLiteralStringBuffer
-                contentStreamRedactorCallback.redactText(glyphText, lastx, lasty);
+                // mark any glyphText that intersect a redaction bound.
+                contentStreamRedactorCallback.markAsRedact(glyphText);
             }
 
         }
-        // append the finally offset of the with of the character
+        // append the finally offset of the width of the character
         advanceX += lastx;
         advanceY += lasty;
 
@@ -1590,6 +1592,13 @@ public abstract class AbstractContentParser {
             case TextState.MODE_ADD:
                 glyphOutlineClip.addTextSprite(textSprites);
                 break;
+        }
+
+        // todo need to move this out to callers.
+        // return TextSprites so we can call this later with more context and avoid rewriting
+        // a string if nothing was redacted.
+        if (contentStreamRedactorCallback != null) {
+            contentStreamRedactorCallback.writeRedactedContent(textSprites, textMetrics, lastx, lasty);
         }
         textMetrics.getAdvance().setLocation(advanceX, advanceY);
     }
