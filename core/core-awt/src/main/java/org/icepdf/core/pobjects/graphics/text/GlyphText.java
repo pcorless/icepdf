@@ -36,6 +36,9 @@ public class GlyphText extends AbstractText {
     private final float x;
     private final float y;
 
+    private final float advanceX;
+    private final float advanceY;
+
     // character code used to represent glyph, maybe ascii or CID value
     private final String cid;
 
@@ -45,10 +48,12 @@ public class GlyphText extends AbstractText {
 
     private boolean redacted;
 
-    public GlyphText(float x, float y, Rectangle2D.Double bounds,
+    public GlyphText(float x, float y, float advanceX, float advanceY, Rectangle2D.Double bounds,
                      String cid, String unicode) {
         this.x = x;
         this.y = y;
+        this.advanceX = advanceX;
+        this.advanceY = advanceY;
         this.bounds = bounds;
         this.textExtractionBounds = new Rectangle2D.Double(bounds.x, bounds.y, bounds.width, bounds.height);
         this.cid = cid;
@@ -103,6 +108,10 @@ public class GlyphText extends AbstractText {
 
     public float getX() {
         return x;
+    }
+
+    public float getAdvanceX() {
+        return advanceX;
     }
 
     public float getY() {

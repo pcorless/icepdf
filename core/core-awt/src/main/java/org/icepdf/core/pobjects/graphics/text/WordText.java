@@ -241,6 +241,7 @@ public class WordText extends AbstractText implements TextSelect {
                                           WordText whiteSpace) {
         GlyphText spaceText = new GlyphText((float) offset,
                 currentGlyph.getY(),
+                (float) offset, 0,
                 new Rectangle2D.Double(spaceBounds.x,
                         spaceBounds.y,
                         spaceBounds.width,

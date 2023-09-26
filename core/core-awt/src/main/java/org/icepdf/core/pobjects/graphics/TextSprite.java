@@ -76,7 +76,7 @@ public class TextSprite {
      * @param font                  font used when painting glyphs.
      * @param contentLength         length of text content.
      * @param graphicStateTransform ctm transform.
-     * @param tmTransform           text transform form postSript.
+     * @param tmTransform           text transform form postSrcipt.
      */
     public TextSprite(FontFile font, int contentLength, AffineTransform graphicStateTransform, AffineTransform tmTransform) {
         glyphTexts = new ArrayList<>(contentLength);
@@ -101,7 +101,8 @@ public class TextSprite {
      * @param width   width of cid from font.
      * @return new GlyphText object containing the text data.
      */
-    public GlyphText addText(String cid, String unicode, float x, float y, float width) {
+    public GlyphText addText(String cid, String unicode, float x, float y, float width, float advanceX,
+                             float advanceY) {
         // x,y must not change as it will affect painting of the glyph,
         // we can change the bounds of glyphBounds as this is what needs to be normalized
         // to page space
@@ -143,7 +144,7 @@ public class TextSprite {
 
         // create glyph and normalize bounds.
         GlyphText glyphText =
-                new GlyphText(x, y, glyphBounds, cid, unicode);
+                new GlyphText(x, y, advanceX, advanceY, glyphBounds, cid, unicode);
         glyphText.normalizeToUserSpace(graphicStateTransform, tmTransform);
         glyphTexts.add(glyphText);
         return glyphText;

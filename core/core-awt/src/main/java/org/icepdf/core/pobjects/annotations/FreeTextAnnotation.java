@@ -453,7 +453,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                 textSprites.addText(
                         String.valueOf(currentChar), // cid
                         String.valueOf(currentChar), // unicode value
-                        currentX, currentY, newAdvanceX);
+                        currentX, currentY, newAdvanceX, lastx, 0);
             } else {
                 // move back to start of next line
                 currentY += lineHeight;
