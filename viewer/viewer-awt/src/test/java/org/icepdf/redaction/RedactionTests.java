@@ -13,6 +13,7 @@ import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingViewBuilder;
 import org.icepdf.ri.util.FontPropertiesManager;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -34,14 +35,18 @@ public class RedactionTests {
         FontPropertiesManager.getInstance().loadOrReadSystemFonts();
     }
 
-    @DisplayName("redact text and export")
+    @DisplayName("redact simple text and export")
     @Test
-    public void testFullUpdate() {
+//    @Disabled
+    public void testSimpleLayoutFullUpdate() {
         try {
 
             // search
-            Document document = searchAndRedact("/redact/test_print.pdf", new String[]{"que"});
-            File out = new File("./src/test/out/RedactionTests_textAndExport.pdf");
+            Document document = searchAndRedact(
+                    "/redact/test_print.pdf",
+                    new String[]{"que"},
+                    1);
+            File out = new File("./src/test/out/RedactionTests_testSimpleLayoutFullUpdate.pdf");
             try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 64 * 1024)) {
                 document.saveToOutputStream(stream, WriteMode.FULL_UPDATE);
             }
@@ -57,7 +62,33 @@ public class RedactionTests {
         }
     }
 
-    private Document searchAndRedact(String path, String[] terms) throws InterruptedException,
+    @DisplayName("redact complex layout text and export")
+    @Test
+    @Disabled
+    public void testComplexLayoutFullUpdate() {
+        try {
+            // search
+            Document document = searchAndRedact(
+                    "/redact/pdf_reference_addendum_redaction.pdf",
+                    new String[]{"Redaction"},
+                    1);
+            File out = new File("./src/test/out/RedactionTests_testComplexLayoutFullUpdate.pdf");
+            try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 64 * 1024)) {
+                document.saveToOutputStream(stream, WriteMode.FULL_UPDATE);
+            }
+            Document modifiedDocument = new Document();
+            modifiedDocument.setFile(out.getAbsolutePath());
+
+            // make sure page still has an annotation
+            Page page = modifiedDocument.getPageTree().getPage(0);
+            assertEquals(1, page.getAnnotations().size());
+        } catch (PDFSecurityException | IOException | InterruptedException | InvocationTargetException e) {
+            // make sure we have no io errors.
+            fail("should not be any exceptions");
+        }
+    }
+
+    private Document searchAndRedact(String path, String[] terms, int pageCount) throws InterruptedException,
             InvocationTargetException {
 
         InputStream fileUrl = RedactionTests.class.getResourceAsStream(path);
@@ -86,12 +117,6 @@ public class RedactionTests {
             }
 
             Document document = controller.getDocument();
-            // set the max number of pages to search and create annotations for.
-            int pageCount = 25;
-            if (pageCount > document.getNumberOfPages()) {
-                pageCount = document.getNumberOfPages();
-            }
-
             // list of founds words to print out
             ArrayList<WordText> foundWords;
             for (int pageIndex = 0; pageIndex < pageCount; pageIndex++) {

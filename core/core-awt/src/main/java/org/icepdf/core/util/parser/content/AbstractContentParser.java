@@ -1355,7 +1355,7 @@ public abstract class AbstractContentParser {
         Number f;
         StringObject stringObject;
         TextState textState;
-        ArrayList<Object> textOperators = new ArrayList<>(v.size());
+        ArrayList<TextSprite> textOperators = new ArrayList<>(v.size());
         for (Object currentObject : v) {
             if (currentObject instanceof StringObject) {
                 stringObject = (StringObject) currentObject;
@@ -1374,13 +1374,13 @@ public abstract class AbstractContentParser {
                 f = (Number) currentObject;
                 textMetrics.getAdvance().x -= (f.floatValue() / 1000f) *
                         graphicState.getTextState().currentfont.getSize();
-                textOperators.add(textMetrics.getAdvance().x);
+//                textOperators.add(f.floatValue());
             }
             textMetrics.setPreviousAdvance(textMetrics.getAdvance().x);
         }
         graphicState.set(tmp);
         if (contentStreamRedactorCallback != null) {
-            contentStreamRedactorCallback.writeRedactedStringObject(textOperators, textMetrics);
+            contentStreamRedactorCallback.writeRedactedStringObject(textOperators, Operands.TJ);
         }
     }
 
@@ -1397,7 +1397,7 @@ public abstract class AbstractContentParser {
             if (tjValue instanceof StringObject) {
                 stringObject = (StringObject) tjValue;
                 textState = graphicState.getTextState();
-                ArrayList<Object> textOperators = new ArrayList<>(1);
+                ArrayList<TextSprite> textOperators = new ArrayList<>(1);
                 // apply scaling
                 AffineTransform tmp = applyTextScaling(graphicState);
                 // apply transparency
@@ -1418,7 +1418,7 @@ public abstract class AbstractContentParser {
                 graphicState.set(tmp);
                 // pass them back to the redactor,
                 if (contentStreamRedactorCallback != null) {
-                    contentStreamRedactorCallback.writeRedactedStringObject(textOperators, textMetrics);
+                    contentStreamRedactorCallback.writeRedactedStringObject(textOperators, Operands.Tj);
                 }
             }
         }

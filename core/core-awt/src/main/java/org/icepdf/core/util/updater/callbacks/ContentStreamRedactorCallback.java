@@ -2,8 +2,9 @@ package org.icepdf.core.util.updater.callbacks;
 
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
+import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
-import org.icepdf.core.util.parser.content.TextMetrics;
+import org.icepdf.core.util.parser.content.Operands;
 import org.icepdf.core.util.redaction.TextObjectWriter;
 
 import java.awt.geom.Rectangle2D;
@@ -12,11 +13,14 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import static org.icepdf.core.util.parser.content.Operands.TJ;
 import static org.icepdf.core.util.parser.content.Operands.Tj;
 
 public class ContentStreamRedactorCallback {
+
+    private static final Logger logger = Logger.getLogger(ContentStreamRedactorCallback.class.toString());
 
     private Stream currentStream;
     private ByteArrayOutputStream burnedContentOutputStream;
@@ -45,16 +49,18 @@ public class ContentStreamRedactorCallback {
             byte[] burnedContentStream = burnedContentOutputStream.toByteArray();
             currentStream.setRawBytes(burnedContentStream);
             currentStream = null;
-            String tmp = new String(burnedContentOutputStream.toByteArray(), StandardCharsets.ISO_8859_1);
+            String tmp = burnedContentOutputStream.toString(StandardCharsets.ISO_8859_1);
             System.out.println("last " + tmp);
             burnedContentOutputStream.close();
-            // TODO update the state manager with this streams changes, if any?
+            // TODO update the state manager with this streams changes,
+            //  - mark stream as edited so we can push it
+            //  - needed so that we don't loose content to garbage collection.
         }
     }
 
     public void setLastTokenPosition(int position, Integer token) {
-//        System.out.println("last token " + position + " " + token);
         // skip text writing operators as they will be handled by the RedactionWriter
+        // other layout operators like ' and " are still handle by the TJ/Tj operators
         if (token != Tj && token != TJ) {
             burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
                     (position - lastTokenPosition));
@@ -67,19 +73,24 @@ public class ContentStreamRedactorCallback {
         for (RedactionAnnotation annotation : redactionAnnotations) {
             Rectangle2D bbox = annotation.getBbox();
             Rectangle2D glyphBounds = glyphText.getBounds();
-            if (glyphBounds.intersects(bbox)) {
+            if (bbox.contains(glyphBounds)) {
                 glyphText.redact();
-                System.out.println("redact " + glyphText.getCid());
+//                System.out.println("redact " + glyphText.getCid());
             }
         }
     }
 
     // write string/hex Object stored in glyphText, skipping and offsetting for any redacted glyphs.
-    public void writeRedactedStringObject(ArrayList<Object> textOperators, TextMetrics textMetrics) throws IOException {
-
+    public void writeRedactedStringObject(ArrayList<TextSprite> textOperators, final int operand) throws IOException {
         if (TextObjectWriter.containsRedactions(textOperators)) {
-            TextObjectWriter.write(burnedContentOutputStream, textOperators);
+            // apply redaction
+            if (Operands.TJ == operand) {
+                TextObjectWriter.writeTJ(burnedContentOutputStream, textOperators);
+            } else {
+                TextObjectWriter.writeTj(burnedContentOutputStream, textOperators);
+            }
         } else {
+            // copy none redacted StringObjects verbatim
             int length = lastTextPosition - lastTokenPosition;
             burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition, length);
         }
