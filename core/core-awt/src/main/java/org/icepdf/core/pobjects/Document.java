@@ -114,6 +114,7 @@ public class Document {
     private final Library library;
     // todo put file channel input library?
     private FileChannel documentFileChannel;
+    private ByteBuffer documentByteBuffer;
     private CrossReferenceRoot crossReferenceRoot;
 
     static {
@@ -249,8 +250,8 @@ public class Document {
         setDocumentOrigin(pathOrURL);
 
         if (!isCachingEnabled) {
-            ByteBuffer byteBuffer = ByteBuffer.wrap(inputStream.readAllBytes());
-            setInputStream(byteBuffer);
+            documentByteBuffer = ByteBuffer.wrap(inputStream.readAllBytes());
+            setInputStream(documentByteBuffer);
         }
         // if caching is allowed cache the url to file
         else {
@@ -298,7 +299,8 @@ public class Document {
         setDocumentOrigin(pathOrURL);
 
         if (!isCachingEnabled) {
-            setInputStream(ByteBuffer.wrap(data, offset, length));
+            documentByteBuffer = ByteBuffer.wrap(data, offset, length);
+            setInputStream(documentByteBuffer);
         }
         // if caching is allowed cache the url to file
         else {
@@ -311,7 +313,7 @@ public class Document {
 
             // Write the data to the temp file.
             try {
-                Files.copy(new ByteArrayInputStream(data), tempFile.toPath());
+                Files.copy(new ByteArrayInputStream(data), tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException e) {
                 logger.log(Level.FINE, "Error writing PDF output stream.", e);
                 throw e;
@@ -538,6 +540,10 @@ public class Document {
             documentFileChannel = null;
         }
 
+        if (documentByteBuffer != null) {
+            documentByteBuffer.clear();
+        }
+
         String fileToDelete = getDocumentCachedFilePath();
         if (fileToDelete != null) {
             File file = new File(fileToDelete);
@@ -576,6 +582,18 @@ public class Document {
         if (documentFileChannel != null) {
             synchronized (library.getMappedFileByteBufferLock()) {
                 ByteBuffer documentByteBuffer = library.getMappedFileByteBuffer();
+                documentByteBuffer.position(0);
+                int documentLength = documentByteBuffer.remaining();
+                long newDocumentLength = new DocumentBuilder().createDocument(
+                        writeMode,
+                        this,
+                        library.getMappedFileByteBuffer(),
+                        out,
+                        documentLength);
+                return newDocumentLength;
+            }
+        } else if (documentByteBuffer != null) {
+            synchronized (library.getMappedFileByteBufferLock()) {
                 documentByteBuffer.position(0);
                 int documentLength = documentByteBuffer.remaining();
                 long newDocumentLength = new DocumentBuilder().createDocument(
