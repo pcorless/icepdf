@@ -1,9 +1,11 @@
 package org.icepdf.core.util.updater.callbacks;
 
+import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
+import org.icepdf.core.util.Library;
 import org.icepdf.core.util.parser.content.Operands;
 import org.icepdf.core.util.redaction.TextObjectWriter;
 
@@ -28,10 +30,13 @@ public class ContentStreamRedactorCallback {
     private int lastTokenPosition;
     private int lastTextPosition;
 
+    private Library library;
+
     private List<RedactionAnnotation> redactionAnnotations;
 
-    public ContentStreamRedactorCallback(List<RedactionAnnotation> redactionAnnotations) {
+    public ContentStreamRedactorCallback(Library library, List<RedactionAnnotation> redactionAnnotations) {
         this.redactionAnnotations = redactionAnnotations;
+        this.library = library;
     }
 
     public void startContentStream(Stream stream) throws IOException {
@@ -48,13 +53,10 @@ public class ContentStreamRedactorCallback {
             // assign accumulated byte[] to the stream
             byte[] burnedContentStream = burnedContentOutputStream.toByteArray();
             currentStream.setRawBytes(burnedContentStream);
-            currentStream = null;
             String tmp = burnedContentOutputStream.toString(StandardCharsets.ISO_8859_1);
             System.out.println("last " + tmp);
             burnedContentOutputStream.close();
-            // TODO update the state manager with this streams changes,
-            //  - mark stream as edited so we can push it
-            //  - needed so that we don't loose content to garbage collection.
+            library.getStateManager().addChange(new PObject(currentStream, currentStream.getPObjectReference()));
         }
     }
 

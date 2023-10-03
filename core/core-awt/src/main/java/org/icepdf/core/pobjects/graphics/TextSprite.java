@@ -99,10 +99,10 @@ public class TextSprite {
      * @param x       x-coordinate to paint.
      * @param y       y-coordinate to paint.
      * @param width   width of cid from font.
+     * @param height  height of cid from font.
      * @return new GlyphText object containing the text data.
      */
-    public GlyphText addText(String cid, String unicode, float x, float y, float width, float advanceX,
-                             float advanceY) {
+    public GlyphText addText(String cid, String unicode, float x, float y, float width, float height) {
         // x,y must not change as it will affect painting of the glyph,
         // we can change the bounds of glyphBounds as this is what needs to be normalized
         // to page space
@@ -144,7 +144,7 @@ public class TextSprite {
 
         // create glyph and normalize bounds.
         GlyphText glyphText =
-                new GlyphText(x, y, advanceX, advanceY, glyphBounds, cid, unicode);
+                new GlyphText(x, y, width, height, glyphBounds, cid, unicode);
         glyphText.normalizeToUserSpace(graphicStateTransform, tmTransform);
         glyphTexts.add(glyphText);
         return glyphText;

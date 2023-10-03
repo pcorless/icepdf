@@ -51,6 +51,7 @@ public class TextObjectWriter {
                     if (!glyphText.isRedacted()) {
                         if (operatorCount == 0) {
                             // todo may need to write string or hex, so we can deal with cid 4 byte codes correctly
+                            //  or use octal values which would be simpler
                             contentOutputStream.write(' ');
                             contentOutputStream.write('(');
                         }
@@ -62,9 +63,10 @@ public class TextObjectWriter {
                             contentOutputStream.write(") Tj ".getBytes());
                         }
                         if (i + 1 == max || (i + 1 < max && !glyphTexts.get(i + 1).isRedacted())) {
-                            float advance = glyphText.getAdvanceX();
+                            float advance = glyphText.getX() + glyphText.getAdvanceX();
                             float delta = advance - lastTdOffset;
                             lastTdOffset = advance;
+                            contentOutputStream.write(' ');
                             contentOutputStream.write(String.valueOf(delta).getBytes());
                             contentOutputStream.write(' ');
                             contentOutputStream.write('0');
@@ -111,6 +113,7 @@ public class TextObjectWriter {
                         float advance = glyphText.getX();
                         float delta = advance - lastTdOffset;
                         lastTdOffset = advance;
+                        contentOutputStream.write(' ');
                         contentOutputStream.write(String.valueOf(delta).getBytes());
                         contentOutputStream.write(' ');
                         contentOutputStream.write('0');
@@ -132,6 +135,7 @@ public class TextObjectWriter {
                         float advance = glyphText.getX() + glyphText.getAdvanceX();
                         float delta = advance - lastTdOffset;
                         lastTdOffset = advance;
+                        contentOutputStream.write(' ');
                         contentOutputStream.write(String.valueOf(delta).getBytes());
                         contentOutputStream.write(' ');
                         contentOutputStream.write('0');
@@ -144,6 +148,7 @@ public class TextObjectWriter {
             }
         }
         // revert back to the original td offset.
+        // todo we might not want to do this every time?
         contentOutputStream.write(String.valueOf(-lastTdOffset).getBytes());
         contentOutputStream.write(' ');
         contentOutputStream.write('0');

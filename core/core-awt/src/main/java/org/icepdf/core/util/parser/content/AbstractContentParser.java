@@ -1530,7 +1530,7 @@ public abstract class AbstractContentParser {
             GlyphText glyphText = textSprites.addText(
                     String.valueOf(currentChar), // cid
                     textState.currentfont.toUnicode(currentChar), // unicode value
-                    currentX, currentY, newAdvanceX, lastx, lasty);
+                    currentX, currentY, newAdvanceX, newAdvanceY);
             shapes.getPageText().addGlyph(glyphText, oCGs);
 
             if (contentStreamRedactorCallback != null) {
