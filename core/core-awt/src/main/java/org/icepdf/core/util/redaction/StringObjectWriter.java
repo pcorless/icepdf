@@ -130,6 +130,9 @@ public class StringObjectWriter {
                     glyphWrittenCount++;
                     char cid = glyphText.getCid();
                     if (cid <= 127) {
+                        if (cid == '(' || cid == ')' || cid == '\\') {
+                            contentOutputStream.write('\\');
+                        }
                         contentOutputStream.write(cid);
                     } else {
                         contentOutputStream.write('\\');

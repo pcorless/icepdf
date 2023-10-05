@@ -13,7 +13,6 @@ import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingViewBuilder;
 import org.icepdf.ri.util.FontPropertiesManager;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -37,7 +36,7 @@ public class RedactionTests {
 
     @DisplayName("redact simple text and export")
     @Test
-    @Disabled
+//    @Disabled
     public void testSimpleLayoutFullUpdate() {
         try {
 
@@ -72,8 +71,8 @@ public class RedactionTests {
             Document document = searchAndRedact(
                     "/redact/pdf_reference_addendum_redaction.pdf",
                     new String[]{"Redaction"},
-                    1,
-                    2);
+                    0,
+                    4);
             File out = new File("./src/test/out/RedactionTests_testComplexLayoutFullUpdate.pdf");
             try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 64 * 1024)) {
                 document.saveToOutputStream(stream, WriteMode.FULL_UPDATE);

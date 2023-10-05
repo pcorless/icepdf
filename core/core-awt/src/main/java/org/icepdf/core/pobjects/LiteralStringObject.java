@@ -58,7 +58,7 @@ public class LiteralStringObject implements StringObject {
 
     /**
      * <p>Creates a new literal string object so that it represents the same
-     * sequence of character data specifed by the argument.</p>
+     * sequence of character data specified by the argument.</p>
      *
      * @param string the initial contents of the literal string object
      */
