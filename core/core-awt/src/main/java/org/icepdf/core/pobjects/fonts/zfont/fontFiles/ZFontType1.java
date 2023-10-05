@@ -78,11 +78,6 @@ public class ZFontType1 extends ZSimpleFont {
         return super.getAdvance(ech);
     }
 
-    @Override
-    protected String codeToName(char estr) {
-        return codeToName(estr);
-    }
-
     protected String codeToName(int code) {
         if (encoding != null &&
                 org.icepdf.core.pobjects.fonts.zfont.Encoding.STANDARD_ENCODING_NAME.equals(encoding.getName())) {
