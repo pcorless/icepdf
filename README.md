@@ -23,14 +23,14 @@ ICEpdf is an open source project and is always looking for more contributors.  T
  ```xml
  <dependency>
      <groupId>com.github.pcorless.icepdf</groupId>
- <artifactId>icepdf-core</artifactId>
- <version>7.1.3</version>
+     <artifactId>icepdf-core</artifactId>
+     <version>7.1.3</version>
 </dependency>
- <dependency>
+<dependency>
      <groupId>com.github.pcorless.icepdf</groupId>
      <artifactId>icepdf-viewer</artifactId>
      <version>7.1.3</version>
- </dependency>
+</dependency>
  ```
  
  ## Getting the Code
@@ -142,34 +142,35 @@ example of how to save page captures in an SVG format
  
  ```java
 String filePath = "somefilepath/myfile.pdf";
-        Document document=new Document();
-        document.setFile(filePath);
-// Get a DOMImplementation
-        DOMImplementation domImpl=GenericDOMImplementation.getDOMImplementation();
-// Create an instance of org.w3c.dom.Document
-        org.w3c.dom.Document svgDocument=domImpl.createDocument(null,"svg",null);
-// Create an instance of the SVG Generator
-        SVGGraphics2D svgGenerator=new SVGGraphics2D(svgDocument);
-        float userRotation=0;
-        float userZoom=1;
-        int pageNumber=0;
+Document document = new Document();
+document.setFile(filePath);
 
-        PDimension pdfDimension=document.getPageDimension(pageNumber,userRotation,userZoom);
-        svgGenerator.setSVGCanvasSize(pdfDimension.toDimension());
+// Get a DOMImplementation
+DOMImplementation domImpl = GenericDOMImplementation.getDOMImplementation();
+// Create an instance of org.w3c.dom.Document
+org.w3c.dom.Document svgDocument = domImpl.createDocument(null,"svg",null);
+// Create an instance of the SVG Generator
+SVGGraphics2D svgGenerator = new SVGGraphics2D(svgDocument);
+float userRotation = 0;
+float userZoom = 1;
+int pageNumber = 0;
+
+PDimension pdfDimension=document.getPageDimension(pageNumber,userRotation,userZoom);
+svgGenerator.setSVGCanvasSize(pdfDimension.toDimension());
 
 // paint the page to the Batik svgGenerator graphics context.
-        document.paintPage(pageNumber,svgGenerator,
-        GraphicsRenderingHints.PRINT,
-        Page.BOUNDARY_CROPBOX,
-        userRotation,
-        userZoom);
+document.paintPage(pageNumber,svgGenerator,
+     GraphicsRenderingHints.PRINT,
+     Page.BOUNDARY_CROPBOX,
+     userRotation,
+     userZoom);
 
-        File file=new File("svgCapture_"+pageNumber+".svg");
+File file = new File("svgCapture_"+pageNumber+".svg");
 // Finally, stream the SVG using UTF-8character byte encoding
-        Writer fileWriter=new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8);
+Writer fileWriter = new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8);
 // Enable SVG CSS style attribute
-        boolean SVG_CSS=true;
-        svgGenerator.stream(fileWriter,SVG_CSS);
+boolean SVG_CSS = true;
+svgGenerator.stream(fileWriter,SVG_CSS);
 ```
 
 Make sure to take a look at the [Wiki](https://github.com/pcorless/icepdf/wiki/Usage-Examples) for more examples of
