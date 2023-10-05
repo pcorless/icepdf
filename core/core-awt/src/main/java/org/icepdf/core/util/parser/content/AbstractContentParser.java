@@ -1527,8 +1527,9 @@ public abstract class AbstractContentParser {
             }
 
             // get normalized from text sprite
+            // todo remove the String.valueOf overhead
             GlyphText glyphText = textSprites.addText(
-                    String.valueOf(currentChar), // cid
+                    currentChar, // cid
                     textState.currentfont.toUnicode(currentChar), // unicode value
                     currentX, currentY, newAdvanceX, newAdvanceY);
             shapes.getPageText().addGlyph(glyphText, oCGs);

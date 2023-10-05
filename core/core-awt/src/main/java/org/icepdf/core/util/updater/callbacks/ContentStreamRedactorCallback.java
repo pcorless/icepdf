@@ -7,7 +7,7 @@ import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.parser.content.Operands;
-import org.icepdf.core.util.redaction.TextObjectWriter;
+import org.icepdf.core.util.redaction.StringObjectWriter;
 
 import java.awt.geom.Rectangle2D;
 import java.io.ByteArrayOutputStream;
@@ -77,19 +77,19 @@ public class ContentStreamRedactorCallback {
             Rectangle2D glyphBounds = glyphText.getBounds();
             if (bbox.contains(glyphBounds)) {
                 glyphText.redact();
-//                System.out.println("redact " + glyphText.getCid());
+                System.out.println("redact " + glyphText.getCid());
             }
         }
     }
 
     // write string/hex Object stored in glyphText, skipping and offsetting for any redacted glyphs.
     public void writeRedactedStringObject(ArrayList<TextSprite> textOperators, final int operand) throws IOException {
-        if (TextObjectWriter.containsRedactions(textOperators)) {
+        if (StringObjectWriter.containsRedactions(textOperators)) {
             // apply redaction
             if (Operands.TJ == operand) {
-                TextObjectWriter.writeTJ(burnedContentOutputStream, textOperators);
+                StringObjectWriter.writeTJ(burnedContentOutputStream, textOperators);
             } else {
-                TextObjectWriter.writeTj(burnedContentOutputStream, textOperators);
+                StringObjectWriter.writeTj(burnedContentOutputStream, textOperators);
             }
         } else {
             // copy none redacted StringObjects verbatim

@@ -296,7 +296,7 @@ public class OFont implements FontFile {
         return 32;
     }
 
-    public Rectangle2D getBounds(String estr, int beginIndex, int limit) {
+    public Rectangle2D getBounds(char estr, int beginIndex, int limit) {
         return null;
     }
 
@@ -304,7 +304,7 @@ public class OFont implements FontFile {
         return null;
     }
 
-    public void paint(Graphics2D g, String displayText, float x, float y,
+    public void paint(Graphics2D g, char displayText, float x, float y,
                       long layout, int mode, Color strokecolor) {
 
         AffineTransform af = g.getTransform();
@@ -393,15 +393,15 @@ public class OFont implements FontFile {
         return ByteEncoding.ONE_BYTE;
     }
 
-    public Shape getOutline(String displayText, float x, float y) {
+    public Shape getOutline(char estr, float x, float y) {
 
-        displayText = toUnicode(displayText);
+        String displayText = toUnicode(estr);
         FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
         GlyphVector glyphVector = awtFont.createGlyphVector(frc, displayText);
         glyphVector.setGlyphPosition(0, new Point2D.Float(x, y));
 
-        // Iterate through displayText to calculate the the new advance value if
-        // the displayLength is greater then one character. This in sures that
+        // Iterate through displayText to calculate the new advance value if
+        // the displayLength is greater than one character. This in sures that
         // cid -> String will get displayed correctly.
         int displayLength = displayText.length();
         float lastx;

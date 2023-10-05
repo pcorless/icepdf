@@ -40,7 +40,7 @@ public class GlyphText extends AbstractText {
     private final float advanceY;
 
     // character code used to represent glyph, maybe ascii or CID value
-    private final String cid;
+    private final char cid;
 
     // Unicode/ASCII value that is represented by glyph, a cid can be
     // represented by one or more characters.
@@ -49,7 +49,7 @@ public class GlyphText extends AbstractText {
     private boolean redacted;
 
     public GlyphText(float x, float y, float advanceX, float advanceY, Rectangle2D.Double bounds,
-                     String cid, String unicode) {
+                     char cid, String unicode) {
         this.x = x;
         this.y = y;
         this.advanceX = advanceX;
@@ -98,7 +98,7 @@ public class GlyphText extends AbstractText {
         this.redacted = true;
     }
 
-    public String getCid() {
+    public char getCid() {
         return cid;
     }
 

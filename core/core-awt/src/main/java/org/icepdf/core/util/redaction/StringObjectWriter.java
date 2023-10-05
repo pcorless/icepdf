@@ -7,7 +7,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class TextObjectWriter {
+public class StringObjectWriter {
 
     public static boolean containsRedactions(ArrayList<TextSprite> textOperators) {
         for (TextSprite textSprite : textOperators) {
@@ -50,13 +50,17 @@ public class TextObjectWriter {
                     glyphText = glyphTexts.get(i);
                     if (!glyphText.isRedacted()) {
                         if (operatorCount == 0) {
-                            // todo may need to write string or hex, so we can deal with cid 4 byte codes correctly
-                            //  or use octal values which would be simpler
                             contentOutputStream.write(' ');
                             contentOutputStream.write('(');
                         }
                         operatorCount++;
-                        contentOutputStream.write(glyphText.getCid().getBytes());
+                        char cid = glyphText.getCid();
+                        if (cid <= 127) {
+                            contentOutputStream.write(cid);
+                        } else {
+                            contentOutputStream.write('\\');
+                            contentOutputStream.write(Integer.toString(cid, 8).getBytes());
+                        }
                     } else if (glyphText.isRedacted()) {
                         if (operatorCount > 0) {
                             operatorCount = 0;
@@ -107,7 +111,7 @@ public class TextObjectWriter {
             int glyphWrittenCount = 0;
             for (int j = 0, glyphTextMax = glyphTexts.size(); j < glyphTextMax; j++) {
                 glyphText = glyphTexts.get(j);
-
+                // todo dry up this common code
                 if (!glyphText.isRedacted()) {
                     if (j == 0 && operatorCount > 1) {
                         float advance = glyphText.getX();
@@ -124,7 +128,13 @@ public class TextObjectWriter {
                         contentOutputStream.write('(');
                     }
                     glyphWrittenCount++;
-                    contentOutputStream.write(glyphText.getCid().getBytes());
+                    char cid = glyphText.getCid();
+                    if (cid <= 127) {
+                        contentOutputStream.write(cid);
+                    } else {
+                        contentOutputStream.write('\\');
+                        contentOutputStream.write(Integer.toString(cid, 8).getBytes());
+                    }
                 } else if (glyphText.isRedacted()) {
                     if (glyphWrittenCount > 0) {
                         glyphWrittenCount = 0;

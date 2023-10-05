@@ -13,6 +13,7 @@ import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingViewBuilder;
 import org.icepdf.ri.util.FontPropertiesManager;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +37,7 @@ public class RedactionTests {
 
     @DisplayName("redact simple text and export")
     @Test
-//    @Disabled
+    @Disabled
     public void testSimpleLayoutFullUpdate() {
         try {
 

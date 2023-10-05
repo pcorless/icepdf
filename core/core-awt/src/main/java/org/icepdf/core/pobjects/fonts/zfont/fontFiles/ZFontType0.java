@@ -83,17 +83,16 @@ public class ZFontType0 extends ZSimpleFont {
     }
 
     @Override
-    public void paint(Graphics2D g, String estr, float x, float y, long layout, int mode, Color strokeColor) {
+    public void paint(Graphics2D g, char estr, float x, float y, long layout, int mode, Color strokeColor) {
         try {
             AffineTransform af = g.getTransform();
             Shape outline = null;
 
-            int cid = estr.charAt(0);
-            Type2CharString charstring = getType2CharString(cid);
+            Type2CharString charstring = getType2CharString(estr);
             if (charstring != null) {
                 outline = charstring.getPath();
             } else if (t1Font instanceof CFFType1Font) {
-                outline = ((CFFType1Font) t1Font).getType2CharString(cid).getPath();
+                outline = ((CFFType1Font) t1Font).getType2CharString(estr).getPath();
             }
 
             // clean up,  not very efficient

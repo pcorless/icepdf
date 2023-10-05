@@ -451,7 +451,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
             if (!(currentChar == '\n' || currentChar == '\r')) {
                 textSprites.addText(
-                        String.valueOf(currentChar), // cid
+                        currentChar, // cid
                         String.valueOf(currentChar), // unicode value
                         currentX, currentY, newAdvanceX, 0);
             } else {

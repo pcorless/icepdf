@@ -157,7 +157,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
      * @param layout layout mode of this font, not value for type3 font
      * @param mode   rendering mode, not applicable for type3 fonts.
      */
-    public void paint(Graphics2D g2d, String string,
+    public void paint(Graphics2D g2d, char estr,
                       float x, float y,
                       long layout, int mode, Color color) {
 
@@ -170,13 +170,9 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
         g2d.scale(size, -size);
         char displayChar;
         try {
-            Shapes shape;
-            for (int i = 0, length = string.length(); i < length; i++) {
-                displayChar = string.charAt(i);
-                shape = getGlyph(displayChar, color);
-                if (shape != null) {
-                    shape.paint(g2d);
-                }
+            Shapes shape = getGlyph(estr, color);
+            if (shape != null) {
+                shape.paint(g2d);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
