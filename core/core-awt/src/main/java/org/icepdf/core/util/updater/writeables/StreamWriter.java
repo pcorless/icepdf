@@ -33,6 +33,9 @@ public class StreamWriter extends BaseWriter {
             outputData = new byte[compressedDataLength];
             System.arraycopy(decompressedOutput, 0, outputData, 0, compressedDataLength);
 
+            // update the dictionary filter /FlateDecode removing previous values.
+            obj.getEntries().put(Stream.FILTER_KEY, Stream.FILTER_FLATE_DECODE);
+
             // check if we need to encrypt the stream
             if (securityManager != null) {
                 DictionaryEntries decodeParams = null;

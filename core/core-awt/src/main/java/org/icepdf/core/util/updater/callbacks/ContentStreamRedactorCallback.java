@@ -43,6 +43,8 @@ public class ContentStreamRedactorCallback {
         if (currentStream != null) {
             endContentStream();
         }
+        lastTokenPosition = 0;
+        lastTextPosition = 0;
         currentStream = stream;
         originalContentStreamBytes = stream.getDecompressedBytes();
         burnedContentOutputStream = new ByteArrayOutputStream();
@@ -50,6 +52,13 @@ public class ContentStreamRedactorCallback {
 
     public void endContentStream() throws IOException {
         if (currentStream != null) {
+            int contentStreamLength = originalContentStreamBytes.length;
+            // make sure we don't miss any bytes.
+            if (lastTokenPosition < originalContentStreamBytes.length - 1) {
+                burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
+                        (contentStreamLength - lastTokenPosition));
+            }
+
             // assign accumulated byte[] to the stream
             byte[] burnedContentStream = burnedContentOutputStream.toByteArray();
             currentStream.setRawBytes(burnedContentStream);

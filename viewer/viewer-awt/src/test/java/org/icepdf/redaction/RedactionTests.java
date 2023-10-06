@@ -89,6 +89,33 @@ public class RedactionTests {
         }
     }
 
+    @DisplayName("redact - test stream writes with different filters")
+    @Test
+//    @Disabled
+    public void testStreamWritesFullUpdate() {
+        try {
+            // search
+            Document document = searchAndRedact(
+                    "/redact/potato_out.pdf",
+                    new String[]{"Spanish", "potato", "eggs", "cheese", "garlic"},
+                    0,
+                    2);
+            File out = new File("./src/test/out/RedactionTests_testStreamWritesFullUpdate.pdf");
+            try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 64 * 1024)) {
+                document.saveToOutputStream(stream, WriteMode.FULL_UPDATE);
+            }
+            Document modifiedDocument = new Document();
+            modifiedDocument.setFile(out.getAbsolutePath());
+
+            // make sure page still has an annotation
+            Page page = modifiedDocument.getPageTree().getPage(1);
+            assertEquals(14, page.getAnnotations().size());
+        } catch (PDFSecurityException | IOException | InterruptedException | InvocationTargetException e) {
+            // make sure we have no io errors.
+            fail("should not be any exceptions");
+        }
+    }
+
     private Document searchAndRedact(String path, String[] terms, int startIndex, int endIndex) throws InterruptedException,
             InvocationTargetException {
 
