@@ -13,6 +13,7 @@ import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingViewBuilder;
 import org.icepdf.ri.util.FontPropertiesManager;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +37,7 @@ public class RedactionTests {
 
     @DisplayName("redact simple text and export")
     @Test
-//    @Disabled
+    @Disabled
     public void testSimpleLayoutFullUpdate() {
         try {
 
@@ -64,7 +65,7 @@ public class RedactionTests {
 
     @DisplayName("redact complex layout text and export")
     @Test
-//    @Disabled
+    @Disabled
     public void testComplexLayoutFullUpdate() {
         try {
             // search
@@ -91,7 +92,7 @@ public class RedactionTests {
 
     @DisplayName("redact - test stream writes with different filters")
     @Test
-//    @Disabled
+    @Disabled
     public void testStreamWritesFullUpdate() {
         try {
             // search
@@ -110,6 +111,33 @@ public class RedactionTests {
             // make sure page still has an annotation
             Page page = modifiedDocument.getPageTree().getPage(1);
             assertEquals(14, page.getAnnotations().size());
+        } catch (PDFSecurityException | IOException | InterruptedException | InvocationTargetException e) {
+            // make sure we have no io errors.
+            fail("should not be any exceptions");
+        }
+    }
+
+    @DisplayName("redact - layout test II")
+    @Test
+//    @Disabled
+    public void testLayoutFullUpdate() {
+        try {
+            // search
+            Document document = searchAndRedact(
+                    "/redact/2005CAT.pdf",
+                    new String[]{"marzocchi"},
+                    0,
+                    1);
+            File out = new File("./src/test/out/RedactionTests_testLayoutFullUpdate.pdf");
+            try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 64 * 1024)) {
+                document.saveToOutputStream(stream, WriteMode.FULL_UPDATE);
+            }
+            Document modifiedDocument = new Document();
+            modifiedDocument.setFile(out.getAbsolutePath());
+
+            // make sure page still has an annotation
+            Page page = modifiedDocument.getPageTree().getPage(0);
+            assertEquals(5, page.getAnnotations().size());
         } catch (PDFSecurityException | IOException | InterruptedException | InvocationTargetException e) {
             // make sure we have no io errors.
             fail("should not be any exceptions");

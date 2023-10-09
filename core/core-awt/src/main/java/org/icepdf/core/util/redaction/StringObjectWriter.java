@@ -46,6 +46,11 @@ public class StringObjectWriter {
                 ArrayList<GlyphText> glyphTexts = textSprite.getGlyphSprites();
                 GlyphText glyphText;
 
+                // can skip it completely
+                if (fullyRedacted(glyphTexts)) {
+                    continue;
+                }
+
                 for (int i = 0, max = glyphTexts.size(); i < max; i++) {
                     glyphText = glyphTexts.get(i);
                     if (!glyphText.isRedacted()) {
@@ -100,12 +105,12 @@ public class StringObjectWriter {
             TextSprite textSprite = textOperators.get(i);
             ArrayList<GlyphText> glyphTexts = textSprite.getGlyphSprites();
 
-            operatorCount++;
-
             // can skip it completely
             if (fullyRedacted(glyphTexts)) {
                 continue;
             }
+
+            operatorCount++;
 
             GlyphText glyphText;
             int glyphWrittenCount = 0;
@@ -161,11 +166,12 @@ public class StringObjectWriter {
             }
         }
         // revert back to the original td offset.
-        // todo we might not want to do this every time?
-        contentOutputStream.write(String.valueOf(-lastTdOffset).getBytes());
-        contentOutputStream.write(' ');
-        contentOutputStream.write('0');
-        contentOutputStream.write(" Td ".getBytes());
+        if (operatorCount > 0) {
+            contentOutputStream.write(String.valueOf(-lastTdOffset).getBytes());
+            contentOutputStream.write(' ');
+            contentOutputStream.write('0');
+            contentOutputStream.write(" Td ".getBytes());
+        }
     }
 
 }

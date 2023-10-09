@@ -1409,7 +1409,7 @@ public abstract class AbstractContentParser {
                                     textState.font.getSubTypeFormat(),
                                     textState.font.getFont()),
                             textMetrics,
-                            graphicState.getTextState(),
+                            textState,
                             shapes,
                             glyphOutlineClip,
                             graphicState, oCGs, contentStreamRedactorCallback);
@@ -1535,6 +1535,9 @@ public abstract class AbstractContentParser {
 
             if (contentStreamRedactorCallback != null) {
                 // mark any glyphText that intersect a redaction bound.
+                // todo if CID font then we need to write hex.
+                //  should be possible to check the textState.font.getSubTypeFormat() == Font.CID_FORMAT
+                //  and write the hex 4 byte values.
                 contentStreamRedactorCallback.markAsRedact(glyphText);
             }
 
