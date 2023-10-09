@@ -68,7 +68,6 @@ public class StreamWriter extends BaseWriter {
         output.write(BEGIN_OBJECT);
 
         obj.getEntries().put(Stream.LENGTH_KEY, outputData.length);
-        obj.getEntries().put(Stream.FORM_TYPE_KEY, 1);
         writeDictionary(new PObject(obj, ref), output);
         output.write(NEWLINE);
         output.write(BEGIN_STREAM);

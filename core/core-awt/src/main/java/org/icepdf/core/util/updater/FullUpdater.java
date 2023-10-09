@@ -143,13 +143,16 @@ public class FullUpdater {
 
     private void writePObject(BaseWriter writer, Name name, Object object) throws IOException {
         if (object instanceof Reference && writer.hasNotWrittenReference((Reference) object)) {
-            PObject pobject = library.getPObject(object);
+            Reference objectReference = (Reference) object;
+            // make sure we get the primitive, not the cached version which may have dropped the original structure
+            PObject pobject = library.getPObject(objectReference, false);
             // possible to have unreferenced object in a file,  todo: file could be corrected
             if (pobject == null) {
                 return;
             }
             Object objectReferenceValue = pobject.getObject();
-            StateManager.Change change = stateManager.getChange((Reference) object);
+
+            StateManager.Change change = stateManager.getChange(objectReference);
             if (change != null) {
                 if (change.getType() != StateManager.Type.DELETE) {
                     writer.writePObject(change.getPObject());
@@ -161,7 +164,7 @@ public class FullUpdater {
                 }
                 writer.writePObject(pobject);
             } else {
-                writer.writePObject(new PObject(objectReferenceValue, (Reference) object));
+                writer.writePObject(new PObject(objectReferenceValue, objectReference));
             }
             if (objectReferenceValue instanceof Dictionary) {
                 writeDictionary(writer, (Dictionary) objectReferenceValue);

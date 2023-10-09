@@ -43,8 +43,6 @@ public class ContentStreamRedactorCallback {
         if (currentStream != null) {
             endContentStream();
         }
-        lastTokenPosition = 0;
-        lastTextPosition = 0;
         currentStream = stream;
         originalContentStreamBytes = stream.getDecompressedBytes();
         burnedContentOutputStream = new ByteArrayOutputStream();
@@ -66,6 +64,9 @@ public class ContentStreamRedactorCallback {
             System.out.println("last " + tmp);
             burnedContentOutputStream.close();
             library.getStateManager().addChange(new PObject(currentStream, currentStream.getPObjectReference()));
+            lastTokenPosition = 0;
+            lastTextPosition = 0;
+            currentStream = null;
         }
     }
 
