@@ -47,6 +47,7 @@ public class GlyphText extends AbstractText {
     private final String unicode;
 
     private boolean redacted;
+    private int fontSubTypeFormat;
 
     public GlyphText(float x, float y, float advanceX, float advanceY, Rectangle2D.Double bounds,
                      char cid, String unicode) {
@@ -94,8 +95,13 @@ public class GlyphText extends AbstractText {
         return redacted;
     }
 
-    public void redact() {
+    public int getFontSubTypeFormat() {
+        return fontSubTypeFormat;
+    }
+
+    public void redact(int fontSubTypeFormat) {
         this.redacted = true;
+        this.fontSubTypeFormat = fontSubTypeFormat;
     }
 
     public char getCid() {

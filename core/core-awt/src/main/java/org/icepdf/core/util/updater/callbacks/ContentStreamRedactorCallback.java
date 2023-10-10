@@ -81,12 +81,12 @@ public class ContentStreamRedactorCallback {
         lastTextPosition = position;
     }
 
-    public void markAsRedact(GlyphText glyphText) {
+    public void markAsRedact(GlyphText glyphText, int fontSubTypeFormat) {
         for (RedactionAnnotation annotation : redactionAnnotations) {
             Rectangle2D bbox = annotation.getBbox();
             Rectangle2D glyphBounds = glyphText.getBounds();
             if (bbox.contains(glyphBounds)) {
-                glyphText.redact();
+                glyphText.redact(fontSubTypeFormat);
                 System.out.println("redact " + glyphText.getCid());
             }
         }

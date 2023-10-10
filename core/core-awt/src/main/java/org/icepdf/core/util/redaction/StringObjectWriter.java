@@ -1,5 +1,6 @@
 package org.icepdf.core.util.redaction;
 
+import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 
@@ -44,7 +45,7 @@ public class StringObjectWriter {
             if (textOperator instanceof TextSprite) {
                 TextSprite textSprite = (TextSprite) textOperator;
                 ArrayList<GlyphText> glyphTexts = textSprite.getGlyphSprites();
-                GlyphText glyphText;
+                GlyphText glyphText = null;
 
                 // can skip it completely
                 if (fullyRedacted(glyphTexts)) {
@@ -55,21 +56,16 @@ public class StringObjectWriter {
                     glyphText = glyphTexts.get(i);
                     if (!glyphText.isRedacted()) {
                         if (operatorCount == 0) {
-                            contentOutputStream.write(' ');
-                            contentOutputStream.write('(');
+                            writeDelimiterStart(glyphText, contentOutputStream);
                         }
                         operatorCount++;
-                        char cid = glyphText.getCid();
-                        if (cid <= 127) {
-                            contentOutputStream.write(cid);
-                        } else {
-                            contentOutputStream.write('\\');
-                            contentOutputStream.write(Integer.toString(cid, 8).getBytes());
-                        }
+                        writeCharacterCode(glyphText, contentOutputStream);
                     } else if (glyphText.isRedacted()) {
                         if (operatorCount > 0) {
                             operatorCount = 0;
-                            contentOutputStream.write(") Tj ".getBytes());
+                            // close off the current string object
+                            writeDelimiterEnd(glyphText, contentOutputStream);
+                            contentOutputStream.write(" Tj ".getBytes());
                         }
                         if (i + 1 == max || (i + 1 < max && !glyphTexts.get(i + 1).isRedacted())) {
                             float advance = glyphText.getX() + glyphText.getAdvanceX();
@@ -84,17 +80,13 @@ public class StringObjectWriter {
                     }
                 }
                 if (operatorCount > 0) {
-                    contentOutputStream.write(") Tj".getBytes());
+                    writeDelimiterEnd(glyphText, contentOutputStream);
+                    contentOutputStream.write(" Tj ".getBytes());
                 }
             } else {
                 contentOutputStream.write(String.valueOf(textOperator).getBytes());
             }
         }
-        // revert back to the original td offset.
-//        contentOutputStream.write(String.valueOf(-lastTdOffset).getBytes());
-//        contentOutputStream.write(' ');
-//        contentOutputStream.write('0');
-//        contentOutputStream.write(" Td ".getBytes());
     }
 
     public static void writeTJ(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators) throws IOException {
@@ -112,11 +104,10 @@ public class StringObjectWriter {
 
             operatorCount++;
 
-            GlyphText glyphText;
+            GlyphText glyphText = null;
             int glyphWrittenCount = 0;
             for (int j = 0, glyphTextMax = glyphTexts.size(); j < glyphTextMax; j++) {
                 glyphText = glyphTexts.get(j);
-                // todo dry up this common code
                 if (!glyphText.isRedacted()) {
                     if (j == 0 && operatorCount > 1) {
                         float advance = glyphText.getX();
@@ -129,25 +120,16 @@ public class StringObjectWriter {
                         contentOutputStream.write(" Td ".getBytes());
                     }
                     if (glyphWrittenCount == 0) {
-                        contentOutputStream.write(' ');
-                        contentOutputStream.write('(');
+                        writeDelimiterStart(glyphText, contentOutputStream);
                     }
                     glyphWrittenCount++;
-                    char cid = glyphText.getCid();
-                    if (cid <= 127) {
-                        if (cid == '(' || cid == ')' || cid == '\\') {
-                            contentOutputStream.write('\\');
-                        }
-                        contentOutputStream.write(cid);
-                    } else {
-                        contentOutputStream.write('\\');
-                        contentOutputStream.write(Integer.toString(cid, 8).getBytes());
-                    }
+                    writeCharacterCode(glyphText, contentOutputStream);
                 } else if (glyphText.isRedacted()) {
                     if (glyphWrittenCount > 0) {
                         glyphWrittenCount = 0;
                         // close off the current string object
-                        contentOutputStream.write(") Tj ".getBytes());
+                        writeDelimiterEnd(glyphText, contentOutputStream);
+                        contentOutputStream.write(" Tj ".getBytes());
                     }
                     if ((j + 1 < glyphTextMax && !glyphTexts.get(j + 1).isRedacted())) {
                         float advance = glyphText.getX() + glyphText.getAdvanceX();
@@ -162,7 +144,8 @@ public class StringObjectWriter {
                 }
             }
             if (glyphWrittenCount > 0) {
-                contentOutputStream.write(") Tj ".getBytes());
+                writeDelimiterEnd(glyphText, contentOutputStream);
+                contentOutputStream.write(" Tj ".getBytes());
             }
         }
         // revert back to the original td offset.
@@ -172,6 +155,52 @@ public class StringObjectWriter {
             contentOutputStream.write('0');
             contentOutputStream.write(" Td ".getBytes());
         }
+    }
+
+    private static void writeCharacterCode(GlyphText glyphText, ByteArrayOutputStream contentOutputStream) throws IOException {
+        if (glyphText.getFontSubTypeFormat() == Font.SIMPLE_FORMAT) {
+            writeSimpleCharacterCode(glyphText, contentOutputStream);
+        } else {
+            writeCidCharacterCode(glyphText, contentOutputStream);
+        }
+    }
+
+    private static void writeSimpleCharacterCode(GlyphText glyphText, ByteArrayOutputStream contentOutputStream) throws IOException {
+        char cid = glyphText.getCid();
+        // simple fonts
+        if (cid <= 127) {
+            if (cid == '(' || cid == ')' || cid == '\\') {
+                contentOutputStream.write('\\');
+            }
+            contentOutputStream.write(cid);
+        } else {
+            contentOutputStream.write('\\');
+            contentOutputStream.write(Integer.toString(cid, 8).getBytes());
+        }
+    }
+
+    private static void writeCidCharacterCode(GlyphText glyphText, ByteArrayOutputStream contentOutputStream) throws IOException {
+        char cid = glyphText.getCid();
+        String hex = Integer.toHexString(cid);
+        if (hex.length() == 2) {
+            hex = "00" + hex;
+        } else if (hex.length() == 1) {
+            hex = "000" + hex;
+        }
+        contentOutputStream.write(hex.getBytes());
+    }
+
+    private static void writeDelimiterStart(GlyphText glyphText, ByteArrayOutputStream contentOutputStream) {
+        int fontSubType = glyphText.getFontSubTypeFormat();
+        char delimiter = fontSubType == Font.SIMPLE_FORMAT ? '(' : '<';
+        contentOutputStream.write(' ');
+        contentOutputStream.write(delimiter);
+    }
+
+    private static void writeDelimiterEnd(GlyphText glyphText, ByteArrayOutputStream contentOutputStream) {
+        int fontSubType = glyphText.getFontSubTypeFormat();
+        char delimiter = fontSubType == Font.SIMPLE_FORMAT ? ')' : '>';
+        contentOutputStream.write(delimiter);
     }
 
 }

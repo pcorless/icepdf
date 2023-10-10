@@ -397,7 +397,7 @@ public class Utils {
     }
 
     /**
-     * Convert a utf-8 encoded string into into an octal enocded byte[] array.
+     * Convert a utf-8 encoded string into an octal encded byte[] array.
      *
      * @param literalString string to convert.
      * @return converted string value.
