@@ -167,10 +167,12 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
             if (value instanceof FileSpecification) {
                 FileSpecification fileSpecification = (FileSpecification) value;
                 final EmbeddedFileStream embeddedFileStream = fileSpecification.getEmbeddedFileStream();
-                final String fileName = (String) fileTableModel.getValueAt(selectedRow, NAME_COLUMN);
-                // already on awt thread but still nice to play by the rules.
-                Runnable doSwingWork = () -> saveFile(fileName, embeddedFileStream);
-                SwingUtilities.invokeLater(doSwingWork);
+                if (embeddedFileStream != null) {
+                    final String fileName = (String) fileTableModel.getValueAt(selectedRow, NAME_COLUMN);
+                    // already on awt thread but still nice to play by the rules.
+                    Runnable doSwingWork = () -> saveFile(fileName, embeddedFileStream);
+                    SwingUtilities.invokeLater(doSwingWork);
+                }
             }
         }
     }
@@ -185,7 +187,7 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
                 EmbeddedFileStream embeddedFileStream = fileSpecification.getEmbeddedFileStream();
                 String fileName = (String) fileTableModel.getValueAt(selectedRow, NAME_COLUMN);
                 // load the file stream if it's PDF.
-                if (fileName.toLowerCase().endsWith(PDF_EXTENSION)) {
+                if (embeddedFileStream != null && fileName.toLowerCase().endsWith(PDF_EXTENSION)) {
                     try {
                         InputStream fileInputStream = embeddedFileStream.getDecodedStreamData();
                         Document embeddedDocument = new Document();

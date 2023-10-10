@@ -292,7 +292,7 @@ public class FileSpecification extends Dictionary {
      */
     public EmbeddedFileStream getEmbeddedFileStream(){
         DictionaryEntries fileDictionary = getEmbeddedFileDictionary();
-        Reference fileRef = (Reference) fileDictionary.get(FileSpecification.F_KEY);
+        Reference fileRef = fileDictionary == null ? null : (Reference) fileDictionary.get(FileSpecification.F_KEY);
         if (fileRef != null) {
             Stream fileStream = (Stream) library.getObject(fileRef);
             if (fileStream != null) {
