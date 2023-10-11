@@ -1483,6 +1483,7 @@ public abstract class AbstractContentParser {
         // create a new sprite to hold the text objects
         TextSprite textSprites =
                 new TextSprite(currentFont,
+                        textState.font.getSubTypeFormat(),
                         textLength,
                         new AffineTransform(graphicState.getCTM()),
                         new AffineTransform(textState.tmatrix));
@@ -1535,7 +1536,7 @@ public abstract class AbstractContentParser {
 
             if (contentStreamRedactorCallback != null) {
                 // mark any glyphText that intersect a redaction bound.
-                contentStreamRedactorCallback.markAsRedact(glyphText, textState.font.getSubTypeFormat());
+                contentStreamRedactorCallback.markAsRedact(glyphText);
             }
 
         }

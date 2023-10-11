@@ -8,6 +8,7 @@ import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 import org.icepdf.ri.common.views.annotations.RedactionAnnotationComponent;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -41,6 +42,10 @@ public class TextRedactionAnnotationHandler extends HighLightAnnotationHandler {
 
         // create the text markup annotation.
         createRedactionAnnotation(highlightBounds);
+
+        // set the annotation tool to the given tool
+        documentViewController.getParentController().setDocumentToolMode(
+                preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_REDACTION_SELECTION_TYPE, 0));
     }
 
     public void createRedactionAnnotation(ArrayList<Shape> redactionBounds) {
@@ -88,7 +93,6 @@ public class TextRedactionAnnotationHandler extends HighLightAnnotationHandler {
             annotation.setMarkupPath(highlightPath);
             annotation.setBBox(tBbox);
             annotation.resetAppearanceStream(pageTransform);
-            annotation.setContents(contents != null && enableHighlightContents ? contents : markupSubType.toString());
 
             RedactionAnnotationComponent comp = (RedactionAnnotationComponent)
                     AnnotationComponentFactory.buildAnnotationComponent(

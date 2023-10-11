@@ -140,17 +140,17 @@ public abstract class Font extends Dictionary {
      * <p>Indicates that the font used to render this String object is in the
      * Simple Font family and thus each glyph is represented by one byte.</p>
      */
-    public static final int SIMPLE_FORMAT = 1;
+    public static final byte SIMPLE_FORMAT = 1;
 
     /**
      * <p>Indicates that the font used to render this String object is in the
      * Composite Font family and thus each glyph is represented by at least
      * one byte.</p>
      */
-    public static final int CID_FORMAT = 2;
+    public static final byte CID_FORMAT = 2;
 
     // supType Format, either simple or CID.
-    protected int subTypeFormat = SIMPLE_FORMAT;
+    protected byte subTypeFormat = SIMPLE_FORMAT;
 
     // The actual Java font that will be used to display the Glyphs
     protected FontFile font;
@@ -362,7 +362,7 @@ public abstract class Font extends Dictionary {
      *
      * @return SIMPLE_FORMAT or CID_FORMAT.
      */
-    public int getSubTypeFormat() {
+    public byte getSubTypeFormat() {
         return subTypeFormat;
     }
 

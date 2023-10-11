@@ -99,9 +99,12 @@ public class GlyphText extends AbstractText {
         return fontSubTypeFormat;
     }
 
-    public void redact(int fontSubTypeFormat) {
-        this.redacted = true;
+    public void setFontSubTypeFormat(int fontSubTypeFormat) {
         this.fontSubTypeFormat = fontSubTypeFormat;
+    }
+
+    public void redact() {
+        this.redacted = true;
     }
 
     public char getCid() {
