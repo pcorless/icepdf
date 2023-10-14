@@ -54,13 +54,7 @@ public class StringObjectWriter {
 
                 for (int i = 0, max = glyphTexts.size(); i < max; i++) {
                     glyphText = glyphTexts.get(i);
-                    if (!glyphText.isRedacted()) {
-                        if (operatorCount == 0) {
-                            writeDelimiterStart(glyphText, contentOutputStream);
-                        }
-                        operatorCount++;
-                        writeCharacterCode(glyphText, contentOutputStream);
-                    } else if (glyphText.isRedacted()) {
+                    if (glyphText.isRedacted()) {
                         if (operatorCount > 0) {
                             operatorCount = 0;
                             // close off the current string object
@@ -77,6 +71,12 @@ public class StringObjectWriter {
                             contentOutputStream.write('0');
                             contentOutputStream.write(" Td".getBytes());
                         }
+                    } else {
+                        if (operatorCount == 0) {
+                            writeDelimiterStart(glyphText, contentOutputStream);
+                        }
+                        operatorCount++;
+                        writeCharacterCode(glyphText, contentOutputStream);
                     }
                 }
                 if (operatorCount > 0) {
@@ -99,6 +99,7 @@ public class StringObjectWriter {
 
             // can skip it completely
             if (fullyRedacted(glyphTexts)) {
+                operatorCount++;
                 continue;
             }
 
@@ -108,23 +109,7 @@ public class StringObjectWriter {
             int glyphWrittenCount = 0;
             for (int j = 0, glyphTextMax = glyphTexts.size(); j < glyphTextMax; j++) {
                 glyphText = glyphTexts.get(j);
-                if (!glyphText.isRedacted()) {
-                    if (j == 0 && operatorCount > 1) {
-                        float advance = glyphText.getX();
-                        float delta = advance - lastTdOffset;
-                        lastTdOffset = advance;
-                        contentOutputStream.write(' ');
-                        contentOutputStream.write(String.valueOf(delta).getBytes());
-                        contentOutputStream.write(' ');
-                        contentOutputStream.write('0');
-                        contentOutputStream.write(" Td ".getBytes());
-                    }
-                    if (glyphWrittenCount == 0) {
-                        writeDelimiterStart(glyphText, contentOutputStream);
-                    }
-                    glyphWrittenCount++;
-                    writeCharacterCode(glyphText, contentOutputStream);
-                } else if (glyphText.isRedacted()) {
+                if (glyphText.isRedacted()) {
                     if (glyphWrittenCount > 0) {
                         glyphWrittenCount = 0;
                         // close off the current string object
@@ -141,6 +126,22 @@ public class StringObjectWriter {
                         contentOutputStream.write('0');
                         contentOutputStream.write(" Td ".getBytes());
                     }
+                } else {
+                    if (j == 0 && operatorCount > 1) {
+                        float advance = glyphText.getX();
+                        float delta = advance - lastTdOffset;
+                        lastTdOffset = advance;
+                        contentOutputStream.write(' ');
+                        contentOutputStream.write(String.valueOf(delta).getBytes());
+                        contentOutputStream.write(' ');
+                        contentOutputStream.write('0');
+                        contentOutputStream.write(" Td ".getBytes());
+                    }
+                    if (glyphWrittenCount == 0) {
+                        writeDelimiterStart(glyphText, contentOutputStream);
+                    }
+                    glyphWrittenCount++;
+                    writeCharacterCode(glyphText, contentOutputStream);
                 }
             }
             if (glyphWrittenCount > 0) {
@@ -158,6 +159,9 @@ public class StringObjectWriter {
     }
 
     private static void writeCharacterCode(GlyphText glyphText, ByteArrayOutputStream contentOutputStream) throws IOException {
+        // todo maybe avoid simpl/cid and just go with the StringObject type, and use the byte length in the wrapper
+        //  or keep the parent StringObject and get it write the bytes as it has all the info as to how it was parse?
+        //  probably a bit of both.  When we get to variable bye hex strings things get harder to define generically
         if (glyphText.getFontSubTypeFormat() == Font.SIMPLE_FORMAT) {
             writeSimpleCharacterCode(glyphText, contentOutputStream);
         } else {
