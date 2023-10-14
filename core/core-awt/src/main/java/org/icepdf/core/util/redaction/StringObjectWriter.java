@@ -41,50 +41,39 @@ public class StringObjectWriter {
     public static void writeTj(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators) throws IOException {
         float lastTdOffset = 0;
         int operatorCount = 0;
-        for (Object textOperator : textOperators) {
-            if (textOperator instanceof TextSprite) {
-                TextSprite textSprite = (TextSprite) textOperator;
-                ArrayList<GlyphText> glyphTexts = textSprite.getGlyphSprites();
-                GlyphText glyphText = null;
+        for (TextSprite textSprite : textOperators) {
+            ArrayList<GlyphText> glyphTexts = textSprite.getGlyphSprites();
+            GlyphText glyphText = null;
 
-                // can skip it completely
-                if (fullyRedacted(glyphTexts)) {
-                    continue;
-                }
+            // can skip it completely
+            if (fullyRedacted(glyphTexts)) {
+                continue;
+            }
 
-                for (int i = 0, max = glyphTexts.size(); i < max; i++) {
-                    glyphText = glyphTexts.get(i);
-                    if (glyphText.isRedacted()) {
-                        if (operatorCount > 0) {
-                            operatorCount = 0;
-                            // close off the current string object
-                            writeDelimiterEnd(glyphText, contentOutputStream);
-                            contentOutputStream.write(" Tj ".getBytes());
-                        }
-                        if (i + 1 == max || (i + 1 < max && !glyphTexts.get(i + 1).isRedacted())) {
-                            float advance = glyphText.getX() + glyphText.getAdvanceX();
-                            float delta = advance - lastTdOffset;
-                            lastTdOffset = advance;
-                            contentOutputStream.write(' ');
-                            contentOutputStream.write(String.valueOf(delta).getBytes());
-                            contentOutputStream.write(' ');
-                            contentOutputStream.write('0');
-                            contentOutputStream.write(" Td".getBytes());
-                        }
-                    } else {
-                        if (operatorCount == 0) {
-                            writeDelimiterStart(glyphText, contentOutputStream);
-                        }
-                        operatorCount++;
-                        writeCharacterCode(glyphText, contentOutputStream);
+            for (int i = 0, glyphTextMax = glyphTexts.size(); i < glyphTextMax; i++) {
+                glyphText = glyphTexts.get(i);
+                if (glyphText.isRedacted()) {
+                    if (operatorCount > 0) {
+                        operatorCount = 0;
+                        // close off the current string object
+                        writeDelimiterEnd(glyphText, contentOutputStream);
+                        contentOutputStream.write(" Tj ".getBytes());
                     }
+                    if (i + 1 == glyphTextMax || (i + 1 < glyphTextMax && !glyphTexts.get(i + 1).isRedacted())) {
+                        lastTdOffset = getLastTdOffset(contentOutputStream, lastTdOffset, glyphText);
+                        contentOutputStream.write(" Td".getBytes());
+                    }
+                } else {
+                    if (operatorCount == 0) {
+                        writeDelimiterStart(glyphText, contentOutputStream);
+                    }
+                    operatorCount++;
+                    writeCharacterCode(glyphText, contentOutputStream);
                 }
-                if (operatorCount > 0) {
-                    writeDelimiterEnd(glyphText, contentOutputStream);
-                    contentOutputStream.write(" Tj ".getBytes());
-                }
-            } else {
-                contentOutputStream.write(String.valueOf(textOperator).getBytes());
+            }
+            if (operatorCount > 0 && glyphText != null) {
+                writeDelimiterEnd(glyphText, contentOutputStream);
+                contentOutputStream.write(" Tj ".getBytes());
             }
         }
     }
@@ -93,8 +82,7 @@ public class StringObjectWriter {
         int operatorCount = 0;
         float lastTdOffset = 0;
 
-        for (int i = 0, textOperatorsMax = textOperators.size(); i < textOperatorsMax; i++) {
-            TextSprite textSprite = textOperators.get(i);
+        for (TextSprite textSprite : textOperators) {
             ArrayList<GlyphText> glyphTexts = textSprite.getGlyphSprites();
 
             // can skip it completely
@@ -107,8 +95,8 @@ public class StringObjectWriter {
 
             GlyphText glyphText = null;
             int glyphWrittenCount = 0;
-            for (int j = 0, glyphTextMax = glyphTexts.size(); j < glyphTextMax; j++) {
-                glyphText = glyphTexts.get(j);
+            for (int i = 0, glyphTextMax = glyphTexts.size(); i < glyphTextMax; i++) {
+                glyphText = glyphTexts.get(i);
                 if (glyphText.isRedacted()) {
                     if (glyphWrittenCount > 0) {
                         glyphWrittenCount = 0;
@@ -116,18 +104,12 @@ public class StringObjectWriter {
                         writeDelimiterEnd(glyphText, contentOutputStream);
                         contentOutputStream.write(" Tj ".getBytes());
                     }
-                    if ((j + 1 < glyphTextMax && !glyphTexts.get(j + 1).isRedacted())) {
-                        float advance = glyphText.getX() + glyphText.getAdvanceX();
-                        float delta = advance - lastTdOffset;
-                        lastTdOffset = advance;
-                        contentOutputStream.write(' ');
-                        contentOutputStream.write(String.valueOf(delta).getBytes());
-                        contentOutputStream.write(' ');
-                        contentOutputStream.write('0');
+                    if ((i + 1 < glyphTextMax && !glyphTexts.get(i + 1).isRedacted())) {
+                        lastTdOffset = getLastTdOffset(contentOutputStream, lastTdOffset, glyphText);
                         contentOutputStream.write(" Td ".getBytes());
                     }
                 } else {
-                    if (j == 0 && operatorCount > 1) {
+                    if (i == 0 && operatorCount > 1) {
                         float advance = glyphText.getX();
                         float delta = advance - lastTdOffset;
                         lastTdOffset = advance;
@@ -156,6 +138,18 @@ public class StringObjectWriter {
             contentOutputStream.write('0');
             contentOutputStream.write(" Td ".getBytes());
         }
+    }
+
+    private static float getLastTdOffset(ByteArrayOutputStream contentOutputStream, float lastTdOffset,
+                                         GlyphText glyphText) throws IOException {
+        float advance = glyphText.getX() + glyphText.getAdvanceX();
+        float delta = advance - lastTdOffset;
+        lastTdOffset = advance;
+        contentOutputStream.write(' ');
+        contentOutputStream.write(String.valueOf(delta).getBytes());
+        contentOutputStream.write(' ');
+        contentOutputStream.write('0');
+        return lastTdOffset;
     }
 
     private static void writeCharacterCode(GlyphText glyphText, ByteArrayOutputStream contentOutputStream) throws IOException {
