@@ -126,7 +126,7 @@ public class RedactionTests {
                     "/redact/2005CAT.pdf",
                     new String[]{"marzocchi"},
                     0,
-                    1);
+                    17);
             File out = new File("./src/test/out/RedactionTests_testLayoutFullUpdate.pdf");
             try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 64 * 1024)) {
                 document.saveToOutputStream(stream, WriteMode.FULL_UPDATE);
