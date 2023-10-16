@@ -166,13 +166,18 @@ public class FullUpdater {
             } else {
                 writer.writePObject(new PObject(objectReferenceValue, objectReference));
             }
-            if (objectReferenceValue instanceof Dictionary) {
-                writeDictionary(writer, (Dictionary) objectReferenceValue);
-            } else if (objectReferenceValue instanceof DictionaryEntries) {
-                writeDictionaryEntries(writer, (DictionaryEntries) objectReferenceValue);
-            } else if (objectReferenceValue instanceof List) {
-                writeList(writer, name, (List) objectReferenceValue);
-            }
+            object = objectReferenceValue;
+        }
+        writeInlinePrimitive(writer, name, object);
+    }
+
+    private void writeInlinePrimitive(BaseWriter writer, Name name, Object value) throws IOException {
+        if (value instanceof Dictionary) {
+            writeDictionary(writer, (Dictionary) value);
+        } else if (value instanceof DictionaryEntries) {
+            writeDictionaryEntries(writer, (DictionaryEntries) value);
+        } else if (value instanceof List) {
+            writeList(writer, name, (List) value);
         }
     }
 
@@ -181,13 +186,8 @@ public class FullUpdater {
             Object value = entries.get(name);
             if (value instanceof Reference && writer.hasNotWrittenReference((Reference) value)) {
                 writePObject(writer, name, value);
-            } else if (value instanceof Dictionary) {
-                writeDictionary(writer, (Dictionary) value);
-            } else if (value instanceof DictionaryEntries) {
-                writeDictionaryEntries(writer, (DictionaryEntries) value);
-            } else if (value instanceof List) {
-                writeList(writer, name, (List) value);
             }
+            writeInlinePrimitive(writer, name, value);
         }
     }
 

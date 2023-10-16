@@ -8,6 +8,7 @@ import org.icepdf.core.pobjects.structure.Header;
 
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -155,8 +156,12 @@ public class BaseWriter {
             writeInteger((Integer) val, output);
         } else if (val instanceof Long) {
             writeLong((Long) val, output);
+        } else if (val instanceof Double) {
+            writeDouble((Double) val, output);
+        } else if (val instanceof Float) {
+            writeFloat((Float) val, output);
         } else if (val instanceof Number) {
-            writeReal((Number) val, output);
+            writeNumber((Number) val, output);
         } else if (val instanceof String) {
             String value = (String) val;
             // We need to unwrap null as we special case it in the object parser, not ideal
@@ -205,12 +210,22 @@ public class BaseWriter {
     }
 
     protected void writeLong(long i, CountingOutputStream output) throws IOException {
-        String str = Long.toString(i);
+        String str = BigDecimal.valueOf(i).toString();
         writeByteString(str, output);
     }
 
-    protected void writeReal(Number r, CountingOutputStream output) throws IOException {
-        String str = r.toString();
+    protected void writeDouble(double r, CountingOutputStream output) throws IOException {
+        String str = BigDecimal.valueOf(r).toString();
+        writeByteString(str, output);
+    }
+
+    protected void writeFloat(float f, CountingOutputStream output) throws IOException {
+        String str = BigDecimal.valueOf(f).toString();
+        writeByteString(str, output);
+    }
+
+    protected void writeNumber(Number n, CountingOutputStream output) throws IOException {
+        String str = n.toString();
         writeByteString(str, output);
     }
 

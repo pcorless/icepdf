@@ -1406,7 +1406,7 @@ public class Page extends Dictionary {
         if (cropBox != null) {
             return cropBox;
         }
-        // add all of the pages crop box dimensions to a vector and process
+        // add all the pages crop box dimensions to a vector and process
         List boxDimensions = (List) (library.getObject(entries, CROPBOX_KEY));
         if (boxDimensions != null) {
             cropBox = new PRectangle(boxDimensions);
