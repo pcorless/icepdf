@@ -80,22 +80,22 @@ public class StringObjectWriter {
 
     public static void writeTJ(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators) throws IOException {
         int operatorCount = 0;
+        int writeCount = 0;
         float lastTdOffset = 0;
 
         for (TextSprite textSprite : textOperators) {
             ArrayList<GlyphText> glyphTexts = textSprite.getGlyphSprites();
 
+            operatorCount++;
             // can skip it completely
             if (fullyRedacted(glyphTexts)) {
-                operatorCount++;
                 continue;
             }
-
-            operatorCount++;
 
             GlyphText glyphText = null;
             int glyphWrittenCount = 0;
             for (int i = 0, glyphTextMax = glyphTexts.size(); i < glyphTextMax; i++) {
+                writeCount++;
                 glyphText = glyphTexts.get(i);
                 if (glyphText.isRedacted()) {
                     if (glyphWrittenCount > 0) {
@@ -131,8 +131,8 @@ public class StringObjectWriter {
                 contentOutputStream.write(" Tj ".getBytes());
             }
         }
-        // revert back to the original td offset.
-        if (operatorCount > 0) {
+        // revert back to the original td offset, but only if we altered TJ.
+        if (operatorCount > 0 && writeCount > 0) {
             contentOutputStream.write(String.valueOf(-lastTdOffset).getBytes());
             contentOutputStream.write(' ');
             contentOutputStream.write('0');
