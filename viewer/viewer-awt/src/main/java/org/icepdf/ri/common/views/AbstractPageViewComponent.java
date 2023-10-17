@@ -255,9 +255,7 @@ public abstract class AbstractPageViewComponent
         Graphics2D g2d = (Graphics2D) g.create(0, 0, pageSize.width, pageSize.height);
         GraphicsRenderingHints grh = GraphicsRenderingHints.getDefault();
         g2d.setRenderingHints(grh.getRenderingHints(GraphicsRenderingHints.SCREEN));
-        // force a 1.0 scale to avoid blurring the Page buffer with system scaling for HiDPI displays
-        // JRE will automatically scale the Graphics context, 125% fractional scaling would result in a scale of 1.25
-        g2d.scale(1.0, 1.0);
+
         // page location in the entire view.
         calculateBufferLocation();
 
@@ -277,7 +275,7 @@ public abstract class AbstractPageViewComponent
                 // force one more paint to make sure we build a new buffer using the current zoom and rotation.
                 repaint();
             }
-            g2d.drawImage(pageImage, paintingClip.x, paintingClip.y, null);
+            g2d.drawImage(pageImage, paintingClip.x, paintingClip.y, paintingClip.width, paintingClip.height, null);
         }
         g2d.dispose();
     }
@@ -418,7 +416,7 @@ public abstract class AbstractPageViewComponent
                 BufferedImage pageBufferImage = graphicsConfiguration.createCompatibleImage(
                         imageLocation.width, imageLocation.height,
                         BufferedImage.TYPE_INT_ARGB);
-                Graphics g2d = pageBufferImage.createGraphics();
+                Graphics2D g2d = pageBufferImage.createGraphics();
 
                 // if we don't have a soft reference then we are likely on a first clean paint at which
                 // point we can kick off the animated paint.
