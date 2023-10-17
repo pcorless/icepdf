@@ -321,4 +321,7 @@ public interface DocumentViewModel {
 
     void setDocumentViewScrollPane(JScrollPane documentViewScrollPane);
 
+    void setSystemScaling(double scaling);
+    
+    double getSystemScaling();
 }

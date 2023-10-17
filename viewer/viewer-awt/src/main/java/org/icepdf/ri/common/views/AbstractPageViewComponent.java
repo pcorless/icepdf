@@ -255,9 +255,15 @@ public abstract class AbstractPageViewComponent
         Graphics2D g2d = (Graphics2D) g.create(0, 0, pageSize.width, pageSize.height);
         GraphicsRenderingHints grh = GraphicsRenderingHints.getDefault();
         g2d.setRenderingHints(grh.getRenderingHints(GraphicsRenderingHints.SCREEN));
-        // force a 1.0 scale to avoid blurring the Page buffer with system scaling for HiDPI displays
-        // JRE will automatically scale the Graphics context, 125% fractional scaling would result in a scale of 1.25
-        g2d.scale(1.0, 1.0);
+        
+        // revert system scaling, which will blur the image
+        // JRE automatically scales the Graphics context, 125% fractional scaling would result in a scale of 1.25
+        double systemScaling = (documentViewModel != null) ? documentViewModel.getSystemScaling() : 1.0;
+        if (systemScaling != 1.0)
+        {
+          g2d.scale(1.0/systemScaling, 1.0/systemScaling);
+        }
+        
         // page location in the entire view.
         calculateBufferLocation();
 

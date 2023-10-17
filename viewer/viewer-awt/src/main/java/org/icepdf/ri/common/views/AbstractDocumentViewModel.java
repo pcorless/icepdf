@@ -70,6 +70,8 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     protected int pageBoundary = Page.BOUNDARY_CROPBOX;
     // page tool settings
     protected int userToolModeFlag, oldUserToolModeFlag;
+    
+    protected double systemScaling;
 
     // 10 pages doesn't take to long to look at, anymore and people will notice
     // the rest of the page sizes will be figured out later.
@@ -388,4 +390,15 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     public void addMemento(Memento oldMementoState, Memento newMementoState) {
         undoCaretaker.addState(oldMementoState, newMementoState);
     }
+    
+    public void setSystemScaling(double scaling)
+    {
+        systemScaling = scaling;
+    }
+    
+    public double getSystemScaling()
+    {
+        return systemScaling;
+    }
+    
 }

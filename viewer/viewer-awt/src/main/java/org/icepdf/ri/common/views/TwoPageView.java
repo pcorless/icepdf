@@ -188,8 +188,9 @@ public class TwoPageView extends AbstractDocumentView {
         }
         // normalize the dimensions to a zoom level of zero.
         float currentZoom = documentViewController.getDocumentViewModel().getViewZoom();
-        pageViewWidth = Math.abs(pageViewWidth / currentZoom);
-        pageViewHeight = Math.abs(pageViewHeight / currentZoom);
+        float systemScaling = (float)documentViewController.getDocumentViewModel().getSystemScaling();
+        pageViewWidth = Math.abs(pageViewWidth / systemScaling / currentZoom);
+        pageViewHeight = Math.abs(pageViewHeight / systemScaling / currentZoom);
 
         // two pages wide, generalization, pages are usually the same size we
         // don't bother to look at the second pages size for the time being.

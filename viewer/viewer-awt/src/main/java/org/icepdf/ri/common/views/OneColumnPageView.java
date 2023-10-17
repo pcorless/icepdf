@@ -135,8 +135,9 @@ public class OneColumnPageView extends AbstractDocumentView {
         }
         // normalize the dimensions to a zoom level of zero.
         float currentZoom = documentViewController.getDocumentViewModel().getViewZoom();
-        pageViewWidth = Math.abs(pageViewWidth / currentZoom);
-        pageViewHeight = Math.abs(pageViewHeight / currentZoom);
+        float systemScaling = (float)documentViewController.getDocumentViewModel().getSystemScaling();
+        pageViewWidth = Math.abs(pageViewWidth / currentZoom / systemScaling);
+        pageViewHeight = Math.abs(pageViewHeight / currentZoom / systemScaling);
 
         // add any horizontal padding from layout manager
         pageViewWidth += PAGE_SPACING_HORIZONTAL;
