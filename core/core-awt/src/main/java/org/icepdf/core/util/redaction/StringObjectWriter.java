@@ -59,7 +59,7 @@ public class StringObjectWriter {
                         writeDelimiterEnd(glyphText, contentOutputStream);
                         contentOutputStream.write(" Tj ".getBytes());
                     }
-                    if (i + 1 == glyphTextMax || (i + 1 < glyphTextMax && !glyphTexts.get(i + 1).isRedacted())) {
+                    if (i + 1 < glyphTextMax && !glyphTexts.get(i + 1).isRedacted()) {
                         lastTdOffset = getLastTdOffset(contentOutputStream, lastTdOffset, glyphText);
                         contentOutputStream.write(" Td".getBytes());
                     }
