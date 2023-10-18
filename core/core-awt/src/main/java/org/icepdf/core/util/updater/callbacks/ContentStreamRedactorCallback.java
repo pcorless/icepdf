@@ -9,6 +9,7 @@ import org.icepdf.core.util.Library;
 import org.icepdf.core.util.parser.content.Operands;
 import org.icepdf.core.util.redaction.StringObjectWriter;
 
+import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -83,11 +84,11 @@ public class ContentStreamRedactorCallback {
 
     public void markAsRedact(GlyphText glyphText) {
         for (RedactionAnnotation annotation : redactionAnnotations) {
-            Rectangle2D bbox = annotation.getBbox();
+            GeneralPath reactionPaths = annotation.getMarkupPath();
             Rectangle2D glyphBounds = glyphText.getBounds();
-            if (bbox.contains(glyphBounds)) {
+            if (reactionPaths.contains(glyphBounds)) {
                 glyphText.redact();
-                System.out.println("redact " + glyphText.getCid() + " " + glyphText.getFontSubTypeFormat());
+                System.out.println("redact " + glyphText.getCid() + " " + glyphText.getUnicode());
             }
         }
     }

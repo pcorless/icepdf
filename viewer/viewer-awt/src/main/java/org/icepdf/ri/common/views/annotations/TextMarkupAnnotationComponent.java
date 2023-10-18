@@ -64,7 +64,8 @@ public class TextMarkupAnnotationComponent extends MarkupAnnotationComponent<Tex
             if (!rect.intersects(new Rectangle(0, 0, compBounds.width, compBounds.height))) {
                 return true;
             }
-            return rect.contains(x, y);
+            boolean subContained = shape.contains(x, y);
+            return subContained;
         }
         return contains;
     }
