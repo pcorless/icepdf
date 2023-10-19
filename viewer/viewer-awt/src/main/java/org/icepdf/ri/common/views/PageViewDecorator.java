@@ -128,10 +128,8 @@ public class PageViewDecorator extends JComponent {
         Dimension size = pageViewComponent.getPreferredSize();
 
         double scale = g2d.getDeviceConfiguration().getDefaultTransform().getScaleX();
-        if (scale != 1.0)
-        {
-          size.width = (int)Math.round(size.width/scale);
-          size.height = (int)Math.round(size.height/scale);
+        if (scale != 1.0) {
+            g2d.scale(1.0 / scale, 1.0 / scale);
         }
         
         // paper
@@ -144,7 +142,7 @@ public class PageViewDecorator extends JComponent {
         // paper shadow
         paintShadow(g2d, size);
 
-        super.paint(g);
+        super.paint(g2d);
     }
 
     protected void paintBorder(Graphics2D g2d, Dimension size){

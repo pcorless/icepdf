@@ -22,6 +22,8 @@ public class TwoColumnPageViewLayout extends TwoPageViewLayout{
             setSizes(parent);
         }
 
+        double systemScaling = documentViewModel.getSystemScaling();
+
         PageViewDecorator[] pages = Arrays.stream(parent.getComponents())
                 .filter(component -> component instanceof PageViewDecorator && component.isVisible())
                 .toArray(PageViewDecorator[]::new);
@@ -31,11 +33,17 @@ public class TwoColumnPageViewLayout extends TwoPageViewLayout{
         for (PageViewDecorator pageViewDecorator : pages) {
             int pageIndex = pageViewDecorator.getPageViewComponent().getPageIndex();
             Dimension d = pageViewDecorator.getPreferredSize();
+            int boundsWidth = d.width;
+            int boundsHeight = d.height;
+            
+            d.width = (int)Math.round(d.width / systemScaling);
+            d.height = (int)Math.round(d.height / systemScaling);
+
             // apply left to right reading
             if (viewType == DocumentView.RIGHT_VIEW && pageIndex == 0 &&
                     (pages.length != 2)) {
                 // offset to the right side
-                xCord = ((maxWidth - preferredWidth) / 2) + d.width + PAGE_SPACING_HORIZONTAL + insets.left;
+                xCord = ((maxWidth - preferredWidth) / 2) + d.width + PAGE_SPACING_HORIZONTAL;
                 if (preferredHeight < maxHeight) {
                     yCord = (maxHeight - preferredHeight) / 2;
                 }
@@ -54,7 +62,7 @@ public class TwoColumnPageViewLayout extends TwoPageViewLayout{
                 xCord += previousDimension.width + PAGE_SPACING_HORIZONTAL;
             }
             previousDimension = d;
-            pageViewDecorator.setBounds(xCord, yCord, d.width, d.height);
+            pageViewDecorator.setBounds(xCord, yCord, boundsWidth, boundsHeight);
             updatePopupAnnotationComponents(pageViewDecorator);
         }
     }
@@ -85,5 +93,11 @@ public class TwoColumnPageViewLayout extends TwoPageViewLayout{
             preferredHeight += pages[0].getPreferredSize().height + PAGE_SPACING_VERTICAL;
             minHeight += preferredHeight;
         }
+
+        double systemScaling = documentViewModel.getSystemScaling();
+        minWidth = (int)Math.round(minWidth / systemScaling);
+        minHeight = (int)Math.round(minHeight / systemScaling);
+        preferredWidth = (int)Math.round(preferredWidth / systemScaling);
+        preferredHeight = (int)Math.round(preferredHeight / systemScaling);
     }
 }

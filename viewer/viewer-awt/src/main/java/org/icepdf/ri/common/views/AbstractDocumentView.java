@@ -295,8 +295,6 @@ public abstract class AbstractDocumentView
         if (currentTool != null) {
             currentTool.paintTool(g);
         }
-        Graphics2D g2d = (Graphics2D) g;
-        documentViewModel.setSystemScaling(g2d.getDeviceConfiguration().getDefaultTransform().getScaleX());
     }
 
     public void adjustmentValueChanged(AdjustmentEvent e) {

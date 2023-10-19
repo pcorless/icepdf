@@ -22,6 +22,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import org.icepdf.core.util.PropertyConstants;
 
 /**
  * <p>Constructs a two column page view as defined in the PDF specification.
@@ -189,9 +190,8 @@ public class TwoColumnPageView extends AbstractDocumentView {
 
         // normalize the dimensions to a zoom level of zero.
         float currentZoom = documentViewController.getDocumentViewModel().getViewZoom();
-        float systemScaling = (float)documentViewController.getDocumentViewModel().getSystemScaling();
-        pageViewWidth = Math.abs(pageViewWidth / currentZoom / systemScaling);
-        pageViewHeight = Math.abs(pageViewHeight / currentZoom / systemScaling);
+        pageViewWidth = pageViewWidth / currentZoom;
+        pageViewHeight = pageViewHeight / currentZoom;
 
         // two pages wide, generalization, pages are usually the same size we
         // don't bother to look at the second pages size for the time being.
@@ -201,11 +201,23 @@ public class TwoColumnPageView extends AbstractDocumentView {
         pageViewWidth += AbstractDocumentView.horizontalSpace * 4;
         pageViewHeight += AbstractDocumentView.verticalSpace * 2;
 
+        float systemScaling = (float)documentViewController.getDocumentViewModel().getSystemScaling();
+        pageViewWidth = Math.abs(pageViewWidth / systemScaling);
+        pageViewHeight = Math.abs(pageViewHeight / systemScaling);
+
         return new Dimension((int) pageViewWidth, (int) pageViewHeight);
 
     }
 
     public void paintComponent(Graphics g) {
+        Graphics2D g2d = (Graphics2D)g;
+        double scale = g2d.getDeviceConfiguration().getDefaultTransform().getScaleX();
+        double dpiScaling = documentViewModel.getSystemScaling();
+        if (scale != dpiScaling) {
+            documentViewModel.setSystemScaling(scale);
+            java.util.List<AbstractPageViewComponent> pageComponents = documentViewController.getDocumentViewModel().getPageComponents();
+            pageComponents.forEach(page -> page.updateView(PropertyConstants.DOCUMENT_VIEW_REFRESH_CHANGE, 1, 0));
+        }
         Rectangle clipBounds = g.getClipBounds();
         g.setColor(backgroundColour);
         g.fillRect(clipBounds.x, clipBounds.y, clipBounds.width, clipBounds.height);

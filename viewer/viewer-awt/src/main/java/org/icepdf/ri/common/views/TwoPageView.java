@@ -22,6 +22,7 @@ import org.icepdf.ri.common.MouseWheelListenerPageChanger;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import org.icepdf.core.util.PropertyConstants;
 
 import static org.icepdf.ri.common.views.TwoPageViewLayout.PAGE_SPACING_HORIZONTAL;
 
@@ -204,6 +205,14 @@ public class TwoPageView extends AbstractDocumentView {
     }
 
     public void paintComponent(Graphics g) {
+        Graphics2D g2d = (Graphics2D)g;
+        double scale = g2d.getDeviceConfiguration().getDefaultTransform().getScaleX();
+        double dpiScaling = documentViewModel.getSystemScaling();
+        if (scale != dpiScaling) {
+            documentViewModel.setSystemScaling(scale);
+            java.util.List<AbstractPageViewComponent> pageComponents = documentViewController.getDocumentViewModel().getPageComponents();
+            pageComponents.forEach(page -> page.updateView(PropertyConstants.DOCUMENT_VIEW_REFRESH_CHANGE, 1, 0));
+        }
         Rectangle clipBounds = g.getClipBounds();
         g.setColor(backgroundColour);
         g.fillRect(clipBounds.x, clipBounds.y, clipBounds.width, clipBounds.height);
