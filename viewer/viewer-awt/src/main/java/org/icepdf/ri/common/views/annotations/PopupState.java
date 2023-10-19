@@ -45,7 +45,7 @@ public class PopupState {
         this.userSpaceRectangle = annotationComponent.getAnnotation().getUserSpaceRectangle();
         this.visible = annotationComponent.isVisible();
         this.commentTextSize = annotationComponent.getTextAreaFontSize();
-        this.headerTextSize = annotationComponent.getTextAreaFontSize();
+        this.headerTextSize = annotationComponent.getHeaderFontSize();
     }
 
     public PopupAnnotationComponent getAnnotationComponent() {

@@ -128,8 +128,6 @@ public class AnnotationState implements Memento {
                     if (popupState != null) {
                         final PopupAnnotation popupAnnotation = popupAnnotationComponent.getAnnotation();
                         popupAnnotation.setOpen(popupState.isVisible());
-                        popupAnnotation.setTextAreaFontsize(popupState.getTextAreaFontSize());
-                        popupAnnotation.setHeaderLabelsFontSize(popupState.getHeaderTextSize());
                         popupAnnotationComponent.setVisible(popupState.isVisible());
                         popupAnnotationComponent.setTextAreaFontSize(popupState.getTextAreaFontSize());
                         popupAnnotationComponent.setHeaderLabelsFontSize(popupState.getHeaderTextSize());
