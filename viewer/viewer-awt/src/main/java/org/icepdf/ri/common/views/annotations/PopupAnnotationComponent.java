@@ -1242,8 +1242,12 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         setHeaderLabelsFontSize(size);
     }
 
-    public int getFontSize() {
+    public int getTextAreaFontSize() {
         return textArea.getFont().getSize();
+    }
+
+    public int getHeaderFontSize(){
+        return titleLabel.getFont().getSize();
     }
 
     class PopupTreeListener extends MouseAdapter {

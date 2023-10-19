@@ -21,6 +21,7 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
+import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.PageViewComponentImpl;
 
@@ -41,7 +42,7 @@ public class AnnotationState implements Memento {
     private final Rectangle2D.Float userSpaceRectangle;
     private final Operation operation;
     private final AnnotationComponent annotationComponent;
-    private final boolean popupVisible;
+    private final PopupState popupState;
 
     public enum Operation {
         ADD, DELETE, MOVE
@@ -61,8 +62,8 @@ public class AnnotationState implements Memento {
         this.annotationComponent = requireNonNull(annotationComponent);
         this.operation = requireNonNull(operation);
         this.userSpaceRectangle = annotationComponent.getAnnotation().getUserSpaceRectangle();
-        this.popupVisible = annotationComponent instanceof MarkupAnnotationComponent &&
-                ((MarkupAnnotationComponent) annotationComponent).getPopupAnnotationComponent().isVisible();
+        this.popupState = annotationComponent instanceof MarkupAnnotationComponent ? new PopupState(((MarkupAnnotationComponent) annotationComponent).getPopupAnnotationComponent()) : null;
+
     }
 
     public AnnotationComponent getAnnotationComponent() {
@@ -124,8 +125,15 @@ public class AnnotationState implements Memento {
                     if (!pageViewComponent.getAnnotationComponents().contains(popupAnnotationComponent)) {
                         pageViewComponent.addAnnotation(popupAnnotationComponent);
                     }
-                    popupAnnotationComponent.getAnnotation().setOpen(popupVisible);
-                    popupAnnotationComponent.setVisible(popupVisible);
+                    if (popupState != null) {
+                        final PopupAnnotation popupAnnotation = popupAnnotationComponent.getAnnotation();
+                        popupAnnotation.setOpen(popupState.isVisible());
+                        popupAnnotation.setTextAreaFontsize(popupState.getTextAreaFontSize());
+                        popupAnnotation.setHeaderLabelsFontSize(popupState.getHeaderTextSize());
+                        popupAnnotationComponent.setVisible(popupState.isVisible());
+                        popupAnnotationComponent.setTextAreaFontSize(popupState.getTextAreaFontSize());
+                        popupAnnotationComponent.setHeaderLabelsFontSize(popupState.getHeaderTextSize());
+                    }
                 }
             }
             // finally update the pageComponent so we can see it again.
