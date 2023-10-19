@@ -368,7 +368,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         String contents = annotation.getParent() != null ?
                 annotation.getParent().getContents() : "";
         textArea = new JTextArea(contents != null ? contents : "");
-        textArea.setFont(new JLabel().getFont());
+        textArea.setFont(new JLabel().getFont().deriveFont(annotation.getTextAreaFontsize()));
         textArea.setWrapStyleWord(true);
         textArea.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(PopupAnnotation.BORDER_COLOR),
                 BorderFactory.createEmptyBorder(2, 2, 2, 2)));
@@ -381,11 +381,13 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
         // creation date
         creationLabel = new JLabel();
+        creationLabel.setFont(new JLabel().getFont().deriveFont(annotation.getHeaderLabelsFontSize()));
         refreshCreationLabel();
         // title, user name.
         String title = selectedMarkupAnnotation != null ?
                 selectedMarkupAnnotation.getFormattedTitleText() : "";
         titleLabel = new JLabel(title);
+        titleLabel.setFont(new JLabel().getFont().deriveFont(annotation.getHeaderLabelsFontSize()));
 
         // main layout panel
         GridBagLayout layout = new GridBagLayout();
