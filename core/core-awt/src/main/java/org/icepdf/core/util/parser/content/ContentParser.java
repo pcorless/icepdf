@@ -988,7 +988,7 @@ public class ContentParser extends AbstractContentParser {
         return textMetrics.getyBTStart();
     }
 
-    private void markTokenPosition(int position, Integer token) {
+    private void markTokenPosition(int position, Integer token) throws IOException {
         if (contentStreamRedactorCallback != null) {
             contentStreamRedactorCallback.setLastTokenPosition(position, token);
         }

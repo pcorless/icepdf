@@ -38,7 +38,7 @@ public class StringObjectWriter {
         return true;
     }
 
-    public static void writeTj(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators) throws IOException {
+    public static float writeTj(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators) throws IOException {
         float lastTdOffset = 0;
         int operatorCount = 0;
         for (TextSprite textSprite : textOperators) {
@@ -60,7 +60,7 @@ public class StringObjectWriter {
                         contentOutputStream.write(" Tj ".getBytes());
                     }
                     if (i + 1 < glyphTextMax && !glyphTexts.get(i + 1).isRedacted()) {
-                        lastTdOffset = getLastTdOffset(contentOutputStream, lastTdOffset, glyphText);
+                        lastTdOffset = writeLastTdOffset(contentOutputStream, lastTdOffset, glyphText);
                         contentOutputStream.write(" Td".getBytes());
                     }
                 } else {
@@ -76,6 +76,7 @@ public class StringObjectWriter {
                 contentOutputStream.write(" Tj ".getBytes());
             }
         }
+        return lastTdOffset;
     }
 
     public static void writeTJ(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators) throws IOException {
@@ -105,7 +106,7 @@ public class StringObjectWriter {
                         contentOutputStream.write(" Tj ".getBytes());
                     }
                     if ((i + 1 < glyphTextMax && !glyphTexts.get(i + 1).isRedacted())) {
-                        lastTdOffset = getLastTdOffset(contentOutputStream, lastTdOffset, glyphText);
+                        lastTdOffset = writeLastTdOffset(contentOutputStream, lastTdOffset, glyphText);
                         contentOutputStream.write(" Td ".getBytes());
                     }
                 } else {
@@ -140,8 +141,8 @@ public class StringObjectWriter {
         }
     }
 
-    private static float getLastTdOffset(ByteArrayOutputStream contentOutputStream, float lastTdOffset,
-                                         GlyphText glyphText) throws IOException {
+    private static float writeLastTdOffset(ByteArrayOutputStream contentOutputStream, float lastTdOffset,
+                                           GlyphText glyphText) throws IOException {
         float advance = glyphText.getX() + glyphText.getAdvanceX();
         float delta = advance - lastTdOffset;
         lastTdOffset = advance;
