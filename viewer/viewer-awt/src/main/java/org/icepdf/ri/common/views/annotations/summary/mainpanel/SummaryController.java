@@ -288,15 +288,15 @@ public class SummaryController implements MutableDocument {
             final ValueLabelItem tmp = (ValueLabelItem) fontSizeBox.getSelectedItem();
             // fire the font size property change event.
             if (tmp != null) {
+                final int value = (int) tmp.getValue();
                 if (annotationNamedColorPanels != null) {
                     for (final ColorLabelPanel colorLabelPanel : annotationNamedColorPanels) {
                         colorLabelPanel.firePropertyChange(PropertyConstants.ANNOTATION_SUMMARY_BOX_FONT_SIZE_CHANGE,
-                                0, (int) tmp.getValue());
+                                0, (float) value);
                     }
                 }
-                propertiesManager.setInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_SUMMARY_FONT_SIZE,
-                        (int) tmp.getValue());
-                setFontSize((int) tmp.getValue());
+                propertiesManager.setInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_SUMMARY_FONT_SIZE, value);
+                setFontSize(value);
             }
         });
         summaryPanel.getFontNameBox().addItemListener(itemEvent -> {

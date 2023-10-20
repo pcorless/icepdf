@@ -123,7 +123,7 @@ public interface AnnotationSummaryComponent {
      *
      * @param size The new font size
      */
-    void setFontSize(int size);
+    void setFontSize(float size);
 
     /**
      * Sets the font family

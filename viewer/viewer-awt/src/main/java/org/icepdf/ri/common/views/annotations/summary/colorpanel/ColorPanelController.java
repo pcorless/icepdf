@@ -21,13 +21,12 @@ public class ColorPanelController {
         @Override
         public void propertyChange(final PropertyChangeEvent evt) {
             final Object newValue = evt.getNewValue();
-            final Object oldValue = evt.getOldValue();
             final String propertyName = evt.getPropertyName();
             if (PropertyConstants.ANNOTATION_SUMMARY_BOX_FONT_SIZE_CHANGE.equals(propertyName)) {
                 final Component[] comps = panel.getDraggableAnnotationPanel().getComponents();
                 for (final Component component : comps) {
                     if (component instanceof AnnotationSummaryComponent) {
-                        ((AnnotationSummaryComponent) component).setFontSize((int) newValue);
+                        ((AnnotationSummaryComponent) component).setFontSize((float) newValue);
                     }
                 }
             }

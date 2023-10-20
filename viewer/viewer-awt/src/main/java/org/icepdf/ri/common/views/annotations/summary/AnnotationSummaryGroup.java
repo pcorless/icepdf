@@ -261,7 +261,7 @@ public class AnnotationSummaryGroup extends MoveableComponentsPanel implements A
     }
 
     @Override
-    public void setFontSize(final int size) {
+    public void setFontSize(final float size) {
         components.forEach(c -> c.setFontSize(size));
     }
 

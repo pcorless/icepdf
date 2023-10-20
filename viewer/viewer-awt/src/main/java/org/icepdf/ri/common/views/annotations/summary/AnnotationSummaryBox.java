@@ -344,7 +344,7 @@ public class AnnotationSummaryBox extends PopupAnnotationComponent implements Fo
     }
 
     @Override
-    public void setFontSize(final int size) {
+    public void setFontSize(final float size) {
         titleLabel.setFont(titleLabel.getFont().deriveFont(size));
         creationLabel.setFont(titleLabel.getFont().deriveFont(size));
         textArea.setFont(titleLabel.getFont().deriveFont(size));
