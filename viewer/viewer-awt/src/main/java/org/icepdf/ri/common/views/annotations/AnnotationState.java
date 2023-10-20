@@ -117,21 +117,19 @@ public class AnnotationState implements Memento {
                 pageViewComponent.addAnnotation(annotationComponent);
             }
             if (annotationComponent instanceof MarkupAnnotationComponent) {
-                final PopupAnnotationComponent popupAnnotationComponent =
+                PopupAnnotationComponent popupAnnotationComponent =
                         ((MarkupAnnotationComponent<?>) annotationComponent).getPopupAnnotationComponent();
                 if (popupAnnotationComponent == null) {
-                    ((MarkupAnnotationComponent<?>) annotationComponent).createPopupAnnotationComponent(true);
-                } else {
-                    if (!pageViewComponent.getAnnotationComponents().contains(popupAnnotationComponent)) {
-                        pageViewComponent.addAnnotation(popupAnnotationComponent);
-                    }
-                    if (popupState != null) {
-                        final PopupAnnotation popupAnnotation = popupAnnotationComponent.getAnnotation();
-                        popupAnnotation.setOpen(popupState.isVisible());
-                        popupAnnotationComponent.setVisible(popupState.isVisible());
-                        popupAnnotationComponent.setTextAreaFontSize(popupState.getTextAreaFontSize());
-                        popupAnnotationComponent.setHeaderLabelsFontSize(popupState.getHeaderTextSize());
-                    }
+                    popupAnnotationComponent = ((MarkupAnnotationComponent<?>) annotationComponent).createPopupAnnotationComponent(true);
+                } else if (!pageViewComponent.getAnnotationComponents().contains(popupAnnotationComponent)) {
+                    pageViewComponent.addAnnotation(popupAnnotationComponent);
+                }
+                if (popupState != null) {
+                    final PopupAnnotation popupAnnotation = popupAnnotationComponent.getAnnotation();
+                    popupAnnotation.setOpen(popupState.isVisible());
+                    popupAnnotationComponent.setVisible(popupState.isVisible());
+                    popupAnnotationComponent.setTextAreaFontSize(popupState.getTextAreaFontSize());
+                    popupAnnotationComponent.setHeaderLabelsFontSize(popupState.getHeaderTextSize());
                 }
             }
             // finally update the pageComponent so we can see it again.
