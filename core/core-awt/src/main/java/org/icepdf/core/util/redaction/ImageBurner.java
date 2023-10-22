@@ -8,6 +8,9 @@ import org.icepdf.core.util.Library;
 
 import java.util.List;
 
+/**
+ * Future home of Image Burner code.
+ */
 public class ImageBurner {
     public static ImageStream[] burn(Page page,
                                      List<RedactionAnnotation> redactionAnnotations) {

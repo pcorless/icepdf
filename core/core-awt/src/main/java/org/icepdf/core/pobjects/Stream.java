@@ -187,7 +187,7 @@ public class Stream extends Dictionary {
 
         InputStream input = streamInput;
 
-        int bufferSize = Math.min((int) streamLength, 8 * 1024);
+        int bufferSize = Math.min((int) streamLength, 32 * 1024);
         input = new java.io.BufferedInputStream(input, bufferSize);
 
         // Search for crypt dictionary entry and decode params so that

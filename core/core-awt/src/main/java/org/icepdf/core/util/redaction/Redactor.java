@@ -11,6 +11,11 @@ import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Redactor iterates over a document pages looking for redaction annotations
+ *
+ * @since 7.2.0
+ */
 public class Redactor {
 
     public static void burnRedactions(Document document) throws InterruptedException, IOException {

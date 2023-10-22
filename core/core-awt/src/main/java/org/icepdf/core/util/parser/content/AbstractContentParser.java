@@ -935,7 +935,8 @@ public abstract class AbstractContentParser {
                                                TextMetrics textMetrics,
                                                GlyphOutlineClip glyphOutlineClip,
                                                LinkedList<OptionalContents> oCGs,
-                                               ContentStreamRedactorCallback contentStreamRedactorCallback) throws IOException {
+                                               ContentStreamRedactorCallback contentStreamRedactorCallback)
+            throws IOException {
         // ' = T* + Tj,  who knew?
         consume_T_star(graphicState, textMetrics, shapes.getPageText(), oCGs);
         consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs, contentStreamRedactorCallback);
@@ -1374,7 +1375,6 @@ public abstract class AbstractContentParser {
                 f = (Number) currentObject;
                 textMetrics.getAdvance().x -= (f.floatValue() / 1000f) *
                         graphicState.getTextState().currentfont.getSize();
-//                textOperators.add(f.floatValue());
             }
             textMetrics.setPreviousAdvance(textMetrics.getAdvance().x);
         }
@@ -1404,7 +1404,6 @@ public abstract class AbstractContentParser {
                 setAlpha(shapes, graphicState, AlphaPaintType.ALPHA_FILL);
                 // draw string will take care of text pageText construction
                 if (stringObject.getLength() > 0) {
-                    // get list of string
                     TextSprite textSprite = drawString(stringObject.getLiteralStringBuffer(
                                     textState.font.getSubTypeFormat(),
                                     textState.font.getFont()),

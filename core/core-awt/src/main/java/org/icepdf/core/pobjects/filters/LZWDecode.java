@@ -60,7 +60,7 @@ public class LZWDecode extends ChunkingInputStream {
         old_code = 0;
         firstTime = true;
         initCodeTable();
-        setBufferSize(8 * 1024);
+        setBufferSize(32 * 1024);
     }
 
     protected int fillInternalBuffer() throws IOException {

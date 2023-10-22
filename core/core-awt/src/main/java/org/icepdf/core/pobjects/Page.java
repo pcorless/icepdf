@@ -422,7 +422,6 @@ public class Page extends Dictionary {
             if (contents != null) {
                 try {
                     ContentParser cp = new ContentParser(library, resources, contentStreamRedactorCallback);
-                    // todo keep Stream object construct, so we can manipulate the object in the redactor
                     Stream[] streams = new Stream[contents.size()];
                     byte[] streamByte;
                     for (int i = 0, max = contents.size(); i < max; i++) {
@@ -1559,9 +1558,9 @@ public class Page extends Dictionary {
         Shapes textBlockShapes = new Shapes();
 
         /*
-          Finally iterate through the contents vector and concat all of the
-          the resource streams together so that the content parser can
-          go to town and build all of the pages shapes.
+          Finally iterate through the contents array and concat all the
+          resource streams together so that the content parser can
+          go to town and build all the pages shapes.
          */
         if (contents == null) {
             // Get the value of the page's content entry
@@ -1574,10 +1573,8 @@ public class Page extends Dictionary {
         }
         if (contents != null) {
             try {
-
                 ContentParser cp = new ContentParser(library, resources);
                 Stream[] streams = new Stream[contents.size()];
-                contents.toArray(streams);
                 textBlockShapes = cp.parseTextBlocks(streams);
                 // print off any fuzz left on the stack
                 if (logger.isLoggable(Level.FINER)) {

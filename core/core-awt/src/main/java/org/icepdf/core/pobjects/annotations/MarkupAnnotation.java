@@ -472,11 +472,4 @@ public abstract class MarkupAnnotation extends Annotation {
         this.markupBounds = markupBounds;
     }
 
-//    public Color getMarkupColor() {
-//        return color;
-//    }
-//
-//    public void setMarkupColor(Color textMarkupColor) {
-//        this.color = textMarkupColor;
-//    }
 }
