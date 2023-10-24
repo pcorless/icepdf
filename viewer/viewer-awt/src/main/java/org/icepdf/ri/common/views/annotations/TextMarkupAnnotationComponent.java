@@ -20,7 +20,6 @@ import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 
 import java.awt.*;
-import java.awt.geom.AffineTransform;
 import java.util.logging.Logger;
 
 /**
@@ -44,30 +43,6 @@ public class TextMarkupAnnotationComponent extends MarkupAnnotationComponent<Tex
     public void resetAppearanceShapes() {
         super.resetAppearanceShapes();
         annotation.resetAppearanceStream(getToPageSpaceTransform());
-    }
-
-    @Override
-    public boolean contains(int x, int y) {
-        boolean contains = super.contains(x, y);
-        if (contains && annotation != null && annotation.getMarkupPath() != null) {
-            // page space
-            AffineTransform pageTransform = getPageSpaceTransform();
-            shape = annotation.getMarkupPath().createTransformedShape(pageTransform);
-
-            // offset for annotation space
-            Rectangle compBounds = getBounds();
-            AffineTransform af = new AffineTransform(1, 0, 0, 1, -compBounds.x, -compBounds.y);
-            shape = af.createTransformedShape(shape);
-            Rectangle rect = shape.getBounds();
-
-            // bail if the markup shape and comp bounds don't line up at all
-            if (!rect.intersects(new Rectangle(0, 0, compBounds.width, compBounds.height))) {
-                return true;
-            }
-            boolean subContained = shape.contains(x, y);
-            return subContained;
-        }
-        return contains;
     }
 
     Shape shape;
