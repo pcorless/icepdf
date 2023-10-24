@@ -57,11 +57,9 @@ public class StringObjectWriter {
                         operatorCount = 0;
                         // close off the current string object
                         writeDelimiterEnd(glyphText, contentOutputStream);
-                        contentOutputStream.write(" Tj ".getBytes());
                     }
                     if (i + 1 < glyphTextMax && !glyphTexts.get(i + 1).isRedacted()) {
                         lastTdOffset = writeLastTdOffset(contentOutputStream, lastTdOffset, glyphText);
-                        contentOutputStream.write(" Td".getBytes());
                     }
                 } else {
                     if (operatorCount == 0) {
@@ -73,15 +71,13 @@ public class StringObjectWriter {
             }
             if (operatorCount > 0 && glyphText != null) {
                 writeDelimiterEnd(glyphText, contentOutputStream);
-                contentOutputStream.write(" Tj ".getBytes());
             }
         }
         return lastTdOffset;
     }
 
-    public static void writeTJ(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators) throws IOException {
+    public static float writeTJ(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators) throws IOException {
         int operatorCount = 0;
-        int writeCount = 0;
         float lastTdOffset = 0;
 
         for (TextSprite textSprite : textOperators) {
@@ -96,29 +92,19 @@ public class StringObjectWriter {
             GlyphText glyphText = null;
             int glyphWrittenCount = 0;
             for (int i = 0, glyphTextMax = glyphTexts.size(); i < glyphTextMax; i++) {
-                writeCount++;
                 glyphText = glyphTexts.get(i);
                 if (glyphText.isRedacted()) {
                     if (glyphWrittenCount > 0) {
                         glyphWrittenCount = 0;
                         // close off the current string object
                         writeDelimiterEnd(glyphText, contentOutputStream);
-                        contentOutputStream.write(" Tj ".getBytes());
                     }
-                    if ((i + 1 < glyphTextMax && !glyphTexts.get(i + 1).isRedacted())) {
+                    if (i + 1 < glyphTextMax && !glyphTexts.get(i + 1).isRedacted()) {
                         lastTdOffset = writeLastTdOffset(contentOutputStream, lastTdOffset, glyphText);
-                        contentOutputStream.write(" Td ".getBytes());
                     }
                 } else {
                     if (i == 0 && operatorCount > 1) {
-                        float advance = glyphText.getX();
-                        float delta = advance - lastTdOffset;
-                        lastTdOffset = advance;
-                        contentOutputStream.write(' ');
-                        contentOutputStream.write(String.valueOf(delta).getBytes());
-                        contentOutputStream.write(' ');
-                        contentOutputStream.write('0');
-                        contentOutputStream.write(" Td ".getBytes());
+                        lastTdOffset = writeStartTdOffset(contentOutputStream, lastTdOffset, glyphText);
                     }
                     if (glyphWrittenCount == 0) {
                         writeDelimiterStart(glyphText, contentOutputStream);
@@ -127,36 +113,40 @@ public class StringObjectWriter {
                     writeCharacterCode(glyphText, contentOutputStream);
                 }
             }
-            if (glyphWrittenCount > 0) {
+            if (glyphWrittenCount > 0 && glyphText != null) {
                 writeDelimiterEnd(glyphText, contentOutputStream);
-                contentOutputStream.write(" Tj ".getBytes());
             }
         }
-        // revert back to the original td offset, but only if we altered TJ.
-        if (operatorCount > 0 && writeCount > 0) {
-            contentOutputStream.write(String.valueOf(-lastTdOffset).getBytes());
-            contentOutputStream.write(' ');
-            contentOutputStream.write('0');
-            contentOutputStream.write(" Td ".getBytes());
-        }
+        return lastTdOffset;
     }
 
     private static float writeLastTdOffset(ByteArrayOutputStream contentOutputStream, float lastTdOffset,
                                            GlyphText glyphText) throws IOException {
         float advance = glyphText.getX() + glyphText.getAdvanceX();
+        return writeTdOffset(contentOutputStream, advance, lastTdOffset);
+    }
+
+    private static float writeStartTdOffset(ByteArrayOutputStream contentOutputStream, float lastTdOffset,
+                                            GlyphText glyphText) throws IOException {
+        float advance = glyphText.getX();
+        return writeTdOffset(contentOutputStream, advance, lastTdOffset);
+    }
+
+    private static float writeTdOffset(ByteArrayOutputStream contentOutputStream, float advance,
+                                       float lastTdOffset) throws IOException {
         float delta = advance - lastTdOffset;
         lastTdOffset = advance;
         contentOutputStream.write(' ');
         contentOutputStream.write(String.valueOf(delta).getBytes());
         contentOutputStream.write(' ');
         contentOutputStream.write('0');
+        contentOutputStream.write(" Td ".getBytes());
         return lastTdOffset;
     }
 
     private static void writeCharacterCode(GlyphText glyphText, ByteArrayOutputStream contentOutputStream) throws IOException {
-        // todo maybe avoid simpl/cid and just go with the StringObject type, and use the byte length in the wrapper
-        //  or keep the parent StringObject and get it write the bytes as it has all the info as to how it was parse?
-        //  probably a bit of both.  When we get to variable bye hex strings things get harder to define generically
+        // When I get back to variable bye hex strings, this might need to be reworked to use the object string
+        // wrapper class.
         if (glyphText.getFontSubTypeFormat() == Font.SIMPLE_FORMAT) {
             writeSimpleCharacterCode(glyphText, contentOutputStream);
         } else {
@@ -196,10 +186,11 @@ public class StringObjectWriter {
         contentOutputStream.write(delimiter);
     }
 
-    private static void writeDelimiterEnd(GlyphText glyphText, ByteArrayOutputStream contentOutputStream) {
+    private static void writeDelimiterEnd(GlyphText glyphText, ByteArrayOutputStream contentOutputStream) throws IOException {
         int fontSubType = glyphText.getFontSubTypeFormat();
         char delimiter = fontSubType == Font.SIMPLE_FORMAT ? ')' : '>';
         contentOutputStream.write(delimiter);
+        contentOutputStream.write(" Tj ".getBytes());
     }
 
 }

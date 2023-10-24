@@ -31,6 +31,7 @@ public class ContentStreamRedactorCallback {
     private int lastTextPosition;
     // keep track of Tj followed by TD layout interactions
     private int lastToken;
+    private int lastTextToken;
     private float lastTjOffset;
 
     private Library library;
@@ -76,29 +77,53 @@ public class ContentStreamRedactorCallback {
     public void setLastTokenPosition(int position, Integer token) throws IOException {
         // skip text writing operators as they will be handled by the RedactionWriter
         // other layout operators like ' and " are still handle by the TJ/Tj operators
-        if (token != Tj && token != TJ && token != TD) {
+        if (!isTextLayoutToken(token)) {
             burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
                     (position - lastTokenPosition));
             lastTokenPosition = position;
-        } else if (token == TD) {
+        } else if (token == TD || token == Td) {
             // lastToken was Tj and current is TD, we need to make sure to undo the offset
             // just encase the TD is adjusting the x coordinate. TJ doesn't seem to have this issue and the
             // undo can be done when finishing up the TJ edit in the StringObjectWriter.
-            if (lastToken == Tj) {
-                if (lastTjOffset > 0) {
-                    burnedContentOutputStream.write(String.valueOf(-lastTjOffset).getBytes());
-                    burnedContentOutputStream.write(' ');
-                    burnedContentOutputStream.write('0');
-                    burnedContentOutputStream.write(" Td ".getBytes());
-                }
+            if (lastTextToken == Tj || lastTextToken == TJ) {
+                writeLastTjOffset();
             }
+            lastTextToken = 0;
+            lastTjOffset = 0;
             // write TD/Td command per usual, as it's still needed for layout
             burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
                     (position - lastTokenPosition));
             lastTokenPosition = position;
+        } else if (token == T_STAR) {
+            writeLastTjOffset();
+            lastTextToken = 0;
+            lastTjOffset = 0;
+            burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
+                    (position - lastTokenPosition));
+            lastTokenPosition = position;
+        } else if (token == BT) {
+            lastTextToken = 0;
+            lastTjOffset = 0;
+        }
+        if (isTextLayoutToken(token)) {
+            lastTextToken = token;
         }
         lastTextPosition = position;
         lastToken = token;
+    }
+
+    private void writeLastTjOffset() throws IOException {
+        if (lastTjOffset > 0) {
+            burnedContentOutputStream.write(' ');
+            burnedContentOutputStream.write(String.valueOf(-lastTjOffset).getBytes());
+            burnedContentOutputStream.write(' ');
+            burnedContentOutputStream.write('0');
+            burnedContentOutputStream.write(" Td ".getBytes());
+        }
+    }
+
+    private boolean isTextLayoutToken(int token) {
+        return token == Tj || token == TJ || token == Td || token == TD || token == T_STAR || token == BT;
     }
 
     public void markAsRedact(GlyphText glyphText) {
@@ -117,8 +142,7 @@ public class ContentStreamRedactorCallback {
         if (StringObjectWriter.containsRedactions(textOperators)) {
             // apply redaction
             if (Operands.TJ == operand) {
-                StringObjectWriter.writeTJ(burnedContentOutputStream, textOperators);
-                lastTjOffset = 0;
+                lastTjOffset = StringObjectWriter.writeTJ(burnedContentOutputStream, textOperators);
             } else {
                 lastTjOffset = StringObjectWriter.writeTj(burnedContentOutputStream, textOperators);
             }

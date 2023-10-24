@@ -1575,6 +1575,7 @@ public class Page extends Dictionary {
             try {
                 ContentParser cp = new ContentParser(library, resources);
                 Stream[] streams = new Stream[contents.size()];
+                contents.toArray(streams);
                 textBlockShapes = cp.parseTextBlocks(streams);
                 // print off any fuzz left on the stack
                 if (logger.isLoggable(Level.FINER)) {
