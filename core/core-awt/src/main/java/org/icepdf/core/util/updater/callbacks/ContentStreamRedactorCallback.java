@@ -81,20 +81,7 @@ public class ContentStreamRedactorCallback {
             burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
                     (position - lastTokenPosition));
             lastTokenPosition = position;
-        } else if (token == TD || token == Td) {
-            // lastToken was Tj and current is TD, we need to make sure to undo the offset
-            // just encase the TD is adjusting the x coordinate. TJ doesn't seem to have this issue and the
-            // undo can be done when finishing up the TJ edit in the StringObjectWriter.
-            if (lastTextToken == Tj || lastTextToken == TJ) {
-                writeLastTjOffset();
-            }
-            lastTextToken = 0;
-            lastTjOffset = 0;
-            // write TD/Td command per usual, as it's still needed for layout
-            burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
-                    (position - lastTokenPosition));
-            lastTokenPosition = position;
-        } else if (token == T_STAR) {
+        } else if (token == T_STAR || token == TD || token == Td) {
             writeLastTjOffset();
             lastTextToken = 0;
             lastTjOffset = 0;
@@ -150,7 +137,6 @@ public class ContentStreamRedactorCallback {
             // copy none redacted StringObjects verbatim
             int length = lastTextPosition - lastTokenPosition;
             burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition, length);
-            lastTjOffset = 0;
         }
         lastTokenPosition = lastTextPosition;
     }
