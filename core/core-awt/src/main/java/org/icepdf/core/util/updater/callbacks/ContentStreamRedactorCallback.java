@@ -56,7 +56,7 @@ public class ContentStreamRedactorCallback {
         if (currentStream != null) {
             int contentStreamLength = originalContentStreamBytes.length;
             // make sure we don't miss any bytes.
-            if (lastTokenPosition < originalContentStreamBytes.length - 1) {
+            if (lastTokenPosition < originalContentStreamBytes.length) {
                 burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
                         (contentStreamLength - lastTokenPosition));
             }

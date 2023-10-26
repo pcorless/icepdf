@@ -12,6 +12,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
+
+import static java.util.zip.Deflater.BEST_COMPRESSION;
 
 public class StreamWriter extends BaseWriter {
 
@@ -24,14 +27,16 @@ public class StreamWriter extends BaseWriter {
         byte[] outputData;
         if (!obj.isRawBytesCompressed() &&
                 obj.getEntries().containsKey(Stream.FILTER_KEY)) {
-            byte[] rawBytes = obj.getRawBytes();
-            byte[] decompressedOutput = new byte[rawBytes.length];
-            Deflater compressor = new Deflater();
-            compressor.setInput(rawBytes);
-            compressor.finish();
-            int compressedDataLength = compressor.deflate(decompressedOutput);
-            outputData = new byte[compressedDataLength];
-            System.arraycopy(decompressedOutput, 0, outputData, 0, compressedDataLength);
+
+            // compress raw bytes
+            final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            final Deflater deflater = new Deflater(Deflater.HUFFMAN_ONLY);
+            deflater.setLevel(BEST_COMPRESSION);
+            final DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(byteArrayOutputStream, deflater);
+            deflaterOutputStream.write(obj.getRawBytes());
+            deflaterOutputStream.close();
+            byteArrayOutputStream.close();
+            outputData = byteArrayOutputStream.toByteArray();
 
             // update the dictionary filter /FlateDecode removing previous values.
             obj.getEntries().put(Stream.FILTER_KEY, Stream.FILTER_FLATE_DECODE);
