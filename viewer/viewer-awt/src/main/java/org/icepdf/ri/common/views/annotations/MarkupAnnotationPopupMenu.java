@@ -92,7 +92,7 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
     public void buildGui() {
         ViewerPropertiesManager propertiesManager = ViewerPropertiesManager.getInstance();
         boolean modifyDocument = controller.havePermissionToModifyDocument();
-        boolean hasEditRights = ((MarkupAnnotation) annotationComponent.getAnnotation()).isCurrentUserOwner();
+        boolean hasEditRights = annotationComponent != null && ((MarkupAnnotation) annotationComponent.getAnnotation()).isCurrentUserOwner();
         boolean canModify = modifyDocument && hasEditRights;
         // status change commands.
         statusNoneMenuItem = new JMenuItem(
