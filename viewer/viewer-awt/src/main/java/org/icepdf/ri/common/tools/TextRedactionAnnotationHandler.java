@@ -61,9 +61,6 @@ public class TextRedactionAnnotationHandler extends HighLightAnnotationHandler {
             redactionBounds = getSelectedTextBounds(pageViewComponent, getPageTransform());
         }
 
-        // grab the selected text
-        String contents = enableHighlightContents && redactionBounds != null ? getSelectedText() : "";
-
         // clear the selected text
         documentViewController.clearSelectedText();
 
@@ -114,8 +111,6 @@ public class TextRedactionAnnotationHandler extends HighLightAnnotationHandler {
                     AnnotationComponentFactory.buildAnnotationComponent(
                             annotation, documentViewController, pageViewComponent);
             documentViewController.addNewAnnotation(comp);
-
-            // convert to user rect to page space along with the bounds.
             comp.setBounds(bounds);
             // avoid a potential rounding error in comp.refreshAnnotationRect(), stead we simply
             // set the bbox to the rect which is just fine for highlight annotations.
