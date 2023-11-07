@@ -188,7 +188,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         // search hit list
         List<LineText> searchHits = new ArrayList<>();
 
-        // get our our page text reference
+        // get our page text reference
         PageText pageText = getPageText(pageIndex);
 
         // some pages just don't have any text.

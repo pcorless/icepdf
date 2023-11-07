@@ -92,34 +92,37 @@ public class RedactSearchTask extends SwingWorker<Void, RedactSearchTask.RedactR
                 for (WordText wordText : foundWords) {
                     redactionCount++;
                     publish(new RedactResult());
-                    Rectangle tBbox = wordText.getBounds().getBounds();
+                    final Rectangle tBbox = wordText.getBounds().getBounds();
 
                     RedactionAnnotation redactionAnnotation = (RedactionAnnotation)
                             AnnotationFactory.buildAnnotation(
                                     document.getPageTree().getLibrary(),
                                     Annotation.SUBTYPE_REDACT,
                                     tBbox);
+                    if (redactionAnnotation != null) {
+                        ArrayList<Shape> markupBounds = new ArrayList<>();
+                        markupBounds.add(tBbox);
+                        redactionAnnotation.setColor(Color.BLACK);
+                        redactionAnnotation.setMarkupBounds(markupBounds);
+                        redactionAnnotation.setMarkupPath(new GeneralPath(tBbox));
+                        redactionAnnotation.setBBox(tBbox);
+                        redactionAnnotation.resetAppearanceStream(new AffineTransform());
 
-                    ArrayList<Shape> markupBounds = new ArrayList<>();
-                    markupBounds.add(tBbox);
-                    redactionAnnotation.setColor(Color.BLACK);
-                    redactionAnnotation.setMarkupBounds(markupBounds);
-                    redactionAnnotation.setMarkupPath(new GeneralPath(tBbox));
-                    redactionAnnotation.setBBox(tBbox);
-                    redactionAnnotation.resetAppearanceStream(new AffineTransform());
+                        if (pageViewComponent.getPage().isInitiated()) {
+                            SwingUtilities.invokeLater(() -> {
+                                RedactionAnnotationComponent annotationComponent = (RedactionAnnotationComponent)
+                                        AnnotationComponentFactory.buildAnnotationComponent(
+                                                redactionAnnotation,
+                                                documentViewController,
+                                                pageViewComponent);
+                                annotationComponent.refreshDirtyBounds();
 
-                    if (pageViewComponent.getPage().isInitiated()) {
-                        RedactionAnnotationComponent annotationComponent = (RedactionAnnotationComponent)
-                                AnnotationComponentFactory.buildAnnotationComponent(
-                                        redactionAnnotation,
-                                        documentViewController,
-                                        pageViewComponent);
-                        documentViewController.addNewAnnotation(annotationComponent);
-                        tBbox = annotationComponent.convertToPageSpace(tBbox).getBounds();
-                        annotationComponent.setBounds(tBbox);
-                        pageViewComponent.repaint();
-                    } else {
-                        pageViewComponent.getPage().addAnnotation(redactionAnnotation, true);
+                                documentViewController.addNewAnnotation(annotationComponent);
+                                pageViewComponent.repaint();
+                            });
+                        } else {
+                            pageViewComponent.getPage().addAnnotation(redactionAnnotation, true);
+                        }
                     }
                 }
             }

@@ -3449,6 +3449,10 @@ public class SwingController extends ComponentAdapter
      */
     public void saveFile() {
         if (IS_READONLY) return;
+        // check for annotations
+        if (hasUnburnedRedactions() && cancelRedactionWarningDialog()) {
+            return;
+        }
         if (document.getStateManager().isChange() &&
                 saveFilePath != null &&
                 !saveFilePath.isEmpty()) {
@@ -3464,7 +3468,7 @@ public class SwingController extends ComponentAdapter
                     }
                 }
             } else {
-                //Probably got loaded from an InputStream, can't simply save
+                // Probably got loaded from an InputStream, can't inline save, so call saveAs
                 saveFileAs(SaveMode.SAVE);
             }
         } else {
@@ -3495,7 +3499,28 @@ public class SwingController extends ComponentAdapter
         saveFileAs(SaveMode.EXPORT);
     }
 
+    protected boolean hasUnburnedRedactions() {
+        return document.hasRedactions();
+    }
+
+    protected boolean cancelRedactionWarningDialog() {
+        // show dialog warning user they are about to save has unburned redaction annotations
+        int option = JOptionPane.showConfirmDialog(getViewerFrame(),
+                messageBundle.getString("viewer.dialog.redaction.unburned.msgs"),
+                messageBundle.getString("viewer.dialog.redaction.unburned.title"),
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (option == JOptionPane.CANCEL_OPTION) {
+            return true;
+        }
+        return false;
+    }
+
+
     protected void saveFileAs(SaveMode saveMode) {
+        if (hasUnburnedRedactions() && cancelRedactionWarningDialog()) {
+            return;
+        }
+
         String originalFileName = getOriginalFileName();
         String newFileName = originalFileName == null || originalFileName.isEmpty() ? null :
                 generateNewSaveName(originalFileName);

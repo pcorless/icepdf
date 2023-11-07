@@ -436,7 +436,8 @@ public class Lexer {
         streamCount++;
         // assign next byte array, but skip over the corner
         // case of a zero length content stream.
-        if (streams[streamCount].getDecompressedBytes().length == 0 &&
+        if (streams[streamCount].getDecompressedBytes() != null &&
+                streams[streamCount].getDecompressedBytes().length == 0 &&
                 streamCount + 1 < streams.length) {
             streamCount++;
         }
@@ -444,7 +445,7 @@ public class Lexer {
         markContentStreamStart();
         // reset the  pointers.
         pos = 0;
-        numRead = streamBytes.length;
+        numRead = streamBytes != null ? streamBytes.length : 0;
     }
 
     private void markContentStreamStart() throws IOException {

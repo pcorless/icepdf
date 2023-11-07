@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects;
 
+import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 
 import java.util.*;
@@ -203,6 +204,18 @@ public class StateManager {
 
     public CrossReferenceRoot getCrossReferenceRoot() {
         return crossReferenceRoot;
+    }
+
+    public boolean hasRedactions() {
+        if (changes.isEmpty()) return false;
+        Collection<Change> changesValues = changes.values();
+        for (Change change : changesValues) {
+            Object object = change.getPObject().getObject();
+            if (object instanceof RedactionAnnotation) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static class PObjectComparatorByReferenceObjectNumber
