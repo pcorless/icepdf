@@ -39,9 +39,7 @@ import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
@@ -61,7 +59,7 @@ import java.util.Date;
  *
  * @since 5.0
  */
-public class HighLightAnnotationHandler extends TextSelectionPageHandler implements ActionListener {
+public class HighLightAnnotationHandler extends TextSelectionPageHandler implements ActionListener, KeyListener {
 
     /**
      * Property when enabled will set the /contents key value to the selected text of the markup annotation.
@@ -91,6 +89,38 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
         // default type
         markupSubType = Annotation.SUBTYPE_HIGHLIGHT;
         mouseClickTimer = new Timer(MULTI_CLICK_INTERVAL, this);
+    }
+
+    @Override
+    public void keyTyped(KeyEvent keyEvent) {
+
+    }
+
+    @Override
+    public void keyPressed(KeyEvent keyEvent) {
+        if (keyEvent.getKeyCode() == KeyEvent.VK_ESCAPE) {
+            cancelSelection();
+            documentViewController.clearSelectedText();
+            pageViewComponent.revalidate();
+            pageViewComponent.repaint();
+        }
+    }
+
+    @Override
+    public void keyReleased(KeyEvent keyEvent) {
+
+    }
+
+    @Override
+    public void installTool() {
+        super.installTool();
+        this.pageViewComponent.addKeyListener(this);
+    }
+
+    @Override
+    public void uninstallTool() {
+        super.uninstallTool();
+        this.pageViewComponent.removeKeyListener(this);
     }
 
     public void actionPerformed(ActionEvent e) {

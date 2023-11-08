@@ -44,6 +44,7 @@ public class TextSelectionPageHandler extends TextSelection
         implements ToolHandler {
 
     protected boolean isMouseDrag;
+    protected boolean isClearSelection;
 
     /**
      * New Text selection handler.  Make sure to correctly and remove
@@ -74,7 +75,8 @@ public class TextSelectionPageHandler extends TextSelection
      * Invoked when a mouse button has been pressed on a component.
      */
     public void mousePressed(MouseEvent e) {
-
+        isClearSelection = false;
+        this.pageViewComponent.requestFocus();
         lastMousePressedLocation = e.getPoint();
 
         selectionStart(e.getPoint(), pageViewComponent, true);
@@ -100,6 +102,9 @@ public class TextSelectionPageHandler extends TextSelection
      * Drag&amp;Drop operation.
      */
     public void mouseDragged(MouseEvent e) {
+        if (isClearSelection) {
+            return;
+        }
         isMouseDrag = true;
         Point point = e.getPoint();
         updateSelectionSize(point.x, point.y, pageViewComponent);
@@ -140,6 +145,11 @@ public class TextSelectionPageHandler extends TextSelection
     public void mouseMoved(MouseEvent e) {
         // change state of mouse from pointer to text selection icon
         selectionIcon(e.getPoint(), pageViewComponent);
+    }
+
+    public void cancelSelection() {
+        isMouseDrag = false;
+        isClearSelection = true;
     }
 
     public void installTool() {
