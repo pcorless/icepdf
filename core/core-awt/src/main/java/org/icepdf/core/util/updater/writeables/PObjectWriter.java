@@ -10,7 +10,6 @@ public class PObjectWriter extends BaseWriter {
 
     public void write(PObject writeable, CountingOutputStream output) throws IOException {
         Reference ref = writeable.getReference();
-        Object obj = writeable.getObject();
 
         writeInteger(ref.getObjectNumber(), output);
         output.write(SPACE);

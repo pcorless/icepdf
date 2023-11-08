@@ -277,9 +277,7 @@ public class TextAnnotation extends MarkupAnnotation {
         try {
             Resources resources = form.getResources();
             ContentParser cp = new ContentParser(library, resources);
-            shapes = cp.parse(
-                    new byte[][]{iconContentString.getBytes()},
-                    new Reference[]{this.getPObjectReference()},
+            shapes = cp.parse(Stream.fromByteArray(iconContentString.getBytes(), this.getPObjectReference()),
                     null).getShapes();
         } catch (Exception e) {
             shapes = new Shapes();

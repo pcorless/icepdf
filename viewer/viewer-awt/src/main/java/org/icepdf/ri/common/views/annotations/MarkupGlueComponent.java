@@ -76,7 +76,7 @@ public class MarkupGlueComponent extends JComponent implements PageViewAnnotatio
         Rectangle2D markupUserSpaceRectangle = markupAnnotationComponent.getAnnotation().getUserSpaceRectangle();
         Rectangle annotationPageSpaceBounds =
                 Annotation.commonBoundsNormalization(new GeneralPath(markupUserSpaceRectangle), at);
-        Rectangle pageBounds = parentPageViewComponent.getParent().getBounds();
+        Rectangle pageBounds = parentPageViewComponent.getBounds();
         annotationPageSpaceBounds.x += pageBounds.x;
         annotationPageSpaceBounds.y += pageBounds.y;
         return annotationPageSpaceBounds;

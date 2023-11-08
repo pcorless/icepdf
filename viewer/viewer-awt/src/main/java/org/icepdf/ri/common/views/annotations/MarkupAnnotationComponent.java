@@ -29,6 +29,7 @@ import org.icepdf.ri.common.views.DocumentViewController;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Logger;
@@ -192,6 +193,29 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
         }
     }
 
+    @Override
+    public boolean contains(int x, int y) {
+        boolean contains = super.contains(x, y);
+        if (contains && annotation != null && annotation.getMarkupPath() != null) {
+            // page space
+            AffineTransform pageTransform = getPageSpaceTransform();
+            Shape shape = annotation.getMarkupPath().createTransformedShape(pageTransform);
+
+            // offset for annotation space
+            Rectangle compBounds = getBounds();
+            AffineTransform af = new AffineTransform(1, 0, 0, 1, -compBounds.x, -compBounds.y);
+            shape = af.createTransformedShape(shape);
+            Rectangle rect = shape.getBounds();
+
+            // bail if the markup shape and comp bounds don't line up at all
+            if (!rect.intersects(new Rectangle(0, 0, compBounds.width, compBounds.height))) {
+                return true;
+            }
+            boolean subContained = shape.contains(x, y);
+            return subContained;
+        }
+        return contains;
+    }
 
     @Override
     public void mouseClicked(MouseEvent e) {

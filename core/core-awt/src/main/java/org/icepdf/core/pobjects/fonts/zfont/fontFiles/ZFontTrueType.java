@@ -108,19 +108,18 @@ public class ZFontTrueType extends ZSimpleFont {
     }
 
     @Override
-    public void paint(Graphics2D g, String estr, float x, float y, long layout, int mode, Color strokeColor) {
+    public void paint(Graphics2D g, char estr, float x, float y, long layout, int mode, Color strokeColor) {
         try {
             AffineTransform af = g.getTransform();
-            char echar = estr.charAt(0);
 
             Shape outline;
             int gid;
             if (trueTypeFont instanceof OpenTypeFont) {
-                int cid = codeToGID(echar);
+                int cid = codeToGID(estr);
                 Type2CharString charstring = ((OpenTypeFont) trueTypeFont).getCFF().getFont().getType2CharString(cid);
                 outline = charstring.getPath();
             } else {
-                gid = getCharToGid(echar);
+                gid = getCharToGid(estr);
                 GlyphData glyphData = trueTypeFont.getGlyph().getGlyph(gid);
                 if (glyphData == null) {
                     outline = new GeneralPath();

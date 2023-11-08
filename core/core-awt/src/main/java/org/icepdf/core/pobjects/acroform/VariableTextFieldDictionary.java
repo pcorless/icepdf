@@ -38,8 +38,7 @@ import static org.icepdf.core.pobjects.acroform.InteractiveForm.DR_KEY;
  */
 public class VariableTextFieldDictionary extends FieldDictionary {
 
-    private static final Logger logger =
-            Logger.getLogger(VariableTextFieldDictionary.class.toString());
+    private static final Logger logger = Logger.getLogger(VariableTextFieldDictionary.class.toString());
 
     public enum Quadding {
         LEFT_JUSTIFIED, CENTERED, RIGHT_JUSTIFIED
@@ -130,13 +129,14 @@ public class VariableTextFieldDictionary extends FieldDictionary {
             if (resources != null) {
                 try {
                     ContentParser cp = new ContentParser(library, resources);
-                    cp.parseTextBlocks(new byte[][]{defaultAppearance.getBytes()});
+                    Stream[] possibleContentStream = Stream.fromByteArray(defaultAppearance.getBytes(),
+                            this.getPObjectReference());
+                    cp.parseTextBlocks(possibleContentStream);
                     GraphicsState gs = cp.getGraphicsState();
                     if (gs != null) {
                         color = gs.getFillColor();
                         size = gs.getTextState().tsize;
-                        if (gs.getTextState().font != null &&
-                                gs.getTextState().font.getSubTypeFormat() != Font.CID_FORMAT) {
+                        if (gs.getTextState().font != null && gs.getTextState().font.getSubTypeFormat() != Font.CID_FORMAT) {
                             font = gs.getTextState().font;
                             fontName = gs.getTextState().fontName;
                         }
@@ -172,7 +172,9 @@ public class VariableTextFieldDictionary extends FieldDictionary {
             }
             ContentParser cp = new ContentParser(library, resources);
             // usefull parser so we parse the font color.
-            cp.parse(new byte[][]{possibleContent.getBytes()}, new Reference[]{this.getPObjectReference()}, null);
+            Stream[] possibleContentStream = Stream.fromByteArray(possibleContent.getBytes(),
+                    this.getPObjectReference());
+            cp.parse(possibleContentStream, null);
             GraphicsState gs = cp.getGraphicsState();
             if (gs != null) {
                 if (gs.getFillColor() != null) color = gs.getFillColor();
@@ -187,8 +189,7 @@ public class VariableTextFieldDictionary extends FieldDictionary {
                 }
                 // further work is needed here to add font mapping support when CID fonts are detected,
                 // this may also be a fix for our asian font write support problem.
-                if (gs.getTextState().font != null &&
-                        gs.getTextState().font.getSubTypeFormat() != Font.CID_FORMAT) {
+                if (gs.getTextState().font != null && gs.getTextState().font.getSubTypeFormat() != Font.CID_FORMAT) {
                     if (gs.getTextState().font != null) font = gs.getTextState().font;
                     if (gs.getTextState().fontName != null) fontName = gs.getTextState().fontName;
                 }
@@ -197,8 +198,7 @@ public class VariableTextFieldDictionary extends FieldDictionary {
             logger.warning("Could not generate default appearance stream.");
         }
         return color.getRed() / 255.0f + " " + color.getGreen() / 255.0f + " " + color.getBlue() / 255.0f + " rg " +
-                "/" + fontName + " " +
-                size + " Tf ";
+                "/" + fontName + " " + size + " Tf ";
     }
 
     public String getDefaultAppearance() {

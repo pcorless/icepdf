@@ -21,6 +21,7 @@ import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
+import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
 import org.icepdf.core.pobjects.graphics.WatermarkCallback;
 import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.pobjects.graphics.text.PageText;
@@ -564,7 +565,7 @@ public class Document {
      * @return The length of the PDF file copied
      * @throws IOException if there is some problem reading or writing the PDF data
      */
-    public long writeToOutputStream(OutputStream out) throws IOException {
+    public long writeToOutputStream(OutputStream out) throws IOException, InterruptedException {
         return writeToOutputStream(out, WriteMode.INCREMENT_UPDATE);
     }
 
@@ -578,7 +579,7 @@ public class Document {
      * @return The length of the PDF file copied
      * @throws IOException if there is some problem reading or writing the PDF data
      */
-    public long writeToOutputStream(OutputStream out, WriteMode writeMode) throws IOException {
+    public long writeToOutputStream(OutputStream out, WriteMode writeMode) throws IOException, InterruptedException {
         if (documentFileChannel != null) {
             synchronized (library.getMappedFileByteBufferLock()) {
                 ByteBuffer documentByteBuffer = library.getMappedFileByteBuffer();
@@ -617,7 +618,7 @@ public class Document {
      * @return The length of the PDF file saved
      * @throws IOException if there is some problem reading or writing the PDF data
      */
-    public long saveToOutputStream(OutputStream out) throws IOException {
+    public long saveToOutputStream(OutputStream out) throws IOException, InterruptedException {
         return writeToOutputStream(out, WriteMode.INCREMENT_UPDATE);
     }
 
@@ -630,7 +631,7 @@ public class Document {
      * @return The length of the PDF file saved
      * @throws IOException if there is some problem reading or writing the PDF data
      */
-    public long saveToOutputStream(OutputStream out, WriteMode writeMode) throws IOException {
+    public long saveToOutputStream(OutputStream out, WriteMode writeMode) throws IOException, InterruptedException {
         return writeToOutputStream(out, writeMode);
     }
 
@@ -716,6 +717,26 @@ public class Document {
             return null;
         }
     }
+
+    public boolean hasRedactions() {
+        // check state manager first as this will be a bit cheaper than scanning each page in the document.
+        if (stateManager.hasRedactions()) {
+            return true;
+        } else {
+            PageTree pageTree = catalog.getPageTree();
+            Page page;
+            List<RedactionAnnotation> redactions;
+            for (int i = 0, max = pageTree.getNumberOfPages(); i < max; i++) {
+                page = pageTree.getPage(i);
+                redactions = page.getRedactionAnnotations();
+                if (redactions != null && redactions.size() > 1) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
 
     /**
      * Gets the security manager for this document. If the document has no

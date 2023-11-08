@@ -17,10 +17,7 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.events.*;
 import org.icepdf.core.io.SeekableInput;
-import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
-import org.icepdf.core.pobjects.annotations.MarkupGlueAnnotation;
-import org.icepdf.core.pobjects.annotations.PopupAnnotation;
+import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.WatermarkCallback;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
@@ -29,6 +26,7 @@ import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.*;
 import org.icepdf.core.util.parser.content.ContentParser;
+import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorCallback;
 import org.icepdf.core.util.updater.modifiers.AnnotationRemovalModifier;
 import org.icepdf.core.util.updater.modifiers.ModifierFactory;
 
@@ -333,7 +331,7 @@ public class Page extends Dictionary {
                             if (creator.equals(SystemProperties.USER_NAME)) {
                                 annotations.add(a);
                             } else {
-                                // other wise we skip it all together but make sure the popup is hidden.
+                                // otherwise we skip it all together but make sure the popup is hidden.
                                 if (markupAnnotation.getPopupAnnotation() != null) {
                                     markupAnnotation.getPopupAnnotation().setOpen(false);
                                 }
@@ -352,7 +350,7 @@ public class Page extends Dictionary {
                     logger.log(Level.WARNING, e, () -> " " + finalA.getPObjectReference() + finalA.getEntries());
                 }
             }
-            //The popup annotations may not be referenced in the page annotations entry, we have to add them manually.
+            // The popup annotations may not be referenced in the page annotations entry, we have to add them manually.
             final Set<Annotation> annotSet = new HashSet<>(annotations);
             for (final Annotation annot : annotSet) {
                 if (annot instanceof MarkupAnnotation) {
@@ -380,6 +378,15 @@ public class Page extends Dictionary {
      * child elements.  Once a page has been initialized, it can be painted.
      */
     public synchronized void init() throws InterruptedException {
+        init(null);
+    }
+
+    /**
+     * Initialize the Page object.  This method triggers the parsing of a page's
+     * child elements.  Once a page has been initialized, it can be painted.
+     * @param contentStreamRedactorCallback callback use to rewrite content stream
+     */
+    public synchronized void init(ContentStreamRedactorCallback contentStreamRedactorCallback) throws InterruptedException {
         try {
             // make sure we are not revisiting this method
             if (inited) {
@@ -407,26 +414,23 @@ public class Page extends Dictionary {
             }
 
             /*
-              Finally iterate through the contents vector and concat all of the
-              the resource streams together so that the content parser can
-              go to town and build all of the page's shapes.
+              Finally iterate through the contents vector and concat all the
+              resource streams together so that the content parser can
+              go to town and build all the page's shapes.
              */
             notifyPageInitializationStarted();
             if (contents != null) {
                 try {
-                    ContentParser cp = new ContentParser(library, resources);
-                    byte[][] streams = new byte[contents.size()][];
-                    byte[] stream;
-                    Reference[] references = new Reference[contents.size()];
+                    ContentParser cp = new ContentParser(library, resources, contentStreamRedactorCallback);
+                    Stream[] streams = new Stream[contents.size()];
+                    byte[] streamByte;
                     for (int i = 0, max = contents.size(); i < max; i++) {
-                        stream = contents.get(i).getDecodedStreamBytes();
-                        if (stream != null) {
-                            streams[i] = stream;
-                            references[i] = contents.get(i).pObjectReference;
+                        streamByte = contents.get(i).getDecodedStreamBytes();
+                        if (streamByte != null) {
+                            streams[i] = contents.get(i);
                         }
                     }
-                    // get any optional groups from the catalog, which control
-                    // visibility
+                    // get any optional groups from the catalog, which control visibility
                     OptionalContent optionalContent = library.getCatalog().getOptionalContent();
                     if (optionalContent != null) {
                         optionalContent.init();
@@ -434,7 +438,7 @@ public class Page extends Dictionary {
 
                     // pass in option group references into parse.
                     if (streams.length > 0) {
-                        shapes = cp.parse(streams, references, this).getShapes();
+                        shapes = cp.parse(streams, this).getShapes();
                     }
                     // set the initiated flag, first as there are couple corner
                     // cases where the content parsing can call page.init() again
@@ -455,12 +459,16 @@ public class Page extends Dictionary {
                 logger.log(Level.WARNING, "Error initializing Page, no page content.");
             }
         } catch (InterruptedException e) {
-            // keeps shapes vector so we can paint what we have but make init state as false
-            // so we can try to re parse it later.
+            // keeps shapes vector so that we can paint what we have but make init state as false
+            // so that we can try to reparse it later.
             inited = false;
             throw new InterruptedException(e.getMessage());
         }
         notifyPageInitializationEnded(inited);
+    }
+
+    public List<Stream> getContentStreams() {
+        return contents;
     }
 
     /**
@@ -1296,9 +1304,27 @@ public class Page extends Dictionary {
         return annotations;
     }
 
+    public List<RedactionAnnotation> getRedactionAnnotations() {
+        if (annotations == null) {
+            try {
+                initPageAnnotations();
+            } catch (InterruptedException e) {
+                logger.finer("Interrupt exception getting annotations. ");
+            }
+        }
+        // todo make this method more generic to any Annotation subtype
+        if (annotations != null) {
+            return annotations.stream()
+                    .filter(RedactionAnnotation.class::isInstance)
+                    .map(RedactionAnnotation.class::cast)
+                    .collect(Collectors.toList());
+        }
+        return null;
+    }
+
     /**
      * Returns the decoded content stream for this page instance.  A page instance
-     * can have more then one content stream associated with it.
+     * can have more than one content stream associated with it.
      *
      * @return An array of decoded content stream.  Each index in the array
      * represents one content stream.  Null return and null String array
@@ -1379,7 +1405,7 @@ public class Page extends Dictionary {
         if (cropBox != null) {
             return cropBox;
         }
-        // add all of the pages crop box dimensions to a vector and process
+        // add all the pages crop box dimensions to a vector and process
         List boxDimensions = (List) (library.getObject(entries, CROPBOX_KEY));
         if (boxDimensions != null) {
             cropBox = new PRectangle(boxDimensions);
@@ -1532,9 +1558,9 @@ public class Page extends Dictionary {
         Shapes textBlockShapes = new Shapes();
 
         /*
-          Finally iterate through the contents vector and concat all of the
-          the resource streams together so that the content parser can
-          go to town and build all of the pages shapes.
+          Finally iterate through the contents array and concat all the
+          resource streams together so that the content parser can
+          go to town and build all the pages shapes.
          */
         if (contents == null) {
             // Get the value of the page's content entry
@@ -1547,12 +1573,9 @@ public class Page extends Dictionary {
         }
         if (contents != null) {
             try {
-
                 ContentParser cp = new ContentParser(library, resources);
-                byte[][] streams = new byte[contents.size()][];
-                for (int i = 0, max = contents.size(); i < max; i++) {
-                    streams[i] = contents.get(i).getDecodedStreamBytes();
-                }
+                Stream[] streams = new Stream[contents.size()];
+                contents.toArray(streams);
                 textBlockShapes = cp.parseTextBlocks(streams);
                 // print off any fuzz left on the stack
                 if (logger.isLoggable(Level.FINER)) {

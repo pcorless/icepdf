@@ -91,7 +91,8 @@ public class PageRemovalModifier implements Modifier<Page> {
         }
         if (!found) {
             // need to resolve each reference and dive into each page tree.
-            for (Object kid : kidsReferences) {
+            for (Object ref : kidsReferences) {
+                Object kid = library.getObject((Reference) ref);
                 if (kid instanceof PageTree) {
                     found = findAndRemovePageTreeReference((PageTree) kid, pageReference);
                     if (found) {

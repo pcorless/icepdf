@@ -12,6 +12,7 @@ import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReferenceFactory;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorCallback;
 
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
@@ -33,17 +34,21 @@ public class ContentParser extends AbstractContentParser {
             Collections.synchronizedMap(new WeakHashMap<>());
 
     public ContentParser(Library l, Resources r) {
-        super(l, r);
+        super(l, r, null);
     }
 
-    public ContentParser parse(byte[][] streamBytes, Reference[] references, Page page)
-            throws InterruptedException {
+    public ContentParser(Library l, Resources r, ContentStreamRedactorCallback contentStreamRedactorCallback) {
+        super(l, r, contentStreamRedactorCallback);
+    }
+
+    public ContentParser parse(Stream[] streams, Page page)
+            throws InterruptedException, IOException {
         if (shapes == null) {
             shapes = new Shapes();
             if (graphicState == null) {
                 graphicState = new GraphicsState(shapes);
             }
-            // If not null we have an Form XObject that contains a content stream
+            // If not null we have a Form XObject that contains a content stream,
             // and we must copy the previous graphics states draw settings in order
             // preserve colour and fill data for the XObjects content stream.
             else {
@@ -64,24 +69,19 @@ public class ContentParser extends AbstractContentParser {
         }
 
         if (logger.isLoggable(Level.FINER)) {
-            logger.finer("Page content streams: " + streamBytes.length);
-            int i = 0;
-            for (byte[] streamByte : streamBytes) {
-                if (streamByte != null) {
+            logger.finer("Page content streams: " + streams.length);
+            for (Stream stream : streams) {
+                if (stream != null) {
+                    byte[] streamByte = stream.getDecodedStreamBytes();
                     String tmp = new String(streamByte, StandardCharsets.ISO_8859_1);
-                    if (references[i] != null) {
-                        logger.finer("Content " + references[i].toString() + " = " + tmp);
-                    } else {
-                        logger.finer("Content = " + tmp);
-                    }
+                    logger.finer("Content " + stream.getPObjectReference() + " = " + tmp);
                 }
-                i++;
             }
         }
         int count = 0;
         Lexer lexer;
         lexer = new Lexer();
-        lexer.setContentStream(streamBytes);
+        lexer.setContentStream(streams, contentStreamRedactorCallback);
 
         // text block y offset.
         float yBTstart = 0;
@@ -104,6 +104,7 @@ public class ContentParser extends AbstractContentParser {
                     }
 
                     int operand = (Integer) tok;
+                    markTokenPosition(lexer.getPos(), operand);
                     // Append a straight line segment from the current point to the
                     // point (x, y). The new current point is (x, y).
                     switch (operand) {
@@ -259,9 +260,9 @@ public class ContentParser extends AbstractContentParser {
                             break;
 
                         // Sets the specified parameters in the graphics state.  The gs operand
-                        // points to a name resource which should be a an ExtGState object.
+                        // points to a name resource which should be an ExtGState object.
                         // The graphics state parameters in the ExtGState must be concatenated
-                        // with the the current graphics state.
+                        // with the current graphics state.
                         case Operands.gs:
                             consume_gs(graphicState, stack, resources, shapes);
                             break;
@@ -337,12 +338,12 @@ public class ContentParser extends AbstractContentParser {
                         // Sets the line dash pattern in the graphics state. A normal line
                         // is [] 0.  See Graphics State -> Line dash patter for more information
                         // in the PDF Reference.  Java 2d uses the same notation so there
-                        // is not much work to be done other then parsing the data.
+                        // is not much work to be done other than parsing the data.
                         case Operands.d:
                             consume_d(graphicState, stack, shapes);
                             break;
 
-                        // Append a cubic Bezier curve to the current path. The curve
+                        // Append a cubic Bézier curve to the current path. The curve
                         // extends from the current point to the point (x3, y3), using
                         // the current point and (x2, y2) as the Bezier control points.
                         // The new current point is (x3, y3).
@@ -355,7 +356,7 @@ public class ContentParser extends AbstractContentParser {
                             consume_j(graphicState, stack, shapes);
                             break;
 
-                        // Append a cubic Bezier curve to the current path. The curve
+                        // Append a cubic Bézier curve to the current path. The curve
                         // extends from the current point to the point (x3, y3), using
                         // (x1, y1) and (x3, y3) as the Bezier control points.
                         // The new current point is (x3, y3).
@@ -585,11 +586,11 @@ public class ContentParser extends AbstractContentParser {
      * @param source content stream source.
      * @return vector where each entry is the text extracted from a text block.
      */
-    public Shapes parseTextBlocks(byte[][] source) throws InterruptedException {
+    public Shapes parseTextBlocks(Stream[] source) throws InterruptedException, IOException {
 
         // great a parser to get tokens for stream
         Lexer parser = new Lexer();
-        parser.setContentStream(source);
+        parser.setContentStream(source, contentStreamRedactorCallback);
         Shapes shapes = new Shapes();
 
         if (graphicState == null) {
@@ -600,7 +601,7 @@ public class ContentParser extends AbstractContentParser {
 
             // keeps track of previous text placement so that Compatibility and
             // implementation note 57 is respected.  That is text drawn after a TJ
-            // must not be less then the previous glyphs coords.
+            // must not be less than the previous glyphs coords.
             textBlockBase = new AffineTransform(graphicState.getCTM());
 
             // transformation matrix used to cMap core space to drawing space
@@ -669,7 +670,7 @@ public class ContentParser extends AbstractContentParser {
      * @param lexer           parser containing BT tokens
      * @param shapes          container of all shapes for the page content being parsed
      * @param previousBTStart y offset of previous BT definition.
-     * @return y offset of the this BT definition.
+     * @return y offset of this BT definition.
      * @throws java.io.IOException end of content stream is found
      */
     private float parseText(Lexer lexer, Shapes shapes, double previousBTStart)
@@ -678,7 +679,7 @@ public class ContentParser extends AbstractContentParser {
         inTextBlock = true;
         // keeps track of previous text placement so that Compatibility and
         // implementation note 57 is respected.  That is text drawn after a TJ
-        // must not be less then the previous glyphs coords.
+        // must not be less than the previous glyphs coords.
         TextMetrics textMetrics = new TextMetrics();
         textBlockBase = new AffineTransform(graphicState.getCTM());
 
@@ -700,11 +701,12 @@ public class ContentParser extends AbstractContentParser {
 
             if (nextToken instanceof Integer) {
                 operand = (Integer) nextToken;
+                markTokenPosition(lexer.getPos(), operand);
                 switch (operand) {
                     // Normal text token, string, hex
                     case Operands.Tj:
                         consume_Tj(graphicState, stack, shapes,
-                                textMetrics, glyphOutlineClip, oCGs);
+                                textMetrics, glyphOutlineClip, oCGs, contentStreamRedactorCallback);
                         break;
 
                     // Character Spacing
@@ -717,7 +719,7 @@ public class ContentParser extends AbstractContentParser {
                         consume_Tw(graphicState, stack);
                         break;
 
-                    // move to the start of he next line, offset from the start of the
+                    // move to the start of the next line, offset from the start of the
                     // current line by (tx,ty)*tx
                     case Operands.Td:
                         consume_Td(graphicState, stack, textMetrics, pageText,
@@ -743,7 +745,7 @@ public class ContentParser extends AbstractContentParser {
                     // TJ marks a vector, where.......
                     case Operands.TJ:
                         consume_TJ(graphicState, stack, shapes,
-                                textMetrics, glyphOutlineClip, oCGs);
+                                textMetrics, glyphOutlineClip, oCGs, contentStreamRedactorCallback);
                         break;
 
                     // Move to the start of the next line, offset from the start of the
@@ -787,9 +789,9 @@ public class ContentParser extends AbstractContentParser {
                         break;
 
                     // Sets the specified parameters in the graphics state.  The gs operand
-                    // points to a name resource which should be a an ExtGState object.
+                    // points to a name resource which should be an ExtGState object.
                     // The graphics state parameters in the ExtGState must be concatenated
-                    // with the the current graphics state.
+                    // with the current graphics state.
                     case Operands.gs:
                         consume_gs(graphicState, stack, resources, shapes);
                         break;
@@ -935,7 +937,7 @@ public class ContentParser extends AbstractContentParser {
                     // Move to the next line and show a text string.
                     case Operands.SINGLE_QUOTE:
                         consume_single_quote(graphicState, stack, shapes, textMetrics,
-                                glyphOutlineClip, oCGs);
+                                glyphOutlineClip, oCGs, contentStreamRedactorCallback);
                         break;
                     /*
                      * Move to the next line and show a text string, using aw as the
@@ -945,7 +947,7 @@ public class ContentParser extends AbstractContentParser {
                      */
                     case Operands.DOUBLE_QUOTE:
                         consume_double_quote(graphicState, stack, shapes, textMetrics,
-                                glyphOutlineClip, oCGs);
+                                glyphOutlineClip, oCGs, contentStreamRedactorCallback);
                         break;
                     // not supposed to have a Do in text block but hey so be it. .
                     case Operands.Do:
@@ -963,8 +965,13 @@ public class ContentParser extends AbstractContentParser {
                 break;
             }
         }
+
+        // make sure we get the last ET token
+        if (nextToken instanceof Integer && (Integer) nextToken == Operands.ET) {
+            markTokenPosition(lexer.getPos(), (Integer) nextToken);
+        }
         // during a BT -> ET text parse there is a change that we might be
-        // in MODE_ADD or MODE_Fill_Add which require that the we push the
+        // in MODE_ADD or MODE_Fill_Add which require that we push the
         // shapes that make up the clipping path to the shapes stack.  When
         // encountered the path will be used as the current clip.
         if (!glyphOutlineClip.isEmpty()) {
@@ -979,6 +986,12 @@ public class ContentParser extends AbstractContentParser {
         }
 
         return textMetrics.getyBTStart();
+    }
+
+    private void markTokenPosition(int position, Integer token) throws IOException {
+        if (contentStreamRedactorCallback != null) {
+            contentStreamRedactorCallback.setLastTokenPosition(position, token);
+        }
     }
 
     private void parseInlineImage(Lexer p, Shapes shapes, Page page) throws IOException {

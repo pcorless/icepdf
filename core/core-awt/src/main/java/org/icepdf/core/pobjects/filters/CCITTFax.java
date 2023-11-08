@@ -575,7 +575,7 @@ public class CCITTFax {
         if (input == null)
             return null;
         input = new ZeroPaddedInputStream(input);
-        BufferedInputStream bufferedInput = new BufferedInputStream(input, 1024);
+        BufferedInputStream bufferedInput = new BufferedInputStream(input, 32 * 1024);
         bufferedInput.mark(4);
         try {
             int hb1 = bufferedInput.read();

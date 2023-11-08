@@ -177,7 +177,7 @@ public class Form extends Stream {
         if (in != null) {
             try {
                 logger.log(Level.FINER, () -> "Parsing form " + getPObjectReference());
-                shapes = cp.parse(new byte[][]{in}, new Reference[]{this.getPObjectReference()}, null).getShapes();
+                shapes = cp.parse(Stream.fromByteArray(in, this.getPObjectReference()), null).getShapes();
                 inited = true;
             } catch (InterruptedException e) {
                 // the initialization was interrupted so we need to make sure we bubble up the exception
