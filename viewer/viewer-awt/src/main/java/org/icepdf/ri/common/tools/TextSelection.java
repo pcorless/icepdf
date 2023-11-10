@@ -239,7 +239,8 @@ public class TextSelection extends SelectionBoxHandler {
         }
     }
 
-    public void selectionIcon(Point mouseLocation, AbstractPageViewComponent pageViewComponent) {
+    public boolean selectionTextSelectIcon(Point mouseLocation, AbstractPageViewComponent pageViewComponent) {
+        boolean foundSelectableText = false;
         try {
             Page currentPage = pageViewComponent.getPage();
             if (currentPage != null) {
@@ -251,7 +252,6 @@ public class TextSelection extends SelectionBoxHandler {
 
                     ArrayList<LineText> pageLines = pageText.getPageLines();
                     if (pageLines != null) {
-                        boolean found = false;
                         Point2D.Float pageMouseLocation = convertToPageSpace(mouseLocation);
                         for (LineText pageLine : pageLines) {
                             // check for containment, if so break into words.
@@ -259,13 +259,13 @@ public class TextSelection extends SelectionBoxHandler {
                                     && ((topMarginExclusion == null || bottomMarginExclusion == null)
                                     || (!topMarginExclusion.contains(pageMouseLocation)
                                     && !bottomMarginExclusion.contains(pageMouseLocation)))) {
-                                found = true;
+                                foundSelectableText = true;
                                 documentViewController.setViewCursor(
                                         DocumentViewController.CURSOR_TEXT_SELECTION);
                                 break;
                             }
                         }
-                        if (!found) {
+                        if (!foundSelectableText) {
                             documentViewController.setViewCursor(
                                     DocumentViewController.CURSOR_SELECT);
                         }
@@ -275,6 +275,7 @@ public class TextSelection extends SelectionBoxHandler {
         } catch (InterruptedException e) {
             logger.fine("Text selection page access interrupted");
         }
+        return foundSelectableText;
     }
 
     protected void calculateTextSelectionExclusion() {

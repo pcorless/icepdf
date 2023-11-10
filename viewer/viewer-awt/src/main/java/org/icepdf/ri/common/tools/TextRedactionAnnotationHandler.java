@@ -1,8 +1,14 @@
 package org.icepdf.ri.common.tools;
 
+import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
+import org.icepdf.core.pobjects.graphics.Shapes;
+import org.icepdf.core.pobjects.graphics.commands.DrawCmd;
+import org.icepdf.core.pobjects.graphics.commands.ImageDrawCmd;
+import org.icepdf.core.pobjects.graphics.commands.ShapesDrawCmd;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
@@ -12,10 +18,7 @@ import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Area;
-import java.awt.geom.GeneralPath;
-import java.awt.geom.Rectangle2D;
+import java.awt.geom.*;
 import java.util.ArrayList;
 
 /**
@@ -47,6 +50,53 @@ public class TextRedactionAnnotationHandler extends HighLightAnnotationHandler {
         // set the annotation tool to the given tool
         documentViewController.getParentController().setDocumentToolMode(
                 preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_REDACTION_SELECTION_TYPE, 0));
+    }
+
+    public void mouseMoved(MouseEvent e) {
+        // apply respective pointers when hovering over text or images.
+        // text selection has priority over image.
+        boolean foundSelectableText = selectionTextSelectIcon(e.getPoint(), pageViewComponent);
+        if (!foundSelectableText) {
+            selectionImageSelectIcon(e.getPoint(), pageViewComponent);
+        }
+    }
+
+    public void selectionImageSelectIcon(Point mouseLocation, AbstractPageViewComponent pageViewComponent) {
+        try {
+            Page currentPage = pageViewComponent.getPage();
+            Point2D.Float pageMouseLocation = convertToPageSpace(mouseLocation);
+            if (currentPage != null) {
+                Shapes pageShapes = currentPage.getShapes();
+                ArrayList<DrawCmd> shapes = pageShapes.getShapes();
+                isCursorOverImage(pageMouseLocation, shapes);
+            }
+        } catch (Exception e) {
+            logger.fine("Image selection page access interrupted");
+        }
+    }
+
+    private boolean isCursorOverImage(Point2D.Float pageSpaceMousePoint, ArrayList<DrawCmd> shapes) {
+        Rectangle2D rect = new Rectangle2D.Float(0, 0, 1, 1);
+        for (DrawCmd object : shapes) {
+            if (object instanceof ImageDrawCmd) {
+                ImageDrawCmd imageDrawCmd = (ImageDrawCmd) object;
+                AffineTransform ctm = imageDrawCmd.getGraphicStateTransform();
+                Path2D.Double generalPath = new Path2D.Double(rect, ctm);
+                Rectangle2D bounds = generalPath.getBounds2D();
+                if (bounds.contains(pageSpaceMousePoint)) {
+                    documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
+                    ImageStream imageStream = imageDrawCmd.getImageReference().getImageStream();
+                    System.out.println(imageStream.getPObjectReference() + " " +
+                            imageStream.getWidth() + "x" + imageStream.getHeight());
+                    return true;
+                }
+            } else if (object instanceof ShapesDrawCmd) {
+                // todo still might need some work here and apply the xObject matrix, need to find a simple test case.
+                Shapes xObjectShapes = ((ShapesDrawCmd) object).getShapes();
+                return isCursorOverImage(pageSpaceMousePoint, xObjectShapes.getShapes());
+            }
+        }
+        return false;
     }
 
     public void createRedactionAnnotation(ArrayList<Shape> redactionBounds) {

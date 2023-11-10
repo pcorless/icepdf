@@ -410,26 +410,23 @@ public abstract class AbstractContentParser {
 
     protected static void consume_cm(GraphicsState graphicState, Stack<Object> stack,
                                      boolean inTextBlock, AffineTransform textBlockBase) {
-        float[] affineTransform = popFloatInOrder(stack, 6);
+        float[] affineTransformArray = popFloatInOrder(stack, 6);
+        AffineTransform affineTransform = new AffineTransform(
+                affineTransformArray[0], affineTransformArray[1], affineTransformArray[2],
+                affineTransformArray[3], affineTransformArray[4], affineTransformArray[5]);
         // get the current CTM
         AffineTransform af = new AffineTransform(graphicState.getCTM());
         // do the matrix concatenation math
-        af.concatenate(new AffineTransform(
-                affineTransform[0], affineTransform[1], affineTransform[2],
-                affineTransform[3], affineTransform[4], affineTransform[5]));
+        af.concatenate(affineTransform);
         // add the transformation to the graphics state
         graphicState.set(af);
         // update the clip, translate by this CM
-        graphicState.updateClipCM(new AffineTransform(
-                affineTransform[0], affineTransform[1], affineTransform[2],
-                affineTransform[3], affineTransform[4], affineTransform[5]));
+        graphicState.updateClipCM(affineTransform);
         // apply the cm just as we would a tm
         if (inTextBlock) {
             // update the textBlockBase with the cm matrix
             AffineTransform af2 = new AffineTransform(graphicState.getTextState().tlmatrix);
-            graphicState.getTextState().tmatrix = new AffineTransform(
-                    affineTransform[0], affineTransform[1], affineTransform[2],
-                    affineTransform[3], affineTransform[4], affineTransform[5]);
+            graphicState.getTextState().tmatrix = affineTransform;
             af2.concatenate(graphicState.getTextState().tmatrix);
             graphicState.set(af2);
             graphicState.scale(1, -1);
@@ -628,8 +625,8 @@ public abstract class AbstractContentParser {
                         imageIndex.get(), page);
                 imageIndex.incrementAndGet();
 
-                AffineTransform af =
-                        new AffineTransform(graphicState.getCTM());
+                AffineTransform af = new AffineTransform(graphicState.getCTM());
+
                 // GH-243,  there is a weird duality between cm and Do inside text blocks that this adjusts for.
                 // Not ideal but solves the inverted rendering problem for now, another sample might give more info
                 // into the actual problem and a better solution.
@@ -638,7 +635,8 @@ public abstract class AbstractContentParser {
                 }
                 graphicState.translate(0, -1);
                 setAlpha(shapes, graphicState, AlphaPaintType.ALPHA_FILL);
-                shapes.add(new ImageDrawCmd(imageReference));
+
+                shapes.add(new ImageDrawCmd(imageReference, af));
                 graphicState.set(af);
             }
         }

@@ -144,7 +144,7 @@ public class TextSelectionPageHandler extends TextSelection
      */
     public void mouseMoved(MouseEvent e) {
         // change state of mouse from pointer to text selection icon
-        selectionIcon(e.getPoint(), pageViewComponent);
+        selectionTextSelectIcon(e.getPoint(), pageViewComponent);
     }
 
     public void cancelSelection() {

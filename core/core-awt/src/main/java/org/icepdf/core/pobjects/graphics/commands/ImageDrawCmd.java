@@ -50,6 +50,7 @@ public class ImageDrawCmd extends AbstractDrawCmd {
     private int yScale = 1;
     private boolean xIsScale = false;
     private boolean yIsScale = false;
+    private AffineTransform graphicStateTransform;
 
     // narrow image scaling lookup table for 1xh or wx1 images.  Soft values
     // but keeps the images from not painting a low zoom levels.
@@ -65,8 +66,9 @@ public class ImageDrawCmd extends AbstractDrawCmd {
             {0.05, 12}
     };
 
-    public ImageDrawCmd(ImageReference image) {
+    public ImageDrawCmd(ImageReference image, AffineTransform graphicStateTransform) {
         this.image = image;
+        this.graphicStateTransform = graphicStateTransform;
         // check image dimensions to see if we should do some work for
         // Xxh or wxX images sizes, as they tend not to be painted by Java2d
         // at zoom levels < 144%.
@@ -82,6 +84,14 @@ public class ImageDrawCmd extends AbstractDrawCmd {
 
     public Image getImage() throws InterruptedException {
         return image.getImage();
+    }
+
+    public ImageReference getImageReference() {
+        return image;
+    }
+
+    public AffineTransform getGraphicStateTransform() {
+        return graphicStateTransform;
     }
 
     @Override
