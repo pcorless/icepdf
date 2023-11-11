@@ -620,13 +620,15 @@ public abstract class AbstractContentParser {
                     }
                 }
 
+                // set CTM so we can convert image location to user space at a later time.
+                AffineTransform af = new AffineTransform(graphicState.getCTM());
+                imageStream.setGraphicsTransformMatrix(af);
+
                 // create an ImageReference for future decoding
                 ImageReference imageReference = ImageReferenceFactory.getImageReference(
                         imageStream, resources, graphicState,
                         imageIndex.get(), page);
                 imageIndex.incrementAndGet();
-
-                AffineTransform af = new AffineTransform(graphicState.getCTM());
 
                 // GH-243,  there is a weird duality between cm and Do inside text blocks that this adjusts for.
                 // Not ideal but solves the inverted rendering problem for now, another sample might give more info
@@ -637,9 +639,9 @@ public abstract class AbstractContentParser {
                 graphicState.translate(0, -1);
                 setAlpha(shapes, graphicState, AlphaPaintType.ALPHA_FILL);
 
-                imageStream.setGraphicsTransformMatrix(af);
+
                 if (contentStreamRedactorCallback != null) {
-                    contentStreamRedactorCallback.checkAndRedactImageXObject(imageStream);
+                    contentStreamRedactorCallback.checkAndRedactImageXObject(imageReference);
                 }
 
                 shapes.add(new ImageDrawCmd(imageReference));

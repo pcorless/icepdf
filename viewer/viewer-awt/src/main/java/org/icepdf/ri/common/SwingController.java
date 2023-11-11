@@ -3517,7 +3517,7 @@ public class SwingController extends ComponentAdapter
 
 
     protected void saveFileAs(SaveMode saveMode) {
-        if (hasUnburnedRedactions() && cancelRedactionWarningDialog()) {
+        if (saveMode != SaveMode.EXPORT && hasUnburnedRedactions() && cancelRedactionWarningDialog()) {
             return;
         }
 

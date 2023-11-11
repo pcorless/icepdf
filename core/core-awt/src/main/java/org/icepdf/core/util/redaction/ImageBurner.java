@@ -1,29 +1,34 @@
 package org.icepdf.core.util.redaction;
 
-import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
-import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
-import org.icepdf.core.util.Library;
+import org.icepdf.core.pobjects.graphics.images.ImageUtility;
+import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 
-import java.util.List;
+import java.awt.*;
+import java.awt.geom.GeneralPath;
+import java.awt.image.BufferedImage;
 
 /**
- * Future home of Image Burner code.
+ * Burn the redactionPath into the given image stream.
  */
 public class ImageBurner {
-    public static ImageStream[] burn(Page page,
-                                     List<RedactionAnnotation> redactionAnnotations) {
-        Library library = page.getLibrary();
-        Shapes shapes = page.getShapes();
-//        DictionaryEntries xObjects = page.getResources().getXObjects();
+    public static void burn(ImageReference imageReference, GeneralPath redactionPath) throws InterruptedException {
+        ImageStream imageStream = imageReference.getImageStream();
+        BufferedImage image = imageReference.getImage();
+        Graphics2D imageGraphics = image.createGraphics();
+        imageGraphics.setColor(Color.BLACK);
+        imageGraphics.scale(1, -1);
+        imageGraphics.translate(0, -image.getHeight());
+        // todo revert offset as the image start at 0, 0, not x,y in the layout
+        imageGraphics.fill(redactionPath);
+        imageGraphics.dispose();
 
-        // xobject images intersection
-        // work through xobjects as defined in page references
-        // option 1: work though shapes stack
-        // option 2: parse page contents looking for intersection
-        // rewrite image with black pixels.
+        ImageUtility.displayImage(image, imageStream.getPObjectReference().toString() + image.getWidth() +
+                " " + "x" + image.getHeight());
 
-        return new ImageStream[]{};
+        // create a mask using the redactionPaths
+
+        // apply the mask to the image
+        // write a new images stream, add new colorspace,
     }
 }

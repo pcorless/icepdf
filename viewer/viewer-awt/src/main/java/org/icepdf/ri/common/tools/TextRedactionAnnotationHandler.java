@@ -34,10 +34,13 @@ import java.util.ArrayList;
  */
 public class TextRedactionAnnotationHandler extends HighLightAnnotationHandler {
 
+    private boolean isOverImage = false;
+
     public TextRedactionAnnotationHandler(DocumentViewController documentViewController,
                                           AbstractPageViewComponent pageViewComponent) {
         super(documentViewController, pageViewComponent);
         markupSubType = Annotation.SUBTYPE_REDACT;
+        selectionBoxColour = Color.BLACK;
     }
 
     protected void createMarkupAnnotationFromTextSelection(MouseEvent e) {
@@ -61,6 +64,50 @@ public class TextRedactionAnnotationHandler extends HighLightAnnotationHandler {
         }
     }
 
+    public void mousePressed(MouseEvent e) {
+        if (!isOverImage) {
+            super.mousePressed(e);
+        } else {
+            isClearSelection = false;
+            this.pageViewComponent.requestFocus();
+            int x = e.getX();
+            int y = e.getY();
+            currentRect = new Rectangle(x, y, 0, 0);
+            updateDrawableRect(pageViewComponent.getWidth(),
+                    pageViewComponent.getHeight());
+            pageViewComponent.repaint();
+        }
+    }
+
+    public void mouseReleased(MouseEvent e) {
+        if (!isOverImage) {
+            super.mouseReleased(e);
+        } else {
+            updateSelectionSize(e.getX(), e.getY(), pageViewComponent);
+            createMarkupAnnotationFromSelectionBox();
+        }
+    }
+
+    public void mouseDragged(MouseEvent e) {
+        if (isClearSelection) {
+            return;
+        }
+        if (!isOverImage) {
+            super.mousePressed(e);
+        } else {
+            updateSelectionSize(e.getX(), e.getY(), pageViewComponent);
+        }
+    }
+
+    @Override
+    public void paintTool(Graphics g) {
+        paintSelectionBox(g, rectToDraw);
+    }
+
+    protected void paintRectangle(Graphics2D gg, Rectangle rectToDraw) {
+        gg.fillRect(rectToDraw.x, rectToDraw.y, rectToDraw.width - 1, rectToDraw.height - 1);
+    }
+
     public void selectionImageSelectIcon(Point mouseLocation, AbstractPageViewComponent pageViewComponent) {
         try {
             Page currentPage = pageViewComponent.getPage();
@@ -68,7 +115,7 @@ public class TextRedactionAnnotationHandler extends HighLightAnnotationHandler {
             if (currentPage != null) {
                 Shapes pageShapes = currentPage.getShapes();
                 ArrayList<DrawCmd> shapes = pageShapes.getShapes();
-                isCursorOverImage(pageMouseLocation, shapes);
+                isOverImage = isCursorOverImage(pageMouseLocation, shapes);
             }
         } catch (Exception e) {
             logger.fine("Image selection page access interrupted");
@@ -83,8 +130,8 @@ public class TextRedactionAnnotationHandler extends HighLightAnnotationHandler {
                 Rectangle2D bounds = imageStream.getNormalizedBounds();
                 if (bounds.contains(pageSpaceMousePoint)) {
                     documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
-                    System.out.println(imageStream.getPObjectReference() + " " +
-                            imageStream.getWidth() + "x" + imageStream.getHeight());
+//                    System.out.println(imageStream.getPObjectReference() + " " +
+//                            imageStream.getWidth() + "x" + imageStream.getHeight());
                     return true;
                 }
             } else if (object instanceof ShapesDrawCmd) {
@@ -94,6 +141,60 @@ public class TextRedactionAnnotationHandler extends HighLightAnnotationHandler {
             }
         }
         return false;
+    }
+
+    public void createMarkupAnnotationFromSelectionBox() {
+
+        // check the bounds on rectToDraw to try and avoid creating
+        // an annotation that is very small.
+        if (rectToDraw.getWidth() < 5 || rectToDraw.getHeight() < 5) {
+            rectToDraw.setSize(new Dimension(15, 25));
+        }
+
+        Rectangle tBbox = convertToPageSpace(rectToDraw).getBounds();
+
+        // create annotations types that are rectangle based;
+        // which is actually just link annotations
+        annotation = (RedactionAnnotation)
+                AnnotationFactory.buildAnnotation(
+                        documentViewController.getDocument().getPageTree().getLibrary(),
+                        markupSubType,
+                        tBbox);
+
+        if (annotation != null) {
+
+            GeneralPath highlightPath = new GeneralPath();
+            highlightPath.append(rectToDraw, false);
+
+            ArrayList<Shape> redactionBounds = new ArrayList<>(1);
+            redactionBounds.add(rectToDraw);
+
+            convertToPageSpace(redactionBounds, highlightPath);
+
+            // todo cleanup duplication
+
+            AffineTransform pageTransform = getToPageSpaceTransform();
+            annotation.setColor(Color.BLACK);
+            annotation.setMarkupBounds(redactionBounds);
+            annotation.setMarkupPath(highlightPath);
+            annotation.setBBox(tBbox);
+            annotation.resetAppearanceStream(pageTransform);
+
+            RedactionAnnotationComponent comp = (RedactionAnnotationComponent)
+                    AnnotationComponentFactory.buildAnnotationComponent(
+                            annotation, documentViewController, pageViewComponent);
+            if (comp != null) {
+                documentViewController.addNewAnnotation(comp);
+                comp.setBounds(rectToDraw);
+                // avoid a potential rounding error in comp.refreshAnnotationRect(), stead we simply
+                // set the bbox to the rect which is just fine for highlight annotations.
+                Rectangle2D rect = annotation.getUserSpaceRectangle();
+                annotation.syncBBoxToUserSpaceRectangle(rect);
+            }
+        }
+
+        // clear the selection
+        rectToDraw = null;
     }
 
     public void createRedactionAnnotation(ArrayList<Shape> redactionBounds) {

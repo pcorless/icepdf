@@ -1064,6 +1064,13 @@ public class ContentParser extends AbstractContentParser {
             AffineTransform af = new AffineTransform(graphicState.getCTM());
             graphicState.scale(1, -1);
             graphicState.translate(0, -1);
+            // todo cleanup inline imates.
+//            imageStream.setGraphicsTransformMatrix(af);
+//
+//            if (contentStreamRedactorCallback != null) {
+//                contentStreamRedactorCallback.checkAndRedactImageXObject(imageStreamReference);
+//            }
+
             shapes.add(new ImageDrawCmd(imageStreamReference));
             graphicState.set(af);
         } catch (IOException e) {

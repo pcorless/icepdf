@@ -52,7 +52,7 @@ public abstract class SelectionBoxHandler extends CommonToolHandler {
 
     public abstract void setSelectionRectangle(Point cursorLocation, Rectangle selection);
 
-    public static void paintSelectionBox(Graphics g, Rectangle rectToDraw) {
+    public void paintSelectionBox(Graphics g, Rectangle rectToDraw) {
         Graphics2D gg = (Graphics2D) g;
         Color oldColor = gg.getColor();
         Stroke oldStroke = gg.getStroke();
@@ -61,14 +61,18 @@ public abstract class SelectionBoxHandler extends CommonToolHandler {
             oldColor = g.getColor();
             gg.setColor(selectionBoxColour);
             gg.setStroke(stroke);
-            gg.drawRect(rectToDraw.x, rectToDraw.y,
-                    rectToDraw.width - 1, rectToDraw.height - 1);
+            paintRectangle(gg, rectToDraw);
             gg.setColor(oldColor);
         }
 
         gg.setColor(oldColor);
         gg.setStroke(oldStroke);
     }
+
+    protected void paintRectangle(Graphics2D gg, Rectangle rectToDraw) {
+        gg.drawRect(rectToDraw.x, rectToDraw.y, rectToDraw.width - 1, rectToDraw.height - 1);
+    }
+
 
     public void resetRectangle(int x, int y) {
         currentRect = new Rectangle(x, y, 0, 0);

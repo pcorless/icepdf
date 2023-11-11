@@ -365,6 +365,9 @@ public class TextSelection extends SelectionBoxHandler {
             }
         }
 //        gg.setComposite(BlendComposite.getInstance(BlendComposite.BlendingMode.NORMAL, 1.0f));
+        gg.setComposite(AlphaComposite.getInstance(
+                AlphaComposite.SRC_OVER,
+                1.0f));
         // restore graphics state to where we left it.
         gg.setTransform(prePaintTransform);
         gg.setStroke(oldStroke);

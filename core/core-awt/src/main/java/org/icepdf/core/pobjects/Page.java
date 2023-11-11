@@ -687,6 +687,7 @@ public class Page extends Dictionary {
                         }
                     }
                 }
+                g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
                 //g2.setComposite(BlendComposite.getInstance(BlendComposite.BlendingMode.NORMAL, 1.0f));
             }
         }

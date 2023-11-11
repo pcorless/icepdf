@@ -5,9 +5,11 @@ import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
+import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.parser.content.Operands;
+import org.icepdf.core.util.redaction.ImageBurner;
 import org.icepdf.core.util.redaction.StringObjectWriter;
 
 import java.awt.geom.GeneralPath;
@@ -123,14 +125,15 @@ public class ContentStreamRedactorCallback {
         }
     }
 
-    public void checkAndRedactImageXObject(ImageStream imageStream) {
+    public void checkAndRedactImageXObject(ImageReference imageReference) throws InterruptedException {
         for (RedactionAnnotation annotation : redactionAnnotations) {
-            GeneralPath reactionPaths = annotation.getMarkupPath();
+            GeneralPath redactionPath = annotation.getMarkupPath();
+            ImageStream imageStream = imageReference.getImageStream();
             Rectangle2D imageBounds = imageStream.getNormalizedBounds();
-            if (reactionPaths.contains(imageBounds)) {
+            if (redactionPath.intersects(imageBounds)) {
                 System.out.println("Redacting: " + imageStream.getPObjectReference() + " " +
                         imageStream.getWidth() + "x" + imageStream.getHeight());
-//                glyphText.redact();
+                ImageBurner.burn(imageReference, redactionPath);
             }
         }
     }
