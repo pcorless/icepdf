@@ -6,7 +6,6 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.StateManager;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
-import org.icepdf.core.pobjects.graphics.images.ImageStream;
 
 import java.io.IOException;
 import java.util.List;
@@ -30,15 +29,14 @@ public class Redactor {
             List<RedactionAnnotation> redactionAnnotations = page.getRedactionAnnotations();
             if (redactionAnnotations != null && !redactionAnnotations.isEmpty()) {
 
-                // burn text with given redaction bounds
-                // todo likely rename to only one call ContentStreamRedactor.burn(), handle both test and inline images
-                //  so we don't need to parse the page a second time.
-                TextBurner.burn(page, redactionAnnotations);
-                // inline images
-                InlineImageBurner.burn(page, redactionAnnotations);
+                // burn text and images with given redaction bounds
+                RedactionContentBurner.burn(page, redactionAnnotations);
+                // todo, move this into above call
+//                InlineImageBurner.burn(page, redactionAnnotations);
 
                 // burn bounds into the image, may need an initialized page to calculate bounds
-                ImageStream[] imageStreams = ImageBurner.burn(page, redactionAnnotations);
+                // todo likely remove
+//                ImageStream[] imageStreams = ImageBurner.burn(page, redactionAnnotations);
             }
             // convert the redaction to Annotation.SUBTYPE_SQUARE.  This avoids any confusion in the exported document
             // and makes sure we show where the redaction took place.

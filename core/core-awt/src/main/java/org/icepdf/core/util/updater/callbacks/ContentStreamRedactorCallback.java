@@ -4,6 +4,7 @@ import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
 import org.icepdf.core.pobjects.graphics.TextSprite;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.parser.content.Operands;
@@ -65,7 +66,6 @@ public class ContentStreamRedactorCallback {
             byte[] burnedContentStream = burnedContentOutputStream.toByteArray();
             currentStream.setRawBytes(burnedContentStream);
             String tmp = burnedContentOutputStream.toString(StandardCharsets.ISO_8859_1);
-            System.out.println("last " + tmp);
             burnedContentOutputStream.close();
             library.getStateManager().addChange(new PObject(currentStream, currentStream.getPObjectReference()));
             lastTokenPosition = 0;
@@ -113,13 +113,24 @@ public class ContentStreamRedactorCallback {
         return token == Tj || token == TJ || token == Td || token == TD || token == T_STAR || token == BT;
     }
 
-    public void markAsRedact(GlyphText glyphText) {
+    public void checkAndRedactText(GlyphText glyphText) {
         for (RedactionAnnotation annotation : redactionAnnotations) {
             GeneralPath reactionPaths = annotation.getMarkupPath();
             Rectangle2D glyphBounds = glyphText.getBounds();
             if (reactionPaths.contains(glyphBounds)) {
                 glyphText.redact();
-                System.out.println("redact " + glyphText.getCid() + " " + glyphText.getUnicode());
+            }
+        }
+    }
+
+    public void checkAndRedactImageXObject(ImageStream imageStream) {
+        for (RedactionAnnotation annotation : redactionAnnotations) {
+            GeneralPath reactionPaths = annotation.getMarkupPath();
+            Rectangle2D imageBounds = imageStream.getNormalizedBounds();
+            if (reactionPaths.contains(imageBounds)) {
+                System.out.println("Redacting: " + imageStream.getPObjectReference() + " " +
+                        imageStream.getWidth() + "x" + imageStream.getHeight());
+//                glyphText.redact();
             }
         }
     }

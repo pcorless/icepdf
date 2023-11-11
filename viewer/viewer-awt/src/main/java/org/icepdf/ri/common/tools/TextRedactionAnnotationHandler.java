@@ -76,16 +76,13 @@ public class TextRedactionAnnotationHandler extends HighLightAnnotationHandler {
     }
 
     private boolean isCursorOverImage(Point2D.Float pageSpaceMousePoint, ArrayList<DrawCmd> shapes) {
-        Rectangle2D rect = new Rectangle2D.Float(0, 0, 1, 1);
         for (DrawCmd object : shapes) {
             if (object instanceof ImageDrawCmd) {
                 ImageDrawCmd imageDrawCmd = (ImageDrawCmd) object;
-                AffineTransform ctm = imageDrawCmd.getGraphicStateTransform();
-                Path2D.Double generalPath = new Path2D.Double(rect, ctm);
-                Rectangle2D bounds = generalPath.getBounds2D();
+                ImageStream imageStream = imageDrawCmd.getImageStream();
+                Rectangle2D bounds = imageStream.getNormalizedBounds();
                 if (bounds.contains(pageSpaceMousePoint)) {
                     documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
-                    ImageStream imageStream = imageDrawCmd.getImageReference().getImageStream();
                     System.out.println(imageStream.getPObjectReference() + " " +
                             imageStream.getWidth() + "x" + imageStream.getHeight());
                     return true;
@@ -150,22 +147,25 @@ public class TextRedactionAnnotationHandler extends HighLightAnnotationHandler {
                             documentViewModel.getDocument().getPageTree().getLibrary(),
                             markupSubType,
                             tBbox);
+            if (annotation != null) {
+                annotation.setColor(Color.BLACK);
+                annotation.setMarkupBounds(redactionBounds);
+                annotation.setMarkupPath(highlightPath);
+                annotation.setBBox(tBbox);
+                annotation.resetAppearanceStream(pageTransform);
 
-            annotation.setColor(Color.BLACK);
-            annotation.setMarkupBounds(redactionBounds);
-            annotation.setMarkupPath(highlightPath);
-            annotation.setBBox(tBbox);
-            annotation.resetAppearanceStream(pageTransform);
-
-            RedactionAnnotationComponent comp = (RedactionAnnotationComponent)
-                    AnnotationComponentFactory.buildAnnotationComponent(
-                            annotation, documentViewController, pageViewComponent);
-            documentViewController.addNewAnnotation(comp);
-            comp.setBounds(bounds);
-            // avoid a potential rounding error in comp.refreshAnnotationRect(), stead we simply
-            // set the bbox to the rect which is just fine for highlight annotations.
-            Rectangle2D rect = annotation.getUserSpaceRectangle();
-            annotation.syncBBoxToUserSpaceRectangle(rect);
+                RedactionAnnotationComponent comp = (RedactionAnnotationComponent)
+                        AnnotationComponentFactory.buildAnnotationComponent(
+                                annotation, documentViewController, pageViewComponent);
+                if (comp != null) {
+                    documentViewController.addNewAnnotation(comp);
+                    comp.setBounds(bounds);
+                    // avoid a potential rounding error in comp.refreshAnnotationRect(), stead we simply
+                    // set the bbox to the rect which is just fine for highlight annotations.
+                    Rectangle2D rect = annotation.getUserSpaceRectangle();
+                    annotation.syncBBoxToUserSpaceRectangle(rect);
+                }
+            }
         }
         pageViewComponent.repaint();
     }

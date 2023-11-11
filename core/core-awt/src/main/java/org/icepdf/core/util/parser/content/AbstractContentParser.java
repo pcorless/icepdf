@@ -488,6 +488,7 @@ public abstract class AbstractContentParser {
                                               Shapes shapes, Resources resources,
                                               boolean viewParse, // events
                                               AtomicInteger imageIndex, Page page,
+                                              ContentStreamRedactorCallback contentStreamRedactorCallback,
                                               boolean inTextBlock) throws InterruptedException {
         Name xobjectName = (Name) stack.pop();
         if (resources == null) return graphicState;
@@ -636,7 +637,12 @@ public abstract class AbstractContentParser {
                 graphicState.translate(0, -1);
                 setAlpha(shapes, graphicState, AlphaPaintType.ALPHA_FILL);
 
-                shapes.add(new ImageDrawCmd(imageReference, af));
+                imageStream.setGraphicsTransformMatrix(af);
+                if (contentStreamRedactorCallback != null) {
+                    contentStreamRedactorCallback.checkAndRedactImageXObject(imageStream);
+                }
+
+                shapes.add(new ImageDrawCmd(imageReference));
                 graphicState.set(af);
             }
         }
@@ -1533,7 +1539,7 @@ public abstract class AbstractContentParser {
 
             if (contentStreamRedactorCallback != null) {
                 // mark any glyphText that intersect a redaction bound.
-                contentStreamRedactorCallback.markAsRedact(glyphText);
+                contentStreamRedactorCallback.checkAndRedactText(glyphText);
             }
 
         }

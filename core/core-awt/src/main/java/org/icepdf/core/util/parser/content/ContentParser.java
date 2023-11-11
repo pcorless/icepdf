@@ -250,7 +250,7 @@ public class ContentParser extends AbstractContentParser {
                         // the XObject's Subtype entry, which may be Image , Form, or PS
                         case Operands.Do:
                             graphicState = consume_Do(graphicState, stack, shapes,
-                                    resources, true, imageIndex, page, false);
+                                    resources, true, imageIndex, page, contentStreamRedactorCallback, false);
                             break;
 
                         // Fill the path, using the even-odd rule to determine the
@@ -633,7 +633,8 @@ public class ContentParser extends AbstractContentParser {
                             stack.clear();
                             break;
                         case Operands.Do:
-                            consume_Do(graphicState, stack, shapes, resources, false, imageIndex, null, true);
+                            consume_Do(graphicState, stack, shapes, resources, false, imageIndex, null,
+                                    contentStreamRedactorCallback, true);
                             stack.clear();
                             break;
                         case Operands.BI:
@@ -951,7 +952,8 @@ public class ContentParser extends AbstractContentParser {
                         break;
                     // not supposed to have a Do in text block but hey so be it. .
                     case Operands.Do:
-                        consume_Do(graphicState, stack, shapes, resources, true, imageIndex, null, true);
+                        consume_Do(graphicState, stack, shapes, resources, true, imageIndex, null,
+                                contentStreamRedactorCallback, true);
                         break;
                 }
             }
@@ -1062,7 +1064,7 @@ public class ContentParser extends AbstractContentParser {
             AffineTransform af = new AffineTransform(graphicState.getCTM());
             graphicState.scale(1, -1);
             graphicState.translate(0, -1);
-            shapes.add(new ImageDrawCmd(imageStreamReference, af));
+            shapes.add(new ImageDrawCmd(imageStreamReference));
             graphicState.set(af);
         } catch (IOException e) {
             throw e;
