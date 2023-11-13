@@ -2,6 +2,7 @@ package org.icepdf.core.util.updater.writeables;
 
 import org.icepdf.core.io.CountingOutputStream;
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 import org.icepdf.core.pobjects.structure.Header;
@@ -39,6 +40,7 @@ public class BaseWriter {
     private static AffineTransformWriter affineTransformWriter;
     private static PObjectWriter pObjectWriter;
     protected static StreamWriter streamWriter;
+    protected static ImageStreamWriter imageStreamWriter;
 
     private static XRefTableWriter xRefTableWriter;
     private static TrailerWriter trailerWriter;
@@ -70,6 +72,7 @@ public class BaseWriter {
     public void initializeWriters() {
         // reuse instances of primitive pdf types.
         streamWriter = new StreamWriter();
+        imageStreamWriter = new ImageStreamWriter();
         headerWriter = new HeaderWriter();
         nameWriter = new NameWriter();
         dictionaryWriter = new DictionaryWriter();
@@ -103,7 +106,11 @@ public class BaseWriter {
                 entries.add(new Entry(reference)); // empty reference, no bytes needed
                 return;
             }
-            streamWriter.write((Stream) pobject.getObject(), securityManager, output);
+            if (pobject.getObject() instanceof ImageStream) {
+                imageStreamWriter.write((ImageStream) pobject.getObject(), securityManager, output);
+            } else {
+                streamWriter.write((Stream) pobject.getObject(), securityManager, output);
+            }
         } else {
             pObjectWriter.write(pobject, output);
         }

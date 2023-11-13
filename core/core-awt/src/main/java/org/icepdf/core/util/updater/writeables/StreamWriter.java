@@ -18,12 +18,10 @@ import static java.util.zip.Deflater.BEST_COMPRESSION;
 
 public class StreamWriter extends BaseWriter {
 
-    private static final byte[] BEGIN_STREAM = "stream\r\n".getBytes();
-    private static final byte[] END_STREAM = "endstream\r\n".getBytes();
+    protected static final byte[] BEGIN_STREAM = "stream\r\n".getBytes();
+    protected static final byte[] END_STREAM = "endstream\r\n".getBytes();
 
     public void write(Stream obj, SecurityManager securityManager, CountingOutputStream output) throws IOException {
-        Reference ref = obj.getPObjectReference();
-
         byte[] outputData;
         if (!obj.isRawBytesCompressed() &&
                 obj.getEntries().containsKey(Stream.FILTER_KEY)) {
@@ -65,7 +63,11 @@ public class StreamWriter extends BaseWriter {
         } else {
             outputData = obj.getRawBytes();
         }
+        writeStreamObject(output, obj, outputData);
+    }
 
+    protected void writeStreamObject(CountingOutputStream output, Stream obj, byte[] outputData) throws IOException {
+        Reference ref = obj.getPObjectReference();
         writeInteger(ref.getObjectNumber(), output);
         output.write(SPACE);
         writeInteger(ref.getGenerationNumber(), output);

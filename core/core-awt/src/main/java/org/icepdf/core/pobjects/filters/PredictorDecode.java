@@ -21,42 +21,42 @@ public class PredictorDecode extends ChunkingInputStream {
     /**
      * No predictor function is used
      */
-    protected static final int PREDICTOR_NONE = 1;
+    public static final int PREDICTOR_NONE = 1;
 
     /**
      * For every row, each component is derived from corresponding component in entry to left
      */
-    protected static final int PREDICTOR_TIFF_2 = 2;
+    public static final int PREDICTOR_TIFF_2 = 2;
 
     /**
      * For current row, PNG predictor to do nothing
      */
-    protected static final int PREDICTOR_PNG_NONE = 10;
+    public static final int PREDICTOR_PNG_NONE = 10;
 
     /**
      * For current row, derive each byte from byte left-by-bytesPerPixel
      */
-    protected static final int PREDICTOR_PNG_SUB = 11;
+    public static final int PREDICTOR_PNG_SUB = 11;
 
     /**
      * For current row, derive each byte from byte above
      */
-    protected static final int PREDICTOR_PNG_UP = 12;
+    public static final int PREDICTOR_PNG_UP = 12;
 
     /**
      * For current row, derive each byte from average of byte left-by-bytesPerPixel and byte above
      */
-    protected static final int PREDICTOR_PNG_AVG = 13;
+    public static final int PREDICTOR_PNG_AVG = 13;
 
     /**
      * For current row, derive each byte from non-linear function of byte left-by-bytesPerPixel and byte above and byte left-by-bytesPerPixel of above
      */
-    protected static final int PREDICTOR_PNG_PAETH = 14;
+    public static final int PREDICTOR_PNG_PAETH = 14;
 
     /**
      * When given in DecodeParms dict, in stream dict, means first byte of each row is row's predictor
      */
-    protected static final int PREDICTOR_PNG_OPTIMUM = 15;
+    public static final int PREDICTOR_PNG_OPTIMUM = 15;
 
     protected static final Name PREDICTOR_VALUE = new Name("Predictor");
     protected static final Name WIDTH_VALUE = new Name("Width");

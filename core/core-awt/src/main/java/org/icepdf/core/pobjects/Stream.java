@@ -48,6 +48,7 @@ public class Stream extends Dictionary {
     public static final Name DECODEPARAM_KEY = new Name("DecodeParms");
 
     public static final Name FILTER_FLATE_DECODE = new Name("FlateDecode");
+    public static final Name FILTER_DCT_DECODE = new Name("DCTDecode");
     public static final Name FILTER_ASCII85_DECODE = new Name("ASCII85Decode");
     public static final Name FILTER_ASCIIHexDECODE = new Name("ASCIIHexDecode");
     public static final Name FILTER_RUN_LENGTH_DECODE = new Name("RunLengthDecode");

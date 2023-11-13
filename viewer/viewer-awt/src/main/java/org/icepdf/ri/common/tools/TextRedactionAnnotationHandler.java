@@ -61,6 +61,8 @@ public class TextRedactionAnnotationHandler extends HighLightAnnotationHandler {
         boolean foundSelectableText = selectionTextSelectIcon(e.getPoint(), pageViewComponent);
         if (!foundSelectableText) {
             selectionImageSelectIcon(e.getPoint(), pageViewComponent);
+        } else {
+            isOverImage = false;
         }
     }
 
@@ -93,7 +95,7 @@ public class TextRedactionAnnotationHandler extends HighLightAnnotationHandler {
             return;
         }
         if (!isOverImage) {
-            super.mousePressed(e);
+            super.mouseDragged(e);
         } else {
             updateSelectionSize(e.getX(), e.getY(), pageViewComponent);
         }
@@ -105,7 +107,9 @@ public class TextRedactionAnnotationHandler extends HighLightAnnotationHandler {
     }
 
     protected void paintRectangle(Graphics2D gg, Rectangle rectToDraw) {
-        gg.fillRect(rectToDraw.x, rectToDraw.y, rectToDraw.width - 1, rectToDraw.height - 1);
+        if (isOverImage) {
+            gg.fillRect(rectToDraw.x, rectToDraw.y, rectToDraw.width - 1, rectToDraw.height - 1);
+        }
     }
 
     public void selectionImageSelectIcon(Point mouseLocation, AbstractPageViewComponent pageViewComponent) {

@@ -38,8 +38,7 @@ import java.util.logging.Logger;
  */
 public class ImageStream extends Stream {
 
-    private static final Logger logger =
-            Logger.getLogger(ImageStream.class.toString());
+    private static final Logger logger = Logger.getLogger(ImageStream.class.toString());
 
     public static final Name TYPE_VALUE = new Name("Image");
 
@@ -47,6 +46,7 @@ public class ImageStream extends Stream {
 
     private AffineTransform graphicsTransformMatrix;
     private Rectangle2D normalizedBounds;
+    private BufferedImage decodedImage;
 
     private static final Rectangle2D baseImageRectangle = new Rectangle2D.Float(0, 0, 1, 1);
 
@@ -112,6 +112,14 @@ public class ImageStream extends Stream {
 //            if (maskDecoder != null || smaskDecoder != null)
 //                ImageUtility.displayImage(decodedImage, "Final " + pObjectReference.toString());
         }
+        return decodedImage;
+    }
+
+    public void setDecodedImage(BufferedImage decodedImage) {
+        this.decodedImage = decodedImage;
+    }
+
+    public BufferedImage getDecodedImage() {
         return decodedImage;
     }
 

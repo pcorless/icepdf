@@ -133,7 +133,9 @@ public class ContentStreamRedactorCallback {
             if (redactionPath.intersects(imageBounds)) {
                 System.out.println("Redacting: " + imageStream.getPObjectReference() + " " +
                         imageStream.getWidth() + "x" + imageStream.getHeight());
-                ImageBurner.burn(imageReference, redactionPath);
+                ImageStream burnedImageStream = ImageBurner.burn(imageReference, redactionPath);
+                library.getStateManager().addChange(new PObject(burnedImageStream,
+                        burnedImageStream.getPObjectReference()));
             }
         }
     }
