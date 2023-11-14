@@ -21,7 +21,18 @@ public class ImageStreamWriter extends StreamWriter {
             BufferedImage bufferedImage = obj.getDecodedImage();
             // try and write the image as PNG.
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream(32 * 1024);
+            int[] comps = bufferedImage.getColorModel().getComponentSize();
+            // todo build this out,  as it's likely not goign to work well for TIFF and grayscale.
+            if (comps.length == 4) {
+                // can't write a 4 channel jpeg, so make an expensive copy.
+                BufferedImage newBufferedImage = new BufferedImage(bufferedImage.getWidth(),
+                        bufferedImage.getHeight(), BufferedImage.TYPE_INT_RGB);
+                newBufferedImage.getGraphics().drawImage(bufferedImage, 0, 0, null);
+                bufferedImage = newBufferedImage;
+                obj.setDecodedImage(bufferedImage);
+            }
             ImageIO.write(bufferedImage, "jpeg", outputStream);
+            outputStream.close();
             outputData = outputStream.toByteArray();
 
             // update the dictionary filter /FlateDecode removing previous values.

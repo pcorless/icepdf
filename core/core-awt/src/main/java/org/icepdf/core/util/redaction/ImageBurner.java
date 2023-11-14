@@ -14,14 +14,11 @@ import java.awt.image.BufferedImage;
 public class ImageBurner {
     public static ImageStream burn(ImageReference imageReference, GeneralPath redactionPath) throws InterruptedException {
         ImageStream imageStream = imageReference.getImageStream();
-        BufferedImage image = imageReference.getImage();
+        BufferedImage image = imageReference.getBaseImage();
         Rectangle2D bbox = imageStream.getNormalizedBounds();
-        // image coords need to be adjusted for any layout scaling
-        double xScale = image.getWidth() / bbox.getWidth();
-        double yScale = image.getHeight() / bbox.getHeight();
         Graphics2D imageGraphics = image.createGraphics();
         imageGraphics.setColor(Color.BLACK);
-        imageGraphics.scale(xScale, -yScale);
+        imageGraphics.scale(1, -1);
         imageGraphics.translate(0, -bbox.getHeight());
         imageGraphics.translate(-bbox.getX(), -bbox.getY());
         imageGraphics.fill(redactionPath);
