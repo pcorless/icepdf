@@ -5,53 +5,36 @@ import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.security.SecurityManager;
+import org.icepdf.core.util.updater.writeables.image.ImageEncoder;
+import org.icepdf.core.util.updater.writeables.image.ImageEncoderFactory;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 public class ImageStreamWriter extends StreamWriter {
-    public void write(ImageStream obj, SecurityManager securityManager, CountingOutputStream output) throws IOException {
+    public void write(ImageStream imageStream, SecurityManager securityManager, CountingOutputStream output) throws IOException {
         byte[] outputData;
         // decoded image is only set if the image was touch via a redaction burn.
-        if (obj.getDecodedImage() != null) {
-            BufferedImage bufferedImage = obj.getDecodedImage();
-            // try and write the image as PNG.
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream(32 * 1024);
-            int[] comps = bufferedImage.getColorModel().getComponentSize();
-            // todo build this out,  as it's likely not goign to work well for TIFF and grayscale.
-            if (comps.length == 4) {
-                // can't write a 4 channel jpeg, so make an expensive copy.
-                BufferedImage newBufferedImage = new BufferedImage(bufferedImage.getWidth(),
-                        bufferedImage.getHeight(), BufferedImage.TYPE_INT_RGB);
-                newBufferedImage.getGraphics().drawImage(bufferedImage, 0, 0, null);
-                bufferedImage = newBufferedImage;
-                obj.setDecodedImage(bufferedImage);
-            }
-            ImageIO.write(bufferedImage, "jpeg", outputStream);
-            outputStream.close();
-            outputData = outputStream.toByteArray();
+        if (imageStream.getDecodedImage() != null) {
 
-            // update the dictionary filter /FlateDecode removing previous values.
-            obj.getEntries().put(Stream.FILTER_KEY, Stream.FILTER_DCT_DECODE);
-
-            // image params for PNG decode
-            DictionaryEntries decodeParams = null;
-            if (obj.getEntries().get(Stream.DECODEPARAM_KEY) != null) {
-                decodeParams = obj.getLibrary().getDictionary(obj.getEntries(), Stream.DECODEPARAM_KEY);
-            } else {
-                decodeParams = new DictionaryEntries();
-//                obj.getEntries().put(Stream.DECODEPARAM_KEY, decodeParams);
-            }
-//            decodeParams.put(PREDICTOR_VALUE, PredictorDecode.PREDICTOR_PNG_PAETH);
+            ImageEncoder imageEncoder = ImageEncoderFactory.createEncodedImage(imageStream);
+            imageStream = imageEncoder.encode();
+            outputData = imageStream.getRawBytes();
 
             // check if we need to encrypt the stream
             if (securityManager != null) {
+                DictionaryEntries decodeParams;
+                if (imageStream.getEntries().get(Stream.DECODEPARAM_KEY) != null) {
+                    // needed to check for a custom crypt filter
+                    decodeParams = imageStream.getLibrary().getDictionary(imageStream.getEntries(),
+                            Stream.DECODEPARAM_KEY);
+                } else {
+                    decodeParams = new DictionaryEntries();
+                }
                 InputStream decryptedStream = securityManager.encryptInputStream(
-                        obj.getPObjectReference(),
+                        imageStream.getPObjectReference(),
                         securityManager.getDecryptionKey(),
                         decodeParams,
                         new ByteArrayInputStream(outputData), true);
@@ -65,8 +48,8 @@ public class ImageStreamWriter extends StreamWriter {
             }
         } else {
             // no modification, just write out the image unaltered.
-            outputData = obj.getRawBytes();
+            outputData = imageStream.getRawBytes();
         }
-        writeStreamObject(output, obj, outputData);
+        writeStreamObject(output, imageStream, outputData);
     }
 }
