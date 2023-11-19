@@ -43,7 +43,6 @@ public class FaxEncoder implements ImageEncoder {
                      new MemoryCacheImageOutputStream(byteArrayOutputStream)) {
             for (int y = 0; y < rows; ++y) {
                 for (int x = 0; x < cols; ++x) {
-                    // todo revisit,  problem with black is one and decode array and output being inverted.
                     memoryCacheImageOutputStream.writeBits(image.getRGB(x, y), 1);
                 }
                 int bitOffset = memoryCacheImageOutputStream.getBitOffset();
@@ -64,15 +63,16 @@ public class FaxEncoder implements ImageEncoder {
         input.close();
         byteArrayOutputStream.close();
 
-        imageStream.getEntries().put(Stream.FILTER_KEY, Stream.FILTER_CCITT_FAX_DECODE);
+        DictionaryEntries entries = imageStream.getEntries();
+        entries.put(Stream.FILTER_KEY, Stream.FILTER_CCITT_FAX_DECODE);
+        // don't need this anymore as the data has already been normalized
+        entries.remove(DECODE_KEY);
         if (imageStream.getEntries().get(Stream.DECODEPARAM_KEY) != null) {
             // needed to check for a custom crypt filter
             DictionaryEntries decodeParams = imageStream.getLibrary().getDictionary(imageStream.getEntries(),
                     Stream.DECODEPARAM_KEY);
             // group 4 encoding
             decodeParams.put(K_KEY, -1);
-            // todo not quite correct yet.
-            decodeParams.remove(DECODE_KEY);
             decodeParams.put(BLACKIS1_KEY, true);
 
         }
