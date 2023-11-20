@@ -1,5 +1,6 @@
 package org.icepdf.core.util.updater.callbacks;
 
+import org.icepdf.core.io.CountingOutputStream;
 import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
@@ -10,6 +11,7 @@ import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.parser.content.Operands;
 import org.icepdf.core.util.redaction.ImageBurner;
+import org.icepdf.core.util.redaction.InlineImageWriter;
 import org.icepdf.core.util.redaction.StringObjectWriter;
 
 import java.awt.geom.GeneralPath;
@@ -31,10 +33,8 @@ public class ContentStreamRedactorCallback {
     private ByteArrayOutputStream burnedContentOutputStream;
     private byte[] originalContentStreamBytes;
     private int lastTokenPosition;
-    private int lastTextPosition;
-    // keep track of Tj followed by TD layout interactions
+    // todo remove, but is handy for the time being for debugging.
     private int lastToken;
-    private int lastTextToken;
     private float lastTjOffset;
 
     private Library library;
@@ -71,7 +71,6 @@ public class ContentStreamRedactorCallback {
             burnedContentOutputStream.close();
             library.getStateManager().addChange(new PObject(currentStream, currentStream.getPObjectReference()));
             lastTokenPosition = 0;
-            lastTextPosition = 0;
             currentStream = null;
         }
     }
@@ -82,22 +81,15 @@ public class ContentStreamRedactorCallback {
         if (!isTextLayoutToken(token)) {
             burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
                     (position - lastTokenPosition));
-            lastTokenPosition = position;
         } else if (token == T_STAR || token == TD || token == Td) {
             writeLastTjOffset();
-            lastTextToken = 0;
             lastTjOffset = 0;
             burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
                     (position - lastTokenPosition));
-            lastTokenPosition = position;
         } else if (token == BT) {
-            lastTextToken = 0;
             lastTjOffset = 0;
         }
-        if (isTextLayoutToken(token)) {
-            lastTextToken = token;
-        }
-        lastTextPosition = position;
+        lastTokenPosition = position;
         lastToken = token;
     }
 
@@ -121,6 +113,23 @@ public class ContentStreamRedactorCallback {
             Rectangle2D glyphBounds = glyphText.getBounds();
             if (reactionPaths.contains(glyphBounds)) {
                 glyphText.redact();
+            }
+        }
+    }
+
+    public void checkAndRedactInlineImage(ImageReference imageReference) throws InterruptedException, IOException {
+        for (RedactionAnnotation annotation : redactionAnnotations) {
+            GeneralPath redactionPath = annotation.getMarkupPath();
+            ImageStream imageStream = imageReference.getImageStream();
+            Rectangle2D imageBounds = imageStream.getNormalizedBounds();
+            if (redactionPath.intersects(imageBounds)) {
+                System.out.println("Redacting: " + imageStream.getWidth() + "x" + imageStream.getHeight());
+                ImageStream burnedImageStream = ImageBurner.burn(imageReference, redactionPath);
+                InlineImageWriter.write(new CountingOutputStream(burnedContentOutputStream), burnedImageStream);
+            } else {
+                // copy none redacted StringObjects verbatim
+                int length = lastTokenPosition - lastTokenPosition;
+                burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition, length);
             }
         }
     }
@@ -151,9 +160,8 @@ public class ContentStreamRedactorCallback {
             }
         } else {
             // copy none redacted StringObjects verbatim
-            int length = lastTextPosition - lastTokenPosition;
+            int length = lastTokenPosition - lastTokenPosition;
             burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition, length);
         }
-        lastTokenPosition = lastTextPosition;
     }
 }

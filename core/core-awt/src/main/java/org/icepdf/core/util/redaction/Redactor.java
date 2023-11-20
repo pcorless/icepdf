@@ -34,9 +34,6 @@ public class Redactor {
                 // todo, move this into above call
 //                InlineImageBurner.burn(page, redactionAnnotations);
 
-                // burn bounds into the image, may need an initialized page to calculate bounds
-                // todo likely remove
-//                ImageStream[] imageStreams = ImageBurner.burn(page, redactionAnnotations);
             }
             // convert the redaction to Annotation.SUBTYPE_SQUARE.  This avoids any confusion in the exported document
             // and makes sure we show where the redaction took place.

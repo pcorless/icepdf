@@ -996,11 +996,11 @@ public class ContentParser extends AbstractContentParser {
         }
     }
 
-    private void parseInlineImage(Lexer p, Shapes shapes, Page page) throws IOException {
+    private void parseInlineImage(Lexer lexer, Shapes shapes, Page page) throws IOException {
         try {
             Object tok;
             DictionaryEntries iih = new DictionaryEntries();
-            tok = p.next();
+            tok = lexer.next();
             while (!tok.equals(Operands.ID)) {
                 if (ImageParams.BPC_KEY.equals(tok)) {
                     tok = ImageParams.BITS_PER_COMPONENT_KEY;
@@ -1021,9 +1021,9 @@ public class ContentParser extends AbstractContentParser {
                 } else if (ImageParams.W_KEY.equals(tok)) {
                     tok = ImageParams.WIDTH_KEY;
                 }
-                Object tok1 = p.next();
+                Object tok1 = lexer.next();
                 iih.put((Name) tok, tok1);
-                tok = p.next();
+                tok = lexer.next();
             }
             // For inline images in content streams, we have to use
             //   a byte[], instead of going back to the original file,
@@ -1036,7 +1036,9 @@ public class ContentParser extends AbstractContentParser {
             //   file, we have to fake it as coming from the file ...
 
             ImageReference imageStreamReference;
-            byte[] data = p.getImageBytes();
+            byte[] data = lexer.getImageBytes();
+            // todo pos will be the end of inline image EI
+            ImageStream imageStream;
             if (data.length < 256) {
                 String tmpKey = new String(data).concat(graphicState.getFillColor() != null ?
                         graphicState.getFillColor().toString() : "");
@@ -1044,32 +1046,30 @@ public class ContentParser extends AbstractContentParser {
                 ImageReference imageReference = inlineImageCache.get(tmpKey);
                 if (imageReference != null) {
                     imageStreamReference = imageReference;
+                    imageStream = imageStreamReference.getImageStream();
                 } else {
                     // create the image stream
-                    ImageStream st = new ImageStream(library, iih, data);
+                    imageStream = new ImageStream(library, iih, data);
                     imageStreamReference = ImageReferenceFactory.getImageReference(
-                            st, resources, graphicState, imageIndex.get(), page);
+                            imageStream, resources, graphicState, imageIndex.get(), page);
                     inlineImageCache.put(tmpKey, imageStreamReference);
                 }
             } else {
                 // create the image stream
-                ImageStream st = new ImageStream(library, iih, data);
+                imageStream = new ImageStream(library, iih, data);
                 imageStreamReference = ImageReferenceFactory.getImageReference(
-                        st, resources, graphicState, imageIndex.get(), page);
+                        imageStream, resources, graphicState, imageIndex.get(), page);
             }
             // experimental display
-//            ImageReference imageStreamReference =
-//                    new InlineImageStreamReference(st, graphicState.getFillColor(), resources);
 //            ImageUtility.displayImage(imageStreamReference.getImage(), "BI");
             AffineTransform af = new AffineTransform(graphicState.getCTM());
             graphicState.scale(1, -1);
             graphicState.translate(0, -1);
-            // todo cleanup inline imates.
-//            imageStream.setGraphicsTransformMatrix(af);
-//
-//            if (contentStreamRedactorCallback != null) {
-//                contentStreamRedactorCallback.checkAndRedactImageXObject(imageStreamReference);
-//            }
+
+            imageStream.setGraphicsTransformMatrix(af);
+            if (contentStreamRedactorCallback != null) {
+                contentStreamRedactorCallback.checkAndRedactInlineImage(imageStreamReference);
+            }
 
             shapes.add(new ImageDrawCmd(imageStreamReference));
             graphicState.set(af);
