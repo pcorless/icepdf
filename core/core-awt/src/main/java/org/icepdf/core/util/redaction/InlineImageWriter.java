@@ -28,8 +28,7 @@ public class InlineImageWriter {
         dictionaryWriter.writeInline(imageStream.getEntries(), contentOutputStream);
         // write image data.
         contentOutputStream.write("ID".getBytes());
-        contentOutputStream.write(BaseWriter.NEWLINE);
-
+        contentOutputStream.write(BaseWriter.SPACE);
         contentOutputStream.write(outputData);
 
         // and we're done

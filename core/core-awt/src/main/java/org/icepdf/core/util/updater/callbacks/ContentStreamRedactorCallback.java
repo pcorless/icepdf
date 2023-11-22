@@ -18,7 +18,6 @@ import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -33,13 +32,14 @@ public class ContentStreamRedactorCallback {
     private ByteArrayOutputStream burnedContentOutputStream;
     private byte[] originalContentStreamBytes;
     private int lastTokenPosition;
+    private int lastTextPosition;
     // todo remove, but is handy for the time being for debugging.
     private int lastToken;
     private float lastTjOffset;
 
-    private Library library;
+    private final Library library;
 
-    private List<RedactionAnnotation> redactionAnnotations;
+    private final List<RedactionAnnotation> redactionAnnotations;
 
     public ContentStreamRedactorCallback(Library library, List<RedactionAnnotation> redactionAnnotations) {
         this.redactionAnnotations = redactionAnnotations;
@@ -67,10 +67,11 @@ public class ContentStreamRedactorCallback {
             // assign accumulated byte[] to the stream
             byte[] burnedContentStream = burnedContentOutputStream.toByteArray();
             currentStream.setRawBytes(burnedContentStream);
-            String tmp = burnedContentOutputStream.toString(StandardCharsets.ISO_8859_1);
+//            String tmp = burnedContentOutputStream.toString(StandardCharsets.ISO_8859_1);
             burnedContentOutputStream.close();
             library.getStateManager().addChange(new PObject(currentStream, currentStream.getPObjectReference()));
             lastTokenPosition = 0;
+            lastTextPosition = 0;
             currentStream = null;
         }
     }
@@ -81,15 +82,17 @@ public class ContentStreamRedactorCallback {
         if (!isTextLayoutToken(token)) {
             burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
                     (position - lastTokenPosition));
+            lastTokenPosition = position;
         } else if (token == T_STAR || token == TD || token == Td) {
             writeLastTjOffset();
             lastTjOffset = 0;
             burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
                     (position - lastTokenPosition));
+            lastTokenPosition = position;
         } else if (token == BT) {
             lastTjOffset = 0;
         }
-        lastTokenPosition = position;
+        lastTextPosition = position;
         lastToken = token;
     }
 
@@ -117,20 +120,23 @@ public class ContentStreamRedactorCallback {
         }
     }
 
-    public void checkAndRedactInlineImage(ImageReference imageReference) throws InterruptedException, IOException {
+    public void checkAndRedactInlineImage(ImageReference imageReference, int pos) throws InterruptedException,
+            IOException {
         for (RedactionAnnotation annotation : redactionAnnotations) {
             GeneralPath redactionPath = annotation.getMarkupPath();
             ImageStream imageStream = imageReference.getImageStream();
             Rectangle2D imageBounds = imageStream.getNormalizedBounds();
             if (redactionPath.intersects(imageBounds)) {
-                System.out.println("Redacting: " + imageStream.getWidth() + "x" + imageStream.getHeight());
+//                System.out.println("Redacting: " + imageStream.getWidth() + "x" + imageStream.getHeight());
                 ImageStream burnedImageStream = ImageBurner.burn(imageReference, redactionPath);
-                InlineImageWriter.write(new CountingOutputStream(burnedContentOutputStream), burnedImageStream);
+                CountingOutputStream countingOutputStream = new CountingOutputStream(burnedContentOutputStream);
+                InlineImageWriter.write(countingOutputStream, burnedImageStream);
             } else {
                 // copy none redacted StringObjects verbatim
-                int length = lastTokenPosition - lastTokenPosition;
+                int length = pos - lastTokenPosition;
                 burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition, length);
             }
+            lastTokenPosition = pos;
         }
     }
 
@@ -160,8 +166,9 @@ public class ContentStreamRedactorCallback {
             }
         } else {
             // copy none redacted StringObjects verbatim
-            int length = lastTokenPosition - lastTokenPosition;
+            int length = lastTextPosition - lastTokenPosition;
             burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition, length);
         }
+        lastTokenPosition = lastTextPosition;
     }
 }

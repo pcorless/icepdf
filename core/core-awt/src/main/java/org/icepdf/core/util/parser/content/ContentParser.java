@@ -1068,9 +1068,8 @@ public class ContentParser extends AbstractContentParser {
 
             imageStream.setGraphicsTransformMatrix(af);
             if (contentStreamRedactorCallback != null) {
-                contentStreamRedactorCallback.checkAndRedactInlineImage(imageStreamReference);
+                contentStreamRedactorCallback.checkAndRedactInlineImage(imageStreamReference, lexer.getPos());
             }
-
             shapes.add(new ImageDrawCmd(imageStreamReference));
             graphicState.set(af);
         } catch (IOException e) {

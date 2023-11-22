@@ -24,7 +24,7 @@ import static org.icepdf.core.pobjects.graphics.images.ImageParams.COLORSPACE_KE
  */
 public class RasterEncoder implements ImageEncoder {
 
-    private ImageStream imageStream;
+    private final ImageStream imageStream;
 
     public RasterEncoder(ImageStream imageStream) {
         this.imageStream = imageStream;
@@ -38,16 +38,14 @@ public class RasterEncoder implements ImageEncoder {
         } else {
             byteArray = createFromRGBImage(imageStream);
         }
-        byte[] outputData = createEncodedBytes(byteArray);
+        byte[] outputData = createFlateEncodedBytes(byteArray);
 
         imageStream.getEntries().put(Stream.FILTER_KEY, Stream.FILTER_FLATE_DECODE);
-
         imageStream.setRawBytes(outputData);
-
         return imageStream;
     }
 
-    private static byte[] createEncodedBytes(byte[] byteArray) throws IOException {
+    private static byte[] createFlateEncodedBytes(byte[] byteArray) throws IOException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(byteArray.length / 2);
         ByteArrayInputStream input = new ByteArrayInputStream(byteArray);
         Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION);
@@ -72,6 +70,7 @@ public class RasterEncoder implements ImageEncoder {
                 imageBytes[i++] = (byte) (pixel & 0xFF);
             }
         }
+        // todo more work to do here to clean up filter keys as in line images can use abbreviated codes
         imageStream.getEntries().put(COLORSPACE_KEY, DEVICERGB_KEY);
         imageStream.getEntries().put(BITS_PER_COMPONENT_KEY, image.getColorModel().getPixelSize() / 3);
         return imageBytes;
