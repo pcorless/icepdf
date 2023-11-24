@@ -15,7 +15,7 @@ import static org.icepdf.core.pobjects.graphics.images.ImageParams.BLACKIS1_KEY;
 import static org.icepdf.core.pobjects.graphics.images.ImageParams.DECODE_KEY;
 
 /**
- * Encode the given image stream as a CCITTfax images.   The assumption is that the image stream is already
+ * Encode the given image stream as a CCITTFax images.   The assumption is that the image stream is already
  * of type CCITTFax or JBig2.
  */
 public class FaxEncoder implements ImageEncoder {
