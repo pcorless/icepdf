@@ -3450,8 +3450,16 @@ public class SwingController extends ComponentAdapter
     public void saveFile() {
         if (IS_READONLY) return;
         // check for annotations
-        if (hasUnburnedRedactions() && cancelRedactionWarningDialog()) {
-            return;
+        if (hasUnburnedRedactions()) {
+            int option = showRedactionWarningDialog();
+            if (option == JOptionPane.CANCEL_OPTION) {
+                return;
+            } else if (option == JOptionPane.YES_OPTION) {
+                exportDocument();
+                return;
+            } else if (option == JOptionPane.NO_OPTION) {
+                // continue with saving the document
+            }
         }
         if (document.getStateManager().isChange() &&
                 saveFilePath != null &&
@@ -3503,22 +3511,26 @@ public class SwingController extends ComponentAdapter
         return document.hasRedactions();
     }
 
-    protected boolean cancelRedactionWarningDialog() {
+    protected int showRedactionWarningDialog() {
         // show dialog warning user they are about to save has unburned redaction annotations
-        int option = JOptionPane.showConfirmDialog(getViewerFrame(),
+        return JOptionPane.showConfirmDialog(getViewerFrame(),
                 messageBundle.getString("viewer.dialog.redaction.unburned.msgs"),
                 messageBundle.getString("viewer.dialog.redaction.unburned.title"),
-                JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
-        if (option == JOptionPane.CANCEL_OPTION) {
-            return true;
-        }
-        return false;
+                JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
     }
 
 
     protected void saveFileAs(SaveMode saveMode) {
-        if (saveMode != SaveMode.EXPORT && hasUnburnedRedactions() && cancelRedactionWarningDialog()) {
-            return;
+        if (saveMode != SaveMode.EXPORT && hasUnburnedRedactions()) {
+            int option = showRedactionWarningDialog();
+            if (option == JOptionPane.CANCEL_OPTION) {
+                return;
+            } else if (option == JOptionPane.YES_OPTION) {
+                exportDocument();
+                return;
+            } else if (option == JOptionPane.NO_OPTION) {
+                // continue with saving the document
+            }
         }
 
         String originalFileName = getOriginalFileName();
