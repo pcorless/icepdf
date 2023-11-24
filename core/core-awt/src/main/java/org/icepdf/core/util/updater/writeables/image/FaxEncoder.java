@@ -68,13 +68,11 @@ public class FaxEncoder implements ImageEncoder {
         // don't need this anymore as the data has already been normalized
         entries.remove(DECODE_KEY);
         if (imageStream.getEntries().get(Stream.DECODEPARAM_KEY) != null) {
-            // needed to check for a custom crypt filter
             DictionaryEntries decodeParams = imageStream.getLibrary().getDictionary(imageStream.getEntries(),
                     Stream.DECODEPARAM_KEY);
             // group 4 encoding
             decodeParams.put(K_KEY, -1);
             decodeParams.put(BLACKIS1_KEY, true);
-
         }
 
         imageStream.setRawBytes(byteArrayOutputStream.toByteArray());

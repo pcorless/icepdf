@@ -15,7 +15,10 @@ import java.awt.image.BufferedImage;
 public class ImageBurner {
     public static ImageStream burn(ImageReference imageReference, GeneralPath redactionPath) throws InterruptedException {
         ImageStream imageStream = imageReference.getImageStream();
-        BufferedImage image = imageReference.getBaseImage();
+        BufferedImage image = imageStream.getDecodedImage();
+        if (image == null) {
+            image = imageReference.getBaseImage();
+        }
         Rectangle2D bbox = imageStream.getNormalizedBounds();
         // image coords need to be adjusted for any layout scaling
         double xScale = image.getWidth() / bbox.getWidth();

@@ -24,8 +24,7 @@ public class ImageEncoderFactory {
             return new FaxEncoder(imageStream);
         } else if (containsFilter(imageStream, DCT_DECODE_FILTERS) ||
                 containsFilter(imageStream, JPX_DECODE_FILTERS)) {
-            // todo investigate what a png encoder would look like or even with lossy use DCT.
-            return new RasterEncoder(imageStream);
+            return new PredictorEncoder(imageStream);
         } else {
             return new RasterEncoder(imageStream);
         }

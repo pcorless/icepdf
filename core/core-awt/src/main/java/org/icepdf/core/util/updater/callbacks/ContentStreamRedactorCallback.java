@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.icepdf.core.util.parser.content.Operands.*;
@@ -115,6 +116,9 @@ public class ContentStreamRedactorCallback {
             GeneralPath reactionPaths = annotation.getMarkupPath();
             Rectangle2D glyphBounds = glyphText.getBounds();
             if (reactionPaths.contains(glyphBounds)) {
+                if (logger.isLoggable(Level.FINER)) {
+                    logger.finer("Redacting Text: " + glyphText.getCid() + " " + glyphText.getUnicode());
+                }
                 glyphText.redact();
             }
         }
@@ -127,7 +131,9 @@ public class ContentStreamRedactorCallback {
             ImageStream imageStream = imageReference.getImageStream();
             Rectangle2D imageBounds = imageStream.getNormalizedBounds();
             if (redactionPath.intersects(imageBounds)) {
-//                System.out.println("Redacting: " + imageStream.getWidth() + "x" + imageStream.getHeight());
+                if (logger.isLoggable(Level.FINER)) {
+                    logger.finer("Redacting inline image: " + imageStream.getWidth() + "x" + imageStream.getHeight());
+                }
                 ImageStream burnedImageStream = ImageBurner.burn(imageReference, redactionPath);
                 CountingOutputStream countingOutputStream = new CountingOutputStream(burnedContentOutputStream);
                 InlineImageWriter.write(countingOutputStream, burnedImageStream);
@@ -146,8 +152,10 @@ public class ContentStreamRedactorCallback {
             ImageStream imageStream = imageReference.getImageStream();
             Rectangle2D imageBounds = imageStream.getNormalizedBounds();
             if (redactionPath.intersects(imageBounds)) {
-                System.out.println("Redacting: " + imageStream.getPObjectReference() + " " +
-                        imageStream.getWidth() + "x" + imageStream.getHeight());
+                if (logger.isLoggable(Level.FINER)) {
+                    logger.finer("Redacting Image: " + imageStream.getPObjectReference() + " " +
+                            imageStream.getWidth() + "x" + imageStream.getHeight());
+                }
                 ImageStream burnedImageStream = ImageBurner.burn(imageReference, redactionPath);
                 library.getStateManager().addChange(new PObject(burnedImageStream,
                         burnedImageStream.getPObjectReference()));

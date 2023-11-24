@@ -70,7 +70,7 @@ public class RasterEncoder implements ImageEncoder {
                 imageBytes[i++] = (byte) (pixel & 0xFF);
             }
         }
-        // todo more work to do here to clean up filter keys as in line images can use abbreviated codes
+        imageStream.getEntries().remove(Stream.DECODEPARAM_KEY);
         imageStream.getEntries().put(COLORSPACE_KEY, DEVICERGB_KEY);
         imageStream.getEntries().put(BITS_PER_COMPONENT_KEY, image.getColorModel().getPixelSize() / 3);
         return imageBytes;
@@ -101,7 +101,6 @@ public class RasterEncoder implements ImageEncoder {
         imageStream.getEntries().put(COLORSPACE_KEY, DEVICEGRAY_KEY);
         imageStream.getEntries().put(BITS_PER_COMPONENT_KEY, image.getColorModel().getPixelSize());
         if (imageStream.getEntries().get(Stream.DECODEPARAM_KEY) != null) {
-            // needed to check for a custom crypt filter
             DictionaryEntries decodeParams = imageStream.getLibrary().getDictionary(imageStream.getEntries(),
                     Stream.DECODEPARAM_KEY);
             decodeParams.remove(K_KEY);
