@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.logging.Logger;
 
 public class RedactionContentBurner {
-
     private static final Logger logger =
             Logger.getLogger(RedactionContentBurner.class.toString());
 

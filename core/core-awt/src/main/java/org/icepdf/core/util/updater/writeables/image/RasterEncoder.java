@@ -47,13 +47,14 @@ public class RasterEncoder implements ImageEncoder {
 
     private static byte[] createFlateEncodedBytes(byte[] byteArray) throws IOException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(byteArray.length / 2);
-        ByteArrayInputStream input = new ByteArrayInputStream(byteArray);
-        Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION);
-        try (DeflaterOutputStream out = new DeflaterOutputStream(byteArrayOutputStream, deflater)) {
-            input.transferTo(out);
+        try (ByteArrayInputStream input = new ByteArrayInputStream(byteArray)) {
+            Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION);
+            try (DeflaterOutputStream out = new DeflaterOutputStream(byteArrayOutputStream, deflater)) {
+                input.transferTo(out);
+            }
+            byteArrayOutputStream.flush();
+            deflater.end();
         }
-        byteArrayOutputStream.flush();
-        deflater.end();
         return byteArrayOutputStream.toByteArray();
     }
 

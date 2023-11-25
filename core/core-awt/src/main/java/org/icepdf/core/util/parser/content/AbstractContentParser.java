@@ -1540,7 +1540,6 @@ public abstract class AbstractContentParser {
             shapes.getPageText().addGlyph(glyphText, oCGs);
 
             if (contentStreamRedactorCallback != null) {
-                // mark any glyphText that intersect a redaction bound.
                 contentStreamRedactorCallback.checkAndRedactText(glyphText);
             }
 

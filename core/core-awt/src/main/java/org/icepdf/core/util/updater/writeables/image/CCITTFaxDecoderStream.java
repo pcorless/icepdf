@@ -57,9 +57,6 @@ final class CCITTFaxDecoderStream extends FilterInputStream {
     private final byte[] decodedRow;
 
     private final boolean optionG32D;
-    // Leading zeros for aligning EOL
-    private final boolean optionG3Fill;
-    private final boolean optionUncompressed;
     private final boolean optionByteAligned;
 
     private final int type;
@@ -102,20 +99,15 @@ final class CCITTFaxDecoderStream extends FilterInputStream {
             case TIFFExtension.COMPRESSION_CCITT_MODIFIED_HUFFMAN_RLE:
                 optionByteAligned = byteAligned;
                 optionG32D = false;
-                optionG3Fill = false;
-                optionUncompressed = false;
+                // Leading zeros for aligning EOL
                 break;
             case TIFFExtension.COMPRESSION_CCITT_T4:
                 optionByteAligned = byteAligned;
                 optionG32D = (options & TIFFExtension.GROUP3OPT_2DENCODING) != 0;
-                optionG3Fill = (options & TIFFExtension.GROUP3OPT_FILLBITS) != 0;
-                optionUncompressed = (options & TIFFExtension.GROUP3OPT_UNCOMPRESSED) != 0;
                 break;
             case TIFFExtension.COMPRESSION_CCITT_T6:
                 optionByteAligned = byteAligned;
                 optionG32D = false;
-                optionG3Fill = false;
-                optionUncompressed = (options & TIFFExtension.GROUP4OPT_UNCOMPRESSED) != 0;
                 break;
             default:
                 throw new IllegalArgumentException("Illegal parameter: " + type);

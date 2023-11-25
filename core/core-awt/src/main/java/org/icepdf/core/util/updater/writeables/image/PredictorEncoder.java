@@ -326,7 +326,7 @@ class PredictorEncoder implements ImageEncoder {
     }
 
     private ImageStream preparePredictorPDImage(ByteArrayOutputStream stream,
-                                                int bitsPerComponent) throws IOException {
+                                                int bitsPerComponent) {
         BufferedImage image = imageStream.getDecodedImage();
         int width = image.getWidth();
 

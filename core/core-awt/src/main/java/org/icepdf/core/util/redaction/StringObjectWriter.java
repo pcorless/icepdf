@@ -8,6 +8,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
+/**
+ * StringObjectWriter is responsible for rewriting text that has been marked as redacted.   This is done by build
+ * out new TJ/Tj layout operations and adjusted Td offset as needed.
+ */
 public class StringObjectWriter {
 
     public static boolean containsRedactions(ArrayList<TextSprite> textOperators) {
@@ -113,7 +117,7 @@ public class StringObjectWriter {
                     writeCharacterCode(glyphText, contentOutputStream);
                 }
             }
-            if (glyphWrittenCount > 0 && glyphText != null) {
+            if (glyphWrittenCount > 0) {
                 writeDelimiterEnd(glyphText, contentOutputStream);
             }
         }
@@ -145,8 +149,6 @@ public class StringObjectWriter {
     }
 
     private static void writeCharacterCode(GlyphText glyphText, ByteArrayOutputStream contentOutputStream) throws IOException {
-        // When I get back to variable bye hex strings, this might need to be reworked to use the object string
-        // wrapper class.
         if (glyphText.getFontSubTypeFormat() == Font.SIMPLE_FORMAT) {
             writeSimpleCharacterCode(glyphText, contentOutputStream);
         } else {
@@ -163,6 +165,7 @@ public class StringObjectWriter {
             }
             contentOutputStream.write(cid);
         } else {
+            // write out octal values
             contentOutputStream.write('\\');
             contentOutputStream.write(Integer.toString(cid, 8).getBytes());
         }

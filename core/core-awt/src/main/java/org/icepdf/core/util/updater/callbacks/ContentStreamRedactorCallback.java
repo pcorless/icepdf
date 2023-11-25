@@ -18,6 +18,7 @@ import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -25,6 +26,14 @@ import java.util.logging.Logger;
 
 import static org.icepdf.core.util.parser.content.Operands.*;
 
+/**
+ * ContentStreamRedactorCallback is called when a pages content stream has been set for redacting content.  The callback
+ * is called as a content stream starts, tokens are parsed and the content stream ends.   The callback writes
+ * the original content stream to a new output stream using the current content parsers state to redact content as
+ * the original content stream is digested.
+ *
+ * @since 7.2.0
+ */
 public class ContentStreamRedactorCallback {
 
     private static final Logger logger = Logger.getLogger(ContentStreamRedactorCallback.class.toString());
@@ -34,10 +43,7 @@ public class ContentStreamRedactorCallback {
     private byte[] originalContentStreamBytes;
     private int lastTokenPosition;
     private int lastTextPosition;
-    // todo remove, but is handy for the time being for debugging.
-    private int lastToken;
     private float lastTjOffset;
-
     private final Library library;
 
     private final List<RedactionAnnotation> redactionAnnotations;
@@ -68,7 +74,10 @@ public class ContentStreamRedactorCallback {
             // assign accumulated byte[] to the stream
             byte[] burnedContentStream = burnedContentOutputStream.toByteArray();
             currentStream.setRawBytes(burnedContentStream);
-//            String tmp = burnedContentOutputStream.toString(StandardCharsets.ISO_8859_1);
+            if (logger.isLoggable(Level.FINEST)) {
+                String redactedContentStream = burnedContentOutputStream.toString(StandardCharsets.ISO_8859_1);
+                logger.finest(redactedContentStream);
+            }
             burnedContentOutputStream.close();
             library.getStateManager().addChange(new PObject(currentStream, currentStream.getPObjectReference()));
             lastTokenPosition = 0;
@@ -94,7 +103,6 @@ public class ContentStreamRedactorCallback {
             lastTjOffset = 0;
         }
         lastTextPosition = position;
-        lastToken = token;
     }
 
     private void writeLastTjOffset() throws IOException {
@@ -111,6 +119,10 @@ public class ContentStreamRedactorCallback {
         return token == Tj || token == TJ || token == Td || token == TD || token == T_STAR || token == BT;
     }
 
+    /**
+     * Marks any glyphText that intersect a redaction bound.
+     * @param glyphText text to test for intersection with redact annotations
+     */
     public void checkAndRedactText(GlyphText glyphText) {
         for (RedactionAnnotation annotation : redactionAnnotations) {
             GeneralPath reactionPaths = annotation.getMarkupPath();

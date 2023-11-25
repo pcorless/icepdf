@@ -20,7 +20,7 @@ import static org.icepdf.core.pobjects.Resources.XOBJECT_KEY;
 public class PageRemovalModifier implements Modifier<Page> {
 
     private Library library;
-    private Catalog catalog;
+    private final Catalog catalog;
     private StateManager stateManager;
 
     public PageRemovalModifier(Object parent) {
@@ -39,14 +39,13 @@ public class PageRemovalModifier implements Modifier<Page> {
             // remove related resources
             // contents
             removeDictionaryEntries(page.getEntries(), CONTENTS_KEY, stateManager);
-            // xobjects
+            // xObjects
             DictionaryEntries entries = (DictionaryEntries) page.getEntries().get(RESOURCES_KEY);
             removeDictionaryEntries(entries, XOBJECT_KEY, stateManager);
             // properties
         }
     }
 
-    // todo start building out utility class.
     private void removeDictionaryEntries(DictionaryEntries dictionary, Name key, StateManager stateManager) {
         Object entries = dictionary.get(key);
 
@@ -57,7 +56,7 @@ public class PageRemovalModifier implements Modifier<Page> {
         }
         // if a vector, process it as needed
         else if (entries instanceof List) {
-            List references = (List) entries;
+            List<?> references = (List<?>) entries;
             for (Object cont : references) {
                 Object tmp = library.getObject(cont);
                 if (tmp instanceof Stream) {
@@ -79,7 +78,7 @@ public class PageRemovalModifier implements Modifier<Page> {
 
     private boolean findAndRemovePageTreeReference(PageTree pageTree, Reference pageReference) {
         // work with raw dictionary entries as we don't want to initialize if we don't have to.
-        List kidsReferences = (List) pageTree.getObject(KIDS_KEY);
+        List<?> kidsReferences = (List<?>) pageTree.getObject(KIDS_KEY);
         boolean found = false;
         for (Object kid : kidsReferences) {
             // quick check for an easy find
@@ -106,7 +105,7 @@ public class PageRemovalModifier implements Modifier<Page> {
     }
 
     // remove and push the dictionary to the StateManager.
-    private void removePageTreeReference(PageTree pageTree, List kidsReferences, Object kid) {
+    private void removePageTreeReference(PageTree pageTree, List<?> kidsReferences, Object kid) {
         DictionaryEntries dictionaryEntries = pageTree.getEntries();
         kidsReferences.remove(kid);
         dictionaryEntries.put(KIDS_KEY, kidsReferences);
