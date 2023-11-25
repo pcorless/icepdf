@@ -1,6 +1,11 @@
 package org.icepdf.ri.common.views;
 
-import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.Catalog;
+import org.icepdf.core.pobjects.Destination;
+import org.icepdf.core.pobjects.NameTree;
+import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.PageTree;
+import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.ChoiceWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
@@ -43,7 +48,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     // annotations component for this pageViewComp.
     protected final Object annotationComponentsLock = new Object();
     protected ArrayList<AbstractAnnotationComponent> annotationComponents;
-    protected Map<Annotation, AnnotationComponent> annotationToComponent;
+    protected Map<Reference, AnnotationComponent> annotationToComponent;
     protected ArrayList<DestinationComponent> destinationComponents;
     private Set<SearchHitComponent> searchHitComponents = new HashSet<>();
 
@@ -230,7 +235,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         if (annotationToComponent == null) {
             initializeAnnotationsComponent(getPage());
         }
-        return annotationToComponent.get(annot);
+        return annotationToComponent.get(annot.getPObjectReference());
     }
 
     /**
@@ -440,7 +445,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
             annotationToComponent = new HashMap<>();
         }
         annotationComponents.add((AbstractAnnotationComponent) annotation);
-        annotationToComponent.put(annotation.getAnnotation(), annotation);
+        annotationToComponent.put(annotation.getAnnotation().getPObjectReference(), annotation);
         if (annotation instanceof PopupAnnotationComponent) {
             addPopupAnnotationComponent((PopupAnnotationComponent) annotation);
         } else if (annotation instanceof MarkupAnnotationComponent) {
@@ -463,7 +468,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     public void removeAnnotation(AnnotationComponent annotationComp) {
         annotationComponents.remove(annotationComp);
         if (annotationComp.getAnnotation() != null) {
-            annotationToComponent.remove(annotationComp.getAnnotation());
+            annotationToComponent.remove(annotationComp.getAnnotation().getPObjectReference());
         } else {
             annotationToComponent.entrySet().stream().filter(e -> e.getValue().equals(annotationComp)).findFirst()
                     .ifPresent(e -> annotationToComponent.remove(e.getKey()));
@@ -560,7 +565,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                         if (comp != null) {
                             // add for painting
                             annotationComponents.add(comp);
-                            annotationToComponent.put(annotation, comp);
+                            annotationToComponent.put(annotation.getPObjectReference(), comp);
                             // add to layout
                             if (comp instanceof PopupAnnotationComponent) {
                                 PopupAnnotationComponent popupAnnotationComponent = (PopupAnnotationComponent) comp;
