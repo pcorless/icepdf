@@ -3,6 +3,7 @@ package org.icepdf.core.util.updater;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.io.CountingOutputStream;
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 import org.icepdf.core.util.Defs;
@@ -87,6 +88,8 @@ public class FullUpdater {
         stateManager = library.getStateManager();
         CrossReferenceRoot crossReferenceRoot = library.getCrossReferenceRoot();
         PTrailer pTrailer = crossReferenceRoot.getTrailerDictionary();
+        boolean useImagePoxy = ImageReference.useProxy;
+        ImageReference.useProxy = false;
 
         SecurityManager securityManager = library.getSecurityManager();
         CountingOutputStream output = new CountingOutputStream(outputStream);
@@ -121,6 +124,8 @@ public class FullUpdater {
                 writer.writeFullTrailer();
             }
         }
+
+        ImageReference.useProxy = useImagePoxy;
 
         return writer.getBytesWritten();
     }

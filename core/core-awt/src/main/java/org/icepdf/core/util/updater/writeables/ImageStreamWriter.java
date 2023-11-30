@@ -3,8 +3,10 @@ package org.icepdf.core.util.updater.writeables;
 import org.icepdf.core.io.CountingOutputStream;
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Stream;
+import org.icepdf.core.pobjects.graphics.images.ImageParams;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.security.SecurityManager;
+import org.icepdf.core.util.Library;
 import org.icepdf.core.util.updater.writeables.image.ImageEncoder;
 import org.icepdf.core.util.updater.writeables.image.ImageEncoderFactory;
 
@@ -18,6 +20,9 @@ public class ImageStreamWriter extends StreamWriter {
         byte[] outputData;
         // decoded image is only set if the image was touch via a redaction burn.
         if (imageStream.getDecodedImage() != null) {
+
+            Library library = imageStream.getLibrary();
+            Object tmp = library.getObject(imageStream.getEntries(), ImageParams.COLORSPACE_KEY);
 
             ImageEncoder imageEncoder = ImageEncoderFactory.createEncodedImage(imageStream);
             imageStream = imageEncoder.encode();

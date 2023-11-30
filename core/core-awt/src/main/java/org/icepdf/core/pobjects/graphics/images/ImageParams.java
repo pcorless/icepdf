@@ -197,6 +197,14 @@ public class ImageParams extends Dictionary {
         return null;
     }
 
+    public ImageStream getMaskImageStream() {
+        Object maskObj = library.getObject(entries, MASK_KEY);
+        if (maskObj instanceof ImageStream) {
+            return (ImageStream) maskObj;
+        }
+        return null;
+    }
+
     public boolean hasSMask() {
         return library.getObject(entries, SMASK_KEY) != null;
     }

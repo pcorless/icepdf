@@ -1,6 +1,10 @@
 package org.icepdf.core.util.redaction;
 
+import org.icepdf.core.pobjects.PObject;
+import org.icepdf.core.pobjects.Reference;
+import org.icepdf.core.pobjects.graphics.images.ImageDecoder;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
+import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 
 import java.awt.*;
@@ -19,10 +23,34 @@ public class ImageBurner {
         if (image == null) {
             image = imageReference.getBaseImage();
         }
+        // update any mask as they can have a content for some scanned documents.
+//        checkAndBurnMasks(imageStream, redactionPath);
+
+        return burnImage(imageStream, image, redactionPath);
+    }
+
+    private static void checkAndBurnMasks(ImageStream imageStream, GeneralPath redactionPath) {
+        ImageStream maskImageStream = imageStream.getImageParams().getMaskImageStream();
+        ImageDecoder imageDecoder = imageStream.getImageParams().getMask(null);
+        if (maskImageStream != null & imageDecoder != null) {
+            BufferedImage imageMask = imageDecoder.decode();
+            burnImage(maskImageStream, imageMask, redactionPath);
+            BufferedImage decodedImage = maskImageStream.getDecodedImage();
+            Reference reference = maskImageStream.getPObjectReference();
+            ImageUtility.displayImage(maskImageStream.getDecodedImage(),
+                    reference.toString() + decodedImage.getWidth() +
+                    " " + "x" + decodedImage.getHeight());
+        }
+    }
+
+    private static ImageStream burnImage(ImageStream imageStream, BufferedImage image, GeneralPath redactionPath) {
+
         Rectangle2D bbox = imageStream.getNormalizedBounds();
         // image coords need to be adjusted for any layout scaling
         double xScale = image.getWidth() / bbox.getWidth();
         double yScale = image.getHeight() / bbox.getHeight();
+        // try a new image to get around index colour space issue.
+        image = ImageUtility.createBufferedImage(image, BufferedImage.TYPE_INT_RGB);
         Graphics2D imageGraphics = image.createGraphics();
         imageGraphics.setColor(Color.BLACK);
         imageGraphics.scale(xScale, -yScale);
@@ -32,6 +60,10 @@ public class ImageBurner {
         imageGraphics.dispose();
         // update the imageReference BufferedImage, as we may have multiple burns to apply
         imageStream.setDecodedImage(image);
+        if (imageStream.getPObjectReference() != null) {
+            imageStream.getLibrary().getStateManager().addChange(new PObject(imageStream,
+                    imageStream.getPObjectReference()));
+        }
         return imageStream;
     }
 }

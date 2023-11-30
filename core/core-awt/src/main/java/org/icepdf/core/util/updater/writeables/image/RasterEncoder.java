@@ -16,8 +16,7 @@ import static org.icepdf.core.pobjects.graphics.DeviceGray.DEVICEGRAY_KEY;
 import static org.icepdf.core.pobjects.graphics.DeviceRGB.DEVICERGB_KEY;
 import static org.icepdf.core.pobjects.graphics.images.FaxDecoder.COLUMNS_KEY;
 import static org.icepdf.core.pobjects.graphics.images.FaxDecoder.K_KEY;
-import static org.icepdf.core.pobjects.graphics.images.ImageParams.BITS_PER_COMPONENT_KEY;
-import static org.icepdf.core.pobjects.graphics.images.ImageParams.COLORSPACE_KEY;
+import static org.icepdf.core.pobjects.graphics.images.ImageParams.*;
 
 /**
  * Raw raster encoder,  not the best compression but gets the job done in a pinch.
@@ -73,7 +72,7 @@ public class RasterEncoder implements ImageEncoder {
         }
         imageStream.getEntries().remove(Stream.DECODEPARAM_KEY);
         imageStream.getEntries().put(COLORSPACE_KEY, DEVICERGB_KEY);
-        imageStream.getEntries().put(BITS_PER_COMPONENT_KEY, image.getColorModel().getPixelSize() / 3);
+        imageStream.getEntries().put(BITS_PER_COMPONENT_KEY, 8);
         return imageBytes;
     }
 
@@ -101,6 +100,7 @@ public class RasterEncoder implements ImageEncoder {
         }
         imageStream.getEntries().put(COLORSPACE_KEY, DEVICEGRAY_KEY);
         imageStream.getEntries().put(BITS_PER_COMPONENT_KEY, image.getColorModel().getPixelSize());
+        imageStream.getEntries().remove(DECODE_KEY);
         if (imageStream.getEntries().get(Stream.DECODEPARAM_KEY) != null) {
             DictionaryEntries decodeParams = imageStream.getLibrary().getDictionary(imageStream.getEntries(),
                     Stream.DECODEPARAM_KEY);

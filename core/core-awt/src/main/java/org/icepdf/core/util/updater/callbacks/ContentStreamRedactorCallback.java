@@ -45,6 +45,7 @@ public class ContentStreamRedactorCallback {
     private int lastTextPosition;
     private float lastTjOffset;
     private final Library library;
+    private boolean modifiedStream;
 
     private final List<RedactionAnnotation> redactionAnnotations;
 
@@ -72,14 +73,17 @@ public class ContentStreamRedactorCallback {
             }
 
             // assign accumulated byte[] to the stream
-            byte[] burnedContentStream = burnedContentOutputStream.toByteArray();
-            currentStream.setRawBytes(burnedContentStream);
-            if (logger.isLoggable(Level.FINEST)) {
-                String redactedContentStream = burnedContentOutputStream.toString(StandardCharsets.ISO_8859_1);
-                logger.finest(redactedContentStream);
+            if (modifiedStream) {
+                byte[] burnedContentStream = burnedContentOutputStream.toByteArray();
+                currentStream.setRawBytes(burnedContentStream);
+                library.getStateManager().addChange(new PObject(currentStream, currentStream.getPObjectReference()));
+                if (logger.isLoggable(Level.FINEST)) {
+                    String redactedContentStream = burnedContentOutputStream.toString(StandardCharsets.ISO_8859_1);
+                    logger.finest(redactedContentStream);
+                }
             }
             burnedContentOutputStream.close();
-            library.getStateManager().addChange(new PObject(currentStream, currentStream.getPObjectReference()));
+            modifiedStream = false;
             lastTokenPosition = 0;
             lastTextPosition = 0;
             currentStream = null;
@@ -112,6 +116,7 @@ public class ContentStreamRedactorCallback {
             burnedContentOutputStream.write(' ');
             burnedContentOutputStream.write('0');
             burnedContentOutputStream.write(" Td ".getBytes());
+            modifiedStream = true;
         }
     }
 
@@ -149,6 +154,7 @@ public class ContentStreamRedactorCallback {
                 ImageStream burnedImageStream = ImageBurner.burn(imageReference, redactionPath);
                 CountingOutputStream countingOutputStream = new CountingOutputStream(burnedContentOutputStream);
                 InlineImageWriter.write(countingOutputStream, burnedImageStream);
+                modifiedStream = true;
             } else {
                 // copy none redacted StringObjects verbatim
                 int length = pos - lastTokenPosition;
@@ -168,9 +174,7 @@ public class ContentStreamRedactorCallback {
                     logger.finer("Redacting Image: " + imageStream.getPObjectReference() + " " +
                             imageStream.getWidth() + "x" + imageStream.getHeight());
                 }
-                ImageStream burnedImageStream = ImageBurner.burn(imageReference, redactionPath);
-                library.getStateManager().addChange(new PObject(burnedImageStream,
-                        burnedImageStream.getPObjectReference()));
+                ImageBurner.burn(imageReference, redactionPath);
             }
         }
     }
@@ -184,6 +188,7 @@ public class ContentStreamRedactorCallback {
             } else {
                 lastTjOffset = StringObjectWriter.writeTj(burnedContentOutputStream, textOperators);
             }
+            modifiedStream = true;
         } else {
             // copy none redacted StringObjects verbatim
             int length = lastTextPosition - lastTokenPosition;

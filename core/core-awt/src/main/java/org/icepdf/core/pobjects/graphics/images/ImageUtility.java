@@ -1260,7 +1260,7 @@ public class ImageUtility {
         return createBufferedImage(imageIn, BufferedImage.TYPE_INT_ARGB);
     }
 
-    private static BufferedImage createBufferedImage(Image imageIn, int imageType) {
+    public static BufferedImage createBufferedImage(Image imageIn, int imageType) {
         BufferedImage bufferedImageOut = new BufferedImage(imageIn
                 .getWidth(null), imageIn.getHeight(null), imageType);
         Graphics g = bufferedImageOut.getGraphics();
