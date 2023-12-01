@@ -19,14 +19,14 @@ import java.util.List;
 public class BaseWriter {
 
     protected static final byte[] SPACE = " ".getBytes();
-    protected static final byte[] NEWLINE = "\r\n".getBytes();
+    protected static final byte[] NEWLINE = "\n".getBytes();
     protected static final byte[] TRUE = "true".getBytes();
     protected static final byte[] FALSE = "false".getBytes();
     protected static final byte[] NULL = "null".getBytes();
     protected static final byte[] REFERENCE = "R".getBytes();
 
-    protected static final byte[] BEGIN_OBJECT = "obj\r\n".getBytes();
-    protected static final byte[] END_OBJECT = "endobj\r\n".getBytes();
+    protected static final byte[] BEGIN_OBJECT = "obj\n".getBytes();
+    protected static final byte[] END_OBJECT = "endobj\n".getBytes();
 
     private static HeaderWriter headerWriter;
     private static NameWriter nameWriter;

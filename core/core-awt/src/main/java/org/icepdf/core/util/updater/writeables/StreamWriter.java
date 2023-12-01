@@ -15,8 +15,8 @@ import java.util.zip.Deflater;
 
 public class StreamWriter extends BaseWriter {
 
-    private static final byte[] BEGIN_STREAM = "stream\r\n".getBytes();
-    private static final byte[] END_STREAM = "endstream\r\n".getBytes();
+    private static final byte[] BEGIN_STREAM = "stream\n".getBytes();
+    private static final byte[] END_STREAM = "endstream\n".getBytes();
 
     public void write(Stream obj, SecurityManager securityManager, CountingOutputStream output) throws IOException {
         Reference ref = obj.getPObjectReference();

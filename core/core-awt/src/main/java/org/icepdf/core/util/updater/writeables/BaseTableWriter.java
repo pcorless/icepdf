@@ -10,10 +10,10 @@ import java.util.List;
 
 public class BaseTableWriter extends BaseWriter {
 
-    protected static final byte[] XREF = "xref\r\n".getBytes();
-    protected static final byte[] TRAILER = "trailer\r\n".getBytes();
-    protected static final byte[] STARTXREF = "startxref\r\n".getBytes();
-    protected static final byte[] COMMENT_EOF = "\r\n%%EOF\r\n".getBytes();
+    protected static final byte[] XREF = "xref\n".getBytes();
+    protected static final byte[] TRAILER = "trailer\n".getBytes();
+    protected static final byte[] STARTXREF = "startxref\n".getBytes();
+    protected static final byte[] COMMENT_EOF = "\n%%EOF\n".getBytes();
 
     protected int subSectionCount(int beginIndex, List<Entry> entries) {
         int beginObjNum = entries.get(beginIndex).getReference().getObjectNumber();
