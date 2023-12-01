@@ -18,8 +18,8 @@ import static java.util.zip.Deflater.BEST_COMPRESSION;
 
 public class StreamWriter extends BaseWriter {
 
-    protected static final byte[] BEGIN_STREAM = "stream\r\n".getBytes();
-    protected static final byte[] END_STREAM = "endstream\r\n".getBytes();
+    protected static final byte[] BEGIN_STREAM = "stream\n".getBytes();
+    protected static final byte[] END_STREAM = "endstream\n".getBytes();
 
     public void write(Stream obj, SecurityManager securityManager, CountingOutputStream output) throws IOException {
         byte[] outputData;
