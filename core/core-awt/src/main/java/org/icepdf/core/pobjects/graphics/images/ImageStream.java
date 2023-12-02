@@ -127,6 +127,10 @@ public class ImageStream extends Stream {
         graphicsTransformMatrix = af;
     }
 
+    public AffineTransform getGraphicsTransformMatrix() {
+        return graphicsTransformMatrix;
+    }
+
     public Rectangle2D getNormalizedBounds() {
         if (normalizedBounds == null) {
             Path2D.Double generalPath = new Path2D.Double(baseImageRectangle, graphicsTransformMatrix);

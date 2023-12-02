@@ -24,33 +24,38 @@ public class ImageBurner {
             image = imageReference.getBaseImage();
         }
         // update any mask as they can have a content for some scanned documents.
-//        checkAndBurnMasks(imageStream, redactionPath);
+        checkAndBurnMasks(imageStream, redactionPath);
 
-        return burnImage(imageStream, image, redactionPath);
+        return burnImage(imageStream, image, redactionPath, true);
     }
 
     private static void checkAndBurnMasks(ImageStream imageStream, GeneralPath redactionPath) {
         ImageStream maskImageStream = imageStream.getImageParams().getMaskImageStream();
-        ImageDecoder imageDecoder = imageStream.getImageParams().getMask(null);
-        if (maskImageStream != null & imageDecoder != null) {
-            BufferedImage imageMask = imageDecoder.decode();
-            burnImage(maskImageStream, imageMask, redactionPath);
+        ImageDecoder imageMaskDecoder = imageStream.getImageParams().getMask(null);
+        if (imageMaskDecoder != null) {
+            maskImageStream.setGraphicsTransformMatrix(imageStream.getGraphicsTransformMatrix());
+            BufferedImage imageMask = imageMaskDecoder.decode();
+            burnImage(maskImageStream, imageMask, redactionPath, false);
+            // todo we get an inverted mask after the paint, need to correct the data.
             BufferedImage decodedImage = maskImageStream.getDecodedImage();
             Reference reference = maskImageStream.getPObjectReference();
             ImageUtility.displayImage(maskImageStream.getDecodedImage(),
                     reference.toString() + decodedImage.getWidth() +
-                    " " + "x" + decodedImage.getHeight());
+                            " " + "x" + decodedImage.getHeight());
         }
     }
 
-    private static ImageStream burnImage(ImageStream imageStream, BufferedImage image, GeneralPath redactionPath) {
+    private static ImageStream burnImage(ImageStream imageStream, BufferedImage image, GeneralPath redactionPath,
+                                         boolean copyImage) {
 
         Rectangle2D bbox = imageStream.getNormalizedBounds();
         // image coords need to be adjusted for any layout scaling
         double xScale = image.getWidth() / bbox.getWidth();
         double yScale = image.getHeight() / bbox.getHeight();
         // try a new image to get around index colour space issue.
-        image = ImageUtility.createBufferedImage(image, BufferedImage.TYPE_INT_RGB);
+        if (copyImage) {
+            image = ImageUtility.createBufferedImage(image, BufferedImage.TYPE_INT_RGB);
+        }
         Graphics2D imageGraphics = image.createGraphics();
         imageGraphics.setColor(Color.BLACK);
         imageGraphics.scale(xScale, -yScale);
