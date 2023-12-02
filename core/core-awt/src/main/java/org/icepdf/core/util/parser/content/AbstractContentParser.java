@@ -524,7 +524,7 @@ public abstract class AbstractContentParser {
             // resources reference as a result we pass in the current
             // one in the hope that any resources can be found.
             formXObject.setParentResources(resources);
-            formXObject.init();
+            formXObject.init(contentStreamRedactorCallback);
             // 2. concatenate matrix entry with the current CTM
             AffineTransform af = new AffineTransform(graphicState.getCTM());
             af.concatenate(formXObject.getMatrix());
@@ -598,6 +598,21 @@ public abstract class AbstractContentParser {
                 if (pageText != null && pageText.getPageLines() != null) {
                     shapes.getPageText().addPageLines(
                             pageText.getPageLines());
+                }
+            }
+            // Some Do object will have images, and we need to make sure we account for localized space.
+            if (contentStreamRedactorCallback != null &&
+                    formXObject.getShapes() != null) {
+                Shapes pageShapes = formXObject.getShapes();
+                ArrayList<DrawCmd> xObjectShapes = pageShapes.getShapes();
+                for (DrawCmd object : xObjectShapes) {
+                    if (object instanceof ImageDrawCmd) {
+                        ImageDrawCmd imageDrawCmd = (ImageDrawCmd) object;
+                        ImageStream imageStream = imageDrawCmd.getImageStream();
+                        AffineTransform pageSpace = new AffineTransform(graphicState.getCTM());
+                        pageSpace.concatenate(formXObject.getMatrix());
+                        imageStream.setGraphicsTransformMatrix(af);
+                    }
                 }
             }
             shapes.add(new NoClipDrawCmd());

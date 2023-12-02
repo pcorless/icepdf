@@ -126,6 +126,7 @@ public class ContentStreamRedactorCallback {
 
     /**
      * Marks any glyphText that intersect a redaction bound.
+     *
      * @param glyphText text to test for intersection with redact annotations
      */
     public void checkAndRedactText(GlyphText glyphText) {
@@ -133,9 +134,7 @@ public class ContentStreamRedactorCallback {
             GeneralPath reactionPaths = annotation.getMarkupPath();
             Rectangle2D glyphBounds = glyphText.getBounds();
             if (reactionPaths.contains(glyphBounds)) {
-                if (logger.isLoggable(Level.FINER)) {
-                    logger.finer("Redacting Text: " + glyphText.getCid() + " " + glyphText.getUnicode());
-                }
+                logger.finer(() -> "Redacting Text: " + glyphText.getCid() + " " + glyphText.getUnicode());
                 glyphText.redact();
             }
         }
@@ -148,9 +147,7 @@ public class ContentStreamRedactorCallback {
             ImageStream imageStream = imageReference.getImageStream();
             Rectangle2D imageBounds = imageStream.getNormalizedBounds();
             if (redactionPath.intersects(imageBounds)) {
-                if (logger.isLoggable(Level.FINER)) {
-                    logger.finer("Redacting inline image: " + imageStream.getWidth() + "x" + imageStream.getHeight());
-                }
+                logger.finer(() -> "Redacting inline image: " + imageStream.getWidth() + "x" + imageStream.getHeight());
                 ImageStream burnedImageStream = ImageBurner.burn(imageReference, redactionPath);
                 CountingOutputStream countingOutputStream = new CountingOutputStream(burnedContentOutputStream);
                 InlineImageWriter.write(countingOutputStream, burnedImageStream);
@@ -170,10 +167,8 @@ public class ContentStreamRedactorCallback {
             ImageStream imageStream = imageReference.getImageStream();
             Rectangle2D imageBounds = imageStream.getNormalizedBounds();
             if (redactionPath.intersects(imageBounds)) {
-                if (logger.isLoggable(Level.FINER)) {
-                    logger.finer("Redacting Image: " + imageStream.getPObjectReference() + " " +
-                            imageStream.getWidth() + "x" + imageStream.getHeight());
-                }
+                logger.finer(() -> "Redacting Image: " + imageStream.getPObjectReference() + " " +
+                        imageStream.getWidth() + "x" + imageStream.getHeight());
                 ImageBurner.burn(imageReference, redactionPath);
             }
         }

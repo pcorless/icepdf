@@ -20,6 +20,7 @@ import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.parser.content.ContentParser;
+import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorCallback;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
@@ -148,10 +149,16 @@ public class Form extends Stream {
         this.parentResource = parentResource;
     }
 
+
+    public synchronized void init() throws InterruptedException {
+        init(null);
+    }
+
     /**
      *
      */
-    public synchronized void init() throws InterruptedException {
+    public synchronized void init(ContentStreamRedactorCallback contentStreamRedactorCallback)
+            throws InterruptedException {
         if (inited) {
             return;
         }
@@ -171,7 +178,7 @@ public class Form extends Stream {
         }
         // Build a new content parser for the content streams and apply the
         // content stream of the calling content stream.
-        ContentParser cp = new ContentParser(library, leafResources);
+        ContentParser cp = new ContentParser(library, leafResources, contentStreamRedactorCallback);
         cp.setGraphicsState(graphicsState);
         byte[] in = getDecodedStreamBytes();
         if (in != null) {

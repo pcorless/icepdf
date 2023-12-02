@@ -307,9 +307,7 @@ public class Library {
             Permissions permissions = catalog.getPermissions();
             if (permissions != null) {
                 this.permissions = permissions;
-                if (logger.isLoggable(Level.FINER)) {
-                    logger.finer("Document perms dictionary found and configured. ");
-                }
+                logger.finer(() -> "Document perms dictionary found and configured. ");
                 return true;
             }
         }
