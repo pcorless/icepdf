@@ -758,7 +758,7 @@ public class ImageUtility {
     }
 
     /**
-     * Treats the base image as as mask data applying the specified fill colour
+     * Treats the base image as a mask data applying the specified fill colour
      * to the flagged bytes and a transparency value otherwise. This method
      * creates a new BufferedImage with a transparency model so it will cause
      * a memory spike.

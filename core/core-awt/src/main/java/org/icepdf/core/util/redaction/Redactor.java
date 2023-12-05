@@ -4,7 +4,6 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.StateManager;
-import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
 
 import java.io.IOException;
@@ -41,11 +40,12 @@ public class Redactor {
     private static void convertRedactionToSquareAnnotation(StateManager stateManager,
                                                            List<RedactionAnnotation> redactionAnnotations) {
         for (RedactionAnnotation redactionAnnotation : redactionAnnotations) {
-            redactionAnnotation.setSubtype(Annotation.SUBTYPE_SQUARE);
-            redactionAnnotation.setFlag(Annotation.FLAG_LOCKED, true);
-            redactionAnnotation.setFlag(Annotation.FLAG_READ_ONLY, true);
-            redactionAnnotation.setFlag(Annotation.FLAG_LOCKED_CONTENTS, true);
-            stateManager.addChange(new PObject(redactionAnnotation, redactionAnnotation.getPObjectReference()));
+//            redactionAnnotation.setSubtype(Annotation.SUBTYPE_SQUARE);
+//            redactionAnnotation.setFlag(Annotation.FLAG_LOCKED, true);
+//            redactionAnnotation.setFlag(Annotation.FLAG_READ_ONLY, true);
+//            redactionAnnotation.setFlag(Annotation.FLAG_LOCKED_CONTENTS, true);
+//            stateManager.addChange(new PObject(redactionAnnotation, redactionAnnotation.getPObjectReference()));
+            stateManager.addDeletion(new PObject(redactionAnnotation, redactionAnnotation.getPObjectReference()));
         }
     }
 }

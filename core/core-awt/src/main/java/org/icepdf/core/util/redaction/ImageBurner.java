@@ -1,7 +1,6 @@
 package org.icepdf.core.util.redaction;
 
 import org.icepdf.core.pobjects.PObject;
-import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.graphics.images.ImageDecoder;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.graphics.images.ImageUtility;
@@ -36,12 +35,6 @@ public class ImageBurner {
             maskImageStream.setGraphicsTransformMatrix(imageStream.getGraphicsTransformMatrix());
             BufferedImage imageMask = imageMaskDecoder.decode();
             burnImage(maskImageStream, imageMask, redactionPath, false);
-            // todo we get an inverted mask after the paint, need to correct the data.
-            BufferedImage decodedImage = maskImageStream.getDecodedImage();
-            Reference reference = maskImageStream.getPObjectReference();
-            ImageUtility.displayImage(maskImageStream.getDecodedImage(),
-                    reference.toString() + decodedImage.getWidth() +
-                            " " + "x" + decodedImage.getHeight());
         }
     }
 

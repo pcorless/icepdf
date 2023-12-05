@@ -65,15 +65,15 @@ public class FaxEncoder implements ImageEncoder {
 
         DictionaryEntries entries = imageStream.getEntries();
         entries.put(Stream.FILTER_KEY, Stream.FILTER_CCITT_FAX_DECODE);
-        // don't need this anymore as the data has already been normalized
         entries.remove(DECODE_KEY);
-        if (imageStream.getEntries().get(Stream.DECODEPARAM_KEY) != null) {
-            DictionaryEntries decodeParams = imageStream.getLibrary().getDictionary(imageStream.getEntries(),
-                    Stream.DECODEPARAM_KEY);
-            // group 4 encoding
-            decodeParams.put(K_KEY, -1);
-            decodeParams.put(BLACKIS1_KEY, true);
+        if (imageStream.getEntries().get(Stream.DECODEPARAM_KEY) == null) {
+            imageStream.getEntries().put(Stream.DECODEPARAM_KEY, new DictionaryEntries());
         }
+        DictionaryEntries decodeParams = imageStream.getLibrary().getDictionary(imageStream.getEntries(),
+                Stream.DECODEPARAM_KEY);
+        // group 4 encoding
+        decodeParams.put(K_KEY, -1);
+        decodeParams.put(BLACKIS1_KEY, true);
 
         imageStream.setRawBytes(byteArrayOutputStream.toByteArray());
 
