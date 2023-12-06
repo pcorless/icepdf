@@ -112,8 +112,9 @@ public class Document {
     private static boolean isCachingEnabled;
 
     private final Library library;
-    // todo put file channel input library?
+
     private FileChannel documentFileChannel;
+    private RandomAccessFile randomAccessFile;
     private ByteBuffer documentByteBuffer;
     private CrossReferenceRoot crossReferenceRoot;
 
@@ -191,7 +192,8 @@ public class Document {
         setDocumentOrigin(filepath);
 
         File file = new File(filepath);
-        try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r")) {
+        try {
+            randomAccessFile = new RandomAccessFile(file, "r");
             documentFileChannel = randomAccessFile.getChannel();
             ByteBuffer mappedFileByteBuffer = documentFileChannel.map(
                     FileChannel.MapMode.READ_ONLY, 0, documentFileChannel.size());
@@ -266,7 +268,8 @@ public class Document {
 
             setDocumentCachedFilePath(tempFile.getAbsolutePath());
 
-            try (RandomAccessFile randomAccessFile = new RandomAccessFile(tempFile, "r")) {
+            try {
+                randomAccessFile = new RandomAccessFile(tempFile, "r");
                 documentFileChannel = randomAccessFile.getChannel();
                 ByteBuffer mappedFileByteBuffer = documentFileChannel.map(
                         FileChannel.MapMode.READ_ONLY, 0, documentFileChannel.size());
@@ -321,7 +324,8 @@ public class Document {
 
             setDocumentCachedFilePath(tempFile.getAbsolutePath());
 
-            try (RandomAccessFile randomAccessFile = new RandomAccessFile(tempFile, "r")) {
+            try {
+                randomAccessFile = new RandomAccessFile(tempFile, "r");
                 documentFileChannel = randomAccessFile.getChannel();
                 ByteBuffer mappedFileByteBuffer = documentFileChannel.map(
                         FileChannel.MapMode.READ_ONLY, 0, documentFileChannel.size());
@@ -530,13 +534,14 @@ public class Document {
      * Dispose of Document, freeing up all used resources.
      */
     public void dispose() {
-
-        if (documentFileChannel != null) {
+        // clean up file it will clean up any file channels and file descriptors too
+        if (randomAccessFile != null) {
             try {
-                documentFileChannel.close();
+                randomAccessFile.close();
             } catch (IOException e) {
-                logger.log(Level.FINE, "Error closing document input stream.", e);
+                logger.log(Level.FINE, "Error closing document random access file.", e);
             }
+            randomAccessFile = null;
             documentFileChannel = null;
         }
 
