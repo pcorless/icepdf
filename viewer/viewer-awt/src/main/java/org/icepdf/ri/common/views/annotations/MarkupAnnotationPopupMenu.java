@@ -32,6 +32,7 @@ import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -77,6 +78,8 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
     // Change color
     protected JMenu changeColorMenu;
 
+    protected JMenuItem extractTextMenuItem;
+
     // delete root annotation and all child popup annotations.
     protected final boolean deleteRoot;
 
@@ -115,6 +118,7 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
         minimizeAllMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.minimizeAll.label"));
         changeColorMenu = buildColorMenu();
+        extractTextMenuItem = new JMenuItem(messageBundle.getString("viewer.annotation.popup.text.extract.label"));
 
         // annotation and destination creation shortcuts.
         if (propertiesManager.checkAndStoreBooleanProperty(
@@ -208,6 +212,12 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
         add(deleteMenuItem);
         deleteMenuItem.addActionListener(this);
         addSeparator();
+
+        if (annotationComponent instanceof TextMarkupAnnotationComponent) {
+            add(extractTextMenuItem);
+            extractTextMenuItem.addActionListener(this);
+            addSeparator();
+        }
 
         // properties
         add(propertiesMenuItem);
@@ -342,6 +352,13 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
                     .map(Dictionary::getPObjectReference).collect(Collectors.toSet());
             ((SwingController) controller).changeAnnotationsPrivacy(a -> references.contains(a.getPObjectReference())
                     || a.getPObjectReference().equals(annot.getPObjectReference()), !annot.getFlagPrivateContents());
+        } else if (source == extractTextMenuItem) {
+            final TextMarkupAnnotation annot = (TextMarkupAnnotation) annotationComponent.getAnnotation();
+            final String selectedText = annot.getContents();
+            if (selectedText != null && !selectedText.isEmpty()) {
+                final StringSelection selection = new StringSelection(selectedText);
+                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
+            }
         }
     }
 
