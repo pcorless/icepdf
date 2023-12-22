@@ -202,7 +202,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
             // associate popup to location
             PopupAnnotationComponent popupAnnotationComponent = comp.getPopupAnnotationComponent();
             popupAnnotationComponent.setBoundsRelativeToParent(
-                    bounds.x + bounds.width / 2, bounds.y + bounds.height / 2, pageTransform);
+                    bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
             popupAnnotationComponent.setVisible(false);
             popupAnnotationComponent.getAnnotation().setOpen(false);
 

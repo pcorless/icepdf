@@ -210,8 +210,8 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
         PopupAnnotationComponent popupAnnotationComponent = comp.getPopupAnnotationComponent();
         popupAnnotationComponent.setBoundsRelativeToParent(
                 e.getX() + scaledSize.width / 2,
-                e.getY() + scaledSize.height / 2,
-                pageInverseTransform);
+                e.getY() + scaledSize.height / 2
+        );
         popupAnnotationComponent.setVisible(true);
         popupAnnotationComponent.getAnnotation().setOpen(true);
         popupAnnotationComponent.focusTextArea();

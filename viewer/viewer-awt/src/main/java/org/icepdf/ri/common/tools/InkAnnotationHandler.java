@@ -236,7 +236,7 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
         // associate popup to location
         PopupAnnotationComponent popupAnnotationComponent = comp.getPopupAnnotationComponent();
         popupAnnotationComponent.setBoundsRelativeToParent(
-                bBox.x + (bBox.width / 2), bBox.y + (bBox.height / 2), pageTransform);
+                bBox.x + (bBox.width / 2), bBox.y + (bBox.height / 2));
         popupAnnotationComponent.setVisible(false);
         popupAnnotationComponent.getAnnotation().setOpen(false);
 

@@ -22,6 +22,7 @@ import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
+import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.ViewModel;
@@ -83,8 +84,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         implements TreeSelectionListener, ActionListener, DocumentListener, PropertyChangeListener, MouseWheelListener,
         DropTargetListener, PageViewAnnotationComponent {
 
-    public static final int DEFAULT_WIDTH = 215;
-    public static final int DEFAULT_HEIGHT = 150;
+    public static final int DEFAULT_WIDTH = Defs.sysPropertyInt("org.icepdf.ri.popup.width.default", 215);
+    public static final int DEFAULT_HEIGHT = Defs.sysPropertyInt("org.icepdf.ri.popup.height.default", 150);
     public static final Color backgroundColor = new Color(252, 253, 227);
     public static final Dimension BUTTON_SIZE = new Dimension(22, 22);
 
@@ -472,12 +473,10 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         textArea.setCaretPosition(textArea.getDocument().getLength());
     }
 
-    public void setBoundsRelativeToParent(int x, int y, AffineTransform pageInverseTransform) {
+    public void setBoundsRelativeToParent(int x, int y) {
         Rectangle pageBounds = pageViewComponent.getParent().getBounds();
         // position the new popup on the icon center.
-        Rectangle bBox2 = new Rectangle(x, y,
-                (int) Math.abs(DEFAULT_WIDTH * pageInverseTransform.getScaleX()),
-                (int) Math.abs(DEFAULT_HEIGHT * pageInverseTransform.getScaleY()));
+        Rectangle bBox2 = new Rectangle(x, y, Math.abs(DEFAULT_WIDTH), Math.abs(DEFAULT_HEIGHT));
 
         // add page offset
         bBox2.x += pageBounds.x;
