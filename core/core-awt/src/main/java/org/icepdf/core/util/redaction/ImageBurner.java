@@ -62,6 +62,9 @@ public class ImageBurner {
             imageStream.getLibrary().getStateManager().addChange(new PObject(imageStream,
                     imageStream.getPObjectReference()));
         }
+        ImageUtility.displayImage(imageStream.getDecodedImage(),
+                imageStream.getPObjectReference().toString() + image.getWidth() +
+                        " " + "x" + image.getHeight());
         return imageStream;
     }
 }
