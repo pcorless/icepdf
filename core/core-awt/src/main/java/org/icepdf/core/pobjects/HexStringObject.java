@@ -362,10 +362,14 @@ public class HexStringObject implements StringObject {
         // otherwise, assume 4 byte character codes
         else {
             int length = hh.length();
+            // check for the need to add padding
+            if (((length - 4) / 4) % 2 != 0) {
+                hh.append("00");
+            }
             sb = new StringBuilder(length / 4);
             String subStr;
             // make sure to skip the marker
-            for (int i = 4; i < length; i = i + 4) {
+            for (int i = 4, max = length - 4; i < max; i = i + 4) {
                 subStr = hh.substring(i, i + 4);
                 sb.append((char) Integer.parseInt(subStr, 16));
             }

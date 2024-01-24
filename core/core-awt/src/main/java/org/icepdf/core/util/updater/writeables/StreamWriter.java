@@ -2,6 +2,7 @@ package org.icepdf.core.util.updater.writeables;
 
 import org.icepdf.core.io.CountingOutputStream;
 import org.icepdf.core.pobjects.DictionaryEntries;
+import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.security.SecurityManager;
@@ -14,8 +15,8 @@ import java.util.zip.Deflater;
 
 public class StreamWriter extends BaseWriter {
 
-    private static final byte[] BEGIN_STREAM = "stream\r\n".getBytes();
-    private static final byte[] END_STREAM = "endstream\r\n".getBytes();
+    private static final byte[] BEGIN_STREAM = "stream\n".getBytes();
+    private static final byte[] END_STREAM = "endstream\n".getBytes();
 
     public void write(Stream obj, SecurityManager securityManager, CountingOutputStream output) throws IOException {
         Reference ref = obj.getPObjectReference();
@@ -65,7 +66,7 @@ public class StreamWriter extends BaseWriter {
 
         obj.getEntries().put(Stream.LENGTH_KEY, outputData.length);
         obj.getEntries().put(Stream.FORM_TYPE_KEY, 1);
-        writeDictionary(obj, output);
+        writeDictionary(new PObject(obj, ref), output);
         output.write(NEWLINE);
         output.write(BEGIN_STREAM);
         output.write(outputData);

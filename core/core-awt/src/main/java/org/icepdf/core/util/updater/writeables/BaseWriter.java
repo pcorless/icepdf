@@ -19,14 +19,14 @@ import java.util.List;
 public class BaseWriter {
 
     protected static final byte[] SPACE = " ".getBytes();
-    protected static final byte[] NEWLINE = "\r\n".getBytes();
+    protected static final byte[] NEWLINE = "\n".getBytes();
     protected static final byte[] TRUE = "true".getBytes();
     protected static final byte[] FALSE = "false".getBytes();
     protected static final byte[] NULL = "null".getBytes();
     protected static final byte[] REFERENCE = "R".getBytes();
 
-    protected static final byte[] BEGIN_OBJECT = "obj\r\n".getBytes();
-    protected static final byte[] END_OBJECT = "endobj\r\n".getBytes();
+    protected static final byte[] BEGIN_OBJECT = "obj\n".getBytes();
+    protected static final byte[] END_OBJECT = "endobj\n".getBytes();
 
     private static HeaderWriter headerWriter;
     private static NameWriter nameWriter;
@@ -44,7 +44,7 @@ public class BaseWriter {
     private static CompressedXrefTableWriter compressedXrefTableWriter;
 
     private CountingOutputStream output;
-    private SecurityManager securityManager;
+    protected SecurityManager securityManager;
     private CrossReferenceRoot crossReferenceRoot;
     private long startingPosition;
     private ArrayList<Entry> entries;
@@ -73,8 +73,8 @@ public class BaseWriter {
         nameWriter = new NameWriter();
         dictionaryWriter = new DictionaryWriter();
         referenceWriter = new ReferenceWriter();
-        hexStringObjectWriter = new HexStringObjectWriter();
-        literalObjectWriter = new LiteralStringWriter();
+        hexStringObjectWriter = new HexStringObjectWriter(securityManager);
+        literalObjectWriter = new LiteralStringWriter(securityManager);
         arrayWriter = new ArrayWriter();
         affineTransformWriter = new AffineTransformWriter();
         pObjectWriter = new PObjectWriter();
@@ -141,7 +141,8 @@ public class BaseWriter {
         headerWriter.write(header, output);
     }
 
-    protected void writeValue(Object val, CountingOutputStream output) throws IOException {
+    protected void writeValue(PObject pObject, CountingOutputStream output) throws IOException {
+        Object val = pObject.getObject();
         if (val == null) {
             output.write(NULL);
         } else if (val instanceof Name) {
@@ -166,16 +167,15 @@ public class BaseWriter {
             }
 
         } else if (val instanceof LiteralStringObject) {
-            literalObjectWriter.write(((LiteralStringObject) val), output);
+            literalObjectWriter.write(pObject, output);
         } else if (val instanceof HexStringObject) {
-            hexStringObjectWriter.write((HexStringObject) val, output);
+            hexStringObjectWriter.write(pObject, output);
         } else if (val instanceof List) {
-            //noinspection unchecked
-            arrayWriter.write((List<Object>) val, output);
+            arrayWriter.write(pObject, output);
         } else if (val instanceof Dictionary) {
-            writeDictionary((Dictionary) val, output);
+            writeDictionary(pObject, output);
         } else if (val instanceof DictionaryEntries) {
-            dictionaryWriter.write((DictionaryEntries) val, output);
+            dictionaryWriter.write(pObject, output);
         } else if (val instanceof AffineTransform) {
             affineTransformWriter.write((AffineTransform) val, output);
         } else {
@@ -187,8 +187,8 @@ public class BaseWriter {
         nameWriter.write(name, output);
     }
 
-    protected void writeDictionary(Dictionary dictionary, CountingOutputStream output) throws IOException {
-        dictionaryWriter.write(dictionary, output);
+    protected void writeDictionary(PObject pObject, CountingOutputStream output) throws IOException {
+        dictionaryWriter.write(pObject, output);
     }
 
     protected void writeBoolean(boolean bool, CountingOutputStream output) throws IOException {

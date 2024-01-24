@@ -15,21 +15,22 @@ ICEpdf is an open source project and is always looking for more contributors.  T
    <!-- Code Contribution Guide --> 
  ## Getting Started
  Whether you are long time user of the API or a new user, there ton of information on the 
- [Wiki](https://github.com/pcorless/icepdf/wiki) pages.  Create a pull requests and use the issue tracker, the more 
- help and feedback we get the better we an make the project. 
+ [Wiki](https://github.com/pcorless/icepdf/wiki) pages.  Create a pull requests and use the issue tracker, the more
+ help and feedback we get the better we can make the project.
+
  
  ### Getting the jars, javadoc and source from maven central 
  ```xml
  <dependency>
      <groupId>com.github.pcorless.icepdf</groupId>
- <artifactId>icepdf-core</artifactId>
- <version>7.1.2</version>
+     <artifactId>icepdf-core</artifactId>
+     <version>7.1.3</version>
 </dependency>
- <dependency>
+<dependency>
      <groupId>com.github.pcorless.icepdf</groupId>
      <artifactId>icepdf-viewer</artifactId>
-     <version>7.1.2</version>
- </dependency>
+     <version>7.1.3</version>
+</dependency>
  ```
  
  ## Getting the Code
@@ -41,10 +42,10 @@ $ cd icepdf
  
  ### Building ICEpdf
  In order to use the library you need to build at least the Core library and if you intend you use the Viewer
- component you'll also need to build the Viewer library.  The project can be built with Gradle or Maven, we have 
- no preference,  pick which ever one makes you more happy. 
- 
- Builds as they are currently configured target Java 11.
+ component you'll also need to build the Viewer library.  The project can be built with Gradle or Maven, we have
+ no preference, pick one that makes you happier.
+
+Builds as they are currently configured to target Java 11.
 
 #### Building With Maven
 ```
@@ -96,8 +97,8 @@ Build the distribution zip and tar archives
  responsible for creating the PDF Viewer component panel populated with Swing components configured to work with the 
  SwingController.
  
- When using the SwingViewBuilder and SwingController classes, it is usually not necessary to use the Document object 
- directly. The SwingController class does this for us.
+ When using the SwingViewBuilder and SwingController classes, it is usually not necessary to use the Document object
+ directly. The SwingController class does this for you.
  
  The following code snippet illustrates how to build a PDF Viewer component:
  ```java
@@ -135,48 +136,52 @@ controller.openDocument(filePath);
  The Document class provides functionality for rendering PDF content into other formats via a Java2D graphics context.
  As a result, rendering PDF content to other formats is a relatively simple process with very powerful results. ICEpdf 
  also supports Java headless mode when rending PDF content, which can be useful for server side solutions.
- 
- An example of how to extract PDF document content to SVG is available in the SVG class found in the package 
- org.icepdf.ri.util. The following is an example of how to save page captures in PNG format
+
+Examples of extraction techniques like png, svg, and tiff can be found examples/capture folder. The following is an
+example of how to save page captures in an SVG format
  
  ```java
 String filePath = "somefilepath/myfile.pdf";
+Document document = new Document();
+document.setFile(filePath);
 
-// build a controller
-SwingController controller = new SwingController();
+// Get a DOMImplementation
+DOMImplementation domImpl = GenericDOMImplementation.getDOMImplementation();
+// Create an instance of org.w3c.dom.Document
+org.w3c.dom.Document svgDocument = domImpl.createDocument(null,"svg",null);
+// Create an instance of the SVG Generator
+SVGGraphics2D svgGenerator = new SVGGraphics2D(svgDocument);
+float userRotation = 0;
+float userZoom = 1;
+int pageNumber = 0;
 
-// Build a SwingViewFactory configured with the controller
-SwingViewBuilder factory = new SwingViewBuilder(controller);
+PDimension pdfDimension=document.getPageDimension(pageNumber,userRotation,userZoom);
+svgGenerator.setSVGCanvasSize(pdfDimension.toDimension());
 
-// Use the factory to build a JPanel that is pre-configured
-//with a complete, active Viewer UI.
-JPanel viewerComponentPanel = factory.buildViewerPanel();
+// paint the page to the Batik svgGenerator graphics context.
+document.paintPage(pageNumber,svgGenerator,
+     GraphicsRenderingHints.PRINT,
+     Page.BOUNDARY_CROPBOX,
+     userRotation,
+     userZoom);
 
-// add copy keyboard command
-ComponentKeyBinding.install(controller, viewerComponentPanel);
-
-// add interactive mouse link annotation support via callback
-controller.getDocumentViewController().setAnnotationCallback(
-      new org.icepdf.ri.common.MyAnnotationCallback(
-             controller.getDocumentViewController()));
-
-// Create a JFrame to display the panel in
-JFrame window = new JFrame("Using the Viewer Component");
-window.getContentPane().add(viewerComponentPanel);
-window.pack();
-window.setVisible(true);
-
-// Open a PDF document to view
-controller.openDocument(filePath);
+File file = new File("svgCapture_"+pageNumber+".svg");
+// Finally, stream the SVG using UTF-8character byte encoding
+Writer fileWriter = new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8);
+// Enable SVG CSS style attribute
+boolean SVG_CSS = true;
+svgGenerator.stream(fileWriter,SVG_CSS);
 ```
- 
- Make sure to take a look at the [Wiki](https://github.com/pcorless/icepdf/wiki/Usage-Examples)) for more examples of extracting content.  
+
+Make sure to take a look at the [Wiki](https://github.com/pcorless/icepdf/wiki/Usage-Examples) for more examples of
+extracting content.
+
  
  ## Learning
   
  ### Examples
 
-There are bunch of examples located in the root of the project grouped by common usage scenarios.  Similarly the 
+There are a bunch of examples located in the root of the project grouped by common usage scenarios. Similarly, the
 Wiki contains [example](https://github.com/pcorless/icepdf/wiki/Usage-Examples) information. 
 
  ### API Documentation

@@ -30,6 +30,8 @@ public class PObject {
     private final Reference objectReference;
     private int linearTraversalOffset;
 
+    private boolean doNotEncrypt;
+
     /**
      * Create a new PObject.
      *
@@ -58,6 +60,12 @@ public class PObject {
     public PObject(Object object, Reference objectReference) {
         this.object = object;
         this.objectReference = objectReference;
+    }
+
+    public PObject(Object object, Reference objectReference, boolean doNotEncrypt) {
+        this.object = object;
+        this.objectReference = objectReference;
+        this.doNotEncrypt = doNotEncrypt;
     }
 
     /**
@@ -109,6 +117,20 @@ public class PObject {
 
     public void setLinearTraversalOffset(int linearTraversalOffset) {
         this.linearTraversalOffset = linearTraversalOffset;
+    }
+
+    /**
+     * Flag dictionary as do not encrypt.  This is mainly used for the root xref dictionary, so we don't encrypt
+     * StringObjects that are needed to open a document
+     *
+     * @return true if the dictionary StringObject values should not be encrypted on a document rewrite.
+     */
+    public boolean isDoNotEncrypt() {
+        return doNotEncrypt;
+    }
+
+    public void setDoNotEncrypt(boolean doNotEncrypt) {
+        this.doNotEncrypt = doNotEncrypt;
     }
 
     /**

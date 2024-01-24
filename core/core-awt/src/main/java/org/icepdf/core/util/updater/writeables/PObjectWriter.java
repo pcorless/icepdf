@@ -17,7 +17,8 @@ public class PObjectWriter extends BaseWriter {
         writeInteger(ref.getGenerationNumber(), output);
         output.write(SPACE);
         output.write(BEGIN_OBJECT);
-        writeValue(obj, output);
+        writeValue(writeable, output);
+        output.write(SPACE);
         output.write(END_OBJECT);
     }
 }

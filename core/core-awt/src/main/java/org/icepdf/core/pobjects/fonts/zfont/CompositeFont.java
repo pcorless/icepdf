@@ -136,8 +136,17 @@ public abstract class CompositeFont extends SimpleFont {
                 currentNext = individualWidths.get(i + 1);
                 if (currentNext instanceof ArrayList) {
                     ArrayList widths2 = (ArrayList) currentNext;
+                    Object tmp;
+                    Number width;
                     for (int j = 0, max2 = widths2.size(); j < max2; j++) {
-                        widths[current + j] = (float) (((Number) widths2.get(j)).intValue()) * 0.001f;
+                        tmp = widths2.get(j);
+                        if (tmp instanceof Number) {
+                            width = (Number) widths2.get(j);
+                        } else {
+                            // one off where the array isn't all numbers.
+                            width = (Number) library.getObject(tmp);
+                        }
+                        widths[current + j] = (float) (width).intValue() * 0.001f;
                     }
                     i++;
                 } else if (currentNext instanceof Number) {

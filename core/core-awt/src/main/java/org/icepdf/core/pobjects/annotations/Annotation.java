@@ -560,6 +560,7 @@ public abstract class Annotation extends Dictionary {
      */
     public Annotation(Library library, DictionaryEntries entries) {
         super(library, entries);
+        securityManager = library.getSecurityManager();
     }
 
     /**
@@ -633,8 +634,6 @@ public abstract class Annotation extends Dictionary {
         super.init();
         // type of Annotation
         subtype = (Name) getObject(SUBTYPE_KEY);
-
-        securityManager = library.getSecurityManager();
 
         content = getContents();
 
@@ -1888,7 +1887,7 @@ public abstract class Annotation extends Dictionary {
                     (float) bbox.getWidth(), (float) bbox.getHeight());
             form.setAppearance(shapes, matrix, formBbox);
 
-            stateManager.addChange(new PObject(form, form.getPObjectReference()));
+            stateManager.addChange(new PObject(form, form.getPObjectReference()), isNew);
             // update the AP's stream bytes so contents can be written out
             form.setRawBytes(rawBytes);
             DictionaryEntries appearanceRefs = new DictionaryEntries();

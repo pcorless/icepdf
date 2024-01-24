@@ -54,10 +54,10 @@ public class FileTableModel extends AbstractTableModel {
                         fileSpecification.getFileSpecification() : "";
                 data[i][DESCRIPTION_COLUMN] = fileSpecification.getDescription() != null ?
                         fileSpecification.getDescription() : "";
-                data[i][MODIFIED_COLUMN] = embeddedFileStream.getParamLastModifiedData() != null ?
+                data[i][MODIFIED_COLUMN] = embeddedFileStream != null && embeddedFileStream.getParamLastModifiedData() != null ?
                         embeddedFileStream.getParamLastModifiedData() : "";
-                data[i][SIZE_COLUMN] = Utils.byteFormatter(embeddedFileStream.getParamUncompressedSize(), true);
-                data[i][COMPRESSION_COLUMN] = Utils.byteFormatter(embeddedFileStream.getCompressedSize(), true);
+                data[i][SIZE_COLUMN] = embeddedFileStream == null ? "" : Utils.byteFormatter(embeddedFileStream.getParamUncompressedSize(), true);
+                data[i][COMPRESSION_COLUMN] = embeddedFileStream == null ? "" : Utils.byteFormatter(embeddedFileStream.getCompressedSize(), true);
                 data[i][DATA_COLUMN] = fileSpecification;
                 i++;
             }
