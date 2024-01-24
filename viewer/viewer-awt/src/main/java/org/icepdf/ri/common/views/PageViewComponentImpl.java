@@ -1,11 +1,6 @@
 package org.icepdf.ri.common.views;
 
-import org.icepdf.core.pobjects.Catalog;
-import org.icepdf.core.pobjects.Destination;
-import org.icepdf.core.pobjects.NameTree;
-import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.PageTree;
-import org.icepdf.core.pobjects.Reference;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.ChoiceWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
@@ -626,7 +621,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
 
     private void removePopupAnnotationComponent(PopupAnnotationComponent popupAnnotationComponent) {
         parentDocumentView.remove(popupAnnotationComponent);
-        documentViewModel.removeDocumentViewAnnotationComponent(this, popupAnnotationComponent);
+        documentViewModel.removeDocumentViewAnnotationComponent(parentDocumentView, this, popupAnnotationComponent);
         ArrayList<PageViewAnnotationComponent> components = documentViewModel.getDocumentViewAnnotationComponents(this);
         // don't forget to remove the glue component
         for (PageViewAnnotationComponent component : components) {
