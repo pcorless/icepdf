@@ -159,9 +159,10 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
 
             Rectangle tBbox = convertToPageSpace(highlightBounds, highlightPath);
 
-            AffineTransform pageTransform = getToPageSpaceTransform();
+            AffineTransform toPageSpaceTransform = getToPageSpaceTransform();
+            AffineTransform pageTransform = getPageTransform();
 
-            // create annotations types that that are rectangle based;
+            // create annotations types that are rectangle based;
             // which is actually just link annotations
             annotation = (TextMarkupAnnotation)
                     AnnotationFactory.buildAnnotation(
@@ -182,7 +183,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler impleme
             annotation.setMarkupPath(highlightPath);
             annotation.setBBox(tBbox);
             // finalized the appearance properties.
-            annotation.resetAppearanceStream(pageTransform);
+            annotation.resetAppearanceStream(toPageSpaceTransform);
 
             // create new annotation given the general path
             MarkupAnnotationComponent comp = (MarkupAnnotationComponent)

@@ -207,11 +207,12 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
         annotation.setRectangle(rectangle);
         annotation.setBorderStyle(borderStyle);
 
-        AffineTransform pageTransform = getToPageSpaceTransform();
+        AffineTransform toPageSpaceTransform = getToPageSpaceTransform();
+        AffineTransform pageTransform = getPageTransform();
 
         // pass outline shapes and bounds to create the highlight shapes
         annotation.setBBox(new Rectangle(0, 0, tBbox.width, tBbox.height));
-        annotation.resetAppearanceStream(pageTransform);
+        annotation.resetAppearanceStream(toPageSpaceTransform);
 
         // create the annotation object.
         MarkupAnnotationComponent comp = (MarkupAnnotationComponent)

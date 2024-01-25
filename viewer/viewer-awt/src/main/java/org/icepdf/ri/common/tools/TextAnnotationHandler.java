@@ -179,11 +179,11 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
 
     public void mouseReleased(MouseEvent e) {
 
-        AffineTransform pageTransform = getToPageSpaceTransform();
-        AffineTransform pageInverseTransform = getPageTransform();
+        AffineTransform toPageSpaceTransform = getToPageSpaceTransform();
+        AffineTransform pageTransform = getPageTransform();
         Dimension scaledSize = new Dimension(
-                (int) Math.abs(ICON_SIZE.width * pageInverseTransform.getScaleX()),
-                (int) Math.abs(ICON_SIZE.height * pageInverseTransform.getScaleY()));
+                (int) Math.abs(ICON_SIZE.width * pageTransform.getScaleX()),
+                (int) Math.abs(ICON_SIZE.height * pageTransform.getScaleY()));
 
         // convert bbox and start and end line points.
         Rectangle bBox = new Rectangle(e.getX(), e.getY(), scaledSize.width, scaledSize.height);
@@ -192,7 +192,7 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
         // text annotation are special as the annotation has fixed size.
         TextAnnotation markupAnnotation =
                 createTextAnnotationInstance(documentViewController.getDocument().getPageTree().getLibrary(),
-                        tBbox, pageTransform);
+                        tBbox, toPageSpaceTransform);
 
         // create the annotation object.
         MarkupAnnotationComponent comp = (MarkupAnnotationComponent)
@@ -206,12 +206,12 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
         // add them to the container, using absolute positioning.
         documentViewController.addNewAnnotation(comp);
 
-        // setup the popup so that it will show near the annotation.
+        // set up the popup so that it will show near the annotation.
         PopupAnnotationComponent popupAnnotationComponent = comp.getPopupAnnotationComponent();
         popupAnnotationComponent.setBoundsRelativeToParent(
-                e.getX() + scaledSize.width / 2,
-                e.getY() + scaledSize.height / 2,
-                pageInverseTransform);
+                e.getX() + bBox.width / 2,
+                e.getY() + bBox.height / 2,
+                pageTransform);
         popupAnnotationComponent.setVisible(true);
         popupAnnotationComponent.getAnnotation().setOpen(true);
         popupAnnotationComponent.focusTextArea();
