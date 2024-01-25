@@ -83,6 +83,7 @@ public class FullUpdater {
                 writer.writeFullTrailer();
             }
         }
+        output.close();
 
         return writer.getBytesWritten();
     }
