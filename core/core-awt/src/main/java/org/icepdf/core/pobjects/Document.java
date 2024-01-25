@@ -112,8 +112,9 @@ public class Document {
     private static boolean isCachingEnabled;
 
     private final Library library;
-    // todo put file channel input library?
+
     private FileChannel documentFileChannel;
+    private RandomAccessFile randomAccessFile;
     private ByteBuffer documentByteBuffer;
     private CrossReferenceRoot crossReferenceRoot;
 
@@ -191,15 +192,22 @@ public class Document {
         setDocumentOrigin(filepath);
 
         File file = new File(filepath);
-        try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r")) {
-            documentFileChannel = randomAccessFile.getChannel();
-            ByteBuffer mappedFileByteBuffer = documentFileChannel.map(
-                    FileChannel.MapMode.READ_ONLY, 0, documentFileChannel.size());
-            setInputStream(mappedFileByteBuffer);
+        try {
+            setInputStream(copyFileToByteBuffer(file));
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Failed to set document file path", e);
             throw e;
         }
+    }
+
+    private ByteBuffer copyFileToByteBuffer(File file) throws IOException {
+        randomAccessFile = new RandomAccessFile(file, "r");
+        documentFileChannel = randomAccessFile.getChannel();
+        long fileSize = documentFileChannel.size();
+        ByteBuffer buffer = ByteBuffer.allocate((int) fileSize);
+        documentFileChannel.read(buffer);
+        buffer.flip();
+        return buffer;
     }
 
     /**
@@ -266,11 +274,8 @@ public class Document {
 
             setDocumentCachedFilePath(tempFile.getAbsolutePath());
 
-            try (RandomAccessFile randomAccessFile = new RandomAccessFile(tempFile, "r")) {
-                documentFileChannel = randomAccessFile.getChannel();
-                ByteBuffer mappedFileByteBuffer = documentFileChannel.map(
-                        FileChannel.MapMode.READ_ONLY, 0, documentFileChannel.size());
-                setInputStream(mappedFileByteBuffer);
+            try {
+                setInputStream(copyFileToByteBuffer(tempFile));
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Failed to set document input stream", e);
                 throw e;
@@ -321,11 +326,8 @@ public class Document {
 
             setDocumentCachedFilePath(tempFile.getAbsolutePath());
 
-            try (RandomAccessFile randomAccessFile = new RandomAccessFile(tempFile, "r")) {
-                documentFileChannel = randomAccessFile.getChannel();
-                ByteBuffer mappedFileByteBuffer = documentFileChannel.map(
-                        FileChannel.MapMode.READ_ONLY, 0, documentFileChannel.size());
-                setInputStream(mappedFileByteBuffer);
+            try {
+                setInputStream(copyFileToByteBuffer(tempFile));
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Failed to set document input stream", e);
                 throw e;
@@ -530,13 +532,14 @@ public class Document {
      * Dispose of Document, freeing up all used resources.
      */
     public void dispose() {
-
-        if (documentFileChannel != null) {
+        // clean up file it will clean up any file channels and file descriptors too
+        if (randomAccessFile != null) {
             try {
-                documentFileChannel.close();
+                randomAccessFile.close();
             } catch (IOException e) {
-                logger.log(Level.FINE, "Error closing document input stream.", e);
+                logger.log(Level.FINE, "Error closing document random access file.", e);
             }
+            randomAccessFile = null;
             documentFileChannel = null;
         }
 
