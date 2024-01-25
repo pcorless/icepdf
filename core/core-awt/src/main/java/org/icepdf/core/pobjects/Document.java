@@ -193,18 +193,21 @@ public class Document {
 
         File file = new File(filepath);
         try {
-            randomAccessFile = new RandomAccessFile(file, "r");
-            documentFileChannel = randomAccessFile.getChannel();
-            long fileSize = documentFileChannel.size();
-            // Create an in memory file opy
-            ByteBuffer buffer = ByteBuffer.allocate((int) fileSize);
-            documentFileChannel.read(buffer);
-            buffer.flip();
-            setInputStream(buffer);
+            setInputStream(copyFileToByteBuffer(file));
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Failed to set document file path", e);
             throw e;
         }
+    }
+
+    private ByteBuffer copyFileToByteBuffer(File file) throws IOException {
+        randomAccessFile = new RandomAccessFile(file, "r");
+        documentFileChannel = randomAccessFile.getChannel();
+        long fileSize = documentFileChannel.size();
+        ByteBuffer buffer = ByteBuffer.allocate((int) fileSize);
+        documentFileChannel.read(buffer);
+        buffer.flip();
+        return buffer;
     }
 
     /**
@@ -331,14 +334,7 @@ public class Document {
             setDocumentCachedFilePath(tempFile.getAbsolutePath());
 
             try {
-                randomAccessFile = new RandomAccessFile(tempFile, "r");
-                documentFileChannel = randomAccessFile.getChannel();
-                long fileSize = documentFileChannel.size();
-                // Create an in memory file opy
-                ByteBuffer buffer = ByteBuffer.allocate((int) fileSize);
-                documentFileChannel.read(buffer);
-                buffer.flip();
-                setInputStream(buffer);
+                setInputStream(copyFileToByteBuffer(tempFile));
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Failed to set document input stream", e);
                 throw e;
