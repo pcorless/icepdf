@@ -13,9 +13,6 @@ public class HexStringObjectWriter extends BaseWriter {
     private static final byte[] BEGIN_HEX_STRING = "<".getBytes();
     private static final byte[] END_HEX_STRING = ">".getBytes();
 
-    private static final String HEX_REGEX = "(?=[<>\\\\])";
-    private static final String HEX_REPLACEMENT = "\\\\";
-
     public HexStringObjectWriter(SecurityManager securityManager) {
         this.securityManager = securityManager;
     }
@@ -23,22 +20,32 @@ public class HexStringObjectWriter extends BaseWriter {
     public void write(PObject pObject, CountingOutputStream output) throws IOException {
         HexStringObject writeable = (HexStringObject) pObject.getObject();
         if (pObject.isDoNotEncrypt()) {
-            writeRaw(writeable.getHexString(), output);
+            writeRaw(writeable.toString(), output);
+        } else if (securityManager != null) {
+            if (writeable.isModified()) {
+                // encryption will take care of any escape issue.
+                String writeableString = writeable.encryption(writeable.toString(), pObject.getReference(),
+                        securityManager);
+                writeRaw(writeableString, output);
+            } else {
+                // just need to write the string data as is, string data will already be in the correct state
+                writeRaw(writeable.toString(), output);
+            }
         } else {
-            write(new HexStringObject(writeable.toString().replaceAll(HEX_REGEX, HEX_REPLACEMENT),
-                    pObject.getReference(), securityManager), output);
+            // plain string make sure it's properly escaped.
+            writeRaw(writeable.toString(), output);
         }
     }
 
-    public void write(HexStringObject writeable, CountingOutputStream output) throws IOException {
+    public void write(String writeable, CountingOutputStream output) throws IOException {
         output.write(BEGIN_HEX_STRING);
-        writeByteString(writeable.getHexString().replaceAll(HEX_REGEX, HEX_REPLACEMENT), output);
+        writeByteString(writeable, output);
         output.write(END_HEX_STRING);
     }
 
     public void writeRaw(String writeable, CountingOutputStream output) throws IOException {
         output.write(BEGIN_HEX_STRING);
-        byte[] textBytes = Utils.convertByteCharSequenceToByteArray(writeable.replaceAll(HEX_REGEX, HEX_REPLACEMENT));
+        byte[] textBytes = Utils.convertByteCharSequenceToByteArray(writeable);
         output.write(textBytes);
         output.write(END_HEX_STRING);
     }

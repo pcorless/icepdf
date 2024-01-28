@@ -224,8 +224,7 @@ public class Dictionary {
      * @return string value of the newly set string which will always be decrypted.
      */
     protected String setString(final Name key, String value) {
-        // make sure we store an encrypted documents string as encrypted
-        entries.put(key, new LiteralStringObject(value));
+        entries.put(key, new LiteralStringObject(value, getPObjectReference()));
         return value;
     }
 
@@ -237,8 +236,7 @@ public class Dictionary {
      * @return string value of the newly set string which will always be decrypted.
      */
     protected String setHexString(final Name key, String value) {
-        // make sure we store an encrypted documents string as encrypted
-        entries.put(key, new HexStringObject(value));
+        entries.put(key, HexStringObject.createHexString(value));
         return value;
     }
 
