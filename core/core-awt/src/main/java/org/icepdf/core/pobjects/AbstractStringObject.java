@@ -28,7 +28,6 @@ public abstract class AbstractStringObject implements StringObject {
         }
     }
 
-
     /**
      * Decrypts or encrypts a string.
      *

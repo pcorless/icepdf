@@ -36,7 +36,7 @@ public class LiteralStringObject extends AbstractStringObject {
      * <p>Creates a new literal string object so that it represents the same
      * sequence of character data specified by the argument.</p>
      *
-     * Crated via the content and object parsers.
+     * Created via the content and object parsers.
      *
      * @param string the initial contents of the literal string object
      */
