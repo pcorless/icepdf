@@ -20,11 +20,11 @@ public class HexStringObjectWriter extends BaseWriter {
     public void write(PObject pObject, CountingOutputStream output) throws IOException {
         HexStringObject writeable = (HexStringObject) pObject.getObject();
         if (pObject.isDoNotEncrypt()) {
-            writeRaw(writeable.toString(), output);
+            writeRaw(writeable.getHexString(), output);
         } else if (securityManager != null) {
             if (writeable.isModified()) {
                 // encryption will take care of any escape issue.
-                String writeableString = writeable.encryption(writeable.toString(), pObject.getReference(),
+                String writeableString = writeable.encryption(writeable.getHexString(), pObject.getReference(),
                         securityManager);
                 writeRaw(writeableString, output);
             } else {
@@ -33,7 +33,7 @@ public class HexStringObjectWriter extends BaseWriter {
             }
         } else {
             // plain string make sure it's properly escaped.
-            writeRaw(writeable.toString(), output);
+            writeRaw(writeable.getHexString(), output);
         }
     }
 
