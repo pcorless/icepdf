@@ -37,11 +37,19 @@ public class TwoPageViewLayout extends BasePageViewLayout implements LayoutManag
                 .filter(component -> component instanceof PageViewDecorator && component.isVisible())
                 .toArray(PageViewDecorator[]::new);
 
+        double systemScaling = documentViewModel.getSystemScaling();
+
         int count = 0;
         int previousWidth = 0;
         for (PageViewDecorator pageViewDecorator : pages) {
             int pageIndex = pageViewDecorator.getPageViewComponent().getPageIndex();
             Dimension d = pageViewDecorator.getPreferredSize();
+            int boundsWidth = d.width;
+            int boundsHeight = d.height;
+
+            d.width = (int)Math.round(d.width / systemScaling);
+            d.height = (int)Math.round(d.height / systemScaling);
+
             // apply odd pages right offset
             if (viewType == DocumentView.RIGHT_VIEW &&
                     pageIndex == 0 && pages.length == 1) {
@@ -64,7 +72,7 @@ public class TwoPageViewLayout extends BasePageViewLayout implements LayoutManag
 
             yCord += insets.top;
 
-            pageViewDecorator.setBounds(xCord, yCord, d.width, d.height);
+            pageViewDecorator.setBounds(xCord, yCord, boundsWidth, boundsHeight);
             updatePopupAnnotationComponents(pageViewDecorator);
         }
     }
@@ -148,6 +156,12 @@ public class TwoPageViewLayout extends BasePageViewLayout implements LayoutManag
             minWidth = Math.max(component.getMinimumSize().width * 2, minWidth);
             minHeight = preferredHeight;
         }
+
+        double systemScaling = documentViewModel.getSystemScaling();
+        minWidth = (int)Math.round(minWidth / systemScaling);
+        minHeight = (int)Math.round(minHeight / systemScaling);
+        preferredWidth = (int)Math.round(preferredWidth / systemScaling);
+        preferredHeight = (int)Math.round(preferredHeight / systemScaling);
     }
 
     public String toString() {

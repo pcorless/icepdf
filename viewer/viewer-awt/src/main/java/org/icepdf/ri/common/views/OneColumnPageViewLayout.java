@@ -20,6 +20,8 @@ public class OneColumnPageViewLayout extends OnePageViewLayout {
             setSizes(parent);
         }
 
+        double systemScaling = documentViewModel.getSystemScaling();
+
         PageViewDecorator[] pages = Arrays.stream(parent.getComponents())
                 .filter(component -> component instanceof PageViewDecorator && component.isVisible())
                 .toArray(PageViewDecorator[]::new);
@@ -27,6 +29,12 @@ public class OneColumnPageViewLayout extends OnePageViewLayout {
         int index = 0;
         for (PageViewDecorator pageViewDecorator : pages) {
             Dimension d = pageViewDecorator.getPreferredSize();
+            int boundsWidth = d.width;
+            int boundsHeight = d.height;
+            
+            d.width = (int)Math.round(d.width / systemScaling);
+            d.height = (int)Math.round(d.height / systemScaling);
+
             // set starting position for page, everything else flows from there
             if(index == 0){
                 // detect if we should be centering
@@ -48,7 +56,7 @@ public class OneColumnPageViewLayout extends OnePageViewLayout {
             index++;
             xCord += insets.left;
 
-            pageViewDecorator.setBounds(xCord, yCord, d.width, d.height);
+            pageViewDecorator.setBounds(xCord, yCord, boundsWidth, boundsHeight);
             updatePopupAnnotationComponents(pageViewDecorator);
         }
     }

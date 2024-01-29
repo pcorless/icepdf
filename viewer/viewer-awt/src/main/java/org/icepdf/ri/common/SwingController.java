@@ -4547,17 +4547,19 @@ public class SwingController extends ComponentAdapter
      * @see #setUtilityPaneVisible(boolean)
      */
     public void showSearchPanel() {
-        final String selectedText = documentViewController.getSelectedText();
-        if (selectedText != null && !selectedText.trim().isEmpty()) {
-            showSearchPanel(selectedText.trim());
-        } else {
-            showSearchPanel(searchPanel.getSearchPhrase());
+        if (searchPanel != null) {
+            final String selectedText = documentViewController.getSelectedText();
+            if (selectedText != null && !selectedText.trim().isEmpty()) {
+                showSearchPanel(selectedText.trim());
+            } else {
+                showSearchPanel(searchPanel.getSearchPhrase());
+            }
         }
     }
 
     public void showSearchPanel(final String searchPhrase) {
-        searchPanel.setSearchPhrase(searchPhrase);
         if (utilityTabbedPane != null && searchPanel != null) {
+            searchPanel.setSearchPhrase(searchPhrase);
             // make sure the utility pane is visible
             if (!utilityTabbedPane.isVisible()) {
                 setUtilityPaneVisible(true);

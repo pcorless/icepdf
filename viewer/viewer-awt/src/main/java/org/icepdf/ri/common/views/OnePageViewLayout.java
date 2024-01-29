@@ -23,10 +23,12 @@ public class OnePageViewLayout extends BasePageViewLayout implements LayoutManag
         Insets insets = parent.getInsets();
         int maxWidth = parent.getWidth() - (insets.left + insets.right);
         int maxHeight = parent.getHeight() - (insets.top + insets.bottom);
-
+        
         if (sizeUnknown) {
             setSizes(parent);
         }
+
+        double systemScaling = documentViewModel.getSystemScaling();
 
         PageViewDecorator[] pages = Arrays.stream(parent.getComponents())
                 .filter(component -> component instanceof PageViewDecorator && component.isVisible())
@@ -35,8 +37,8 @@ public class OnePageViewLayout extends BasePageViewLayout implements LayoutManag
         for (PageViewDecorator pageViewDecorator : pages) {
             Dimension d = pageViewDecorator.getPreferredSize();
             // center the page or pagesPanel
-            int xCord = (maxWidth - d.width) / 2;
-            int yCord = (maxHeight - d.height) / 2;
+            int xCord = (int)Math.round((maxWidth - d.width / systemScaling) / 2);
+            int yCord = (int)Math.round((maxHeight - d.height / systemScaling) / 2);
 
             if (xCord < 0) xCord = 0;
             if (yCord < 0) yCord = 0;
@@ -125,8 +127,16 @@ public class OnePageViewLayout extends BasePageViewLayout implements LayoutManag
             preferredHeight += dimension.height + PAGE_SPACING_VERTICAL;
 
             minWidth = Math.max(pageViewDecorator.getMinimumSize().width, minWidth);
-            minHeight = preferredHeight;
         }
+
+        preferredHeight += pages.length * PAGE_SPACING_VERTICAL;
+        minHeight = preferredHeight;
+
+        double systemScaling = documentViewModel.getSystemScaling();
+        minWidth = (int)Math.round(minWidth / systemScaling);
+        minHeight = (int)Math.round(minHeight / systemScaling);
+        preferredWidth = (int)Math.round(preferredWidth / systemScaling);
+        preferredHeight = (int)Math.round(preferredHeight / systemScaling);
     }
 
     public String toString() {

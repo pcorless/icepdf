@@ -92,6 +92,13 @@ public class MarkupGlueComponent extends JComponent implements PageViewAnnotatio
 
     @Override
     public void paintComponent(Graphics g) {
+        Graphics2D g2d = (Graphics2D) g;
+
+        double scale = g2d.getDeviceConfiguration().getDefaultTransform().getScaleX();
+        if (scale != 1.0) {
+            g2d.scale(1.0 / scale, 1.0 / scale);
+        }
+      
         if (popupAnnotationComponent.isVisible()) {
             Rectangle popupBounds = popupAnnotationComponent.getBounds();
             Rectangle markupBounds = adjustedMarkupAnnotationBounds;

@@ -21,6 +21,7 @@ import org.icepdf.ri.common.MouseWheelListenerPageChanger;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import org.icepdf.core.util.PropertyConstants;
 
 import static org.icepdf.ri.common.views.BasePageViewLayout.PAGE_SPACING_HORIZONTAL;
 
@@ -140,8 +141,9 @@ public class OnePageView extends AbstractDocumentView {
             pageViewWidth = bounds.width;
             pageViewHeight = bounds.height;
         }
-        // normalize the dimensions to a zoom level of zero.
-        float currentZoom = documentViewController.getDocumentViewModel().getViewZoom();
+        // normalize the dimensions to a zoom level of zero and apply system scaling
+        float systemScaling = (float)documentViewController.getDocumentViewModel().getSystemScaling();
+        float currentZoom = documentViewController.getDocumentViewModel().getViewZoom() * systemScaling;
         pageViewWidth = Math.abs(pageViewWidth / currentZoom);
         pageViewHeight = Math.abs(pageViewHeight / currentZoom);
 
@@ -152,6 +154,14 @@ public class OnePageView extends AbstractDocumentView {
     }
 
     public void paintComponent(Graphics g) {
+        Graphics2D g2d = (Graphics2D)g;
+        double scale = g2d.getDeviceConfiguration().getDefaultTransform().getScaleX();
+        double dpiScaling = documentViewModel.getSystemScaling();
+        if (scale != dpiScaling) {
+            documentViewModel.setSystemScaling(scale);
+            java.util.List<AbstractPageViewComponent> pageComponents = documentViewController.getDocumentViewModel().getPageComponents();
+            pageComponents.forEach(page -> page.updateView(PropertyConstants.DOCUMENT_VIEW_REFRESH_CHANGE, 1, 0));
+        }
         Rectangle clipBounds = g.getClipBounds();
         // paint background gray
         g.setColor(backgroundColour);
