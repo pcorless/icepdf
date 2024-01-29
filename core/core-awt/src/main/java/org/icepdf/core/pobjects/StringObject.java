@@ -87,7 +87,7 @@ public interface StringObject {
      *                   Composite and Simple font types respectively
      * @param font       font used to render the literal string data.
      * @return StringBuffer which contains all renderaable characters for the
-     *         given font.
+     * given font.
      */
     StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font);
 
@@ -106,13 +106,6 @@ public interface StringObject {
     void setReference(Reference reference);
 
     /**
-     * Sets the parent PDF object's reference.
-     *
-     * @return returns the reference used for encryption.
-     */
-    Reference getReference();
-
-    /**
      * Gets the decrypted literal string value of the data using the key provided by the
      * security manager.
      *
@@ -120,5 +113,12 @@ public interface StringObject {
      * @return decrypted stream.
      */
     String getDecryptedLiteralString(SecurityManager securityManager);
+
+    /**
+     * Indicated the string data has been modified and may need to be encrypted if persisted
+     *
+     * @return true if the object has been modified.
+     */
+    boolean isModified();
 
 }

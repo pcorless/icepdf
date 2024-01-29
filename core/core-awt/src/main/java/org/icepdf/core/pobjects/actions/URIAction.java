@@ -56,8 +56,7 @@ public class URIAction extends Action {
      * @param URI an string value except null.
      */
     public void setURI(String URI) {
-        StringObject tmp = new LiteralStringObject(
-                URI, getPObjectReference(), library.getSecurityManager());
+        StringObject tmp = new LiteralStringObject(URI, getPObjectReference());
         // StringObject detection should allow writer to pick on encryption.
         entries.put(URIAction.URI_KEY, tmp);
         this.URI = tmp;
