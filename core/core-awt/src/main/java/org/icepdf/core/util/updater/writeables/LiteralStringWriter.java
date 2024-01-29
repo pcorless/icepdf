@@ -24,23 +24,32 @@ public class LiteralStringWriter extends BaseWriter {
         LiteralStringObject writeable = (LiteralStringObject) pObject.getObject();
         if (pObject.isDoNotEncrypt()) {
             writeRaw(writeable.getLiteralString(), output);
+        } else if (securityManager != null) {
+            if (writeable.isModified()) {
+                // encryption will take care of any escape issue.
+                String writeableString = writeable.encryption(writeable.getLiteralString(), pObject.getReference(),
+                        securityManager);
+                writeRaw(writeableString, output);
+            } else {
+                // just need to write the string data as is, string data will already be in the correct state
+                writeRaw(writeable.getLiteralString(), output);
+            }
         } else {
-            write(new LiteralStringObject(writeable.toString().replaceAll(LITERAL_REGEX, LITERAL_REPLACEMENT),
-                            pObject.getReference(), securityManager).toString(),
-                    output);
+            // plain string make sure it's properly escaped.
+            String escaped = writeable.getLiteralString().replaceAll(LITERAL_REGEX, LITERAL_REPLACEMENT);
+            writeRaw(escaped, output);
         }
     }
 
     public void write(String writeable, CountingOutputStream output) throws IOException {
         output.write(BEGIN_LITERAL_STRING);
-        writeByteString(writeable.replaceAll(LITERAL_REGEX, LITERAL_REPLACEMENT), output);
+        writeByteString(writeable, output);
         output.write(END_LITERAL_STRING);
     }
 
     public void writeRaw(String writeable, CountingOutputStream output) throws IOException {
         output.write(BEGIN_LITERAL_STRING);
-        byte[] textBytes = Utils.convertByteCharSequenceToByteArray(
-                writeable.replaceAll(LITERAL_REGEX, LITERAL_REPLACEMENT));
+        byte[] textBytes = Utils.convertByteCharSequenceToByteArray(writeable);
         output.write(textBytes);
         output.write(END_LITERAL_STRING);
     }

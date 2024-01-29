@@ -17,8 +17,6 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontFile;
-import org.icepdf.core.pobjects.security.SecurityManager;
-import org.icepdf.core.util.Utils;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,35 +28,18 @@ import java.util.logging.Logger;
  *
  * @since 2.0
  */
-public class HexStringObject implements StringObject {
+public class HexStringObject extends AbstractStringObject {
 
     private static final Logger logger =
             Logger.getLogger(HexStringObject.class.toString());
-
-    // core data used to represent the literal string information
-    private StringBuilder stringData;
-
-    // Reference is need for standard encryption
-    Reference reference;
-
-    /**
-     * <p>Creates a new hexadecimal string object so that it represents the same
-     * sequence of bytes as in the bytes argument.  In other words, the
-     * initial content of the hexadecimal string is the characters represented
-     * by the byte data.</p>
-     *
-     * @param bytes array of bytes which will be interpreted as hexadecimal
-     *              data.
-     */
-    public HexStringObject(byte[] bytes) {
-        this(new StringBuilder(bytes.length).append(new String(bytes)));
-    }
 
     /**
      * <p>Creates a new hexadecimal string object so that it represents the same
      * sequence of character data specified by the argument. This constructor should
      * only be used in the context of the parser which has leading and ending
      * angled brackets which are removed by this method.</p>
+     *
+     * Old parser, just used for cmap parsing now.
      *
      * @param stringBuffer the initial contents of the hexadecimal string object
      */
@@ -71,32 +52,19 @@ public class HexStringObject implements StringObject {
         stringData.append(normalizeHex(stringBuffer, 2).toString());
     }
 
+    /**
+     * Content and object parser hex string creation
+     *
+     * @param string raw hex string
+     */
     public HexStringObject(String string) {
         stringData = new StringBuilder(string.length());
         stringData.append(normalizeHex(new StringBuilder(string), 2).toString());
     }
 
-    /**
-     * <p>Creates a new literal string object so that it represents the same
-     * sequence of character data specified by the arguments.  The string
-     * value is assumed to be unencrypted and will be encrypted.  The
-     * method #LiteralStringObject(String string) should be used if the string
-     * is all ready encrypted. This method is used for creating new
-     * LiteralStringObject's that are created post document parse. </p>
-     *
-     * @param string          the initial contents of the literal string object,
-     *                        unencrypted.
-     * @param reference       of parent PObject
-     * @param securityManager security manager used ot encrypt the string.
-     */
-    public HexStringObject(String string, Reference reference,
-                           SecurityManager securityManager) {
-        // append string data
-        this.reference = reference;
-        // convert string data to hex encoded
-        stringData = encodeHexString(string);
-        // save and encrypt the hex value.  TODO: encryption still not working correctly, likely a -> byte[] error.
-        stringData = new StringBuilder(encryption(stringData.toString(), false, securityManager));
+    public static HexStringObject createHexString(String literalstring) {
+        StringBuilder hexString = encodeHexString(literalstring);
+        return new HexStringObject(hexString.toString());
     }
 
     /**
@@ -106,9 +74,9 @@ public class HexStringObject implements StringObject {
      * @param contents string to be encoded into hex format.
      * @return original content stream with contents encoded in the hex string format.
      */
-    private StringBuilder encodeHexString(String contents) {
+    public static StringBuilder encodeHexString(String contents) {
         StringBuilder hex = new StringBuilder();
-        if (contents != null && contents.length() > 0) {
+        if (contents != null && !contents.isEmpty()) {
             char[] chars = contents.toCharArray();
             hex.append("FEFF");
             String hexCode;
@@ -396,87 +364,6 @@ public class HexStringObject implements StringObject {
             sb.append((char) Integer.parseInt(subStr, 16));
         }
         return sb;
-    }
-
-    /**
-     * Sets the parent PDF object's reference.
-     *
-     * @param reference parent object reference.
-     */
-    public void setReference(Reference reference) {
-        this.reference = reference;
-    }
-
-    /**
-     * Sets the parent PDF object's reference.
-     *
-     * @return returns the reference used for encryption.
-     */
-    public Reference getReference() {
-        return reference;
-    }
-
-    /**
-     * Gets the decrypted literal string value of the data using the key provided by the
-     * security manager.
-     *
-     * @param securityManager security manager associated with parent document.
-     */
-    public String getDecryptedLiteralString(SecurityManager securityManager) {
-        // get the security manager instance
-        if (securityManager != null && reference != null) {
-            // get the key
-            byte[] key = securityManager.getDecryptionKey();
-
-            // convert string to bytes.
-            byte[] textBytes =
-                    Utils.convertByteCharSequenceToByteArray(getLiteralString());
-
-            // Decrypt String
-            textBytes = securityManager.decrypt(reference,
-                    key,
-                    textBytes);
-
-            // convert back to a string
-            return Utils.convertByteArrayToByteString(textBytes);
-        }
-        return getLiteralString();
-    }
-
-    /**
-     * Decrypts or encrypts a string.
-     *
-     * @param string          string to encrypt or decrypt
-     * @param decrypt         true to decrypt string, false otherwise;
-     * @param securityManager security manager for document.
-     * @return encrypted or decrypted string, depends on value of decrypt param.
-     */
-    public String encryption(String string, boolean decrypt,
-                             SecurityManager securityManager) {
-        // get the security manager instance
-        if (securityManager != null && reference != null) {
-            // get the key
-            byte[] key = securityManager.getDecryptionKey();
-
-            // convert string to bytes.
-            byte[] textBytes =
-                    Utils.convertByteCharSequenceToByteArray(string);
-
-            // Decrypt String
-            if (decrypt) {
-                textBytes = securityManager.decrypt(reference,
-                        key,
-                        textBytes);
-            } else {
-                textBytes = securityManager.encrypt(reference,
-                        key,
-                        textBytes);
-            }
-
-            // convert back to a string
-            return Utils.convertByteArrayToByteString(textBytes);
-        }
-        return string;
     }
 
 }

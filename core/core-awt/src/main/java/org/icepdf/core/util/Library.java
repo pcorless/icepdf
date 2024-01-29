@@ -208,7 +208,8 @@ public class Library {
         return new PObject(obj, reference);
     }
 
-    private boolean isSoftReferenceAble(Object object) {
+    private boolean isSoftReferenceAble(PObject pObject) {
+        Object object = pObject.getObject();
         if (object instanceof Dictionary) {
             DictionaryEntries entries = ((Dictionary) object).getEntries();
             Name type = getName(entries, Dictionary.TYPE_KEY);
