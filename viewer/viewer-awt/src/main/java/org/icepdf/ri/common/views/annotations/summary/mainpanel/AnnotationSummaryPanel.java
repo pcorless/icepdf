@@ -15,7 +15,6 @@
  */
 package org.icepdf.ri.common.views.annotations.summary.mainpanel;
 
-import com.twelvemonkeys.io.FileSeekableStream;
 import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.utility.annotation.properties.FreeTextAnnotationPanel;
 import org.icepdf.ri.common.utility.annotation.properties.ValueLabelItem;
@@ -33,18 +32,25 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Timer;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
 public class AnnotationSummaryPanel extends JPanel {
+    private static final Logger LOG = Logger.getLogger(AnnotationSummaryPanel.class.getName());
     private static final boolean USE_JFILECHOOSER;
 
     static {
@@ -358,14 +364,8 @@ public class AnnotationSummaryPanel extends JPanel {
             final String filename = chooser.getFile();
             final String dir = chooser.getDirectory();
             if (filename != null && dir != null) {
-                ViewerPropertiesManager.getInstance().set(ViewerPropertiesManager.PROPERTY_ANNOTATION_SUMMARY_IMPORT_FILE,
-                        dir + filename);
-                try {
-                    final File file = new File(dir + filename);
-                    controller.importFormat(new FileSeekableStream(file), true);
-                } catch (final FileNotFoundException ignored) {
-
-                }
+                final String path = dir + filename;
+                importFile(path);
             }
         } else {
             final JFileChooser chooser = new JFileChooser();
@@ -384,14 +384,21 @@ public class AnnotationSummaryPanel extends JPanel {
             final int ret = chooser.showSaveDialog(controller.getFrame());
             if (ret == JFileChooser.APPROVE_OPTION) {
                 final File file = chooser.getSelectedFile();
-                ViewerPropertiesManager.getInstance().set(ViewerPropertiesManager.PROPERTY_ANNOTATION_SUMMARY_IMPORT_FILE,
-                        file.getAbsolutePath());
-                try {
-                    controller.importFormat(new FileSeekableStream(file), true);
-                } catch (final FileNotFoundException ignored) {
-
-                }
+                final String path = file.getAbsolutePath();
+                importFile(path);
             }
+        }
+    }
+
+    private void importFile(final String path) {
+        ViewerPropertiesManager.getInstance().set(ViewerPropertiesManager.PROPERTY_ANNOTATION_SUMMARY_IMPORT_FILE,
+                path);
+        try (final InputStream in = new BufferedInputStream(Files.newInputStream(Paths.get(path)))) {
+            controller.importFormat(in, true);
+        } catch (final FileNotFoundException ignored) {
+
+        } catch (final IOException e) {
+            LOG.log(Level.SEVERE, "Error getting " + path, e);
         }
     }
 

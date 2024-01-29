@@ -1,7 +1,5 @@
 package org.icepdf.ri.common.views.annotations.summary.mainpanel;
 
-import com.twelvemonkeys.io.FileSeekableStream;
-import com.twelvemonkeys.io.SeekableInputStream;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.Annotation;
@@ -23,10 +21,23 @@ import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.*;
@@ -207,7 +218,7 @@ public class SummaryController implements MutableDocument {
      * @param inputStream The input stream
      * @return true if the import was unsuccessful and the user wants to delete the file
      */
-    public boolean importFormat(final SeekableInputStream inputStream, final boolean partial) {
+    public boolean importFormat(final InputStream inputStream, final boolean partial) {
         try {
             final Map<AnnotationSummaryComponent, Pair<Integer, Integer>> compToCell = canImport(inputStream, partial);
             inputStream.reset();
@@ -255,12 +266,6 @@ public class SummaryController implements MutableDocument {
                             e.getMessage() == null ? e.toString() : e.getMessage()),
                     messageBundle.getString("viewer.summary.import.failure.title"),
                     JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE) == JOptionPane.YES_OPTION;
-        } finally {
-            try {
-                inputStream.close();
-            } catch (final IOException ignored) {
-
-            }
         }
     }
 
@@ -503,11 +508,14 @@ public class SummaryController implements MutableDocument {
     }
 
     private void tryImportSummaryFile() {
-        final SeekableInputStream inputStream = getDefaultSummaryInputStream();
-        if (inputStream != null) {
-            if (importFormat(inputStream, true)) {
-                deleteSummaryFile();
+        try (final InputStream inputStream = getDefaultSummaryInputStream()) {
+            if (inputStream != null) {
+                if (importFormat(inputStream, true)) {
+                    deleteSummaryFile();
+                }
             }
+        } catch (final IOException e) {
+            LOG.log(Level.SEVERE, "Error getting default input stream", e);
         }
         setHasManuallyChanged(false);
     }
@@ -525,12 +533,15 @@ public class SummaryController implements MutableDocument {
         }
     }
 
-    public SeekableInputStream getDefaultSummaryInputStream() {
+    public InputStream getDefaultSummaryInputStream() {
         final File file = getDefaultSummaryFile();
         if (file != null) {
             try {
-                return new FileSeekableStream(file);
+                return new BufferedInputStream(Files.newInputStream(Paths.get(file.getAbsolutePath())));
             } catch (final FileNotFoundException e) {
+                return null;
+            } catch (final IOException e) {
+                LOG.log(Level.SEVERE, "Error getting " + file, e);
                 return null;
             }
         } else {
