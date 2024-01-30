@@ -17,7 +17,7 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontFile;
-import org.icepdf.core.pobjects.security.SecurityManager;
+import org.icepdf.core.util.StringOffsetBuilder;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
