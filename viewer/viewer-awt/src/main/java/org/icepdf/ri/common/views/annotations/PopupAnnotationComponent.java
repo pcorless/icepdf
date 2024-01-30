@@ -172,7 +172,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
-        Rectangle pageBounds = parentPageViewComponent.getBounds();
+        Rectangle pageBounds = parentPageViewComponent.getParent().getBounds();
         annotationPageSpaceBounds.x += pageBounds.x;
         annotationPageSpaceBounds.y += pageBounds.y;
         setBounds(annotationPageSpaceBounds);
@@ -194,7 +194,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
-        Rectangle pageBounds = parentPageViewComponent.getBounds();
+        Rectangle pageBounds = parentPageViewComponent.getParent().getBounds();
         Rectangle bounds = getBounds();
         bounds.x -= pageBounds.x;
         bounds.y -= pageBounds.y;
@@ -517,7 +517,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     }
 
     public AnnotationComponent getAnnotationParentComponent() {
-        return findAnnotationComponent(selectedMarkupAnnotation);
+        return findAnnotationComponent(annotation.getParent());
     }
 
     /**
