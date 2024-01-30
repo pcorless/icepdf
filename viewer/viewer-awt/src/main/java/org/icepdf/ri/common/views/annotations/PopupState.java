@@ -27,8 +27,8 @@ public class PopupState {
 
     private final Rectangle2D.Float userSpaceRectangle;
     private final PopupAnnotationComponent annotationComponent;
-    private final int headerTextSize;
-    private final int commentTextSize;
+    private final float headerTextSize;
+    private final float commentTextSize;
     private final boolean visible;
 
 
@@ -44,8 +44,8 @@ public class PopupState {
         this.annotationComponent = requireNonNull(annotationComponent);
         this.userSpaceRectangle = annotationComponent.getAnnotation().getUserSpaceRectangle();
         this.visible = annotationComponent.isVisible();
-        this.commentTextSize = annotationComponent.getTextAreaFontSize();
-        this.headerTextSize = annotationComponent.getHeaderFontSize();
+        this.commentTextSize = annotationComponent.getAnnotation().getTextAreaFontsize();
+        this.headerTextSize = annotationComponent.getAnnotation().getHeaderLabelsFontSize();
     }
 
     public PopupAnnotationComponent getAnnotationComponent() {
@@ -56,11 +56,11 @@ public class PopupState {
         return userSpaceRectangle;
     }
 
-    public int getHeaderTextSize() {
+    public float getHeaderTextSize() {
         return headerTextSize;
     }
 
-    public int getTextAreaFontSize() {
+    public float getTextAreaFontSize() {
         return commentTextSize;
     }
 
