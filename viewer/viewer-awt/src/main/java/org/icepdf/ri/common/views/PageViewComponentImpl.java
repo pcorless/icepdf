@@ -43,7 +43,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     // annotations component for this pageViewComp.
     protected final Object annotationComponentsLock = new Object();
     protected ArrayList<AbstractAnnotationComponent> annotationComponents;
-    protected Map<Annotation, AnnotationComponent> annotationToComponent;
+    protected Map<Reference, AnnotationComponent> annotationToComponent;
     protected ArrayList<DestinationComponent> destinationComponents;
     private Set<SearchHitComponent> searchHitComponents = new HashSet<>();
 
@@ -238,7 +238,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         if (annotationToComponent == null) {
             initializeAnnotationsComponent(getPage());
         }
-        return annotationToComponent.get(annot);
+        return annotationToComponent.get(annot.getPObjectReference());
     }
 
     /**
@@ -449,7 +449,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
             annotationToComponent = new HashMap<>();
         }
         annotationComponents.add((AbstractAnnotationComponent) annotation);
-        annotationToComponent.put(annotation.getAnnotation(), annotation);
+        annotationToComponent.put(annotation.getAnnotation().getPObjectReference(), annotation);
         if (annotation instanceof PopupAnnotationComponent) {
             addPopupAnnotationComponent((PopupAnnotationComponent) annotation);
         } else if (annotation instanceof MarkupAnnotationComponent) {
@@ -472,7 +472,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     public void removeAnnotation(AnnotationComponent annotationComp) {
         annotationComponents.remove(annotationComp);
         if (annotationComp.getAnnotation() != null) {
-            annotationToComponent.remove(annotationComp.getAnnotation());
+            annotationToComponent.remove(annotationComp.getAnnotation().getPObjectReference());
         } else {
             annotationToComponent.entrySet().stream().filter(e -> e.getValue().equals(annotationComp)).findFirst()
                     .ifPresent(e -> annotationToComponent.remove(e.getKey()));
@@ -569,7 +569,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                         if (comp != null) {
                             // add for painting
                             annotationComponents.add(comp);
-                            annotationToComponent.put(annotation, comp);
+                            annotationToComponent.put(annotation.getPObjectReference(), comp);
                             // add to layout
                             if (comp instanceof PopupAnnotationComponent) {
                                 PopupAnnotationComponent popupAnnotationComponent = (PopupAnnotationComponent) comp;
@@ -630,7 +630,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
 
     private void removePopupAnnotationComponent(PopupAnnotationComponent popupAnnotationComponent) {
         parentDocumentView.remove(popupAnnotationComponent);
-        documentViewModel.removeDocumentViewAnnotationComponent(this, popupAnnotationComponent);
+        documentViewModel.removeDocumentViewAnnotationComponent(parentDocumentView, this, popupAnnotationComponent);
         ArrayList<PageViewAnnotationComponent> components = documentViewModel.getDocumentViewAnnotationComponents(this);
         // don't forget to remove the glue component
         for (PageViewAnnotationComponent component : components) {

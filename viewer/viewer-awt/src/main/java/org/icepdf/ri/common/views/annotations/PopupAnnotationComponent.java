@@ -301,14 +301,14 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     private void buildGUI() {
 
         List<Annotation> annotations = pageViewComponent.getPage().getAnnotations();
-        MarkupAnnotation parentAnnotation = annotation.getParent();
+        selectedMarkupAnnotation = annotation.getParent();
 
         // check first if there are anny annotation that point to this one as
         // an IRT.  If there aren't any then the selectedAnnotation is the parent
         // other wise we need to build out
         DefaultMutableTreeNode root =
                 new DefaultMutableTreeNode("Root");
-        boolean isIRT = buildCommentTree(parentAnnotation, annotations, root);
+        boolean isIRT = buildCommentTree(selectedMarkupAnnotation, annotations, root);
         commentTree = new JTree(root);
         commentTree.setRootVisible(true);
         commentTree.setExpandsSelectedPaths(true);
@@ -330,13 +330,10 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         // make sure the root node is selected by default.
         commentTree.setSelectionRow(0);
 
-        // Set the
-        selectedMarkupAnnotation = parentAnnotation;
-
         // try and make the popup the same colour as the annotations fill color
         popupBackgroundColor = backgroundColor;
-        if (parentAnnotation != null && parentAnnotation.getColor() != null) {
-            popupBackgroundColor = checkColor(parentAnnotation.getColor());
+        if (selectedMarkupAnnotation != null && selectedMarkupAnnotation.getColor() != null) {
+            popupBackgroundColor = checkColor(selectedMarkupAnnotation.getColor());
         }
 
         // minimize button
@@ -355,8 +352,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
         // lock button
         privateToggleButton = new JToggleButton();
-        boolean isPrivate = annotation.getParent() != null &&
-                annotation.getParent().getFlagPrivateContents();
+        boolean isPrivate = selectedMarkupAnnotation != null &&
+                selectedMarkupAnnotation.getFlagPrivateContents();
         privateToggleButton.setToolTipText(messageBundle.getString(
                 "viewer.utilityPane.markupAnnotation.view.publicToggleButton.tooltip.label"));
         privateToggleButton.setSelected(isPrivate);
@@ -369,8 +366,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         privateToggleButton.setBorderPainted(true);
 
         // text area edited the selected annotation markup contents.
-        String contents = annotation.getParent() != null ?
-                annotation.getParent().getContents() : "";
+        String contents = selectedMarkupAnnotation != null ?
+                selectedMarkupAnnotation.getContents() : "";
         textArea = new JTextArea(contents != null ? contents : "");
         textArea.setFont(new JLabel().getFont());
         textArea.setWrapStyleWord(true);
@@ -427,8 +424,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         constraints.insets = new Insets(1, 1, 1, 1);
         // user that created the comment is the only one that can actually make it private.
         if (SystemProperties.PRIVATE_PROPERTY_ENABLED) {
-            MarkupAnnotation markupAnnotation = annotation.getParent();
-            if (markupAnnotation != null && userName.equals(markupAnnotation.getTitleText())) {
+            if (selectedMarkupAnnotation != null && userName.equals(selectedMarkupAnnotation.getTitleText())) {
                 addGB(commentPanel, privateToggleButton, 2, 0, 1, 1);
             }
         }
@@ -521,7 +517,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     }
 
     public AnnotationComponent getAnnotationParentComponent() {
-        return findAnnotationComponent(annotation.getParent());
+        return findAnnotationComponent(selectedMarkupAnnotation);
     }
 
     /**
@@ -549,7 +545,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         removeMarkupInReplyTo(selectedMarkupAnnotation.getPObjectReference());
 
 
-        // rebuild the tree, which is easier then pruning at this point
+        // rebuild the tree, which is easier than pruning at this point
         rebuildTree();
         commentPanel.revalidate();
         refreshPopupState();
@@ -786,7 +782,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
         // check first if there are anny annotation that point to this one as
         // an IRT.  If there aren't any then the selectedAnnotation is the parent
-        // other wise we need to build out
+        // otherwise we need to build out
         DefaultMutableTreeNode root = new DefaultMutableTreeNode("Root");
         boolean isIRT = buildCommentTree(parentAnnotation, annotations, root);
         commentTree.removeTreeSelectionListener(this);
@@ -934,7 +930,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
     public MarkupAnnotationComponent getMarkupAnnotationComponent() {
         if (annotation != null) {
-            MarkupAnnotation markupAnnotation = annotation.getParent();
+            MarkupAnnotation markupAnnotation = selectedMarkupAnnotation;
             if (markupAnnotation != null) {
                 // find the popup component
                 ArrayList<AbstractAnnotationComponent> annotationComponents = pageViewComponent.getAnnotationComponents();

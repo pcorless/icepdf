@@ -509,7 +509,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             Rectangle2D formBbox = new Rectangle2D.Float(0, 0,
                     (float) bbox.getWidth(), (float) bbox.getHeight());
             form.setAppearance(shapes, matrix, formBbox);
-            stateManager.addChange(new PObject(form, form.getPObjectReference()));
+            stateManager.addChange(new PObject(form, form.getPObjectReference()), isNew);
             // update the AP's stream bytes so contents can be written out
             form.setRawBytes(
                     PostScriptEncoder.generatePostScript(shapes.getShapes()));
@@ -571,7 +571,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                 newFont.setPObjectReference(reference);
             }
             // update hard reference to state manager and weak library reference.
-            stateManager.addChange(new PObject(newFont, newFont.getPObjectReference()));
+            stateManager.addChange(new PObject(newFont, newFont.getPObjectReference()), isNew);
             library.addObject(newFont, newFont.getPObjectReference());
         }
 

@@ -43,7 +43,7 @@ public class DocumentBuilder {
                         document,
                         out,
                         documentLength);
-
+                channel.close();
                 return documentLength + appendedLength;
             }
         } catch (IOException | InterruptedException e) {

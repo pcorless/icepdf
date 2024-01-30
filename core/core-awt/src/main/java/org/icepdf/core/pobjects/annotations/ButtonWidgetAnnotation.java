@@ -66,7 +66,7 @@ public class ButtonWidgetAnnotation extends AbstractWidgetAnnotation<ButtonField
         }
         // add this annotation to the state manager.
         StateManager stateManager = library.getStateManager();
-        stateManager.addChange(new PObject(this, this.getPObjectReference()));
+        stateManager.addChange(new PObject(this, this.getPObjectReference()), isNew);
 
         Name selectedName = appearance.getSelectedName();
         // check boxes will have a V entry which

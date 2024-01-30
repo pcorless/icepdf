@@ -124,6 +124,7 @@ public class FullUpdater {
                 writer.writeFullTrailer();
             }
         }
+        output.close();
 
         ImageReference.useProxy = useImagePoxy;
 

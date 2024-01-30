@@ -198,7 +198,9 @@ public interface DocumentViewModel {
      * Removes an annotation component the list of floating annotation components that are painted in the DocumentView.
      * @param annotationComponent annotation component to remove
      */
-    void removeDocumentViewAnnotationComponent(AbstractPageViewComponent pageViewComponent, PageViewAnnotationComponent annotationComponent);
+    void removeDocumentViewAnnotationComponent(DocumentView parentDocumentView,
+                                               AbstractPageViewComponent pageViewComponent,
+                                               PageViewAnnotationComponent annotationComponent);
     void removeAllFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent);
 
     /**

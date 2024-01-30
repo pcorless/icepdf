@@ -217,11 +217,12 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
         annotation.setInkPath(tInkPath);
         annotation.setOpacity(opacity);
 
-        AffineTransform pageTransform = getToPageSpaceTransform();
+        AffineTransform toPageSpaceTransform = getToPageSpaceTransform();
+        AffineTransform pageTransform = getPageTransform();
 
         // pass outline shapes and bounds to create the highlight shapes
         annotation.setBBox(tBbox);
-        annotation.resetAppearanceStream(pageTransform);
+        annotation.resetAppearanceStream(toPageSpaceTransform);
 
         // create the annotation object.
         MarkupAnnotationComponent comp = (MarkupAnnotationComponent)
