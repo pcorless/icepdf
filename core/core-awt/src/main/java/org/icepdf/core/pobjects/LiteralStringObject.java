@@ -17,7 +17,6 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontFile;
-import org.icepdf.core.util.StringOffsetBuilder;
 import org.icepdf.core.util.Utils;
 
 /**
@@ -178,26 +177,26 @@ public class LiteralStringObject extends AbstractStringObject {
      * @return StringBuffer which contains all renderable characters for the
      *         given font.
      */
-    public StringOffsetBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
+    public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
 
         if (fontFormat == Font.SIMPLE_FORMAT
                 || (font.getByteEncoding() == FontFile.ByteEncoding.ONE_BYTE)) {
-            return new StringOffsetBuilder(stringData, 1);
+            return stringData;
         } else if (fontFormat == Font.CID_FORMAT) {
             int length = getLength();
             int charValue;
-            StringOffsetBuilder tmp = new StringOffsetBuilder(length);
+            StringBuilder tmp = new StringBuilder(length);
             if (font.getByteEncoding() == FontFile.ByteEncoding.MIXED_BYTE) {
                 int charOffset = 1;
                 for (int i = 0; i < length; i += charOffset) {
                     // check range for possible 2 byte char.
                     charValue = getUnsignedInt(i, 1);
                     if (font.canDisplay((char) charValue)) {
-                        tmp.append((char) charValue, 1);
+                        tmp.append((char) charValue);
                     } else {
                         int charValue2 = getUnsignedInt(i, 2);
                         if (font.canDisplay((char) charValue2)) {
-                            tmp.append((char) charValue2, 2);
+                            tmp.append((char) charValue2);
                             i += 1;
                         }
                     }
@@ -208,7 +207,7 @@ public class LiteralStringObject extends AbstractStringObject {
                 for (int i = 0; i < length; i += charOffset) {
                     int charValue2 = getUnsignedInt(i, 2);
                     if (font.canDisplay((char) charValue2)) {
-                        tmp.append((char) charValue2, 2);
+                        tmp.append((char) charValue2);
                     }
                 }
             }

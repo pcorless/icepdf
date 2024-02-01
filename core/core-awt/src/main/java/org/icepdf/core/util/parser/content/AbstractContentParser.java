@@ -27,7 +27,6 @@ import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.StringOffsetBuilder;
 import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorCallback;
 
 import java.awt.*;
@@ -1460,7 +1459,7 @@ public abstract class AbstractContentParser {
      * @param shapes           collection of all shapes for page content being parsed.
      */
     private static TextSprite drawString(
-            StringOffsetBuilder displayText,
+            StringBuilder displayText,
             TextMetrics textMetrics,
             TextState textState,
             Shapes shapes,

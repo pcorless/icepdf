@@ -17,7 +17,6 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontFile;
-import org.icepdf.core.util.StringOffsetBuilder;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -191,7 +190,7 @@ public class HexStringObject extends AbstractStringObject {
      * @return StringBuffer which contains all renderaable characters for the
      * given font.
      */
-    public StringOffsetBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
+    public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
         if (fontFormat == Font.SIMPLE_FORMAT) {
             stringData = new StringBuilder(normalizeHex(stringData, 2).toString());
             int charOffset = 2;
@@ -214,14 +213,14 @@ public class HexStringObject extends AbstractStringObject {
                     lastIndex += charOffset;
                 }
             }
-            return new StringOffsetBuilder(tmp, 2);
+            return tmp;
         } else if (fontFormat == Font.CID_FORMAT) {
             stringData = new StringBuilder(normalizeHex(stringData, 4).toString());
             int charOffset = 2;
             int length = getLength();
             int charValue;
-            StringOffsetBuilder tmp = new StringOffsetBuilder(length);
-            // attempt to detect multibyte encoded strings.
+            StringBuilder tmp = new StringBuilder(length);
+            // attempt to detect mulibyte encoded strings.
             for (int i = 0; i < length; i += charOffset) {
                 String first = stringData.substring(i, i + 2);
                 if (first.charAt(0) != '0') {
@@ -229,11 +228,11 @@ public class HexStringObject extends AbstractStringObject {
                     charValue = getUnsignedInt(first);
                     if (font.getByteEncoding() == FontFile.ByteEncoding.MIXED_BYTE &&
                             font.canDisplay((char) charValue) && font.getSource() != null) {
-                        tmp.append((char) charValue, 2);
+                        tmp.append((char) charValue);
                     } else {
                         charValue = getUnsignedInt(i, 4);
                         if (font.canDisplay((char) charValue)) {
-                            tmp.append((char) charValue, 4);
+                            tmp.append((char) charValue);
                             i += 2;
                         }
                     }
@@ -241,7 +240,7 @@ public class HexStringObject extends AbstractStringObject {
                     charValue = getUnsignedInt(i, 4);
                     // should never have a 4 digit zero value.
                     if (font.canDisplay((char) charValue)) {
-                        tmp.append((char) charValue, 4);
+                        tmp.append((char) charValue);
                         i += 2;
                     }
                 }

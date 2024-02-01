@@ -17,7 +17,6 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.security.SecurityManager;
-import org.icepdf.core.util.StringOffsetBuilder;
 
 /**
  * <p>This class represents a PDF String Object.  A <code>StringObject</code>
@@ -87,10 +86,10 @@ public interface StringObject {
      *                   the text.  Valid values are CID_FORMAT and SIMPLE_FORMAT for Adobe
      *                   Composite and Simple font types respectively
      * @param font       font used to render the literal string data.
-     * @return StringOffsetBuilder which contains all renderable characters for the
-     *         given font and byte offsets.
+     * @return StringBuffer which contains all renderable characters for the
+     * given font.
      */
-    StringOffsetBuilder getLiteralStringBuffer(final int fontFormat, FontFile font);
+    StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font);
 
     /**
      * The length of the underlying objects data.
