@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.views;
 
+import org.icepdf.core.CombinedMemento;
 import org.icepdf.core.Memento;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
@@ -22,17 +23,17 @@ import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.ri.common.UndoCaretaker;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.common.views.annotations.MarkupGlueComponent;
 import org.icepdf.ri.common.views.annotations.PageViewAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * <p>The AbstractDocumentViewModel is responsible for keeping the state of the
@@ -101,6 +102,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     public HashMap<AbstractPageViewComponent, ArrayList<PageViewAnnotationComponent>> getDocumentViewAnnotationComponents() {
         return documentViewAnnotationComponents;
     }
+
     @Override
     public ArrayList<PageViewAnnotationComponent> getDocumentViewAnnotationComponents(AbstractPageViewComponent pageViewComponent) {
         return documentViewAnnotationComponents.get(pageViewComponent);
@@ -149,9 +151,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     }
 
     public void removeAllFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent) {
-        if (!documentViewAnnotationComponents.containsKey(pageViewComponent)) {
-            documentViewAnnotationComponents.remove(pageViewComponent);
-        }
+        documentViewAnnotationComponents.remove(pageViewComponent);
     }
 
     //todo clean up name and why this isn't called.
@@ -414,6 +414,33 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     }
 
     public void addMemento(Memento oldMementoState, Memento newMementoState) {
-        undoCaretaker.addState(oldMementoState, newMementoState);
+        final Memento filteredOld = filterMemento(oldMementoState);
+        final Memento filteredNew = filterMemento(newMementoState);
+        if (filteredOld != null && filteredNew != null) {
+            undoCaretaker.addState(filteredOld, filteredNew);
+        }
+    }
+
+    private Memento filterMemento(final Memento memento) {
+        if (memento instanceof AnnotationState) {
+            final AnnotationState state = (AnnotationState) memento;
+            if (state.getOperation() == AnnotationState.Operation.MOVE ||
+                    !(state.getAnnotationComponent() instanceof PopupAnnotationComponent)) {
+                return memento;
+            } else {
+                return null;
+            }
+        } else if (memento instanceof CombinedMemento) {
+            final CombinedMemento newMemento =
+                    new CombinedMemento(((CombinedMemento) memento).getMementos().stream().map(this::filterMemento)
+                            .filter(Objects::nonNull).collect(Collectors.toList()));
+            if (newMemento.getMementos().isEmpty()) {
+                return null;
+            } else {
+                return newMemento;
+            }
+        } else {
+            return memento;
+        }
     }
 }

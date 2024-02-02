@@ -811,7 +811,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 }
             }
         } else if (PropertyConstants.ANNOTATION_DELETED.equals(evt.getPropertyName())) {
-            final AnnotationComponent ac = ((AnnotationComponent) evt.getOldValue());
+            final AnnotationComponent ac = (AnnotationComponent) evt.getOldValue();
             if (ac instanceof MarkupAnnotationComponent) {
                 if (ac.getAnnotation() != null) {
                     if (containsRefs(Collections.singleton(ac.getAnnotation().getPObjectReference()))) {
@@ -1242,8 +1242,12 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         setHeaderLabelsFontSize(size);
     }
 
-    public int getFontSize() {
+    public int getTextAreaFontSize() {
         return textArea.getFont().getSize();
+    }
+
+    public int getHeaderFontSize(){
+        return titleLabel.getFont().getSize();
     }
 
     class PopupTreeListener extends MouseAdapter {

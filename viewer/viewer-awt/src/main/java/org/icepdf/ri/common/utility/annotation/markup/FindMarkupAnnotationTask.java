@@ -146,67 +146,70 @@ public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
                                 Object annotation = library.getObject(annotationReference);
                                 if (annotation instanceof MarkupAnnotation) {
                                     MarkupAnnotation markupAnnotation = (MarkupAnnotation) annotation;
-                                    totalAnnotations++;
-                                    // apply any filters
-                                    // author
-                                    boolean filter = false;
-                                    if (filterAuthor == MarkupAnnotationPanel.FilterAuthorColumn.AUTHOR_OTHER) {
-                                        if (markupAnnotation.getTitleText() == null ||
-                                                markupAnnotation.getTitleText().equalsIgnoreCase(userName)) {
-                                            filter = markupAnnotation.getReplyingAnnotations(true).stream().noneMatch(m ->
-                                                    m.getTitleText() != null && !m.getTitleText().equalsIgnoreCase(userName));
+                                    if (!markupAnnotation.isDeleted()) {
+                                        totalAnnotations++;
+
+                                        // apply any filters
+                                        // author
+                                        boolean filter = false;
+                                        if (filterAuthor == MarkupAnnotationPanel.FilterAuthorColumn.AUTHOR_OTHER) {
+                                            if (markupAnnotation.getTitleText() == null ||
+                                                    markupAnnotation.getTitleText().equalsIgnoreCase(userName)) {
+                                                filter = markupAnnotation.getReplyingAnnotations(true).stream().noneMatch(m ->
+                                                        m.getTitleText() != null && !m.getTitleText().equalsIgnoreCase(userName));
+                                            }
+                                        } else if (filterAuthor == MarkupAnnotationPanel.FilterAuthorColumn.AUTHOR_CURRENT) {
+                                            if (markupAnnotation.getTitleText() == null ||
+                                                    !markupAnnotation.getTitleText().equalsIgnoreCase(userName)) {
+                                                filter = markupAnnotation.getReplyingAnnotations(true).stream().noneMatch(m ->
+                                                        m.getTitleText() != null && m.getTitleText().equalsIgnoreCase(userName));
+                                            }
                                         }
-                                    } else if (filterAuthor == MarkupAnnotationPanel.FilterAuthorColumn.AUTHOR_CURRENT) {
-                                        if (markupAnnotation.getTitleText() == null ||
-                                                !markupAnnotation.getTitleText().equalsIgnoreCase(userName)) {
-                                            filter = markupAnnotation.getReplyingAnnotations(true).stream().noneMatch(m ->
-                                                    m.getTitleText() != null && m.getTitleText().equalsIgnoreCase(userName));
-                                        }
-                                    }
-                                    // color
-                                    if (filterColor != null) {
-                                        if (markupAnnotation.getColor() == null ||
-                                                markupAnnotation.getColor().getRGB() != filterColor.getRGB()) {
-                                            filter = true;
-                                        }
-                                    }
-                                    // filter by type
-                                    if (filterType != MarkupAnnotationPanel.FilterSubTypeColumn.ALL) {
-                                        if (markupAnnotation.getSubType() != null) {
-                                            String subType = markupAnnotation.getSubType().toString();
-                                            if (!subType.equalsIgnoreCase(filterType.toString())) {
+                                        // color
+                                        if (filterColor != null) {
+                                            if (markupAnnotation.getColor() == null ||
+                                                    markupAnnotation.getColor().getRGB() != filterColor.getRGB()) {
                                                 filter = true;
                                             }
-                                        } else {
-                                            filter = true;
                                         }
-                                    }
-                                    if (PRIVATE_PROPERTY_ENABLED &&
-                                            filterVisibility != MarkupAnnotationPanel.FilterVisibilityColumn.ALL) {
-                                        if ((markupAnnotation.getFlagPrivateContents()
-                                                && filterVisibility == MarkupAnnotationPanel.FilterVisibilityColumn.PUBLIC)
-                                                || (!markupAnnotation.getFlagPrivateContents()
-                                                && filterVisibility == MarkupAnnotationPanel.FilterVisibilityColumn.PRIVATE)) {
-                                            filter = true;
+                                        // filter by type
+                                        if (filterType != MarkupAnnotationPanel.FilterSubTypeColumn.ALL) {
+                                            if (markupAnnotation.getSubType() != null) {
+                                                String subType = markupAnnotation.getSubType().toString();
+                                                if (!subType.equalsIgnoreCase(filterType.toString())) {
+                                                    filter = true;
+                                                }
+                                            } else {
+                                                filter = true;
+                                            }
                                         }
-                                    }
-                                    // app search regex
-                                    if (isRegex && searchPattern != null) {
-                                        Matcher matcher = searchPattern.matcher(
-                                                ((MarkupAnnotation) annotation).getContents());
-                                        filter = !matcher.find();
-                                    } else if (searchPattern != null) {
-                                        String annotationText = ((MarkupAnnotation) annotation).getContents();
-                                        if (isCaseSensitive && annotationText != null) {
-                                            filter = !annotationText.contains(searchPattern.pattern());
-                                        } else if (annotationText != null) {
-                                            filter = !annotationText.toLowerCase().contains(
-                                                    searchPattern.pattern().toLowerCase());
+                                        if (PRIVATE_PROPERTY_ENABLED &&
+                                                filterVisibility != MarkupAnnotationPanel.FilterVisibilityColumn.ALL) {
+                                            if ((markupAnnotation.getFlagPrivateContents()
+                                                    && filterVisibility == MarkupAnnotationPanel.FilterVisibilityColumn.PUBLIC)
+                                                    || (!markupAnnotation.getFlagPrivateContents()
+                                                    && filterVisibility == MarkupAnnotationPanel.FilterVisibilityColumn.PRIVATE)) {
+                                                filter = true;
+                                            }
                                         }
-                                    }
-                                    // apply the filter flag
-                                    if (!filter) {
-                                        markupAnnotations.add(markupAnnotation);
+                                        // app search regex
+                                        if (isRegex && searchPattern != null) {
+                                            Matcher matcher = searchPattern.matcher(
+                                                    ((MarkupAnnotation) annotation).getContents());
+                                            filter = !matcher.find();
+                                        } else if (searchPattern != null) {
+                                            String annotationText = ((MarkupAnnotation) annotation).getContents();
+                                            if (isCaseSensitive && annotationText != null) {
+                                                filter = !annotationText.contains(searchPattern.pattern());
+                                            } else if (annotationText != null) {
+                                                filter = !annotationText.toLowerCase().contains(
+                                                        searchPattern.pattern().toLowerCase());
+                                            }
+                                        }
+                                        // apply the filter flag
+                                        if (!filter) {
+                                            markupAnnotations.add(markupAnnotation);
+                                        }
                                     }
                                 }
                             }

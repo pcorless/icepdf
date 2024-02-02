@@ -16,7 +16,6 @@
 package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.PDate;
-import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.util.Defs;
@@ -30,7 +29,6 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.geom.AffineTransform;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Logger;
 
@@ -66,6 +64,9 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
                         "org.icepdf.core.annotations.interactive.popup.enabled", true);
     }
 
+    // Used to keep a reference to the popupAnnotationComponent while the annotation is deleted, in case of an undo
+    private PopupAnnotationComponent popupAnnotationComponent;
+
     public MarkupAnnotationComponent(T annotation,
                                      DocumentViewController documentViewController,
                                      AbstractPageViewComponent pageViewComponent) {
@@ -91,19 +92,9 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
         if (annotation != null) {
             PopupAnnotation popup = annotation.getPopupAnnotation();
             if (popup != null) {
-                // find the popup component
-                ArrayList<AbstractAnnotationComponent> annotationComponents = pageViewComponent.getAnnotationComponents();
-                Reference compReference;
-                Reference popupReference = popup.getPObjectReference();
-                for (AnnotationComponent annotationComponent : annotationComponents) {
-                    compReference = annotationComponent.getAnnotation().getPObjectReference();
-                    // find the component and toggle it's visibility, null check just encase compRef is direct.
-                    if (compReference != null && compReference.equals(popupReference)) {
-                        if (annotationComponent instanceof PopupAnnotationComponent) {
-                            PopupAnnotationComponent popupComponent = ((PopupAnnotationComponent) annotationComponent);
-                            popupComponent.resetAppearanceShapes();
-                        }
-                    }
+                final AnnotationComponent popupComponent = getPopupAnnotationComponent();
+                if (popupComponent != null) {
+                    popupComponent.resetAppearanceShapes();
                 }
             }
             ((MarkupAnnotationPopupMenu) contextMenu).refreshColorMenu();
@@ -122,19 +113,11 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
             }
 
             // find the popup component
-            ArrayList<AbstractAnnotationComponent> annotationComponents = pageViewComponent.getAnnotationComponents();
-            Reference compReference;
-            Reference popupReference = popup.getPObjectReference();
-            for (AnnotationComponent annotationComponent : annotationComponents) {
-                compReference = annotationComponent.getAnnotation().getPObjectReference();
-                // find the component and toggle it's visibility, null check just encase compRef is direct.
-                if (compReference != null && compReference.equals(popupReference)) {
-                    if (annotationComponent instanceof PopupAnnotationComponent) {
-                        return ((PopupAnnotationComponent) annotationComponent);
-                    }
-                    break;
-                }
+            final AnnotationComponent component = pageViewComponent.getComponentFor(popup);
+            if (component instanceof PopupAnnotationComponent) {
+                this.popupAnnotationComponent = (PopupAnnotationComponent) component;
             }
+            return popupAnnotationComponent;
         }
         return null;
     }
@@ -187,6 +170,7 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
             // add them to the container, using absolute positioning.
             documentViewController.addNewAnnotation(comp);
             pageViewComponent.revalidate();
+            this.popupAnnotationComponent = comp;
             return comp;
         } else {
             return null;

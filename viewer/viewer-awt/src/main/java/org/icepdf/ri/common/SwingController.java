@@ -5706,26 +5706,14 @@ public class SwingController extends ComponentAdapter
                     setEnabled(deleteMenuItem, false);
                 }
                 break;
-            // annotation bounds have changed.
+            // annotation bounds have changed or annotation as been deleted or added.
             case PropertyConstants.ANNOTATION_BOUNDS:
-                if (documentViewController.getToolMode() ==
-                        DocumentViewModelImpl.DISPLAY_TOOL_SELECTION) {
-                    AnnotationState oldAnnotationState = (AnnotationState) oldValue;
-                    AnnotationState newAnnotationState = (AnnotationState) newValue;
-
-                    // saves the state changes back to the document structure.
-                    newAnnotationState.apply(newAnnotationState);
-                    newAnnotationState.restore();
-
-                    // add new states to care taker implementation.
-                    documentViewController.getDocumentViewModel()
-                            .addMemento(oldAnnotationState,
-                                    newAnnotationState);
-                }
+            case PropertyConstants.ANNOTATION_DELETED:
+            case PropertyConstants.ANNOTATION_ADDED:
                 // check to see if undo/redo can be enabled/disabled.
                 reflectUndoCommands();
                 break;
-            // divider has been moved, save the location as it changes.
+                // divider has been moved, save the location as it changes.
             case JSplitPane.LAST_DIVIDER_LOCATION_PROPERTY:
                 JSplitPane sourceSplitPane = (JSplitPane) evt.getSource();
                 int dividerLocation = (Integer) evt.getNewValue();
