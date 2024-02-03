@@ -170,17 +170,23 @@ public class ImageUtility {
             maskMinGreen = maskMinRGB[1];
             maskMinBlue = maskMinRGB[2];
         }
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int argb = image.getRGB(x, y);
+
+        int[] srcBand = new int[width];
+        // iterate over each band to apply the mask
+        for (int i = 0; i < height; i++) {
+            image.getRGB(0, i, width, 1, srcBand, 0, width);
+            // apply the soft mask blending
+            for (int j = 0; j < width; j++) {
+                int argb = srcBand[j];
                 int alpha = ((argb >> 24) & 0xFF);
                 if (alpha == 0x00) {
                     argb = maskMinRed << 16
                             | maskMinGreen << 8
                             | maskMinBlue;
-                    image.setRGB(x, y, argb);
+                    srcBand[j] = argb;
                 }
             }
+            image.setRGB(0, i, width, 1, srcBand, 0, width);
         }
         imageStream.setDecodedImage(image);
     }
