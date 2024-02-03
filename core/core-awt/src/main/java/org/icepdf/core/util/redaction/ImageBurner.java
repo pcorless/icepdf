@@ -2,6 +2,7 @@ package org.icepdf.core.util.redaction;
 
 import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.graphics.images.ImageDecoder;
+import org.icepdf.core.pobjects.graphics.images.ImageParams;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
@@ -40,14 +41,16 @@ public class ImageBurner {
 
     private static ImageStream burnImage(ImageStream imageStream, BufferedImage image, GeneralPath redactionPath,
                                          boolean copyImage) {
-
+        ImageParams imageParams = imageStream.getImageParams();
         Rectangle2D bbox = imageStream.getNormalizedBounds();
         // image coords need to be adjusted for any layout scaling
         double xScale = image.getWidth() / bbox.getWidth();
         double yScale = image.getHeight() / bbox.getHeight();
         // try a new image to get around index colour space issue.
-        if (copyImage) {
+        if (copyImage && !imageParams.isColorKeyMask()) {
             image = ImageUtility.createBufferedImage(image, BufferedImage.TYPE_INT_RGB);
+        } else if (imageParams.isColorKeyMask()) {
+            image = ImageUtility.createBufferedImage(image, BufferedImage.TYPE_INT_ARGB);
         }
         Graphics2D imageGraphics = image.createGraphics();
         imageGraphics.setColor(Color.BLACK);
@@ -62,9 +65,10 @@ public class ImageBurner {
             imageStream.getLibrary().getStateManager().addChange(new PObject(imageStream,
                     imageStream.getPObjectReference()));
         }
-        ImageUtility.displayImage(imageStream.getDecodedImage(),
-                imageStream.getPObjectReference().toString() + image.getWidth() +
-                        " " + "x" + image.getHeight());
+        // check if we need to update the colorKeyMask.
+        if (imageParams.isColorKeyMask()) {
+            ImageUtility.encodeColorKeyMask(imageStream);
+        }
         return imageStream;
     }
 }

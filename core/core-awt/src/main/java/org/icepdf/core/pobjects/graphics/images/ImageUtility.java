@@ -146,7 +146,46 @@ public class ImageUtility {
         }
     }
 
-    private static BufferedImage alterBufferedImageAlpha(BufferedImage bi, int[] maskMinRGB, int[] maskMaxRGB) {
+    /**
+     * Reverse encode the color key mask.  Important when re-encoding images after authentication.
+     *
+     * @param imageStream image data to alter.
+     */
+    public static void encodeColorKeyMask(ImageStream imageStream) {
+        ImageParams imageParams = imageStream.getImageParams();
+        BufferedImage image = imageStream.getDecodedImage();
+
+        ColorKeyMask colorKeyMask = imageParams.getColorKeyMask();
+        int[] maskMinRGB = colorKeyMask.getMaskMinRGB();
+        int[] maskMaxRGB = colorKeyMask.getMaskMinRGB();
+
+        int width = image.getWidth();
+        int height = image.getHeight();
+
+        int maskMinRed = 0xFF;
+        int maskMinGreen = 0xFF;
+        int maskMinBlue = 0xFF;
+        if (maskMinRGB != null && maskMaxRGB != null) {
+            maskMinRed = maskMinRGB[0];
+            maskMinGreen = maskMinRGB[1];
+            maskMinBlue = maskMinRGB[2];
+        }
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int argb = image.getRGB(x, y);
+                int alpha = ((argb >> 24) & 0xFF);
+                if (alpha == 0x00) {
+                    argb = maskMinRed << 16
+                            | maskMinGreen << 8
+                            | maskMinBlue;
+                    image.setRGB(x, y, argb);
+                }
+            }
+        }
+        imageStream.setDecodedImage(image);
+    }
+
+    private static BufferedImage applyColorKeyMask(BufferedImage bi, int[] maskMinRGB, int[] maskMaxRGB) {
 
         // check for alpha, if not we need to create a copy
         if (!hasAlpha(bi)) {
@@ -1059,7 +1098,7 @@ public class ImageUtility {
                 copyDecodedStreamBytesIntoRGB(data, dataToRGB);
                 // apply alpha data.
                 if (usingAlpha) {
-                    img = alterBufferedImageAlpha(img, maskMinRGB, maskMaxRGB);
+                    img = applyColorKeyMask(img, maskMinRGB, maskMaxRGB);
                 }
             }
         } else if (colourSpace instanceof DeviceCMYK) {
@@ -1111,7 +1150,7 @@ public class ImageUtility {
                     ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, true, -1,
                             db.getDataType());
                     img = new BufferedImage(cm, wr, false, null);
-                    img = alterBufferedImageAlpha(img, maskMinRGB, maskMaxRGB);
+                    img = applyColorKeyMask(img, maskMinRGB, maskMaxRGB);
                 } else {
                     DataBuffer db = new DataBufferByte(data, dataLength);
                     WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));

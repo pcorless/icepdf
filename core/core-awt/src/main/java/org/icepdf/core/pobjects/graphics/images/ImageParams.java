@@ -177,6 +177,10 @@ public class ImageParams extends Dictionary {
         return decode;
     }
 
+    public boolean isColorKeyMask() {
+        return library.getObject(entries, MASK_KEY) instanceof List;
+    }
+
     public ColorKeyMask getColorKeyMask() {
         Object maskObj = library.getObject(entries, MASK_KEY);
         if (maskObj instanceof List) {
