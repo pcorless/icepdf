@@ -156,9 +156,6 @@ public class RedactionAnnotation extends MarkupAnnotation {
             return;
         }
 
-        // todo: Revisit as there is a lot of duplicate code here also found in textMarkupAnnotations, however
-        // this may change when image redaction code is added.
-
         Appearance appearance = appearances.get(currentAppearance);
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
         appearanceState.setShapes(new Shapes());

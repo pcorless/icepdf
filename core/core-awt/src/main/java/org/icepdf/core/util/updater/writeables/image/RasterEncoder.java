@@ -35,11 +35,6 @@ public class RasterEncoder implements ImageEncoder {
         if (isGrayScaleImage(imageStream)) {
             byteArray = createFromGrayScaleImage(imageStream);
         } else {
-            // may need to look at the mask value, if arrray we have ColorKeyMask and are rgba?
-//            BufferedImage image = imageStream.getDecodedImage();
-//            ImageUtility.displayImage(imageStream.getDecodedImage(),
-//                    imageStream.getPObjectReference().toString() + image.getWidth() +
-//                            " " + "x" + image.getHeight());
             byteArray = createFromRGBImage(imageStream);
         }
         byte[] outputData = createFlateEncodedBytes(byteArray);

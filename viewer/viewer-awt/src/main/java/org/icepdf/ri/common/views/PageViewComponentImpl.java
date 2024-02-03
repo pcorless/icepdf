@@ -153,9 +153,9 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                 break;
             case DocumentViewModel.DISPLAY_TOOL_REDACTION_ANNOTATION:
                 // handler is responsible for the initial creation of the annotation
-                currentToolHandler = new TextRedactionAnnotationHandler(
+                currentToolHandler = new RedactionAnnotationHandler(
                         documentViewController, this);
-                ((TextRedactionAnnotationHandler) currentToolHandler).createMarkupAnnotation(null);
+                ((RedactionAnnotationHandler) currentToolHandler).createMarkupAnnotation(null);
                 documentViewController.clearSelectedText();
                 break;
 
@@ -237,8 +237,9 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     public AnnotationComponent getComponentFor(Annotation annot) {
         if (annotationToComponent == null) {
             initializeAnnotationsComponent(getPage());
+            return annotationToComponent.get(annot.getPObjectReference());
         }
-        return annotationToComponent.get(annot.getPObjectReference());
+        return null;
     }
 
     /**

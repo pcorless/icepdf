@@ -347,7 +347,7 @@ public class Utils {
 
     /**
      * Utility method for decrypting a String object found in a dictionary
-     * as a plaing text.  The string can be encrypted as well as octal encoded,
+     * as a plain text.  The string can be encrypted as well as octal encoded,
      * which is handle by this method.
      *
      * @param library      document library used for encryption handling.
@@ -397,7 +397,7 @@ public class Utils {
     }
 
     /**
-     * Convert a utf-8 encoded string into an octal encded byte[] array.
+     * Convert an utf-8 encoded string into an octal encoded byte[] array.
      *
      * @param literalString string to convert.
      * @return converted string value.

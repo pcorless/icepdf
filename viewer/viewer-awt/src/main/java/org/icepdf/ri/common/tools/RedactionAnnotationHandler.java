@@ -32,12 +32,12 @@ import java.util.ArrayList;
  *
  * @since 7.2
  */
-public class TextRedactionAnnotationHandler extends HighLightAnnotationHandler {
+public class RedactionAnnotationHandler extends HighLightAnnotationHandler {
 
     private boolean isOverImage = false;
 
-    public TextRedactionAnnotationHandler(DocumentViewController documentViewController,
-                                          AbstractPageViewComponent pageViewComponent) {
+    public RedactionAnnotationHandler(DocumentViewController documentViewController,
+                                      AbstractPageViewComponent pageViewComponent) {
         super(documentViewController, pageViewComponent);
         markupSubType = Annotation.SUBTYPE_REDACT;
         selectionBoxColour = Color.BLACK;
@@ -174,8 +174,6 @@ public class TextRedactionAnnotationHandler extends HighLightAnnotationHandler {
             redactionBounds.add(rectToDraw);
 
             convertToPageSpace(redactionBounds, highlightPath);
-
-            // todo cleanup duplication
 
             AffineTransform pageTransform = getToPageSpaceTransform();
             annotation.setColor(Color.BLACK);
