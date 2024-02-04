@@ -488,7 +488,7 @@ public abstract class AbstractContentParser {
                                               boolean viewParse, // events
                                               AtomicInteger imageIndex, Page page,
                                               ContentStreamRedactorCallback contentStreamRedactorCallback,
-                                              boolean inTextBlock) throws InterruptedException {
+                                              boolean inTextBlock) throws InterruptedException, IOException {
         Name xobjectName = (Name) stack.pop();
         if (resources == null) return graphicState;
         // Form XObject
@@ -523,7 +523,12 @@ public abstract class AbstractContentParser {
             // resources reference as a result we pass in the current
             // one in the hope that any resources can be found.
             formXObject.setParentResources(resources);
-            formXObject.init(contentStreamRedactorCallback);
+            // need a new instance, so we don't corrupt the stream offset.
+            ContentStreamRedactorCallback formContentStreamRedactorCallback = null;
+            if (contentStreamRedactorCallback != null) {
+                formContentStreamRedactorCallback = contentStreamRedactorCallback.createChildInstance();
+            }
+            formXObject.init(formContentStreamRedactorCallback);
             // 2. concatenate matrix entry with the current CTM
             AffineTransform af = new AffineTransform(graphicState.getCTM());
             af.concatenate(formXObject.getMatrix());
@@ -602,6 +607,7 @@ public abstract class AbstractContentParser {
             // Some Do object will have images, and we need to make sure we account for localized space.
             if (contentStreamRedactorCallback != null &&
                     formXObject.getShapes() != null) {
+                formContentStreamRedactorCallback.endContentStream();
                 Shapes pageShapes = formXObject.getShapes();
                 ArrayList<DrawCmd> xObjectShapes = pageShapes.getShapes();
                 for (DrawCmd object : xObjectShapes) {
@@ -776,7 +782,7 @@ public abstract class AbstractContentParser {
             // A line width of 0 shall denote the thinnest line that can be rendered at device resolution: 1 device
             // pixel wide.  0.15f is about the thinnest line we can draw reliably at low zoom levels
             if (scale == 0f) {
-                scale = (float)(0.15f / graphicState.getCTM().getScaleX());
+                scale = (float) (0.15f / graphicState.getCTM().getScaleX());
             }
             graphicState.setLineWidth(scale);
             setStroke(shapes, graphicState);
@@ -788,7 +794,8 @@ public abstract class AbstractContentParser {
         setStroke(shapes, graphicState);
     }
 
-    protected static void consume_gs(GraphicsState graphicState, Stack<Object> stack, Resources resources, Shapes shapes) {
+    protected static void consume_gs(GraphicsState graphicState, Stack<Object> stack, Resources resources,
+                                     Shapes shapes) {
         Object gs = stack.pop();
         if (gs instanceof Name && resources != null) {
             // Get ExtGState and merge it with
@@ -1820,7 +1827,7 @@ public abstract class AbstractContentParser {
      * @param shapes        current shapes stack
      * @param graphicState  current graphics state.
      * @param geometricPath current path.
-     * @throws InterruptedException            thread interrupted.
+     * @throws InterruptedException thread interrupted.
      */
     private static void commonFill(Shapes shapes, GraphicsState graphicState, GeneralPath geometricPath)
             throws InterruptedException {

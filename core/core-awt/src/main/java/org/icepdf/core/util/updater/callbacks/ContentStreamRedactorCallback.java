@@ -54,6 +54,10 @@ public class ContentStreamRedactorCallback {
         this.library = library;
     }
 
+    public ContentStreamRedactorCallback createChildInstance() {
+        return new ContentStreamRedactorCallback(this.library, this.redactionAnnotations);
+    }
+
     public void startContentStream(Stream stream) throws IOException {
         if (currentStream != null) {
             endContentStream();
