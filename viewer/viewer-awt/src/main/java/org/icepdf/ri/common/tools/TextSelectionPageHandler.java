@@ -62,7 +62,7 @@ public class TextSelectionPageHandler extends TextSelection
     }
 
     /**
-     * When mouse is double clicked we select the word the mouse if over.  When
+     * When mouse is double-clicked we select the word the mouse if over.  When
      * the mouse is triple clicked we select the line of text that the mouse
      * is over.
      */
