@@ -19,7 +19,9 @@ import static org.icepdf.core.pobjects.graphics.images.FaxDecoder.K_KEY;
 import static org.icepdf.core.pobjects.graphics.images.ImageParams.*;
 
 /**
- * Raw raster encoder,  not the best compression but gets the job done in a pinch.
+ * Raw raster encoder,  not the best compression but gets the job done.
+ *
+ * @since 7.2.0
  */
 public class RasterEncoder implements ImageEncoder {
 

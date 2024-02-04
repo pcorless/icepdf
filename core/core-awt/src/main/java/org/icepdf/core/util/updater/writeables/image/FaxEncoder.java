@@ -17,6 +17,8 @@ import static org.icepdf.core.pobjects.graphics.images.ImageParams.DECODE_KEY;
 /**
  * Encode the given image stream as a CCITTFax images.   The assumption is that the image stream is already
  * of type CCITTFax or JBig2.
+ *
+ * @since 7.2.0
  */
 public class FaxEncoder implements ImageEncoder {
 

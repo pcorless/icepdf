@@ -9,6 +9,12 @@ import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
 
+/**
+ * Sets up the callback needed to rewrite the content stream as text and image that has been marked for redaction.
+ * Text and image burning is kicked off by this process.
+ *
+ * @since 7.2.0
+ */
 public class RedactionContentBurner {
     private static final Logger logger =
             Logger.getLogger(RedactionContentBurner.class.toString());

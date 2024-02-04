@@ -6,9 +6,13 @@ import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 import org.icepdf.core.pobjects.structure.Header;
+import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -71,8 +75,8 @@ public class BaseWriter {
 
     public void initializeWriters() {
         // reuse instances of primitive pdf types.
-        streamWriter = new StreamWriter();
-        imageStreamWriter = new ImageStreamWriter();
+        streamWriter = new StreamWriter(securityManager);
+        imageStreamWriter = new ImageStreamWriter(securityManager);
         headerWriter = new HeaderWriter();
         nameWriter = new NameWriter();
         dictionaryWriter = new DictionaryWriter();
@@ -242,6 +246,34 @@ public class BaseWriter {
             val = ((int) str.charAt(i)) & 0xFF;
             output.write(val);
         }
+    }
+
+    protected byte[] encryptStream(Stream stream) throws IOException {
+        // check if we need to encrypt the stream
+        if (securityManager != null) {
+            DictionaryEntries decodeParams;
+            Library library = stream.getLibrary();
+            if (stream.getEntries().get(Stream.DECODEPARAM_KEY) != null) {
+                // needed to check for a custom crypt filter
+                decodeParams = library.getDictionary(stream.getEntries(),
+                        Stream.DECODEPARAM_KEY);
+            } else {
+                decodeParams = new DictionaryEntries();
+            }
+            InputStream decryptedStream = securityManager.encryptInputStream(
+                    stream.getPObjectReference(),
+                    securityManager.getDecryptionKey(),
+                    decodeParams,
+                    new ByteArrayInputStream(stream.getRawBytes()), true);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            int nRead;
+            byte[] data = new byte[16384];
+            while ((nRead = decryptedStream.read(data, 0, data.length)) != -1) {
+                out.write(data, 0, nRead);
+            }
+            return out.toByteArray();
+        }
+        return null;
     }
 
     /**

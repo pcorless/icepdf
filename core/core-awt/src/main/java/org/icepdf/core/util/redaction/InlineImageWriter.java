@@ -10,7 +10,9 @@ import org.icepdf.core.util.updater.writeables.image.ImageEncoderFactory;
 import java.io.IOException;
 
 /**
- *  Burn the redactionPath into the given inline image content.
+ * Burn the redactionPath into the given inline image content.
+ *
+ * @since 7.2.0
  */
 public class InlineImageWriter {
 

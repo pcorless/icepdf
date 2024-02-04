@@ -24,13 +24,14 @@ import java.util.ArrayList;
 /**
  * RedactionAnnotationHandler tool extends HighlightSelectionPageHandler which
  * takes care visually selected text as the mouse is dragged across text on the
- * current page as well as double and triple word selection.
+ * current page as well as double and triple word selection.  The tool also allows
+ * the selection of image content for redactoin
  * <br>
  * Redaction annotation type only marks section of the PDF document for redaction.
  * For content to be removed the document must be exported using the DocumentBuilder
  * WriteMode.FULL_UPDATE mode.  During the export all content is removed from the PDF.
  *
- * @since 7.2
+ * @since 7.2.0
  */
 public class RedactionAnnotationHandler extends HighLightAnnotationHandler {
 
@@ -134,12 +135,9 @@ public class RedactionAnnotationHandler extends HighLightAnnotationHandler {
                 Rectangle2D bounds = imageStream.getNormalizedBounds();
                 if (bounds.contains(pageSpaceMousePoint)) {
                     documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
-//                    System.out.println(imageStream.getPObjectReference() + " " +
-//                            imageStream.getWidth() + "x" + imageStream.getHeight());
                     return true;
                 }
             } else if (object instanceof ShapesDrawCmd) {
-                // todo still might need some work here and apply the xObject matrix, need to find a simple test case.
                 Shapes xObjectShapes = ((ShapesDrawCmd) object).getShapes();
                 return isCursorOverImage(pageSpaceMousePoint, xObjectShapes.getShapes());
             }

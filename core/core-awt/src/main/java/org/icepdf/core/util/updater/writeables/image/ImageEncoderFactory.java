@@ -5,7 +5,7 @@ import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import static org.icepdf.core.pobjects.graphics.images.ImageDecoderFactory.*;
 
 /**
- * When a modified BufferedImage needs to be written out this factor checks the ImageStreams dictionary and will
+ * When a modified BufferedImage needs to be written out this factory checks the ImageStreams dictionary and will
  * create a new encoded byte[] that best matches the color data of the original data.  Rough guide
  * <ul>
  *     <li>CCITTFAX_DECODE_FILTERS, JBIG2_DECODE_FILTERS -> CCITTFAX encoder</li>
@@ -16,6 +16,8 @@ import static org.icepdf.core.pobjects.graphics.images.ImageDecoderFactory.*;
  * fall into this category have already to converted to rgb or grayscale colour space.  Because of the nature of
  * redacted output we have made some assumptions that some colour space information can be dropped and that image
  * quality should be maintained even if it results in a slightly larger output size.
+ *
+ * @since 7.2.0
  */
 public class ImageEncoderFactory {
 

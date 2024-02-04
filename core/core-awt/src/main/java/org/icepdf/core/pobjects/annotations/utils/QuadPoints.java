@@ -1,7 +1,7 @@
 package org.icepdf.core.pobjects.annotations.utils;
 
 /**
- * Common handling of QuadPoints parsing and dictionary valud assignment for rendering.
+ * Common handling of QuadPoints parsing and dictionary value assignment for rendering.
  **/
 
 import org.icepdf.core.pobjects.DictionaryEntries;
@@ -23,7 +23,7 @@ public class QuadPoints {
     /**
      * Pulls the KEY_QUAD_POINTS key from the specified dictionary and an attempt is made to parse the data.
      * An array of 8 × n numbers specifying the coordinates of n quadrilaterals in default user space.
-     * Each quadrilateral shall encompasses a word or group of contiguous words in the text underlying the annotation.
+     * Each quadrilateral shall encompass a word or group of contiguous words in the text underlying the annotation.
      * The coordinates for each quadrilateral shall be given in the order
      * x1 y1 x2 y2 x3 y3 x4 y4
      * specifying the quadrilateral’s four vertices in counterclockwise order

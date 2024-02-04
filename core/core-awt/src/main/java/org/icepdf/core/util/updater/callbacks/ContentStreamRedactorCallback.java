@@ -28,7 +28,7 @@ import static org.icepdf.core.util.parser.content.Operands.*;
 
 /**
  * ContentStreamRedactorCallback is called when a pages content stream has been set for redacting content.  The callback
- * is called as a content stream starts, tokens are parsed and the content stream ends.   The callback writes
+ * is called as a content parsing starts, tokens are parsed and the content stream ends.   The callback writes
  * the original content stream to a new output stream using the current content parsers state to redact content as
  * the original content stream is digested.
  *
@@ -133,7 +133,7 @@ public class ContentStreamRedactorCallback {
         for (RedactionAnnotation annotation : redactionAnnotations) {
             GeneralPath reactionPaths = annotation.getMarkupPath();
             Rectangle2D glyphBounds = glyphText.getBounds();
-            if (reactionPaths.contains(glyphBounds)) {
+            if (reactionPaths != null && reactionPaths.contains(glyphBounds)) {
                 logger.finer(() -> "Redacting Text: " + glyphText.getCid() + " " + glyphText.getUnicode());
                 glyphText.redact();
             }

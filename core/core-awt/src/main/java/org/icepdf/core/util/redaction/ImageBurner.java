@@ -15,6 +15,8 @@ import java.awt.image.BufferedImage;
 /**
  * Burn the redactionPath into the given image stream.  The image stream holds the fully decode image with masking
  * data as well a converted colour space.
+ *
+ * @since 7.2.0
  */
 public class ImageBurner {
     public static ImageStream burn(ImageReference imageReference, GeneralPath redactionPath) throws InterruptedException {

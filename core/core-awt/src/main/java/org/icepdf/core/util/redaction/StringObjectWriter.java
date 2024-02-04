@@ -9,8 +9,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 /**
- * StringObjectWriter is responsible for rewriting text that has been marked as redacted.   This is done by build
- * out new TJ/Tj layout operations and adjusted Td offset as needed.
+ * StringObjectWriter is responsible for rewriting text that has been marked as redacted.   This is done by building
+ * out new TJ/Tj layout operations and adjusted Td offset as needed.  This was hard.
+ *
+ * @since 7.2.0
  */
 public class StringObjectWriter {
 
