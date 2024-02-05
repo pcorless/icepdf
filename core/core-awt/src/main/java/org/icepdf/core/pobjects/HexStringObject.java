@@ -150,7 +150,7 @@ public class HexStringObject extends AbstractStringObject {
      * <p>Gets a hexadecimal StringBuffer representation of this object's data,
      * which is in fact the raw data contained in this object.</p>
      *
-     * @return a StringBufffer representation of the objects data in hexadecimal.
+     * @return a StringBuffer representation of the objects data in hexadecimal.
      */
     public StringBuilder getHexStringBuffer() {
         return stringData;

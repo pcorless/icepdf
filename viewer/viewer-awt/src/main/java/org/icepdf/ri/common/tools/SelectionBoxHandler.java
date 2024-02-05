@@ -198,7 +198,7 @@ public abstract class SelectionBoxHandler extends CommonToolHandler {
         if (comp instanceof PageViewComponentImpl) {
             return (PageViewComponentImpl) comp;
         } else if (comp instanceof MarkupGlueComponent) {
-            comp = comp.getParent();
+            comp = ((MarkupGlueComponent) comp).getMarkupAnnotationComponent().getPageViewComponent();
             if (comp instanceof PageViewComponentImpl) return (PageViewComponentImpl) comp;
         }
         return null;

@@ -18,8 +18,10 @@ package org.icepdf.ri.common.views.annotations;
 import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.DocumentViewModel;
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.util.logging.Logger;
 
 /**
@@ -43,6 +45,33 @@ public class TextMarkupAnnotationComponent extends MarkupAnnotationComponent<Tex
     public void resetAppearanceShapes() {
         super.resetAppearanceShapes();
         annotation.resetAppearanceStream(getToPageSpaceTransform());
+    }
+
+    @Override
+    public boolean contains(int x, int y) {
+        // avoid interference if text selection tool is selected
+        int toolMode = documentViewController.getDocumentViewModel().getViewToolMode();
+        if (toolMode == DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) return false;
+
+        boolean contains = super.contains(x, y);
+        if (contains && annotation != null && annotation.getMarkupPath() != null) {
+            // page space
+            AffineTransform pageTransform = getPageSpaceTransform();
+            shape = annotation.getMarkupPath().createTransformedShape(pageTransform);
+
+            // offset for annotation space
+            Rectangle compBounds = getBounds();
+            AffineTransform af = new AffineTransform(1, 0, 0, 1, -compBounds.x, -compBounds.y);
+            shape = af.createTransformedShape(shape);
+            Rectangle rect = shape.getBounds();
+
+            // bail if the markup shape and comp bounds don't line up at all
+            if (!rect.intersects(new Rectangle(0, 0, compBounds.width, compBounds.height))) {
+                return true;
+            }
+            return rect.contains(x, y);
+        }
+        return contains;
     }
 
     Shape shape;
