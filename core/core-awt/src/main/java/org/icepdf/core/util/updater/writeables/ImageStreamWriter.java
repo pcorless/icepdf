@@ -22,7 +22,7 @@ public class ImageStreamWriter extends StreamWriter {
 
     public void write(ImageStream imageStream, SecurityManager securityManager, CountingOutputStream output) throws IOException {
         byte[] outputData;
-        // decoded image is only set if the image was touch via a redaction burn.
+        // decoded image is only set if the image was touch via a redaction burn and will always be unencrypted
         if (imageStream.getDecodedImage() != null) {
             ImageEncoder imageEncoder = ImageEncoderFactory.createEncodedImage(imageStream);
             imageStream = imageEncoder.encode();
@@ -30,7 +30,7 @@ public class ImageStreamWriter extends StreamWriter {
 
             // check if we need to encrypt the stream
             if (securityManager != null) {
-                outputData = encryptStream(imageStream);
+                outputData = encryptStream(imageStream, outputData);
             }
         } else {
             // no modification, just write out the image unaltered.

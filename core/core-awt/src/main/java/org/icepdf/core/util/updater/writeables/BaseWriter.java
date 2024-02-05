@@ -248,7 +248,7 @@ public class BaseWriter {
         }
     }
 
-    protected byte[] encryptStream(Stream stream) throws IOException {
+    protected byte[] encryptStream(Stream stream, byte[] outputData) throws IOException {
         // check if we need to encrypt the stream
         if (securityManager != null) {
             DictionaryEntries decodeParams;
@@ -264,7 +264,7 @@ public class BaseWriter {
                     stream.getPObjectReference(),
                     securityManager.getDecryptionKey(),
                     decodeParams,
-                    new ByteArrayInputStream(stream.getRawBytes()), true);
+                    new ByteArrayInputStream(outputData), true);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             int nRead;
             byte[] data = new byte[16384];

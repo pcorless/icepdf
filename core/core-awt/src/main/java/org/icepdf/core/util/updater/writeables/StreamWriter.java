@@ -42,7 +42,7 @@ public class StreamWriter extends BaseWriter {
 
             // check if we need to encrypt the stream
             if (securityManager != null) {
-                outputData = encryptStream(stream);
+                outputData = encryptStream(stream, outputData);
             }
         } else {
             outputData = stream.getRawBytes();
