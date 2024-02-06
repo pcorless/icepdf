@@ -37,6 +37,8 @@ import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.icepdf.core.pobjects.fonts.Font.SIMPLE_FORMAT;
+
 /**
  * A free text annotation (PDF 1.3) displays text directly on the page. Unlike
  * an ordinary text annotation (see 12.5.6.4, "Text Annotations"), a free text
@@ -415,6 +417,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         fontFile = fontFile.deriveFont(fontSize);
         TextSprite textSprites =
                 new TextSprite(fontFile,
+                        SIMPLE_FORMAT,
                         content.length(),
                         new AffineTransform(), null);
         textSprites.setRMode(TextState.MODE_FILL);
@@ -451,9 +454,9 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
             if (!(currentChar == '\n' || currentChar == '\r')) {
                 textSprites.addText(
-                        String.valueOf(currentChar), // cid
+                        currentChar, // cid
                         String.valueOf(currentChar), // unicode value
-                        currentX, currentY, newAdvanceX);
+                        currentX, currentY, newAdvanceX, 0);
             } else {
                 // move back to start of next line
                 currentY += lineHeight;

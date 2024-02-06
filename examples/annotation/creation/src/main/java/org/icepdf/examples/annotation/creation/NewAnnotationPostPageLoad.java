@@ -149,8 +149,7 @@ public class NewAnnotationPostPageLoad {
                     foundWords = searchController.searchPage(pageIndex);
                     if (foundWords != null) {
                         // get the current page lock and start adding the annotations
-                        AbstractPageViewComponent pageViewComponent =
-                                pageComponents.get(pageIndex);
+                        AbstractPageViewComponent pageViewComponent = pageComponents.get(pageIndex);
                         for (WordText wordText : foundWords) {
                             // create a  new link annotation
                             LinkAnnotation linkAnnotation = (LinkAnnotation)

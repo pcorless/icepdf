@@ -43,7 +43,7 @@ public interface StringObject {
     /**
      * <p>Gets a literal StringBuffer representation of this object's data.</p>
      *
-     * @return a StringBuffer representing the objects data.
+     * @return a StringBuffer representing the object's data.
      */
     StringBuilder getLiteralStringBuffer();
 
@@ -57,7 +57,7 @@ public interface StringObject {
     /**
      * <p>Gets a hexadecimal StringBuffer representation of this objects data.</p>
      *
-     * @return a StringBufffer representation of the objects data.
+     * @return a StringBuffer representation of the object's data.
      */
     StringBuilder getHexStringBuffer();
 
@@ -86,7 +86,7 @@ public interface StringObject {
      *                   the text.  Valid values are CID_FORMAT and SIMPLE_FORMAT for Adobe
      *                   Composite and Simple font types respectively
      * @param font       font used to render the literal string data.
-     * @return StringBuffer which contains all renderaable characters for the
+     * @return StringBuffer which contains all renderable characters for the
      * given font.
      */
     StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font);
@@ -94,7 +94,7 @@ public interface StringObject {
     /**
      * The length of the underlying objects data.
      *
-     * @return length of objct's data.
+     * @return length of object's data.
      */
     int getLength();
 

@@ -127,7 +127,7 @@ public interface FontFile {
      */
     char getSpace();
 
-    Rectangle2D getBounds(String estr, int beginIndex, int limit);
+    Rectangle2D getBounds(char estr, int beginIndex, int limit);
 
     /**
      * Returns primary format, such as "Type1" or "OpenType".
@@ -136,7 +136,7 @@ public interface FontFile {
      */
     String getFormat();
 
-    void paint(Graphics2D g, String estr, float x,
+    void paint(Graphics2D g, char estr, float x,
                float y, long layout, int mode,
                Color strokeColor);
 
@@ -148,7 +148,7 @@ public interface FontFile {
      * @param y    y coordinate to translate outline shape.
      * @return glyph outline of the estr.
      */
-    Shape getOutline(String estr, float x, float y);
+    Shape getOutline(char estr, float x, float y);
 
     ByteEncoding getByteEncoding();
 

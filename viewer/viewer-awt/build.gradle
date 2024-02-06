@@ -21,6 +21,9 @@ dependencies {
     // signature validation.
     implementation 'org.bouncycastle:bcprov-ext-jdk18on:' + "${BOUNCY_VERSION}"
     implementation 'org.bouncycastle:bcpkix-jdk18on:' + "${BOUNCY_VERSION}"
+    // tests
+    testImplementation(platform("org.junit:junit-bom:${JUNIT_BOM_VERSION}"))
+    testImplementation('org.junit.jupiter:junit-jupiter')
 }
 
 // generatePomFileForViewerJarPublication
@@ -48,6 +51,13 @@ publishing {
                 artifact javadocJar
             }
         }
+    }
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
     }
 }
 

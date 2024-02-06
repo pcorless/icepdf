@@ -50,6 +50,8 @@ public class TextSprite {
     // child GlyphText objects
     private final ArrayList<GlyphText> glyphTexts;
 
+    private final byte subTypeFormat;
+
     // text bounds, including all child Glyph sprites, in glyph space
     // this bound is used during painting to respect painting clip.
     final Rectangle2D.Float bounds;
@@ -74,12 +76,15 @@ public class TextSprite {
      * <p>Creates a new TextSprite object.</p>
      *
      * @param font                  font used when painting glyphs.
+     * @param subTypeFormat         font type format
      * @param contentLength         length of text content.
      * @param graphicStateTransform ctm transform.
-     * @param tmTransform           text transform form postSript.
+     * @param tmTransform           text transform form postScript.
      */
-    public TextSprite(FontFile font, int contentLength, AffineTransform graphicStateTransform, AffineTransform tmTransform) {
+    public TextSprite(FontFile font, byte subTypeFormat, int contentLength, AffineTransform graphicStateTransform,
+                      AffineTransform tmTransform) {
         glyphTexts = new ArrayList<>(contentLength);
+        this.subTypeFormat = subTypeFormat;
         // all glyphs in text share this ctm
         this.graphicStateTransform = graphicStateTransform;
         this.tmTransform = tmTransform;
@@ -99,9 +104,10 @@ public class TextSprite {
      * @param x       x-coordinate to paint.
      * @param y       y-coordinate to paint.
      * @param width   width of cid from font.
+     * @param height  height of cid from font.
      * @return new GlyphText object containing the text data.
      */
-    public GlyphText addText(String cid, String unicode, float x, float y, float width) {
+    public GlyphText addText(char cid, String unicode, float x, float y, float width, float height) {
         // x,y must not change as it will affect painting of the glyph,
         // we can change the bounds of glyphBounds as this is what needs to be normalized
         // to page space
@@ -143,8 +149,9 @@ public class TextSprite {
 
         // create glyph and normalize bounds.
         GlyphText glyphText =
-                new GlyphText(x, y, glyphBounds, cid, unicode);
+                new GlyphText(x, y, width, height, glyphBounds, cid, unicode);
         glyphText.normalizeToUserSpace(graphicStateTransform, tmTransform);
+        glyphText.setFontSubTypeFormat(subTypeFormat);
         glyphTexts.add(glyphText);
         return glyphText;
     }

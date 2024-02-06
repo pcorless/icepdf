@@ -36,7 +36,7 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.icepdf.core.pobjects.filters.FlateDecode.COLUMNS_VALUE;
+import static org.icepdf.core.pobjects.filters.FlateDecode.COLUMNS_KEY;
 import static org.icepdf.core.pobjects.graphics.images.FaxDecoder.K_KEY;
 
 /**
@@ -575,7 +575,7 @@ public class CCITTFax {
         if (input == null)
             return null;
         input = new ZeroPaddedInputStream(input);
-        BufferedInputStream bufferedInput = new BufferedInputStream(input, 1024);
+        BufferedInputStream bufferedInput = new BufferedInputStream(input, 32 * 1024);
         bufferedInput.mark(4);
         try {
             int hb1 = bufferedInput.read();
@@ -638,7 +638,7 @@ public class CCITTFax {
             int width = library.getInt(streamDictionary, ImageParams.WIDTH_KEY);
             int height = library.getInt(streamDictionary, ImageParams.HEIGHT_KEY);
 
-            Object columnsObj = library.getObject(decodeParmsDictionary, COLUMNS_VALUE);
+            Object columnsObj = library.getObject(decodeParmsDictionary, COLUMNS_KEY);
             if (columnsObj instanceof Number) {
                 int columns = ((Number) columnsObj).intValue();
                 if (columns > width)

@@ -96,7 +96,7 @@ public class SmoothScaledImageReference extends CachedImageReference {
         BufferedImage image = null;
         long start = System.nanoTime();
         try {
-            // get the stream image if need, otherwise scale what you have.
+            // get the stream image if needed, otherwise scale what you have.
             image = imageStream.getImage(graphicsState, resources);
             if (width > maxImageWidth || height > maxImageHeight) {
                 return image;

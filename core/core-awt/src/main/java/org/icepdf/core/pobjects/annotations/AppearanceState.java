@@ -78,10 +78,7 @@ public class AppearanceState extends Dictionary {
             originalContentStream = new String(stream.getDecodedStreamBytes());
             try {
                 ContentParser cp = new ContentParser(library, resources);
-                shapes = cp.parse(
-                        new byte[][]{stream.getDecodedStreamBytes()},
-                        new Reference[]{this.getPObjectReference()},
-                        null).getShapes();
+                shapes = cp.parse(new Stream[]{stream}, null).getShapes();
             } catch (Exception e) {
                 shapes = new Shapes();
                 logger.log(Level.WARNING, "Error initializing AppearanceState.", e);
@@ -143,8 +140,7 @@ public class AppearanceState extends Dictionary {
         try {
             ContentParser cp = new ContentParser(library, resources);
             shapes = cp.parse(
-                    new byte[][]{contentBytes},
-                    new Reference[]{this.getPObjectReference()},
+                    Stream.fromByteArray(contentBytes, this.getPObjectReference()),
                     null).getShapes();
         } catch (Exception e) {
             shapes = new Shapes();

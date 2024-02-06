@@ -26,7 +26,7 @@ public class DocumentBuilder {
             Document document,
             ByteBuffer documentByteBuffer,
             OutputStream out,
-            long documentLength) throws IOException {
+            long documentLength) throws IOException, InterruptedException {
 
         try (WritableByteChannel channel = Channels.newChannel(out)) {
             if (writeMode == WriteMode.FULL_UPDATE) {
@@ -46,7 +46,7 @@ public class DocumentBuilder {
                 channel.close();
                 return documentLength + appendedLength;
             }
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             logger.log(Level.FINE, "Error writing PDF output stream.", e);
             throw e;
         }

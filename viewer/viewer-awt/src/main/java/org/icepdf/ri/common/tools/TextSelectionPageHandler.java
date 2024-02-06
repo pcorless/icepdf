@@ -44,9 +44,10 @@ public class TextSelectionPageHandler extends TextSelection
         implements ToolHandler {
 
     protected boolean isMouseDrag;
+    protected boolean isClearSelection;
 
     /**
-     * New Text selection handler.  Make sure to correctly and and remove
+     * New Text selection handler.  Make sure to correctly and remove
      * this mouse and text listeners.
      *
      * @param pageViewComponent page component that this handler is bound to.
@@ -62,7 +63,7 @@ public class TextSelectionPageHandler extends TextSelection
     }
 
     /**
-     * When mouse is double-clicked we select the word the mouse if over.  When
+     * When the mouse is double-clicked we select the word the mouse if over.  When
      * the mouse is triple clicked we select the line of text that the mouse
      * is over.
      */
@@ -74,7 +75,8 @@ public class TextSelectionPageHandler extends TextSelection
      * Invoked when a mouse button has been pressed on a component.
      */
     public void mousePressed(MouseEvent e) {
-
+        isClearSelection = false;
+        this.pageViewComponent.requestFocus();
         lastMousePressedLocation = e.getPoint();
 
         selectionStart(e.getPoint(), pageViewComponent, true);
@@ -100,6 +102,9 @@ public class TextSelectionPageHandler extends TextSelection
      * Drag&amp;Drop operation.
      */
     public void mouseDragged(MouseEvent e) {
+        if (isClearSelection) {
+            return;
+        }
         isMouseDrag = true;
         Point point = e.getPoint();
         updateSelectionSize(point.x, point.y, pageViewComponent);
@@ -139,7 +144,12 @@ public class TextSelectionPageHandler extends TextSelection
      */
     public void mouseMoved(MouseEvent e) {
         // change state of mouse from pointer to text selection icon
-        selectionIcon(e.getPoint(), pageViewComponent);
+        selectionTextSelectIcon(e.getPoint(), pageViewComponent);
+    }
+
+    public void cancelSelection() {
+        isMouseDrag = false;
+        isClearSelection = true;
     }
 
     public void installTool() {

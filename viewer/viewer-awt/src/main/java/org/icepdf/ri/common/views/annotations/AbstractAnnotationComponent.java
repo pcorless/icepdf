@@ -640,7 +640,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
      * @param rect rectangle to convert to page space.
      * @return transformed bbox.
      */
-    protected Rectangle convertToPageSpace(Rectangle rect) {
+    public Rectangle convertToPageSpace(Rectangle rect) {
         Page currentPage = pageViewComponent.getPage();
         DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         return currentPage.convertToPageSpace(rect, documentViewModel.getPageBoundary(),

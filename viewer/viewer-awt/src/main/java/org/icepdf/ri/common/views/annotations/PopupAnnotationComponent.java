@@ -517,7 +517,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     }
 
     public AnnotationComponent getAnnotationParentComponent() {
-        return findAnnotationComponent(selectedMarkupAnnotation);
+        return findAnnotationComponent(annotation.getParent());
     }
 
     /**

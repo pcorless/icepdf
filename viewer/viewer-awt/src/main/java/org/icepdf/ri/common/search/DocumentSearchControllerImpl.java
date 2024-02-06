@@ -73,10 +73,10 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     protected Document document;
     public static final SearchHitComponentFactory componentFactory = new SearchHitComponentFactoryImpl();
 
-    //Search mode is per-word or whole page
+    // Search mode is per-word or whole page
     private SearchMode searchMode = SearchMode.WORD;
 
-    //Page index to SearchHitComponents
+    // Page index to SearchHitComponents
     private final Map<Integer, Set<SearchHitComponent>> pageToComponents = new HashMap<>();
 
     /**
@@ -188,7 +188,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         // search hit list
         List<LineText> searchHits = new ArrayList<>();
 
-        // get our our page text reference
+        // get our page text reference
         PageText pageText = getPageText(pageIndex);
 
         // some pages just don't have any text.
@@ -555,11 +555,11 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         Library library = document.getCatalog().getLibrary();
         List<Reference> annotationReferences = page.getAnnotationReferences();
         ArrayList<MarkupAnnotation> foundAnnotations = new ArrayList<>();
-        if (annotationReferences != null && annotationReferences.size() > 0) {
+        if (annotationReferences != null && !annotationReferences.isEmpty()) {
             // get search terms from model and search for each occurrence.
             ArrayList<SearchTerm> terms = searchModel.getSearchTerms();
             // we need to do the search for  each term.
-            if (terms.size() > 0) {
+            if (!terms.isEmpty()) {
                 SearchTerm term = terms.get(0);
                 Pattern searchPattern = term.getRegexPattern();
                 String searchTerm = term.getTerm();
@@ -649,7 +649,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         if (document == null) document = viewerController.getDocument();
         ArrayList<OutlineItem> foundOutlines = new ArrayList<>();
         Outlines outlines = document.getCatalog().getOutlines();
-        if (outlines != null && searchModel.getSearchTerms().size() > 0) {
+        if (outlines != null && !searchModel.getSearchTerms().isEmpty()) {
             ArrayList<SearchTerm> terms = searchModel.getSearchTerms();
             SearchTerm term = terms.get(0);
             Pattern searchPattern = term.getRegexPattern();
@@ -798,7 +798,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                     if (pageText != null) {
                         pageText.clearHighlightedCursor();
                         ArrayList<LineText> pageLines = pageText.getPageLines();
-                        if (pageLines.size() > 0) {
+                        if (!pageLines.isEmpty()) {
                             if (searchWordCursor < 0) searchLineCursor--;
                             if (searchLineCursor < 0) searchLineCursor = pageLines.size() - 1;
                             for (int k = searchLineCursor; k >= 0; k--) {
@@ -910,8 +910,8 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     }
 
     /**
-     * Clears all highlighted text states for this this document.  This optimized
-     * to use the the SearchHighlightModel to only clear pages that still have
+     * Clears all highlighted text states for this document.  This optimized
+     * to use the SearchHighlightModel to only clear pages that still have
      * selected states.
      */
     public void clearAllSearchHighlight() {
@@ -946,6 +946,8 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      */
     public void dispose() {
         searchModel.clearSearchResults();
+        pageToComponents.clear();
+        document = null;
     }
 
     /**

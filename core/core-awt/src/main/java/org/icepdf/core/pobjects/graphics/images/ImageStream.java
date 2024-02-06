@@ -24,6 +24,9 @@ import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.PColorSpace;
 import org.icepdf.core.util.Library;
 
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Path2D;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.logging.Logger;
 
@@ -35,12 +38,17 @@ import java.util.logging.Logger;
  */
 public class ImageStream extends Stream {
 
-    private static final Logger logger =
-            Logger.getLogger(ImageStream.class.toString());
+    private static final Logger logger = Logger.getLogger(ImageStream.class.toString());
 
     public static final Name TYPE_VALUE = new Name("Image");
 
     private ImageParams imageParams;
+
+    private AffineTransform graphicsTransformMatrix;
+    private Rectangle2D normalizedBounds;
+    private BufferedImage decodedImage;
+
+    private static final Rectangle2D baseImageRectangle = new Rectangle2D.Float(0, 0, 1, 1);
 
     public ImageStream(Library l, DictionaryEntries h, byte[] rawBytes) {
         super(l, h, rawBytes);
@@ -105,6 +113,30 @@ public class ImageStream extends Stream {
 //                ImageUtility.displayImage(decodedImage, "Final " + pObjectReference.toString());
         }
         return decodedImage;
+    }
+
+    public void setDecodedImage(BufferedImage decodedImage) {
+        this.decodedImage = decodedImage;
+    }
+
+    public BufferedImage getDecodedImage() {
+        return decodedImage;
+    }
+
+    public void setGraphicsTransformMatrix(AffineTransform af) {
+        graphicsTransformMatrix = af;
+    }
+
+    public AffineTransform getGraphicsTransformMatrix() {
+        return graphicsTransformMatrix;
+    }
+
+    public Rectangle2D getNormalizedBounds() {
+        if (normalizedBounds == null) {
+            Path2D.Double generalPath = new Path2D.Double(baseImageRectangle, graphicsTransformMatrix);
+            normalizedBounds = generalPath.getBounds2D();
+        }
+        return normalizedBounds;
     }
 
     public int getWidth() {

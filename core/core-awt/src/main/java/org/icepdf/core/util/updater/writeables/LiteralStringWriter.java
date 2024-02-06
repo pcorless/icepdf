@@ -29,10 +29,10 @@ public class LiteralStringWriter extends BaseWriter {
                 // encryption will take care of any escape issue.
                 String writeableString = writeable.encryption(writeable.getLiteralString(), pObject.getReference(),
                         securityManager);
-                writeRaw(writeableString, output);
+                writeRaw(writeableString.replaceAll(LITERAL_REGEX, LITERAL_REPLACEMENT), output);
             } else {
                 // just need to write the string data as is, string data will already be in the correct state
-                writeRaw(writeable.getLiteralString(), output);
+                writeRaw(writeable.getLiteralString().replaceAll(LITERAL_REGEX, LITERAL_REPLACEMENT), output);
             }
         } else {
             // plain string make sure it's properly escaped.

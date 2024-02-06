@@ -47,7 +47,7 @@ public interface DocumentSearchController {
      * added or after all have been added.
      *
      * @param pageIndex     page to search
-     * @param caseSensitive if true use case sensitive searches
+     * @param caseSensitive if true use case-sensitive searches
      * @param wholeWord     if true use whole word searches
      * @param term          term to search for
      * @return number for hits for this page.

@@ -27,7 +27,7 @@ public class RunLengthDecode extends ChunkingInputStream {
         super();
 
         setInputStream(input);
-        setBufferSize(8 * 1024);
+        setBufferSize(32 * 1024);
     }
 
     protected int fillInternalBuffer() throws IOException {

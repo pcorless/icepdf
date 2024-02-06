@@ -73,6 +73,8 @@ public class AnnotationFactory {
             return TextAnnotation.getInstance(library, rect);
         } else if (subType.equals(Annotation.SUBTYPE_POPUP)) {
             return PopupAnnotation.getInstance(library, rect);
+        } else if (subType.equals(Annotation.SUBTYPE_REDACT)) {
+            return RedactionAnnotation.getInstance(library, rect);
         } else {
             logger.warning("Unsupported Annotation type. ");
             return null;

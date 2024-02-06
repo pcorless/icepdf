@@ -100,7 +100,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         this.viewContainer = controller.getDocumentViewController().getViewContainer();
         lengthOfTask = controller.getDocument().getNumberOfPages();
 
-        // setup searching format format.
+        // setup searching format.
         this.searchModel = builder.searchModel;
         if (searchModel != null) {
             searchingMessageForm = searchModel.setupSearchingMessageForm();
@@ -140,7 +140,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         Document document = controller.getDocument();
         // iterate over each page in the document
         if (text || comments || forms) {
-            for (int i = 0; i < document.getNumberOfPages(); i++) {
+            for (int i = 0, max = document.getNumberOfPages(); i < max; i++) {
                 // break if needed
                 if (isCancelled()) {
                     setDialogMessage();
@@ -180,7 +180,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
                 // search comments,  page is already initialized, so we'll take advantage of that.
                 if (comments) {
                     ArrayList<MarkupAnnotation> matchMarkupAnnotations = searchController.searchComments(current);
-                    if (matchMarkupAnnotations != null && matchMarkupAnnotations.size() > 0) {
+                    if (matchMarkupAnnotations != null && !matchMarkupAnnotations.isEmpty()) {
                         int hitCount = matchMarkupAnnotations.size();
                         messageArguments = new Object[]{String.valueOf((current + 1)), hitCount, hitCount};
                         final String nodeText =
@@ -206,7 +206,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
                 return null;
             }
             ArrayList<OutlineItem> outlinesMatches = searchController.searchOutlines();
-            if (outlinesMatches != null && outlinesMatches.size() > 0) {
+            if (outlinesMatches != null && !outlinesMatches.isEmpty()) {
                 publish(new OutlineResult(outlinesMatches));
             }
         }
@@ -215,7 +215,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
                 return null;
             }
             ArrayList<DestinationResult> destinationMatches = searchController.searchDestinations();
-            if (destinationMatches != null && destinationMatches.size() > 0) {
+            if (destinationMatches != null && !destinationMatches.isEmpty()) {
                 publish(new DestinationsResult(destinationMatches));
             }
         }
@@ -267,7 +267,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
     private void setDialogMessage() {
         // Build Internationalized plural phrase.
         Object[] messageArguments = {String.valueOf((current + 1)), (current + 1), totalHitCount};
-        if (searchResultMessageForm != null) {
+        if (searchCompletionMessageForm != null) {
             dialogMessage = searchCompletionMessageForm.format(messageArguments);
         }
     }

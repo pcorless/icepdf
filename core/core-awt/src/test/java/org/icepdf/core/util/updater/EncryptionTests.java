@@ -29,7 +29,7 @@ public class EncryptionTests {
             Document modifiedDocument = new Document();
             modifiedDocument.setFile(out.getAbsolutePath());
 
-        } catch (PDFSecurityException | IOException e) {
+        } catch (PDFSecurityException | IOException | InterruptedException e) {
             // make sure we have no io errors.
             fail("should not be any exceptions");
         }

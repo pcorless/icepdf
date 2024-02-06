@@ -13,6 +13,9 @@ public class HexStringObjectWriter extends BaseWriter {
     private static final byte[] BEGIN_HEX_STRING = "<".getBytes();
     private static final byte[] END_HEX_STRING = ">".getBytes();
 
+    private static final String HEX_REGEX = "(?=[<>\\\\])";
+    private static final String HEX_REPLACEMENT = "\\\\";
+
     public HexStringObjectWriter(SecurityManager securityManager) {
         this.securityManager = securityManager;
     }
@@ -20,20 +23,20 @@ public class HexStringObjectWriter extends BaseWriter {
     public void write(PObject pObject, CountingOutputStream output) throws IOException {
         HexStringObject writeable = (HexStringObject) pObject.getObject();
         if (pObject.isDoNotEncrypt()) {
-            writeRaw(writeable.getHexString(), output);
+            writeRaw(writeable.getHexString().replaceAll(HEX_REGEX, HEX_REPLACEMENT), output);
         } else if (securityManager != null) {
             if (writeable.isModified()) {
                 // encryption will take care of any escape issue.
                 String writeableString = writeable.encryption(writeable.getHexString(), pObject.getReference(),
                         securityManager);
-                writeRaw(writeableString, output);
+                writeRaw(writeableString.replaceAll(HEX_REGEX, HEX_REPLACEMENT), output);
             } else {
                 // just need to write the string data as is, string data will already be in the correct state
                 writeRaw(writeable.toString(), output);
             }
         } else {
             // plain string make sure it's properly escaped.
-            writeRaw(writeable.getHexString(), output);
+            writeRaw(writeable.getHexString().replaceAll(HEX_REGEX, HEX_REPLACEMENT), output);
         }
     }
 

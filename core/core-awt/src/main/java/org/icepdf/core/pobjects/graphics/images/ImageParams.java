@@ -177,6 +177,10 @@ public class ImageParams extends Dictionary {
         return decode;
     }
 
+    public boolean isColorKeyMask() {
+        return library.getObject(entries, MASK_KEY) instanceof List;
+    }
+
     public ColorKeyMask getColorKeyMask() {
         Object maskObj = library.getObject(entries, MASK_KEY);
         if (maskObj instanceof List) {
@@ -193,6 +197,14 @@ public class ImageParams extends Dictionary {
         Object maskObj = library.getObject(entries, MASK_KEY);
         if (maskObj instanceof ImageStream) {
             return ImageDecoderFactory.createDecoder((ImageStream) maskObj, graphicsState);
+        }
+        return null;
+    }
+
+    public ImageStream getMaskImageStream() {
+        Object maskObj = library.getObject(entries, MASK_KEY);
+        if (maskObj instanceof ImageStream) {
+            return (ImageStream) maskObj;
         }
         return null;
     }

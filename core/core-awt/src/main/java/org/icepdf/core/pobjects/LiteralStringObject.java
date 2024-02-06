@@ -165,15 +165,15 @@ public class LiteralStringObject extends AbstractStringObject {
 
     /**
      * <p>Gets a literal String representation of this object's data using the
-     * specifed font and format.  The font is used to verify that the
-     * specific character codes can be rendered; if they cannot they may be
+     * specified font and format.  The font is used to verify that the
+     * specific character codes can be rendered; if they cannot, they may be
      * removed or combined with the next character code to get a displayable
      * character code.
      *
      * @param fontFormat the type of pdf font which will be used to display
      *                   the text.  Valid values are CID_FORMAT and SIMPLE_FORMAT for Adobe
      *                   Composite and Simple font types respectively
-     * @param font       font used to render the the literal string data.
+     * @param font       font used to render the literal string data.
      * @return StringBuffer which contains all renderable characters for the
      *         given font.
      */
@@ -217,7 +217,7 @@ public class LiteralStringObject extends AbstractStringObject {
     }
 
     /**
-     * The length of the the underlying object's data.
+     * The length of the underlying object's data.
      *
      * @return length of objcts data.
      */

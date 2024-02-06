@@ -16,7 +16,7 @@ import static org.icepdf.core.pobjects.Page.RESOURCES_KEY;
  */
 public class AnnotationRemovalModifier implements Modifier<Annotation> {
 
-    private Page parentPage;
+    private final Page parentPage;
 
     public AnnotationRemovalModifier(Object parent) {
         this.parentPage = (Page) parent;
@@ -25,8 +25,6 @@ public class AnnotationRemovalModifier implements Modifier<Annotation> {
     @Override
     public void modify(Annotation annot) {
         Library library = annot.getLibrary();
-
-        DictionaryEntries entries = annot.getEntries();
 
         StateManager stateManager = library.getStateManager();
 
@@ -39,7 +37,7 @@ public class AnnotationRemovalModifier implements Modifier<Annotation> {
         Stream nAp = annot.getAppearanceStream();
         if (nAp != null) {
             nAp.setDeleted(true);
-            // find the xobjects font resources.
+            // find the xObjects font resources.
             Object tmp = library.getObject(nAp.getEntries(), RESOURCES_KEY);
             if (tmp instanceof Resources) {
                 Resources resources = (Resources) tmp;
@@ -91,7 +89,7 @@ public class AnnotationRemovalModifier implements Modifier<Annotation> {
 
         // remove any markupGlue so that it doesn't get written.  Glue is never added to the document, it created
         // dynamically for print purposes.
-        if (annot instanceof MarkupAnnotation) {
+        if (annot instanceof MarkupAnnotation && annotations != null) {
             MarkupAnnotation markupAnnotation = (MarkupAnnotation) annot;
             for (Annotation annotation : annotations) {
                 if (annotation instanceof MarkupGlueAnnotation &&
@@ -105,13 +103,15 @@ public class AnnotationRemovalModifier implements Modifier<Annotation> {
                 if (annotation instanceof PopupAnnotation &&
                         ((PopupAnnotation) annotation).getParent().equals(markupAnnotation)) {
                     annotations.remove(annotation);
-                    ((List<?>) annots).remove(annotation.getPObjectReference());
-                    stateManager.addDeletion(annotation.getPObjectReference());
-                    break;
+                    if (annots instanceof List) {
+                        ((List<?>) annots).remove(annotation.getPObjectReference());
+                        stateManager.addDeletion(annotation.getPObjectReference());
+                        break;
+                    }
                 }
             }
         }
-        if (annotations.size() == 0) {
+        if (annotations != null && annotations.isEmpty()) {
             parentPage.getEntries().remove(ANNOTS_KEY);
             // change should already be registered
         }
