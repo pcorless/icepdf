@@ -14,6 +14,7 @@ import org.icepdf.core.util.redaction.ImageBurner;
 import org.icepdf.core.util.redaction.InlineImageWriter;
 import org.icepdf.core.util.redaction.StringObjectWriter;
 
+import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
 import java.io.ByteArrayOutputStream;
@@ -45,6 +46,7 @@ public class ContentStreamRedactorCallback {
     private int lastTextPosition;
     private float lastTjOffset;
     private final Library library;
+    private final AffineTransform transform;
     private boolean modifiedStream;
 
     private final List<RedactionAnnotation> redactionAnnotations;
@@ -52,10 +54,20 @@ public class ContentStreamRedactorCallback {
     public ContentStreamRedactorCallback(Library library, List<RedactionAnnotation> redactionAnnotations) {
         this.redactionAnnotations = redactionAnnotations;
         this.library = library;
+        this.transform = new AffineTransform();
     }
 
-    public ContentStreamRedactorCallback createChildInstance() {
-        return new ContentStreamRedactorCallback(this.library, this.redactionAnnotations);
+    private ContentStreamRedactorCallback(Library library, List<RedactionAnnotation> redactionAnnotations,
+                                          AffineTransform transform) {
+        this.redactionAnnotations = redactionAnnotations;
+        this.library = library;
+        // xObject text will have it's on transform that must be taken into when determining intersections of the
+        // redaction and glyph bounds.
+        this.transform = transform;
+    }
+
+    public ContentStreamRedactorCallback createChildInstance(AffineTransform transform) {
+        return new ContentStreamRedactorCallback(this.library, this.redactionAnnotations, transform);
     }
 
     public void startContentStream(Stream stream) throws IOException {
@@ -136,6 +148,7 @@ public class ContentStreamRedactorCallback {
     public void checkAndRedactText(GlyphText glyphText) {
         for (RedactionAnnotation annotation : redactionAnnotations) {
             GeneralPath reactionPaths = annotation.getMarkupPath();
+            glyphText.normalizeToUserSpace(transform, null);
             Rectangle2D glyphBounds = glyphText.getBounds();
             if (reactionPaths != null && reactionPaths.contains(glyphBounds)) {
                 logger.finer(() -> "Redacting Text: " + glyphText.getCid() + " " + glyphText.getUnicode());

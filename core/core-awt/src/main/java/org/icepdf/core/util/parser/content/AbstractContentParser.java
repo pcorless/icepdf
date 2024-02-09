@@ -526,7 +526,9 @@ public abstract class AbstractContentParser {
             // need a new instance, so we don't corrupt the stream offset.
             ContentStreamRedactorCallback formContentStreamRedactorCallback = null;
             if (contentStreamRedactorCallback != null) {
-                formContentStreamRedactorCallback = contentStreamRedactorCallback.createChildInstance();
+                AffineTransform xObjectTransform = graphicState.getCTM();
+                xObjectTransform.concatenate(formXObject.getMatrix());
+                formContentStreamRedactorCallback = contentStreamRedactorCallback.createChildInstance(xObjectTransform);
             }
             formXObject.init(formContentStreamRedactorCallback);
             // 2. concatenate matrix entry with the current CTM
