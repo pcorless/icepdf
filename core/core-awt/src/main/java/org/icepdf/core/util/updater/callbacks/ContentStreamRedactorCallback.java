@@ -116,13 +116,16 @@ public class ContentStreamRedactorCallback {
         } else if (token == T_STAR || token == TD || token == Td) {
             // relative operators, so adjust for the redacted content.
             writeLastTjOffset();
-            lastTjOffset = 0;
             burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
                     (position - lastTokenPosition));
+            lastTjOffset = 0;
             lastTokenPosition = position;
         } else if (token == BT || token == Tm) {
+            burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
+                    (position - lastTokenPosition));
             // hard reset, new coordinate system
             lastTjOffset = 0;
+            lastTokenPosition = position;
         }
         lastTextPosition = position;
     }
