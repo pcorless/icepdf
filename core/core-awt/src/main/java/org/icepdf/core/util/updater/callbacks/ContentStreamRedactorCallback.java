@@ -114,12 +114,14 @@ public class ContentStreamRedactorCallback {
                     (position - lastTokenPosition));
             lastTokenPosition = position;
         } else if (token == T_STAR || token == TD || token == Td) {
+            // relative operators, so adjust for the redacted content.
             writeLastTjOffset();
             lastTjOffset = 0;
             burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
                     (position - lastTokenPosition));
             lastTokenPosition = position;
-        } else if (token == BT) {
+        } else if (token == BT || token == Tm) {
+            // hard reset, new coordinate system
             lastTjOffset = 0;
         }
         lastTextPosition = position;
@@ -137,7 +139,7 @@ public class ContentStreamRedactorCallback {
     }
 
     private boolean isTextLayoutToken(int token) {
-        return token == Tj || token == TJ || token == Td || token == TD || token == T_STAR || token == BT;
+        return token == Tj || token == TJ || token == Td || token == TD || token == Tm || token == T_STAR || token == BT;
     }
 
     /**
