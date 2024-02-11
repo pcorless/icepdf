@@ -104,6 +104,9 @@ Build the distribution zip and tar archives
  ```java
 String filePath = "somefilepath/myfile.pdf";
 
+// initiate font caching for faster startups
+FontPropertiesManager.getInstance().loadOrReadSystemFonts();
+
 // build a controller
 SwingController controller = new SwingController();
 
