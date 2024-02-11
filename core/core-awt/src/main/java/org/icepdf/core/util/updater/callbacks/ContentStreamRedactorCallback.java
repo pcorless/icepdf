@@ -201,9 +201,9 @@ public class ContentStreamRedactorCallback {
         if (StringObjectWriter.containsRedactions(textOperators)) {
             // apply redaction
             if (Operands.TJ == operand) {
-                lastTjOffset = StringObjectWriter.writeTJ(burnedContentOutputStream, textOperators);
+                lastTjOffset = StringObjectWriter.writeTJ(burnedContentOutputStream, textOperators, lastTjOffset);
             } else {
-                lastTjOffset = StringObjectWriter.writeTj(burnedContentOutputStream, textOperators);
+                lastTjOffset = StringObjectWriter.writeTj(burnedContentOutputStream, textOperators, lastTjOffset);
             }
             modifiedStream = true;
         } else {

@@ -44,8 +44,8 @@ public class StringObjectWriter {
         return true;
     }
 
-    public static float writeTj(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators) throws IOException {
-        float lastTdOffset = 0;
+    public static float writeTj(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators,
+                                float lastTdOffset) throws IOException {
         int operatorCount = 0;
         for (TextSprite textSprite : textOperators) {
             ArrayList<GlyphText> glyphTexts = textSprite.getGlyphSprites();
@@ -82,9 +82,9 @@ public class StringObjectWriter {
         return lastTdOffset;
     }
 
-    public static float writeTJ(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators) throws IOException {
+    public static float writeTJ(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators,
+                                float lastTdOffset) throws IOException {
         int operatorCount = 0;
-        float lastTdOffset = 0;
 
         for (TextSprite textSprite : textOperators) {
             ArrayList<GlyphText> glyphTexts = textSprite.getGlyphSprites();
