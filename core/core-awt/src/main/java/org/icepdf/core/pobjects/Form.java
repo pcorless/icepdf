@@ -172,8 +172,7 @@ public class Form extends Stream {
         // try and find the form's resources dictionary.
         Resources leafResources = library.getResources(entries, RESOURCES_KEY);
         // apply parent resource, if the current resources is null
-        if (leafResources != null) {
-        } else {
+        if (leafResources == null) {
             leafResources = parentResource;
         }
         // Build a new content parser for the content streams and apply the
@@ -184,11 +183,11 @@ public class Form extends Stream {
         if (in != null) {
             try {
                 logger.log(Level.FINER, () -> "Parsing form " + getPObjectReference());
-                shapes = cp.parse(Stream.fromByteArray(in, this.getPObjectReference()), null).getShapes();
+                shapes = cp.parse(Stream.fromByteArray(in, this), null).getShapes();
                 inited = true;
             } catch (InterruptedException e) {
-                // the initialization was interrupted so we need to make sure we bubble up the exception
-                // as we need to let any chained forms know so we can invalidate the page correctly
+                // the initialization was interrupted so, we need to make sure we bubble up the exception
+                // as we need to let any chained forms know so, we can invalidate the page correctly
                 shapes = new Shapes();
                 logger.log(Level.FINE, "Parsing form interrupted parsing Form content stream.", e);
                 throw new InterruptedException(e.getMessage());

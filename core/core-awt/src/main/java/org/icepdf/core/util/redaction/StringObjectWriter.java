@@ -44,8 +44,8 @@ public class StringObjectWriter {
         return true;
     }
 
-    public static float writeTj(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators) throws IOException {
-        float lastTdOffset = 0;
+    public static float writeTj(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators,
+                                float lastTdOffset) throws IOException {
         int operatorCount = 0;
         for (TextSprite textSprite : textOperators) {
             ArrayList<GlyphText> glyphTexts = textSprite.getGlyphSprites();
@@ -82,9 +82,9 @@ public class StringObjectWriter {
         return lastTdOffset;
     }
 
-    public static float writeTJ(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators) throws IOException {
+    public static float writeTJ(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators,
+                                float lastTdOffset) throws IOException {
         int operatorCount = 0;
-        float lastTdOffset = 0;
 
         for (TextSprite textSprite : textOperators) {
             ArrayList<GlyphText> glyphTexts = textSprite.getGlyphSprites();
@@ -129,6 +129,12 @@ public class StringObjectWriter {
     private static float writeLastTdOffset(ByteArrayOutputStream contentOutputStream, float lastTdOffset,
                                            GlyphText glyphText) throws IOException {
         float advance = glyphText.getX() + glyphText.getAdvanceX();
+        // still not sure how to handle this in a 100% of cases as advance can technically be negative
+        // but if we have a negative glyph advance we likely have a negative font value and should
+        // treat this as a positive value when writing the advance.
+        if (glyphText.getAdvanceX() < 0) {
+            advance = Math.abs(advance);
+        }
         return writeTdOffset(contentOutputStream, advance, lastTdOffset);
     }
 

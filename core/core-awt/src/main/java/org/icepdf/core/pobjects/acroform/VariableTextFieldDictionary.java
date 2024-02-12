@@ -129,8 +129,7 @@ public class VariableTextFieldDictionary extends FieldDictionary {
             if (resources != null) {
                 try {
                     ContentParser cp = new ContentParser(library, resources);
-                    Stream[] possibleContentStream = Stream.fromByteArray(defaultAppearance.getBytes(),
-                            this.getPObjectReference());
+                    Stream[] possibleContentStream = Stream.fromByteArray(defaultAppearance.getBytes(), this);
                     cp.parseTextBlocks(possibleContentStream);
                     GraphicsState gs = cp.getGraphicsState();
                     if (gs != null) {
@@ -172,8 +171,7 @@ public class VariableTextFieldDictionary extends FieldDictionary {
             }
             ContentParser cp = new ContentParser(library, resources);
             // usefull parser so we parse the font color.
-            Stream[] possibleContentStream = Stream.fromByteArray(possibleContent.getBytes(),
-                    this.getPObjectReference());
+            Stream[] possibleContentStream = Stream.fromByteArray(possibleContent.getBytes(), this);
             cp.parse(possibleContentStream, null);
             GraphicsState gs = cp.getGraphicsState();
             if (gs != null) {
