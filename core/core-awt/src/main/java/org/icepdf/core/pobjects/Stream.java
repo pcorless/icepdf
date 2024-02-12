@@ -342,13 +342,13 @@ public class Stream extends Dictionary {
      * that aren't specifically stream, but we want to parse some kind of state from the given bytes.
      *
      * @param contentBytes decompressed bytes to be treated as a stream
-     * @param reference    parent objects reference, can be null
+     * @param dictionary  parent objects to base new stream from
      * @return mock stream object
      */
-    public static Stream[] fromByteArray(byte[] contentBytes, Reference reference) {
-        Stream stream = new Stream(new DictionaryEntries(), null);
+    public static Stream[] fromByteArray(byte[] contentBytes, Dictionary dictionary) {
+        Stream stream = new Stream(dictionary.getEntries(), null);
         stream.setRawBytes(contentBytes);
-        stream.setPObjectReference(reference);
+        stream.setPObjectReference(dictionary.getPObjectReference());
         return new Stream[]{stream};
     }
 

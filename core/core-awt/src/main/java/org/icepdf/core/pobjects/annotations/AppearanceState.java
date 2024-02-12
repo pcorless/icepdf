@@ -140,7 +140,7 @@ public class AppearanceState extends Dictionary {
         try {
             ContentParser cp = new ContentParser(library, resources);
             shapes = cp.parse(
-                    Stream.fromByteArray(contentBytes, this.getPObjectReference()),
+                    Stream.fromByteArray(contentBytes, this),
                     null).getShapes();
         } catch (Exception e) {
             shapes = new Shapes();

@@ -23,6 +23,7 @@
         <module>loadingEvents</module>
         <module>printservices</module>
         <module>search</module>
+        <module>redaction</module>
         <module>signatures</module>
     </modules>
 
