@@ -13,10 +13,4 @@
     <description>
         The ICEpdf redaction examples
     </description>
-
-    <modules>
-        <module>component</module>
-        <module>headless</module>
-    </modules>
-
 </project>

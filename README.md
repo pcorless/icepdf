@@ -24,12 +24,12 @@ ICEpdf is an open source project and is always looking for more contributors.  T
  <dependency>
      <groupId>com.github.pcorless.icepdf</groupId>
      <artifactId>icepdf-core</artifactId>
- <version>7.1.4</version>
+ <version>7.2.0</version>
 </dependency>
 <dependency>
      <groupId>com.github.pcorless.icepdf</groupId>
      <artifactId>icepdf-viewer</artifactId>
-     <version>7.1.4</version>
+     <version>7.2.0</version>
 </dependency>
  ```
  

@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.github.pcorless.icepdf</groupId>
         <artifactId>icepdf</artifactId>
-        <version>7.2.0-SNAPSHOT</version>
+        <version>7.2.0</version>
     </parent>
     <artifactId>viewer</artifactId>
     <packaging>pom</packaging>
@@ -25,6 +25,13 @@
                 <groupId>com.github.pcorless.icepdf</groupId>
                 <artifactId>icepdf-core</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit.bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
