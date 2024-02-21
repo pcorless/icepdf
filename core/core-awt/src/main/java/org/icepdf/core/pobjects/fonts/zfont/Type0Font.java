@@ -3,6 +3,7 @@ package org.icepdf.core.pobjects.fonts.zfont;
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Reference;
+import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.zfont.cmap.CMap;
 import org.icepdf.core.util.Library;
 
@@ -48,9 +49,18 @@ public class Type0Font extends SimpleFont {
             cMap = CMap.getInstance(name);
             Encoding encoding = Encoding.getInstance((name).getName());
             font = font.deriveFont(encoding, toUnicodeCMap);
+            return;
         }
-        if (cMap != null) {
-            boolean isCMapPredefined = true;
+        Object object = library.getObject(entries, ENCODING_KEY);
+        if (object instanceof Stream) {
+            Stream gidMap = (Stream) object;
+            Name cmapName = library.getName(gidMap.getEntries(), new Name("CMapName"));
+            // update font with oneByte information from the cmap, so far I've only
+            // scene this on a handful of CID font but fix encoding issue in each case.
+            if (cmapName.equals("OneByteIdentityH")) {
+                subTypeFormat = SIMPLE_FORMAT;
+            }
+            return;
         }
     }
 
