@@ -192,6 +192,8 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_HIGHLIGHT = "application.toolbar.annotation.highlight.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_REDACTION = "application.toolbar.annotation.redaction" +
             ".enabled";
+    public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_SIGNATURE = "application.toolbar.annotation.signature" +
+            ".enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_UNDERLINE = "application.toolbar.annotation.underline.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_STRIKE_OUT = "application.toolbar.annotation.strikeout.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_LINE = "application.toolbar.annotation.line.enabled";

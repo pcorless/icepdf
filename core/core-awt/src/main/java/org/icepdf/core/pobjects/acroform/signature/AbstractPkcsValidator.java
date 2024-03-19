@@ -520,10 +520,8 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         try {
             String provider = signatureDictionary.getFilter().getName();
 
-            messageDigestAlgorithm = AlgorithmIdentifier.getDigestInstance(
-                    digestAlgorithmIdentifier, provider);
-            eConMessageDigestAlgorithm = AlgorithmIdentifier.getDigestInstance(
-                    digestAlgorithmIdentifier, provider);
+            messageDigestAlgorithm = AlgorithmIdentifier.getDigestInstance(digestAlgorithmIdentifier, provider);
+            eConMessageDigestAlgorithm = AlgorithmIdentifier.getDigestInstance(digestAlgorithmIdentifier, provider);
 
             signature = createSignature(signerCertificate.getPublicKey(), provider,
                     signatureAlgorithmIdentifier, digestAlgorithmIdentifier);
@@ -622,6 +620,8 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
             while (aliases.hasMoreElements()) {
                 trusted.add((X509Certificate) trustStore.getCertificate(aliases.nextElement()));
             }
+            // todo trust chain test, remove
+//            trusted.add(cers[0]);
             CertificateVerifier.verifyCertificate(signerCertificate, cers, trusted);
             isCertificateChainTrusted = true;
             isCertificateDateValid = true;

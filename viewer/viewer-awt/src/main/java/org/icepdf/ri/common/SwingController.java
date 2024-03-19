@@ -51,7 +51,6 @@ import org.icepdf.ri.common.utility.signatures.SignaturesHandlerPanel;
 import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
 import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
-import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryFrame;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
@@ -2106,7 +2105,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Sets the state of the "Tools" buttons. This ensure that correct button
+     * Sets the state of the "Tools" buttons. This ensures that correct button
      * is depressed when the state of the Document class specifies it.
      */
     private void reflectToolInToolButtons() {
