@@ -77,6 +77,8 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_DEFAULT_ROTATION = "document.rotation";
     // page rotation
     public static final String PROPERTY_DEFAULT_VIEW_TYPE = "document.viewtype";
+    // display tool
+    public static final String PROPERTY_DEFAULT_DISPLAY_TOOL = "document.displaytool.mode";
     // highlight and selection text colours.
     public static final String PROPERTY_TEXT_SELECTION_COLOR = "org.icepdf.core.views.page.text.selection.color";
     public static final String PROPERTY_TEXT_HIGHLIGHT_COLOR = "org.icepdf.core.views.page.text.highlight.color";
