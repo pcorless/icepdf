@@ -2447,44 +2447,6 @@ public class SwingViewBuilder implements ViewBuilder {
         return tmp;
     }
 
-
-    protected JToggleButton makeToolbarToggleButton(
-            String title, String toolTip, java.awt.Font font) {
-        JToggleButton tmp = new JToggleButton(showButtonText ? title : "");
-        tmp.setFont(font);
-        tmp.setToolTipText(toolTip);
-        setPreferredButtonSize(tmp, iconSize);
-        tmp.setText(title);
-        tmp.setFocusPainted(true);
-        return tmp;
-    }
-
-
-    protected JToggleButton makeToolbarToggleButton(
-            String title, String toolTip, String imageName,
-            int imageWidth, int imageHeight, java.awt.Font font) {
-        JToggleButton tmp = new JToggleButton(showButtonText ? title : "");
-        tmp.setFont(font);
-        tmp.setToolTipText(toolTip);
-        tmp.setRolloverEnabled(false);
-        setPreferredButtonSize(tmp, iconSize);
-        try {
-            tmp.setIcon(new ImageIcon(Images.get(imageName + "_d.png")));
-            tmp.setPressedIcon(new ImageIcon(Images.get(imageName + "_d.png")));
-            tmp.setSelectedIcon(new ImageIcon(Images.get(imageName + "_n.png")));
-            tmp.setDisabledIcon(new ImageIcon(Images.get(imageName + "_n.png")));
-        } catch (NullPointerException e) {
-            logger.warning("Failed to load toobar toggle button images: " + imageName + ".png");
-        }
-        tmp.setBorderPainted(false);
-        tmp.setBorder(BorderFactory.createEmptyBorder());
-        tmp.setContentAreaFilled(false);
-        tmp.setFocusPainted(false);
-        tmp.setPreferredSize(new Dimension(imageWidth, imageHeight));
-
-        return tmp;
-    }
-
     /**
      * Utility method for creating a menu item.
      *
