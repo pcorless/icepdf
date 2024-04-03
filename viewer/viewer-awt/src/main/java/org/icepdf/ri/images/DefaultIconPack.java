@@ -28,18 +28,44 @@ public class DefaultIconPack extends IconPack {
 	@Override
 	public Icon getIcon (String name, Variant variant, Images.IconSize size) throws RuntimeException {
 		String iconSize;
-		if (size == Images.IconSize.HUGE) iconSize = "_lg";
-		else if (size == Images.IconSize.LARGE) iconSize = "_32";
-		else if (size == Images.IconSize.SMALL) iconSize = "_24";
-		else if (size == Images.IconSize.MINI) iconSize = "_20";
-		else iconSize = "_16";
+		switch (size) {
+			case HUGE:
+				iconSize = "_lg";
+				break;
+			case LARGE:
+				iconSize = "_32";
+				break;
+			case SMALL:
+				iconSize = "_24";
+				break;
+			case MINI:
+				iconSize = "_20";
+				break;
+			default:
+				iconSize = "_16";
+				break;
+		}
 
 		String iconVariant;
-		if (variant == Variant.PRESSED || variant == Variant.DISABLED) iconVariant = "_i";
-		else if (variant == Variant.ROLLOVER) iconVariant = "_r";
-		else if (variant == Variant.SELECTED) iconVariant = "_selected_a";
-		else if (variant == Variant.NONE) iconVariant = "";
-		else iconVariant = "_a";
+		switch (variant) {
+			case NORMAL:
+				iconVariant = "_a";
+				break;
+			case PRESSED:
+			case DISABLED:
+				iconVariant = "_i";
+				break;
+			case ROLLOVER:
+				iconVariant = "_r";
+				break;
+			case SELECTED:
+				iconVariant = "_selected_a";
+				break;
+			case NONE:
+			default:
+				iconVariant = "";
+				break;
+		}
 
 		URL url = Images.class.getResource (name + iconVariant + iconSize + ".png");
 		if (url == null) {
