@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common;
 
+import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
@@ -29,7 +30,7 @@ import java.awt.*;
 @SuppressWarnings("serial")
 public class DestinationCellRender extends DefaultTreeCellRenderer {
 
-    protected static final ImageIcon IMAGE_ICON = new ImageIcon(Images.get("page.gif"));
+    protected static final Icon IMAGE_ICON = Images.getSingleIcon ("page", IconPack.Variant.NONE, Images.IconSize.TINY);
 
     @Override
     public Component getTreeCellRendererComponent(

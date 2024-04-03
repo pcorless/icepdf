@@ -29,6 +29,7 @@ import org.icepdf.ri.common.tools.TextAnnotationHandler;
 import org.icepdf.ri.common.utility.annotation.properties.FreeTextAnnotationPanel;
 import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryBox;
+import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
@@ -1085,8 +1086,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         minimizeButton.setBackground(popupBackgroundColor);
         privateToggleButton.setBackground(popupBackgroundColor);
         // lock icons.
-        Icon lockedIcon = new ImageIcon(Images.get("lock_16.png"));
-        Icon unlockedIcon = new ImageIcon(Images.get("unlock_16.png"));
+        Icon lockedIcon = Images.getSingleIcon ("lock", IconPack.Variant.NONE, Images.IconSize.TINY);
+        Icon unlockedIcon = Images.getSingleIcon ("unlock", IconPack.Variant.NONE, Images.IconSize.TINY);
         privateToggleButton.setIcon(unlockedIcon);
         privateToggleButton.setPressedIcon(null);
         privateToggleButton.setSelectedIcon(lockedIcon);

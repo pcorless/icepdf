@@ -18,6 +18,7 @@ package org.icepdf.ri.common.utility.annotation;
 import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.ri.common.CompoundIcon;
 import org.icepdf.ri.common.widgets.ImageColorIcon;
+import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
@@ -41,52 +42,52 @@ public class AnnotationCellRender extends DefaultTreeCellRenderer {
     /**
      * Comment/text annotation icon.
      */
-    public static final ImageIcon ANNOTATION_TEXT_ICON = new ImageIcon(Images.get("annot_text_tree.png"));
+    public static final Icon ANNOTATION_TEXT_ICON = Images.getSingleIcon ("annot_text_tree", IconPack.Variant.NONE, Images.IconSize.SMALL);
 
     /**
      * Markup highlight annotation icon.
      */
-    public static final ImageIcon ANNOTATION_HIGHLIGHT_ICON = new ImageIcon(Images.get("annot_highlight_tree.png"));
+    public static final Icon ANNOTATION_HIGHLIGHT_ICON = Images.getSingleIcon ("annot_highlight_tree", IconPack.Variant.NONE, Images.IconSize.SMALL);
 
     /**
      * Markup cross out annotation icon.
      */
-    public static final ImageIcon ANNOTATION_CROSS_OUT_ICON = new ImageIcon(Images.get("annot_cross_out_tree.png"));
+    public static final Icon ANNOTATION_CROSS_OUT_ICON = Images.getSingleIcon ("annot_cross_out_tree", IconPack.Variant.NONE, Images.IconSize.SMALL);
 
     /**
      * Markup underline annotation icon.
      */
-    public static final ImageIcon ANNOTATION_UNDERLINE_ICON = new ImageIcon(Images.get("annot_underline_tree.png"));
+    public static final Icon ANNOTATION_UNDERLINE_ICON = Images.getSingleIcon ("annot_underline_tree", IconPack.Variant.NONE, Images.IconSize.SMALL);
 
     /**
      * Free text annotation icon.
      */
-    public static final ImageIcon ANNOTATION_FREE_TEXT_ICON = new ImageIcon(Images.get("annot_free_text_tree.png"));
+    public static final Icon ANNOTATION_FREE_TEXT_ICON = Images.getSingleIcon ("annot_free_text_tree", IconPack.Variant.NONE, Images.IconSize.SMALL);
 
     /**
      * Line annotation icon.
      */
-    public static final ImageIcon ANNOTATION_LINE_ICON = new ImageIcon(Images.get("annot_line_tree.png"));
+    public static final Icon ANNOTATION_LINE_ICON = Images.getSingleIcon ("annot_line_tree", IconPack.Variant.NONE, Images.IconSize.SMALL);
 
     /**
      * Circle annotation icon.
      */
-    public static final ImageIcon ANNOTATION_CIRCLE_ICON = new ImageIcon(Images.get("annot_circle_tree.png"));
+    public static final Icon ANNOTATION_CIRCLE_ICON = Images.getSingleIcon ("annot_circle_tree", IconPack.Variant.NONE, Images.IconSize.SMALL);
 
     /**
      * Square annotation icon.
      */
-    public static final ImageIcon ANNOTATION_SQUARE_ICON = new ImageIcon(Images.get("annot_square_tree.png"));
+    public static final Icon ANNOTATION_SQUARE_ICON = Images.getSingleIcon ("annot_square_tree", IconPack.Variant.NONE, Images.IconSize.SMALL);
 
     /**
      * Ink annotation icon.
      */
-    public static final ImageIcon ANNOTATION_INK_ICON = new ImageIcon(Images.get("annot_ink_tree.png"));
+    public static final Icon ANNOTATION_INK_ICON = Images.getSingleIcon ("annot_ink_tree", IconPack.Variant.NONE, Images.IconSize.SMALL);
 
     /**
      * Link annotation icon.
      */
-    public static final ImageIcon ANNOTATION_LINK_ICON = new ImageIcon(Images.get("annot_link_tree.png"));
+    public static final Icon ANNOTATION_LINK_ICON = Images.getSingleIcon ("annot_link_tree", IconPack.Variant.NONE, Images.IconSize.SMALL);
 
     public static final GeneralPath squareColorOutline;
     public static final GeneralPath circleColorOutline;
@@ -191,7 +192,7 @@ public class AnnotationCellRender extends DefaultTreeCellRenderer {
         }
         // dynamic as the validator status changes, so will the icon.
         if (annotation instanceof TextAnnotation) {
-            ImageColorIcon tmp = new ImageColorIcon(Images.get("annot_text_c_tree.png"));
+            ImageColorIcon tmp = new ImageColorIcon(Images.getSingleIcon ("annot_text_c_tree", IconPack.Variant.NONE, Images.IconSize.SMALL));
             tmp.setColor(annotation.getColor());
             tmp.setColorBound(textColorOutline);
             setIcon(tmp);
@@ -200,23 +201,23 @@ public class AnnotationCellRender extends DefaultTreeCellRenderer {
         } else if (annotation instanceof FreeTextAnnotation) {
             setIcon(ANNOTATION_FREE_TEXT_ICON);
         } else if (annotation instanceof LineAnnotation) {
-            ImageColorIcon tmp = new ImageColorIcon(Images.get("annot_line_c_tree.png"));
+            ImageColorIcon tmp = new ImageColorIcon(Images.getSingleIcon ("annot_line_c_tree", IconPack.Variant.NONE, Images.IconSize.SMALL));
             tmp.setColor(annotation.getColor(), 1f, false, false);
             tmp.setColorBound(lineColorOutline);
             setIcon(tmp);
         } else if (annotation instanceof SquareAnnotation) {
-            ImageColorIcon tmp = new ImageColorIcon(Images.get("annot_square_c_tree.png"));
+            ImageColorIcon tmp = new ImageColorIcon(Images.getSingleIcon ("annot_square_c_tree", IconPack.Variant.NONE, Images.IconSize.SMALL));
             tmp.setColor(annotation.getColor(), 1f, false, false);
             tmp.setColorBound(squareColorOutline);
             setIcon(tmp);
         } else if (annotation instanceof CircleAnnotation) {
-            ImageColorIcon tmp = new ImageColorIcon(Images.get("annot_circle_c_tree.png"));
+            ImageColorIcon tmp = new ImageColorIcon(Images.getSingleIcon ("annot_circle_c_tree", IconPack.Variant.NONE, Images.IconSize.SMALL));
             tmp.setColor(annotation.getColor(), 1f, false, false);
             tmp.setColorBound(circleColorOutline);
             setIcon(tmp);
         } else if (annotation instanceof TextMarkupAnnotation) {
             if (annotation.getSubType().equals(TextMarkupAnnotation.SUBTYPE_HIGHLIGHT)) {
-                ImageColorIcon tmp = new ImageColorIcon(Images.get("annot_highlight_c_tree.png"));
+                ImageColorIcon tmp = new ImageColorIcon(Images.getSingleIcon ("annot_highlight_c_tree", IconPack.Variant.NONE, Images.IconSize.SMALL));
                 tmp.setColor(annotation.getColor());
                 tmp.setBack(false);
                 tmp.setColorBound(highlightColorOutline);
@@ -224,38 +225,39 @@ public class AnnotationCellRender extends DefaultTreeCellRenderer {
             } else if (annotation.getSubType().equals(TextMarkupAnnotation.SUBTYPE_SQUIGGLY)) {
                 setIcon(ANNOTATION_UNDERLINE_ICON);
             } else if (annotation.getSubType().equals(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT)) {
-                ImageColorIcon tmp = new ImageColorIcon(Images.get("annot_cross_out_c_tree.png"));
+                ImageColorIcon tmp = new ImageColorIcon(Images.getSingleIcon ("annot_cross_out_c_tree", IconPack.Variant.NONE, Images.IconSize.SMALL));
                 tmp.setColor(annotation.getColor(), 1f, true, true);
                 tmp.setColorBound(strikeOutColorOutline);
                 setIcon(tmp);
             } else if (annotation.getSubType().equals(TextMarkupAnnotation.SUBTYPE_UNDERLINE)) {
-                ImageColorIcon tmp = new ImageColorIcon(Images.get("annot_underline_c_tree.png"));
+                ImageColorIcon tmp = new ImageColorIcon(Images.getSingleIcon ("annot_underline_c_tree", IconPack.Variant.NONE, Images.IconSize.SMALL));
                 tmp.setColor(annotation.getColor(), 1f, true, false);
                 tmp.setColorBound(underlineColorOutline);
                 setIcon(tmp);
             }
         } else if (annotation instanceof InkAnnotation) {
-            ImageColorIcon tmp = new ImageColorIcon(Images.get("annot_ink_c_tree.png"));
+            ImageColorIcon tmp = new ImageColorIcon(Images.getSingleIcon ("annot_ink_c_tree", IconPack.Variant.NONE, Images.IconSize.SMALL));
             tmp.setColor(annotation.getColor());
             tmp.setColorBound(inkColorOutline);
             setIcon(tmp);
         } else if (annotation instanceof TextWidgetAnnotation) {
-            ImageIcon tmp = new ImageIcon(Images.get("form_highlight_a_24.png"));
+            Icon tmp = Images.getSingleIcon ("form_highlight", IconPack.Variant.NORMAL, Images.IconSize.SMALL);
             setIcon(tmp);
         } else if (annotation != null) {
             setLeafIcon(null);
             setOpenIcon(null);
             setClosedIcon(null);
         } else if (value instanceof DefaultMutableTreeNode) {
-            setOpenIcon(new ImageIcon(Images.get("page.gif")));
-            setClosedIcon(new ImageIcon(Images.get("page.gif")));
-            setLeafIcon(new ImageIcon(Images.get("page.gif")));
+            Icon icon = Images.getSingleIcon ("page", IconPack.Variant.NONE, Images.IconSize.TINY);
+            setOpenIcon(icon);
+            setClosedIcon(icon);
+            setLeafIcon(icon);
         }
         if (PRIVATE_PROPERTY_ENABLED && annotation != null && !(annotation instanceof TextWidgetAnnotation)) {
-            final ImageIcon privateIcon;
+            final Icon privateIcon;
             privateIcon = annotation.getFlagPrivateContents() ?
-                    new ImageIcon(Images.get("lock_16.png")) :
-                    new ImageIcon(Images.get("unlock_16.png"));
+                    Images.getSingleIcon ("lock", IconPack.Variant.NONE, Images.IconSize.TINY) :
+                    Images.getSingleIcon ("unlock", IconPack.Variant.NONE, Images.IconSize.TINY);
             final CompoundIcon icon = new CompoundIcon(getIcon(), privateIcon);
             setIcon(icon);
         }

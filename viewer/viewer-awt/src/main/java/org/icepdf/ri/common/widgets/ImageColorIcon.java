@@ -24,13 +24,19 @@ import java.net.URL;
  *
  * @since 6.3
  */
-public class ImageColorIcon extends ImageIcon {
+public class ImageColorIcon implements Icon {
 
     protected final PaintButtonBase paintButtonBase;
+    protected final Icon baseIcon;
 
     public ImageColorIcon(URL location) {
-        super(location);
+        baseIcon = new ImageIcon (location);
         paintButtonBase = new PaintButtonBase(null);
+    }
+
+    public ImageColorIcon(Icon icon) {
+        baseIcon = icon;
+        paintButtonBase = new PaintButtonBase (null);
     }
 
     public void setColor(Color color, float alpha) {
@@ -64,7 +70,14 @@ public class ImageColorIcon extends ImageIcon {
     @Override
     public synchronized void paintIcon(Component c, Graphics g, int x, int y) {
         if (paintButtonBase.back) paintButtonBase.paintComponent(g);
-        super.paintIcon(c, g, x, y);
+        baseIcon.paintIcon(c, g, x, y);
         if (!paintButtonBase.back) paintButtonBase.paintComponent(g);
     }
+
+    @Override
+    public int getIconWidth () { return baseIcon.getIconWidth (); }
+
+    @Override
+    public int getIconHeight () { return baseIcon.getIconHeight (); }
+
 }

@@ -7,6 +7,7 @@ import org.icepdf.core.util.Utils;
 import org.icepdf.ri.common.MutableDocument;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.ViewModel;
+import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.viewer.WindowManager;
 
@@ -102,8 +103,8 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
         // right click context menu for save as.
         contextMenu = new JPopupMenu();
         saveAsMenuItem = new JMenuItem(messageBundle.getString(
-                "viewer.utilityPane.attachments.menu.saveAs.label"),
-                new ImageIcon(Images.get("save_a_24.png")));
+                "viewer.utilityPane.attachments.menu.saveAs.label"));
+        Images.applyIcon (saveAsMenuItem, "save", IconPack.Variant.NORMAL, Images.IconSize.SMALL);
         saveAsMenuItem.addActionListener(this);
         contextMenu.add(saveAsMenuItem);
 

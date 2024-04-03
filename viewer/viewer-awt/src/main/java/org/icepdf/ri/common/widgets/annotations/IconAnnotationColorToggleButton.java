@@ -1,6 +1,7 @@
 package org.icepdf.ri.common.widgets.annotations;
 
 import org.icepdf.ri.common.views.Controller;
+import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 
@@ -19,7 +20,7 @@ public class IconAnnotationColorToggleButton extends AnnotationColorToggleButton
 
     public IconAnnotationColorToggleButton(final Controller controller, final ResourceBundle messageBundle,
                                            final String title, final String toolTip, final String colorProperty,
-                                           final String imageName, final String imageSize, final Font font, final float alpha) {
+                                           final String imageName, final Images.IconSize imageSize, final Font font, final float alpha) {
         this(controller, messageBundle, title, toolTip, colorProperty, imageName, imageSize, font, alpha, Color.YELLOW);
     }
 
@@ -39,11 +40,12 @@ public class IconAnnotationColorToggleButton extends AnnotationColorToggleButton
      */
     public IconAnnotationColorToggleButton(final Controller controller, final ResourceBundle messageBundle,
                                            final String title, final String toolTip, final String colorProperty,
-                                           final String imageName, final String imageSize, final Font font,
+                                           final String imageName, final Images.IconSize imageSize, final Font font,
                                            final float alpha, final Color defaultColor) {
         super(controller, messageBundle, title, toolTip, colorProperty, imageName, imageSize, font);
         this.alpha = alpha;
-        final ImageIcon icon = new ImageIcon(Images.get(imageName + "_a" + imageSize + ".png"));
+        //final ImageIcon icon = new ImageIcon(Images.get(imageName + "_a" + imageSize + ".png"));
+        final Icon icon = Images.getSingleIcon (imageName, IconPack.Variant.NORMAL, imageSize);
         baseImage = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
         final Graphics2D g = baseImage.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);

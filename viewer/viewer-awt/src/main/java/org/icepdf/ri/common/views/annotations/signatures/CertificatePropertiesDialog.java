@@ -21,6 +21,7 @@ import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.icepdf.core.util.HexDumper;
 import org.icepdf.ri.common.EscapeJDialog;
 import org.icepdf.ri.common.utility.signatures.SignatureUtilities;
+import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
@@ -199,9 +200,11 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
         // Disable HTML to disable anchor click out.
         DefaultTreeCellRenderer customCellRenderer = new DefaultTreeCellRenderer();
         customCellRenderer.putClientProperty("html.disable", Boolean.TRUE);
-        customCellRenderer.setOpenIcon(new ImageIcon(Images.get("page.gif")));
-        customCellRenderer.setClosedIcon(new ImageIcon(Images.get("page.gif")));
-        customCellRenderer.setLeafIcon(new ImageIcon(Images.get("page.gif")));
+
+        Icon icon = Images.getSingleIcon ("page", IconPack.Variant.NONE, Images.IconSize.TINY);
+        customCellRenderer.setOpenIcon(icon);
+        customCellRenderer.setClosedIcon(icon);
+        customCellRenderer.setLeafIcon(icon);
         tree.setCellRenderer(customCellRenderer);
 
         // Allow single node selection only

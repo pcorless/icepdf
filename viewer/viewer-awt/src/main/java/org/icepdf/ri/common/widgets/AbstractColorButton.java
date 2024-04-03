@@ -66,13 +66,12 @@ public abstract class AbstractColorButton extends AbstractButton
         Insets insets = dropDownArrowButton.getMargin();
         dropDownArrowButton.setMargin(new Insets(insets.top, 0, insets.bottom, 0));
 
-        String imageSize = ViewerPropertiesManager.getInstance().getPreferences().get(
-                ViewerPropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE);
-        if (imageSize.equals(Images.SIZE_LARGE)) {
-            setPreferredSize(new Dimension(48, 32));
-        } else if (imageSize.equals(Images.SIZE_SMALL)) {
-            setPreferredSize(new Dimension(36, 24));
-        }
+        Images.IconSize imageSize = Images.getDefaultIconSizeOr (ViewerPropertiesManager.getInstance(), Images.IconSize.LARGE);
+        int h = Images.getHeightValueForIconSize (imageSize);
+
+        // TODO: Should we restore something equivalent to the previous size code?
+        if (h >= 32) setPreferredSize (new Dimension (48, 32));
+        else setPreferredSize (new Dimension (36, h));
 
         dropDownArrowButton.addActionListener(this);
         addAncestorListener(this);

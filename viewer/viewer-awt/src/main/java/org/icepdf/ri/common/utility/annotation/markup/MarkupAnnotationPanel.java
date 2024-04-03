@@ -378,7 +378,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
     protected void buildSortFilterToolBar() {
         JPanel filterSortToolPanel = new JPanel(new GridBagLayout());
 
-        String iconSize = preferences.get(ViewerPropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE);
+        Images.IconSize iconSize = Images.getDefaultIconSizeOr (preferences, Images.IconSize.LARGE);
 
         DropDownButton sortDropDownButton = new DropDownButton(controller, "",
                 messageBundle.getString("viewer.utilityPane.markupAnnotation.toolbar.sort.sortButton.tooltip"),
