@@ -52,14 +52,6 @@ public abstract class AnnotationColorToggleButton extends AbstractColorButton {
         colorButton.setPreferredSize (new Dimension (h, h));
         colorButton.setRolloverEnabled(true);
 
-        /*try {
-            colorButton.setIcon(new ImageIcon(Images.get(imageName + "_a" + imageSize + ".png")));
-            colorButton.setPressedIcon(new ImageIcon(Images.get(imageName + "_i" + imageSize + ".png")));
-            colorButton.setRolloverIcon(new ImageIcon(Images.get(imageName + "_r" + imageSize + ".png")));
-            colorButton.setDisabledIcon(new ImageIcon(Images.get(imageName + "_i" + imageSize + ".png")));
-        } catch (final NullPointerException e) {
-            logger.warning("Failed to load toolbar toggle drop down button images: " + imageName + "_i" + imageSize + ".png");
-        }*/
         Images.applyIcons (colorButton, imageName, imageSize);
         colorButton.setBorder(BorderFactory.createEmptyBorder());
         colorButton.setContentAreaFilled(false);
