@@ -56,6 +56,9 @@ public class DropDownButton extends JButton
 
         if (imageName != null) {
             Images.applyIcons (this, imageName, imageSize);
+
+            int h = Images.getHeightValueForIconSize (imageSize);
+            setPreferredSize (new Dimension (h, h));
         }
 
         popupMenu = new JPopupMenu();
