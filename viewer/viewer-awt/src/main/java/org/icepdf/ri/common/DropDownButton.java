@@ -73,7 +73,7 @@ public class DropDownButton extends JButton
     @Override
     public void setSelected(boolean b) {
         super.setSelected(b);
-        Images.applyIcon (this, imageName, IconPack.Variant.SELECTED, imageSize);
+        Images.applyIcon (this, imageName, b ? IconPack.Variant.SELECTED : IconPack.Variant.NORMAL, imageSize);
     }
 
     public void add(JMenuItem menuItem, int idx) {
