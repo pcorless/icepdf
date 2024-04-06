@@ -16,9 +16,7 @@
 
 package org.icepdf.core.pobjects.annotations;
 
-import org.icepdf.core.pobjects.DictionaryEntries;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.util.ColorUtil;
@@ -113,6 +111,23 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
             resetAppearanceStream(new AffineTransform());
         }
         // todo check if we have content value but no appearance stream.
+    }
+
+    protected static DictionaryEntries createCommonFieldDictionary(Name fieldType, Rectangle rect) {
+        DictionaryEntries entries = new DictionaryEntries();
+        // set default link annotation values.
+        entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
+        entries.put(Dictionary.SUBTYPE_KEY, Annotation.SUBTYPE_WIDGET);
+        entries.put(FieldDictionary.FT_KEY, fieldType);
+        entries.put(Annotation.FLAG_KEY, 4);
+        // coordinates
+        if (rect != null) {
+            entries.put(Annotation.RECTANGLE_KEY,
+                    PRectangle.getPRectangleVector(rect));
+        } else {
+            entries.put(Annotation.RECTANGLE_KEY, new Rectangle(10, 10, 50, 100));
+        }
+        return entries;
     }
 
     public abstract void reset();

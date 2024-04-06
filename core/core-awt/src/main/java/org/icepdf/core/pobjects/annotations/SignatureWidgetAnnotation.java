@@ -1,14 +1,16 @@
 package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.DictionaryEntries;
-import org.icepdf.core.pobjects.acroform.FieldDictionary;
-import org.icepdf.core.pobjects.acroform.SignatureDictionary;
-import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
-import org.icepdf.core.pobjects.acroform.SignatureHandler;
+import org.icepdf.core.pobjects.LiteralStringObject;
+import org.icepdf.core.pobjects.PDate;
+import org.icepdf.core.pobjects.StateManager;
+import org.icepdf.core.pobjects.acroform.*;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.util.Library;
 
+import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.util.Date;
 import java.util.logging.Logger;
 
 /**
@@ -61,6 +63,35 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
         fieldDictionary = new SignatureFieldDictionary(library, entries);
         // copy over the reference number.
         setPObjectReference(widgetAnnotation.getPObjectReference());
+    }
+
+    /**
+     * Gets an instance of a SignatureWidgetAnnotation that has valid Object Reference.
+     *
+     * @param library document library
+     * @param rect    bounding rectangle in user space
+     * @return new SignatureWidgetAnnotation Instance.
+     */
+    public static SignatureWidgetAnnotation getInstance(Library library, Rectangle rect) {
+        // state manager
+        StateManager stateManager = library.getStateManager();
+
+        // create a new entries to hold the annotation properties
+        DictionaryEntries entries = createCommonFieldDictionary(FieldDictionaryFactory.TYPE_SIGNATURE, rect);
+
+        SignatureWidgetAnnotation signatureAnnotation = null;
+        try {
+            signatureAnnotation = new SignatureWidgetAnnotation(library, entries);
+            signatureAnnotation.init();
+            entries.put(NM_KEY, new LiteralStringObject(String.valueOf(signatureAnnotation.hashCode())));
+            signatureAnnotation.setPObjectReference(stateManager.getNewReferenceNumber());
+            signatureAnnotation.setNew(true);
+            signatureAnnotation.setModifiedDate(PDate.formatDateTime(new Date()));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.fine("Text markup annotation instance creation was interrupted");
+        }
+        return signatureAnnotation;
     }
 
     public SignatureDictionary getSignatureDictionary() {

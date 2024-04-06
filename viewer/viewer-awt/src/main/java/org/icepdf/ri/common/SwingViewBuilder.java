@@ -1805,7 +1805,7 @@ public class SwingViewBuilder implements ViewBuilder {
                 messageBundle.getString("viewer.toolbar.tool.signature.tooltip"),
                 "signature_annot", imageSize, buttonFont);
         if (viewerController != null && btn != null)
-            viewerController.setRedactionAnnotationToolButton(btn);
+            viewerController.setSignatureAnnotationToolButton(btn);
         return btn;
     }
 

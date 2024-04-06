@@ -225,6 +225,8 @@ public class SwingController extends ComponentAdapter
     // main annotation toolbar
     private AnnotationColorToggleButton highlightAnnotationToolButton;
     private JToggleButton redactionAnnotationToolButton;
+
+    private JToggleButton signatureAnnotationToolButton;
     private JToggleButton linkAnnotationToolButton;
     private AnnotationColorToggleButton strikeOutAnnotationToolButton;
     private AnnotationColorToggleButton underlineAnnotationToolButton;
@@ -1258,6 +1260,11 @@ public class SwingController extends ComponentAdapter
         btn.addItemListener(this);
     }
 
+    public void setSignatureAnnotationToolButton(JToggleButton btn) {
+        signatureAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
      *
@@ -1705,6 +1712,7 @@ public class SwingController extends ComponentAdapter
         setEnabled(selectToolButton, opened && canModify && !pdfCollection);
         setEnabled(highlightAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(redactionAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(signatureAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(strikeOutAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(underlineAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(lineAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
@@ -2003,6 +2011,11 @@ public class SwingController extends ComponentAdapter
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION);
                 documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
                 setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
+            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_SIGNATURE_ANNOTATION) {
+                actualToolMayHaveChanged =
+                        documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SIGNATURE_ANNOTATION);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
+                setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_REDACTION_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_REDACTION_ANNOTATION);
@@ -2129,6 +2142,10 @@ public class SwingController extends ComponentAdapter
                 documentViewController.isToolModeSelected(
                         DocumentViewModelImpl.DISPLAY_TOOL_REDACTION_ANNOTATION
                 ));
+        reflectSelectionInButton(signatureAnnotationToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_SIGNATURE_ANNOTATION
+                ));
         reflectSelectionInButton(underlineAnnotationToolButton,
                 documentViewController.isToolModeSelected(
                         DocumentViewModelImpl.DISPLAY_TOOL_UNDERLINE_ANNOTATION
@@ -2144,6 +2161,10 @@ public class SwingController extends ComponentAdapter
         reflectSelectionInButton(linkAnnotationToolButton,
                 documentViewController.isToolModeSelected(
                         DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION
+                ));
+        reflectSelectionInButton(signatureAnnotationToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_SIGNATURE_ANNOTATION
                 ));
         reflectSelectionInButton(lineArrowAnnotationToolButton,
                 documentViewController.isToolModeSelected(
@@ -3356,6 +3377,7 @@ public class SwingController extends ComponentAdapter
         selectToolButton = null;
         highlightAnnotationToolButton = null;
         redactionAnnotationToolButton = null;
+        signatureAnnotationToolButton = null;
         strikeOutAnnotationToolButton = null;
         underlineAnnotationToolButton = null;
         lineAnnotationToolButton = null;
@@ -5181,6 +5203,11 @@ public class SwingController extends ComponentAdapter
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_REDACTION_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_REDACTION_ANNOTATION);
+                }
+            } else if (source == signatureAnnotationToolButton) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    tool = DocumentViewModelImpl.DISPLAY_TOOL_SIGNATURE_ANNOTATION;
+                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SIGNATURE_ANNOTATION);
                 }
             } else if (checkAnnotationButton(source, strikeOutAnnotationToolButton,
                     strikeOutAnnotationPropertiesToolButton)) {

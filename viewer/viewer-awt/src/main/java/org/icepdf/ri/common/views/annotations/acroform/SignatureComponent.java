@@ -21,11 +21,13 @@ import org.icepdf.core.pobjects.acroform.SignatureHandler;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
+import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.signatures.CertificatePropertiesDialog;
+import org.icepdf.ri.common.views.annotations.signatures.SignatureCreationDialog;
 import org.icepdf.ri.common.views.annotations.signatures.SignaturePropertiesDialog;
 
 import javax.swing.*;
@@ -47,6 +49,9 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
             Logger.getLogger(SignatureComponent.class.toString());
 
     protected final JPopupMenu contextMenu;
+    protected final JMenuItem validationMenu;
+    protected final JMenuItem signaturePropertiesMenu;
+    protected final JMenuItem addSignatureMenu;
     protected final Controller controller;
 
     public SignatureComponent(SignatureWidgetAnnotation annotation, DocumentViewController documentViewController,
@@ -70,15 +75,34 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
 
         // add context menu for quick access to validating and signature properties.
         contextMenu = new JPopupMenu();
-        JMenuItem validationMenu = new JMenuItem(messageBundle.getString(
+
+        validationMenu = new JMenuItem(messageBundle.getString(
                 "viewer.annotation.signature.menu.showCertificates.label"));
         validationMenu.addActionListener(new CertificatePropertiesActionListener());
-        contextMenu.add(validationMenu);
-        contextMenu.add(new JPopupMenu.Separator());
-        JMenuItem signaturePropertiesMenu = new JMenuItem(messageBundle.getString(
+
+        signaturePropertiesMenu = new JMenuItem(messageBundle.getString(
                 "viewer.annotation.signature.menu.signatureProperties.label"));
-        signaturePropertiesMenu.addActionListener(new signerPropertiesActionListener());
-        contextMenu.add(signaturePropertiesMenu);
+        signaturePropertiesMenu.addActionListener(new SignerPropertiesActionListener());
+
+        addSignatureMenu = new JMenuItem(messageBundle.getString(
+                "viewer.annotation.signature.menu.addSignature.label"));
+        addSignatureMenu.addActionListener(new NewSignatureActionListener());
+
+        updateContextMenu();
+    }
+
+    protected void updateContextMenu() {
+        SignatureFieldDictionary fieldDictionary = annotation.getFieldDictionary();
+        if (fieldDictionary != null) {
+            SignatureValidator signatureValidator = annotation.getSignatureValidator();
+            contextMenu.removeAll();
+            if (signatureValidator != null) {
+                contextMenu.add(validationMenu);
+                contextMenu.add(signaturePropertiesMenu);
+            } else {
+                contextMenu.add(addSignatureMenu);
+            }
+        }
     }
 
     public boolean isActive() {
@@ -122,7 +146,8 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
             // validate the signature and show the summary dialog.
             SignatureFieldDictionary fieldDictionary = annotation.getFieldDictionary();
             if (fieldDictionary != null) {
-                SignatureHandler signatureHandler = fieldDictionary.getLibrary().getSignatureHandler();
+                Library library = annotation.getLibrary();
+                SignatureHandler signatureHandler = library.getSignatureHandler();
                 SignatureValidator signatureValidator = signatureHandler.validateSignature(fieldDictionary);
                 if (signatureValidator != null) {
                     try {
@@ -140,9 +165,18 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
     /**
      * Opens the SignaturePropertiesDialog from a context menu.
      */
-    class signerPropertiesActionListener implements ActionListener {
+    class SignerPropertiesActionListener implements ActionListener {
         public void actionPerformed(ActionEvent actionEvent) {
             showSignatureWidgetPropertiesDialog();
+        }
+    }
+
+    /**
+     * Opens the SignaturePropertiesDialog from a context menu.
+     */
+    class NewSignatureActionListener implements ActionListener {
+        public void actionPerformed(ActionEvent actionEvent) {
+            new SignatureCreationDialog(controller.getViewerFrame(), messageBundle, annotation).setVisible(true);
         }
     }
 

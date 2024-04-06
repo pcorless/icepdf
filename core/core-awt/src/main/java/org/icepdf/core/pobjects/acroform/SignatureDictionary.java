@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
@@ -180,6 +181,23 @@ public class SignatureDictionary extends Dictionary {
         super(library, entries);
     }
 
+    public static SignatureDictionary getInstance(SignatureWidgetAnnotation signatureWidgetAnnotation) {
+        // todo: below would all be done in generateSignatureDictionary();
+
+        // setup permission
+
+        // time service
+
+        // Add the signatureWidget catalog
+//        InteractiveForm interactiveForm = document.getCatalog().getInteractiveForm();
+//        interactiveForm.addWidget(SignatureWidgetAnnotation);
+
+        // add placeholders for offset and contents
+
+        // flag updater that signatureDictionary needs to be updated.
+        return null;
+    }
+
     public Name getFilter() {
         return library.getName(entries, FILTER_KEY);
     }
@@ -283,8 +301,16 @@ public class SignatureDictionary extends Dictionary {
         }
     }
 
+    public void setName(String name) {
+        entries.put(NAME_KEY, new LiteralStringObject(name));
+    }
+
     public String getDate() {
         return library.getString(entries, M_KEY);
+    }
+
+    public void setDate(String date) {
+        entries.put(M_KEY, new LiteralStringObject(date));
     }
 
     public String getLocation() {
@@ -296,6 +322,10 @@ public class SignatureDictionary extends Dictionary {
         }
     }
 
+    public void setLocation(String location) {
+        entries.put(LOCATION_KEY, new LiteralStringObject(location));
+    }
+
     public String getReason() {
         Object tmp = library.getObject(entries, REASON_KEY);
         if (tmp instanceof StringObject) {
@@ -305,6 +335,10 @@ public class SignatureDictionary extends Dictionary {
         }
     }
 
+    public void setReason(String reason) {
+        entries.put(REASON_KEY, new LiteralStringObject(reason));
+    }
+
     public String getContactInfo() {
         Object tmp = library.getObject(entries, CONTACT_INFO_KEY);
         if (tmp instanceof StringObject) {
@@ -312,6 +346,10 @@ public class SignatureDictionary extends Dictionary {
         } else {
             return null;
         }
+    }
+
+    public void setContactInfo(String contactInfo) {
+        entries.put(CONTACT_INFO_KEY, new LiteralStringObject(contactInfo));
     }
 
     public int getHandlerVersion() {

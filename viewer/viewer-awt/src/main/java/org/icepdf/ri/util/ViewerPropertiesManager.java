@@ -159,6 +159,8 @@ public final class ViewerPropertiesManager {
             ".selection.type";
     public static final String PROPERTY_ANNOTATION_LINE_SELECTION_TYPE = "application.annotation.line.selection.type";
     public static final String PROPERTY_ANNOTATION_LINK_SELECTION_TYPE = "application.annotation.link.selection.type";
+    public static final String PROPERTY_ANNOTATION_SIGNATURE_SELECTION_TYPE = "application.annotation.signature" +
+            ".selection.type";
     public static final String PROPERTY_ANNOTATION_SQUARE_SELECTION_TYPE = "application.annotation.rectangle.selection.type";
     public static final String PROPERTY_ANNOTATION_CIRCLE_SELECTION_TYPE = "application.annotation.circle.selection.type";
     public static final String PROPERTY_ANNOTATION_INK_SELECTION_TYPE = "application.annotation.ink.selection.type";
@@ -170,6 +172,7 @@ public final class ViewerPropertiesManager {
             ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_SELECTION_TYPE,
             ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_SELECTION_TYPE,
             ViewerPropertiesManager.PROPERTY_ANNOTATION_LINK_SELECTION_TYPE,
+            ViewerPropertiesManager.PROPERTY_ANNOTATION_SIGNATURE_SELECTION_TYPE,
             ViewerPropertiesManager.PROPERTY_ANNOTATION_SQUARE_SELECTION_TYPE,
             ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_SELECTION_TYPE,
             ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SELECTION_TYPE

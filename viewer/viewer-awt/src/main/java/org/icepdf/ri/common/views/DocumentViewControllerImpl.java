@@ -897,8 +897,7 @@ public class DocumentViewControllerImpl
                 if (documentView != null) documentView.setToolMode(viewToolMode);
 
                 // notify the page components of the tool change.
-                List<AbstractPageViewComponent> pageComponents =
-                        documentViewModel.getPageComponents();
+                List<AbstractPageViewComponent> pageComponents = documentViewModel.getPageComponents();
                 for (AbstractPageViewComponent page : pageComponents) {
                     ((PageViewComponentImpl) page).setToolMode(viewToolMode);
                 }
