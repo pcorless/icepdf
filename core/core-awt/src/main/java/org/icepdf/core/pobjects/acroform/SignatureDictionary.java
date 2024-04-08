@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.acroform;
 
+import org.bouncycastle.cms.CMSSignedDataGenerator;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.util.Library;
@@ -177,6 +178,8 @@ public class SignatureDictionary extends Dictionary {
      */
     public static final Name CONTACT_INFO_KEY = new Name("ContactInfo");
 
+    private CMSSignedDataGenerator signedDataGenerator;
+
     public SignatureDictionary(Library library, DictionaryEntries entries) {
         super(library, entries);
     }
@@ -196,6 +199,11 @@ public class SignatureDictionary extends Dictionary {
 
         // flag updater that signatureDictionary needs to be updated.
         return null;
+    }
+
+    public void setSignedDataGenerator(CMSSignedDataGenerator signedDataGenerator) {
+        library.addSigner(this);
+        this.signedDataGenerator = signedDataGenerator;
     }
 
     public Name getFilter() {

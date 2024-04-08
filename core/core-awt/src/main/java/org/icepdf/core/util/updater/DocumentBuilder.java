@@ -1,14 +1,10 @@
 package org.icepdf.core.util.updater;
 
-import org.bouncycastle.cms.CMSSignedDataGenerator;
 import org.icepdf.core.pobjects.Document;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.WritableByteChannel;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -29,43 +25,21 @@ public class DocumentBuilder {
             OutputStream out,
             long documentLength) throws IOException, InterruptedException {
 
-        try (WritableByteChannel channel = Channels.newChannel(out)) {
-            long length;
-            if (writeMode == WriteMode.FULL_UPDATE) {
-                // kick of a full rewrite of the document, replacing any updates objects with new data
-                length = new FullUpdater().writeDocument(
-                        document,
-                        out);
-            } else if (writeMode == WriteMode.INCREMENT_UPDATE) {
-                // copy original file data
-                channel.write(documentByteBuffer);
-                // append the data from the incremental updater
-                long appendedLength = new IncrementalUpdater().appendIncrementalUpdate(
-                        document,
-                        out,
-                        documentLength);
-                channel.close();
-                length = documentLength + appendedLength;
-            }
-
-            CMSSignedDataGenerator gen = document.getCatalog().getSignedDataGenerator();
-            if (gen != null) {
-                // Signer.updateSigature(gen, out);
-                // find the /contents pattern regex
-                //    get start and end offsets.
-                // find the /ByteRange offset regex
-                //    replace pattern with proper offset
-                // digest the two byte ranges
-                // write the signature value to the /contents placeholder
-                // document.getCatalog().setSignedDataGenerator(null);
-            }
-
-            return length;
-        } catch (IOException | InterruptedException e) {
-            logger.log(Level.FINE, "Error writing PDF output stream.", e);
-            throw e;
+        long length = -1;
+        if (writeMode == WriteMode.FULL_UPDATE) {
+            // kick of a full rewrite of the document, replacing any updates objects with new data
+            length = new FullUpdater().writeDocument(
+                    document,
+                    out);
+        } else if (writeMode == WriteMode.INCREMENT_UPDATE) {
+            // append the data from the incremental updater
+            long appendedLength = new IncrementalUpdater().appendIncrementalUpdate(
+                    document,
+                    documentByteBuffer,
+                    out,
+                    documentLength);
+            length = documentLength + appendedLength;
         }
-
-        return 0;
+        return length;
     }
 }

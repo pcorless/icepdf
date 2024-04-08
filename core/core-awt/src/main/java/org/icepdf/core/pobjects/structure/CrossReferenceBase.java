@@ -38,6 +38,14 @@ public abstract class CrossReferenceBase<T extends Dictionary> implements CrossR
         return null;
     }
 
+    public int getObjectOffset(ObjectLoader objectLoader, Reference reference)
+            throws ObjectStateException, CrossReferenceStateException, IOException {
+        if (reference != null) {
+            return objectLoader.getObjectOffset(this, reference);
+        }
+        return -1;
+    }
+
     public CrossReferenceEntry getEntry(Reference reference) throws ObjectStateException,
             CrossReferenceStateException, IOException {
         CrossReferenceEntry crossReferenceEntry = indirectObjectReferences.get(reference);
