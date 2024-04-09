@@ -170,7 +170,7 @@ public class ZFontType1 extends ZSimpleFont {
         return type1Font.getName();
     }
 
-    private void calculateFontBbox() {
+    private void calculateFontBbox() throws IOException {
         BoundingBox fontBBox = type1Font.getFontBBox();
         if (fontBBox.getWidth() > 0 && fontBBox.getHeight() > 0) {
             bbox = new Rectangle2D.Double(

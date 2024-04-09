@@ -3,13 +3,13 @@ package org.icepdf.core.pobjects.fonts.zfont.fontFiles;
 import org.apache.fontbox.ttf.GlyphData;
 import org.apache.fontbox.ttf.OTFParser;
 import org.apache.fontbox.ttf.OpenTypeFont;
+import org.apache.pdfbox.io.RandomAccessReadBuffer;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.graphics.TextState;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,7 +28,7 @@ public class ZFontOpenType extends ZFontTrueType {
         try {
             if (fontBytes != null) {
                 OTFParser otfParser = new OTFParser(true);
-                OpenTypeFont openTypeFont = otfParser.parse(new ByteArrayInputStream(fontBytes));
+                OpenTypeFont openTypeFont = otfParser.parse(new RandomAccessReadBuffer(fontBytes));
                 trueTypeFont = openTypeFont;
                 fontBoxFont = trueTypeFont;
                 if (openTypeFont.isPostScript()) {
