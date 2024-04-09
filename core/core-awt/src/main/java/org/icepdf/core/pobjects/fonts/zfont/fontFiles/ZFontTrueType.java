@@ -2,6 +2,7 @@ package org.icepdf.core.pobjects.fonts.zfont.fontFiles;
 
 import org.apache.fontbox.cff.Type2CharString;
 import org.apache.fontbox.ttf.*;
+import org.apache.pdfbox.io.RandomAccessReadBuffer;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Encoding;
@@ -14,7 +15,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Map;
@@ -57,7 +57,7 @@ public class ZFontTrueType extends ZSimpleFont {
         try {
             if (fontBytes != null) {
                 TTFParser ttfParser = new TTFParser(true);
-                trueTypeFont = ttfParser.parse(new ByteArrayInputStream(fontBytes));
+                trueTypeFont = ttfParser.parse(new RandomAccessReadBuffer(fontBytes));
                 fontBoxFont = trueTypeFont;
 
                 extractCmapTable();
@@ -359,7 +359,7 @@ public class ZFontTrueType extends ZSimpleFont {
         calculateFontBbox();
     }
 
-    private void calculateFontBbox(){
+    private void calculateFontBbox() {
         if (headerTable != null) {
             Rectangle2D bbox = new Rectangle2D.Float(
                     headerTable.getXMin(), headerTable.getYMin(), headerTable.getXMax(), headerTable.getYMax());
