@@ -80,7 +80,7 @@ public class Images {
     private static final IconPack.VariantPool AVAILABLE_VARIANTS;
 
     static {
-        Object defaultIconPackProp = UIManager.get ("org.icepdf.iconpack");
+        Object defaultIconPackProp = UIManager.get ("org.icepdf.ri.iconpack");
         if (!(defaultIconPackProp instanceof IconPack)) {
             LOGGER.fine ("No user-defined icon pack was registered or registered one was invalid; using default icon pack");
             ICON_PACK = new DefaultIconPack ();
