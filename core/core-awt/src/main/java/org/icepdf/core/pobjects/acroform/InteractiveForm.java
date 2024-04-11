@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
@@ -206,6 +207,21 @@ public class InteractiveForm extends Dictionary {
         }
     }
 
+    public void addField(Object field) {
+        if (!(field instanceof AbstractWidgetAnnotation)) {
+            throw new IllegalStateException("Field must be an AbstractWidgetAnnotation");
+        }
+        if (fields == null) {
+            fields = new ArrayList<>();
+            fields.add(field);
+            entries.put(FIELDS_KEY, List.of(((AbstractWidgetAnnotation) field).getPObjectReference()));
+        } else {
+            fields.add(field);
+            List<Reference> fieldReferences = (List<Reference>) library.getObject(entries, FIELDS_KEY);
+            fieldReferences.add(((AbstractWidgetAnnotation) field).getPObjectReference());
+        }
+    }
+
     /**
      * Gets the fields associated with this form.
      *
@@ -216,7 +232,8 @@ public class InteractiveForm extends Dictionary {
     }
 
     /**
-     * Gets the signature fields associated with this form.  A new array that references the forms signature annotations.
+     * Gets the signature fields associated with this form.  A new array that references the forms signature
+     * annotations.
      * If no fields are found an empty list is returned.
      *
      * @return a list of form signature objects.
@@ -351,7 +368,8 @@ public class InteractiveForm extends Dictionary {
     /**
      * Ges the default variable text quadding rule.
      *
-     * @return integer represented by VariableTextFieldDictionary.QUADDING_LEFT_JUSTIFIED, VariableTextFieldDictionary.QUADDING_CENTERED or
+     * @return integer represented by VariableTextFieldDictionary.QUADDING_LEFT_JUSTIFIED,
+     * VariableTextFieldDictionary.QUADDING_CENTERED or
      * VariableTextFieldDictionary.QUADDING_RIGHT_JUSTIFIED.
      */
     public int getDefaultVariableTextQField() {

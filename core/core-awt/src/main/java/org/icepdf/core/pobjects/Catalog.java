@@ -386,6 +386,23 @@ public class Catalog extends Dictionary {
     }
 
     /**
+     * Gets the interactive form object that contains the form widgets for the given PDF.  This method should be
+     * called before adding new widgets.
+     *
+     * @return The interactive form object if it exists, if null a new dictionary is inserted into the document.
+     */
+    public InteractiveForm getOrCreateInteractiveForm() {
+        if (interactiveForm == null) {
+            InteractiveForm interactiveForm = new InteractiveForm(library, new DictionaryEntries());
+            StateManager stateManager = library.getStateManager();
+            this.entries.put(ACRO_FORM_KEY, interactiveForm);
+            stateManager.addChange(new PObject(this, this.getPObjectReference()));
+            return interactiveForm;
+        }
+        return interactiveForm;
+    }
+
+    /**
      * Returns a summary of the Catalog dictionary values.
      *
      * @return dictionary values.

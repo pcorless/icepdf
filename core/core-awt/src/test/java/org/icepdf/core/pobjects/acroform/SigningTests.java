@@ -24,16 +24,14 @@ public class SigningTests {
     public void testXrefTableFullUpdate() {
 
         try {
-            Document document = new Document();
-            InputStream fileUrl = ObjectUpdateTests.class.getResourceAsStream("/signing/test_print.pdf");
-            document.setInputStream(fileUrl, "test_print.pdf");
-
 
             String password = "changeit";
             String keystorePath = "/home/pcorless/dev/cert-test/keypair/sender_keystore.pfx";
             String certAlias = "senderKeyPair";
             String algorithm = "SHA512WithRSA";
 
+            // keystore loading before ICEpdf as it will use bouncy castle JCE provider which can't seem to load
+            // this keystore format,  hopefully it can use the generator.
             KeyStore keystore = KeyStore.getInstance("PKCS12");
             keystore.load(new FileInputStream(keystorePath), password.toCharArray());
             X509Certificate certificate = (X509Certificate) keystore.getCertificate(certAlias);
@@ -42,12 +40,21 @@ public class SigningTests {
             CMSSignedDataGenerator signedDataGenerator = new Pkcs7Generator()
                     .createSignedDataGenerator(algorithm, new X509Certificate[]{certificate}, privateKey);
 
+            Document document = new Document();
+            InputStream fileUrl = ObjectUpdateTests.class.getResourceAsStream("/signing/test_print.pdf");
+            document.setInputStream(fileUrl, "test_print.pdf");
+
             // Creat signature annotation
             SignatureWidgetAnnotation signatureAnnotation = (SignatureWidgetAnnotation)
                     AnnotationFactory.buildWidgetAnnotation(
                             document.getPageTree().getLibrary(),
                             FieldDictionaryFactory.TYPE_SIGNATURE,
                             new Rectangle(100, 250, 100, 50));
+            document.getPageTree().getPage(0).addAnnotation(signatureAnnotation, true);
+
+            // Add the signatureWidget to catalog
+            InteractiveForm interactiveForm = document.getCatalog().getOrCreateInteractiveForm();
+            interactiveForm.addField(signatureAnnotation);
 
             // update dictionary,  already in StateManager
             SignatureDictionary signatureDictionary = SignatureDictionary.getInstance(signatureAnnotation);
@@ -55,6 +62,8 @@ public class SigningTests {
             signatureDictionary.setLocation("Springfield USA");
             signatureDictionary.setReason("Make sure stuff didn't change");
             signatureDictionary.setDate("D:20240405082733+02'00'");
+
+            // todo time service
 
             // todo: default appearance, uses values from signatureDictionary
             // signatureAnnotation.buildDefaultAppearance();
@@ -72,6 +81,7 @@ public class SigningTests {
 
         } catch (Exception e) {
             // make sure we have no io errors.
+            e.printStackTrace();
             fail("should not be any exceptions");
         }
     }

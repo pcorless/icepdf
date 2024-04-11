@@ -1,9 +1,6 @@
 package org.icepdf.core.pobjects.annotations;
 
-import org.icepdf.core.pobjects.DictionaryEntries;
-import org.icepdf.core.pobjects.LiteralStringObject;
-import org.icepdf.core.pobjects.PDate;
-import org.icepdf.core.pobjects.StateManager;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.*;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.util.Library;
@@ -87,6 +84,7 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
             signatureAnnotation.setPObjectReference(stateManager.getNewReferenceNumber());
             signatureAnnotation.setNew(true);
             signatureAnnotation.setModifiedDate(PDate.formatDateTime(new Date()));
+            stateManager.addChange(new PObject(signatureAnnotation, signatureAnnotation.getPObjectReference()));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.fine("Text markup annotation instance creation was interrupted");

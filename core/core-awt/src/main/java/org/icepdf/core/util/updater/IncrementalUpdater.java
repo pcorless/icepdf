@@ -5,12 +5,12 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.PTrailer;
 import org.icepdf.core.pobjects.StateManager;
-import org.icepdf.core.pobjects.acroform.signature.Signer;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.updater.writeables.BaseWriter;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -49,10 +49,12 @@ public class IncrementalUpdater {
         }
 
         // create a temp document so that it can sign it after the incremental update
-        Path tmpFile = Files.createTempFile(null, null);
-        OutputStream newDocumentOutputStream = new FileOutputStream(tmpFile.toFile());
-        try (WritableByteChannel channel = Channels.newChannel(newDocumentOutputStream)) {
+        Path tmpFilePath = Files.createTempFile(null, null);
+        File tempFile = tmpFilePath.toFile();
+        OutputStream newDocumentOutputStream = new FileOutputStream(tempFile);
+        try {
             // copy original file data
+            WritableByteChannel channel = Channels.newChannel(newDocumentOutputStream);
             channel.write(documentByteBuffer);
         } catch (IOException e) {
             logger.log(Level.FINE, "Error writing PDF output stream during incremental write.", e);
@@ -86,22 +88,22 @@ public class IncrementalUpdater {
         // sign the document using the first signature, this could be reworked to handle more signatures.
         Document tmpDocument = new Document();
         try {
-            if (library.hasSigners()) {
-                // open new incrementally updated tmp file
-                tmpDocument.setFile(tmpFile.toString());
-                Signer.signDocument(tmpDocument, output, library.getSigner());
-            }
+//            if (library.hasSigners()) {
+//                // open new incrementally updated tmp file
+//                tmpDocument.setFile(tmpFile.toString());
+//                Signer.signDocument(tmpDocument, output, library.getSigner());
+//            }
         } catch (Exception e) {
             logger.log(Level.FINE, "Failed to sign document.", e);
             throw new RuntimeException(e);
         } finally {
             output.close();
             tmpDocument.dispose();
-            Files.delete(tmpFile);
         }
 
         // copy the temp file to the outputStream and cleanup.
-        Files.copy(tmpFile, outputStream);
+        Files.copy(tmpFilePath, outputStream);
+        Files.delete(tmpFilePath);
 
         return writer.getBytesWritten();
     }

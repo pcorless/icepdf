@@ -24,9 +24,18 @@ import org.icepdf.core.util.Utils;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.icepdf.core.pobjects.Permissions.DOC_MDP_KEY;
+import static org.icepdf.core.pobjects.acroform.DocMDPTransferParam.PERMISSION_KEY;
+import static org.icepdf.core.pobjects.acroform.DocMDPTransferParam.PERMISSION_VALUE_NO_CHANGES;
+import static org.icepdf.core.pobjects.acroform.FieldDictionaryFactory.TYPE_SIGNATURE;
+import static org.icepdf.core.pobjects.acroform.SignatureReferenceDictionary.*;
+import static org.icepdf.core.pobjects.acroform.signature.DigitalSignatureFactory.DSS_SUB_FILTER_PKCS7_DETACHED;
+
 /**
- * A digital signature (PDF 1.3) may be used to authenticate the identity of a user and the document’s contents. It stores
- * information about the signer and the state of the document when it was signed. The signature may be purely mathematical,
+ * A digital signature (PDF 1.3) may be used to authenticate the identity of a user and the document’s contents. It
+ * stores
+ * information about the signer and the state of the document when it was signed. The signature may be purely
+ * mathematical,
  * such as a public/private-key encrypted document digest, or it may be a biometric form of identification, such as a
  * handwritten signature, fingerprint, or retinal scan. The specific form of authentication used shall be implemented by
  * a special software module called a signature handler.
@@ -47,7 +56,8 @@ public class SignatureDictionary extends Dictionary {
     public static final Name FILTER_KEY = new Name("Filter");
 
     /**
-     * (Optional) A name that describes the encoding of the signature value and key information in the signature dictionary.
+     * (Optional) A name that describes the encoding of the signature value and key information in the signature
+     * dictionary.
      * A conforming reader may use any handler that supports this format to validate the signature.
      * <br>
      * (PDF 1.6) The following values for public-key cryptographic signatures shall be used: adbe.x509.rsa_sha1,
@@ -154,7 +164,8 @@ public class SignatureDictionary extends Dictionary {
      * state of the computer environment used for signing, such as the name of the handler used to create the signature,
      * software build date, version, and operating system.
      * <br>
-     * The PDF Signature Build Dictionary Specification, provides implementation guidelines for the use of this dictionary.
+     * The PDF Signature Build Dictionary Specification, provides implementation guidelines for the use of this
+     * dictionary.
      */
     public static final Name PROP_BUILD_KEY = new Name("Prop_Build");
 
@@ -171,7 +182,8 @@ public class SignatureDictionary extends Dictionary {
     public static final Name PROP_AUTH_TIME_KEY = new Name("Prop_AuthTime");
 
     /**
-     * (Optional) Information provided by the signer to enable a recipient to contact the signer to verify the signature.
+     * (Optional) Information provided by the signer to enable a recipient to contact the signer to verify the
+     * signature.
      * <br>
      * EXAMPLE 3<br>
      * A phone number.
@@ -185,20 +197,45 @@ public class SignatureDictionary extends Dictionary {
     }
 
     public static SignatureDictionary getInstance(SignatureWidgetAnnotation signatureWidgetAnnotation) {
-        // todo: below would all be done in generateSignatureDictionary();
+        Library library = signatureWidgetAnnotation.getLibrary();
+        DictionaryEntries signatureDictionaryEntries = new DictionaryEntries();
 
-        // setup permission
+        // reference dictionary
+        signatureDictionaryEntries.put(REFERENCE_KEY, List.of(buildReferenceDictionary(library)));
 
-        // time service
+        signatureDictionaryEntries.put(TYPE_KEY, TYPE_SIGNATURE);
+        signatureDictionaryEntries.put(FILTER_KEY, new Name("Adobe.PPKLite"));
+        signatureDictionaryEntries.put(SUB_FILTER_KEY, DSS_SUB_FILTER_PKCS7_DETACHED);
 
-        // Add the signatureWidget catalog
-//        InteractiveForm interactiveForm = document.getCatalog().getInteractiveForm();
-//        interactiveForm.addWidget(SignatureWidgetAnnotation);
-
-        // add placeholders for offset and contents
+        // add placeholders for the signature, these values are updated when this object is written to disk
+        // and contents when the signature hash is calculated.
+        signatureDictionaryEntries.put(BYTE_RANGE_KEY, List.of(0, 0, 1, 1));
+        signatureDictionaryEntries.put(CONTENTS_KEY, new HexStringObject("update"));
 
         // flag updater that signatureDictionary needs to be updated.
-        return null;
+        SignatureDictionary signatureDictionary = new SignatureDictionary(library, signatureDictionaryEntries);
+        StateManager stateManager = library.getStateManager();
+        signatureDictionary.setPObjectReference(stateManager.getNewReferenceNumber());
+        stateManager.addChange(new PObject(signatureDictionary, signatureDictionary.getPObjectReference()));
+
+        // attach the dictionary to the annotation
+        signatureWidgetAnnotation.getEntries().put(V_KEY, signatureDictionary.getPObjectReference());
+
+        return signatureDictionary;
+    }
+
+    private static SignatureReferenceDictionary buildReferenceDictionary(Library library) {
+        DictionaryEntries referenceEntries = new DictionaryEntries();
+        referenceEntries.put(TYPE_KEY, SIG_REF_TYPE_VALUE);
+        referenceEntries.put(DIGEST_METHOD_KEY, new Name("SHA1"));
+        referenceEntries.put(TRANSFORM_METHOD_KEY, DOC_MDP_KEY);
+
+        DictionaryEntries transformParams = new DictionaryEntries();
+        transformParams.put(PERMISSION_KEY, PERMISSION_VALUE_NO_CHANGES);
+        transformParams.put(V_KEY, DocMDPTransferParam.getDocMDPVersion());
+        referenceEntries.put(TRANSFORM_PARAMS_KEY, new DocMDPTransferParam(library, transformParams));
+
+        return new SignatureReferenceDictionary(library, referenceEntries);
     }
 
     public void setSignedDataGenerator(CMSSignedDataGenerator signedDataGenerator) {
