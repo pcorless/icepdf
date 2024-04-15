@@ -63,8 +63,7 @@ public class BaseWriter {
     }
 
     public BaseWriter(CrossReferenceRoot crossReferenceRoot, SecurityManager securityManager,
-                      CountingOutputStream output,
-                      long startingPosition) {
+                      CountingOutputStream output, long startingPosition) {
         this.output = output;
         this.crossReferenceRoot = crossReferenceRoot;
         this.securityManager = securityManager;
@@ -255,16 +254,12 @@ public class BaseWriter {
             Library library = stream.getLibrary();
             if (stream.getEntries().get(Stream.DECODEPARAM_KEY) != null) {
                 // needed to check for a custom crypt filter
-                decodeParams = library.getDictionary(stream.getEntries(),
-                        Stream.DECODEPARAM_KEY);
+                decodeParams = library.getDictionary(stream.getEntries(), Stream.DECODEPARAM_KEY);
             } else {
                 decodeParams = new DictionaryEntries();
             }
-            InputStream decryptedStream = securityManager.encryptInputStream(
-                    stream.getPObjectReference(),
-                    securityManager.getDecryptionKey(),
-                    decodeParams,
-                    new ByteArrayInputStream(outputData), true);
+            InputStream decryptedStream = securityManager.encryptInputStream(stream.getPObjectReference(),
+                    securityManager.getDecryptionKey(), decodeParams, new ByteArrayInputStream(outputData), true);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             int nRead;
             byte[] data = new byte[16384];
