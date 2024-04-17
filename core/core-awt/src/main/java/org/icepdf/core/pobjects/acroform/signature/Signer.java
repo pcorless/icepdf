@@ -1,13 +1,8 @@
 package org.icepdf.core.pobjects.acroform.signature;
 
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.cms.CMSException;
-import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.icepdf.core.io.CountingOutputStream;
-import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.pobjects.PObject;
-import org.icepdf.core.pobjects.StateManager;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
@@ -23,9 +18,14 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
-
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Signer {
+
+    public static int PLACEHOLDER_PADDING_LENGTH = 30000;
+    public static int PLACEHOLDER_BYTE_OFFSET_LENGTH = 9;
 
     public static void signDocument(Document document, File outputFile, SignatureDictionary signatureDictionary) {
         try (final RandomAccessFile raf = new RandomAccessFile(outputFile, "rw");) {
@@ -36,37 +36,75 @@ public class Signer {
             StateManager stateManager = document.getStateManager();
             SecurityManager securityManager = document.getSecurityManager();
             CrossReferenceRoot crossReferenceRoot = stateManager.getCrossReferenceRoot();
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            CountingOutputStream objectOutput = new CountingOutputStream(byteArrayOutputStream);
-            BaseWriter writer = new BaseWriter(crossReferenceRoot, securityManager, objectOutput, 0l);
-            writer.initializeWriters();
-            writer.writePObject(new PObject(signatureDictionary, signatureDictionary.getPObjectReference()));
-            String objectDump = byteArrayOutputStream.toString(StandardCharsets.UTF_8);
 
-
-            // find byte offset of start of content hex string
-
-            // next start is known, +30k
-
-            // todo calculate the length of the last three offsets
-
-
-            // update /ByteRange
-            objectDump = objectDump.replace("/ByteRange [0 0 1 1]", "/ByteRange [1 1 1 2]");
-
-            // digest the file creating the content signature
-
-            // update /contents
-
-            // write the new object
+            // write out the securityDictionary, so we can make the necessary edits for setting up signing
+            String contentsDump = writeSignatureDictionary(crossReferenceRoot, securityManager, signatureDictionary);
+            int signatureDictionaryLength = contentsDump.length();
 
             final FileChannel fc = raf.getChannel();
+            fc.position(0);
+            long fileLength = fc.size();
+
+            // find byte offset of the start of content hex string
+            int firstStart = 0;
+            String contents = "/Contents <";
+            int firstOffset = signatureDictionaryOffset + contentsDump.indexOf(contents) + contents.length();
+            int secondOffset = (int) fileLength; // just awkward, but should 32bit max.
+            int secondStart = firstOffset + PLACEHOLDER_PADDING_LENGTH;
+
+            // find length of the new array.
+            List byteRangeArray = List.of(firstStart, firstOffset, secondStart, secondOffset);
+            String byteRangeDump = writeByteOffsets(crossReferenceRoot, securityManager, byteRangeArray);
+            // adjust the second start, we will make sure the padding zeros on the /contents hex string adjust
+            // accordingly
+            int byteRangeLength = byteRangeDump.length() - PLACEHOLDER_BYTE_OFFSET_LENGTH;
+            secondStart -= byteRangeLength;
+            byteRangeArray = List.of(firstStart, firstOffset, secondStart, secondOffset);
+            byteRangeDump = writeByteOffsets(crossReferenceRoot, securityManager, byteRangeArray);
+            // update /ByteRange
+            contentsDump = contentsDump.replace("/ByteRange [0 0 0 0]", "/ByteRange " + byteRangeDump);
+
+            // update /contents with adjusted length for byteRange offset
+            Pattern pattern = Pattern.compile("/Contents <([A-Fa-f0-9]+)>");
+            Matcher matcher = pattern.matcher(contentsDump);
+            contentsDump = matcher.replaceFirst("/Contents <" + generateContentsPlaceholder(byteRangeLength) + ">");
+
+            // write the altered signature dictionary
             fc.position(signatureDictionaryOffset);
-            int count = fc.write(ByteBuffer.wrap(objectDump.getBytes()));
+            fc.write(ByteBuffer.wrap(contentsDump.getBytes()));
+
+            // digest the file creating the content signature
+            ByteBuffer preContent = ByteBuffer.allocate(firstOffset - firstStart);
+            ByteBuffer postContent = ByteBuffer.allocate(secondOffset - secondStart);
+            fc.position(0);
+            fc.read(preContent);
+            fc.position(secondStart);
+            fc.read(postContent);
+            byte[] combined = new byte[preContent.limit() + postContent.limit()];
+            ByteBuffer buffer = ByteBuffer.wrap(combined);
+            preContent.flip();
+            postContent.flip();
+            buffer.put(preContent);
+            buffer.put(postContent);
+
+            byte[] signature = signatureDictionary.getSignedData(combined);
+            String hexContent = HexStringObject.encodeHexString(signature);
+            if (hexContent.length() < PLACEHOLDER_PADDING_LENGTH) {
+                int padding = PLACEHOLDER_PADDING_LENGTH - byteRangeLength - hexContent.length();
+                hexContent = hexContent + "0".repeat(Math.max(0, padding));
+            } else {
+                throw new IllegalStateException("signature content is larger than placeholder");
+            }
+            // update /contents with signature
+            contentsDump = matcher.replaceFirst("/Contents <" + hexContent + ">");
+
+            // write the altered signature dictionary
+            fc.position(signatureDictionaryOffset);
+            int count = fc.write(ByteBuffer.wrap(contentsDump.getBytes()));
 
             // make sure the object length didn't change
-            if (count != byteArrayOutputStream.size()) {
-                System.out.println("BAM!");
+            if (count != signatureDictionaryLength) {
+                System.out.println("BAM! " + count + " " + signatureDictionaryLength);
                 throw new IllegalStateException();
             }
 
@@ -76,17 +114,46 @@ public class Signer {
             throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } catch (CMSException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    // todo handle in Signature dictionary called by the signer class
-    //  want to ame sure the generator can only be used by the signature dictionary.
-    public byte[] getContents(byte[] data) throws IOException, CMSException {
-        CMSProcessableByteArray message =
-                new CMSProcessableByteArray(new ASN1ObjectIdentifier(CMSObjectIdentifiers.data.getId()), data);
-//        CMSSignedData signedData = signedDataGenerator.generate(message, false);
-//        return signedData.getEncoded();
-        return null;
+    public static String writeSignatureDictionary(CrossReferenceRoot crossReferenceRoot,
+                                                  SecurityManager securityManager,
+                                                  SignatureDictionary signatureDictionary) throws IOException {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        CountingOutputStream objectOutput = new CountingOutputStream(byteArrayOutputStream);
+        BaseWriter writer = new BaseWriter(crossReferenceRoot, securityManager, objectOutput, 0l);
+        writer.initializeWriters();
+        writer.writePObject(new PObject(signatureDictionary, signatureDictionary.getPObjectReference()));
+        String objectDump = byteArrayOutputStream.toString(StandardCharsets.UTF_8);
+        objectOutput.close();
+        return objectDump;
     }
+
+    public static String writeByteOffsets(CrossReferenceRoot crossReferenceRoot, SecurityManager securityManager,
+                                          List offsets) throws IOException {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        CountingOutputStream objectOutput = new CountingOutputStream(byteArrayOutputStream);
+        BaseWriter writer = new BaseWriter(crossReferenceRoot, securityManager, objectOutput, 0l);
+        writer.initializeWriters();
+        writer.writeValue(new PObject(offsets, new Reference(1, 0)), objectOutput);
+        String objectDump = byteArrayOutputStream.toString(StandardCharsets.UTF_8);
+        objectOutput.close();
+        return objectDump;
+    }
+
+    public static String generateContentsPlaceholder() {
+        return generateContentsPlaceholder(0);
+    }
+
+    public static String generateContentsPlaceholder(int reductionAdjustment) {
+        int capacity = PLACEHOLDER_PADDING_LENGTH - reductionAdjustment;
+        StringBuilder paddedZeros = new StringBuilder(capacity);
+        paddedZeros.append("0".repeat(Math.max(0, capacity)));
+        return paddedZeros.toString();
+    }
+
 
 }

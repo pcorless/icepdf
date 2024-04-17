@@ -58,6 +58,7 @@ public class SigningTests {
 
             // update dictionary,  already in StateManager
             SignatureDictionary signatureDictionary = SignatureDictionary.getInstance(signatureAnnotation);
+            signatureDictionary.setSignedDataGenerator(signedDataGenerator);
             signatureDictionary.setName("Tester McTest");
             signatureDictionary.setLocation("Springfield USA");
             signatureDictionary.setReason("Make sure stuff didn't change");
@@ -67,8 +68,6 @@ public class SigningTests {
 
             // todo: default appearance, uses values from signatureDictionary
             // signatureAnnotation.buildDefaultAppearance();
-
-            signatureDictionary.setSignedDataGenerator(signedDataGenerator);
 
             File out = new File("./src/test/out/SigningTest_signed_document.pdf");
             try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 8192)) {

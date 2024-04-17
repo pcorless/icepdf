@@ -15,12 +15,19 @@
  */
 package org.icepdf.core.pobjects.acroform;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
+import org.bouncycastle.cms.CMSException;
+import org.bouncycastle.cms.CMSProcessableByteArray;
+import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSSignedDataGenerator;
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.acroform.signature.Signer;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -209,8 +216,8 @@ public class SignatureDictionary extends Dictionary {
 
         // add placeholders for the signature, these values are updated when this object is written to disk
         // and contents when the signature hash is calculated.
-        signatureDictionaryEntries.put(BYTE_RANGE_KEY, List.of(0, 0, 1, 1));
-        signatureDictionaryEntries.put(CONTENTS_KEY, new HexStringObject("update"));
+        signatureDictionaryEntries.put(BYTE_RANGE_KEY, List.of(0, 0, 0, 0));
+        signatureDictionaryEntries.put(CONTENTS_KEY, new HexStringObject(Signer.generateContentsPlaceholder()));
 
         // flag updater that signatureDictionary needs to be updated.
         SignatureDictionary signatureDictionary = new SignatureDictionary(library, signatureDictionaryEntries);
@@ -241,6 +248,15 @@ public class SignatureDictionary extends Dictionary {
     public void setSignedDataGenerator(CMSSignedDataGenerator signedDataGenerator) {
         library.addSigner(this);
         this.signedDataGenerator = signedDataGenerator;
+    }
+
+    public byte[] getSignedData(byte[] data) throws IOException, CMSException {
+        CMSProcessableByteArray message =
+                new CMSProcessableByteArray(new ASN1ObjectIdentifier(CMSObjectIdentifiers.data.getId()), data);
+
+        // move to signature
+        CMSSignedData signedData = signedDataGenerator.generate(message, false);
+        return signedData.getEncoded();
     }
 
     public Name getFilter() {

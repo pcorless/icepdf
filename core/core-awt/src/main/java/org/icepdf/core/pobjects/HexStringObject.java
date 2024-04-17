@@ -67,6 +67,21 @@ public class HexStringObject extends AbstractStringObject {
         return new HexStringObject(hexString.toString());
     }
 
+    public static String encodeHexString(byte[] byteArray) {
+        StringBuffer hexStringBuffer = new StringBuffer();
+        for (int i = 0; i < byteArray.length; i++) {
+            hexStringBuffer.append(byteToHex(byteArray[i]));
+        }
+        return hexStringBuffer.toString();
+    }
+
+    private static String byteToHex(byte num) {
+        char[] hexDigits = new char[2];
+        hexDigits[0] = Character.forDigit((num >> 4) & 0xF, 16);
+        hexDigits[1] = Character.forDigit((num & 0xF), 16);
+        return new String(hexDigits);
+    }
+
     /**
      * Encodes the given contents string into a 4 byte hex string.  This allows us to easily account for
      * mixed encoding of 2-byte and 4 byte string content.

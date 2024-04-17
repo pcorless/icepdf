@@ -152,7 +152,7 @@ public class BaseWriter {
         headerWriter.write(header, output);
     }
 
-    protected void writeValue(PObject pObject, CountingOutputStream output) throws IOException {
+    public void writeValue(PObject pObject, CountingOutputStream output) throws IOException {
         Object val = pObject.getObject();
         if (val == null) {
             output.write(NULL);
