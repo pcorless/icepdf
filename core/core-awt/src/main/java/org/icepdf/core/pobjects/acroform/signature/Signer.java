@@ -63,11 +63,23 @@ public class Signer {
             // adjust the second start, we will make sure the padding zeros on the /contents hex string adjust
             // accordingly
             int byteRangeLength = byteRangeDump.length() - PLACEHOLDER_BYTE_OFFSET_LENGTH;
+            // we want to make sure the /content <hex> value has an even length
+            // if odd we need to account for the extra byte,  negate the secondStart and add a space the byteRangeDump
+            boolean oddOffsetCompensation = false;
+            if (byteRangeLength % 2 != 0) {
+                byteRangeLength += 1;
+                oddOffsetCompensation = true;
+            }
             secondStart -= byteRangeLength;
+
             secondOffset = (int) fileLength - secondStart;
             byteRangeArray = List.of(firstStart, firstOffset, secondStart, secondOffset);
             byteRangeDump = writeByteOffsets(crossReferenceRoot, securityManager, byteRangeArray);
             // update /ByteRange
+            if (oddOffsetCompensation) {
+                // newton's law, remove a byte then you need to add a byte
+                byteRangeDump = byteRangeDump.concat(" ");
+            }
             contentsDump = contentsDump.replace("/ByteRange [0 0 0 0]", "/ByteRange " + byteRangeDump);
 
             // update /contents with adjusted length for byteRange offset
@@ -80,8 +92,8 @@ public class Signer {
             fc.write(ByteBuffer.wrap(contentsDump.getBytes()));
 
             // digest the file creating the content signature
-            ByteBuffer preContent = ByteBuffer.allocate(firstOffset - firstStart);
-            ByteBuffer postContent = ByteBuffer.allocate(secondStart + secondOffset);
+            ByteBuffer preContent = ByteBuffer.allocateDirect(firstOffset - firstStart);
+            ByteBuffer postContent = ByteBuffer.allocateDirect(secondStart + secondOffset);
             fc.position(firstStart);
             fc.read(preContent);
             fc.position(secondStart);
@@ -99,7 +111,6 @@ public class Signer {
             out.println(signedData);
 
             String hexContent = HexStringObject.encodeHexString(signature);
-            boolean oddLength = false;
             if (hexContent.length() < PLACEHOLDER_PADDING_LENGTH) {
                 int padding = PLACEHOLDER_PADDING_LENGTH - byteRangeLength - hexContent.length();
                 hexContent = hexContent + "0".repeat(Math.max(0, padding));
