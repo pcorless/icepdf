@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.acroform.signature;
 
+import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.ContentInfo;
