@@ -1,14 +1,17 @@
 package org.icepdf.core.pobjects.acroform.signature;
 
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.cms.CMSException;
 import org.icepdf.core.io.CountingOutputStream;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
+import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 import org.icepdf.core.pobjects.structure.exceptions.CrossReferenceStateException;
 import org.icepdf.core.pobjects.structure.exceptions.ObjectStateException;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.Utils;
 import org.icepdf.core.util.updater.writeables.BaseWriter;
 
 import java.io.ByteArrayOutputStream;
@@ -21,6 +24,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static java.lang.System.out;
 
 public class Signer {
 
@@ -49,8 +54,8 @@ public class Signer {
             int firstStart = 0;
             String contents = "/Contents <";
             int firstOffset = signatureDictionaryOffset + contentsDump.indexOf(contents) + contents.length();
-            int secondOffset = (int) fileLength; // just awkward, but should 32bit max.
             int secondStart = firstOffset + PLACEHOLDER_PADDING_LENGTH;
+            int secondOffset = (int) fileLength - secondStart; // just awkward, but should 32bit max.
 
             // find length of the new array.
             List byteRangeArray = List.of(firstStart, firstOffset, secondStart, secondOffset);
@@ -59,6 +64,7 @@ public class Signer {
             // accordingly
             int byteRangeLength = byteRangeDump.length() - PLACEHOLDER_BYTE_OFFSET_LENGTH;
             secondStart -= byteRangeLength;
+            secondOffset = (int) fileLength - secondStart;
             byteRangeArray = List.of(firstStart, firstOffset, secondStart, secondOffset);
             byteRangeDump = writeByteOffsets(crossReferenceRoot, securityManager, byteRangeArray);
             // update /ByteRange
@@ -75,8 +81,8 @@ public class Signer {
 
             // digest the file creating the content signature
             ByteBuffer preContent = ByteBuffer.allocate(firstOffset - firstStart);
-            ByteBuffer postContent = ByteBuffer.allocate(secondOffset - secondStart);
-            fc.position(0);
+            ByteBuffer postContent = ByteBuffer.allocate(secondStart + secondOffset);
+            fc.position(firstStart);
             fc.read(preContent);
             fc.position(secondStart);
             fc.read(postContent);
@@ -88,7 +94,12 @@ public class Signer {
             buffer.put(postContent);
 
             byte[] signature = signatureDictionary.getSignedData(combined);
+            Pkcs7Validator pkcs7Validator = new Pkcs7Validator(null);
+            ASN1Sequence signedData = pkcs7Validator.captureSignedData(signature);
+            out.println(signedData);
+
             String hexContent = HexStringObject.encodeHexString(signature);
+            boolean oddLength = false;
             if (hexContent.length() < PLACEHOLDER_PADDING_LENGTH) {
                 int padding = PLACEHOLDER_PADDING_LENGTH - byteRangeLength - hexContent.length();
                 hexContent = hexContent + "0".repeat(Math.max(0, padding));
@@ -97,6 +108,12 @@ public class Signer {
             }
             // update /contents with signature
             contentsDump = matcher.replaceFirst("/Contents <" + hexContent + ">");
+
+            HexStringObject hexStringObject = new HexStringObject(hexContent);
+            // make sure we don't lose any bytes converting the string in the raw.\
+            String literalString = hexStringObject.getLiteralString();
+            byte[] cmsData = Utils.convertByteCharSequenceToByteArray(literalString);
+            out.println(signature + " " + cmsData);
 
             // write the altered signature dictionary
             fc.position(signatureDictionaryOffset);
@@ -115,6 +132,8 @@ public class Signer {
         } catch (IOException e) {
             throw new RuntimeException(e);
         } catch (CMSException e) {
+            throw new RuntimeException(e);
+        } catch (SignatureIntegrityException e) {
             throw new RuntimeException(e);
         }
     }

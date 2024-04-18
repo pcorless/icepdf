@@ -28,7 +28,7 @@ public class SigningTests {
             String password = "changeit";
             String keystorePath = "/home/pcorless/dev/cert-test/keypair/sender_keystore.pfx";
             String certAlias = "senderKeyPair";
-            String algorithm = "SHA512WithRSA";
+            String algorithm = "SHA256WithRSA";
 
             // keystore loading before ICEpdf as it will use bouncy castle JCE provider which can't seem to load
             // this keystore format,  hopefully it can use the generator.

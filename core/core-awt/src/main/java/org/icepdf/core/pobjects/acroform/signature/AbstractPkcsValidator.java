@@ -15,7 +15,6 @@
  */
 package org.icepdf.core.pobjects.acroform.signature;
 
-import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.ContentInfo;
@@ -101,7 +100,9 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
 
     public AbstractPkcsValidator(SignatureFieldDictionary signatureFieldDictionary) throws SignatureIntegrityException {
         this.signatureFieldDictionary = signatureFieldDictionary;
-        init();
+        if (signatureFieldDictionary != null) {
+            init();
+        }
     }
 
     /**

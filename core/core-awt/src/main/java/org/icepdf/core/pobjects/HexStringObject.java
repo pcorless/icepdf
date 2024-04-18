@@ -296,7 +296,8 @@ public class HexStringObject extends AbstractStringObject {
         if (step == 2) {
             // pre append 0's to uneven length, be careful as the 0020 isn't the same as 2000
             if (length % 2 != 0) {
-                hex = new StringBuilder("0").append(hex);
+                // this was done for variable byte font encoding,  this seems risky to preappend, pulling
+                hex = hex.append("0");//new StringBuilder("0").append(hex);
             }
         }
         if (step == 4) {
