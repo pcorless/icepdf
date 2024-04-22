@@ -52,7 +52,10 @@ public class SignatureHandler {
         try {
             // try and create a new provider
             Object provider = Class.forName(defaultSecurityProvider).getDeclaredConstructor().newInstance();
+            // todo: this needs more investigation, I think this was done for a client way back,
+            //  but I'm not sure why we doing this twice, also done in SignatureDictionary
             Security.insertProviderAt((Provider) provider, 2);
+            Security.addProvider((Provider) provider);
         } catch (ClassNotFoundException e) {
             logger.log(Level.FINE, "Optional BouncyCastle security provider not found");
         } catch (InstantiationException e) {

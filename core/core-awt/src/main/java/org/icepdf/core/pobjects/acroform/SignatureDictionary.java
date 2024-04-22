@@ -15,19 +15,21 @@
  */
 package org.icepdf.core.pobjects.acroform;
 
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.cms.CMSException;
-import org.bouncycastle.cms.CMSProcessableByteArray;
-import org.bouncycastle.cms.CMSSignedData;
-import org.bouncycastle.cms.CMSSignedDataGenerator;
+import org.bouncycastle.operator.OperatorCreationException;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.signature.Signer;
+import org.icepdf.core.pobjects.acroform.signature.handlers.SignerHandler;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
 import java.io.IOException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -197,7 +199,7 @@ public class SignatureDictionary extends Dictionary {
      */
     public static final Name CONTACT_INFO_KEY = new Name("ContactInfo");
 
-    private CMSSignedDataGenerator signedDataGenerator;
+    private SignerHandler signerHandler;
 
     public SignatureDictionary(Library library, DictionaryEntries entries) {
         super(library, entries);
@@ -245,18 +247,14 @@ public class SignatureDictionary extends Dictionary {
         return new SignatureReferenceDictionary(library, referenceEntries);
     }
 
-    public void setSignedDataGenerator(CMSSignedDataGenerator signedDataGenerator) {
-        library.addSigner(this);
-        this.signedDataGenerator = signedDataGenerator;
+    public void setSignerHandler(SignerHandler signerHandler) {
+        this.signerHandler = signerHandler;
     }
 
-    public byte[] getSignedData(byte[] data) throws IOException, CMSException {
-        CMSProcessableByteArray message =
-                new CMSProcessableByteArray(new ASN1ObjectIdentifier(CMSObjectIdentifiers.data.getId()), data);
-
+    public byte[] getSignedData(byte[] data) throws IOException, CMSException, UnrecoverableKeyException,
+            CertificateException, KeyStoreException, NoSuchAlgorithmException, OperatorCreationException {
         // move to signature
-        CMSSignedData signedData = signedDataGenerator.generate(message, false);
-        return signedData.getEncoded();
+        return signerHandler.signData(data);
     }
 
     public Name getFilter() {

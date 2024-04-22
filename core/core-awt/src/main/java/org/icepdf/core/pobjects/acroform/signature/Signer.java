@@ -2,6 +2,7 @@ package org.icepdf.core.pobjects.acroform.signature;
 
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.cms.CMSException;
+import org.bouncycastle.operator.OperatorCreationException;
 import org.icepdf.core.io.CountingOutputStream;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
@@ -21,6 +22,11 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -145,6 +151,18 @@ public class Signer {
         } catch (CMSException e) {
             throw new RuntimeException(e);
         } catch (SignatureIntegrityException e) {
+            throw new RuntimeException(e);
+        } catch (UnrecoverableKeyException e) {
+            throw new RuntimeException(e);
+        } catch (CertificateEncodingException e) {
+            throw new RuntimeException(e);
+        } catch (KeyStoreException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        } catch (OperatorCreationException e) {
+            throw new RuntimeException(e);
+        } catch (CertificateException e) {
             throw new RuntimeException(e);
         }
     }

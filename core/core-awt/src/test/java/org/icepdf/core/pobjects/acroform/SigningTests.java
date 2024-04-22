@@ -1,20 +1,21 @@
 package org.icepdf.core.pobjects.acroform;
 
-import org.bouncycastle.cms.CMSSignedDataGenerator;
 import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.pobjects.acroform.signature.Pkcs7Generator;
+import org.icepdf.core.pobjects.acroform.signature.handlers.Pkcs12SignerHandler;
+import org.icepdf.core.pobjects.acroform.signature.handlers.SimpleCallbackHandler;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
+import org.icepdf.core.util.Library;
 import org.icepdf.core.util.updater.ObjectUpdateTests;
 import org.icepdf.core.util.updater.WriteMode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.awt.*;
-import java.io.*;
-import java.security.KeyStore;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -24,25 +25,19 @@ public class SigningTests {
     public void testXrefTableFullUpdate() {
 
         try {
-
             String password = "changeit";
-            String keystorePath = "/home/pcorless/dev/cert-test/keypair/sender_keystore.pfx";
+            String keystorePath = "/home/pcorless/dev/cert-test/keypair-bc/certificate.pfx";
             String certAlias = "senderKeyPair";
-            String algorithm = "SHA256WithRSA";
 
-            // keystore loading before ICEpdf as it will use bouncy castle JCE provider which can't seem to load
-            // this keystore format,  hopefully it can use the generator.
-            KeyStore keystore = KeyStore.getInstance("PKCS12");
-            keystore.load(new FileInputStream(keystorePath), password.toCharArray());
-            X509Certificate certificate = (X509Certificate) keystore.getCertificate(certAlias);
-            PrivateKey privateKey = (PrivateKey) keystore.getKey(certAlias, password.toCharArray());
-
-            CMSSignedDataGenerator signedDataGenerator = new Pkcs7Generator()
-                    .createSignedDataGenerator(algorithm, new X509Certificate[]{certificate}, privateKey);
+            Pkcs12SignerHandler pkcs12SignerHandler = new Pkcs12SignerHandler(
+                    new File(keystorePath),
+                    certAlias,
+                    new SimpleCallbackHandler(password));
 
             Document document = new Document();
             InputStream fileUrl = ObjectUpdateTests.class.getResourceAsStream("/signing/test_print.pdf");
             document.setInputStream(fileUrl, "test_print.pdf");
+            Library library = document.getCatalog().getLibrary();
 
             // Creat signature annotation
             SignatureWidgetAnnotation signatureAnnotation = (SignatureWidgetAnnotation)
@@ -56,13 +51,16 @@ public class SigningTests {
             InteractiveForm interactiveForm = document.getCatalog().getOrCreateInteractiveForm();
             interactiveForm.addField(signatureAnnotation);
 
-            // update dictionary,  already in StateManager
+            // update dictionary
             SignatureDictionary signatureDictionary = SignatureDictionary.getInstance(signatureAnnotation);
-            signatureDictionary.setSignedDataGenerator(signedDataGenerator);
+            signatureDictionary.setSignerHandler(pkcs12SignerHandler);
             signatureDictionary.setName("Tester McTest");
             signatureDictionary.setLocation("Springfield USA");
             signatureDictionary.setReason("Make sure stuff didn't change");
             signatureDictionary.setDate("D:20240405082733+02'00'");
+
+            // set this signature as the primary certification signer.
+            library.addCertificationSigner(signatureDictionary);
 
             // todo time service
 
