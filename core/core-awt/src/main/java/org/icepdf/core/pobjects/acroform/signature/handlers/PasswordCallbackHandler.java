@@ -8,7 +8,6 @@ public abstract class PasswordCallbackHandler implements CallbackHandler {
 
     public PasswordCallbackHandler(String password) {
         this.password = password;
-        ;
     }
 
     protected char[] getPassword() {

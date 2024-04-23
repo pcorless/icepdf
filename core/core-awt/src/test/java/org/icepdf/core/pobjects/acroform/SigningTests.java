@@ -25,8 +25,8 @@ public class SigningTests {
     public void testXrefTableFullUpdate() {
 
         try {
+            String keystorePath = "/home/pcorless/dev/cert-test/openssl-keypair/certificate.pfx";
             String password = "changeit";
-            String keystorePath = "/home/pcorless/dev/cert-test/keypair-bc/certificate.pfx";
             String certAlias = "senderKeyPair";
 
             Pkcs12SignerHandler pkcs12SignerHandler = new Pkcs12SignerHandler(
