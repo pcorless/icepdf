@@ -44,9 +44,6 @@ public abstract class AnnotationColorButton extends AbstractColorButton {
         colorButton = new ColorButton();
         colorButton.setFont(font);
         colorButton.setToolTipText(toolTip);
-
-        int h = Images.getHeightValueForIconSize (imageSize);
-        colorButton.setPreferredSize (new Dimension (h, h));
         colorButton.setRolloverEnabled(true);
 
         Images.applyIcons (colorButton, imageName, imageSize);
