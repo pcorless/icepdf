@@ -2345,7 +2345,6 @@ public class SwingViewBuilder implements ViewBuilder {
         JButton tmp = new JButton(showButtonText ? title : "");
         tmp.setFont(font);
         tmp.setToolTipText(toolTip);
-        setPreferredButtonSize(tmp, iconSize);
         Images.applyIcons (tmp, imageName, iconSize);
         tmp.setRolloverEnabled(true);
         tmp.setBorderPainted(false);
@@ -2353,11 +2352,6 @@ public class SwingViewBuilder implements ViewBuilder {
         tmp.setFocusPainted(true);
 
         return tmp;
-    }
-
-    private void setPreferredButtonSize(Component comp, Images.IconSize iconSize) {
-        int h = Images.getHeightValueForIconSize (iconSize);
-        comp.setPreferredSize (new Dimension (32, 32));
     }
 
     protected AnnotationColorToggleButton makeAnnotationToggleButton(String title, String toolTip, String colorPreferenceKey,
@@ -2382,7 +2376,6 @@ public class SwingViewBuilder implements ViewBuilder {
         JToggleButton tmp = new JToggleButton(showButtonText ? title : "");
         tmp.setFont(font);
         tmp.setToolTipText(toolTip);
-        setPreferredButtonSize(tmp, imageSize);
         tmp.setRolloverEnabled(true);
 
         Images.applyIcons (tmp, imageName, iconSize);
@@ -2411,7 +2404,6 @@ public class SwingViewBuilder implements ViewBuilder {
         JToggleButton tmp = new JToggleButton(showButtonText ? title : "");
         tmp.setFont(font);
         tmp.setToolTipText(toolTip);
-        setPreferredButtonSize(tmp, imageSize);
         Images.applyIcons (tmp, imageName, iconSize);
         //tmp.setBorderPainted(false);
         tmp.setBorder(BorderFactory.createEmptyBorder());
