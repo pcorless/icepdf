@@ -5,7 +5,7 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.PTrailer;
 import org.icepdf.core.pobjects.StateManager;
-import org.icepdf.core.pobjects.acroform.signature.Signer;
+import org.icepdf.core.pobjects.acroform.signature.DocumentSigner;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 import org.icepdf.core.util.Library;
@@ -87,7 +87,8 @@ public class IncrementalUpdater {
         }
         output.close();
 
-        // sign the document using the first signature, this could be reworked to handle more signatures.
+        // sign the document using the first signature, this could be reworked to handle more signatures, like
+        // certification followed by other approvals.  But for now it will be assumed this is done as seperate steps
         Document tmpDocument = new Document();
         try {
             if (library.hasSigners()) {
@@ -95,7 +96,7 @@ public class IncrementalUpdater {
                 tmpDocument.setFile(tempFile.toString());
                 // size of new file, this won't change as SignatureDictionary has padding to account for content and
                 // offsets
-                Signer.signDocument(tmpDocument, tempFile, library.getSigner());
+                DocumentSigner.signDocument(tmpDocument, tempFile, library.getSigner());
             }
         } catch (Exception e) {
             logger.log(Level.FINE, "Failed to sign document.", e);

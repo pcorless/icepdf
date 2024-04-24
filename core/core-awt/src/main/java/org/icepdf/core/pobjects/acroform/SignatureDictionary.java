@@ -18,7 +18,7 @@ package org.icepdf.core.pobjects.acroform;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.icepdf.core.pobjects.*;
-import org.icepdf.core.pobjects.acroform.signature.Signer;
+import org.icepdf.core.pobjects.acroform.signature.DocumentSigner;
 import org.icepdf.core.pobjects.acroform.signature.handlers.SignerHandler;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.util.Library;
@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.List;
@@ -219,7 +218,7 @@ public class SignatureDictionary extends Dictionary {
         // add placeholders for the signature, these values are updated when this object is written to disk
         // and contents when the signature hash is calculated.
         signatureDictionaryEntries.put(BYTE_RANGE_KEY, List.of(0, 0, 0, 0));
-        signatureDictionaryEntries.put(CONTENTS_KEY, new HexStringObject(Signer.generateContentsPlaceholder()));
+        signatureDictionaryEntries.put(CONTENTS_KEY, new HexStringObject(DocumentSigner.generateContentsPlaceholder()));
 
         // flag updater that signatureDictionary needs to be updated.
         SignatureDictionary signatureDictionary = new SignatureDictionary(library, signatureDictionaryEntries);

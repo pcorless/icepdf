@@ -1,18 +1,15 @@
 package org.icepdf.core.pobjects.acroform.signature;
 
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.icepdf.core.io.CountingOutputStream;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
-import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 import org.icepdf.core.pobjects.structure.exceptions.CrossReferenceStateException;
 import org.icepdf.core.pobjects.structure.exceptions.ObjectStateException;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.Utils;
 import org.icepdf.core.util.updater.writeables.BaseWriter;
 
 import java.io.ByteArrayOutputStream;
@@ -25,33 +22,55 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static java.lang.System.out;
-
-public class Signer {
+/**
+ * DocumentSigner does the awkward task of populating a SignatureDictionary's /content and /ByteRange entries with
+ * valid values.  The updated SignatureDictionary is inserted back into the file using he same byte footprint but
+ * contains a singed digest and respective offset of the signed content.
+ */
+public class DocumentSigner {
 
     public static int PLACEHOLDER_PADDING_LENGTH = 30000;
     public static int PLACEHOLDER_BYTE_OFFSET_LENGTH = 9;
 
-    public static void signDocument(Document document, File outputFile, SignatureDictionary signatureDictionary) {
+    /**
+     * The given Document instance will be singed using signatureDictionary location and written to the specified
+     * output stream.
+     *
+     * @param document            document contents to be signed
+     * @param outputFile          output file for singed document output
+     * @param signatureDictionary dictionary to update signer information
+     * @throws IOException
+     * @throws CrossReferenceStateException
+     * @throws ObjectStateException
+     * @throws UnrecoverableKeyException
+     * @throws CertificateException
+     * @throws KeyStoreException
+     * @throws NoSuchAlgorithmException
+     * @throws OperatorCreationException
+     * @throws CMSException
+     */
+    public static void signDocument(Document document, File outputFile, SignatureDictionary signatureDictionary)
+            throws IOException, CrossReferenceStateException, ObjectStateException, UnrecoverableKeyException,
+            CertificateException, KeyStoreException, NoSuchAlgorithmException, OperatorCreationException, CMSException {
         try (final RandomAccessFile raf = new RandomAccessFile(outputFile, "rw");) {
             Library library = document.getCatalog().getLibrary();
             int signatureDictionaryOffset = library.getOffset(signatureDictionary.getPObjectReference());
 
-            // write the signature object as a raw string so that it can be updated with offsets and certs
             StateManager stateManager = document.getStateManager();
             SecurityManager securityManager = document.getSecurityManager();
             CrossReferenceRoot crossReferenceRoot = stateManager.getCrossReferenceRoot();
 
             // write out the securityDictionary, so we can make the necessary edits for setting up signing
-            String contentsDump = writeSignatureDictionary(crossReferenceRoot, securityManager, signatureDictionary);
-            int signatureDictionaryLength = contentsDump.length();
+            String rawSignatureDiciontary = writeSignatureDictionary(crossReferenceRoot, securityManager,
+                    signatureDictionary);
+            int signatureDictionaryLength = rawSignatureDiciontary.length();
 
+            // figure out byte offset around the content hex string
             final FileChannel fc = raf.getChannel();
             fc.position(0);
             long fileLength = fc.size();
@@ -59,7 +78,7 @@ public class Signer {
             // find byte offset of the start of content hex string
             int firstStart = 0;
             String contents = "/Contents <";
-            int firstOffset = signatureDictionaryOffset + contentsDump.indexOf(contents) + contents.length();
+            int firstOffset = signatureDictionaryOffset + rawSignatureDiciontary.indexOf(contents) + contents.length();
             int secondStart = firstOffset + PLACEHOLDER_PADDING_LENGTH;
             int secondOffset = (int) fileLength - secondStart; // just awkward, but should 32bit max.
 
@@ -86,16 +105,18 @@ public class Signer {
                 // newton's law, remove a byte then you need to add a byte
                 byteRangeDump = byteRangeDump.concat(" ");
             }
-            contentsDump = contentsDump.replace("/ByteRange [0 0 0 0]", "/ByteRange " + byteRangeDump);
+            rawSignatureDiciontary = rawSignatureDiciontary.replace("/ByteRange [0 0 0 0]",
+                    "/ByteRange " + byteRangeDump);
 
             // update /contents with adjusted length for byteRange offset
             Pattern pattern = Pattern.compile("/Contents <([A-Fa-f0-9]+)>");
-            Matcher matcher = pattern.matcher(contentsDump);
-            contentsDump = matcher.replaceFirst("/Contents <" + generateContentsPlaceholder(byteRangeLength) + ">");
+            Matcher matcher = pattern.matcher(rawSignatureDiciontary);
+            rawSignatureDiciontary =
+                    matcher.replaceFirst("/Contents <" + generateContentsPlaceholder(byteRangeLength) + ">");
 
             // write the altered signature dictionary
             fc.position(signatureDictionaryOffset);
-            fc.write(ByteBuffer.wrap(contentsDump.getBytes()));
+            fc.write(ByteBuffer.wrap(rawSignatureDiciontary.getBytes()));
 
             // digest the file creating the content signature
             ByteBuffer preContent = ByteBuffer.allocateDirect(firstOffset - firstStart);
@@ -112,10 +133,6 @@ public class Signer {
             buffer.put(postContent);
 
             byte[] signature = signatureDictionary.getSignedData(combined);
-            Pkcs7Validator pkcs7Validator = new Pkcs7Validator(null);
-            ASN1Sequence signedData = pkcs7Validator.captureSignedData(signature);
-            out.println(signedData);
-
             String hexContent = HexStringObject.encodeHexString(signature);
             if (hexContent.length() < PLACEHOLDER_PADDING_LENGTH) {
                 int padding = PLACEHOLDER_PADDING_LENGTH - byteRangeLength - hexContent.length();
@@ -124,46 +141,18 @@ public class Signer {
                 throw new IllegalStateException("signature content is larger than placeholder");
             }
             // update /contents with signature
-            contentsDump = matcher.replaceFirst("/Contents <" + hexContent + ">");
-
-            HexStringObject hexStringObject = new HexStringObject(hexContent);
-            // make sure we don't lose any bytes converting the string in the raw.\
-            String literalString = hexStringObject.getLiteralString();
-            byte[] cmsData = Utils.convertByteCharSequenceToByteArray(literalString);
-            out.println(signature + " " + cmsData);
+            rawSignatureDiciontary = matcher.replaceFirst("/Contents <" + hexContent + ">");
 
             // write the altered signature dictionary
             fc.position(signatureDictionaryOffset);
-            int count = fc.write(ByteBuffer.wrap(contentsDump.getBytes()));
+            int count = fc.write(ByteBuffer.wrap(rawSignatureDiciontary.getBytes()));
 
             // make sure the object length didn't change
             if (count != signatureDictionaryLength) {
-                System.out.println("BAM! " + count + " " + signatureDictionaryLength);
-                throw new IllegalStateException();
+                throw new IllegalStateException("Signature dictionary length change original " + count +
+                        " new " + signatureDictionaryLength);
             }
 
-        } catch (CrossReferenceStateException e) {
-            throw new RuntimeException(e);
-        } catch (ObjectStateException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (CMSException e) {
-            throw new RuntimeException(e);
-        } catch (SignatureIntegrityException e) {
-            throw new RuntimeException(e);
-        } catch (UnrecoverableKeyException e) {
-            throw new RuntimeException(e);
-        } catch (CertificateEncodingException e) {
-            throw new RuntimeException(e);
-        } catch (KeyStoreException e) {
-            throw new RuntimeException(e);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (OperatorCreationException e) {
-            throw new RuntimeException(e);
-        } catch (CertificateException e) {
-            throw new RuntimeException(e);
         }
     }
 
