@@ -11,8 +11,8 @@ import java.util.logging.Logger;
  * <p>Pkcs11SignerHandler tries to do some of the boilerplate work to set up a Pkcs#11 provider.  The configuration file
  * must point at a shared-object library (.so on linux) and dynamic-link library (.dll on windows or .dylib on macOS).
  * Consult the vendors of the PKCS#11 cryptographic API documentation for more information.
- * More information can be found at https://docs.oracle.com/en/java/javase/11/security/pkcs11-reference-guide1
- * .html#GUID-97F1E537-CB59-4C7F-AB6B-05D4DBD69AC0
+ * More information can be found at
+ * <a href="https://docs.oracle.com/en/java/javase/11/security/pkcs11-reference-guide1.html#GUID-508B5E3B-BF39-4E02-A1BD-523352D3AA12">pkcs11-reference-guide</a>
  * </p>
  * A sample config file might be as follows:
  * <pre>
@@ -45,8 +45,8 @@ public class Pkcs11SignerHandler extends SignerHandler {
 
     private static final Logger logger = Logger.getLogger(SimpleCallbackHandler.class.getName());
 
-    private String configName;
-    private BigInteger certSerial;
+    private final String configName;
+    private final BigInteger certSerial;
 
     public Pkcs11SignerHandler(String configName, BigInteger certSerial, PasswordCallbackHandler callbackHandler) {
         super(null, callbackHandler);
@@ -71,7 +71,7 @@ public class Pkcs11SignerHandler extends SignerHandler {
         logger.log(Level.INFO, "search for");
         certAlias = getAliasByCertificateSerialNumber(keyStore, certSerial);
         logger.log(Level.INFO, "buildKeyStore, retrieved cert alias: " + certAlias);
-        logger.log(Level.INFO, "buildKeyStore, should use password from callbackHandler");
+        logger.log(Level.INFO, "buildKeyStore, should use pin/password from callbackHandler");
         return (PrivateKey) keyStore.getKey(certAlias, null); // should pull password from callbackHandler
 //        return (PrivateKey) keyStore.getKey(certAlias, callbackHandler.getPassword());
     }
