@@ -19,6 +19,7 @@ import java.awt.*;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.math.BigInteger;
 import java.nio.file.Path;
 
 /**
@@ -38,19 +39,19 @@ public class Pkcs11SignatureCreation {
         // Get a file from the command line to open
         String filePath = args[0];
         String providerConfig = args[1];
-        String certAlias = args[2];
+        BigInteger certSerial = new BigInteger(args[2]);
         String password = args[3];
         Path path = Path.of(filePath);
         // start the capture
-        new Pkcs11SignatureCreation().signDocument(path, providerConfig, certAlias, password);
+        new Pkcs11SignatureCreation().signDocument(path, providerConfig, certSerial, password);
     }
 
-    public void signDocument(Path filePath, String providerConfig, String certAlias, String password) {
+    public void signDocument(Path filePath, String providerConfig, BigInteger certSerial, String password) {
         try {
 
             Pkcs11SignerHandler pkcs11SignerHandler = new Pkcs11SignerHandler(
                     providerConfig,
-                    certAlias,
+                    certSerial,
                     new SimpleCallbackHandler(password));
 
             Document document = new Document();

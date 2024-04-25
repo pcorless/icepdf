@@ -1,6 +1,11 @@
 package org.icepdf.core.pobjects.acroform.signature.handlers;
 
+import java.math.BigInteger;
 import java.security.*;
+import java.security.cert.X509Certificate;
+import java.util.Enumeration;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p>Pkcs11SignerHandler tries to do some of the boilerplate work to set up a Pkcs#11 provider.  The configuration file
@@ -38,17 +43,23 @@ import java.security.*;
  */
 public class Pkcs11SignerHandler extends SignerHandler {
 
-    private String configName;
+    private static final Logger logger = Logger.getLogger(SimpleCallbackHandler.class.getName());
 
-    public Pkcs11SignerHandler(String configName, String certAlias, PasswordCallbackHandler callbackHandler) {
-        super(certAlias, callbackHandler);
+    private String configName;
+    private BigInteger certSerial;
+
+    public Pkcs11SignerHandler(String configName, BigInteger certSerial, PasswordCallbackHandler callbackHandler) {
+        super(null, callbackHandler);
         this.configName = configName;
+        this.certSerial = certSerial;
     }
 
     @Override
     protected KeyStore buildKeyStore() throws KeyStoreException {
         Provider provider = Security.getProvider("SunPKCS11");
-        provider.configure(this.configName);
+        provider = provider.configure(this.configName);
+        Security.addProvider(provider);
+        logger.log(Level.INFO, "buildKeyStore, created SunPKCS11 provider");
         KeyStore.CallbackHandlerProtection chp = new KeyStore.CallbackHandlerProtection(this.callbackHandler);
         KeyStore.Builder builder = KeyStore.Builder.newInstance("PKCS11", provider, chp);
         return builder.getKeyStore();
@@ -57,8 +68,26 @@ public class Pkcs11SignerHandler extends SignerHandler {
     @Override
     protected PrivateKey getPrivateKey(KeyStore keyStore) throws KeyStoreException, UnrecoverableKeyException,
             NoSuchAlgorithmException {
+        logger.log(Level.INFO, "search for");
+        certAlias = getAliasByCertificateSerialNumber(keyStore, certSerial);
+        logger.log(Level.INFO, "buildKeyStore, retrieved cert alias: " + certAlias);
+        logger.log(Level.INFO, "buildKeyStore, should use password from callbackHandler");
         return (PrivateKey) keyStore.getKey(certAlias, null); // should pull password from callbackHandler
 //        return (PrivateKey) keyStore.getKey(certAlias, callbackHandler.getPassword());
+    }
+
+    private String getAliasByCertificateSerialNumber(KeyStore keyStore, BigInteger certSerial) throws KeyStoreException {
+        Enumeration<String> aliases = keyStore.aliases();
+        while (aliases.hasMoreElements()) {
+            String alias = aliases.nextElement();
+            logger.log(Level.INFO, "Alias: {0}", alias);
+            X509Certificate cert = (X509Certificate) keyStore.getCertificate(alias);
+            logger.log(Level.INFO, "  Certificate Serial: {0}", cert.getSerialNumber().toString(16));
+            if (certSerial.equals(cert.getSerialNumber())) {
+                return alias;
+            }
+        }
+        throw new IllegalStateException("No certificate number " + certSerial.toString(16) + " in KeyStore.");
     }
 
 }
