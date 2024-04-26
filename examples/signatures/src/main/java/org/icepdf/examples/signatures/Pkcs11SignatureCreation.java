@@ -7,7 +7,6 @@ import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.handlers.Pkcs11SignerHandler;
-import org.icepdf.core.pobjects.acroform.signature.handlers.Pkcs12SignerHandler;
 import org.icepdf.core.pobjects.acroform.signature.handlers.SimpleCallbackHandler;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
@@ -39,14 +38,14 @@ public class Pkcs11SignatureCreation {
         // Get a file from the command line to open
         String filePath = args[0];
         String providerConfig = args[1];
-        BigInteger certSerial = convertStringToBigInteger(args[2]);
+        BigInteger certSerial = convertHexStringToBigInteger(args[2]);
         String password = args[3];
         Path path = Path.of(filePath);
         // start the capture
         new Pkcs11SignatureCreation().signDocument(path, providerConfig, certSerial, password);
     }
 
-    private static BigInteger convertStringToBigInteger(String hexStr) {
+    private static BigInteger convertHexStringToBigInteger(String hexStr) {
         hexStr = hexStr.replace(":", "");
         return new BigInteger(hexStr, 16);
     }
