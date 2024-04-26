@@ -39,11 +39,16 @@ public class Pkcs11SignatureCreation {
         // Get a file from the command line to open
         String filePath = args[0];
         String providerConfig = args[1];
-        BigInteger certSerial = new BigInteger(args[2]);
+        BigInteger certSerial = convertStringToBigInteger(args[2]);
         String password = args[3];
         Path path = Path.of(filePath);
         // start the capture
         new Pkcs11SignatureCreation().signDocument(path, providerConfig, certSerial, password);
+    }
+
+    private static BigInteger convertStringToBigInteger(String hexStr) {
+        hexStr = hexStr.replace(":", "");
+        return new BigInteger(hexStr, 16);
     }
 
     public void signDocument(Path filePath, String providerConfig, BigInteger certSerial, String password) {
