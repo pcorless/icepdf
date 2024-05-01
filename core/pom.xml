@@ -23,7 +23,7 @@
             <!-- Bouncy castle is need for building the core bundles as well as digital signature support -->
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-ext-jdk18on</artifactId>
+                <artifactId>bcprov-jdk18on</artifactId>
                 <version>${bouncy.version}</version>
             </dependency>
 
