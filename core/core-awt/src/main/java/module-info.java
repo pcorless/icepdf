@@ -11,6 +11,7 @@ module org.icepdf.core {
 
     // automatic module names
     requires org.apache.fontbox;
+    requires org.apache.pdfbox.jbig2;
     requires org.apache.commons.logging;
     requires com.twelvemonkeys.common.image;
     requires com.twelvemonkeys.common.io;
