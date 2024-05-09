@@ -1465,7 +1465,7 @@ public class SwingViewBuilder implements ViewBuilder {
 
         JComboBox<String> tmp = new JComboBox<>();
         tmp.setToolTipText(messageBundle.getString("viewer.toolbar.zoom.tooltip"));
-        tmp.setPreferredSize(new Dimension(90, Images.getHeightValueForIconSize(iconSize)));
+        tmp.setPreferredSize(new Dimension(90, tmp.getPreferredSize().height));
         for (float zoomLevel : zoomLevels)
             tmp.addItem(NumberFormat.getPercentInstance().format(zoomLevel));
         tmp.setEditable(true);
@@ -1488,7 +1488,7 @@ public class SwingViewBuilder implements ViewBuilder {
         JComboBox<String> tmp = new JComboBox<>();
         tmp.setToolTipText(messageBundle.getString(
                 "viewer.utilityPane.markupAnnotation.view.publicToggleButton.tooltip.label"));
-        tmp.setPreferredSize(new Dimension(65, Images.getHeightValueForIconSize(iconSize)));
+        tmp.setPreferredSize(new Dimension(65, tmp.getPreferredSize().height));
         tmp.addItem(messageBundle.getString("viewer.utilityPane.markupAnnotation.view.publicToggleButton.label"));
         tmp.addItem(messageBundle.getString("viewer.utilityPane.markupAnnotation.view.privateToggleButton.label"));
         tmp.setEditable(true);
@@ -2351,6 +2351,7 @@ public class SwingViewBuilder implements ViewBuilder {
             String title, String toolTip, String imageName, final Images.IconSize iconSize,
             java.awt.Font font) {
         JButton tmp = new JButton(showButtonText ? title : "");
+        tmp.setBorder(BorderFactory.createEmptyBorder());
         tmp.setFont(font);
         tmp.setToolTipText(toolTip);
         Images.applyIcons(tmp, imageName, iconSize);

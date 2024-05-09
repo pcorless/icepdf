@@ -155,16 +155,6 @@ public class Images {
     }
 
     /**
-     * Ask the current icon pack what its default height value (in pixels) is for the given icon size
-     *
-     * @param iconSize The icon size to query
-     * @return The height value for the given icon size of the current icon pack
-     */
-    public static int getHeightValueForIconSize(IconSize iconSize) {
-        return ICON_PACK.getHeightValueForSize(iconSize);
-    }
-
-    /**
      * Apply normal, pressed, rollover and disabled variants of the given icon in the given size to the given button
      * <p/>
      * Pressed, rollover and disabled icons are only registered if the current icon pack supports those variants

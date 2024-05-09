@@ -20,7 +20,6 @@ import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.logging.Logger;
@@ -56,10 +55,8 @@ public class DropDownButton extends JButton
 
         if (imageName != null) {
             Images.applyIcons(this, imageName, imageSize);
-
-            int h = Images.getHeightValueForIconSize(imageSize);
-            setPreferredSize(new Dimension(h, h));
         }
+        validate();
 
         popupMenu = new JPopupMenu();
 

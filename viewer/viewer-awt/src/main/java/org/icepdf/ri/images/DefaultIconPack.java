@@ -74,21 +74,4 @@ public class DefaultIconPack extends IconPack {
 
         return new ImageIcon(url);
     }
-
-    @Override
-    public int getHeightValueForSize(Images.IconSize size) {
-        switch (size) {
-            case HUGE:
-                return 57;
-            case LARGE:
-                return 32;
-            case SMALL:
-                return 24;
-            case MINI:
-                return 20;
-            default:
-                return 16;
-        }
-    }
-
 }
