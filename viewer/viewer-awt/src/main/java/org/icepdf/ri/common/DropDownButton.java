@@ -55,10 +55,10 @@ public class DropDownButton extends JButton
         this.imageSize = imageSize;
 
         if (imageName != null) {
-            Images.applyIcons (this, imageName, imageSize);
+            Images.applyIcons(this, imageName, imageSize);
 
-            int h = Images.getHeightValueForIconSize (imageSize);
-            setPreferredSize (new Dimension (h, h));
+            int h = Images.getHeightValueForIconSize(imageSize);
+            setPreferredSize(new Dimension(h, h));
         }
 
         popupMenu = new JPopupMenu();
@@ -76,7 +76,7 @@ public class DropDownButton extends JButton
     @Override
     public void setSelected(boolean b) {
         super.setSelected(b);
-        Images.applyIcon (this, imageName, b ? IconPack.Variant.SELECTED : IconPack.Variant.NORMAL, imageSize);
+        Images.applyIcon(this, imageName, b ? IconPack.Variant.SELECTED : IconPack.Variant.NORMAL, imageSize);
     }
 
     public void add(JMenuItem menuItem, int idx) {

@@ -129,16 +129,16 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
                     messageBundle.getString("viewer.utilityPane.view.selectionTool.contextMenu.addDestination.label"));
             addDestinationMenuItem.setEnabled(modifyDocument);
             addDestinationMenuItem.addActionListener(this);
-            Images.applyIcon (addDestinationMenuItem, "destination", IconPack.Variant.NONE, Images.IconSize.MINI);
+            Images.applyIcon(addDestinationMenuItem, "destination", IconPack.Variant.NONE, Images.IconSize.MINI);
             addFreeTextMenuItem1 = new JMenuItem(
                     messageBundle.getString("viewer.annotation.popup.addAnnotation.freeText.label"));
             addFreeTextMenuItem1.setEnabled(modifyDocument);
-            Images.applyIcon (addFreeTextMenuItem1, "freetext_annot", IconPack.Variant.NORMAL, Images.IconSize.MINI);
+            Images.applyIcon(addFreeTextMenuItem1, "freetext_annot", IconPack.Variant.NORMAL, Images.IconSize.MINI);
             addFreeTextMenuItem1.addActionListener(this);
             addFreeTextMenuItem2 = new JMenuItem(
                     messageBundle.getString("viewer.annotation.popup.addAnnotation.freeText.label"));
             addFreeTextMenuItem2.setEnabled(modifyDocument);
-            Images.applyIcon (addFreeTextMenuItem2, "freetext_annot", IconPack.Variant.NORMAL, Images.IconSize.MINI);
+            Images.applyIcon(addFreeTextMenuItem2, "freetext_annot", IconPack.Variant.NORMAL, Images.IconSize.MINI);
             addFreeTextMenuItem2.addActionListener(this);
             // addition of set status menu
             JMenu submenu = new JMenu(
@@ -189,13 +189,16 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
 
         if (PRIVATE_PROPERTY_ENABLED) {
             final JMenu submenu = new JMenu(messageBundle.getString("viewer.annotation.popup.privacy.label"));
-            togglePrivacyMenuItem = new JMenuItem(messageBundle.getString("viewer.annotation.popup.privacy.toggle.label"));
+            togglePrivacyMenuItem = new JMenuItem(messageBundle.getString("viewer.annotation.popup.privacy.toggle" +
+                    ".label"));
             togglePrivacyMenuItem.addActionListener(this);
             submenu.add(togglePrivacyMenuItem);
-            setAllPrivateMenuItem = new JMenuItem(messageBundle.getString("viewer.annotation.popup.privacy.all.private.label"));
+            setAllPrivateMenuItem = new JMenuItem(messageBundle.getString("viewer.annotation.popup.privacy.all" +
+                    ".private.label"));
             setAllPrivateMenuItem.addActionListener(this);
             submenu.add(setAllPrivateMenuItem);
-            setAllPublicMenuItem = new JMenuItem(messageBundle.getString("viewer.annotation.popup.privacy.all.public.label"));
+            setAllPublicMenuItem = new JMenuItem(messageBundle.getString("viewer.annotation.popup.privacy.all.public" +
+                    ".label"));
             setAllPublicMenuItem.addActionListener(this);
             submenu.add(setAllPublicMenuItem);
             add(submenu);

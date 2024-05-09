@@ -32,7 +32,7 @@ public class SearchFilterButton extends DropDownButton {
                 "",
                 controller.getMessageBundle().getString(titleRes),
                 "filter",
-                Images.getDefaultIconSizeOr (controller.getPropertiesManager (), Images.IconSize.LARGE),
+                Images.getDefaultIconSizeOr(controller.getPropertiesManager(), Images.IconSize.LARGE),
                 SwingViewBuilder.buildButtonFont());
         final Preferences preferences = controller.getPropertiesManager().getPreferences();
         boolean isWholePage = preferences.getBoolean(PROPERTY_SEARCH_PANEL_WHOLE_PAGE_ENABLED, false);
