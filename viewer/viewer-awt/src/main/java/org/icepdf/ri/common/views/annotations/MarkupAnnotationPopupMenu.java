@@ -27,6 +27,7 @@ import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.PageViewComponentImpl;
 import org.icepdf.ri.common.widgets.DragDropColorList;
+import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 
@@ -128,16 +129,16 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
                     messageBundle.getString("viewer.utilityPane.view.selectionTool.contextMenu.addDestination.label"));
             addDestinationMenuItem.setEnabled(modifyDocument);
             addDestinationMenuItem.addActionListener(this);
-            addDestinationMenuItem.setIcon(new ImageIcon(Images.get("destination_20.png")));
+            Images.applyIcon (addDestinationMenuItem, "destination", IconPack.Variant.NONE, Images.IconSize.MINI);
             addFreeTextMenuItem1 = new JMenuItem(
                     messageBundle.getString("viewer.annotation.popup.addAnnotation.freeText.label"));
             addFreeTextMenuItem1.setEnabled(modifyDocument);
-            addFreeTextMenuItem1.setIcon(new ImageIcon(Images.get("freetext_annot_a_20.png")));
+            Images.applyIcon (addFreeTextMenuItem1, "freetext_annot", IconPack.Variant.NORMAL, Images.IconSize.MINI);
             addFreeTextMenuItem1.addActionListener(this);
             addFreeTextMenuItem2 = new JMenuItem(
                     messageBundle.getString("viewer.annotation.popup.addAnnotation.freeText.label"));
             addFreeTextMenuItem2.setEnabled(modifyDocument);
-            addFreeTextMenuItem2.setIcon(new ImageIcon(Images.get("freetext_annot_a_20.png")));
+            Images.applyIcon (addFreeTextMenuItem2, "freetext_annot", IconPack.Variant.NORMAL, Images.IconSize.MINI);
             addFreeTextMenuItem2.addActionListener(this);
             // addition of set status menu
             JMenu submenu = new JMenu(

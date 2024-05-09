@@ -43,7 +43,7 @@ public class SignatureValidationPanel extends JPanel {
         }
 
         // get the respective image.
-        JLabel validityIconLabel = new JLabel(new ImageIcon(signatureValidationStatus.getValidityIconPath()));
+        JLabel validityIconLabel = new JLabel(signatureValidationStatus.getValidityIcon ());
 
         // put it all together.
         setAlignmentY(JPanel.TOP_ALIGNMENT);

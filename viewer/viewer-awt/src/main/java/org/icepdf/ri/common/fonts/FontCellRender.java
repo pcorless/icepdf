@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.fonts;
 
+import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
@@ -39,9 +40,10 @@ public class FontCellRender extends DefaultTreeCellRenderer {
                 tree, value, sel,
                 expanded, leaf, row,
                 hasFocus);
-        setOpenIcon(new ImageIcon(Images.get("page.gif")));
-        setClosedIcon(new ImageIcon(Images.get("page.gif")));
-        setLeafIcon(new ImageIcon(Images.get("page.gif")));
+        Icon icon = Images.getSingleIcon ("page", IconPack.Variant.NONE, Images.IconSize.TINY);
+        setOpenIcon (icon);
+        setClosedIcon(icon);
+        setLeafIcon(icon);
         return this;
     }
 }

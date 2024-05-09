@@ -36,29 +36,17 @@ public abstract class AnnotationColorButton extends AbstractColorButton {
     private static final Logger logger = Logger.getLogger(AnnotationColorToggleButton.class.toString());
 
     protected AnnotationColorButton(Controller controller,
-                                 ResourceBundle messageBundle,
-                                 String title, String toolTip, String imageName,
-                                 final String imageSize, Font font) {
+                                    ResourceBundle messageBundle,
+                                    String title, String toolTip, String imageName,
+                                    final Images.IconSize imageSize, Font font) {
         super(controller, messageBundle);
 
         colorButton = new ColorButton();
         colorButton.setFont(font);
         colorButton.setToolTipText(toolTip);
-        if (imageSize.equals(Images.SIZE_LARGE)) {
-            colorButton.setPreferredSize(new Dimension(32, 32));
-        } else if (imageSize.equals(Images.SIZE_SMALL)) {
-            colorButton.setPreferredSize(new Dimension(24, 24));
-        }
         colorButton.setRolloverEnabled(true);
 
-        try {
-            colorButton.setIcon(new ImageIcon(Images.get(imageName + "_a" + imageSize + ".png")));
-            colorButton.setPressedIcon(new ImageIcon(Images.get(imageName + "_i" + imageSize + ".png")));
-            colorButton.setRolloverIcon(new ImageIcon(Images.get(imageName + "_r" + imageSize + ".png")));
-            colorButton.setDisabledIcon(new ImageIcon(Images.get(imageName + "_i" + imageSize + ".png")));
-        } catch (NullPointerException e) {
-            logger.warning("Failed to load toolbar toggle drop down button images: " + imageName + "_i" + imageSize + ".png");
-        }
+        Images.applyIcons (colorButton, imageName, imageSize);
         colorButton.setBorder(BorderFactory.createEmptyBorder());
         colorButton.setContentAreaFilled(false);
         colorButton.setFocusPainted(true);

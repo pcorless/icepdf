@@ -21,6 +21,7 @@ import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.PageViewComponentImpl;
+import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
@@ -134,7 +135,7 @@ public class TextSelectionViewHandler extends TextSelection
         JMenuItem addDestinationMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.utilityPane.view.selectionTool.contextMenu.addDestination.label"));
         addDestinationMenuItem.setEnabled(modifyDocument);
-        addDestinationMenuItem.setIcon(new ImageIcon(Images.get("destination_20.png")));
+        Images.applyIcon (addDestinationMenuItem, "destination", IconPack.Variant.NONE, Images.IconSize.MINI);
         addDestinationMenuItem.addActionListener(e -> {
             // grab the start of the text selection
             Point point = getSelectionBounds(pageComponent).getLocation();
@@ -148,7 +149,7 @@ public class TextSelectionViewHandler extends TextSelection
         JMenuItem addHighlightMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.addAnnotation.hightlight.label"));
         addHighlightMenuItem.setEnabled(modifyDocument);
-        addHighlightMenuItem.setIcon(new ImageIcon(Images.get("highlight_annot_a_20.png")));
+        Images.applyIcon (addHighlightMenuItem, "highlight_annot", IconPack.Variant.NORMAL, Images.IconSize.MINI);
         addHighlightMenuItem.addActionListener(e ->
                 new HighLightAnnotationHandler(controller.getDocumentViewController(), pageComponent)
                         .createMarkupAnnotation(null));
@@ -157,7 +158,7 @@ public class TextSelectionViewHandler extends TextSelection
         JMenuItem addUnderlineMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.addAnnotation.underline.label"));
         addUnderlineMenuItem.setEnabled(modifyDocument);
-        addUnderlineMenuItem.setIcon(new ImageIcon(Images.get("underline_a_20.png")));
+        Images.applyIcon (addUnderlineMenuItem, "underline", IconPack.Variant.NORMAL, Images.IconSize.MINI);
         addUnderlineMenuItem.addActionListener(e -> new UnderLineAnnotationHandler(controller.getDocumentViewController(), pageComponent)
                 .createMarkupAnnotation(null));
         contextMenu.add(addUnderlineMenuItem);
@@ -165,7 +166,7 @@ public class TextSelectionViewHandler extends TextSelection
         JMenuItem addStrikeOutMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.addAnnotation.strikeout.label"));
         addStrikeOutMenuItem.setEnabled(modifyDocument);
-        addStrikeOutMenuItem.setIcon(new ImageIcon(Images.get("strikeout_a_20.png")));
+        Images.applyIcon (addStrikeOutMenuItem, "strikeout", IconPack.Variant.NORMAL, Images.IconSize.MINI);
         addStrikeOutMenuItem.addActionListener(e -> new StrikeOutAnnotationHandler(controller.getDocumentViewController(), pageComponent)
                 .createMarkupAnnotation(null));
         contextMenu.add(addStrikeOutMenuItem);

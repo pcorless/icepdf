@@ -189,7 +189,7 @@ public class GeneralPreferencesPanel extends JPanel implements PropertyChangeLis
                         messageBundle.getString("viewer.dialog.viewerPreferences.section.general.iconSize.large.label"))};
         iconSizeComboBox = new JComboBox<>(sizeList);
         iconSizeComboBox.setSelectedIndex(
-                preferences.get(ViewerPropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_SMALL).equals(Images.SIZE_SMALL)
+                Images.getDefaultIconSizeOr (preferences, Images.IconSize.SMALL) == Images.IconSize.SMALL
                         ? 0 : 1);
         iconSizeComboBox.addItemListener(this);
         constraints.anchor = GridBagConstraints.WEST;
@@ -213,7 +213,7 @@ public class GeneralPreferencesPanel extends JPanel implements PropertyChangeLis
         Object source = e.getItemSelectable();
         if (source == iconSizeComboBox) {
             preferences.put(ViewerPropertiesManager.PROPERTY_ICON_DEFAULT_SIZE,
-                    iconSizeComboBox.getSelectedIndex() == 0 ? Images.SIZE_SMALL : Images.SIZE_LARGE);
+                    iconSizeComboBox.getSelectedIndex() == 0 ? Images.IconSize.SMALL.toString () : Images.IconSize.LARGE.toString ());
         }
     }
 

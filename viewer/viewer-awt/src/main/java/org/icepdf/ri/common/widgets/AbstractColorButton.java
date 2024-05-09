@@ -66,14 +66,6 @@ public abstract class AbstractColorButton extends AbstractButton
         Insets insets = dropDownArrowButton.getMargin();
         dropDownArrowButton.setMargin(new Insets(insets.top, 0, insets.bottom, 0));
 
-        String imageSize = ViewerPropertiesManager.getInstance().getPreferences().get(
-                ViewerPropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE);
-        if (imageSize.equals(Images.SIZE_LARGE)) {
-            setPreferredSize(new Dimension(48, 32));
-        } else if (imageSize.equals(Images.SIZE_SMALL)) {
-            setPreferredSize(new Dimension(36, 24));
-        }
-
         dropDownArrowButton.addActionListener(this);
         addAncestorListener(this);
     }
@@ -96,6 +88,13 @@ public abstract class AbstractColorButton extends AbstractButton
         c.gridx++;
         gbl.setConstraints(dropDownArrowButton, c);
         add(dropDownArrowButton);
+
+        Dimension buttonPreferredSize = colorButton.getPreferredSize();
+        Dimension dropDownArrowPreferredSize = dropDownArrowButton.getPreferredSize();
+        setPreferredSize(new Dimension(
+                buttonPreferredSize.width + dropDownArrowPreferredSize.width,
+                buttonPreferredSize.height));
+        validate();
     }
 
     public abstract void setColor(Color newColor, boolean fireChangeEvent);

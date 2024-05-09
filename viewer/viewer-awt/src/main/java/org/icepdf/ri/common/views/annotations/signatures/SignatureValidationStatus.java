@@ -22,9 +22,11 @@ import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.common.utility.signatures.SignatureUtilities;
+import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 
 import javax.security.auth.x500.X500Principal;
+import javax.swing.*;
 import java.net.URL;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
@@ -43,7 +45,7 @@ public class SignatureValidationStatus {
     private String emailAddress;
     private String organization;
     private String commonName;
-    private final URL validityIconPath;
+    private final Icon validityIcon;
 
     private final String dictionaryName;
     private final String dictionaryLocation;
@@ -100,7 +102,7 @@ public class SignatureValidationStatus {
         }
         signatureTime = messageBundle.getString(signatureTime);
 
-        validityIconPath = getLargeValidityIcon(signatureValidator);
+        validityIcon = getLargeValidityIcon(signatureValidator);
 
         // signature dictionary common names.
         SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
@@ -129,19 +131,19 @@ public class SignatureValidationStatus {
     }
 
     // set one of the three icon's to represent the validity status of the signature node.
-    protected URL getLargeValidityIcon(SignatureValidator signatureValidator) {
+    protected Icon getLargeValidityIcon(SignatureValidator signatureValidator) {
         if (!signatureValidator.isSignedDataModified() && signatureValidator.isCertificateChainTrusted()
                 && signatureValidator.isSignaturesCoverDocumentLength()) {
-            return Images.get("signature_valid_lg.png");
+            return Images.getSingleIcon ("signature_valid", IconPack.Variant.NONE, Images.IconSize.HUGE);
         } else if (!signatureValidator.isSignedDataModified() && signatureValidator.isSignaturesCoverDocumentLength()) {
-            return Images.get("signature_caution_lg.png");
+            return Images.getSingleIcon ("signature_cation", IconPack.Variant.NONE, Images.IconSize.HUGE);
         } else {
-            return Images.get("signature_invalid_lg.png");
+            return Images.getSingleIcon ("signature_invalid", IconPack.Variant.NONE, Images.IconSize.HUGE);
         }
     }
 
-    public URL getValidityIconPath() {
-        return validityIconPath;
+    public Icon getValidityIcon() {
+        return validityIcon;
     }
 
     public String getValidity() {
