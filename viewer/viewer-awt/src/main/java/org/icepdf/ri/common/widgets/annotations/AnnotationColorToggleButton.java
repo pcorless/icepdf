@@ -49,7 +49,7 @@ public abstract class AnnotationColorToggleButton extends AbstractColorButton {
         colorButton.setToolTipText(toolTip);
         colorButton.setRolloverEnabled(true);
 
-        Images.applyIcons (colorButton, imageName, imageSize);
+        Images.applyIcons(colorButton, imageName, imageSize);
         colorButton.setBorder(BorderFactory.createEmptyBorder());
         colorButton.setContentAreaFilled(false);
         colorButton.setFocusPainted(true);

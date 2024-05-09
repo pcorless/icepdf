@@ -68,7 +68,7 @@ import static org.icepdf.core.util.SystemProperties.INTERACTIVE_ANNOTATIONS;
  * accepted, rejected, cancelled, completed, none. The component can also add
  * replyTo text annotations as well as delete comments.
  * <br>
- * The PopupAnnotationComponent is slightly more complex then the other
+ * The PopupAnnotationComponent is slightly more complex than the other
  * annotations components.  Most annotations let the page pain the annotation
  * but in this case PopupAnnotationComponent paints itself along with controls
  * for editing, replying and deleting TextAnnotation comments.
@@ -913,9 +913,11 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 final boolean hasChildren = tn.getChildCount() > 0;
                 if (node instanceof MarkupAnnotationTreeNode) {
                     final Annotation annot = (MarkupAnnotation) ((MarkupAnnotationTreeNode) node).getUserObject();
-                    return hasChildren ? Stream.concat(Stream.of(annot), Collections.list(tn.children()).stream().flatMap(PopupAnnotationComponent::getAllAnnotations)) : Stream.of(annot);
+                    return hasChildren ? Stream.concat(Stream.of(annot),
+                            Collections.list(tn.children()).stream().flatMap(PopupAnnotationComponent::getAllAnnotations)) : Stream.of(annot);
                 } else {
-                    return hasChildren ? Collections.list(tn.children()).stream().flatMap(PopupAnnotationComponent::getAllAnnotations) : Stream.empty();
+                    return hasChildren ?
+                            Collections.list(tn.children()).stream().flatMap(PopupAnnotationComponent::getAllAnnotations) : Stream.empty();
                 }
             } else {
                 return Stream.empty();
@@ -934,7 +936,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             MarkupAnnotation markupAnnotation = selectedMarkupAnnotation;
             if (markupAnnotation != null) {
                 // find the popup component
-                ArrayList<AbstractAnnotationComponent> annotationComponents = pageViewComponent.getAnnotationComponents();
+                ArrayList<AbstractAnnotationComponent> annotationComponents =
+                        pageViewComponent.getAnnotationComponents();
                 Reference compReference;
                 Reference markupReference = markupAnnotation.getPObjectReference();
                 for (AnnotationComponent annotationComponent : annotationComponents) {
@@ -1086,8 +1089,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         minimizeButton.setBackground(popupBackgroundColor);
         privateToggleButton.setBackground(popupBackgroundColor);
         // lock icons.
-        Icon lockedIcon = Images.getSingleIcon ("lock", IconPack.Variant.NONE, Images.IconSize.TINY);
-        Icon unlockedIcon = Images.getSingleIcon ("unlock", IconPack.Variant.NONE, Images.IconSize.TINY);
+        Icon lockedIcon = Images.getSingleIcon("lock", IconPack.Variant.NONE, Images.IconSize.TINY);
+        Icon unlockedIcon = Images.getSingleIcon("unlock", IconPack.Variant.NONE, Images.IconSize.TINY);
         privateToggleButton.setIcon(unlockedIcon);
         privateToggleButton.setPressedIcon(null);
         privateToggleButton.setSelectedIcon(lockedIcon);
@@ -1247,7 +1250,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         return textArea.getFont().getSize();
     }
 
-    public int getHeaderFontSize(){
+    public int getHeaderFontSize() {
         return titleLabel.getFont().getSize();
     }
 

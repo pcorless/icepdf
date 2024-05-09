@@ -40,8 +40,8 @@ public class FontCellRender extends DefaultTreeCellRenderer {
                 tree, value, sel,
                 expanded, leaf, row,
                 hasFocus);
-        Icon icon = Images.getSingleIcon ("page", IconPack.Variant.NONE, Images.IconSize.TINY);
-        setOpenIcon (icon);
+        Icon icon = Images.getSingleIcon("page", IconPack.Variant.NONE, Images.IconSize.TINY);
+        setOpenIcon(icon);
         setClosedIcon(icon);
         setLeafIcon(icon);
         return this;

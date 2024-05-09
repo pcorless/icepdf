@@ -415,7 +415,8 @@ public class SwingViewBuilder implements ViewBuilder {
         overrideHighlightColor(propertiesManager);
 
         // update View Controller with previewer document page fit and view type info
-        DocumentViewControllerImpl documentViewController = (DocumentViewControllerImpl) viewerController.getDocumentViewController();
+        DocumentViewControllerImpl documentViewController =
+                (DocumentViewControllerImpl) viewerController.getDocumentViewController();
         documentViewController.setDocumentViewType(documentViewType, documentPageFitMode);
 
         buttonFont = bf;
@@ -433,7 +434,7 @@ public class SwingViewBuilder implements ViewBuilder {
         // set default view mode type, fit page, fit width, no-fit.
         this.documentPageFitMode = documentPageFitMode;
         // apply default button size
-        iconSize = Images.getDefaultIconSizeOr (propertiesManager, Images.IconSize.LARGE);
+        iconSize = Images.getDefaultIconSizeOr(propertiesManager, Images.IconSize.LARGE);
     }
 
     /**
@@ -514,8 +515,10 @@ public class SwingViewBuilder implements ViewBuilder {
                 // Generate and register the MacOSAdapter, passing it a hash of all the methods we wish to
                 // use as delegates for various com.apple.eawt.ApplicationListener methods
                 // for legacy OS X,  no longer works on macOS
-                MacOSAdapter.setQuitHandler(viewerController, viewerController.getClass().getDeclaredMethod("exit", (Class[]) null));
-                MacOSAdapter.setAboutHandler(viewerController, viewerController.getClass().getDeclaredMethod("showAboutDialog", (Class[]) null));
+                MacOSAdapter.setQuitHandler(viewerController, viewerController.getClass().getDeclaredMethod("exit",
+                        (Class[]) null));
+                MacOSAdapter.setAboutHandler(viewerController, viewerController.getClass().getDeclaredMethod(
+                        "showAboutDialog", (Class[]) null));
             } catch (Exception e) {
                 logger.log(Level.FINE, "Error occurred while loading the MacOSAdapter:", e);
             }
@@ -577,7 +580,7 @@ public class SwingViewBuilder implements ViewBuilder {
         JMenuItem openURLMenuItem = buildOpenURLMenuItem();
         if (openFileMenuItem != null && openURLMenuItem != null) {
             JMenu openSubMenu = new JMenu(messageBundle.getString("viewer.menu.open.label"));
-            Images.applyIcons (openSubMenu, "open", Images.IconSize.SMALL);
+            Images.applyIcons(openSubMenu, "open", Images.IconSize.SMALL);
             addToMenu(openSubMenu, openFileMenuItem);
             addToMenu(openSubMenu, openURLMenuItem);
             addToMenu(fileMenu, openSubMenu);
@@ -680,7 +683,8 @@ public class SwingViewBuilder implements ViewBuilder {
     public JMenuItem buildExportDocumentFileMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.exportDocument.label"), null, null,
-                buildKeyStroke(KeyEventConstants.KEY_CODE_EXPORT_DOCUMENT, KeyEventConstants.MODIFIER_EXPORT_DOCUMENT, false));
+                buildKeyStroke(KeyEventConstants.KEY_CODE_EXPORT_DOCUMENT, KeyEventConstants.MODIFIER_EXPORT_DOCUMENT
+                        , false));
         if (viewerController != null && mi != null)
             viewerController.setExportDocumentFileMenuItem(mi);
         return mi;
@@ -1024,7 +1028,8 @@ public class SwingViewBuilder implements ViewBuilder {
     }
 
     public JMenuItem buildAdvancedSearchMenuItem() {
-        final JMenuItem mi = makeMenuItem(messageBundle.getString("viewer.toolbar.search.advanced.label"), buildKeyStroke(KeyEventConstants.KEY_CODE_SEARCH, KeyEventConstants.MODIFIER_ADVANCED_SEARCH));
+        final JMenuItem mi = makeMenuItem(messageBundle.getString("viewer.toolbar.search.advanced.label"),
+                buildKeyStroke(KeyEventConstants.KEY_CODE_SEARCH, KeyEventConstants.MODIFIER_ADVANCED_SEARCH));
         if (viewerController != null) {
             viewerController.setAdvancedSearchMenuItem(mi);
         }
@@ -1460,7 +1465,7 @@ public class SwingViewBuilder implements ViewBuilder {
 
         JComboBox<String> tmp = new JComboBox<>();
         tmp.setToolTipText(messageBundle.getString("viewer.toolbar.zoom.tooltip"));
-        tmp.setPreferredSize(new Dimension(90, Images.getHeightValueForIconSize (iconSize)));
+        tmp.setPreferredSize(new Dimension(90, tmp.getPreferredSize().height));
         for (float zoomLevel : zoomLevels)
             tmp.addItem(NumberFormat.getPercentInstance().format(zoomLevel));
         tmp.setEditable(true);
@@ -1483,7 +1488,7 @@ public class SwingViewBuilder implements ViewBuilder {
         JComboBox<String> tmp = new JComboBox<>();
         tmp.setToolTipText(messageBundle.getString(
                 "viewer.utilityPane.markupAnnotation.view.publicToggleButton.tooltip.label"));
-        tmp.setPreferredSize(new Dimension(65, Images.getHeightValueForIconSize (iconSize)));
+        tmp.setPreferredSize(new Dimension(65, tmp.getPreferredSize().height));
         tmp.addItem(messageBundle.getString("viewer.utilityPane.markupAnnotation.view.publicToggleButton.label"));
         tmp.addItem(messageBundle.getString("viewer.utilityPane.markupAnnotation.view.privateToggleButton.label"));
         tmp.setEditable(true);
@@ -2290,7 +2295,8 @@ public class SwingViewBuilder implements ViewBuilder {
     }
 
     public JToggleButton buildPageViewSinglePageConToggleButton() {
-        JToggleButton btn = makeToolbarToggleButton(messageBundle.getString("viewer.toolbar.pageView.continuous.singlePage.label"),
+        JToggleButton btn = makeToolbarToggleButton(messageBundle.getString("viewer.toolbar.pageView.continuous" +
+                        ".singlePage.label"),
                 messageBundle.getString("viewer.toolbar.pageView.continuous.singlePage.tooltip"),
                 "single_page_column", iconSize,
                 buttonFont);
@@ -2300,7 +2306,8 @@ public class SwingViewBuilder implements ViewBuilder {
     }
 
     public JToggleButton buildPageViewFacingPageConToggleButton() {
-        JToggleButton btn = makeToolbarToggleButton(messageBundle.getString("viewer.toolbar.pageView.continuous.facingPage.label"),
+        JToggleButton btn = makeToolbarToggleButton(messageBundle.getString("viewer.toolbar.pageView.continuous" +
+                        ".facingPage.label"),
                 messageBundle.getString("viewer.toolbar.pageView.continuous.facingPage.tooltip"),
                 "two_page_column", iconSize,
                 buttonFont);
@@ -2310,7 +2317,8 @@ public class SwingViewBuilder implements ViewBuilder {
     }
 
     public JToggleButton buildPageViewSinglePageNonConToggleButton() {
-        JToggleButton btn = makeToolbarToggleButton(messageBundle.getString("viewer.toolbar.pageView.nonContinuous.singlePage.label"),
+        JToggleButton btn = makeToolbarToggleButton(messageBundle.getString("viewer.toolbar.pageView.nonContinuous" +
+                        ".singlePage.label"),
                 messageBundle.getString("viewer.toolbar.pageView.nonContinuous.singlePage.tooltip"),
                 "single_page", iconSize, buttonFont);
         if (viewerController != null && btn != null)
@@ -2319,7 +2327,8 @@ public class SwingViewBuilder implements ViewBuilder {
     }
 
     public JToggleButton buildPageViewFacingPageNonConToggleButton() {
-        JToggleButton btn = makeToolbarToggleButton(messageBundle.getString("viewer.toolbar.pageView.nonContinuous.facingPage.label"),
+        JToggleButton btn = makeToolbarToggleButton(messageBundle.getString("viewer.toolbar.pageView.nonContinuous" +
+                        ".facingPage.label"),
                 messageBundle.getString("viewer.toolbar.pageView.nonContinuous.facingPage.tooltip"),
                 "two_page", iconSize, buttonFont);
         if (viewerController != null && btn != null)
@@ -2336,16 +2345,16 @@ public class SwingViewBuilder implements ViewBuilder {
      * @param imageName display image name
      * @param iconSize  image size file extention constant
      * @param font      display font
-     *
      * @return a button with the specified characteristics.
      */
     protected JButton makeToolbarButton(
             String title, String toolTip, String imageName, final Images.IconSize iconSize,
             java.awt.Font font) {
         JButton tmp = new JButton(showButtonText ? title : "");
+        tmp.setBorder(BorderFactory.createEmptyBorder());
         tmp.setFont(font);
         tmp.setToolTipText(toolTip);
-        Images.applyIcons (tmp, imageName, iconSize);
+        Images.applyIcons(tmp, imageName, iconSize);
         tmp.setRolloverEnabled(true);
         tmp.setBorderPainted(false);
         tmp.setContentAreaFilled(false);
@@ -2354,8 +2363,10 @@ public class SwingViewBuilder implements ViewBuilder {
         return tmp;
     }
 
-    protected AnnotationColorToggleButton makeAnnotationToggleButton(String title, String toolTip, String colorPreferenceKey,
-                                                                     String imageName, Images.IconSize imageSize, Font font, float alpha) {
+    protected AnnotationColorToggleButton makeAnnotationToggleButton(String title, String toolTip,
+                                                                     String colorPreferenceKey,
+                                                                     String imageName, Images.IconSize imageSize,
+                                                                     Font font, float alpha) {
         return new IconAnnotationColorToggleButton(viewerController, messageBundle, title, toolTip,
                 colorPreferenceKey, imageName, imageSize, font, alpha);
     }
@@ -2378,7 +2389,7 @@ public class SwingViewBuilder implements ViewBuilder {
         tmp.setToolTipText(toolTip);
         tmp.setRolloverEnabled(true);
 
-        Images.applyIcons (tmp, imageName, iconSize);
+        Images.applyIcons(tmp, imageName, iconSize);
         //tmp.setBorderPainted(false);
         tmp.setBorder(BorderFactory.createEmptyBorder());
         tmp.setContentAreaFilled(false);
@@ -2404,7 +2415,7 @@ public class SwingViewBuilder implements ViewBuilder {
         JToggleButton tmp = new JToggleButton(showButtonText ? title : "");
         tmp.setFont(font);
         tmp.setToolTipText(toolTip);
-        Images.applyIcons (tmp, imageName, iconSize);
+        Images.applyIcons(tmp, imageName, iconSize);
         //tmp.setBorderPainted(false);
         tmp.setBorder(BorderFactory.createEmptyBorder());
         tmp.setContentAreaFilled(false);
@@ -2441,9 +2452,9 @@ public class SwingViewBuilder implements ViewBuilder {
                                      final Images.IconSize imageSize, KeyStroke accel) {
         JMenuItem jmi = new JMenuItem(text);
         if (imageName != null) {
-            Images.applyIcons (jmi, imageName, imageSize);
+            Images.applyIcons(jmi, imageName, imageSize);
         } else {
-            Images.applyIcon (jmi, "menu_spacer", IconPack.Variant.NONE, Images.IconSize.SMALL);
+            Images.applyIcon(jmi, "menu_spacer", IconPack.Variant.NONE, Images.IconSize.SMALL);
         }
         jmi.setBorder(BorderFactory.createEmptyBorder());
         jmi.setContentAreaFilled(false);
@@ -2500,18 +2511,23 @@ public class SwingViewBuilder implements ViewBuilder {
         PageViewDecorator.pageColor = new Color(preferences.getInt(
                 ViewerPropertiesManager.PROPERTY_PAGE_VIEW_PAPER_COLOR, PageViewDecorator.pageColor.getRGB()));
         PageViewDecorator.pageBorderColor = new Color(preferences.getInt(
-                ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, PageViewDecorator.pageBorderColor.getRGB()));
+                ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR,
+                PageViewDecorator.pageBorderColor.getRGB()));
         AbstractDocumentView.backgroundColour = new Color(preferences.getInt(
-                ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, AbstractDocumentView.backgroundColour.getRGB()));
+                ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR,
+                AbstractDocumentView.backgroundColour.getRGB()));
 
         // image reference type.
         ImageReferenceFactory.imageReferenceType = ImageReferenceFactory.getImageReferenceType(
                 preferences.get(ViewerPropertiesManager.PROPERTY_IMAGING_REFERENCE_TYPE, "default"));
 
         // advanced reference types.
-        Library.commonPoolThreads = preferences.getInt(ViewerPropertiesManager.PROPERTY_COMMON_THREAD_COUNT, Library.commonPoolThreads);
-        Library.imagePoolThreads = preferences.getInt(ViewerPropertiesManager.PROPERTY_IMAGE_PROXY_THREAD_COUNT, Library.imagePoolThreads);
-        ImageReference.useProxy = preferences.getBoolean(ViewerPropertiesManager.PROPERTY_IMAGE_PROXY_ENABLED, ImageReference.useProxy);
+        Library.commonPoolThreads = preferences.getInt(ViewerPropertiesManager.PROPERTY_COMMON_THREAD_COUNT,
+                Library.commonPoolThreads);
+        Library.imagePoolThreads = preferences.getInt(ViewerPropertiesManager.PROPERTY_IMAGE_PROXY_THREAD_COUNT,
+                Library.imagePoolThreads);
+        ImageReference.useProxy = preferences.getBoolean(ViewerPropertiesManager.PROPERTY_IMAGE_PROXY_ENABLED,
+                ImageReference.useProxy);
 
     }
 

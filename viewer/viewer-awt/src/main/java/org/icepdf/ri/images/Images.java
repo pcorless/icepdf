@@ -33,12 +33,14 @@ import static org.icepdf.ri.images.IconPack.Variant;
  * are meant to be customizable by applications embedding ICEpdf, call:
  * <ul>
  *     <li>for a single icon {@link #getSingleIcon(String, Variant, IconSize)}</li>
- *     <li>for a button without different styles for its states, {@link #applyIcon(AbstractButton, String, Variant, IconSize)}</li>
+ *     <li>for a button without different styles for its states,
+ *     {@link #applyIcon(AbstractButton, String, Variant, IconSize)}</li>
  *     <li>for a button with different styles per state, {@link #applyIcons(AbstractButton, String, IconSize)}</li>
  * </ul>
  * Icons for the different states will be loaded and registered on the button if the current icon pack provides
  * these styles. Note that all types of buttons, including {@code JMenu}s and {@code JMenuItem}s are supported
- * by {@link #applyIcons(AbstractButton, String, IconSize)} and {@link #applyIcon(AbstractButton, String, Variant, IconSize)}.
+ * by {@link #applyIcons(AbstractButton, String, IconSize)} and
+ * {@link #applyIcon(AbstractButton, String, Variant, IconSize)}.
  *
  * @author Mark Collette
  * @author Alexander Leithner
@@ -74,21 +76,22 @@ public class Images {
         TINY
     }
 
-    private static final Logger LOGGER = Logger.getLogger (Images.class.getName ());
+    private static final Logger LOGGER = Logger.getLogger(Images.class.getName());
 
     private static final IconPack ICON_PACK;
     private static final IconPack.VariantPool AVAILABLE_VARIANTS;
 
     static {
-        Object defaultIconPackProp = UIManager.get ("org.icepdf.ri.iconpack");
+        Object defaultIconPackProp = UIManager.get("org.icepdf.ri.iconpack");
         if (!(defaultIconPackProp instanceof IconPack)) {
-            LOGGER.fine ("No user-defined icon pack was registered or registered one was invalid; using default icon pack");
-            ICON_PACK = new DefaultIconPack ();
+            LOGGER.fine("No user-defined icon pack was registered or registered one was invalid; using default icon " +
+                    "pack");
+            ICON_PACK = new DefaultIconPack();
         } else {
             ICON_PACK = (IconPack) defaultIconPackProp;
         }
 
-        AVAILABLE_VARIANTS = ICON_PACK.getProvidedVariants ();
+        AVAILABLE_VARIANTS = ICON_PACK.getProvidedVariants();
     }
 
     /**
@@ -108,8 +111,8 @@ public class Images {
     /**
      * Get a single icon from the classpath (must be PNG or GIF); no icon packs involved
      *
-     * @param name  The file to retrieve
-     * @return      A URL referring to the requested icon on the classpath.
+     * @param name The file to retrieve
+     * @return A URL referring to the requested icon on the classpath.
      */
     public static URL get(String name) {
         return Images.class.getResource(name);
@@ -122,43 +125,33 @@ public class Images {
      *
      * @param propertiesManager The Properties Manager to retrieve the preferences from
      * @param elseValue         The value to return if preference is unset or is invalid
-     * @return                  The current preference for the icon size or the given default value
+     * @return The current preference for the icon size or the given default value
      */
-    public static IconSize getDefaultIconSizeOr (ViewerPropertiesManager propertiesManager, IconSize elseValue) {
-        return getDefaultIconSizeOr (propertiesManager.getPreferences (), elseValue);
+    public static IconSize getDefaultIconSizeOr(ViewerPropertiesManager propertiesManager, IconSize elseValue) {
+        return getDefaultIconSizeOr(propertiesManager.getPreferences(), elseValue);
     }
 
     /**
      * Get the current setting for the icon size or the given "else" value if preference is unset or is invalid
      *
-     * @param preferences   The preference store to retrieve the preference from
-     * @param elseValue     The value to return if preference is unset or is invalid
-     * @return              The current preference for the icon size or the given default value
+     * @param preferences The preference store to retrieve the preference from
+     * @param elseValue   The value to return if preference is unset or is invalid
+     * @return The current preference for the icon size or the given default value
      */
-    public static IconSize getDefaultIconSizeOr (Preferences preferences, IconSize elseValue) {
+    public static IconSize getDefaultIconSizeOr(Preferences preferences, IconSize elseValue) {
         IconSize iconSize;
 
         String defaultSizeStr = preferences.get(ViewerPropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE);
-        if (defaultSizeStr == null || !(defaultSizeStr.equals (Images.SIZE_SMALL) || defaultSizeStr.equals (Images.SIZE_LARGE))) {
+        if (defaultSizeStr == null || !(defaultSizeStr.equals(Images.SIZE_SMALL) || defaultSizeStr.equals(Images.SIZE_LARGE))) {
             try {
-                iconSize = IconSize.valueOf (defaultSizeStr);
+                iconSize = IconSize.valueOf(defaultSizeStr);
             } catch (IllegalArgumentException e) {
                 iconSize = elseValue;
             }
-        } else if (defaultSizeStr.equals (Images.SIZE_SMALL)) iconSize = Images.IconSize.SMALL;
+        } else if (defaultSizeStr.equals(Images.SIZE_SMALL)) iconSize = Images.IconSize.SMALL;
         else iconSize = Images.IconSize.LARGE;
 
         return iconSize;
-    }
-
-    /**
-     * Ask the current icon pack what its default height value (in pixels) is for the given icon size
-     *
-     * @param iconSize  The icon size to query
-     * @return          The height value for the given icon size of the current icon pack
-     */
-    public static int getHeightValueForIconSize (IconSize iconSize) {
-        return ICON_PACK.getHeightValueForSize (iconSize);
     }
 
     /**
@@ -170,11 +163,11 @@ public class Images {
      * @param iconName The icon to register
      * @param size     The size of the icon to register
      */
-    public static void applyIcons (AbstractButton button, String iconName, IconSize size) {
-        applyIcon (button::setIcon, iconName, Variant.NORMAL, size);
-        if (AVAILABLE_VARIANTS.pressedProvided ()) applyIcon (button::setPressedIcon, iconName, Variant.PRESSED, size);
-        if (AVAILABLE_VARIANTS.rolloverProvided ()) applyIcon (button::setRolloverIcon, iconName, Variant.ROLLOVER, size);
-        if (AVAILABLE_VARIANTS.disabledProvided ()) applyIcon (button::setDisabledIcon, iconName, Variant.DISABLED, size);
+    public static void applyIcons(AbstractButton button, String iconName, IconSize size) {
+        applyIcon(button::setIcon, iconName, Variant.NORMAL, size);
+        if (AVAILABLE_VARIANTS.pressedProvided()) applyIcon(button::setPressedIcon, iconName, Variant.PRESSED, size);
+        if (AVAILABLE_VARIANTS.rolloverProvided()) applyIcon(button::setRolloverIcon, iconName, Variant.ROLLOVER, size);
+        if (AVAILABLE_VARIANTS.disabledProvided()) applyIcon(button::setDisabledIcon, iconName, Variant.DISABLED, size);
     }
 
     /**
@@ -188,8 +181,8 @@ public class Images {
      * @param variant  The wanted variant of the given icon
      * @param size     The wanted size
      */
-    public static void applyIcon (AbstractButton button, String iconName, Variant variant, IconSize size) {
-        applyIcon (button::setIcon, iconName, variant, size);
+    public static void applyIcon(AbstractButton button, String iconName, Variant variant, IconSize size) {
+        applyIcon(button::setIcon, iconName, variant, size);
     }
 
     /**
@@ -201,11 +194,11 @@ public class Images {
      * @param iconName The icon to retrieve from the current icon pack
      * @param variant  The variant of the icon to retrieve
      * @param size     The size in which to retrieve the icon
-     * @return         The icon as fetched by the icon pack
+     * @return The icon as fetched by the icon pack
      * @throws RuntimeException If the icon pack could not find or could not load the requested icon
      */
-    public static Icon getSingleIcon (String iconName, Variant variant, IconSize size) throws RuntimeException {
-        return ICON_PACK.getIcon (iconName, variant, size);
+    public static Icon getSingleIcon(String iconName, Variant variant, IconSize size) throws RuntimeException {
+        return ICON_PACK.getIcon(iconName, variant, size);
     }
 
     /**
@@ -216,11 +209,12 @@ public class Images {
      * @param variant       The variant of the icon to fetch
      * @param size          The wanted size of the icon
      */
-    private static void applyIcon (Consumer <Icon> applyFunction, String name, Variant variant, IconSize size) {
+    private static void applyIcon(Consumer<Icon> applyFunction, String name, Variant variant, IconSize size) {
         try {
-            applyFunction.accept (ICON_PACK.getIcon (name, variant, size));
+            applyFunction.accept(ICON_PACK.getIcon(name, variant, size));
         } catch (RuntimeException e) {
-            LOGGER.log (Level.WARNING, "Couldn't get icon " + name + ", size " + size + ", variant " + variant + " from icon pack", e);
+            LOGGER.log(Level.WARNING, "Couldn't get icon " + name + ", size " + size + ", variant " + variant + " " +
+                    "from icon pack", e);
         }
     }
 
