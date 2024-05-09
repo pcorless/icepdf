@@ -2351,7 +2351,7 @@ public class SwingViewBuilder implements ViewBuilder {
             String title, String toolTip, String imageName, final Images.IconSize iconSize,
             java.awt.Font font) {
         JButton tmp = new JButton(showButtonText ? title : "");
-        tmp.setBorder(BorderFactory.createEmptyBorder(0, 2, 0, 2));
+        tmp.setBorder(BorderFactory.createEmptyBorder());
         tmp.setFont(font);
         tmp.setToolTipText(toolTip);
         Images.applyIcons(tmp, imageName, iconSize);
