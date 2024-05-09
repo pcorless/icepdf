@@ -40,7 +40,7 @@ public class OutlinesTree extends JTree {
                 TreeSelectionModel.SINGLE_TREE_SELECTION);
         // change the look & feel of the jtree
         DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
-        Icon icon = Images.getSingleIcon ("page", IconPack.Variant.NONE, Images.IconSize.TINY);
+        Icon icon = Images.getSingleIcon("page", IconPack.Variant.NONE, Images.IconSize.TINY);
         renderer.setOpenIcon(icon);
         renderer.setClosedIcon(icon);
         renderer.setLeafIcon(icon);
