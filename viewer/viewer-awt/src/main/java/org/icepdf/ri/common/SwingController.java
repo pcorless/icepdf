@@ -2105,6 +2105,11 @@ public class SwingController extends ComponentAdapter
         }
     }
 
+    private void getDefaultDisplayTool() {
+        setDisplayTool(propertiesManager.getPreferences().getInt(PROPERTY_DEFAULT_DISPLAY_TOOL,
+                DocumentViewModelImpl.DISPLAY_TOOL_PAN));
+    }
+
 
     private void setCursorOnComponents(final int cursorType) {
         Cursor cursor = documentViewController.getViewCursor(cursorType);
@@ -2599,7 +2604,7 @@ public class SwingController extends ComponentAdapter
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
             } finally {
-                setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
+                getDefaultDisplayTool();
             }
         }
     }
@@ -2719,7 +2724,7 @@ public class SwingController extends ComponentAdapter
                             // create default security callback is user has not created one
                             setupSecurityHandler(document, documentViewController.getSecurityCallback());
                             commonNewDocumentHandling(location.getPath());
-                            setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
+                            getDefaultDisplayTool();
                         } catch (IOException ex) {
                             if (in != null) {
                                 try {
@@ -2839,7 +2844,7 @@ public class SwingController extends ComponentAdapter
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
             } finally {
-                setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
+                getDefaultDisplayTool();
             }
         }
     }
@@ -2876,7 +2881,7 @@ public class SwingController extends ComponentAdapter
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
             } finally {
-                setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
+                getDefaultDisplayTool();
             }
         }
     }
@@ -2931,7 +2936,7 @@ public class SwingController extends ComponentAdapter
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
             } finally {
-                setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
+                getDefaultDisplayTool();
             }
         }
     }
