@@ -29,14 +29,14 @@ public class ColorOverlayIcon implements Icon {
     protected final PaintButtonBase paintButtonBase;
     protected final Icon baseIcon;
 
-    public ColorOverlayIcon (URL location) {
-        baseIcon = new ImageIcon (location);
+    public ColorOverlayIcon(URL location) {
+        baseIcon = new ImageIcon(location);
         paintButtonBase = new PaintButtonBase(null);
     }
 
-    public ColorOverlayIcon (Icon icon) {
+    public ColorOverlayIcon(Icon icon) {
         baseIcon = icon;
-        paintButtonBase = new PaintButtonBase (null);
+        paintButtonBase = new PaintButtonBase(null);
     }
 
     public void setColor(Color color, float alpha) {
@@ -75,9 +75,13 @@ public class ColorOverlayIcon implements Icon {
     }
 
     @Override
-    public int getIconWidth () { return baseIcon.getIconWidth (); }
+    public int getIconWidth() {
+        return baseIcon.getIconWidth();
+    }
 
     @Override
-    public int getIconHeight () { return baseIcon.getIconHeight (); }
+    public int getIconHeight() {
+        return baseIcon.getIconHeight();
+    }
 
 }

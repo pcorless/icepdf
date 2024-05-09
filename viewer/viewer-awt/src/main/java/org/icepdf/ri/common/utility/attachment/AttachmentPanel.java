@@ -104,7 +104,7 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
         contextMenu = new JPopupMenu();
         saveAsMenuItem = new JMenuItem(messageBundle.getString(
                 "viewer.utilityPane.attachments.menu.saveAs.label"));
-        Images.applyIcon (saveAsMenuItem, "save", IconPack.Variant.NORMAL, Images.IconSize.SMALL);
+        Images.applyIcon(saveAsMenuItem, "save", IconPack.Variant.NORMAL, Images.IconSize.SMALL);
         saveAsMenuItem.addActionListener(this);
         contextMenu.add(saveAsMenuItem);
 
@@ -196,7 +196,7 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
                         WindowManager.getInstance().newWindow(embeddedDocument, fileName);
                     } catch (IOException e) {
                         logger.log(Level.WARNING, "Error opening PDF file stream " + fileName, e);
-                    } catch( PDFSecurityException e) {
+                    } catch (PDFSecurityException e) {
                         logger.log(Level.WARNING, "Error opening PDF security exception " + fileName, e);
                     }
                 }

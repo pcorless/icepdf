@@ -27,7 +27,6 @@ import org.icepdf.ri.images.Images;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
-import java.net.URL;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
@@ -54,7 +53,8 @@ public class SignatureValidationStatus {
     private final String dictionaryDate;
 
     public SignatureValidationStatus(ResourceBundle messageBundle,
-                                     SignatureWidgetAnnotation signatureWidgetAnnotation, SignatureValidator signatureValidator) {
+                                     SignatureWidgetAnnotation signatureWidgetAnnotation,
+                                     SignatureValidator signatureValidator) {
 
         // build out the string that we need to display
         validity = "viewer.annotation.signature.validation.common.invalid.label";
@@ -114,7 +114,8 @@ public class SignatureValidationStatus {
         dictionaryDate = signatureDictionary.getDate();
     }
 
-    private void validateSignatureNode(SignatureWidgetAnnotation signatureWidgetAnnotation, SignatureValidator signatureValidator) {
+    private void validateSignatureNode(SignatureWidgetAnnotation signatureWidgetAnnotation,
+                                       SignatureValidator signatureValidator) {
         SignatureFieldDictionary fieldDictionary = signatureWidgetAnnotation.getFieldDictionary();
 
         if (fieldDictionary != null) {
@@ -134,11 +135,11 @@ public class SignatureValidationStatus {
     protected Icon getLargeValidityIcon(SignatureValidator signatureValidator) {
         if (!signatureValidator.isSignedDataModified() && signatureValidator.isCertificateChainTrusted()
                 && signatureValidator.isSignaturesCoverDocumentLength()) {
-            return Images.getSingleIcon ("signature_valid", IconPack.Variant.NONE, Images.IconSize.HUGE);
+            return Images.getSingleIcon("signature_valid", IconPack.Variant.NONE, Images.IconSize.HUGE);
         } else if (!signatureValidator.isSignedDataModified() && signatureValidator.isSignaturesCoverDocumentLength()) {
-            return Images.getSingleIcon ("signature_cation", IconPack.Variant.NONE, Images.IconSize.HUGE);
+            return Images.getSingleIcon("signature_cation", IconPack.Variant.NONE, Images.IconSize.HUGE);
         } else {
-            return Images.getSingleIcon ("signature_invalid", IconPack.Variant.NONE, Images.IconSize.HUGE);
+            return Images.getSingleIcon("signature_invalid", IconPack.Variant.NONE, Images.IconSize.HUGE);
         }
     }
 

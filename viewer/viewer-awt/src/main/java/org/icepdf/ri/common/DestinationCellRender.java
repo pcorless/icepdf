@@ -30,7 +30,7 @@ import java.awt.*;
 @SuppressWarnings("serial")
 public class DestinationCellRender extends DefaultTreeCellRenderer {
 
-    protected static final Icon IMAGE_ICON = Images.getSingleIcon ("page", IconPack.Variant.NONE, Images.IconSize.TINY);
+    protected static final Icon IMAGE_ICON = Images.getSingleIcon("page", IconPack.Variant.NONE, Images.IconSize.TINY);
 
     @Override
     public Component getTreeCellRendererComponent(

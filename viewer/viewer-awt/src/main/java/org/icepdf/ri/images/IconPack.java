@@ -121,8 +121,7 @@ public abstract class IconPack {
 	 * <p/>
 	 * Note that the {@code size} parameter is to be regarded as a hint. If the icon pack deems it necessary to return
 	 * another size for any given icon, the icon will be returned in this size instead. No guarantee is made that any
-	 * icon return by this method is square nor that all icons will have the height value returned by
-	 * {@link #getHeightValueForSize(IconSize)} for the given {@code size}.
+	 * icon return by this method is square
 	 *
 	 * @param name    The name of the icon to retrieve
 	 * @param variant The variant to retrieve
@@ -131,17 +130,5 @@ public abstract class IconPack {
 	 * @throws RuntimeException If the icon could not be retrieved from the classpath or any other error occurs
 	 */
 	public abstract Icon getIcon (String name, Variant variant, IconSize size) throws RuntimeException;
-
-	/**
-	 * Returns the expected height of an icon requested with the given icon size.
-	 * <p/>
-	 * Note that there is no guarantee that an icon requested with the given size actually has the returned value
-	 * for the size as its height, nor that the returned value of this method is equal to the width of any icon
-	 * requested with the given size.
-	 *
-	 * @param size The icon size to get the expected height for
-	 * @return     The height value (in pixels) of a typical icon of the given size
-	 */
-	public abstract int getHeightValueForSize (IconSize size);
 
 }

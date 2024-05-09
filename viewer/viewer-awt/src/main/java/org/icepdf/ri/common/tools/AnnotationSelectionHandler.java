@@ -56,13 +56,13 @@ public class AnnotationSelectionHandler extends CommonToolHandler
         // create destination menu item
         addDestinationMenuItem = new JMenuItem(messageBundle.getString(
                 "viewer.utilityPane.view.selectionTool.contextMenu.addDestination.label"));
-        Images.applyIcon (addDestinationMenuItem, "destination", IconPack.Variant.NONE, Images.IconSize.MINI);
+        Images.applyIcon(addDestinationMenuItem, "destination", IconPack.Variant.NONE, Images.IconSize.MINI);
         addDestinationMenuItem.addActionListener(this);
         contextMenu.add(addDestinationMenuItem);
         // create free text menu item.
         freeTextMenuItem = new JMenuItem(messageBundle.getString(
                 "viewer.utilityPane.view.selectionTool.contextMenu.addFreeText.label"));
-        Images.applyIcon (freeTextMenuItem, "freetext_annot", IconPack.Variant.NORMAL, Images.IconSize.MINI);
+        Images.applyIcon(freeTextMenuItem, "freetext_annot", IconPack.Variant.NORMAL, Images.IconSize.MINI);
         freeTextMenuItem.addActionListener(this);
         contextMenu.add(freeTextMenuItem);
     }

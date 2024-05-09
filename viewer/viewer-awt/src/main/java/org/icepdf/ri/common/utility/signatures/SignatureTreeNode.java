@@ -170,11 +170,11 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
     protected Icon getRootNodeValidityIcon() {
         if (!signatureValidator.isSignedDataModified() && signatureValidator.isCertificateChainTrusted()
                 && signatureValidator.isSignaturesCoverDocumentLength()) {
-            return Images.getSingleIcon ("signature_valid", IconPack.Variant.NONE, Images.IconSize.MINI);
+            return Images.getSingleIcon("signature_valid", IconPack.Variant.NONE, Images.IconSize.MINI);
         } else if (!signatureValidator.isSignedDataModified() && signatureValidator.isSignaturesCoverDocumentLength()) {
-            return Images.getSingleIcon ("signature_caution", IconPack.Variant.NONE, Images.IconSize.MINI);
+            return Images.getSingleIcon("signature_caution", IconPack.Variant.NONE, Images.IconSize.MINI);
         } else {
-            return Images.getSingleIcon ("signature_invalid", IconPack.Variant.NONE, Images.IconSize.MINI);
+            return Images.getSingleIcon("signature_invalid", IconPack.Variant.NONE, Images.IconSize.MINI);
         }
     }
 

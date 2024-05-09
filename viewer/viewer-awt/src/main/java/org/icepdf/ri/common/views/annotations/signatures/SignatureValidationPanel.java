@@ -25,7 +25,7 @@ import java.awt.*;
 import java.util.ResourceBundle;
 
 /**
- * SignatureValidationPanel shows a summary of the the validation results.
+ * SignatureValidationPanel shows a summary of the validation results.
  */
 public class SignatureValidationPanel extends JPanel {
     // layouts constraint
@@ -33,7 +33,8 @@ public class SignatureValidationPanel extends JPanel {
 
 
     public SignatureValidationPanel(SignatureValidationStatus signatureValidationStatus, ResourceBundle messageBundle,
-                                    SignatureWidgetAnnotation signatureWidgetAnnotation, SignatureValidator signatureValidator,
+                                    SignatureWidgetAnnotation signatureWidgetAnnotation,
+                                    SignatureValidator signatureValidator,
                                     boolean showIcon, boolean showBorder) {
         if (showBorder) {
             setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
@@ -43,7 +44,7 @@ public class SignatureValidationPanel extends JPanel {
         }
 
         // get the respective image.
-        JLabel validityIconLabel = new JLabel(signatureValidationStatus.getValidityIcon ());
+        JLabel validityIconLabel = new JLabel(signatureValidationStatus.getValidityIcon());
 
         // put it all together.
         setAlignmentY(JPanel.TOP_ALIGNMENT);

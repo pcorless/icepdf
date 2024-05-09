@@ -20,7 +20,8 @@ public class IconAnnotationColorToggleButton extends AnnotationColorToggleButton
 
     public IconAnnotationColorToggleButton(final Controller controller, final ResourceBundle messageBundle,
                                            final String title, final String toolTip, final String colorProperty,
-                                           final String imageName, final Images.IconSize imageSize, final Font font, final float alpha) {
+                                           final String imageName, final Images.IconSize imageSize, final Font font,
+                                           final float alpha) {
         this(controller, messageBundle, title, toolTip, colorProperty, imageName, imageSize, font, alpha, Color.YELLOW);
     }
 
@@ -45,20 +46,22 @@ public class IconAnnotationColorToggleButton extends AnnotationColorToggleButton
         super(controller, messageBundle, title, toolTip, colorProperty, imageName, imageSize, font);
         this.alpha = alpha;
         //final ImageIcon icon = new ImageIcon(Images.get(imageName + "_a" + imageSize + ".png"));
-        final Icon icon = Images.getSingleIcon (imageName, IconPack.Variant.NORMAL, imageSize);
+        final Icon icon = Images.getSingleIcon(imageName, IconPack.Variant.NORMAL, imageSize);
         baseImage = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
         final Graphics2D g = baseImage.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         icon.paintIcon(null, g, 0, 0);
         g.dispose();
         setupLayout();
-        final Color defColor = new Color(ViewerPropertiesManager.getInstance().checkAndStoreIntProperty(colorProperty, defaultColor.getRGB()));
+        final Color defColor = new Color(ViewerPropertiesManager.getInstance().checkAndStoreIntProperty(colorProperty
+                , defaultColor.getRGB()));
         setColor(defColor, false);
     }
 
     @Override
     public void setColor(final Color newColor, final boolean fireChangeEvent) {
-        final BufferedImage newImage = new BufferedImage(baseImage.getWidth(), baseImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        final BufferedImage newImage = new BufferedImage(baseImage.getWidth(), baseImage.getHeight(),
+                BufferedImage.TYPE_INT_ARGB);
         for (int x = 0; x < baseImage.getWidth(); ++x) {
             for (int y = 0; y < baseImage.getHeight(); ++y) {
                 final Color orig = new Color(baseImage.getRGB(x, y), true);
