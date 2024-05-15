@@ -1,6 +1,7 @@
 package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.acroform.signature.handlers.BasicSignatureAppearanceCallback;
 import org.icepdf.core.pobjects.acroform.signature.handlers.Pkcs12SignerHandler;
 import org.icepdf.core.pobjects.acroform.signature.handlers.SimpleCallbackHandler;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
@@ -29,9 +30,7 @@ public class SigningTests {
             String password = "changeit";
             String certAlias = "senderKeyPair";
 
-            Pkcs12SignerHandler pkcs12SignerHandler = new Pkcs12SignerHandler(
-                    new File(keystorePath),
-                    certAlias,
+            Pkcs12SignerHandler pkcs12SignerHandler = new Pkcs12SignerHandler(new File(keystorePath), certAlias,
                     new SimpleCallbackHandler(password));
 
             Document document = new Document();
@@ -40,8 +39,8 @@ public class SigningTests {
             Library library = document.getCatalog().getLibrary();
 
             // Creat signature annotation
-            SignatureWidgetAnnotation signatureAnnotation = (SignatureWidgetAnnotation)
-                    AnnotationFactory.buildWidgetAnnotation(
+            SignatureWidgetAnnotation signatureAnnotation =
+                    (SignatureWidgetAnnotation) AnnotationFactory.buildWidgetAnnotation(
                             document.getPageTree().getLibrary(),
                             FieldDictionaryFactory.TYPE_SIGNATURE,
                             new Rectangle(100, 250, 100, 50));
@@ -55,17 +54,18 @@ public class SigningTests {
             SignatureDictionary signatureDictionary = SignatureDictionary.getInstance(signatureAnnotation);
             signatureDictionary.setSignerHandler(pkcs12SignerHandler);
             signatureDictionary.setName("Tester McTest");
+            signatureDictionary.setContactInfo("test@test.com");
             signatureDictionary.setLocation("Springfield USA");
             signatureDictionary.setReason("Make sure stuff didn't change");
             signatureDictionary.setDate("D:20240405082733+02'00'");
 
+            // build basic appearance
+            BasicSignatureAppearanceCallback signatureAppearance =
+                    new BasicSignatureAppearanceCallback("Test master", null);
+            signatureAppearance.createAppearanceStream(signatureAnnotation);
+
             // set this signature as the primary certification signer.
             library.addCertificationSigner(signatureDictionary);
-
-            // todo time service
-
-            // todo: default appearance, uses values from signatureDictionary
-            // signatureAnnotation.buildDefaultAppearance();
 
             File out = new File("./src/test/out/SigningTest_signed_document.pdf");
             try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 8192)) {
