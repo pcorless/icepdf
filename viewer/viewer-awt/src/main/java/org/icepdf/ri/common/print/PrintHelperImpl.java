@@ -46,7 +46,7 @@ import java.util.logging.Logger;
  *
  * @since 2.0
  */
-public class PrintHelperImpl extends PrintHelper implements Printable {
+public class PrintHelperImpl extends PrintHelper {
 
     private static final Logger logger =
             Logger.getLogger(PrintHelperImpl.class.toString());

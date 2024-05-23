@@ -7,7 +7,11 @@ import org.icepdf.core.util.Defs;
 import javax.print.*;
 import javax.print.attribute.*;
 import javax.print.attribute.standard.*;
+import java.awt.*;
 import java.awt.geom.Rectangle2D;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -17,7 +21,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.regex.Pattern;
 
-public abstract class PrintHelper {
+public abstract class PrintHelper implements Printable {
 
     public static final PrintService[] EMPTY_PRINTSERVICE_ARRAY = new PrintService[0];
     private static final Pattern END_NEWLINE_PATTERN = Pattern.compile("[\r\n]+$");
@@ -268,6 +272,8 @@ public abstract class PrintHelper {
     public abstract CancelablePrintJob cancelablePrint() throws PrintException;
 
     public abstract void print(PrintJobWatcher printJobWatcher) throws PrintException;
+
+    public abstract int print(Graphics graphics, PageFormat pageFormat, int i) throws PrinterException;
 
     /**
      * Print a range of pages from the document as specified by #setupPrintService.
