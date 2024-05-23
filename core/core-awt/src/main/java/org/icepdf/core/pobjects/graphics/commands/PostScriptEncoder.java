@@ -194,7 +194,7 @@ public class PostScriptEncoder {
 
                     ArrayList<GlyphText> glyphTexts = textSprite.getGlyphSprites();
                     if (glyphTexts.size() > 0) {
-                        // write out stat of text paint
+                        // write out start of text paint
                         postScript.append("1 0 0 -1 ")
                                 .append(glyphTexts.get(0).getX()).append(SPACE)
                                 .append(glyphTexts.get(0).getY()).append(SPACE).append(PdfOps.Tm_TOKEN).append(NEWLINE);

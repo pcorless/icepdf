@@ -3,6 +3,7 @@ package org.icepdf.core.pobjects.annotations;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.*;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
+import org.icepdf.core.pobjects.acroform.signature.handlers.SignatureAppearanceCallback;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -37,6 +38,8 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
     private SignatureDictionary signatureDictionary;
 
     private SignatureValidator signatureValidator;
+
+    private SignatureAppearanceCallback signatureAppearanceCallback;
 
     public SignatureWidgetAnnotation(Library l, DictionaryEntries h) {
         super(l, h);
@@ -101,9 +104,13 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
 
     }
 
+    public void setResetAppearanceCallback(SignatureAppearanceCallback signatureAppearanceCallback) {
+        this.signatureAppearanceCallback = signatureAppearanceCallback;
+    }
+
     @Override
     public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew) {
-
+        signatureAppearanceCallback.createAppearanceStream(this);
     }
 
     @Override

@@ -563,7 +563,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                 try {
                     form.init();
                 } catch (InterruptedException e) {
-                    logger.log(Level.WARNING, "Could not initialized FreeTexttAnnotation", e);
+                    logger.log(Level.WARNING, "Could not initialized FreeTextAnnotation", e);
                 }
                 newFont = form.getResources().getFont(EMBEDDED_FONT_NAME);
                 Reference reference = newFont.getPObjectReference();

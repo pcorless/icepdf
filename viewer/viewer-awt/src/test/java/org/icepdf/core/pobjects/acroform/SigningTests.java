@@ -7,8 +7,9 @@ import org.icepdf.core.pobjects.acroform.signature.handlers.SimpleCallbackHandle
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.updater.ObjectUpdateTests;
 import org.icepdf.core.util.updater.WriteMode;
+import org.icepdf.ri.util.FontPropertiesManager;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -21,6 +22,12 @@ import java.io.InputStream;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class SigningTests {
+
+    @BeforeAll
+    public static void init() {
+        FontPropertiesManager.getInstance().loadOrReadSystemFonts();
+    }
+
     @DisplayName("signatures - should create signed document")
     @Test
     public void testXrefTableFullUpdate() {
@@ -34,7 +41,7 @@ public class SigningTests {
                     new SimpleCallbackHandler(password));
 
             Document document = new Document();
-            InputStream fileUrl = ObjectUpdateTests.class.getResourceAsStream("/signing/test_print.pdf");
+            InputStream fileUrl = SigningTests.class.getResourceAsStream("/signing/test_print.pdf");
             document.setInputStream(fileUrl, "test_print.pdf");
             Library library = document.getCatalog().getLibrary();
 
@@ -43,7 +50,7 @@ public class SigningTests {
                     (SignatureWidgetAnnotation) AnnotationFactory.buildWidgetAnnotation(
                             document.getPageTree().getLibrary(),
                             FieldDictionaryFactory.TYPE_SIGNATURE,
-                            new Rectangle(100, 250, 100, 50));
+                            new Rectangle(100, 250, 200, 100));
             document.getPageTree().getPage(0).addAnnotation(signatureAnnotation, true);
 
             // Add the signatureWidget to catalog
@@ -61,8 +68,9 @@ public class SigningTests {
 
             // build basic appearance
             BasicSignatureAppearanceCallback signatureAppearance =
-                    new BasicSignatureAppearanceCallback("Test master", null);
-            signatureAppearance.createAppearanceStream(signatureAnnotation);
+                    new BasicSignatureAppearanceCallback("Test Title 2", null);
+            signatureAnnotation.setResetAppearanceCallback(signatureAppearance);
+            signatureAnnotation.resetNullAppearanceStream();
 
             // set this signature as the primary certification signer.
             library.addCertificationSigner(signatureDictionary);
