@@ -227,7 +227,7 @@ public class SignatureDictionary extends Dictionary {
         stateManager.addChange(new PObject(signatureDictionary, signatureDictionary.getPObjectReference()));
 
         // attach the dictionary to the annotation
-        signatureWidgetAnnotation.getEntries().put(V_KEY, signatureDictionary.getPObjectReference());
+        signatureWidgetAnnotation.setSignatureDictionary(signatureDictionary);
 
         return signatureDictionary;
     }

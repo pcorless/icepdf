@@ -11,6 +11,8 @@ import java.awt.geom.AffineTransform;
 import java.util.Date;
 import java.util.logging.Logger;
 
+import static org.icepdf.core.pobjects.acroform.SignatureDictionary.V_KEY;
+
 /**
  * A digital signature (PDF 1.3) may be used to authenticate the identity of a user and the document's contents. It
  * stores information about the signer and the state of the document when it was signed. The signature may be purely
@@ -45,9 +47,16 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
         super(l, h);
         fieldDictionary = new SignatureFieldDictionary(library, entries);
 
+//        DictionaryEntries valueDict = library.getDictionary(entries, FieldDictionary.V_KEY);
+//        signatureDictionary = new SignatureDictionary(library, valueDict);
+
+    }
+
+    @Override
+    public void init() throws InterruptedException {
+        super.init();
         DictionaryEntries valueDict = library.getDictionary(entries, FieldDictionary.V_KEY);
         signatureDictionary = new SignatureDictionary(library, valueDict);
-
     }
 
     public SignatureValidator getSignatureValidator() {
@@ -97,6 +106,11 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
 
     public SignatureDictionary getSignatureDictionary() {
         return signatureDictionary;
+    }
+
+    public void setSignatureDictionary(SignatureDictionary signatureDictionary) {
+        entries.put(V_KEY, signatureDictionary.getPObjectReference());
+        this.signatureDictionary = signatureDictionary;
     }
 
     @Override

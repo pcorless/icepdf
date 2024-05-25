@@ -61,8 +61,8 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
         controller = documentViewController.getParentController();
 
         isShowInvisibleBorder = true;
-        isResizable = false;
-        isMovable = false;
+        isResizable = true;
+        isMovable = true;
 
         if (!annotation.allowScreenOrPrintRenderingOrInteraction()) {
             // border state flags.

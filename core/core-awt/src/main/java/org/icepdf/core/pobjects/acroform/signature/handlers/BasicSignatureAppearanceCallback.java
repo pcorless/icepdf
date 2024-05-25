@@ -1,7 +1,11 @@
 package org.icepdf.core.pobjects.acroform.signature.handlers;
 
 import org.icepdf.core.pobjects.*;
-import org.icepdf.core.pobjects.annotations.*;
+import org.icepdf.core.pobjects.acroform.SignatureDictionary;
+import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.Appearance;
+import org.icepdf.core.pobjects.annotations.AppearanceState;
+import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.pobjects.fonts.zfont.Encoding;
@@ -9,15 +13,13 @@ import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.TextState;
 import org.icepdf.core.pobjects.graphics.commands.*;
-import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -110,53 +112,29 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         textSprites.setFontName(EMBEDDED_FONT_NAME.toString());
         textSprites.setFontSize(fontSize);
 
-        // iterate over each line of text painting the strings.
-        StringBuilder contents = new StringBuilder(content);
-
-        // todo build out factory to setup x,y for sig content
-        //  fontsize, offset based on bbox size.
-        float lineHeight = fontSize;
-
         float offsetX = INSETS;  // 1 pixel padding
         float offsetY = INSETS;
         // is generally going to be zero, and af takes care of the offset for inset.
         float advanceX = (float) bbox.getMinX() + offsetX;
         float advanceY = (float) bbox.getMinY() + offsetY;
+        float midX = (float) (bbox.getWidth() + offsetX) / 2;
 
-        float currentX;
-        // we don't want to shift the whole line width just the ascent
-        float currentY = advanceY + lineHeight;
+        StringBuilder contents = new StringBuilder(content);
+        createTextSprites(advanceX, advanceY, shapes, textSprites, contents);
 
-        float lastx = 0;
-        float newAdvanceX;
-        char currentChar;
-        for (int i = 0, max = contents.length(); i < max; i++) {
+        SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
 
-            currentChar = contents.charAt(i);
+        StringBuilder reason = new StringBuilder(signatureDictionary.getReason());
+        createTextSprites(midX, advanceY, shapes, textSprites, reason);
 
-            newAdvanceX = (float) fontFile.getAdvance(currentChar).getX();
-            currentX = advanceX + lastx;
-            lastx += newAdvanceX;
+        StringBuilder name = new StringBuilder(signatureDictionary.getName());
+        createTextSprites(advanceX, advanceY + fontSize, shapes, textSprites, name);
 
-            if (!(currentChar == '\n' || currentChar == '\r')) {
-                textSprites.addText(
-                        currentChar, // cid
-                        String.valueOf(currentChar), // unicode value
-                        currentX, currentY, newAdvanceX, 0);
-            } else {
-                // move back to start of next line
-                currentY += lineHeight;
-                advanceX = (float) bbox.getMinX() + offsetX;
-                lastx = 0;
-            }
-        }
+        StringBuilder contact = new StringBuilder(signatureDictionary.getContactInfo());
+        createTextSprites(midX, advanceY + fontSize, shapes, textSprites, contact);
 
-        // actual font.
-        shapes.add(new ColorDrawCmd(Color.BLACK));
-        shapes.add(new TextSpriteDrawCmd(textSprites));
-
-        shapes.add(new AlphaDrawCmd(
-                AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f)));
+        StringBuilder location = new StringBuilder(signatureDictionary.getLocation());
+        createTextSprites(midX, advanceY * 2 + fontSize, shapes, textSprites, location);
 
         // update the appearance stream
         // create/update the appearance stream of the xObject.
@@ -231,5 +209,47 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
             library.addObject(newFont, newFont.getPObjectReference());
         }
 
+    }
+
+    private Point2D.Float createTextSprites(final float advanceX, final float advanceY, Shapes shapes,
+                                            TextSprite textSprites,
+                                            StringBuilder contents) {
+        int fontSize = textSprites.getFontSize();
+
+        float currentX = 0;
+        // we don't want to shift the whole line width just the ascent
+        float currentY = advanceY + fontSize;
+
+        float lastx = 0;
+        float newAdvanceX;
+        char currentChar;
+        for (int i = 0, max = contents.length(); i < max; i++) {
+
+            currentChar = contents.charAt(i);
+
+            newAdvanceX = (float) fontFile.getAdvance(currentChar).getX();
+            currentX = advanceX + lastx;
+            lastx += newAdvanceX;
+
+            if (!(currentChar == '\n' || currentChar == '\r')) {
+                textSprites.addText(
+                        currentChar, // cid
+                        String.valueOf(currentChar), // unicode value
+                        currentX, currentY, newAdvanceX, 0);
+            } else {
+                // move back to start of next line
+                currentY += fontSize;
+                lastx = 0;
+            }
+        }
+
+        // actual font.
+        shapes.add(new ColorDrawCmd(Color.BLACK));
+        shapes.add(new TextSpriteDrawCmd(textSprites));
+
+        shapes.add(new AlphaDrawCmd(
+                AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f)));
+
+        return new Point2D.Float(currentX, currentY);
     }
 }

@@ -68,7 +68,7 @@ public class SigningTests {
 
             // build basic appearance
             BasicSignatureAppearanceCallback signatureAppearance =
-                    new BasicSignatureAppearanceCallback("Test Title 2", null);
+                    new BasicSignatureAppearanceCallback("Director of Signing", null);
             signatureAnnotation.setResetAppearanceCallback(signatureAppearance);
             signatureAnnotation.resetNullAppearanceStream();
 
