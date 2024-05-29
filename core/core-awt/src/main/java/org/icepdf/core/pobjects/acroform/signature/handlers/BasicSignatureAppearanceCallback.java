@@ -83,7 +83,7 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         // remove any previous text
         shapes.getShapes().clear();
 
-        // setup the space for the AP content stream.
+        // set up the space for the AP content stream.
         AffineTransform af = new AffineTransform();
         af.scale(1, -1);
         af.translate(0, -bbox.getHeight());
@@ -100,8 +100,8 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
             fontFile = fontFile.deriveFont(Encoding.standardEncoding, null);
             fontPropertyChanged = false;
         }
-        int fontSize = 10;
-        fontFile = fontFile.deriveFont(10); // todo might be dynamically set?
+        int fontSize = 14;
+        fontFile = fontFile.deriveFont(fontSize); // todo might be dynamically set?
         TextSprite textSprites =
                 new TextSprite(fontFile,
                         SIMPLE_FORMAT,
@@ -119,22 +119,18 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         float advanceY = (float) bbox.getMinY() + offsetY;
         float midX = (float) (bbox.getWidth() + offsetX) / 2;
 
-        StringBuilder contents = new StringBuilder(content);
-        createTextSprites(advanceX, advanceY, shapes, textSprites, contents);
+        float lineSpacing = 5;
+
+        createTextSprites(advanceX, advanceY, shapes, 14, content);
 
         SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
+        Point2D.Float lastOffset = createTextSprites(midX, advanceY + 2, shapes, 12, signatureDictionary.getReason());
 
-        StringBuilder reason = new StringBuilder(signatureDictionary.getReason());
-        createTextSprites(midX, advanceY, shapes, textSprites, reason);
+        createTextSprites(advanceX, lastOffset.y + lineSpacing, shapes, 14, signatureDictionary.getName());
 
-        StringBuilder name = new StringBuilder(signatureDictionary.getName());
-        createTextSprites(advanceX, advanceY + fontSize, shapes, textSprites, name);
-
-        StringBuilder contact = new StringBuilder(signatureDictionary.getContactInfo());
-        createTextSprites(midX, advanceY + fontSize, shapes, textSprites, contact);
-
-        StringBuilder location = new StringBuilder(signatureDictionary.getLocation());
-        createTextSprites(midX, advanceY * 2 + fontSize, shapes, textSprites, location);
+        lastOffset = createTextSprites(midX, lastOffset.y + lineSpacing, shapes, 12,
+                signatureDictionary.getContactInfo());
+        lastOffset = createTextSprites(midX, lastOffset.y + lineSpacing, shapes, 12, signatureDictionary.getLocation());
 
         // update the appearance stream
         // create/update the appearance stream of the xObject.
@@ -212,9 +208,19 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
     }
 
     private Point2D.Float createTextSprites(final float advanceX, final float advanceY, Shapes shapes,
-                                            TextSprite textSprites,
-                                            StringBuilder contents) {
-        int fontSize = textSprites.getFontSize();
+                                            int fontSize,
+                                            String content) {
+        TextSprite textSprites =
+                new TextSprite(fontFile,
+                        SIMPLE_FORMAT,
+                        content.length(),
+                        new AffineTransform(), null);
+        textSprites.setRMode(TextState.MODE_FILL);
+        textSprites.setStrokeColor(Color.BLACK);
+        textSprites.setFontName(EMBEDDED_FONT_NAME.toString());
+        textSprites.setFontSize(fontSize);
+
+        StringBuilder contents = new StringBuilder(content);
 
         float currentX = 0;
         // we don't want to shift the whole line width just the ascent

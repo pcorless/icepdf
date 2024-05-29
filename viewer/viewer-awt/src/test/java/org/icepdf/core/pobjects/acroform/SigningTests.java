@@ -50,7 +50,7 @@ public class SigningTests {
                     (SignatureWidgetAnnotation) AnnotationFactory.buildWidgetAnnotation(
                             document.getPageTree().getLibrary(),
                             FieldDictionaryFactory.TYPE_SIGNATURE,
-                            new Rectangle(100, 250, 200, 100));
+                            new Rectangle(100, 250, 375, 125));
             document.getPageTree().getPage(0).addAnnotation(signatureAnnotation, true);
 
             // Add the signatureWidget to catalog
