@@ -35,6 +35,11 @@ public abstract class SignerHandler {
     protected abstract PrivateKey getPrivateKey(KeyStore keyStore) throws KeyStoreException, UnrecoverableKeyException,
             NoSuchAlgorithmException;
 
+    public X509Certificate getCertificate() throws KeyStoreException {
+        KeyStore keystore = buildKeyStore();
+        return (X509Certificate) keystore.getCertificate(certAlias);
+    }
+
     public byte[] signData(byte[] data) throws KeyStoreException, UnrecoverableKeyException, NoSuchAlgorithmException,
             CertificateException, OperatorCreationException, CMSException, IOException {
 

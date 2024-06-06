@@ -20,7 +20,9 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.text.MessageFormat;
 import java.util.HashMap;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,14 +36,17 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
     private static final Logger logger =
             Logger.getLogger(BasicSignatureAppearanceCallback.class.toString());
 
-    private static final int INSETS = 5;
-    public static final Name EMBEDDED_FONT_NAME = new Name("ice1");
+    protected static final int INSETS = 0;
+    protected float lineSpacing = 5;
+    protected static final Name EMBEDDED_FONT_NAME = new Name("ice1");
 
     private BufferedImage bufferedImage;
-    private String title;
+    private final String title;
+    private final String name;
+    private final ResourceBundle messageBundle;
 
-
-    private String fontName = "Helvetica";
+    // todo config object
+    private final String fontName = "Helvetica";
     protected FontFile fontFile;
     protected boolean fontPropertyChanged;
 
@@ -49,16 +54,21 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
      * Create a new signature appearance
      *
      * @param title          title of signer, for example 'Software Developer', can be null.
+     * @param name           name of signiner, custom name which might be different the name in cert.
      * @param signatureImage signature image,  if null no images is inserted.
      */
-    public BasicSignatureAppearanceCallback(String title,
-                                            BufferedImage signatureImage) {
+    public BasicSignatureAppearanceCallback(String title, String name,
+                                            BufferedImage signatureImage, ResourceBundle messageBundle) {
+        // todo add a configuration object for turning on/off the fields that are setup for this implementation.
         this.title = title;
+        this.name = name;
         this.bufferedImage = signatureImage;
+        this.messageBundle = messageBundle;
     }
 
     @Override
     public void createAppearanceStream(SignatureWidgetAnnotation signatureWidgetAnnotation) {
+        SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
         Name currentAppearance = signatureWidgetAnnotation.getCurrentAppearance();
         HashMap<Name, Appearance> appearances = signatureWidgetAnnotation.getAppearances();
         Appearance appearance = appearances.get(currentAppearance);
@@ -70,29 +80,16 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         bbox.setRect(0, 0, bbox.getWidth(), bbox.getHeight());
 
         AffineTransform matrix = appearanceState.getMatrix();
-        Shapes shapes = appearanceState.getShapes();
 
-        if (shapes == null) {
-            shapes = new Shapes();
-            appearanceState.setShapes(shapes);
-        } else {
-            // remove any previous text
-            appearanceState.getShapes().getShapes().clear();
-        }
-
-        // remove any previous text
-        shapes.getShapes().clear();
+        Shapes shapes = new Shapes();
+        appearanceState.setShapes(shapes);
 
         // set up the space for the AP content stream.
         AffineTransform af = new AffineTransform();
         af.scale(1, -1);
         af.translate(0, -bbox.getHeight());
-        // adjust of the border offset, offset is define in viewer,
-        // so we can't use the constant because of dependency issues.
         af.translate(INSETS, INSETS);
         shapes.add(new TransformDrawCmd(af));
-
-        String content = title;
 
         // create the new font to draw with
         if (fontFile == null || fontPropertyChanged) {
@@ -100,17 +97,6 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
             fontFile = fontFile.deriveFont(Encoding.standardEncoding, null);
             fontPropertyChanged = false;
         }
-        int fontSize = 14;
-        fontFile = fontFile.deriveFont(fontSize); // todo might be dynamically set?
-        TextSprite textSprites =
-                new TextSprite(fontFile,
-                        SIMPLE_FORMAT,
-                        content.length(),
-                        new AffineTransform(), null);
-        textSprites.setRMode(TextState.MODE_FILL);
-        textSprites.setStrokeColor(Color.BLACK);
-        textSprites.setFontName(EMBEDDED_FONT_NAME.toString());
-        textSprites.setFontSize(fontSize);
 
         float offsetX = INSETS;  // 1 pixel padding
         float offsetY = INSETS;
@@ -119,18 +105,37 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         float advanceY = (float) bbox.getMinY() + offsetY;
         float midX = (float) (bbox.getWidth() + offsetX) / 2;
 
-        float lineSpacing = 5;
+        // title
+        createTextSprites(advanceX, advanceY, shapes, 15, title);
 
-        createTextSprites(advanceX, advanceY, shapes, 14, content);
+        // reasons
+        MessageFormat reasonFormatter = new MessageFormat(messageBundle.getString(
+                "viewer.annotation.signature.handler.properties.reason.label"));
+        String reason = reasonFormatter.format(new Object[]{signatureDictionary.getReason()});
+        Point2D.Float lastOffset = createTextSprites(midX, advanceY + 4, shapes, 12, reason);
 
-        SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
-        Point2D.Float lastOffset = createTextSprites(midX, advanceY + 2, shapes, 12, signatureDictionary.getReason());
+        float groupSpacing = lineSpacing + 5;
 
-        createTextSprites(advanceX, lastOffset.y + lineSpacing, shapes, 14, signatureDictionary.getName());
+        // name
+        createTextSprites(advanceX, lastOffset.y + groupSpacing, shapes, 15, name);
 
-        lastOffset = createTextSprites(midX, lastOffset.y + lineSpacing, shapes, 12,
-                signatureDictionary.getContactInfo());
-        lastOffset = createTextSprites(midX, lastOffset.y + lineSpacing, shapes, 12, signatureDictionary.getLocation());
+        // contact info
+        MessageFormat contactFormatter = new MessageFormat(messageBundle.getString(
+                "viewer.annotation.signature.handler.properties.contact.label"));
+        String contactInfo = contactFormatter.format(new Object[]{signatureDictionary.getContactInfo()});
+        lastOffset = createTextSprites(midX, lastOffset.y + groupSpacing, shapes, 12, contactInfo);
+
+        // common name
+        MessageFormat signerFormatter = new MessageFormat(messageBundle.getString(
+                "viewer.annotation.signature.handler.properties.signer.label"));
+        String commonName = signerFormatter.format(new Object[]{signatureDictionary.getName()});
+        lastOffset = createTextSprites(midX, lastOffset.y + groupSpacing, shapes, 12, commonName);
+
+        // location
+        MessageFormat locationFormatter = new MessageFormat(messageBundle.getString(
+                "viewer.annotation.signature.handler.properties.location.label"));
+        String location = locationFormatter.format(new Object[]{signatureDictionary.getLocation()});
+        createTextSprites(midX, lastOffset.y + groupSpacing, shapes, 12, location);
 
         // update the appearance stream
         // create/update the appearance stream of the xObject.
@@ -159,26 +164,22 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
                 form.getEntries().remove(Stream.FILTER_KEY);
             }
 
-            // create the font
+            // create the font dictionary
+            // todo break out to a util class and same for freetext annotations
             DictionaryEntries fontDictionary = new DictionaryEntries();
             fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.TYPE_KEY,
                     org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY);
-            fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY,
-                    new Name("Type1"));
-            fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.NAME_KEY,
-                    EMBEDDED_FONT_NAME);
-            fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.BASEFONT_KEY,
-                    new Name(fontName));
-            fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.ENCODING_KEY,
-                    new Name("WinAnsiEncoding"));
+            fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY, new Name("Type1"));
+            fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.NAME_KEY, EMBEDDED_FONT_NAME);
+            fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.BASEFONT_KEY, new Name(fontName));
+            fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.ENCODING_KEY, new Name("WinAnsiEncoding"));
             fontDictionary.put(new Name("FirstChar"), 32);
             fontDictionary.put(new Name("LastChar"), 255);
 
             org.icepdf.core.pobjects.fonts.Font newFont;
             if (form.getResources() == null ||
                     form.getResources().getFont(EMBEDDED_FONT_NAME) == null) {
-                newFont = new org.icepdf.core.pobjects.fonts.zfont.SimpleFont(
-                        library, fontDictionary);
+                newFont = new org.icepdf.core.pobjects.fonts.zfont.SimpleFont(library, fontDictionary);
                 newFont.setPObjectReference(stateManager.getNewReferenceNumber());
                 // create font entry
                 DictionaryEntries fontResources = new DictionaryEntries();
@@ -244,7 +245,7 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
                         currentX, currentY, newAdvanceX, 0);
             } else {
                 // move back to start of next line
-                currentY += fontSize;
+                currentY += fontSize + lineSpacing;
                 lastx = 0;
             }
         }

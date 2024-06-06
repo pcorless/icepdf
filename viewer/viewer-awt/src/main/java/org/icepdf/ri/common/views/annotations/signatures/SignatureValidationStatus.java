@@ -21,7 +21,7 @@ import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
-import org.icepdf.ri.common.utility.signatures.SignatureUtilities;
+import org.icepdf.core.pobjects.acroform.signature.utils.SignatureUtilities;
 import org.icepdf.ri.images.Images;
 
 import javax.security.auth.x500.X500Principal;

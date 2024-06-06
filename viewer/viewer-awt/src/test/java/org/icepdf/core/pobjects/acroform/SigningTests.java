@@ -1,27 +1,41 @@
 package org.icepdf.core.pobjects.acroform;
 
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.acroform.signature.handlers.BasicSignatureAppearanceCallback;
 import org.icepdf.core.pobjects.acroform.signature.handlers.Pkcs12SignerHandler;
 import org.icepdf.core.pobjects.acroform.signature.handlers.SimpleCallbackHandler;
+import org.icepdf.core.pobjects.acroform.signature.utils.SignatureUtilities;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.updater.WriteMode;
 import org.icepdf.ri.util.FontPropertiesManager;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import javax.security.auth.x500.X500Principal;
 import java.awt.*;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.ResourceBundle;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class SigningTests {
+
+
+    private static ResourceBundle messageBundle =
+            ResourceBundle.getBundle(ViewerPropertiesManager.DEFAULT_MESSAGE_BUNDLE);
 
     @BeforeAll
     public static void init() {
@@ -57,18 +71,16 @@ public class SigningTests {
             InteractiveForm interactiveForm = document.getCatalog().getOrCreateInteractiveForm();
             interactiveForm.addField(signatureAnnotation);
 
-            // update dictionary
+            // set up signer dictionary
             SignatureDictionary signatureDictionary = SignatureDictionary.getInstance(signatureAnnotation);
             signatureDictionary.setSignerHandler(pkcs12SignerHandler);
-            signatureDictionary.setName("Tester McTest");
-            signatureDictionary.setContactInfo("test@test.com");
-            signatureDictionary.setLocation("Springfield USA");
-            signatureDictionary.setReason("Make sure stuff didn't change");
-            signatureDictionary.setDate("D:20240405082733+02'00'");
+
+            // assign cert metadata to dictionary
+            updateSignatureDictionary(signatureDictionary, pkcs12SignerHandler.getCertificate());
 
             // build basic appearance
             BasicSignatureAppearanceCallback signatureAppearance =
-                    new BasicSignatureAppearanceCallback("Director of Signing", null);
+                    new BasicSignatureAppearanceCallback("Director of Signing", "Patrick Corless", null, messageBundle);
             signatureAnnotation.setResetAppearanceCallback(signatureAppearance);
             signatureAnnotation.resetNullAppearanceStream();
 
@@ -90,4 +102,44 @@ public class SigningTests {
             fail("should not be any exceptions");
         }
     }
+
+    /**
+     * Populate signature dictionary with values from the certificate
+     *
+     * @param signatureDictionary dictionary to populate
+     * @param certificate         cert to extract values from
+     */
+    public void updateSignatureDictionary(SignatureDictionary signatureDictionary, X509Certificate certificate) {
+        X500Principal principal = certificate.getSubjectX500Principal();
+        X500Name x500name = new X500Name(principal.getName());
+        // Set up dictionary using certificate values.
+        // https://javadoc.io/static/org.bouncycastle/bcprov-jdk15on/1.70/org/bouncycastle/asn1/x500/style/BCStyle.html
+        if (x500name.getRDNs() != null) {
+            String commonName = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.CN);
+            if (commonName != null) {
+                signatureDictionary.setName(commonName);
+            }
+            String email = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.EmailAddress);
+            if (email != null) {
+                signatureDictionary.setContactInfo(email);
+            }
+            ArrayList<String> location = new ArrayList<>(2);
+            String state = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.ST);
+            if (state != null) {
+                location.add(state);
+            }
+            String country = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.C);
+            if (country != null) {
+                location.add(country);
+            }
+            if (!location.isEmpty()) {
+                signatureDictionary.setLocation(String.join(", ", location));
+            }
+        } else {
+            throw new IllegalStateException("Certificate has no DRNs data");
+        }
+        signatureDictionary.setReason("Approval"); // Approval or certification but technically can be anything
+        signatureDictionary.setDate(PDate.formatDateTime(new Date()));
+    }
+
 }
