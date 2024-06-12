@@ -23,6 +23,7 @@ import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
+import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 
 import javax.security.auth.x500.X500Principal;
@@ -166,14 +167,14 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
     }
 
     // set one of the three icon's to represent the validity status of the signature node.
-    protected ImageIcon getRootNodeValidityIcon() {
+    protected Icon getRootNodeValidityIcon() {
         if (!signatureValidator.isSignedDataModified() && signatureValidator.isCertificateChainTrusted()
                 && signatureValidator.isSignaturesCoverDocumentLength()) {
-            return new ImageIcon(Images.get("signature_valid.png"));
+            return Images.getSingleIcon("signature_valid", IconPack.Variant.NONE, Images.IconSize.MINI);
         } else if (!signatureValidator.isSignedDataModified() && signatureValidator.isSignaturesCoverDocumentLength()) {
-            return new ImageIcon(Images.get("signature_caution.png"));
+            return Images.getSingleIcon("signature_caution", IconPack.Variant.NONE, Images.IconSize.MINI);
         } else {
-            return new ImageIcon(Images.get("signature_invalid.png"));
+            return Images.getSingleIcon("signature_invalid", IconPack.Variant.NONE, Images.IconSize.MINI);
         }
     }
 
@@ -238,7 +239,7 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
         rootSignatureDetails.add(new SignatureCertTreeNode(
                 messageBundle.getString("viewer.utilityPane.signatures.tab.certTree.signature.details.full.label"),
                 signatureValidator.getCertificateChain(),
-                getRootNodeValidityIcon().getImage()));
+                getRootNodeValidityIcon()));
         root.add(rootSignatureDetails);
     }
 

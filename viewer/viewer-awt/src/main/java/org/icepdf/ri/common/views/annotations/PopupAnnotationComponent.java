@@ -29,6 +29,7 @@ import org.icepdf.ri.common.tools.TextAnnotationHandler;
 import org.icepdf.ri.common.utility.annotation.properties.FreeTextAnnotationPanel;
 import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryBox;
+import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
@@ -67,7 +68,7 @@ import static org.icepdf.core.util.SystemProperties.INTERACTIVE_ANNOTATIONS;
  * accepted, rejected, cancelled, completed, none. The component can also add
  * replyTo text annotations as well as delete comments.
  * <br>
- * The PopupAnnotationComponent is slightly more complex then the other
+ * The PopupAnnotationComponent is slightly more complex than the other
  * annotations components.  Most annotations let the page pain the annotation
  * but in this case PopupAnnotationComponent paints itself along with controls
  * for editing, replying and deleting TextAnnotation comments.
@@ -301,14 +302,14 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     private void buildGUI() {
 
         List<Annotation> annotations = pageViewComponent.getPage().getAnnotations();
-        MarkupAnnotation parentAnnotation = annotation.getParent();
+        selectedMarkupAnnotation = annotation.getParent();
 
         // check first if there are anny annotation that point to this one as
         // an IRT.  If there aren't any then the selectedAnnotation is the parent
         // other wise we need to build out
         DefaultMutableTreeNode root =
                 new DefaultMutableTreeNode("Root");
-        boolean isIRT = buildCommentTree(parentAnnotation, annotations, root);
+        boolean isIRT = buildCommentTree(selectedMarkupAnnotation, annotations, root);
         commentTree = new JTree(root);
         commentTree.setRootVisible(true);
         commentTree.setExpandsSelectedPaths(true);
@@ -330,13 +331,10 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         // make sure the root node is selected by default.
         commentTree.setSelectionRow(0);
 
-        // Set the
-        selectedMarkupAnnotation = parentAnnotation;
-
         // try and make the popup the same colour as the annotations fill color
         popupBackgroundColor = backgroundColor;
-        if (parentAnnotation != null && parentAnnotation.getColor() != null) {
-            popupBackgroundColor = checkColor(parentAnnotation.getColor());
+        if (selectedMarkupAnnotation != null && selectedMarkupAnnotation.getColor() != null) {
+            popupBackgroundColor = checkColor(selectedMarkupAnnotation.getColor());
         }
 
         // minimize button
@@ -355,8 +353,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
         // lock button
         privateToggleButton = new JToggleButton();
-        boolean isPrivate = annotation.getParent() != null &&
-                annotation.getParent().getFlagPrivateContents();
+        boolean isPrivate = selectedMarkupAnnotation != null &&
+                selectedMarkupAnnotation.getFlagPrivateContents();
         privateToggleButton.setToolTipText(messageBundle.getString(
                 "viewer.utilityPane.markupAnnotation.view.publicToggleButton.tooltip.label"));
         privateToggleButton.setSelected(isPrivate);
@@ -369,8 +367,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         privateToggleButton.setBorderPainted(true);
 
         // text area edited the selected annotation markup contents.
-        String contents = annotation.getParent() != null ?
-                annotation.getParent().getContents() : "";
+        String contents = selectedMarkupAnnotation != null ?
+                selectedMarkupAnnotation.getContents() : "";
         textArea = new JTextArea(contents != null ? contents : "");
         textArea.setFont(new JLabel().getFont());
         textArea.setWrapStyleWord(true);
@@ -427,8 +425,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         constraints.insets = new Insets(1, 1, 1, 1);
         // user that created the comment is the only one that can actually make it private.
         if (SystemProperties.PRIVATE_PROPERTY_ENABLED) {
-            MarkupAnnotation markupAnnotation = annotation.getParent();
-            if (markupAnnotation != null && userName.equals(markupAnnotation.getTitleText())) {
+            if (selectedMarkupAnnotation != null && userName.equals(selectedMarkupAnnotation.getTitleText())) {
                 addGB(commentPanel, privateToggleButton, 2, 0, 1, 1);
             }
         }
@@ -549,7 +546,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         removeMarkupInReplyTo(selectedMarkupAnnotation.getPObjectReference());
 
 
-        // rebuild the tree, which is easier then pruning at this point
+        // rebuild the tree, which is easier than pruning at this point
         rebuildTree();
         commentPanel.revalidate();
         refreshPopupState();
@@ -786,7 +783,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
         // check first if there are anny annotation that point to this one as
         // an IRT.  If there aren't any then the selectedAnnotation is the parent
-        // other wise we need to build out
+        // otherwise we need to build out
         DefaultMutableTreeNode root = new DefaultMutableTreeNode("Root");
         boolean isIRT = buildCommentTree(parentAnnotation, annotations, root);
         commentTree.removeTreeSelectionListener(this);
@@ -916,9 +913,11 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 final boolean hasChildren = tn.getChildCount() > 0;
                 if (node instanceof MarkupAnnotationTreeNode) {
                     final Annotation annot = (MarkupAnnotation) ((MarkupAnnotationTreeNode) node).getUserObject();
-                    return hasChildren ? Stream.concat(Stream.of(annot), Collections.list(tn.children()).stream().flatMap(PopupAnnotationComponent::getAllAnnotations)) : Stream.of(annot);
+                    return hasChildren ? Stream.concat(Stream.of(annot),
+                            Collections.list(tn.children()).stream().flatMap(PopupAnnotationComponent::getAllAnnotations)) : Stream.of(annot);
                 } else {
-                    return hasChildren ? Collections.list(tn.children()).stream().flatMap(PopupAnnotationComponent::getAllAnnotations) : Stream.empty();
+                    return hasChildren ?
+                            Collections.list(tn.children()).stream().flatMap(PopupAnnotationComponent::getAllAnnotations) : Stream.empty();
                 }
             } else {
                 return Stream.empty();
@@ -934,10 +933,11 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
     public MarkupAnnotationComponent getMarkupAnnotationComponent() {
         if (annotation != null) {
-            MarkupAnnotation markupAnnotation = annotation.getParent();
+            MarkupAnnotation markupAnnotation = selectedMarkupAnnotation;
             if (markupAnnotation != null) {
                 // find the popup component
-                ArrayList<AbstractAnnotationComponent> annotationComponents = pageViewComponent.getAnnotationComponents();
+                ArrayList<AbstractAnnotationComponent> annotationComponents =
+                        pageViewComponent.getAnnotationComponents();
                 Reference compReference;
                 Reference markupReference = markupAnnotation.getPObjectReference();
                 for (AnnotationComponent annotationComponent : annotationComponents) {
@@ -1089,8 +1089,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         minimizeButton.setBackground(popupBackgroundColor);
         privateToggleButton.setBackground(popupBackgroundColor);
         // lock icons.
-        Icon lockedIcon = new ImageIcon(Images.get("lock_16.png"));
-        Icon unlockedIcon = new ImageIcon(Images.get("unlock_16.png"));
+        Icon lockedIcon = Images.getSingleIcon("lock", IconPack.Variant.NONE, Images.IconSize.TINY);
+        Icon unlockedIcon = Images.getSingleIcon("unlock", IconPack.Variant.NONE, Images.IconSize.TINY);
         privateToggleButton.setIcon(unlockedIcon);
         privateToggleButton.setPressedIcon(null);
         privateToggleButton.setSelectedIcon(lockedIcon);
@@ -1246,8 +1246,12 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         setHeaderLabelsFontSize(size);
     }
 
-    public int getFontSize() {
+    public int getTextAreaFontSize() {
         return textArea.getFont().getSize();
+    }
+
+    public int getHeaderFontSize() {
+        return titleLabel.getFont().getSize();
     }
 
     class PopupTreeListener extends MouseAdapter {

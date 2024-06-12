@@ -17,8 +17,6 @@ package org.icepdf.ri.common.widgets;
 
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.widgets.annotations.AnnotationColorPropertyPanel;
-import org.icepdf.ri.images.Images;
-import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import javax.swing.event.AncestorEvent;
@@ -53,7 +51,6 @@ public abstract class AbstractColorButton extends AbstractButton
         this.controller = controller;
 
         dropDownArrowButton = new JButton(new MetalComboBoxIcon());
-        dropDownArrowButton.setBorder(BorderFactory.createEmptyBorder());
         dropDownArrowButton.setContentAreaFilled(false);
         dropDownArrowButton.setRolloverEnabled(false);
         dropDownArrowButton.setFocusPainted(false);
@@ -62,17 +59,6 @@ public abstract class AbstractColorButton extends AbstractButton
         this.annotationColorPropertyPanel =
                 new AnnotationColorPropertyPanel(controller, messageBundle);
         this.annotationColorPropertyPanel.setCallback(this);
-
-        Insets insets = dropDownArrowButton.getMargin();
-        dropDownArrowButton.setMargin(new Insets(insets.top, 0, insets.bottom, 0));
-
-        String imageSize = ViewerPropertiesManager.getInstance().getPreferences().get(
-                ViewerPropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE);
-        if (imageSize.equals(Images.SIZE_LARGE)) {
-            setPreferredSize(new Dimension(48, 32));
-        } else if (imageSize.equals(Images.SIZE_SMALL)) {
-            setPreferredSize(new Dimension(36, 24));
-        }
 
         dropDownArrowButton.addActionListener(this);
         addAncestorListener(this);
@@ -96,6 +82,13 @@ public abstract class AbstractColorButton extends AbstractButton
         c.gridx++;
         gbl.setConstraints(dropDownArrowButton, c);
         add(dropDownArrowButton);
+
+        Dimension buttonPreferredSize = colorButton.getPreferredSize();
+        Dimension dropDownArrowPreferredSize = dropDownArrowButton.getPreferredSize();
+        setPreferredSize(new Dimension(
+                buttonPreferredSize.width + dropDownArrowPreferredSize.width,
+                buttonPreferredSize.height));
+        validate();
     }
 
     public abstract void setColor(Color newColor, boolean fireChangeEvent);

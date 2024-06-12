@@ -21,6 +21,7 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
+import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.PageViewComponentImpl;
 
@@ -41,6 +42,7 @@ public class AnnotationState implements Memento {
     private final Rectangle2D.Float userSpaceRectangle;
     private final Operation operation;
     private final AnnotationComponent annotationComponent;
+    private final PopupState popupState;
 
     public enum Operation {
         ADD, DELETE, MOVE
@@ -60,6 +62,9 @@ public class AnnotationState implements Memento {
         this.annotationComponent = requireNonNull(annotationComponent);
         this.operation = requireNonNull(operation);
         this.userSpaceRectangle = annotationComponent.getAnnotation().getUserSpaceRectangle();
+        this.popupState = annotationComponent instanceof MarkupAnnotationComponent ?
+                new PopupState(((MarkupAnnotationComponent) annotationComponent).getPopupAnnotationComponent()) : null;
+
     }
 
     public AnnotationComponent getAnnotationComponent() {
@@ -113,16 +118,19 @@ public class AnnotationState implements Memento {
                 pageViewComponent.addAnnotation(annotationComponent);
             }
             if (annotationComponent instanceof MarkupAnnotationComponent) {
-                final PopupAnnotationComponent popupAnnotationComponent =
+                PopupAnnotationComponent popupAnnotationComponent =
                         ((MarkupAnnotationComponent<?>) annotationComponent).getPopupAnnotationComponent();
                 if (popupAnnotationComponent == null) {
-                    ((MarkupAnnotationComponent<?>) annotationComponent).createPopupAnnotationComponent(true);
-                } else {
-                    if (!pageViewComponent.getAnnotationComponents().contains(popupAnnotationComponent)) {
-                        pageViewComponent.addAnnotation(popupAnnotationComponent);
-                    }
-                    popupAnnotationComponent.getAnnotation().setOpen(true);
-                    popupAnnotationComponent.setVisible(true);
+                    popupAnnotationComponent = ((MarkupAnnotationComponent<?>) annotationComponent).createPopupAnnotationComponent(true);
+                } else if (!pageViewComponent.getAnnotationComponents().contains(popupAnnotationComponent)) {
+                    pageViewComponent.addAnnotation(popupAnnotationComponent);
+                }
+                if (popupState != null) {
+                    final PopupAnnotation popupAnnotation = popupAnnotationComponent.getAnnotation();
+                    popupAnnotation.setOpen(popupState.isVisible());
+                    popupAnnotationComponent.setVisible(popupState.isVisible());
+                    popupAnnotationComponent.setTextAreaFontSize(popupState.getTextAreaFontSize());
+                    popupAnnotationComponent.setHeaderLabelsFontSize(popupState.getHeaderTextSize());
                 }
             }
             // finally update the pageComponent so we can see it again.

@@ -142,23 +142,43 @@ public class Library {
      * object reference can not be found.
      */
     public Object getObject(Reference reference) {
-        return getObject(reference, null);
+        Object obj = getObject(reference, null, true);
+        if (obj != null) {
+            return getObject(reference, null, true).getObject();
+        }
+        return null;
     }
 
-    private Object getObject(Reference reference, Name hint) {
+    public PObject getPObject(Reference reference) {
+        return getObject(reference, null, true);
+    }
+
+    /**
+     * Retrieves object from library.
+     *
+     * @param reference reference to resolve
+     * @param useCache  use cached values which maybe fully parsed objects not the original data structures.
+     * @return resolved reference or null if objects could not be found.
+     */
+    public PObject getPObject(Reference reference, boolean useCache) {
+        return getObject(reference, null, useCache);
+    }
+
+    private PObject getObject(Reference reference, Name hint, boolean useCache) {
         Object obj;
-        java.lang.ref.Reference<Object> obRef = objectStore.get(reference);
         // check stateManager first to allow for annotations to be injected
         // from a separate file.
         if (stateManager != null) {
             if (stateManager.contains(reference)) {
                 obj = stateManager.getChange(reference);
                 if (obj != null) {
-                    return ((StateManager.Change) obj).getPObject().getObject();
+                    return ((StateManager.Change) obj).getPObject();
                 }
-                return obj;
+                return null;
             }
         }
+        // check cache for initiated object.
+        java.lang.ref.Reference<Object> obRef = useCache ? objectStore.get(reference) : null;
         obj = obRef != null ? obRef.get() : null;
         if (obj == null && crossReferenceRoot != null) {
             try {
@@ -182,7 +202,7 @@ public class Library {
             }
             if (obj == null) return null;
             // keep expensive like fonts, images, page tree
-            Object object = ((PObject) obj).getObject();
+            PObject object = ((PObject) obj);
             if (isSoftReferenceAble(object)) {
                 objectStore.put(reference, new SoftReference<>(obj));
             } else {
@@ -191,16 +211,17 @@ public class Library {
             return object;
         }
         if (obj instanceof PObject) {
-            return ((PObject) obj).getObject();
+            return (PObject) obj;
         } else if (obj instanceof Reference) {
             Reference secondReference = (Reference) obj;
             logger.log(Level.WARNING, () -> "Found a reference to a reference: " + secondReference);
-            return getObject(secondReference);
+            return getPObject(secondReference);
         }
-        return obj;
+        return new PObject(obj, reference);
     }
 
-    private boolean isSoftReferenceAble(Object object) {
+    private boolean isSoftReferenceAble(PObject pObject) {
+        Object object = pObject.getObject();
         if (object instanceof Dictionary) {
             DictionaryEntries entries = ((Dictionary) object).getEntries();
             Name type = getName(entries, Dictionary.TYPE_KEY);
@@ -287,9 +308,7 @@ public class Library {
             Permissions permissions = catalog.getPermissions();
             if (permissions != null) {
                 this.permissions = permissions;
-                if (logger.isLoggable(Level.FINER)) {
-                    logger.finer("Document perms dictionary found and configured. ");
-                }
+                logger.finer(() -> "Document perms dictionary found and configured. ");
                 return true;
             }
         }

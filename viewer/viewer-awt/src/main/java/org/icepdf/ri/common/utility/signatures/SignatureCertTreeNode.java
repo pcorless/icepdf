@@ -15,8 +15,8 @@
  */
 package org.icepdf.ri.common.utility.signatures;
 
+import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
-import java.awt.*;
 import java.security.cert.Certificate;
 import java.util.Collection;
 import java.util.logging.Logger;
@@ -30,19 +30,19 @@ public class SignatureCertTreeNode extends DefaultMutableTreeNode {
             Logger.getLogger(SignatureTreeNode.class.toString());
 
     private final Collection<? extends Certificate> certificateChain;
-    private final Image image;
+    private final Icon icon;
 
-    public SignatureCertTreeNode(Object userObject, Collection<? extends Certificate> certificateChain, Image image) {
+    public SignatureCertTreeNode(Object userObject, Collection<? extends Certificate> certificateChain, Icon icon) {
         super(userObject);
         this.certificateChain = certificateChain;
-        this.image = image;
+        this.icon = icon;
     }
 
     public Collection<? extends Certificate> getCertificateChain() {
         return certificateChain;
     }
 
-    public Image getImage() {
-        return image;
+    public Icon getIcon() {
+        return icon;
     }
 }

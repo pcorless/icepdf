@@ -43,7 +43,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     // annotations component for this pageViewComp.
     protected final Object annotationComponentsLock = new Object();
     protected ArrayList<AbstractAnnotationComponent> annotationComponents;
-    protected Map<Annotation, AnnotationComponent> annotationToComponent;
+    protected Map<Reference, AnnotationComponent> annotationToComponent;
     protected ArrayList<DestinationComponent> destinationComponents;
     private Set<SearchHitComponent> searchHitComponents = new HashSet<>();
 
@@ -148,19 +148,27 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                 // handler is responsible for the initial creation of the annotation
                 currentToolHandler = new HighLightAnnotationHandler(
                         documentViewController, this);
-                ((HighLightAnnotationHandler) currentToolHandler).createTextMarkupAnnotation(null);
+                ((HighLightAnnotationHandler) currentToolHandler).createMarkupAnnotation(null);
                 documentViewController.clearSelectedText();
                 break;
+            case DocumentViewModel.DISPLAY_TOOL_REDACTION_ANNOTATION:
+                // handler is responsible for the initial creation of the annotation
+                currentToolHandler = new RedactionAnnotationHandler(
+                        documentViewController, this);
+                ((RedactionAnnotationHandler) currentToolHandler).createMarkupAnnotation(null);
+                documentViewController.clearSelectedText();
+                break;
+
             case DocumentViewModel.DISPLAY_TOOL_STRIKEOUT_ANNOTATION:
                 currentToolHandler = new StrikeOutAnnotationHandler(
                         documentViewController, this);
-                ((StrikeOutAnnotationHandler) currentToolHandler).createTextMarkupAnnotation(null);
+                ((StrikeOutAnnotationHandler) currentToolHandler).createMarkupAnnotation(null);
                 documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_UNDERLINE_ANNOTATION:
                 currentToolHandler = new UnderLineAnnotationHandler(
                         documentViewController, this);
-                ((UnderLineAnnotationHandler) currentToolHandler).createTextMarkupAnnotation(null);
+                ((UnderLineAnnotationHandler) currentToolHandler).createMarkupAnnotation(null);
                 documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_LINE_ANNOTATION:
@@ -230,7 +238,10 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         if (annotationToComponent == null) {
             initializeAnnotationsComponent(getPage());
         }
-        return annotationToComponent.get(annot);
+        if (annotationToComponent != null) {
+            return annotationToComponent.get(annot.getPObjectReference());
+        }
+        return null;
     }
 
     /**
@@ -269,7 +280,8 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                         documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) ||
                         documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION) ||
                         documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_STRIKEOUT_ANNOTATION) ||
-                        documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_UNDERLINE_ANNOTATION))
+                        documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_UNDERLINE_ANNOTATION) ||
+                        documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_REDACTION_ANNOTATION))
         ) {
             try {
                 PageText pageText = currentPage.getViewText();
@@ -440,7 +452,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
             annotationToComponent = new HashMap<>();
         }
         annotationComponents.add((AbstractAnnotationComponent) annotation);
-        annotationToComponent.put(annotation.getAnnotation(), annotation);
+        annotationToComponent.put(annotation.getAnnotation().getPObjectReference(), annotation);
         if (annotation instanceof PopupAnnotationComponent) {
             final PopupAnnotationComponent popupAnnotationComponent = (PopupAnnotationComponent) annotation;
             addPopupAnnotationComponent(popupAnnotationComponent);
@@ -465,7 +477,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     public void removeAnnotation(AnnotationComponent annotationComp) {
         annotationComponents.remove(annotationComp);
         if (annotationComp.getAnnotation() != null) {
-            annotationToComponent.remove(annotationComp.getAnnotation());
+            annotationToComponent.remove(annotationComp.getAnnotation().getPObjectReference());
         } else {
             annotationToComponent.entrySet().stream().filter(e -> e.getValue().equals(annotationComp)).findFirst()
                     .ifPresent(e -> annotationToComponent.remove(e.getKey()));
@@ -562,7 +574,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                         if (comp != null) {
                             // add for painting
                             annotationComponents.add(comp);
-                            annotationToComponent.put(annotation, comp);
+                            annotationToComponent.put(annotation.getPObjectReference(), comp);
                             // add to layout
                             if (comp instanceof PopupAnnotationComponent) {
                                 PopupAnnotationComponent popupAnnotationComponent = (PopupAnnotationComponent) comp;
@@ -625,12 +637,12 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
 
     private void removePopupAnnotationComponent(PopupAnnotationComponent popupAnnotationComponent) {
         parentDocumentView.remove(popupAnnotationComponent);
-        documentViewModel.removeDocumentViewAnnotationComponent(this, popupAnnotationComponent);
+        documentViewModel.removeDocumentViewAnnotationComponent(parentDocumentView, this, popupAnnotationComponent);
         //Don't forget to remove the glue
         final MarkupGlueComponent glue = getGlue(popupAnnotationComponent);
         if (glue != null) {
             parentDocumentView.remove(glue);
-            documentViewModel.removeDocumentViewAnnotationComponent(this, glue);
+            documentViewModel.removeDocumentViewAnnotationComponent(parentDocumentView, this, glue);
         }
     }
 

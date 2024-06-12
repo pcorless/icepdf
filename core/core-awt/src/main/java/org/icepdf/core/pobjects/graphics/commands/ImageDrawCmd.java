@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects.graphics.commands;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.OptionalContentState;
 import org.icepdf.core.pobjects.graphics.PaintTimer;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.util.Defs;
 
@@ -68,7 +69,7 @@ public class ImageDrawCmd extends AbstractDrawCmd {
     public ImageDrawCmd(ImageReference image) {
         this.image = image;
         // check image dimensions to see if we should do some work for
-        // Xxh or wxX images sizes, as they tend not to be painted by Java2d
+        // Xxh or wxX images sizes, as they tend not to be painted by Java2D
         // at zoom levels < 144%.
         if (isScaledPaint) {
             if (image.getHeight() <= MIN_DIMENSION) {
@@ -82,6 +83,13 @@ public class ImageDrawCmd extends AbstractDrawCmd {
 
     public Image getImage() throws InterruptedException {
         return image.getImage();
+    }
+
+    public ImageStream getImageStream() {
+        if (image != null) {
+            return image.getImageStream();
+        }
+        return null;
     }
 
     @Override

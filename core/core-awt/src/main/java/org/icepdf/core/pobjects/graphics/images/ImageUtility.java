@@ -146,7 +146,52 @@ public class ImageUtility {
         }
     }
 
-    private static BufferedImage alterBufferedImageAlpha(BufferedImage bi, int[] maskMinRGB, int[] maskMaxRGB) {
+    /**
+     * Reverse encode the color key mask.  Important when re-encoding images after authentication.
+     *
+     * @param imageStream image data to alter.
+     */
+    public static void encodeColorKeyMask(ImageStream imageStream) {
+        ImageParams imageParams = imageStream.getImageParams();
+        BufferedImage image = imageStream.getDecodedImage();
+
+        ColorKeyMask colorKeyMask = imageParams.getColorKeyMask();
+        int[] maskMinRGB = colorKeyMask.getMaskMinRGB();
+        int[] maskMaxRGB = colorKeyMask.getMaskMinRGB();
+
+        int width = image.getWidth();
+        int height = image.getHeight();
+
+        int maskMinRed = 0xFF;
+        int maskMinGreen = 0xFF;
+        int maskMinBlue = 0xFF;
+        if (maskMinRGB != null && maskMaxRGB != null) {
+            maskMinRed = maskMinRGB[0];
+            maskMinGreen = maskMinRGB[1];
+            maskMinBlue = maskMinRGB[2];
+        }
+
+        int[] srcBand = new int[width];
+        // iterate over each band to apply the mask
+        for (int i = 0; i < height; i++) {
+            image.getRGB(0, i, width, 1, srcBand, 0, width);
+            // apply the soft mask blending
+            for (int j = 0; j < width; j++) {
+                int argb = srcBand[j];
+                int alpha = ((argb >> 24) & 0xFF);
+                if (alpha == 0x00) {
+                    argb = maskMinRed << 16
+                            | maskMinGreen << 8
+                            | maskMinBlue;
+                    srcBand[j] = argb;
+                }
+            }
+            image.setRGB(0, i, width, 1, srcBand, 0, width);
+        }
+        imageStream.setDecodedImage(image);
+    }
+
+    private static BufferedImage applyColorKeyMask(BufferedImage bi, int[] maskMinRGB, int[] maskMaxRGB) {
 
         // check for alpha, if not we need to create a copy
         if (!hasAlpha(bi)) {
@@ -409,7 +454,8 @@ public class ImageUtility {
         }
     }
 
-    protected WritableRaster alterRasterRGBA(WritableRaster wr, BufferedImage smaskImage, BufferedImage maskImage, int[] maskMinRGB, int[] maskMaxRGB) {
+    protected WritableRaster alterRasterRGBA(WritableRaster wr, BufferedImage smaskImage, BufferedImage maskImage,
+                                             int[] maskMinRGB, int[] maskMaxRGB) {
         Raster smaskRaster = null;
         int smaskWidth = 0;
         int smaskHeight = 0;
@@ -511,10 +557,8 @@ public class ImageUtility {
         // the mask specified no colour.
         baseWidth = baseImage.getWidth();
         baseHeight = baseImage.getHeight();
-        int mask = 0xffffff;
-        if (maskImage.getType() == BufferedImage.TYPE_BYTE_INDEXED) {
-            mask = 0xffffffff;
-        }
+        // adjust for a mask values with less than 4 components, most likely...
+        int mask = maskImage.getColorModel().getNumComponents() == 4 ? 0xffffff : -1;
 
         boolean hasAlpha = hasAlpha(baseImage);
         BufferedImage argbImage;
@@ -532,7 +576,7 @@ public class ImageUtility {
             maskImage.getRGB(0, i, baseWidth, 1, maskBnd, 0, baseWidth);
             // apply the soft mask blending
             for (int j = 0; j < baseWidth; j++) {
-                if (maskBnd[j] == 0 || maskBnd[j] == mask || maskBnd[j] == -1 || maskBnd[j] == 0xffffff) {
+                if (maskBnd[j] == 0 || maskBnd[j] == mask || maskBnd[j] == 0xffffff) {
                     //  set the pixel as transparent
                     maskBnd[j] = 0xff;
                 } else {
@@ -759,7 +803,7 @@ public class ImageUtility {
     }
 
     /**
-     * Treats the base image as as mask data applying the specified fill colour
+     * Treats the base image as a mask data applying the specified fill colour
      * to the flagged bytes and a transparency value otherwise. This method
      * creates a new BufferedImage with a transparency model so it will cause
      * a memory spike.
@@ -823,7 +867,8 @@ public class ImageUtility {
             }
             // build a new buffer with indexed colour model.
             DataBuffer db = wr.getDataBuffer();
-            //        SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width, new int[]{0});
+            //        SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width, new
+            //        int[]{0});
             //        WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
             ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, true, -1, db.getDataType());
             img = new BufferedImage(cm, wr, false, null);
@@ -847,7 +892,8 @@ public class ImageUtility {
         } else if (bitsPerComponent == 4) {
             cmap = GRAY_4_BIT_INDEX_TO_RGB;
         }
-        ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1, wr.getDataBuffer().getDataType());
+        ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1,
+                wr.getDataBuffer().getDataType());
         rgbImage = new BufferedImage(cm, wr, false, null);
         return rgbImage;
     }
@@ -954,7 +1000,8 @@ public class ImageUtility {
         return rgbImage;
     }
 
-    static BufferedImage makeImageWithRasterFromBytes(byte[] data, GraphicsState graphicsState, ImageParams imageParams) {
+    static BufferedImage makeImageWithRasterFromBytes(byte[] data, GraphicsState graphicsState,
+                                                      ImageParams imageParams) {
         BufferedImage img = null;
 
         PColorSpace colourSpace = imageParams.getColourSpace();
@@ -1018,9 +1065,11 @@ public class ImageUtility {
                         cmap.length,            // the size of the color component arrays
                         cmap,                   // the array of color components
                         0,                      // the starting offset of the first color component
-                        colorSpaceCompCount == 4,                   // indicates whether alpha values are contained in the cmap array
+                        colorSpaceCompCount == 4,                   // indicates whether alpha values are contained
+                        // in the cmap array
                         transparentIndex,       // the index of the fully transparent pixel
-                        db.getDataType());      // the data type of the array used to represent pixel values. The data type must be either DataBuffer.TYPE_BYTE or DataBuffer.TYPE_USHORT
+                        db.getDataType());      // the data type of the array used to represent pixel values. The
+                // data type must be either DataBuffer.TYPE_BYTE or DataBuffer.TYPE_USHORT
                 img = new BufferedImage(icm, wr, false, null);
             } else if (bitsPerComponent == 1 || bitsPerComponent == 2 || bitsPerComponent == 4) {
                 //int data_length = data.length;
@@ -1035,7 +1084,8 @@ public class ImageUtility {
                 } else {
                     cmap = GRAY_4_BIT_INDEX_TO_RGB;
                 }
-                ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1, db.getDataType());
+                ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1,
+                        db.getDataType());
                 img = new BufferedImage(cm, wr, false, null);
             } else if (bitsPerComponent == 8) {
                 img = createCompatibleImage(width, height);
@@ -1054,7 +1104,7 @@ public class ImageUtility {
                 copyDecodedStreamBytesIntoRGB(data, dataToRGB);
                 // apply alpha data.
                 if (usingAlpha) {
-                    img = alterBufferedImageAlpha(img, maskMinRGB, maskMaxRGB);
+                    img = applyColorKeyMask(img, maskMinRGB, maskMaxRGB);
                 }
             }
         } else if (colourSpace instanceof DeviceCMYK) {
@@ -1066,9 +1116,11 @@ public class ImageUtility {
                 for (int i = 0; i < colorSpaceCompCount; i++) {
                     bandOffsets[i] = i;
                 }
-                SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, colorSpaceCompCount, colorSpaceCompCount * width, bandOffsets);
+                SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, colorSpaceCompCount
+                        , colorSpaceCompCount * width, bandOffsets);
                 WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
-                //WritableRaster wr = Raster.createInterleavedRaster( db, width, height, colorSpaceCompCount*width, colorSpaceCompCount, bandOffsets, new Point(0,0) );
+                //WritableRaster wr = Raster.createInterleavedRaster( db, width, height, colorSpaceCompCount*width,
+                // colorSpaceCompCount, bandOffsets, new Point(0,0) );
                 ColorSpace cs = DeviceCMYK.getIccCmykColorSpace();
                 int[] bits = new int[colorSpaceCompCount];
                 for (int i = 0; i < colorSpaceCompCount; i++) {
@@ -1101,13 +1153,15 @@ public class ImageUtility {
                 if (usingAlpha) {
                     DataBuffer db = new DataBufferByte(data, dataLength);
                     WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));
-                    ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, true, -1, db.getDataType());
+                    ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, true, -1,
+                            db.getDataType());
                     img = new BufferedImage(cm, wr, false, null);
-                    img = alterBufferedImageAlpha(img, maskMinRGB, maskMaxRGB);
+                    img = applyColorKeyMask(img, maskMinRGB, maskMaxRGB);
                 } else {
                     DataBuffer db = new DataBufferByte(data, dataLength);
                     WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));
-                    ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1, db.getDataType());
+                    ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1,
+                            db.getDataType());
                     img = new BufferedImage(cm, wr, false, null);
                 }
             } else if (bitsPerComponent == 8) {
@@ -1134,9 +1188,11 @@ public class ImageUtility {
                         cmap[i] = 0x00000000;
                     }
                     DataBuffer db = new DataBufferByte(data, dataLength);
-                    SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width, new int[]{0});
+                    SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width,
+                            new int[]{0});
                     WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
-                    ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, true, -1, db.getDataType());
+                    ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, true, -1,
+                            db.getDataType());
                     img = new BufferedImage(cm, wr, false, null);
                 } else if (usingAlpha) {
                     int[] rgbaData = new int[width * height];
@@ -1151,13 +1207,16 @@ public class ImageUtility {
                     //    db.getDataType(), width, height, masks );
                     WritableRaster wr = Raster.createPackedRaster(db, width, height, width, masks, new Point(0, 0));
                     ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
-                    ColorModel cm = new DirectColorModel(cs, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000, false, db.getDataType());
+                    ColorModel cm = new DirectColorModel(cs, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000,
+                            false, db.getDataType());
                     img = new BufferedImage(cm, wr, false, null);
                 } else {
                     DataBuffer db = new DataBufferByte(data, dataLength);
-                    SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width, new int[]{0});
+                    SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width,
+                            new int[]{0});
                     WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
-                    ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1, db.getDataType());
+                    ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1,
+                            db.getDataType());
                     img = new BufferedImage(cm, wr, false, null);
                 }
             }
@@ -1175,7 +1234,8 @@ public class ImageUtility {
                 } else if (bitsPerComponent == 8) {
                     return null;
                 }
-                ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1, db.getDataType());
+                ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1,
+                        db.getDataType());
                 img = new BufferedImage(cm, wr, false, null);
             }
         }
@@ -1245,7 +1305,7 @@ public class ImageUtility {
         return createBufferedImage(imageIn, BufferedImage.TYPE_INT_ARGB);
     }
 
-    private static BufferedImage createBufferedImage(Image imageIn, int imageType) {
+    public static BufferedImage createBufferedImage(Image imageIn, int imageType) {
         BufferedImage bufferedImageOut = new BufferedImage(imageIn
                 .getWidth(null), imageIn.getHeight(null), imageType);
         Graphics g = bufferedImageOut.getGraphics();

@@ -217,28 +217,26 @@ public class Dictionary {
     }
 
     /**
-     * Sets the dictionary key value, handling any encryption so dictionary can be written correctly.
+     * Sets the dictionary key value. Encryption is handled by the writers
      *
      * @param key   dictionary key
      * @param value key value.
      * @return string value of the newly set string which will always be decrypted.
      */
     protected String setString(final Name key, String value) {
-        // make sure we store an encrypted documents string as encrypted
-        entries.put(key, new LiteralStringObject(value, getPObjectReference(), library.getSecurityManager()));
+        entries.put(key, new LiteralStringObject(value, getPObjectReference()));
         return value;
     }
 
     /**
-     * Sets the dictionary key value, handling any encryption so dictionary can be written correctly.
+     * Sets the dictionary key value. Encryption is handled by the writers.
      *
      * @param key   dictionary key
      * @param value key value.
      * @return string value of the newly set string which will always be decrypted.
      */
     protected String setHexString(final Name key, String value) {
-        // make sure we store an encrypted documents string as encrypted
-        entries.put(key, new HexStringObject(value, getPObjectReference(), library.getSecurityManager()));
+        entries.put(key, HexStringObject.createHexString(value));
         return value;
     }
 

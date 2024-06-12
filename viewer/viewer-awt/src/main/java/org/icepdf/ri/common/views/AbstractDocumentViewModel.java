@@ -20,9 +20,11 @@ import org.icepdf.core.Memento;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
+import org.icepdf.core.pobjects.Reference;
 import org.icepdf.ri.common.UndoCaretaker;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationState;
+import org.icepdf.ri.common.views.annotations.MarkupGlueComponent;
 import org.icepdf.ri.common.views.annotations.PageViewAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 
@@ -116,10 +118,35 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     }
 
     @Override
-    public void removeDocumentViewAnnotationComponent(AbstractPageViewComponent pageViewComponent, PageViewAnnotationComponent annotationComponent) {
+    public void removeDocumentViewAnnotationComponent(DocumentView parentDocumentView,
+                                                      AbstractPageViewComponent pageViewComponent,
+                                                      PageViewAnnotationComponent annotationComponent) {
         if (documentViewAnnotationComponents.containsKey(pageViewComponent)) {
             List<PageViewAnnotationComponent> components = documentViewAnnotationComponents.get(pageViewComponent);
             components.remove(annotationComponent);
+            // find and remove glue component
+            if (annotationComponent instanceof PopupAnnotationComponent) {
+                PageViewAnnotationComponent markForRemoval = null;
+                for (PageViewAnnotationComponent pageViewAnnotationComponent : components) {
+                    if (pageViewAnnotationComponent instanceof MarkupGlueComponent) {
+                        MarkupGlueComponent glueComponent = (MarkupGlueComponent) pageViewAnnotationComponent;
+                        PopupAnnotationComponent popupannotationComponent =
+                                (PopupAnnotationComponent) annotationComponent;
+                        Reference glueParentReference =
+                                glueComponent.getPopupAnnotationComponent().getAnnotation().getPObjectReference();
+                        Reference parentReference =
+                                popupannotationComponent.getAnnotation().getPObjectReference();
+                        if (glueParentReference.equals(parentReference)) {
+                            markForRemoval = pageViewAnnotationComponent;
+                            break;
+                        }
+                    }
+                }
+                if (markForRemoval != null) {
+                    components.remove(markForRemoval);
+                    parentDocumentView.remove((Component) markForRemoval);
+                }
+            }
         }
     }
 

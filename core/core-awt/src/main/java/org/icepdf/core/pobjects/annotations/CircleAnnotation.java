@@ -47,18 +47,6 @@ public class CircleAnnotation extends MarkupAnnotation {
     private static final Logger logger =
             Logger.getLogger(CircleAnnotation.class.toString());
 
-    /**
-     * (Optional; PDF 1.4) An array of numbers in the range 0.0 to 1.0 specifying
-     * the interior color that shall be used to fill the annotation’s line endings
-     * (see Table 176). The number of array elements shall determine the colour
-     * space in which the colour is defined:
-     * 0 - No colour; transparent
-     * 1 - DeviceGray
-     * 3 - DeviceRGB
-     * 4 - DeviceCMYK
-     */
-    public static final Name IC_KEY = new Name("IC");
-
     // state properties for generate the content stream and shapes representation.
     // of the annnotation state.
     private Color fillColor;

@@ -20,9 +20,12 @@ import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.SystemProperties;
 
+import java.awt.*;
+import java.awt.geom.GeneralPath;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
@@ -165,6 +168,33 @@ public abstract class MarkupAnnotation extends Annotation {
 
     private static final Pattern REPLY_PATTERN = Pattern.compile("(?:Re: ?)+");
 
+    /**
+     * (Optional; PDF 1.4) An array of numbers in the range 0.0 to 1.0 specifying
+     * the interior color that shall be used to fill the annotation’s line endings
+     * (see Table 176). The number of array elements shall determine the colour
+     * space in which the colour is defined:
+     * 0 - No colour; transparent
+     * 1 - DeviceGray
+     * 3 - DeviceRGB
+     * 4 - DeviceCMYK
+     */
+    public static final Name IC_KEY = new Name("IC");
+
+    /**
+     * (Required) An array of 8 × n numbers specifying the coordinates of
+     * n quadrilaterals in default user space. Each quadrilateral shall encompasses
+     * a word or group of contiguous words in the text underlying the annotation.
+     * The coordinates for each quadrilateral shall be given in the order
+     * x1 y1 x2 y2 x3 y3 x4 y4
+     * specifying the quadrilateral’s four vertices in counterclockwise order
+     * (see Figure 64). The text shall be oriented with respect to the edge
+     * connecting points (x1, y1) and (x2, y2).
+     * <br>
+     * The annotation dictionary’s AP entry, if present, shall take precedence
+     * over QuadPoints; see Table 168 and 12.5.5, "Appearance Streams."
+     */
+    public static final Name KEY_QUAD_POINTS = new Name("QuadPoints");
+
     protected String titleText;
     protected PopupAnnotation popupAnnotation;
     protected float opacity = 1.0f;
@@ -175,6 +205,13 @@ public abstract class MarkupAnnotation extends Annotation {
     protected Name replyToRelation = new Name("R");
     protected Name intent;
     // exData not implemented
+
+    /**
+     * Converted Quad points.
+     */
+    protected Shape[] quadrilaterals;
+    protected GeneralPath markupPath;
+    protected ArrayList<Shape> markupBounds;
 
     public MarkupAnnotation(Library library, DictionaryEntries dictionaryEntries) {
         super(library, dictionaryEntries);
@@ -226,6 +263,22 @@ public abstract class MarkupAnnotation extends Annotation {
         if (value != null) {
             intent = (Name) value;
         }
+    }
+
+    protected static DictionaryEntries createCommonMarkupDictionary(Name subType, Rectangle rect) {
+        DictionaryEntries entries = new DictionaryEntries();
+        // set default link annotation values.
+        entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
+        entries.put(Dictionary.SUBTYPE_KEY, subType);
+        entries.put(Annotation.FLAG_KEY, 4);
+        // coordinates
+        if (rect != null) {
+            entries.put(Annotation.RECTANGLE_KEY,
+                    PRectangle.getPRectangleVector(rect));
+        } else {
+            entries.put(Annotation.RECTANGLE_KEY, new Rectangle(10, 10, 50, 100));
+        }
+        return entries;
     }
 
 
@@ -410,6 +463,19 @@ public abstract class MarkupAnnotation extends Annotation {
     public String toString() {
         return getPObjectReference() + " - " + getTitleText() + " - " + getContents();
     }
+
+    public void setMarkupPath(GeneralPath markupPath) {
+        this.markupPath = markupPath;
+    }
+
+    public GeneralPath getMarkupPath() {
+        return markupPath;
+    }
+
+    public void setMarkupBounds(ArrayList<Shape> markupBounds) {
+        this.markupBounds = markupBounds;
+    }
+
 
     public boolean isCurrentUserOwner() {
         return REPLY_PATTERN.matcher(getTitleText()).replaceAll("").equals(SystemProperties.USER_NAME);

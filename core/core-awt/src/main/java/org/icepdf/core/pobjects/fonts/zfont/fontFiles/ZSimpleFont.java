@@ -122,8 +122,8 @@ public abstract class ZSimpleFont implements FontFile {
     }
 
     // allows sub classes to override the codeToName logic.
-    protected String codeToName(String estr) {
-        return estr;
+    protected String codeToName(char estr) {
+        return String.valueOf(estr);
     }
 
     protected CMap deriveToUnicode(org.icepdf.core.pobjects.fonts.Encoding encoding, CMap toUnicode) {
@@ -138,13 +138,13 @@ public abstract class ZSimpleFont implements FontFile {
     }
 
     @Override
-    public void paint(Graphics2D g, String estr, float x, float y, long layout, int mode, Color strokeColor) {
+    public void paint(Graphics2D g, char estr, float x, float y, long layout, int mode, Color strokeColor) {
         try {
             AffineTransform af = g.getTransform();
             String name = codeToName(estr);
             Shape outline = fontBoxFont.getPath(name);
             if (encoding != null && !fontBoxFont.hasGlyph(name)) {
-                name = encoding.getName(estr.charAt(0));
+                name = encoding.getName(estr);
                 if (name != null) {
                     outline = fontBoxFont.getPath(name);
                 }
@@ -169,12 +169,12 @@ public abstract class ZSimpleFont implements FontFile {
     }
 
     @Override
-    public Shape getOutline(String estr, float x, float y) {
+    public Shape getOutline(char estr, float x, float y) {
         try {
             String name = codeToName(estr);
             Shape glyph = fontBoxFont.getPath(name);
             if (encoding != null && !fontBoxFont.hasGlyph(name)) {
-                name = encoding.getName(estr.charAt(0));
+                name = encoding.getName(estr);
                 if (name != null) {
                     glyph = fontBoxFont.getPath(name);
                 }
@@ -307,7 +307,7 @@ public abstract class ZSimpleFont implements FontFile {
     }
 
     @Override
-    public Rectangle2D getBounds(String estr, int beginIndex, int limit) {
+    public Rectangle2D getBounds(char estr, int beginIndex, int limit) {
         return null;
     }
 

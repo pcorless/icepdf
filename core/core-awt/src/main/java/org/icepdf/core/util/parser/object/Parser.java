@@ -135,7 +135,7 @@ public class Parser {
         return ObjectFactory.getInstance(library, objectNumber, objectGeneration, objectData, streamByteBuffer);
     }
 
-    private int getLength(Object objectData){
+    private int getLength(Object objectData) {
         if (objectData instanceof DictionaryEntries) {
             return library.getInt((DictionaryEntries) objectData, Dictionary.LENGTH_KEY);
         } else if (objectData instanceof Dictionary) {
@@ -158,10 +158,10 @@ public class Parser {
         return ObjectFactory.getInstance(library, objectNumber, 0, objectData, null);
     }
 
-    public CrossReference getCrossReference(ByteBuffer byteBuffer, int starXref)
+    public CrossReference getCrossReference(ByteBuffer byteBuffer, int startXref)
             throws CrossReferenceStateException, ObjectStateException, IOException {
         // sometimes the offset is off just by a few bytes
-        byteBuffer.position(starXref - 10);
+        byteBuffer.position(startXref - 10);
         int xrefPositionStart = byteBuffer.position();
 
         // make sure we have a xref declaration
@@ -176,9 +176,9 @@ public class Parser {
         // see if we found xref marking and thus an < 1.5 formatted xref table.
         if (foundXrefMarker) {
             // update the xref position as we will have removed any white space.
-            starXref = xrefPositionStart + lookAheadBuffer.position();
+            startXref = xrefPositionStart + lookAheadBuffer.position();
             // scan ahead to find the trailer position
-            byteBuffer.position(starXref);
+            byteBuffer.position(startXref);
             boolean foundTrailerMarker = ByteBufferUtil.findString(byteBuffer, TRAILER_MARKER);
             if (!foundTrailerMarker || byteBuffer.position() == byteBuffer.limit()) {
                 throw new CrossReferenceStateException();
@@ -189,19 +189,22 @@ public class Parser {
             Object token = objectLexer.nextToken();
             if (token instanceof DictionaryEntries) {
                 DictionaryEntries xrefDictionary = (DictionaryEntries) token;
-                return parseCrossReferenceTable(xrefDictionary, objectLexer, byteBuffer, starXref, startTrailer);
+                return parseCrossReferenceTable(xrefDictionary, objectLexer, byteBuffer,
+                        startXref, startTrailer);
             }
         }
         // if there is an entry we can ignore parsing the table as it's redundant and just parse the strmObject
-        return parseCrossReferenceStream(byteBuffer, starXref);
+        return parseCrossReferenceStream(byteBuffer, startXref);
     }
 
-    private CrossReference parseCrossReferenceTable(DictionaryEntries dictionaryEntries, Lexer objectLexer, ByteBuffer byteBuffer,
+    private CrossReference parseCrossReferenceTable(DictionaryEntries dictionaryEntries, Lexer objectLexer,
+                                                    ByteBuffer byteBuffer,
                                                     int start, int end) throws IOException {
         // mark the xref start, so it can be used to write future /prev entries.
         // allocate to a new buffer as the data is well-defined.
         ByteBuffer xrefTableBuffer = ByteBufferUtil.sliceObjectStream(byteBuffer, start, end);
-        CrossReferenceTable crossReferenceTable = new CrossReferenceTable(library, dictionaryEntries, start);
+        CrossReferenceTable crossReferenceTable = new CrossReferenceTable(library, dictionaryEntries,
+                start - XREF_MARKER.length);
         objectLexer.setByteBuffer(xrefTableBuffer);
         // parse the sub groupings
         while (true) {

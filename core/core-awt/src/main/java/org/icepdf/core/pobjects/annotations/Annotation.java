@@ -353,6 +353,7 @@ public abstract class Annotation extends Dictionary {
     public static final Name SUBTYPE_POLYGON = new Name("Polygon");
     public static final Name SUBTYPE_POLYLINE = new Name("PolyLine");
     public static final Name SUBTYPE_HIGHLIGHT = new Name("Highlight");
+    public static final Name SUBTYPE_REDACT = new Name("Redact");
     public static final Name SUBTYPE_POPUP = new Name("Popup");
     public static final Name SUBTYPE_WIDGET = new Name("Widget");
     public static final Name SUBTYPE_INK = new Name("Ink");
@@ -560,6 +561,7 @@ public abstract class Annotation extends Dictionary {
      */
     public Annotation(Library library, DictionaryEntries entries) {
         super(library, entries);
+        securityManager = library.getSecurityManager();
     }
 
     /**
@@ -594,6 +596,8 @@ public abstract class Annotation extends Dictionary {
                 annot = new TextAnnotation(library, entries);
             } else if (subType.equals(Annotation.SUBTYPE_POPUP)) {
                 annot = new PopupAnnotation(library, entries);
+            } else if (subType.equals(Annotation.SUBTYPE_REDACT)) {
+                annot = new RedactionAnnotation(library, entries);
             } else if (PolyAnnotation.isPolyAnnotation(subType)) {
                 annot = new PolyAnnotation(library, entries);
             } else if (subType.equals(Annotation.SUBTYPE_WIDGET)) {
@@ -633,8 +637,6 @@ public abstract class Annotation extends Dictionary {
         super.init();
         // type of Annotation
         subtype = (Name) getObject(SUBTYPE_KEY);
-
-        securityManager = library.getSecurityManager();
 
         content = getContents();
 
@@ -1888,7 +1890,7 @@ public abstract class Annotation extends Dictionary {
                     (float) bbox.getWidth(), (float) bbox.getHeight());
             form.setAppearance(shapes, matrix, formBbox);
 
-            stateManager.addChange(new PObject(form, form.getPObjectReference()));
+            stateManager.addChange(new PObject(form, form.getPObjectReference()), isNew);
             // update the AP's stream bytes so contents can be written out
             form.setRawBytes(rawBytes);
             DictionaryEntries appearanceRefs = new DictionaryEntries();

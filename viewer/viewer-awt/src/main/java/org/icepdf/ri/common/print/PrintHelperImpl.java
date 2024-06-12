@@ -46,7 +46,7 @@ import java.util.logging.Logger;
  *
  * @since 2.0
  */
-public class PrintHelperImpl extends PrintHelper implements Printable {
+public class PrintHelperImpl extends PrintHelper {
 
     private static final Logger logger =
             Logger.getLogger(PrintHelperImpl.class.toString());
@@ -183,11 +183,14 @@ public class PrintHelperImpl extends PrintHelper implements Printable {
                 Dimension dim = pageDim.toDimension();
                 Rectangle2D.Float rect = new Rectangle2D.Float(0, 0, dim.width, dim.height);
                 List<Annotation> annotations = currentPage.getAnnotations();
-                for (Annotation annot : annotations) {
-                    Rectangle2D.union(
-                            rect,
-                            annot.calculatePageSpaceRectangle(currentPage, Page.BOUNDARY_MEDIABOX, rotation, zoomFactor),
-                            rect);
+                if (annotations != null) {
+                    for (Annotation annot : annotations) {
+                        Rectangle2D.union(
+                                rect,
+                                annot.calculatePageSpaceRectangle(currentPage, Page.BOUNDARY_MEDIABOX, rotation,
+                                        zoomFactor),
+                                rect);
+                    }
                 }
 
                 // Get location of imageable area from PageFormat object

@@ -10,14 +10,14 @@ public class PObjectWriter extends BaseWriter {
 
     public void write(PObject writeable, CountingOutputStream output) throws IOException {
         Reference ref = writeable.getReference();
-        Object obj = writeable.getObject();
 
         writeInteger(ref.getObjectNumber(), output);
         output.write(SPACE);
         writeInteger(ref.getGenerationNumber(), output);
         output.write(SPACE);
         output.write(BEGIN_OBJECT);
-        writeValue(obj, output);
+        writeValue(writeable, output);
+        output.write(SPACE);
         output.write(END_OBJECT);
     }
 }

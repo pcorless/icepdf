@@ -65,6 +65,9 @@ public class AnnotationComponentFactory {
             } else if (TextMarkupAnnotation.isTextMarkupAnnotation(subtype)) {
                 return new TextMarkupAnnotationComponent((TextMarkupAnnotation) annotation, documentViewController,
                         pageViewComponent);
+            } else if (Annotation.SUBTYPE_REDACT.equals(subtype)) {
+                return new RedactionAnnotationComponent((RedactionAnnotation) annotation, documentViewController,
+                        pageViewComponent);
             } else if (Annotation.SUBTYPE_LINE.equals(subtype)) {
                 return new LineAnnotationComponent((LineAnnotation) annotation, documentViewController,
                         pageViewComponent);

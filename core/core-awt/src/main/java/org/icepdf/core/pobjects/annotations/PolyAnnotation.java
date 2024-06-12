@@ -50,19 +50,6 @@ public class PolyAnnotation extends MarkupAnnotation {
     public static final Name BE_KEY = new Name("BE");
 
     /**
-     * (Optional; PDF 1.4) An array of numbers in the range 0.0 to 1.0 specifying
-     * the interior color that shall be used to fill the annotation’s line endings
-     * (see Table 176). The number of array elements shall determine the colour
-     * space in which the colour is defined:
-     * 0 - No colour; transparent
-     * 1 - DeviceGray
-     * 3 - DeviceRGB
-     * 4 - DeviceCMYK
-     * TODO consolidate duplication across the line type shapes to new base class.
-     */
-    public static final Name IC_KEY = new Name("IC");
-
-    /**
      * (Optional; PDF 1.6) A name that shall describe the intent of the polygon
      * or polyline annotation (see also Table 170). The following values shall be
      * valid:

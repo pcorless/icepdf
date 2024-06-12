@@ -27,9 +27,12 @@ import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorCallback;
 
 import java.awt.*;
 import java.awt.geom.*;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Stack;
@@ -93,6 +96,7 @@ public abstract class AbstractContentParser {
     protected GraphicsState graphicState;
     protected Library library;
     protected Resources resources;
+    protected ContentStreamRedactorCallback contentStreamRedactorCallback;
 
     protected Shapes shapes;
     // keep track of embedded marked content
@@ -124,9 +128,10 @@ public abstract class AbstractContentParser {
      * @param l PDF library master object.
      * @param r resources
      */
-    public AbstractContentParser(Library l, Resources r) {
+    public AbstractContentParser(Library l, Resources r, ContentStreamRedactorCallback contentStreamRedactorCallback) {
         library = l;
         resources = r;
+        this.contentStreamRedactorCallback = contentStreamRedactorCallback;
     }
 
     /**
@@ -175,20 +180,20 @@ public abstract class AbstractContentParser {
     /**
      * Parse a pages content stream.
      *
-     * @param streamBytes byte stream containing page content
+     * @param streams stream page content pObject
      * @return a Shapes Object containing all the pages text and images shapes.
      * @throws InterruptedException if current parse thread is interrupted.
      */
-    public abstract ContentParser parse(byte[][] streamBytes, Reference[] references, Page page)
-            throws InterruptedException;
+    public abstract ContentParser parse(Stream[] streams, Page page)
+            throws InterruptedException, IOException;
 
     /**
      * Specialized method for extracting text from documents.
      *
-     * @param source content stream source.
+     * @param streams stream page content pObject
      * @return vector where each entry is the text extracted from a text block.
      */
-    public abstract Shapes parseTextBlocks(byte[][] source) throws InterruptedException;
+    public abstract Shapes parseTextBlocks(Stream[] streams) throws InterruptedException, IOException;
 
     protected static void consume_G(GraphicsState graphicState, Stack<Object> stack,
                                     Library library) {
@@ -404,26 +409,23 @@ public abstract class AbstractContentParser {
 
     protected static void consume_cm(GraphicsState graphicState, Stack<Object> stack,
                                      boolean inTextBlock, AffineTransform textBlockBase) {
-        float[] affineTransform = popFloatInOrder(stack, 6);
+        float[] affineTransformArray = popFloatInOrder(stack, 6);
+        AffineTransform affineTransform = new AffineTransform(
+                affineTransformArray[0], affineTransformArray[1], affineTransformArray[2],
+                affineTransformArray[3], affineTransformArray[4], affineTransformArray[5]);
         // get the current CTM
         AffineTransform af = new AffineTransform(graphicState.getCTM());
         // do the matrix concatenation math
-        af.concatenate(new AffineTransform(
-                affineTransform[0], affineTransform[1], affineTransform[2],
-                affineTransform[3], affineTransform[4], affineTransform[5]));
+        af.concatenate(affineTransform);
         // add the transformation to the graphics state
         graphicState.set(af);
         // update the clip, translate by this CM
-        graphicState.updateClipCM(new AffineTransform(
-                affineTransform[0], affineTransform[1], affineTransform[2],
-                affineTransform[3], affineTransform[4], affineTransform[5]));
+        graphicState.updateClipCM(affineTransform);
         // apply the cm just as we would a tm
         if (inTextBlock) {
             // update the textBlockBase with the cm matrix
             AffineTransform af2 = new AffineTransform(graphicState.getTextState().tlmatrix);
-            graphicState.getTextState().tmatrix = new AffineTransform(
-                    affineTransform[0], affineTransform[1], affineTransform[2],
-                    affineTransform[3], affineTransform[4], affineTransform[5]);
+            graphicState.getTextState().tmatrix = affineTransform;
             af2.concatenate(graphicState.getTextState().tmatrix);
             graphicState.set(af2);
             graphicState.scale(1, -1);
@@ -485,7 +487,8 @@ public abstract class AbstractContentParser {
                                               Shapes shapes, Resources resources,
                                               boolean viewParse, // events
                                               AtomicInteger imageIndex, Page page,
-                                              boolean inTextBlock) throws InterruptedException {
+                                              ContentStreamRedactorCallback contentStreamRedactorCallback,
+                                              boolean inTextBlock) throws InterruptedException, IOException {
         Name xobjectName = (Name) stack.pop();
         if (resources == null) return graphicState;
         // Form XObject
@@ -520,7 +523,14 @@ public abstract class AbstractContentParser {
             // resources reference as a result we pass in the current
             // one in the hope that any resources can be found.
             formXObject.setParentResources(resources);
-            formXObject.init();
+            // need a new instance, so we don't corrupt the stream offset.
+            ContentStreamRedactorCallback formContentStreamRedactorCallback = null;
+            if (contentStreamRedactorCallback != null) {
+                AffineTransform xObjectTransform = graphicState.getCTM();
+                xObjectTransform.concatenate(formXObject.getMatrix());
+                formContentStreamRedactorCallback = contentStreamRedactorCallback.createChildInstance(xObjectTransform);
+            }
+            formXObject.init(formContentStreamRedactorCallback);
             // 2. concatenate matrix entry with the current CTM
             AffineTransform af = new AffineTransform(graphicState.getCTM());
             af.concatenate(formXObject.getMatrix());
@@ -596,6 +606,22 @@ public abstract class AbstractContentParser {
                             pageText.getPageLines());
                 }
             }
+            // Some Do object will have images, and we need to make sure we account for localized space.
+            if (contentStreamRedactorCallback != null &&
+                    formXObject.getShapes() != null) {
+                formContentStreamRedactorCallback.endContentStream();
+                Shapes pageShapes = formXObject.getShapes();
+                ArrayList<DrawCmd> xObjectShapes = pageShapes.getShapes();
+                for (DrawCmd object : xObjectShapes) {
+                    if (object instanceof ImageDrawCmd) {
+                        ImageDrawCmd imageDrawCmd = (ImageDrawCmd) object;
+                        ImageStream imageStream = imageDrawCmd.getImageStream();
+                        AffineTransform pageSpace = new AffineTransform(graphicState.getCTM());
+                        pageSpace.concatenate(formXObject.getMatrix());
+                        imageStream.setGraphicsTransformMatrix(af);
+                    }
+                }
+            }
             shapes.add(new NoClipDrawCmd());
             //  5. Restore the saved graphics state
             graphicState = graphicState.restore();
@@ -616,14 +642,16 @@ public abstract class AbstractContentParser {
                     }
                 }
 
+                // set CTM so we can convert image location to user space at a later time.
+                AffineTransform af = new AffineTransform(graphicState.getCTM());
+                imageStream.setGraphicsTransformMatrix(af);
+
                 // create an ImageReference for future decoding
                 ImageReference imageReference = ImageReferenceFactory.getImageReference(
                         imageStream, resources, graphicState,
                         imageIndex.get(), page);
                 imageIndex.incrementAndGet();
 
-                AffineTransform af =
-                        new AffineTransform(graphicState.getCTM());
                 // GH-243,  there is a weird duality between cm and Do inside text blocks that this adjusts for.
                 // Not ideal but solves the inverted rendering problem for now, another sample might give more info
                 // into the actual problem and a better solution.
@@ -632,6 +660,12 @@ public abstract class AbstractContentParser {
                 }
                 graphicState.translate(0, -1);
                 setAlpha(shapes, graphicState, AlphaPaintType.ALPHA_FILL);
+
+
+                if (contentStreamRedactorCallback != null) {
+                    contentStreamRedactorCallback.checkAndRedactImageXObject(imageReference);
+                }
+
                 shapes.add(new ImageDrawCmd(imageReference));
                 graphicState.set(af);
             }
@@ -750,7 +784,7 @@ public abstract class AbstractContentParser {
             // A line width of 0 shall denote the thinnest line that can be rendered at device resolution: 1 device
             // pixel wide.  0.15f is about the thinnest line we can draw reliably at low zoom levels
             if (scale == 0f) {
-                scale = (float)(0.15f / graphicState.getCTM().getScaleX());
+                scale = (float) (0.15f / graphicState.getCTM().getScaleX());
             }
             graphicState.setLineWidth(scale);
             setStroke(shapes, graphicState);
@@ -762,7 +796,8 @@ public abstract class AbstractContentParser {
         setStroke(shapes, graphicState);
     }
 
-    protected static void consume_gs(GraphicsState graphicState, Stack<Object> stack, Resources resources, Shapes shapes) {
+    protected static void consume_gs(GraphicsState graphicState, Stack<Object> stack, Resources resources,
+                                     Shapes shapes) {
         Object gs = stack.pop();
         if (gs instanceof Name && resources != null) {
             // Get ExtGState and merge it with
@@ -913,24 +948,27 @@ public abstract class AbstractContentParser {
                                                Shapes shapes,
                                                TextMetrics textMetrics,
                                                GlyphOutlineClip glyphOutlineClip,
-                                               LinkedList<OptionalContents> oCGs) {
+                                               LinkedList<OptionalContents> oCGs,
+                                               ContentStreamRedactorCallback contentStreamRedactorCallback) throws IOException {
         StringObject stringObject = (StringObject) stack.pop();
         graphicState.getTextState().cspace = ((Number) stack.pop()).floatValue();
         graphicState.getTextState().wspace = ((Number) stack.pop()).floatValue();
         // push the string back on, so we can reuse the single quote layout code
         stack.push(stringObject);
         consume_T_star(graphicState, textMetrics, shapes.getPageText(), oCGs);
-        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs);
+        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs, contentStreamRedactorCallback);
     }
 
     protected static void consume_single_quote(GraphicsState graphicState, Stack<Object> stack,
                                                Shapes shapes,
                                                TextMetrics textMetrics,
                                                GlyphOutlineClip glyphOutlineClip,
-                                               LinkedList<OptionalContents> oCGs) {
+                                               LinkedList<OptionalContents> oCGs,
+                                               ContentStreamRedactorCallback contentStreamRedactorCallback)
+            throws IOException {
         // ' = T* + Tj,  who knew?
         consume_T_star(graphicState, textMetrics, shapes.getPageText(), oCGs);
-        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs);
+        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs, contentStreamRedactorCallback);
     }
 
     protected static void consume_Td(GraphicsState graphicState, Stack<Object> stack,
@@ -1337,7 +1375,8 @@ public abstract class AbstractContentParser {
                                      Shapes shapes,
                                      TextMetrics textMetrics,
                                      GlyphOutlineClip glyphOutlineClip,
-                                     LinkedList<OptionalContents> oCGs) {
+                                     LinkedList<OptionalContents> oCGs,
+                                     ContentStreamRedactorCallback contentStreamRedactorCallback) throws IOException {
         // apply scaling
         AffineTransform tmp = applyTextScaling(graphicState);
         // apply transparency
@@ -1346,18 +1385,20 @@ public abstract class AbstractContentParser {
         Number f;
         StringObject stringObject;
         TextState textState;
+        ArrayList<TextSprite> textOperators = new ArrayList<>(v.size());
         for (Object currentObject : v) {
             if (currentObject instanceof StringObject) {
                 stringObject = (StringObject) currentObject;
                 textState = graphicState.getTextState();
                 // draw string takes care of PageText extraction
                 if (stringObject.getLength() > 0) {
-                    drawString(stringObject.getLiteralStringBuffer(
+                    TextSprite textSprite = drawString(stringObject.getLiteralStringBuffer(
                                     textState.font.getSubTypeFormat(),
                                     textState.font.getFont()),
                             textMetrics,
                             graphicState.getTextState(), shapes, glyphOutlineClip,
-                            graphicState, oCGs);
+                            graphicState, oCGs, contentStreamRedactorCallback);
+                    textOperators.add(textSprite);
                 }
             } else if (currentObject instanceof Number) {
                 f = (Number) currentObject;
@@ -1367,13 +1408,17 @@ public abstract class AbstractContentParser {
             textMetrics.setPreviousAdvance(textMetrics.getAdvance().x);
         }
         graphicState.set(tmp);
+        if (contentStreamRedactorCallback != null) {
+            contentStreamRedactorCallback.writeRedactedStringObject(textOperators, Operands.TJ);
+        }
     }
 
     protected static void consume_Tj(GraphicsState graphicState, Stack<Object> stack,
                                      Shapes shapes,
                                      TextMetrics textMetrics,
                                      GlyphOutlineClip glyphOutlineClip,
-                                     LinkedList<OptionalContents> oCGs) {
+                                     LinkedList<OptionalContents> oCGs,
+                                     ContentStreamRedactorCallback contentStreamRedactorCallback) throws IOException {
         if (stack.size() != 0) {
             Object tjValue = stack.pop();
             StringObject stringObject;
@@ -1381,22 +1426,28 @@ public abstract class AbstractContentParser {
             if (tjValue instanceof StringObject) {
                 stringObject = (StringObject) tjValue;
                 textState = graphicState.getTextState();
+                ArrayList<TextSprite> textOperators = new ArrayList<>(1);
                 // apply scaling
                 AffineTransform tmp = applyTextScaling(graphicState);
                 // apply transparency
                 setAlpha(shapes, graphicState, AlphaPaintType.ALPHA_FILL);
                 // draw string will take care of text pageText construction
                 if (stringObject.getLength() > 0) {
-                    drawString(stringObject.getLiteralStringBuffer(
+                    TextSprite textSprite = drawString(stringObject.getLiteralStringBuffer(
                                     textState.font.getSubTypeFormat(),
                                     textState.font.getFont()),
                             textMetrics,
-                            graphicState.getTextState(),
+                            textState,
                             shapes,
                             glyphOutlineClip,
-                            graphicState, oCGs);
+                            graphicState, oCGs, contentStreamRedactorCallback);
+                    textOperators.add(textSprite);
                 }
                 graphicState.set(tmp);
+                // pass them back to the redactor,
+                if (contentStreamRedactorCallback != null) {
+                    contentStreamRedactorCallback.writeRedactedStringObject(textOperators, Operands.Tj);
+                }
             }
         }
     }
@@ -1416,23 +1467,24 @@ public abstract class AbstractContentParser {
      * @param oCGs             optional content group, can be null
      * @param shapes           collection of all shapes for page content being parsed.
      */
-    private static void drawString(
+    private static TextSprite drawString(
             StringBuilder displayText,
             TextMetrics textMetrics,
             TextState textState,
             Shapes shapes,
             GlyphOutlineClip glyphOutlineClip,
             GraphicsState graphicState,
-            LinkedList<OptionalContents> oCGs) {
+            LinkedList<OptionalContents> oCGs,
+            ContentStreamRedactorCallback contentStreamRedactorCallback) {
 
         float advanceX = textMetrics.getAdvance().x;
         float advanceY = textMetrics.getAdvance().y;
 
         if (displayText.length() == 0) {
-            return;
+            return null;
         }
 
-        // Postion of previous Glyph, all relative to text block
+        // Position of previous Glyph, all relative to text block
         float lastx = 0, lasty = 0;
         // Make sure that the previous advanceX is greater than then where we
         // are going to place the next glyph,  see not 57 in 1.6 spec for more
@@ -1459,6 +1511,7 @@ public abstract class AbstractContentParser {
         // create a new sprite to hold the text objects
         TextSprite textSprites =
                 new TextSprite(currentFont,
+                        textState.font.getSubTypeFormat(),
                         textLength,
                         new AffineTransform(graphicState.getCTM()),
                         new AffineTransform(textState.tmatrix));
@@ -1504,13 +1557,17 @@ public abstract class AbstractContentParser {
 
             // get normalized from text sprite
             GlyphText glyphText = textSprites.addText(
-                    String.valueOf(currentChar), // cid
+                    currentChar, // cid
                     textState.currentfont.toUnicode(currentChar), // unicode value
-                    currentX, currentY, newAdvanceX);
+                    currentX, currentY, newAdvanceX, newAdvanceY);
             shapes.getPageText().addGlyph(glyphText, oCGs);
 
+            if (contentStreamRedactorCallback != null) {
+                contentStreamRedactorCallback.checkAndRedactText(glyphText);
+            }
+
         }
-        // append the finally offset of the with of the character
+        // append the finally offset of the width of the character
         advanceX += lastx;
         advanceY += lasty;
 
@@ -1531,19 +1588,19 @@ public abstract class AbstractContentParser {
           7 - Add text to path for clipping.
          */
 
-        int rmode = textState.rmode;
-        switch (rmode) {
+        int rMode = textState.rmode;
+        switch (rMode) {
             // fill text: 0
             case TextState.MODE_FILL:
-                drawModeFill(graphicState, textSprites, shapes, rmode);
+                drawModeFill(graphicState, textSprites, shapes, rMode);
                 break;
             // Stroke text: 1
             case TextState.MODE_STROKE:
-                drawModeStroke(graphicState, textSprites, textState, shapes, rmode);
+                drawModeStroke(graphicState, textSprites, textState, shapes, rMode);
                 break;
             // Fill, then stroke text: 2
             case TextState.MODE_FILL_STROKE:
-                drawModeFillStroke(graphicState, textSprites, textState, shapes, rmode);
+                drawModeFillStroke(graphicState, textSprites, textState, shapes, rMode);
                 break;
             // Neither fill nor stroke text (invisible): 3
             case TextState.MODE_INVISIBLE:
@@ -1551,17 +1608,17 @@ public abstract class AbstractContentParser {
                 break;
             // Fill text and add to path for clipping: 4
             case TextState.MODE_FILL_ADD:
-                drawModeFill(graphicState, textSprites, shapes, rmode);
+                drawModeFill(graphicState, textSprites, shapes, rMode);
                 glyphOutlineClip.addTextSprite(textSprites);
                 break;
             // Stroke Text and add to path for clipping: 5
             case TextState.MODE_STROKE_ADD:
-                drawModeStroke(graphicState, textSprites, textState, shapes, rmode);
+                drawModeStroke(graphicState, textSprites, textState, shapes, rMode);
                 glyphOutlineClip.addTextSprite(textSprites);
                 break;
             // Fill, then stroke text adn add to path for clipping: 6
             case TextState.MODE_FILL_STROKE_ADD:
-                drawModeFillStroke(graphicState, textSprites, textState, shapes, rmode);
+                drawModeFillStroke(graphicState, textSprites, textState, shapes, rMode);
                 glyphOutlineClip.addTextSprite(textSprites);
                 break;
             // Add text to path for clipping: 7
@@ -1570,6 +1627,7 @@ public abstract class AbstractContentParser {
                 break;
         }
         textMetrics.getAdvance().setLocation(advanceX, advanceY);
+        return textSprites;
     }
 
     /**
@@ -1771,7 +1829,7 @@ public abstract class AbstractContentParser {
      * @param shapes        current shapes stack
      * @param graphicState  current graphics state.
      * @param geometricPath current path.
-     * @throws InterruptedException            thread interrupted.
+     * @throws InterruptedException thread interrupted.
      */
     private static void commonFill(Shapes shapes, GraphicsState graphicState, GeneralPath geometricPath)
             throws InterruptedException {

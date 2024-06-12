@@ -18,6 +18,7 @@ package org.icepdf.ri.common.views.annotations;
 import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.DocumentViewModel;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -48,6 +49,10 @@ public class TextMarkupAnnotationComponent extends MarkupAnnotationComponent<Tex
 
     @Override
     public boolean contains(int x, int y) {
+        // avoid interference if text selection tool is selected
+        int toolMode = documentViewController.getDocumentViewModel().getViewToolMode();
+        if (toolMode == DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) return false;
+
         boolean contains = super.contains(x, y);
         if (contains && annotation != null && annotation.getMarkupPath() != null) {
             // page space

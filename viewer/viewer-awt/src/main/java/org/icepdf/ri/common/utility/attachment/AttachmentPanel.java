@@ -7,6 +7,7 @@ import org.icepdf.core.util.Utils;
 import org.icepdf.ri.common.MutableDocument;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.ViewModel;
+import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.viewer.WindowManager;
 
@@ -29,8 +30,8 @@ import static org.icepdf.ri.common.utility.attachment.FileTableModel.*;
 /**
  * AttachmentPanel displays a PDF attachments as defined by the Catalogs names tree's EmbeddedFiles entry.
  * The view is pretty straight forward showing properties on all attached files but only allows the opening
- * of .pdf files via a double click of a row.  However it is possible to save any file by selecting a table
- * row and right clicking to expose the context menu for 'Save as..."
+ * of .pdf files via a double click of a row.  However, it is possible to save any file by selecting a table
+ * row and right-clicking to expose the context menu for 'Save as...'
  *
  * @since 6.2
  */
@@ -102,8 +103,8 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
         // right click context menu for save as.
         contextMenu = new JPopupMenu();
         saveAsMenuItem = new JMenuItem(messageBundle.getString(
-                "viewer.utilityPane.attachments.menu.saveAs.label"),
-                new ImageIcon(Images.get("save_a_24.png")));
+                "viewer.utilityPane.attachments.menu.saveAs.label"));
+        Images.applyIcon(saveAsMenuItem, "save", IconPack.Variant.NORMAL, Images.IconSize.SMALL);
         saveAsMenuItem.addActionListener(this);
         contextMenu.add(saveAsMenuItem);
 
@@ -167,10 +168,12 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
             if (value instanceof FileSpecification) {
                 FileSpecification fileSpecification = (FileSpecification) value;
                 final EmbeddedFileStream embeddedFileStream = fileSpecification.getEmbeddedFileStream();
-                final String fileName = (String) fileTableModel.getValueAt(selectedRow, NAME_COLUMN);
-                // already on awt thread but still nice to play by the rules.
-                Runnable doSwingWork = () -> saveFile(fileName, embeddedFileStream);
-                SwingUtilities.invokeLater(doSwingWork);
+                if (embeddedFileStream != null) {
+                    final String fileName = (String) fileTableModel.getValueAt(selectedRow, NAME_COLUMN);
+                    // already on awt thread but still nice to play by the rules.
+                    Runnable doSwingWork = () -> saveFile(fileName, embeddedFileStream);
+                    SwingUtilities.invokeLater(doSwingWork);
+                }
             }
         }
     }
@@ -185,7 +188,7 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
                 EmbeddedFileStream embeddedFileStream = fileSpecification.getEmbeddedFileStream();
                 String fileName = (String) fileTableModel.getValueAt(selectedRow, NAME_COLUMN);
                 // load the file stream if it's PDF.
-                if (fileName.toLowerCase().endsWith(PDF_EXTENSION)) {
+                if (embeddedFileStream != null && fileName.toLowerCase().endsWith(PDF_EXTENSION)) {
                     try {
                         InputStream fileInputStream = embeddedFileStream.getDecodedStreamData();
                         Document embeddedDocument = new Document();
@@ -193,7 +196,7 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
                         WindowManager.getInstance().newWindow(embeddedDocument, fileName);
                     } catch (IOException e) {
                         logger.log(Level.WARNING, "Error opening PDF file stream " + fileName, e);
-                    } catch( PDFSecurityException e) {
+                    } catch (PDFSecurityException e) {
                         logger.log(Level.WARNING, "Error opening PDF security exception " + fileName, e);
                     }
                 }

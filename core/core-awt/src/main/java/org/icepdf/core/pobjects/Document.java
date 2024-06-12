@@ -21,6 +21,7 @@ import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
+import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
 import org.icepdf.core.pobjects.graphics.WatermarkCallback;
 import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.pobjects.graphics.text.PageText;
@@ -112,8 +113,10 @@ public class Document {
     private static boolean isCachingEnabled;
 
     private final Library library;
-    // todo put file channel input library?
+
     private FileChannel documentFileChannel;
+    private RandomAccessFile randomAccessFile;
+    private ByteBuffer documentByteBuffer;
     private CrossReferenceRoot crossReferenceRoot;
 
     static {
@@ -190,15 +193,22 @@ public class Document {
         setDocumentOrigin(filepath);
 
         File file = new File(filepath);
-        try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r")) {
-            documentFileChannel = randomAccessFile.getChannel();
-            ByteBuffer mappedFileByteBuffer = documentFileChannel.map(
-                    FileChannel.MapMode.READ_ONLY, 0, documentFileChannel.size());
-            setInputStream(mappedFileByteBuffer);
+        try {
+            setInputStream(copyFileToByteBuffer(file));
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Failed to set document file path", e);
             throw e;
         }
+    }
+
+    private ByteBuffer copyFileToByteBuffer(File file) throws IOException {
+        randomAccessFile = new RandomAccessFile(file, "r");
+        documentFileChannel = randomAccessFile.getChannel();
+        long fileSize = documentFileChannel.size();
+        ByteBuffer buffer = ByteBuffer.allocate((int) fileSize);
+        documentFileChannel.read(buffer);
+        buffer.flip();
+        return buffer;
     }
 
     /**
@@ -249,8 +259,8 @@ public class Document {
         setDocumentOrigin(pathOrURL);
 
         if (!isCachingEnabled) {
-            ByteBuffer byteBuffer = ByteBuffer.wrap(inputStream.readAllBytes());
-            setInputStream(byteBuffer);
+            documentByteBuffer = ByteBuffer.wrap(inputStream.readAllBytes());
+            setInputStream(documentByteBuffer);
         }
         // if caching is allowed cache the url to file
         else {
@@ -265,11 +275,8 @@ public class Document {
 
             setDocumentCachedFilePath(tempFile.getAbsolutePath());
 
-            try (RandomAccessFile randomAccessFile = new RandomAccessFile(tempFile, "r")) {
-                documentFileChannel = randomAccessFile.getChannel();
-                ByteBuffer mappedFileByteBuffer = documentFileChannel.map(
-                        FileChannel.MapMode.READ_ONLY, 0, documentFileChannel.size());
-                setInputStream(mappedFileByteBuffer);
+            try {
+                setInputStream(copyFileToByteBuffer(tempFile));
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Failed to set document input stream", e);
                 throw e;
@@ -298,7 +305,8 @@ public class Document {
         setDocumentOrigin(pathOrURL);
 
         if (!isCachingEnabled) {
-            setInputStream(ByteBuffer.wrap(data, offset, length));
+            documentByteBuffer = ByteBuffer.wrap(data, offset, length);
+            setInputStream(documentByteBuffer);
         }
         // if caching is allowed cache the url to file
         else {
@@ -311,7 +319,7 @@ public class Document {
 
             // Write the data to the temp file.
             try {
-                Files.copy(new ByteArrayInputStream(data), tempFile.toPath());
+                Files.copy(new ByteArrayInputStream(data), tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException e) {
                 logger.log(Level.FINE, "Error writing PDF output stream.", e);
                 throw e;
@@ -319,11 +327,8 @@ public class Document {
 
             setDocumentCachedFilePath(tempFile.getAbsolutePath());
 
-            try (RandomAccessFile randomAccessFile = new RandomAccessFile(tempFile, "r")) {
-                documentFileChannel = randomAccessFile.getChannel();
-                ByteBuffer mappedFileByteBuffer = documentFileChannel.map(
-                        FileChannel.MapMode.READ_ONLY, 0, documentFileChannel.size());
-                setInputStream(mappedFileByteBuffer);
+            try {
+                setInputStream(copyFileToByteBuffer(tempFile));
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Failed to set document input stream", e);
                 throw e;
@@ -528,14 +533,19 @@ public class Document {
      * Dispose of Document, freeing up all used resources.
      */
     public void dispose() {
-
-        if (documentFileChannel != null) {
+        // clean up file it will clean up any file channels and file descriptors too
+        if (randomAccessFile != null) {
             try {
-                documentFileChannel.close();
+                randomAccessFile.close();
             } catch (IOException e) {
-                logger.log(Level.FINE, "Error closing document input stream.", e);
+                logger.log(Level.FINE, "Error closing document random access file.", e);
             }
+            randomAccessFile = null;
             documentFileChannel = null;
+        }
+
+        if (documentByteBuffer != null) {
+            documentByteBuffer.clear();
         }
 
         String fileToDelete = getDocumentCachedFilePath();
@@ -558,7 +568,7 @@ public class Document {
      * @return The length of the PDF file copied
      * @throws IOException if there is some problem reading or writing the PDF data
      */
-    public long writeToOutputStream(OutputStream out) throws IOException {
+    public long writeToOutputStream(OutputStream out) throws IOException, InterruptedException {
         return writeToOutputStream(out, WriteMode.INCREMENT_UPDATE);
     }
 
@@ -572,10 +582,22 @@ public class Document {
      * @return The length of the PDF file copied
      * @throws IOException if there is some problem reading or writing the PDF data
      */
-    public long writeToOutputStream(OutputStream out, WriteMode writeMode) throws IOException {
+    public long writeToOutputStream(OutputStream out, WriteMode writeMode) throws IOException, InterruptedException {
         if (documentFileChannel != null) {
             synchronized (library.getMappedFileByteBufferLock()) {
                 ByteBuffer documentByteBuffer = library.getMappedFileByteBuffer();
+                documentByteBuffer.position(0);
+                int documentLength = documentByteBuffer.remaining();
+                long newDocumentLength = new DocumentBuilder().createDocument(
+                        writeMode,
+                        this,
+                        library.getMappedFileByteBuffer(),
+                        out,
+                        documentLength);
+                return newDocumentLength;
+            }
+        } else if (documentByteBuffer != null) {
+            synchronized (library.getMappedFileByteBufferLock()) {
                 documentByteBuffer.position(0);
                 int documentLength = documentByteBuffer.remaining();
                 long newDocumentLength = new DocumentBuilder().createDocument(
@@ -599,7 +621,7 @@ public class Document {
      * @return The length of the PDF file saved
      * @throws IOException if there is some problem reading or writing the PDF data
      */
-    public long saveToOutputStream(OutputStream out) throws IOException {
+    public long saveToOutputStream(OutputStream out) throws IOException, InterruptedException {
         return writeToOutputStream(out, WriteMode.INCREMENT_UPDATE);
     }
 
@@ -612,7 +634,7 @@ public class Document {
      * @return The length of the PDF file saved
      * @throws IOException if there is some problem reading or writing the PDF data
      */
-    public long saveToOutputStream(OutputStream out, WriteMode writeMode) throws IOException {
+    public long saveToOutputStream(OutputStream out, WriteMode writeMode) throws IOException, InterruptedException {
         return writeToOutputStream(out, writeMode);
     }
 
@@ -698,6 +720,26 @@ public class Document {
             return null;
         }
     }
+
+    public boolean hasRedactions() {
+        // check state manager first as this will be a bit cheaper than scanning each page in the document.
+        if (stateManager.hasRedactions()) {
+            return true;
+        } else {
+            PageTree pageTree = catalog.getPageTree();
+            Page page;
+            List<RedactionAnnotation> redactions;
+            for (int i = 0, max = pageTree.getNumberOfPages(); i < max; i++) {
+                page = pageTree.getPage(i);
+                redactions = page.getRedactionAnnotations();
+                if (redactions != null && redactions.size() > 1) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
 
     /**
      * Gets the security manager for this document. If the document has no
@@ -862,7 +904,7 @@ public class Document {
     }
 
     /**
-     * Sets the caching mode when handling file loaded by an URI.  If enabled
+     * Sets the caching mode when handling file loaded by a URI.  If enabled
      * URI streams will be cached to disk, otherwise they will be stored in
      * memory. This method must be set before a call to setByteArray() or
      * setInputStream() is called.

@@ -24,10 +24,10 @@ import java.util.List;
 public class ImageDecoderFactory {
 
     // filter names
-    private static final String[] CCITTFAX_DECODE_FILTERS = new String[]{"CCITTFaxDecode", "/CCF", "CCF"};
-    private static final String[] DCT_DECODE_FILTERS = new String[]{"DCTDecode", "/DCT", "DCT"};
-    private static final String[] JBIG2_DECODE_FILTERS = new String[]{"JBIG2Decode"};
-    private static final String[] JPX_DECODE_FILTERS = new String[]{"JPXDecode"};
+    public static final String[] CCITTFAX_DECODE_FILTERS = new String[]{"CCITTFaxDecode", "/CCF", "CCF"};
+    public static final String[] DCT_DECODE_FILTERS = new String[]{"DCTDecode", "/DCT", "DCT"};
+    public static final String[] JBIG2_DECODE_FILTERS = new String[]{"JBIG2Decode"};
+    public static final String[] JPX_DECODE_FILTERS = new String[]{"JPXDecode"};
 
     // setup no caching for imageio.
     static {
@@ -64,7 +64,7 @@ public class ImageDecoderFactory {
         }
     }
 
-    private static boolean containsFilter(ImageStream imageStream, String[] searchFilterNames) {
+    public static boolean containsFilter(ImageStream imageStream, String[] searchFilterNames) {
         List<String> filterNames = imageStream.getFilterNames();
         if (filterNames == null)
             return false;
