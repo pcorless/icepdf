@@ -125,4 +125,7 @@ public class MarkupGlueComponent extends JComponent implements PageViewAnnotatio
         parentPageViewComponent = pageViewComponent;
     }
 
+    public MarkupAnnotationComponent getMarkupAnnotationComponent() {
+        return markupAnnotationComponent;
+    }
 }

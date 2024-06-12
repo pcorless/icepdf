@@ -40,7 +40,7 @@ public class UnderLineAnnotationHandler extends HighLightAnnotationHandler {
     public UnderLineAnnotationHandler(DocumentViewController documentViewController,
                                       AbstractPageViewComponent pageViewComponent) {
         super(documentViewController, pageViewComponent);
-        highLightType = TextMarkupAnnotation.SUBTYPE_UNDERLINE;
+        markupSubType = TextMarkupAnnotation.SUBTYPE_UNDERLINE;
     }
 
     protected void checkAndApplyPreferences() {
@@ -50,11 +50,8 @@ public class UnderLineAnnotationHandler extends HighLightAnnotationHandler {
             color = new Color(rgb);
         }
         // apply the settings or system property base colour for the given subtype.
-        if (color == null) {
-            annotation.setColor(annotation.getTextMarkupColor());
-        } else {
+        if (color != null) {
             annotation.setColor(color);
-            annotation.setTextMarkupColor(color);
         }
         annotation.setOpacity(preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_OPACITY, 255));
     }

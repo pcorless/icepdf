@@ -23,8 +23,8 @@ import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import java.awt.image.BufferedImage;
 
 /**
- * the Abstract CachedImageReference stores the decoded BufferedImage data in
- * an ImagePool referenced by the images PDF object number to insure that if
+ * The Abstract CachedImageReference stores the decoded BufferedImage data in
+ * an ImagePool referenced by the images PDF object number to ensure that if
  * a page is garbage collected the image can re fetched from the pool if
  * necessary.
  *

@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.github.pcorless.icepdf</groupId>
         <artifactId>icepdf</artifactId>
-        <version>7.2.0-SNAPSHOT</version>
+        <version>7.3.0-SNAPSHOT</version>
     </parent>
     <groupId>org.icepdf.examples</groupId>
     <artifactId>examples</artifactId>
@@ -23,6 +23,7 @@
         <module>loadingEvents</module>
         <module>printservices</module>
         <module>search</module>
+        <module>redaction</module>
         <module>signatures</module>
     </modules>
 

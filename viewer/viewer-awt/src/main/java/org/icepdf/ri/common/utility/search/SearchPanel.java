@@ -34,8 +34,6 @@ import org.icepdf.ri.common.utility.outline.OutlineItemTreeNode;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.PageComponentSelector;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
-import org.icepdf.ri.images.Images;
-import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -55,11 +53,8 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
-import java.util.prefs.Preferences;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-
-import static org.icepdf.ri.util.ViewerPropertiesManager.*;
 
 /**
  * This class is the GUI component for the SearchTextTask.  This panel can be
@@ -72,7 +67,7 @@ import static org.icepdf.ri.util.ViewerPropertiesManager.*;
  */
 @SuppressWarnings("serial")
 public class SearchPanel extends JPanel implements ActionListener, MutableDocument,
-        TreeSelectionListener, DocumentListener, BaseSearchModel {
+        TreeSelectionListener, DocumentListener, BaseSearchModel, BaseRedactModel {
 
     private static final Logger logger =
             Logger.getLogger(SearchPanel.class.toString());
@@ -110,6 +105,8 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     private JButton searchButton;
     // clear search
     private JButton clearSearchButton;
+    // redact current search results
+    private JButton redactResultsButton;
     private SearchFilterButton searchFilterButton;
     // page index of the last added node.
     private int lastTextNodePageIndex, lastCommentNodePageIndex;
@@ -118,6 +115,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     private JProgressBar progressBar;
     // task to complete in separate thread
     private SearchTextTask searchTextTask;
+    private RedactSearchTask redactSearchTask;
 
     // status label for search
     private JLabel findMessage;
@@ -250,24 +248,15 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                 "viewer.utilityPane.search.clearSearchButton.label"));
         clearSearchButton.addActionListener(this);
 
-        // apply default preferences
-        Preferences preferences = controller.getPropertiesManager().getPreferences();
-        String iconSize = preferences.get(ViewerPropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE);
-        boolean isRegex = preferences.getBoolean(PROPERTY_SEARCH_PANEL_REGEX_ENABLED, true);
-        boolean isWholeWord = preferences.getBoolean(PROPERTY_SEARCH_PANEL_WHOLE_WORDS_ENABLED, false);
-        boolean isCaseSensitive = preferences.getBoolean(PROPERTY_SEARCH_PANEL_CASE_SENSITIVE_ENABLED, false);
-        boolean isCumulative = preferences.getBoolean(PROPERTY_SEARCH_PANEL_CUMULATIVE_ENABLED, false);
-
-        boolean isText = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SEARCH_TEXT_ENABLED, true);
-        boolean isComments = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SEARCH_COMMENTS_ENABLED, false);
-        boolean isDestinations = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SEARCH_DEST_ENABLED, false);
-        boolean isOutlines = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SEARCH_OUTLINES_ENABLED, false);
-
-        boolean isShowPages = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SHOW_PAGES_ENABLED, true);
+        // redact search results button
+        redactResultsButton = new JButton(messageBundle.getString(
+                "viewer.utilityPane.search.redactSearchResultsButton.label"));
+        redactResultsButton.addActionListener(this);
 
         // search options check boxes.
         // search option check boxes.
-        searchFilterButton = new SearchFilterButton(this, controller, "viewer.utilityPane.markupAnnotation.toolbar.filter.filterButton.tooltip");
+        searchFilterButton = new SearchFilterButton(this, controller, "viewer.utilityPane.markupAnnotation.toolbar" +
+                ".filter.filterButton.tooltip");
         searchFilterButton.getShowPagesCheckbox().addActionListener(this);
 
         // Build search GUI
@@ -300,7 +289,11 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         addGB(searchPanel, searchFilterButton, 1, 1, 1, 1);
         addGB(searchPanel, searchButton, 2, 1, 1, 1);
 
+        constraints.fill = GridBagConstraints.NONE;
+        addGB(searchPanel, redactResultsButton, 0, 2, 1, 1);
+
         // add clear search button
+        constraints.fill = GridBagConstraints.HORIZONTAL;
         addGB(searchPanel, clearSearchButton, 2, 2, 1, 1);
 
         // Add Results label
@@ -399,7 +392,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         int pageNumber = textResult.getCurrentPage();
         List<LineText> textResults = textResult.getLineItems();
         // add the new results entry.
-        if ((textResults != null) && (textResults.size() > 0)) {
+        if ((textResults != null) && (!textResults.isEmpty())) {
             DefaultMutableTreeNode parentNode;
             // insert parent page number note.
             if (searchTextTask.isShowPages() && lastTextNodePageIndex != pageNumber) {
@@ -609,7 +602,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
             documentTitle = document.getInfo().getTitle();
         }
 
-        if ((documentTitle == null) || (documentTitle.trim().length() == 0)) {
+        if ((documentTitle == null) || (documentTitle.trim().isEmpty())) {
             return null;
         }
 
@@ -652,6 +645,11 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
 
     private void startSearch() {
 
+        if (searchTextTask != null && !searchTextTask.isDone()) {
+            searchTextTask.cancel(true);
+            return;
+        }
+
         // update gui components
         findMessage.setVisible(true);
         progressBar.setVisible(true);
@@ -681,6 +679,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         // set state of search button
         searchButton.setText(messageBundle.getString("viewer.utilityPane.search.stopButton.label"));
         searchFilterButton.setEnabled(false);
+        redactResultsButton.setEnabled(false);
 
         // start the task and the timer
         searchTextTask.execute();
@@ -695,6 +694,21 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         // reset high light states.
         controller.getDocumentSearchController().clearAllSearchHighlight();
         controller.getDocumentViewController().getViewContainer().repaint();
+    }
+
+    private void redactSearchResults() {
+        findMessage.setVisible(true);
+        progressBar.setVisible(true);
+
+        // start a new search text task
+        redactSearchTask = new RedactSearchTask(controller, this);
+
+        // set state of search button
+        redactResultsButton.setText(messageBundle.getString("viewer.utilityPane.search.stopButton.label"));
+        searchButton.setEnabled(false);
+        searchFilterButton.setEnabled(false);
+
+        redactSearchTask.execute();
     }
 
     private void showAllNodePages() {
@@ -796,7 +810,8 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                 currentChild = (DefaultMutableTreeNode) node.getChildAt(0);
                 if (currentChild.getChildCount() > 0) {
                     // Get any subchildren and reinsert them as plain leafs on the root
-                    // We need to wrap the user object in a new mutable tree node to stop any conflicts with parent indexes
+                    // We need to wrap the user object in a new mutable tree node to stop any conflicts with parent
+                    // indexes
                     for (int j = 0, max = currentChild.getChildCount(); j < max; j++) {
                         treeModel.insertNodeInto(
                                 (DefaultMutableTreeNode) currentChild.getChildAt(0),
@@ -818,6 +833,8 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         // Start/ stop a search
         if (source == searchTextField || source == searchButton) {
             startSearch();
+        } else if (source == redactResultsButton) {
+            redactSearchResults();
         } else if (source == clearSearchButton) {
             clearSearch();
         } else if (source == searchFilterButton.getShowPagesCheckbox()) {
@@ -852,25 +869,15 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     }
 
     /**
-     * Uitility for createing the searchable dialog message format.
+     * Utility for creating the searchable dialog message format.
      *
-     * @return reuseable message format.
+     * @return reusable message format.
      */
     public MessageFormat setupSearchResultMessageForm() {
         MessageFormat messageForm =
                 new MessageFormat(messageBundle.getString(
                         "viewer.utilityPane.search.result.msg"));
-        double[] pageLimits = {0, 1, 2};
-        String[] resultsStrings = {
-                messageBundle.getString(
-                        "viewer.utilityPane.search.result.moreFile.msg"),
-                messageBundle.getString(
-                        "viewer.utilityPane.search.result.oneFile.msg"),
-                messageBundle.getString(
-                        "viewer.utilityPane.search.result.moreFile.msg")
-        };
-        ChoiceFormat resultsChoiceForm = new ChoiceFormat(pageLimits,
-                resultsStrings);
+        ChoiceFormat resultsChoiceForm = getResultsChoiceFormat();
 
         Format[] formats = {null, resultsChoiceForm};
         messageForm.setFormats(formats);
@@ -878,26 +885,16 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     }
 
     /**
-     * Uitility for createing the searching message format.
+     * Utility for creating the searching message format.
      *
-     * @return reuseable message format.
+     * @return reusable message format.
      */
     public MessageFormat setupSearchingMessageForm() {
         // Build Internationalized plural phrase.
         MessageFormat messageForm =
                 new MessageFormat(messageBundle.getString(
                         "viewer.utilityPane.search.searching1.msg"));
-        double[] fileLimits = {0, 1, 2};
-        String[] fileStrings = {
-                messageBundle.getString(
-                        "viewer.utilityPane.search.searching1.moreFile.msg"),
-                messageBundle.getString(
-                        "viewer.utilityPane.search.searching1.oneFile.msg"),
-                messageBundle.getString(
-                        "viewer.utilityPane.search.searching1.moreFile.msg"),
-        };
-        ChoiceFormat choiceForm = new ChoiceFormat(fileLimits,
-                fileStrings);
+        ChoiceFormat choiceForm = getProgressPageChoiceFormat();
         Format[] formats = {null, choiceForm, null};
         messageForm.setFormats(formats);
 
@@ -908,6 +905,39 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         MessageFormat messageForm =
                 new MessageFormat(messageBundle.getString(
                         "viewer.utilityPane.search.progress.msg"));
+        ChoiceFormat pageChoiceForm = getProgressPagesChoiceFormat();
+        ChoiceFormat resultsChoiceForm = getProgressMatchChoiceFormat();
+
+        Format[] formats = {null, pageChoiceForm, resultsChoiceForm};
+        messageForm.setFormats(formats);
+        return messageForm;
+    }
+
+    public MessageFormat setupRedactingMessageForm() {
+        // Build Internationalized plural phrase.
+        MessageFormat messageForm =
+                new MessageFormat(messageBundle.getString(
+                        "viewer.utilityPane.redact.searching1.msg"));
+        ChoiceFormat choiceForm = getProgressPageChoiceFormat();
+        Format[] formats = {null, choiceForm, null};
+        messageForm.setFormats(formats);
+
+        return messageForm;
+    }
+
+    public MessageFormat setupRedactCompletionMessageForm() {
+        MessageFormat messageForm =
+                new MessageFormat(messageBundle.getString(
+                        "viewer.utilityPane.redact.progress.msg"));
+        ChoiceFormat pageChoiceForm = getProgressPagesChoiceFormat();
+        ChoiceFormat resultsChoiceForm = getProgressMatchChoiceFormat();
+
+        Format[] formats = {null, pageChoiceForm, resultsChoiceForm};
+        messageForm.setFormats(formats);
+        return messageForm;
+    }
+
+    private ChoiceFormat getProgressPagesChoiceFormat() {
         double[] pageLimits = {0, 1, 2};
         String[] pageStrings = {
                 messageBundle.getString(
@@ -917,8 +947,11 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                 messageBundle.getString(
                         "viewer.utilityPane.search.progress.morePage.msg"),
         };
-        ChoiceFormat pageChoiceForm = new ChoiceFormat(pageLimits,
-                pageStrings);
+        return new ChoiceFormat(pageLimits, pageStrings);
+    }
+
+    private ChoiceFormat getProgressMatchChoiceFormat() {
+        double[] pageLimits = {0, 1, 2};
         String[] resultsStrings = {
                 messageBundle.getString(
                         "viewer.utilityPane.search.progress.moreMatch.msg"),
@@ -927,12 +960,30 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                 messageBundle.getString(
                         "viewer.utilityPane.search.progress.moreMatch.msg"),
         };
-        ChoiceFormat resultsChoiceForm = new ChoiceFormat(pageLimits,
-                resultsStrings);
+        return new ChoiceFormat(pageLimits, resultsStrings);
+    }
 
-        Format[] formats = {null, pageChoiceForm, resultsChoiceForm};
-        messageForm.setFormats(formats);
-        return messageForm;
+    private ChoiceFormat getProgressPageChoiceFormat() {
+        double[] fileLimits = {0, 1, 2};
+        String[] fileStrings = {
+                messageBundle.getString(
+                        "viewer.utilityPane.search.searching1.moreFile.msg"),
+                messageBundle.getString(
+                        "viewer.utilityPane.search.searching1.oneFile.msg"),
+                messageBundle.getString(
+                        "viewer.utilityPane.search.searching1.moreFile.msg"),
+        };
+        return new ChoiceFormat(fileLimits, fileStrings);
+    }
+
+    private ChoiceFormat getResultsChoiceFormat() {
+        double[] pageLimits = {0, 1, 2};
+        String[] resultsStrings = {
+                messageBundle.getString("viewer.utilityPane.search.result.moreFile.msg"),
+                messageBundle.getString("viewer.utilityPane.search.result.oneFile.msg"),
+                messageBundle.getString("viewer.utilityPane.search.result.moreFile.msg")
+        };
+        return new ChoiceFormat(pageLimits, resultsStrings);
     }
 
     public void updateProgressControls(String message) {
@@ -941,13 +992,26 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
             findMessage.setText(message);
         }
         // update the text when the search is completed
-        if (searchTextTask.isDone() || searchTextTask.isCancelled()) {
+        if (searchTextTask != null && (searchTextTask.isDone() || searchTextTask.isCancelled())) {
             // update search status
             findMessage.setText(message);
             // update buttons states.
             searchButton.setText(messageBundle.getString("viewer.utilityPane.search.searchButton.label"));
-            //resetTree();
             searchFilterButton.setEnabled(true);
+            redactResultsButton.setEnabled(true);
+
+            // update progress bar then hide it.
+            progressBar.setValue(progressBar.getMinimum());
+            progressBar.setVisible(false);
+        }
+        if (redactSearchTask != null && (redactSearchTask.isDone() || redactSearchTask.isCancelled())) {
+            // update search status
+            findMessage.setText(message);
+            // update buttons states.
+            redactResultsButton.setText(messageBundle.getString("viewer.utilityPane.search.redactSearchResultsButton" +
+                    ".label"));
+            searchFilterButton.setEnabled(true);
+            searchButton.setEnabled(true);
 
             // update progress bar then hide it.
             progressBar.setValue(progressBar.getMinimum());
@@ -1045,7 +1109,8 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                     if (e.getClickCount() == 2) {
                         SwingController swingController = (SwingController) controller;
                         JTree outlineTree = swingController.getOutlineTree();
-                        OutlineItemTreeNode outlineItemTreeNode = (OutlineItemTreeNode) outlineTree.getModel().getRoot();
+                        OutlineItemTreeNode outlineItemTreeNode =
+                                (OutlineItemTreeNode) outlineTree.getModel().getRoot();
                         for (int i = 0, max = outlineItemTreeNode.getChildCount(); i < max; i++) {
                             OutlineItemTreeNode outlineNode =
                                     findOutlineTreeNode(outlineItemTreeNode.getChildAt(i), (OutlineItemTreeNode) node);
@@ -1059,7 +1124,8 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                         }
                     }
                 } else if (node instanceof NameTreeNode) {
-                    // on a double click we'll set focus to the destination tab and expand the tree to the node in question
+                    // on a double click we'll set focus to the destination tab and expand the tree to the node in
+                    // question
                     if (e.getClickCount() == 2) {
                         SwingController swingController = (SwingController) controller;
                         Names names = controller.getDocument().getCatalog().getNames();
@@ -1070,7 +1136,8 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                             // try to expand back to the same path
                             NameTreeNode nameTreeNode = (NameTreeNode) node;
                             // find and select a node with the same node.)
-                            Enumeration<TreeNode> nodes = ((NameTreeNode) destinationModel.getRoot()).depthFirstEnumeration();
+                            Enumeration<TreeNode> nodes =
+                                    ((NameTreeNode) destinationModel.getRoot()).depthFirstEnumeration();
                             while (nodes.hasMoreElements()) {
                                 NameTreeNode currentNode = (NameTreeNode) nodes.nextElement();
                                 if (currentNode.getName() != null &&

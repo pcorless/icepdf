@@ -44,11 +44,10 @@ public class ZFontOpenType extends ZFontTrueType {
     }
 
     @Override
-    public void paint(Graphics2D g, String estr, float x, float y, long layout, int mode, Color strokeColor) {
+    public void paint(Graphics2D g, char estr, float x, float y, long layout, int mode, Color strokeColor) {
         try {
             AffineTransform af = g.getTransform();
-            char echar = estr.charAt(0);
-            int gid = getCharToGid(echar);
+            int gid = getCharToGid(estr);
             GlyphData glyphData = trueTypeFont.getGlyph().getGlyph(gid);
             Shape outline;
             if (glyphData == null) {

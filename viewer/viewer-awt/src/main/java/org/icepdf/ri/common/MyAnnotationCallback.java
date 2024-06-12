@@ -22,6 +22,7 @@ import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
 
@@ -225,20 +226,10 @@ public class MyAnnotationCallback implements AnnotationCallback {
             if (markupAnnotation.getPopupAnnotation() != null) {
                 page.deleteAnnotation(markupAnnotation.getPopupAnnotation());
                 // find and remove the popup component
-                ArrayList<AbstractAnnotationComponent> annotationComponents =
-                        ((PageViewComponentImpl) pageComponent).getAnnotationComponents();
-                Reference compReference;
-                Reference popupReference = markupAnnotation.getPopupAnnotation().getPObjectReference();
-                for (AbstractAnnotationComponent annotationComp : annotationComponents) {
-                    compReference = annotationComp.getAnnotation().getPObjectReference();
-                    // find the component and toggle it's visibility.
-                    if (compReference != null && compReference.equals(popupReference)) {
-                        if (annotationComp instanceof PopupAnnotationComponent) {
-                            PopupAnnotationComponent popupComponent = ((PopupAnnotationComponent) annotationComp);
-                            ((PageViewComponentImpl) pageComponent).removeAnnotation(popupComponent);
-                            break;
-                        }
-                    }
+                final AnnotationComponent component =
+                        ((MarkupAnnotationComponent) annotationComponent).getPopupAnnotationComponent();
+                if (component != null) {
+                    ((PageViewComponentImpl) pageComponent).removeAnnotation(component);
                 }
             }
         }

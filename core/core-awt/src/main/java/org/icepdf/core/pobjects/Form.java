@@ -20,6 +20,7 @@ import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.parser.content.ContentParser;
+import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorCallback;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
@@ -148,10 +149,16 @@ public class Form extends Stream {
         this.parentResource = parentResource;
     }
 
+
+    public synchronized void init() throws InterruptedException {
+        init(null);
+    }
+
     /**
      *
      */
-    public synchronized void init() throws InterruptedException {
+    public synchronized void init(ContentStreamRedactorCallback contentStreamRedactorCallback)
+            throws InterruptedException {
         if (inited) {
             return;
         }
@@ -165,23 +172,22 @@ public class Form extends Stream {
         // try and find the form's resources dictionary.
         Resources leafResources = library.getResources(entries, RESOURCES_KEY);
         // apply parent resource, if the current resources is null
-        if (leafResources != null) {
-        } else {
+        if (leafResources == null) {
             leafResources = parentResource;
         }
         // Build a new content parser for the content streams and apply the
         // content stream of the calling content stream.
-        ContentParser cp = new ContentParser(library, leafResources);
+        ContentParser cp = new ContentParser(library, leafResources, contentStreamRedactorCallback);
         cp.setGraphicsState(graphicsState);
         byte[] in = getDecodedStreamBytes();
         if (in != null) {
             try {
                 logger.log(Level.FINER, () -> "Parsing form " + getPObjectReference());
-                shapes = cp.parse(new byte[][]{in}, new Reference[]{this.getPObjectReference()}, null).getShapes();
+                shapes = cp.parse(Stream.fromByteArray(in, this), null).getShapes();
                 inited = true;
             } catch (InterruptedException e) {
-                // the initialization was interrupted so we need to make sure we bubble up the exception
-                // as we need to let any chained forms know so we can invalidate the page correctly
+                // the initialization was interrupted so, we need to make sure we bubble up the exception
+                // as we need to let any chained forms know so, we can invalidate the page correctly
                 shapes = new Shapes();
                 logger.log(Level.FINE, "Parsing form interrupted parsing Form content stream.", e);
                 throw new InterruptedException(e.getMessage());

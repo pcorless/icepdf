@@ -17,6 +17,7 @@ package org.icepdf.ri.common.views;
 
 import org.icepdf.core.Memento;
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.ri.common.UndoCaretaker;
 import org.icepdf.ri.common.views.annotations.PageViewAnnotationComponent;
 
 import javax.swing.*;
@@ -84,34 +85,36 @@ public interface DocumentViewModel {
     int DISPLAY_TOOL_LINE_ANNOTATION = 12;
 
     /**
-     * Display tool constant for creating new line  annotation.
+     * Display tool constant for creating new line arrow  annotation.
      */
     int DISPLAY_TOOL_LINE_ARROW_ANNOTATION = 13;
 
     /**
-     * Display tool constant for creating new line  annotation.
+     * Display tool constant for creating new square  annotation.
      */
     int DISPLAY_TOOL_SQUARE_ANNOTATION = 14;
 
     /**
-     * Display tool constant for creating new line  annotation.
+     * Display tool constant for creating new circle  annotation.
      */
     int DISPLAY_TOOL_CIRCLE_ANNOTATION = 15;
 
     /**
-     * Display tool constant for creating new line  annotation.
+     * Display tool constant for creating new ink  annotation.
      */
     int DISPLAY_TOOL_INK_ANNOTATION = 16;
 
     /**
-     * Display tool constant for creating new line  annotation.
+     * Display tool constant for creating new free text  annotation.
      */
     int DISPLAY_TOOL_FREE_TEXT_ANNOTATION = 17;
 
     /**
-     * Display tool constant for creating new line  annotation.
+     * Display tool constant for creating new text  annotation.
      */
     int DISPLAY_TOOL_TEXT_ANNOTATION = 18;
+
+    int DISPLAY_TOOL_REDACTION_ANNOTATION = 19;
 
     /**
      * Display tool constant for setting no tools
@@ -196,7 +199,9 @@ public interface DocumentViewModel {
      * Removes an annotation component the list of floating annotation components that are painted in the DocumentView.
      * @param annotationComponent annotation component to remove
      */
-    void removeDocumentViewAnnotationComponent(AbstractPageViewComponent pageViewComponent, PageViewAnnotationComponent annotationComponent);
+    void removeDocumentViewAnnotationComponent(DocumentView parentDocumentView,
+                                               AbstractPageViewComponent pageViewComponent,
+                                               PageViewAnnotationComponent annotationComponent);
     void removeAllFloatingAnnotationComponent(AbstractPageViewComponent pageViewComponent);
 
     /**
@@ -320,5 +325,5 @@ public interface DocumentViewModel {
     JScrollPane getDocumentViewScrollPane();
 
     void setDocumentViewScrollPane(JScrollPane documentViewScrollPane);
-
+    UndoCaretaker getAnnotationCareTaker();
 }

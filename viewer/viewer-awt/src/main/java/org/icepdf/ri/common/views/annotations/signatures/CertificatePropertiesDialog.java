@@ -21,6 +21,7 @@ import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.icepdf.core.util.HexDumper;
 import org.icepdf.ri.common.EscapeJDialog;
 import org.icepdf.ri.common.utility.signatures.SignatureUtilities;
+import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
@@ -50,14 +51,16 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
     protected static ResourceBundle messageBundle;
     private final Collection<? extends Certificate> certs;
 
-    public CertificatePropertiesDialog(Frame parent, ResourceBundle messageBundle, Collection<? extends Certificate> certs) {
+    public CertificatePropertiesDialog(Frame parent, ResourceBundle messageBundle,
+                                       Collection<? extends Certificate> certs) {
         super(parent, true);
         CertificatePropertiesDialog.messageBundle = messageBundle;
         this.certs = certs;
         buildUI();
     }
 
-    public CertificatePropertiesDialog(JDialog parent, ResourceBundle messageBundle, Collection<? extends Certificate> certs) {
+    public CertificatePropertiesDialog(JDialog parent, ResourceBundle messageBundle,
+                                       Collection<? extends Certificate> certs) {
         super(parent, true);
         CertificatePropertiesDialog.messageBundle = messageBundle;
         this.certs = certs;
@@ -79,7 +82,8 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new FlowLayout(FlowLayout.TRAILING));
-        JButton closeButton = new JButton(messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.closeButton.label"));
+        JButton closeButton = new JButton(messageBundle.getString("viewer.utilityPane.signatures.cert.dialog" +
+                ".closeButton.label"));
         closeButton.setMnemonic("viewer.utilityPane.signatures.cert.dialog.closeButton.mnemonic".charAt(0));
         closeButton.addActionListener(e -> setVisible(false));
         buttonPanel.add(closeButton);
@@ -157,7 +161,8 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
 
     /**
      * Break down DN string into an array used for message format.
-     * Organization: {0}\n Organization Unit :{1}\n Common Name: {2}\n Local: {3}\n State: {4}\n Country:{5}\n Email: {6}
+     * Organization: {0}\n Organization Unit :{1}\n Common Name: {2}\n Local: {3}\n State: {4}\n Country:{5}\n Email:
+     * {6}
      */
     private Object[] formatDNString(X500Name rdName) {
         Object[] output = new Object[7];
@@ -199,9 +204,11 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
         // Disable HTML to disable anchor click out.
         DefaultTreeCellRenderer customCellRenderer = new DefaultTreeCellRenderer();
         customCellRenderer.putClientProperty("html.disable", Boolean.TRUE);
-        customCellRenderer.setOpenIcon(new ImageIcon(Images.get("page.gif")));
-        customCellRenderer.setClosedIcon(new ImageIcon(Images.get("page.gif")));
-        customCellRenderer.setLeafIcon(new ImageIcon(Images.get("page.gif")));
+
+        Icon icon = Images.getSingleIcon("page", IconPack.Variant.NONE, Images.IconSize.TINY);
+        customCellRenderer.setOpenIcon(icon);
+        customCellRenderer.setClosedIcon(icon);
+        customCellRenderer.setLeafIcon(icon);
         tree.setCellRenderer(customCellRenderer);
 
         // Allow single node selection only
@@ -261,16 +268,19 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
                 "viewer.utilityPane.signatures.cert.dialog.info.version.value"));
         String certVersion = formatter.format(new Object[]{String.valueOf(cert.getVersion())});
 
-        formatter.applyPattern(messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.serialNumber.value"));
+        formatter.applyPattern(messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.serialNumber" +
+                ".value"));
         String serialNumber = formatter.format(new Object[]{String.valueOf(cert.getSerialNumber())});
 
-        formatter.applyPattern(messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.signatureAlgorithm.value"));
+        formatter.applyPattern(messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info" +
+                ".signatureAlgorithm.value"));
         String signatureAlgorithm = formatter.format(new Object[]{cert.getSigAlgName()});
 
         formatter.applyPattern(messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.issuer.value"));
         String issuer = formatter.format(formatDNString(new X500Name(cert.getIssuerDN().toString())));
 
-        formatter.applyPattern(messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.validity.value"));
+        formatter.applyPattern(messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.validity" +
+                ".value"));
         String validity = formatter.format(new Object[]{cert.getNotBefore(), cert.getNotAfter()});
 
         formatter.applyPattern(messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.subject.value"));
@@ -282,15 +292,18 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
         try {
             formatter.applyPattern(messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.md5.value"));
             md5 = formatter.format(new Object[]{getCertFingerPrint("MD5", cert)});
-            formatter.applyPattern(messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.sha1.value"));
+            formatter.applyPattern(messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.sha1" +
+                    ".value"));
             sha1 = formatter.format(new Object[]{getCertFingerPrint("SHA1", cert)});
         } catch (Exception e) {
             logger.log(Level.WARNING, "Failed to get cert fingerprint", e);
         }
         Object[][] data = {
                 {messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.version.label"), certVersion},
-                {messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.serialNumber.label"), serialNumber},
-                {messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.signatureAlgorithm.label"), signatureAlgorithm},
+                {messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.serialNumber.label"),
+                        serialNumber},
+                {messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.signatureAlgorithm.label"),
+                        signatureAlgorithm},
                 {messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.issuer.label"), issuer},
                 {messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.validity.label"), validity},
                 {messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.subject.label"), subject},
@@ -335,8 +348,10 @@ class CertificateInfo {
      * @return CN
      */
     private String extractAliasName(X509Certificate cert) {
-        String subjectName = messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.unknownSubject.label");
-        String issuerName = messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.unknownIssuer.label");
+        String subjectName = messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.unknownSubject" +
+                ".label");
+        String issuerName = messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.unknownIssuer" +
+                ".label");
         // Extract CN from the DN for each certificate
         try {
             X500Name principal = new X500Name(cert.getSubjectDN().toString());

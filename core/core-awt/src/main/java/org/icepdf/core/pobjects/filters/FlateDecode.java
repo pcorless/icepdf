@@ -43,11 +43,11 @@ public class FlateDecode extends ChunkingInputStream {
     }
 
     public static final Name DECODE_PARMS_VALUE = new Name("DecodeParms");
-    public static final Name PREDICTOR_VALUE = new Name("Predictor");
-    public static final Name WIDTH_VALUE = new Name("Width");
-    public static final Name COLUMNS_VALUE = new Name("Columns");
-    public static final Name COLORS_VALUE = new Name("Colors");
-    public static final Name BITS_PER_COMPONENT_VALUE = new Name("BitsPerComponent");
+    public static final Name PREDICTOR_KEY = new Name("Predictor");
+    public static final Name WIDTH_KEY = new Name("Width");
+    public static final Name COLUMNS_KEY = new Name("Columns");
+    public static final Name COLORS_KEY = new Name("Colors");
+    public static final Name BITS_PER_COMPONENT_KEY = new Name("BitsPerComponent");
 
 
     private final InputStream originalInputKeptSolelyForDebugging;
@@ -64,7 +64,7 @@ public class FlateDecode extends ChunkingInputStream {
 
         // get decode parameters from stream properties
         DictionaryEntries decodeParmsDictionary = ImageParams.getDecodeParams(library, props);
-        predictor = library.getInt(decodeParmsDictionary, PREDICTOR_VALUE);
+        predictor = library.getInt(decodeParmsDictionary, PREDICTOR_KEY);
         if (predictor != PredictorDecode.PREDICTOR_NONE &&
                 predictor != PredictorDecode.PREDICTOR_TIFF_2 &&
                 predictor != PredictorDecode.PREDICTOR_PNG_NONE &&
@@ -76,13 +76,13 @@ public class FlateDecode extends ChunkingInputStream {
             predictor = PredictorDecode.PREDICTOR_NONE;
         }
         if (predictor != PredictorDecode.PREDICTOR_NONE) {
-            Number widthNumber = library.getNumber(props, WIDTH_VALUE);
+            Number widthNumber = library.getNumber(props, WIDTH_KEY);
             // default values for non image streams.
             int width = 1;
             if (widthNumber != null) {
                 width = widthNumber.intValue();
             }
-            int columns = library.getInt(decodeParmsDictionary, COLUMNS_VALUE);
+            int columns = library.getInt(decodeParmsDictionary, COLUMNS_KEY);
             if (columns > 0) width = columns;
 
             // Since DecodeParms.BitsPerComponent has a default value, I don't think we'd
@@ -93,11 +93,11 @@ public class FlateDecode extends ChunkingInputStream {
             numComponents = 1;    // DecodeParms.Colors: 1,2,3,4  Default=1
             bitsPerComponent = 8; // DecodeParms.BitsPerComponent: 1,2,4,8,16  Default=8
 
-            Object numComponentsDecodeParmsObj = library.getObject(decodeParmsDictionary, COLORS_VALUE);
+            Object numComponentsDecodeParmsObj = library.getObject(decodeParmsDictionary, COLORS_KEY);
             if (numComponentsDecodeParmsObj instanceof Number) {
                 numComponents = ((Number) numComponentsDecodeParmsObj).intValue();
             }
-            Object bitsPerComponentDecodeParmsObj = library.getObject(decodeParmsDictionary, BITS_PER_COMPONENT_VALUE);
+            Object bitsPerComponentDecodeParmsObj = library.getObject(decodeParmsDictionary, BITS_PER_COMPONENT_KEY);
             if (bitsPerComponentDecodeParmsObj instanceof Number) {
                 bitsPerComponent = ((Number) bitsPerComponentDecodeParmsObj).intValue();
             }

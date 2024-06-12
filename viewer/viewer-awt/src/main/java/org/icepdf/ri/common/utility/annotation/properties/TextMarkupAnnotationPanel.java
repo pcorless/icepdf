@@ -96,7 +96,7 @@ public class TextMarkupAnnotationPanel extends AnnotationPanelAdapter implements
                 currentAnnotationComponent.getAnnotation();
 
         applySelectedValue(textMarkupTypes, annotation.getSubType());
-        setButtonBackgroundColor(colorButton, annotation.getTextMarkupColor());
+        setButtonBackgroundColor(colorButton, annotation.getColor());
         transparencySlider.setValue(Math.round(annotation.getOpacity() * 255));
 
         // disable appearance input if we have a invisible rectangle
@@ -128,7 +128,7 @@ public class TextMarkupAnnotationPanel extends AnnotationPanelAdapter implements
             if (chosenColor != null) {
                 // change the colour of the button background
                 colorButton.setBackground(chosenColor);
-                annotation.setTextMarkupColor(chosenColor);
+                annotation.setColor(chosenColor);
 
                 // save the last used colour
                 Name subtype = annotation.getSubType();

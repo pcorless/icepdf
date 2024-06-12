@@ -15,6 +15,8 @@
  */
 package org.icepdf.ri.common.views;
 
+import org.icepdf.core.CombinedMemento;
+import org.icepdf.core.Memento;
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.search.DocumentSearchController;
@@ -22,6 +24,7 @@ import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
 import org.icepdf.ri.images.Images;
@@ -1326,9 +1329,11 @@ public class DocumentViewControllerImpl
                 annotationCallback.newAnnotation(pageComponent, annotationComponent);
             }
 
+            documentViewModel.addMemento(new AnnotationState(annotationComponent, AnnotationState.Operation.DELETE),
+                    new AnnotationState(annotationComponent, AnnotationState.Operation.ADD));
+
             // fire event notification
-            firePropertyChange(PropertyConstants.ANNOTATION_ADDED,
-                    null, annotationComponent);
+            firePropertyChange(PropertyConstants.ANNOTATION_ADDED, null, annotationComponent);
 
             // clear previously selected annotation and fire event.
             assignSelectedAnnotation(null);
@@ -1381,10 +1386,11 @@ public class DocumentViewControllerImpl
                 annotationCallback.removeAnnotation(pageComponent, annotationComponent);
             }
 
+            documentViewModel.addMemento(new AnnotationState(annotationComponent, AnnotationState.Operation.ADD),
+                    new AnnotationState(annotationComponent, AnnotationState.Operation.DELETE));
+
             // fire event notification
-            firePropertyChange(PropertyConstants.ANNOTATION_DELETED,
-                    annotationComponent,
-                    null);
+            firePropertyChange(PropertyConstants.ANNOTATION_DELETED, annotationComponent, null);
 
             // clear previously selected annotation and fire event.
             assignSelectedAnnotation(null);
@@ -1472,13 +1478,39 @@ public class DocumentViewControllerImpl
 
 
     public void undo() {
+        final Memento memento = documentViewModel.getAnnotationCareTaker().undo();
+        fireEvent(memento);
         // repaint the view.
         documentView.repaint();
     }
 
     public void redo() {
+        final Memento memento = documentViewModel.getAnnotationCareTaker().redo();
+        fireEvent(memento);
         // repaint the view.
         documentView.repaint();
+    }
+
+    private void fireEvent(Memento memento) {
+        if (memento instanceof AnnotationState) {
+            fireEvent((AnnotationState) memento);
+        } else if (memento instanceof CombinedMemento) {
+            ((CombinedMemento) memento).getMementos().forEach(this::fireEvent);
+        }
+    }
+
+    private void fireEvent(AnnotationState state) {
+        switch (state.getOperation()) {
+            case ADD:
+                firePropertyChange(PropertyConstants.ANNOTATION_ADDED, null, state.getAnnotationComponent());
+                break;
+            case DELETE:
+                firePropertyChange(PropertyConstants.ANNOTATION_DELETED, state.getAnnotationComponent(), null);
+                break;
+            case MOVE:
+                firePropertyChange(PropertyConstants.ANNOTATION_BOUNDS, state.getAnnotationComponent(), state.getAnnotationComponent());
+                break;
+        }
     }
 
     public void removePropertyChangeListener(PropertyChangeListener l) {

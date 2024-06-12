@@ -146,7 +146,52 @@ public class ImageUtility {
         }
     }
 
-    private static BufferedImage alterBufferedImageAlpha(BufferedImage bi, int[] maskMinRGB, int[] maskMaxRGB) {
+    /**
+     * Reverse encode the color key mask.  Important when re-encoding images after authentication.
+     *
+     * @param imageStream image data to alter.
+     */
+    public static void encodeColorKeyMask(ImageStream imageStream) {
+        ImageParams imageParams = imageStream.getImageParams();
+        BufferedImage image = imageStream.getDecodedImage();
+
+        ColorKeyMask colorKeyMask = imageParams.getColorKeyMask();
+        int[] maskMinRGB = colorKeyMask.getMaskMinRGB();
+        int[] maskMaxRGB = colorKeyMask.getMaskMinRGB();
+
+        int width = image.getWidth();
+        int height = image.getHeight();
+
+        int maskMinRed = 0xFF;
+        int maskMinGreen = 0xFF;
+        int maskMinBlue = 0xFF;
+        if (maskMinRGB != null && maskMaxRGB != null) {
+            maskMinRed = maskMinRGB[0];
+            maskMinGreen = maskMinRGB[1];
+            maskMinBlue = maskMinRGB[2];
+        }
+
+        int[] srcBand = new int[width];
+        // iterate over each band to apply the mask
+        for (int i = 0; i < height; i++) {
+            image.getRGB(0, i, width, 1, srcBand, 0, width);
+            // apply the soft mask blending
+            for (int j = 0; j < width; j++) {
+                int argb = srcBand[j];
+                int alpha = ((argb >> 24) & 0xFF);
+                if (alpha == 0x00) {
+                    argb = maskMinRed << 16
+                            | maskMinGreen << 8
+                            | maskMinBlue;
+                    srcBand[j] = argb;
+                }
+            }
+            image.setRGB(0, i, width, 1, srcBand, 0, width);
+        }
+        imageStream.setDecodedImage(image);
+    }
+
+    private static BufferedImage applyColorKeyMask(BufferedImage bi, int[] maskMinRGB, int[] maskMaxRGB) {
 
         // check for alpha, if not we need to create a copy
         if (!hasAlpha(bi)) {
@@ -758,7 +803,7 @@ public class ImageUtility {
     }
 
     /**
-     * Treats the base image as as mask data applying the specified fill colour
+     * Treats the base image as a mask data applying the specified fill colour
      * to the flagged bytes and a transparency value otherwise. This method
      * creates a new BufferedImage with a transparency model so it will cause
      * a memory spike.
@@ -1059,7 +1104,7 @@ public class ImageUtility {
                 copyDecodedStreamBytesIntoRGB(data, dataToRGB);
                 // apply alpha data.
                 if (usingAlpha) {
-                    img = alterBufferedImageAlpha(img, maskMinRGB, maskMaxRGB);
+                    img = applyColorKeyMask(img, maskMinRGB, maskMaxRGB);
                 }
             }
         } else if (colourSpace instanceof DeviceCMYK) {
@@ -1111,7 +1156,7 @@ public class ImageUtility {
                     ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, true, -1,
                             db.getDataType());
                     img = new BufferedImage(cm, wr, false, null);
-                    img = alterBufferedImageAlpha(img, maskMinRGB, maskMaxRGB);
+                    img = applyColorKeyMask(img, maskMinRGB, maskMaxRGB);
                 } else {
                     DataBuffer db = new DataBufferByte(data, dataLength);
                     WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));
@@ -1260,7 +1305,7 @@ public class ImageUtility {
         return createBufferedImage(imageIn, BufferedImage.TYPE_INT_ARGB);
     }
 
-    private static BufferedImage createBufferedImage(Image imageIn, int imageType) {
+    public static BufferedImage createBufferedImage(Image imageIn, int imageType) {
         BufferedImage bufferedImageOut = new BufferedImage(imageIn
                 .getWidth(null), imageIn.getHeight(null), imageType);
         Graphics g = bufferedImageOut.getGraphics();

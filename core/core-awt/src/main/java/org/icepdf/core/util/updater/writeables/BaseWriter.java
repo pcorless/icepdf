@@ -2,12 +2,18 @@ package org.icepdf.core.util.updater.writeables;
 
 import org.icepdf.core.io.CountingOutputStream;
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 import org.icepdf.core.pobjects.structure.Header;
+import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -18,11 +24,11 @@ import java.util.List;
  */
 public class BaseWriter {
 
-    protected static final byte[] SPACE = " ".getBytes();
-    protected static final byte[] NEWLINE = "\n".getBytes();
-    protected static final byte[] TRUE = "true".getBytes();
-    protected static final byte[] FALSE = "false".getBytes();
-    protected static final byte[] NULL = "null".getBytes();
+    public static final byte[] SPACE = " ".getBytes();
+    public static final byte[] NEWLINE = "\n".getBytes();
+    public static final byte[] TRUE = "true".getBytes();
+    public static final byte[] FALSE = "false".getBytes();
+    public static final byte[] NULL = "null".getBytes();
     protected static final byte[] REFERENCE = "R".getBytes();
 
     protected static final byte[] BEGIN_OBJECT = "obj\n".getBytes();
@@ -38,6 +44,7 @@ public class BaseWriter {
     private static AffineTransformWriter affineTransformWriter;
     private static PObjectWriter pObjectWriter;
     protected static StreamWriter streamWriter;
+    protected static ImageStreamWriter imageStreamWriter;
 
     private static XRefTableWriter xRefTableWriter;
     private static TrailerWriter trailerWriter;
@@ -68,7 +75,8 @@ public class BaseWriter {
 
     public void initializeWriters() {
         // reuse instances of primitive pdf types.
-        streamWriter = new StreamWriter();
+        streamWriter = new StreamWriter(securityManager);
+        imageStreamWriter = new ImageStreamWriter(securityManager);
         headerWriter = new HeaderWriter();
         nameWriter = new NameWriter();
         dictionaryWriter = new DictionaryWriter();
@@ -102,7 +110,11 @@ public class BaseWriter {
                 entries.add(new Entry(reference)); // empty reference, no bytes needed
                 return;
             }
-            streamWriter.write((Stream) pobject.getObject(), securityManager, output);
+            if (pobject.getObject() instanceof ImageStream) {
+                imageStreamWriter.write((ImageStream) pobject.getObject(), securityManager, output);
+            } else {
+                streamWriter.write((Stream) pobject.getObject(), securityManager, output);
+            }
         } else {
             pObjectWriter.write(pobject, output);
         }
@@ -155,8 +167,12 @@ public class BaseWriter {
             writeInteger((Integer) val, output);
         } else if (val instanceof Long) {
             writeLong((Long) val, output);
+        } else if (val instanceof Double) {
+            writeDouble((Double) val, output);
+        } else if (val instanceof Float) {
+            writeFloat((Float) val, output);
         } else if (val instanceof Number) {
-            writeReal((Number) val, output);
+            writeNumber((Number) val, output);
         } else if (val instanceof String) {
             String value = (String) val;
             // We need to unwrap null as we special case it in the object parser, not ideal
@@ -205,12 +221,22 @@ public class BaseWriter {
     }
 
     protected void writeLong(long i, CountingOutputStream output) throws IOException {
-        String str = Long.toString(i);
+        String str = BigDecimal.valueOf(i).toString();
         writeByteString(str, output);
     }
 
-    protected void writeReal(Number r, CountingOutputStream output) throws IOException {
-        String str = r.toString();
+    protected void writeDouble(double r, CountingOutputStream output) throws IOException {
+        String str = BigDecimal.valueOf(r).toString();
+        writeByteString(str, output);
+    }
+
+    protected void writeFloat(float f, CountingOutputStream output) throws IOException {
+        String str = BigDecimal.valueOf(f).toString();
+        writeByteString(str, output);
+    }
+
+    protected void writeNumber(Number n, CountingOutputStream output) throws IOException {
+        String str = n.toString();
         writeByteString(str, output);
     }
 
@@ -220,6 +246,34 @@ public class BaseWriter {
             val = ((int) str.charAt(i)) & 0xFF;
             output.write(val);
         }
+    }
+
+    protected byte[] encryptStream(Stream stream, byte[] outputData) throws IOException {
+        // check if we need to encrypt the stream
+        if (securityManager != null) {
+            DictionaryEntries decodeParams;
+            Library library = stream.getLibrary();
+            if (stream.getEntries().get(Stream.DECODEPARAM_KEY) != null) {
+                // needed to check for a custom crypt filter
+                decodeParams = library.getDictionary(stream.getEntries(),
+                        Stream.DECODEPARAM_KEY);
+            } else {
+                decodeParams = new DictionaryEntries();
+            }
+            InputStream decryptedStream = securityManager.encryptInputStream(
+                    stream.getPObjectReference(),
+                    securityManager.getDecryptionKey(),
+                    decodeParams,
+                    new ByteArrayInputStream(outputData), true);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            int nRead;
+            byte[] data = new byte[16384];
+            while ((nRead = decryptedStream.read(data, 0, data.length)) != -1) {
+                out.write(data, 0, nRead);
+            }
+            return out.toByteArray();
+        }
+        return null;
     }
 
     /**

@@ -23,3 +23,6 @@ include 'core:core-awt',
 
 
 rootProject.name = 'icepdf'
+include 'examples:redaction'
+findProject(':examples:redaction')?.name = 'redaction'
+

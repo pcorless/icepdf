@@ -36,17 +36,25 @@ public class GlyphText extends AbstractText {
     private final float x;
     private final float y;
 
+    private final float advanceX;
+    private final float advanceY;
+
     // character code used to represent glyph, maybe ascii or CID value
-    private final String cid;
+    private final char cid;
 
     // Unicode/ASCII value that is represented by glyph, a cid can be
     // represented by one or more characters.
     private final String unicode;
 
-    public GlyphText(float x, float y, Rectangle2D.Double bounds,
-                     String cid, String unicode) {
+    private boolean redacted;
+    private int fontSubTypeFormat;
+
+    public GlyphText(float x, float y, float advanceX, float advanceY, Rectangle2D.Double bounds,
+                     char cid, String unicode) {
         this.x = x;
         this.y = y;
+        this.advanceX = advanceX;
+        this.advanceY = advanceY;
         this.bounds = bounds;
         this.textExtractionBounds = new Rectangle2D.Double(bounds.x, bounds.y, bounds.width, bounds.height);
         this.cid = cid;
@@ -83,7 +91,23 @@ public class GlyphText extends AbstractText {
 
     }
 
-    public String getCid() {
+    public boolean isRedacted() {
+        return redacted;
+    }
+
+    public int getFontSubTypeFormat() {
+        return fontSubTypeFormat;
+    }
+
+    public void setFontSubTypeFormat(int fontSubTypeFormat) {
+        this.fontSubTypeFormat = fontSubTypeFormat;
+    }
+
+    public void redact() {
+        this.redacted = true;
+    }
+
+    public char getCid() {
         return cid;
     }
 
@@ -93,6 +117,10 @@ public class GlyphText extends AbstractText {
 
     public float getX() {
         return x;
+    }
+
+    public float getAdvanceX() {
+        return advanceX;
     }
 
     public float getY() {

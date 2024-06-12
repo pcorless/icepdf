@@ -421,10 +421,10 @@ public class GraphicsState {
      * Sets the graphics state CTM to a new transform, the old CTM transform is
      * lost.  The new CTM value is added to the shapes stack.
      *
-     * @param af the AffineTranform object to set the CTM to.
+     * @param af the AffineTransform object to set the CTM to.
      */
     public void set(AffineTransform af) {
-        // appling a CTM can be expensive, so only do it if it's needed.
+        // applying a CTM can be expensive, so only do it if it's needed.
         if (!CTM.equals(af)) {
             CTM = new AffineTransform(af);
         }

@@ -1,11 +1,6 @@
 package org.icepdf.ri.common.views;
 
-import org.icepdf.core.pobjects.Catalog;
-import org.icepdf.core.pobjects.Destination;
-import org.icepdf.core.pobjects.NameTree;
-import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.PageTree;
-import org.icepdf.core.pobjects.Reference;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.ChoiceWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
@@ -153,19 +148,27 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                 // handler is responsible for the initial creation of the annotation
                 currentToolHandler = new HighLightAnnotationHandler(
                         documentViewController, this);
-                ((HighLightAnnotationHandler) currentToolHandler).createTextMarkupAnnotation(null);
+                ((HighLightAnnotationHandler) currentToolHandler).createMarkupAnnotation(null);
                 documentViewController.clearSelectedText();
                 break;
+            case DocumentViewModel.DISPLAY_TOOL_REDACTION_ANNOTATION:
+                // handler is responsible for the initial creation of the annotation
+                currentToolHandler = new RedactionAnnotationHandler(
+                        documentViewController, this);
+                ((RedactionAnnotationHandler) currentToolHandler).createMarkupAnnotation(null);
+                documentViewController.clearSelectedText();
+                break;
+
             case DocumentViewModel.DISPLAY_TOOL_STRIKEOUT_ANNOTATION:
                 currentToolHandler = new StrikeOutAnnotationHandler(
                         documentViewController, this);
-                ((StrikeOutAnnotationHandler) currentToolHandler).createTextMarkupAnnotation(null);
+                ((StrikeOutAnnotationHandler) currentToolHandler).createMarkupAnnotation(null);
                 documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_UNDERLINE_ANNOTATION:
                 currentToolHandler = new UnderLineAnnotationHandler(
                         documentViewController, this);
-                ((UnderLineAnnotationHandler) currentToolHandler).createTextMarkupAnnotation(null);
+                ((UnderLineAnnotationHandler) currentToolHandler).createMarkupAnnotation(null);
                 documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_LINE_ANNOTATION:
@@ -235,7 +238,10 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         if (annotationToComponent == null) {
             initializeAnnotationsComponent(getPage());
         }
-        return annotationToComponent.get(annot.getPObjectReference());
+        if (annotationToComponent != null) {
+            return annotationToComponent.get(annot.getPObjectReference());
+        }
+        return null;
     }
 
     /**
@@ -274,7 +280,8 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                         documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) ||
                         documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION) ||
                         documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_STRIKEOUT_ANNOTATION) ||
-                        documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_UNDERLINE_ANNOTATION))
+                        documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_UNDERLINE_ANNOTATION) ||
+                        documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_REDACTION_ANNOTATION))
         ) {
             try {
                 PageText pageText = currentPage.getViewText();
@@ -447,7 +454,9 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         annotationComponents.add((AbstractAnnotationComponent) annotation);
         annotationToComponent.put(annotation.getAnnotation().getPObjectReference(), annotation);
         if (annotation instanceof PopupAnnotationComponent) {
-            addPopupAnnotationComponent((PopupAnnotationComponent) annotation);
+            final PopupAnnotationComponent popupAnnotationComponent = (PopupAnnotationComponent) annotation;
+            addPopupAnnotationComponent(popupAnnotationComponent);
+            addPopupAnnotationComponentGlue(popupAnnotationComponent.getMarkupAnnotationComponent(), popupAnnotationComponent);
         } else if (annotation instanceof MarkupAnnotationComponent) {
             MarkupAnnotationComponent markupAnnotationComponent = (MarkupAnnotationComponent) annotation;
             PopupAnnotationComponent popupAnnotationComponent = markupAnnotationComponent.getPopupAnnotationComponent();
@@ -612,29 +621,42 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
 
     private void addPopupAnnotationComponentGlue(MarkupAnnotationComponent markupAnnotationComponent,
                                                  PopupAnnotationComponent popupAnnotationComponent) {
-        MarkupGlueComponent markupGlueComponent =
-                new MarkupGlueComponent(documentViewController,
-                        markupAnnotationComponent, popupAnnotationComponent);
-        // assign parent so we can properly place the popup relative to its parent page.
-        markupGlueComponent.setParentPageComponent(this);
-        markupGlueComponent.refreshDirtyBounds();
-        // won't show up on the right layer if layer isn't set first.
-        documentViewModel.addDocumentViewAnnotationComponent(this, markupGlueComponent);
-        ((JLayeredPane)parentDocumentView).setLayer(markupGlueComponent, JLayeredPane.MODAL_LAYER);
-        parentDocumentView.add(markupGlueComponent);
+        if (markupAnnotationComponent != null && popupAnnotationComponent != null && getGlue(popupAnnotationComponent) == null) {
+            MarkupGlueComponent markupGlueComponent =
+                    new MarkupGlueComponent(documentViewController,
+                            markupAnnotationComponent, popupAnnotationComponent);
+            // assign parent so we can properly place the popup relative to its parent page.
+            markupGlueComponent.setParentPageComponent(this);
+            markupGlueComponent.refreshDirtyBounds();
+            // won't show up on the right layer if layer isn't set first.
+            documentViewModel.addDocumentViewAnnotationComponent(this, markupGlueComponent);
+            ((JLayeredPane) parentDocumentView).setLayer(markupGlueComponent, JLayeredPane.MODAL_LAYER);
+            parentDocumentView.add(markupGlueComponent);
+        }
     }
 
     private void removePopupAnnotationComponent(PopupAnnotationComponent popupAnnotationComponent) {
         parentDocumentView.remove(popupAnnotationComponent);
-        documentViewModel.removeDocumentViewAnnotationComponent(this, popupAnnotationComponent);
+        documentViewModel.removeDocumentViewAnnotationComponent(parentDocumentView, this, popupAnnotationComponent);
+        //Don't forget to remove the glue
+        final MarkupGlueComponent glue = getGlue(popupAnnotationComponent);
+        if (glue != null) {
+            parentDocumentView.remove(glue);
+            documentViewModel.removeDocumentViewAnnotationComponent(parentDocumentView, this, glue);
+        }
+    }
+
+    private MarkupGlueComponent getGlue(final PopupAnnotationComponent popupAnnotationComponent) {
         ArrayList<PageViewAnnotationComponent> components = documentViewModel.getDocumentViewAnnotationComponents(this);
-        // don't forget to remove the glue component
-        for (PageViewAnnotationComponent component : components) {
-            if (component instanceof MarkupGlueComponent &&
-                    ((MarkupGlueComponent) component).getPopupAnnotationComponent().equals(popupAnnotationComponent)) {
-                parentDocumentView.remove((JComponent)component);
+        if (components != null) {
+            for (PageViewAnnotationComponent component : components) {
+                if (component instanceof MarkupGlueComponent &&
+                        ((MarkupGlueComponent) component).getPopupAnnotationComponent().equals(popupAnnotationComponent)) {
+                    return (MarkupGlueComponent) component;
+                }
             }
         }
+        return null;
     }
 
     private void initializeDestinationComponents(Page page) {
