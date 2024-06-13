@@ -23,6 +23,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyListener;
 import java.beans.PropertyChangeSupport;
+import java.util.Collection;
 
 
 /**
@@ -236,4 +237,6 @@ public interface DocumentViewController {
      * @return The property change support for this controller
      */
     PropertyChangeSupport getPropertyChangeSupport();
+
+    void deleteAnnotations(Collection<AnnotationComponent> annotations);
 }

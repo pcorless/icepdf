@@ -1228,7 +1228,7 @@ public class SwingViewBuilder implements ViewBuilder {
         if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_TOOL))
             addToToolBar(toolbar, buildToolToolBar());
         if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION))
-            addToToolBar(toolbar, buildAnnotationlToolBar());
+            addToToolBar(toolbar, buildAnnotationToolBar());
         if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_FORMS))
             addToToolBar(toolbar, buildFormsToolBar());
         if (propertiesManager.checkAndStoreBooleanProperty(ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_SEARCH))
@@ -1591,7 +1591,7 @@ public class SwingViewBuilder implements ViewBuilder {
         return toolbar;
     }
 
-    public JToolBar buildAnnotationlToolBar() {
+    public JToolBar buildAnnotationToolBar() {
         JToolBar toolbar = new JToolBar();
         commonToolBarSetup(toolbar, false);
         if (propertiesManager.checkAndStoreBooleanProperty(
@@ -1643,6 +1643,10 @@ public class SwingViewBuilder implements ViewBuilder {
             addToToolBar(toolbar, buildTextAnnotationToolButton(iconSize));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
+                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_DELETE)) {
+            addToToolBar(toolbar, buildDeleteAllAnnotationsButton(iconSize));
+        }
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_REDACTION)) {
             addToToolBar(toolbar, buildRedactionAnnotationToolButton(iconSize));
         }
@@ -1662,7 +1666,6 @@ public class SwingViewBuilder implements ViewBuilder {
                 ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_PREVIEW)) {
             addToToolBar(toolbar, buildAnnotationPreviewButton(iconSize));
         }
-
         return toolbar;
     }
 
@@ -1773,6 +1776,17 @@ public class SwingViewBuilder implements ViewBuilder {
                 "select", imageSize, buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setSelectToolButton(btn);
+        return btn;
+    }
+
+    public JButton buildDeleteAllAnnotationsButton(final Images.IconSize imageSize) {
+        final JButton btn = makeToolbarButton(
+                messageBundle.getString("viewer.toolbar.tool.delete.all.label"),
+                messageBundle.getString("viewer.toolbar.tool.delete.all.tooltip"),
+                "delete_all_annotations", imageSize, buttonFont);
+        if (viewerController != null && btn != null) {
+            viewerController.setDeleteAllButton(btn);
+        }
         return btn;
     }
 

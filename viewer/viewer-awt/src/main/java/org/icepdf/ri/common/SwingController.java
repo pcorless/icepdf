@@ -223,6 +223,7 @@ public class SwingController extends ComponentAdapter
     private JToggleButton zoomDynamicToolButton;
     private JToggleButton selectToolButton;
     // main annotation toolbar
+    private JButton deleteAllAnnotationsButton;
     private AnnotationColorToggleButton highlightAnnotationToolButton;
     private JToggleButton redactionAnnotationToolButton;
     private JToggleButton linkAnnotationToolButton;
@@ -1238,6 +1239,26 @@ public class SwingController extends ComponentAdapter
      *
      * @param btn button to assign
      */
+    public void setDeleteAllButton(final JButton btn) {
+        deleteAllAnnotationsButton = btn;
+        btn.addActionListener(e -> {
+            documentViewController.getDocumentViewModel().getPageComponents().forEach(pvc -> {
+                final List<AbstractAnnotationComponent> comps = ((PageViewComponentImpl) pvc).getAnnotationComponents();
+                if (comps != null) {
+                    final Collection<AnnotationComponent> toDelete = comps.stream().filter(comp -> comp instanceof MarkupAnnotationComponent
+                            && ((MarkupAnnotation) comp.getAnnotation()).isCurrentUserOwner()).collect(Collectors.toSet());
+                    documentViewController.deleteAnnotations(toDelete);
+                    reflectUndoCommands();
+                }
+            });
+        });
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param btn button to assign
+     */
     public void setLinkAnnotationPropertiesToolButton(JToggleButton btn) {
         linkAnnotationPropertiesToolButton = btn;
         btn.addItemListener(this);
@@ -1703,6 +1724,7 @@ public class SwingController extends ComponentAdapter
         setEnabled(zoomDynamicToolButton, opened && !pdfCollection);
         setEnabled(textSelectToolButton, opened && canExtract && !pdfCollection);
         setEnabled(selectToolButton, opened && canModify && !pdfCollection);
+        setEnabled(deleteAllAnnotationsButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(highlightAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(redactionAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(strikeOutAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);

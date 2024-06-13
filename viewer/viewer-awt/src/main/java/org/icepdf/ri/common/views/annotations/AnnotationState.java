@@ -62,7 +62,8 @@ public class AnnotationState implements Memento {
         this.annotationComponent = requireNonNull(annotationComponent);
         this.operation = requireNonNull(operation);
         this.userSpaceRectangle = annotationComponent.getAnnotation().getUserSpaceRectangle();
-        this.popupState = annotationComponent instanceof MarkupAnnotationComponent ? new PopupState(((MarkupAnnotationComponent) annotationComponent).getPopupAnnotationComponent()) : null;
+        this.popupState = annotationComponent instanceof MarkupAnnotationComponent ?
+                new PopupState(((MarkupAnnotationComponent) annotationComponent).getPopupAnnotationComponent()) : null;
 
     }
 
