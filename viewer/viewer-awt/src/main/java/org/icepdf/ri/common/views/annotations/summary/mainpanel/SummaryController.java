@@ -51,6 +51,7 @@ public class SummaryController implements MutableDocument {
             Logger.getLogger(SummaryController.class.toString());
 
     private static final ImportExportHandler DEFAULT_IMPORT_EXPORT_HANDLER = new NoOpImportExportHandler();
+    private static final DragDropColorList.ColorLabel DEFAULT_COLOR_LABEL = new DragDropColorList.ColorLabel(Color.WHITE, "default");
 
     private final Frame frame;
     private final Controller controller;
@@ -114,7 +115,7 @@ public class SummaryController implements MutableDocument {
         return DEFAULT_IMPORT_EXPORT_HANDLER;
     }
 
-    public boolean canSave(){
+    public boolean canSave() {
         return getImportExportHandler() != DEFAULT_IMPORT_EXPORT_HANDLER;
     }
 
@@ -348,7 +349,7 @@ public class SummaryController implements MutableDocument {
 
     public String getLabelFor(final Color c) {
         final DragDropColorList.ColorLabel colorLabel = getColorLabelFor(c);
-        return colorLabel != null ? colorLabel.getLabel() : null;
+        return colorLabel.getLabel();
     }
 
     /**
@@ -364,7 +365,7 @@ public class SummaryController implements MutableDocument {
                 return colorLabel;
             }
         }
-        return null;
+        return DEFAULT_COLOR_LABEL;
     }
 
     /**
@@ -380,12 +381,12 @@ public class SummaryController implements MutableDocument {
                 return colorLabel;
             }
         }
-        return null;
+        return DEFAULT_COLOR_LABEL;
     }
 
     public Color getColorFor(final String s) {
         final DragDropColorList.ColorLabel colorLabel = getColorLabelFor(s);
-        return colorLabel != null ? colorLabel.getColor() : null;
+        return colorLabel.getColor();
     }
 
     public DragAndLinkManager getDragAndLinkManager() {
@@ -460,7 +461,7 @@ public class SummaryController implements MutableDocument {
             if (colorLabels.isEmpty()) {
                 // just one big panel with all the named colors.
                 // Create a dummy colorLabel to avoid null checks everywhere
-                final DragDropColorList.ColorLabel label = new DragDropColorList.ColorLabel(Color.WHITE, "default");
+                final DragDropColorList.ColorLabel label = DEFAULT_COLOR_LABEL;
                 final ColorLabelPanel annotationColumnPanel = createColorLabelPanel(frame, label);
                 annotationNamedColorPanels.add(annotationColumnPanel);
                 for (int i = 0, max = document.getNumberOfPages(); i < max; i++) {
@@ -586,20 +587,14 @@ public class SummaryController implements MutableDocument {
             return annotationToColorPanel.get(annot.getPObjectReference());
         } else {
             final List<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
-            if (colorLabels.isEmpty() || annotationNamedColorPanels == null) {
-                if (annotationNamedColorPanels != null && !annotationNamedColorPanels.isEmpty()) {
-                    return annotationNamedColorPanels.get(0);
-                } else {
-                    return null;
-                }
-            } else {
+            if (!colorLabels.isEmpty() && annotationNamedColorPanels != null) {
                 for (final ColorLabelPanel annotationColumnPanel : annotationNamedColorPanels) {
                     if (annotationColumnPanel.getColorLabel().getColor().equals(annot.getColor())) {
                         return annotationColumnPanel;
                     }
                 }
-                return null;
             }
+            return getDefaultColorPanel();
         }
     }
 
@@ -620,13 +615,23 @@ public class SummaryController implements MutableDocument {
      * @return The colorpanel, or null
      */
     ColorLabelPanel getColorPanelFor(final Color color) {
-        final Color withoutAlpha = new Color(color.getRed(), color.getGreen(), color.getBlue());
-        for (final ColorLabelPanel p : annotationNamedColorPanels) {
-            if (p.getColorLabel().getColor().equals(withoutAlpha)) {
-                return p;
+        if (color != null) {
+            final Color withoutAlpha = new Color(color.getRed(), color.getGreen(), color.getBlue());
+            for (final ColorLabelPanel p : annotationNamedColorPanels) {
+                if (p.getColorLabel().getColor().equals(withoutAlpha)) {
+                    return p;
+                }
             }
         }
-        return null;
+        return getDefaultColorPanel();
+    }
+
+    private ColorLabelPanel getDefaultColorPanel() {
+        if (isSingleDefaultColor()) {
+            return annotationNamedColorPanels.get(0);
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -659,6 +664,10 @@ public class SummaryController implements MutableDocument {
         final List<Component> components = Arrays.stream(summaryPanel.getAnnotationsPanel().getComponents())
                 .filter(ColorLabelPanel.class::isInstance).collect(Collectors.toList());
         return idx >= 0 && idx < components.size() ? ((ColorLabelPanel) components.get(idx)).getColorLabel().getColor() : null;
+    }
+
+    public boolean isSingleDefaultColor() {
+        return annotationNamedColorPanels.size() == 1 && annotationNamedColorPanels.get(0).getColorLabel() == DEFAULT_COLOR_LABEL;
     }
 
     static void applySelectedValue(final JComboBox<ValueLabelItem> comboBox, final Object value) {

@@ -37,7 +37,6 @@ public class MenuFactoryHelper {
         this.draggablePanelController = draggablePanelController;
         this.messageBundle = controller.getMessageBundle();
         this.components = components;
-        assert !components.isEmpty();
         this.groupManager = summaryController.getGroupManager();
         this.uuid = UUID.randomUUID();
         canEdit = components.stream().allMatch(AnnotationSummaryComponent::canEdit);
@@ -52,19 +51,22 @@ public class MenuFactoryHelper {
         createGroupMenuItem.addActionListener(e -> {
             setManuallyChanged();
             groupManager.createGroup(draggablePanelController.getPanel().getSortedList(components.stream()
-                                    .map(c -> (Component) c).collect(Collectors.toList()), true)
-                            .stream().map(c -> (AnnotationSummaryComponent) c).collect(Collectors.toList()),
+                                    .map(Component.class::cast).collect(Collectors.toList()), true)
+                            .stream().map(AnnotationSummaryComponent.class::cast).collect(Collectors.toList()),
                     draggablePanelController.getPanel().getFirstPosForComponents(components.stream()
-                            .map(c -> (Component) c).collect(Collectors.toList())));
+                            .map(Component.class::cast).collect(Collectors.toList())));
         });
         return createGroupMenuItem;
     }
 
     JMenu getMoveInMenu() {
         final Map<Color, Set<String>> colorGroups = summaryController.getGroupManager().getGroupNames();
-        if (!colorGroups.isEmpty()) {
+        if (colorGroups.isEmpty()) {
+            return null;
+        } else {
             final JMenu moveInMenu = new JMenu(messageBundle.getString("viewer.summary.popup.group.movein"));
-            final AnnotationSummaryGroup parent = groupManager.getParentOf(components.iterator().next());
+            final AnnotationSummaryComponent firstComponent = components.iterator().next();
+            final AnnotationSummaryGroup parent = groupManager.getParentOf(firstComponent);
             final Map<Color, Set<String>> invalidNames = new HashMap<>();
             final Set<String> allSubnames = new HashSet<>();
             components.forEach(c -> {
@@ -75,35 +77,47 @@ public class MenuFactoryHelper {
                     invalidNames.put(c.getColor(), subnames);
                 }
             });
-            colorGroups.forEach((color, names) -> {
-                if (!color.equals(components.iterator().next().getColor()) && names.stream().anyMatch(allSubnames::contains)) {
-                    invalidNames.put(color, names);
-                }
-            });
-            colorGroups.forEach((color, names) -> {
-                final Set<String> subnames = invalidNames.getOrDefault(color, Collections.emptySet());
-                final List<String> groups = new ArrayList<>(names);
-                groups.sort(Comparator.naturalOrder());
-                final JMenu colorMenu = new JMenu(summaryController.getColorLabelFor(color).getLabel());
-                groups.forEach(name -> {
-                    if (!subnames.contains(name) && (parent == null || !parent.getName().equals(name))) {
-                        final JMenuItem moveTo = new JMenuItem(name);
-                        moveTo.addActionListener(e -> {
-                            setManuallyChanged();
-                            components.forEach(c -> groupManager.moveIntoGroup(c, color, name));
-                        });
-                        colorMenu.add(moveTo);
+            if (summaryController.isSingleDefaultColor()) {
+                final Set<String> groupNames = components.stream().filter(AnnotationSummaryGroup.class::isInstance).map(AnnotationSummaryGroup.class::cast).map(AnnotationSummaryGroup::getName).collect(Collectors.toSet());
+                colorGroups.values().stream().flatMap(Collection::stream).sorted().filter(s -> !groupNames.contains(s) && (parent == null || !parent.getName().equals(s))).forEach(n -> {
+                    final var item = new JMenuItem(n);
+                    item.addActionListener(e -> {
+                        setManuallyChanged();
+                        components.forEach(c -> groupManager.moveIntoGroup(c, summaryController.getAnnotationNamedColorPanels().get(0).getColorLabel().getColor(), n));
+                    });
+                    moveInMenu.add(item);
+                });
+            } else {
+                colorGroups.forEach((color, names) -> {
+                    if (!color.equals(firstComponent.getColor()) && names.stream().anyMatch(allSubnames::contains)) {
+                        invalidNames.put(color, names);
                     }
                 });
-                if (!canEdit && !components.iterator().next().getColor().equals(color)) {
-                    colorMenu.setEnabled(false);
-                }
-                if (colorMenu.getMenuComponentCount() > 0) {
-                    moveInMenu.add(colorMenu);
-                }
-            });
+                colorGroups.forEach((color, names) -> {
+                    final Set<String> subnames = invalidNames.getOrDefault(color, Collections.emptySet());
+                    final List<String> groups = new ArrayList<>(names);
+                    groups.sort(Comparator.naturalOrder());
+                    final JMenu colorMenu = new JMenu(summaryController.getColorLabelFor(color).getLabel());
+                    groups.forEach(name -> {
+                        if (!subnames.contains(name) && (parent == null || !parent.getName().equals(name))) {
+                            final JMenuItem moveTo = new JMenuItem(name);
+                            moveTo.addActionListener(e -> {
+                                setManuallyChanged();
+                                components.forEach(c -> groupManager.moveIntoGroup(c, color, name));
+                            });
+                            colorMenu.add(moveTo);
+                        }
+                    });
+                    if (!canEdit && !firstComponent.getColor().equals(color)) {
+                        colorMenu.setEnabled(false);
+                    }
+                    if (colorMenu.getMenuComponentCount() > 0) {
+                        moveInMenu.add(colorMenu);
+                    }
+                });
+            }
             return moveInMenu.getMenuComponentCount() > 0 ? moveInMenu : null;
-        } else return null;
+        }
     }
 
     JMenuItem getMoveOutMenuItem() {
@@ -173,6 +187,9 @@ public class MenuFactoryHelper {
     }
 
     JMenu getLinkWithMenu() {
+        if (summaryController.isSingleDefaultColor()) {
+            return null;
+        }
         final DragAndLinkManager dragAndLinkManager = summaryController.getDragAndLinkManager();
         final JMenu linkMenu = new JMenu(messageBundle.getString("viewer.summary.popup.link.single"));
         final AnnotationSummaryComponent component = components.iterator().next();
@@ -205,6 +222,9 @@ public class MenuFactoryHelper {
     }
 
     JMenu getLinkAllWithMenu(final int selectedIdx) {
+        if (summaryController.isSingleDefaultColor()) {
+            return null;
+        }
         final DragAndLinkManager dragAndLinkManager = summaryController.getDragAndLinkManager();
         final JMenu linkMenu = new JMenu(messageBundle.getString("viewer.summary.popup.link.all"));
         final AnnotationSummaryComponent component = new ArrayList<>(components).get(selectedIdx);

@@ -10,10 +10,18 @@ import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-import java.util.*;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Represents a group of AnnotationSummaryComponent
@@ -32,8 +40,8 @@ public class AnnotationSummaryGroup extends MoveableComponentsPanel implements A
     public AnnotationSummaryGroup(final Collection<AnnotationSummaryComponent> components, final String name, final SummaryController summaryController) {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         this.components = new ArrayList<>(components);
-        this.name = name;
-        this.summaryController = summaryController;
+        this.name = requireNonNull(name);
+        this.summaryController = requireNonNull(summaryController);
         this.id = UUID.randomUUID();
         setRequestFocusEnabled(true);
         setFocusable(true);
@@ -43,7 +51,9 @@ public class AnnotationSummaryGroup extends MoveableComponentsPanel implements A
     }
 
     public Color getColor() {
-        if (!components.isEmpty()) {
+        if (summaryController.isSingleDefaultColor()) {
+            color = summaryController.getAnnotationNamedColorPanels().get(0).getColorLabel().getColor();
+        } else if (!components.isEmpty()) {
             color = components.get(0).getColor();
         }
         return color;

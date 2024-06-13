@@ -112,25 +112,27 @@ public class GroupManager {
      * @param name       The name of the group
      */
     public AnnotationSummaryGroup createGroup(final Collection<AnnotationSummaryComponent> components, final int y, final String name) {
-        if (name != null) {
+        if (name == null) {
+            return null;
+        } else {
             controller.setHasManuallyChanged();
             controller.getDragAndLinkManager().unlinkAll(components, false);
             final AnnotationSummaryGroup group = new AnnotationSummaryGroup(components, name, controller);
             final Map<String, AnnotationSummaryGroup> colorGroups = namedGroups.getOrDefault(group.getColor(), new HashMap<>());
             colorGroups.put(name, group);
             namedGroups.put(group.getColor(), colorGroups);
-            components.stream().filter(c -> c instanceof AnnotationSummaryBox).flatMap(c ->
+            components.stream().filter(AnnotationSummaryBox.class::isInstance).flatMap(c ->
                     c.getAnnotations().stream()).forEach(a -> annotationGroups.put(a.getPObjectReference(), group));
             final AnnotationSummaryGroup oldParent = groups.get(components.iterator().next());
             components.forEach(c -> groups.put(c, group));
-            if (oldParent != null) {
-                groups.put(group, oldParent);
-                oldParent.addComponent(group);
-            } else {
+            if (oldParent == null) {
                 final ColorLabelPanel panel = controller.getColorPanelFor(group);
                 if (panel != null) {
                     panel.addGroup(group, y);
                 }
+            } else {
+                groups.put(group, oldParent);
+                oldParent.addComponent(group);
             }
             components.forEach(c -> {
                 if (oldParent != null) {
@@ -139,8 +141,6 @@ public class GroupManager {
             });
             controller.refreshPanelLayout();
             return group;
-        } else {
-            return null;
         }
     }
 
@@ -302,7 +302,7 @@ public class GroupManager {
         final AnnotationSummaryGroup oldGroup = groups.remove(c);
         final AnnotationSummaryGroup group = namedGroups.get(color).get(name);
         controller.getDragAndLinkManager().unlinkComponent(c, false);
-        if (!c.getColor().equals(group.getColor())) {
+        if (!controller.isSingleDefaultColor() && !c.getColor().equals(group.getColor())) {
             c.moveTo(group.getColor(), true);
         }
         groups.put(c, group);
