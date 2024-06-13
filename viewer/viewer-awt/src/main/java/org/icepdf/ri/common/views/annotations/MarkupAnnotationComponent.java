@@ -64,7 +64,7 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
                         "org.icepdf.core.annotations.interactive.popup.enabled", true);
     }
 
-    // Used to keep a reference to the popupAnnotationComponent while the annotation is deleted, in case of an undo
+    //Used to keep a reference to the popupAnnotationComponent while the annotation is deleted, in case of an undo
     private PopupAnnotationComponent popupAnnotationComponent;
 
     public MarkupAnnotationComponent(T annotation,
