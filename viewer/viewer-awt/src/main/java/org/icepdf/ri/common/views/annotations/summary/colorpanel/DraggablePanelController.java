@@ -16,8 +16,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
-import java.util.*;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -362,54 +368,46 @@ public class DraggablePanelController {
         }
     }
 
-    public void moveComponent(final Component dragComponent, final boolean snap) {
-        if (dragComponent != null) {
-            final int padding = 10;
+    private void moveComponent(final Component draggedComponent, final boolean snap) {
+        if (draggedComponent != null) {
             panel.sortComponents();
-            final Component[] comps = panel.getComponents();
-            final int draggedIndex = findComponentAt(comps, dragComponent);
-            final Rectangle dragBounds = dragComponent.getBounds();
-            Component comp;
-            // adjust for any overlap
-            for (int i = 0; i < comps.length; i++) {
-                comp = comps[i];
-                if (i == draggedIndex) {
-                    continue;
-                }
-                if (comp.getBounds().contains(dragBounds) && comp instanceof AnnotationSummaryGroup) {
-                    summaryController.getGroupManager().moveIntoGroup((AnnotationSummaryComponent) dragComponent,
-                            ((AnnotationSummaryGroup) comp).getColor(), comp.getName());
-                    return;
-                } else if (comp.getBounds().intersects(dragBounds)) {
-                    // over top but just below the top so we shift it back down.
-                    if (comp.getY() < dragBounds.y) {
-                        dragComponent.setLocation(dragBounds.x, comp.getY() + comp.getHeight() + padding);
-                        moveComponent(dragComponent, snap);
-                    } else {
-                        comp.setLocation(dragBounds.x, dragComponent.getY() + dragComponent.getHeight() + padding);
-                        moveComponent(comp, snap);
-                    }
-                }
-            }
-
-            if (draggedIndex == 0) {
-                // make sure the component y > padding
-                if (dragComponent.getY() < padding) {
-                    dragComponent.setLocation(dragComponent.getX(), padding);
-                    moveComponent(dragComponent, snap);
-                }
-            }
-            if (draggedIndex >= 1) {
-                comp = comps[draggedIndex - 1];
-                final int offset = dragComponent.getY() - (comp.getY() + comp.getHeight());
-                if (offset < padding) {
-                    dragComponent.setLocation(dragComponent.getX(), dragComponent.getY() + (padding - offset));
-                    moveComponent(dragComponent, snap);
-                }
-            }
-            panel.revalidate();
-            ((AnnotationSummaryComponent) dragComponent).fireComponentMoved(snap, true, UUID.randomUUID());
+            innerMove(draggedComponent, snap);
         }
+    }
+
+    private void innerMove(final Component draggedComponent, final boolean snap) {
+        final int padding = 10;
+        final Component[] comps = panel.getComponents();
+        final int draggedIndex = findComponentAt(comps, draggedComponent);
+        final Rectangle dragBounds = draggedComponent.getBounds();
+        final Collection<AnnotationSummaryComponent> moved = new ArrayList<>(comps.length);
+        if (draggedIndex == 0 && dragBounds.getY() < padding) {
+            draggedComponent.setLocation(draggedComponent.getX(), padding);
+        } else if (draggedIndex > 0) {
+            final Component previousComponent = comps[draggedIndex - 1];
+            if (previousComponent instanceof AnnotationSummaryGroup && previousComponent.getBounds().contains(dragBounds)) {
+                summaryController.getGroupManager().moveIntoGroup((AnnotationSummaryComponent) draggedComponent,
+                        ((AnnotationSummaryGroup) previousComponent).getColor(), previousComponent.getName());
+            } else if (previousComponent.getBounds().intersects(dragBounds)) {
+                draggedComponent.setLocation(dragBounds.x, previousComponent.getY() + previousComponent.getHeight() + padding);
+                moved.add((AnnotationSummaryComponent) draggedComponent);
+            }
+        }
+
+        for (int i = draggedIndex + 1; i < comps.length; i++) {
+            final Component currentComponent = comps[i];
+            for (int j = draggedIndex; j < i; ++j) {
+                final Component precedingComponent = comps[j];
+                if (currentComponent.getBounds().intersects(precedingComponent.getBounds())) {
+                    final Component previousComponent = comps[i - 1];
+                    currentComponent.setLocation(previousComponent.getX(), previousComponent.getY() + previousComponent.getHeight() + padding);
+                    moved.add((AnnotationSummaryComponent) currentComponent);
+                }
+            }
+        }
+
+        panel.revalidate();
+        moved.forEach(c -> c.fireComponentMoved(snap, true, UUID.randomUUID()));
     }
 
     private int findComponentAt(final Component[] comps, final Component dragComponent) {
@@ -441,10 +439,12 @@ public class DraggablePanelController {
         final Component child = c.getComponentAt(p);
         if (child instanceof AnnotationSummaryComponent) {
             final Point newP = SwingUtilities.convertPoint(c, p, child);
-            if (child != c) {
+            if (child == c) {
+                return (AnnotationSummaryComponent) child;
+            } else {
                 final AnnotationSummaryComponent deepest = getDeepestComponentAt(child, newP);
                 return deepest == null ? (AnnotationSummaryComponent) child : deepest;
-            } else return (AnnotationSummaryComponent) child;
+            }
         } else if (c instanceof AnnotationSummaryComponent) {
             return (AnnotationSummaryComponent) c;
         } else return null;
@@ -463,17 +463,19 @@ public class DraggablePanelController {
         final Component child = c.getComponentAt(p);
         if (child instanceof AnnotationSummaryComponent) {
             //Sometimes StackOverflow for some reason
-            if (!list.contains(child)) {
+            if (list.contains(child)) {
+                return list;
+            } else {
                 list.add((AnnotationSummaryComponent) child);
                 final Point newP = SwingUtilities.convertPoint(c, p, child);
                 return getAllComponentsAt(child, newP, list);
-            } else return list;
+            }
         } else return list;
     }
 
     public AnnotationSummaryComponent findComponentFor(final Predicate<AnnotationSummaryBox> filter) {
         final List<AnnotationSummaryComponent> components = Arrays.stream(panel.getComponents())
-                .map(c -> (AnnotationSummaryComponent) c).collect(Collectors.toList());
+                .map(AnnotationSummaryComponent.class::cast).collect(Collectors.toList());
         final List<AnnotationSummaryComponent> found = components.stream().map(c -> {
             if (c instanceof AnnotationSummaryBox) {
                 return filter.test((AnnotationSummaryBox) c) ? c : null;

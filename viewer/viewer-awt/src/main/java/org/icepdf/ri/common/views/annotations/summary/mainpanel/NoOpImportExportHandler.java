@@ -34,6 +34,6 @@ public class NoOpImportExportHandler implements ImportExportHandler {
 
     @Override
     public String getFileExtension() {
-        return "";
+        return "empty";
     }
 }

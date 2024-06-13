@@ -439,16 +439,18 @@ public class DragAndLinkManager {
             colorToComps.put(c.getColor(), colorComponents);
             if (snap) {
                 final ColorLabelPanel panel = controller.getColorPanelFor(c);
-                for (final Map.Entry<Color, Set<Component>> entry : colorToComps.entrySet()) {
-                    if (!entry.getKey().equals(c.getColor())) {
-                        for (final Component component : entry.getValue()) {
-                            final int compY = component.getY();
-                            final int snapHeight = 30;
-                            if (!linkedComponents.getOrDefault(c, new HashSet<>()).contains(component)
-                                    && y != compY && y > compY - snapHeight && y < compY + snapHeight) {
-                                panel.getDraggableAnnotationPanel().moveComponentToY(cComp, compY, uuid);
-                                addRelation(c, (AnnotationSummaryComponent) component, potentialLinks);
-                                break;
+                if (panel != null) {
+                    for (final Map.Entry<Color, Set<Component>> entry : colorToComps.entrySet()) {
+                        if (!entry.getKey().equals(c.getColor())) {
+                            for (final Component component : entry.getValue()) {
+                                final int compY = component.getY();
+                                final int snapHeight = 30;
+                                if (!linkedComponents.getOrDefault(c, new HashSet<>()).contains(component)
+                                        && y != compY && y > compY - snapHeight && y < compY + snapHeight) {
+                                    panel.getDraggableAnnotationPanel().moveComponentToY(cComp, compY, uuid);
+                                    addRelation(c, (AnnotationSummaryComponent) component, potentialLinks);
+                                    break;
+                                }
                             }
                         }
                     }

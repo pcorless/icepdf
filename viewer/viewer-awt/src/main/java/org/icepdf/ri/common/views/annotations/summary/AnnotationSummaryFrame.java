@@ -46,7 +46,7 @@ public class AnnotationSummaryFrame extends JFrame implements MutableDocument {
     }
 
     public void saveChanges() {
-        if (annotationSummaryPanel.getController().hasChanged()) {
+        if (annotationSummaryPanel.getController().hasChanged() && annotationSummaryPanel.getController().canSave()) {
             final MessageFormat formatter = new MessageFormat(
                     messageBundle.getString("viewer.summary.dialog.saveOnClose.noUpdates.msg").replace("'", "''"));
             final String dialogMessage = formatter.format(new Object[]{controller.getDocument().getDocumentOrigin()});

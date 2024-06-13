@@ -22,7 +22,11 @@ import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
 import org.icepdf.core.util.SystemProperties;
-import org.icepdf.ri.common.views.*;
+import org.icepdf.ri.common.views.AbstractPageViewComponent;
+import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.Controller;
+import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.PageViewComponentImpl;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
@@ -41,7 +45,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.UUID;
 import java.util.logging.Level;
 
 
@@ -192,11 +201,14 @@ public class AnnotationSummaryBox extends PopupAnnotationComponent implements Fo
         }
     }
 
+    @Override
     public Color getColor() {
-        if (getAnnotationComponent() != null && getAnnotationComponent().getAnnotation() != null) {
-            return getAnnotationComponent().getAnnotation().getColor();
-        } else {
+        if (getAnnotationComponent() == null ||
+                getAnnotationComponent().getAnnotation() == null ||
+                getAnnotationComponent().getAnnotation().getColor() == null) {
             return popupBackgroundColor;
+        } else {
+            return getAnnotationComponent().getAnnotation().getColor();
         }
     }
 

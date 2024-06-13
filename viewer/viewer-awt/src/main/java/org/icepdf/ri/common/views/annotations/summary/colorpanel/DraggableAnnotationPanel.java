@@ -24,8 +24,12 @@ import org.icepdf.ri.common.views.annotations.summary.mainpanel.SummaryControlle
 
 import java.awt.*;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
-import java.util.*;
+import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
@@ -61,7 +65,7 @@ public class DraggableAnnotationPanel extends MoveableComponentsPanel {
 
     public boolean contains(final MarkupAnnotation annotation) {
         return Arrays.stream(getComponents())
-                .filter(c -> c instanceof AnnotationSummaryComponent)
+                .filter(AnnotationSummaryComponent.class::isInstance)
                 .flatMap(c -> ((AnnotationSummaryComponent) c).getAnnotations().stream())
                 .anyMatch(a -> a.getPObjectReference().equals(annotation.getPObjectReference()));
     }
@@ -72,10 +76,10 @@ public class DraggableAnnotationPanel extends MoveableComponentsPanel {
             panelController.setNeverDragged(false);
         }
         if (panelController.isNeverDragged()) {
-            if (pos != -1) {
-                super.add(c, pos);
-            } else {
+            if (pos == -1) {
                 super.add(c);
+            } else {
+                super.add(c, pos);
             }
         } else {
             if (pos != -1) {
@@ -100,7 +104,7 @@ public class DraggableAnnotationPanel extends MoveableComponentsPanel {
 
     public int getFirstPosForComponents(final Collection<Component> components) {
         final List<Component> sorted = getSortedList(components, true);
-        return sorted != null ? getPositionFor(sorted.get(0)) : -1;
+        return sorted == null ? -1 : getPositionFor(sorted.get(0));
     }
 
     public int getPositionFor(final Component c) {
@@ -211,24 +215,22 @@ public class DraggableAnnotationPanel extends MoveableComponentsPanel {
         final Component[] comps = getComponents();
         Arrays.sort(comps, new ComponentBoundsCompare());
         if (comps.length > 1) {
-            checkForOverlap(uuid, comps[0], Arrays.copyOfRange(comps, 1, comps.length));
+            checkForOverlap(uuid, comps, 1);
         }
     }
 
-    private static void checkForOverlap(final UUID uuid, final Component refComp, final Component[] components) {
-        if (components.length > 0) {
-            final Component curComp = components[0];
+    private static void checkForOverlap(final UUID uuid, final Component[] components, final int index) {
+        if (index < components.length) {
+            final Component refComp = components[index - 1];
+            final Component curComp = components[index];
             final Rectangle bounds = curComp.getBounds();
             if (refComp.getBounds().intersects(bounds) || refComp.getY() + refComp.getHeight() + 10 > curComp.getY()) {
                 // over top but just below the top so we shift it back down.
                 curComp.setLocation(bounds.x, refComp.getY() + refComp.getHeight() + 10);
                 ((AnnotationSummaryComponent) curComp).fireComponentMoved(false, true, uuid);
             }
-            if (components.length > 1) {
-                checkForOverlap(uuid, curComp, Arrays.copyOfRange(components, 1, components.length));
-            }
+            checkForOverlap(uuid, components, index + 1);
         }
-
     }
 
     public void compact(final UUID uuid) {

@@ -5064,7 +5064,7 @@ public class SwingController extends ComponentAdapter
                     "viewer.dialog.error.exception.msg",
                     message);
             SwingUtilities.invokeLater(doSwingWork);
-            logger.log(Level.FINE, "Error processing action event.", e);
+            logger.log(Level.SEVERE, "Error processing action event.", e);
         }
 
         if (!cancelSetFocus) {

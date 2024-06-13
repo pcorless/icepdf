@@ -70,7 +70,7 @@ public class AnnotationSummaryPanel extends JPanel {
 
     private static final int DEFAULT_FONT_SIZE_INDEX = 5;
 
-    private static final List<ValueLabelItem> fonts = Arrays.stream(GraphicsEnvironment.getLocalGraphicsEnvironment()
+    private static final List<ValueLabelItem> AVAILABLE_FONTS = Arrays.stream(GraphicsEnvironment.getLocalGraphicsEnvironment()
                     .getAvailableFontFamilyNames()).filter(f -> new Font(f, Font.PLAIN, 12).canDisplayUpTo("&èéàôö'%+<>ß") == -1)
             .sorted(Comparator.naturalOrder()).map(s -> new ValueLabelItem(s, s)).collect(Collectors.toList());
 
@@ -88,8 +88,10 @@ public class AnnotationSummaryPanel extends JPanel {
         // add key listeners for ctr, 0, -, = : reset, decrease and increase font size.
         addFontSizeBindings();
         addMouseWheelListener(e -> {
-            fontSizeBox.setSelectedIndex(Math.max(0, Math.min(fontSizeBox.getSelectedIndex() - e.getWheelRotation(),
-                    fontSizeBox.getItemCount() - 1)));
+            if (e.isControlDown()) {
+                fontSizeBox.setSelectedIndex(Math.max(0, Math.min(fontSizeBox.getSelectedIndex() - e.getWheelRotation(),
+                        fontSizeBox.getItemCount() - 1)));
+            }
         });
     }
 
@@ -166,7 +168,7 @@ public class AnnotationSummaryPanel extends JPanel {
             idx = Math.min(sizeValues.size() - 1, -(idx + 1));
         }
         fontSizeBox = new JComboBox<>(sizes);
-        fontNameBox = new JComboBox<>(fonts.toArray(new ValueLabelItem[0]));
+        fontNameBox = new JComboBox<>(AVAILABLE_FONTS.toArray(new ValueLabelItem[0]));
         final int size = propertiesManager.checkAndStoreIntProperty(
                 ViewerPropertiesManager.PROPERTY_ANNOTATION_SUMMARY_FONT_SIZE, sizeValues.get(idx));
         fontNameBox.setRenderer(new FontFamilyBoxRenderer(new JLabel().getFont().getSize()));
@@ -214,6 +216,8 @@ public class AnnotationSummaryPanel extends JPanel {
         exportButton.addActionListener(this::exportPerformed);
         final JButton importButton = new JButton(messageBundle.getString("viewer.annotationSummary.import.button"));
         importButton.addActionListener(this::importPerformed);
+        final List<JButton> fileButtons = Arrays.asList(saveButton, exportButton, importButton);
+        fileButtons.forEach(b -> b.setVisible(controller.canSave()));
         addGB(statusToolbarPanel, saveButton, 6, 0, 1, 1);
         addGB(statusToolbarPanel, exportButton, 7, 0, 1, 1);
         addGB(statusToolbarPanel, importButton, 8, 0, 1, 1);
@@ -233,7 +237,7 @@ public class AnnotationSummaryPanel extends JPanel {
         add(statusToolbarPanel, BorderLayout.SOUTH);
 
         final ArrayList<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
-        final int numberOfPanels = colorLabels != null && !colorLabels.isEmpty() ? colorLabels.size() : 1;
+        final int numberOfPanels = colorLabels.isEmpty() ? 1 : colorLabels.size();
         constraints.weightx = 1.0 / (float) numberOfPanels;
         constraints.weighty = 1.0f;
         constraints.insets = new Insets(0, 5, 0, 0);
@@ -297,7 +301,7 @@ public class AnnotationSummaryPanel extends JPanel {
      * @param component The component
      * @param l         The label to add
      */
-    public void addLabel(final AnnotationSummaryComponent component, final SummaryController.LinkLabel l) {
+    public void addLabel(final AnnotationSummaryComponent component, final LinkLabel l) {
         final Component c = component.asComponent();
         final int x = computeX(c, l);
         final int y = computeY(c, l);
@@ -312,7 +316,7 @@ public class AnnotationSummaryPanel extends JPanel {
      * @param c The component
      * @param l The LinkLabel
      */
-    public void updateLabel(final Component c, final SummaryController.LinkLabel l) {
+    public void updateLabel(final Component c, final LinkLabel l) {
         final int x = computeX(c, l);
         final int y = computeY(c, l);
         final Point point = SwingUtilities.convertPoint(c.getParent(), x, y, annotationsPanel);
@@ -324,11 +328,11 @@ public class AnnotationSummaryPanel extends JPanel {
      *
      * @param l The LinkLabel to remove
      */
-    public void removeLabel(final SummaryController.LinkLabel l) {
+    public void removeLabel(final LinkLabel l) {
         annotationsPanel.remove(l);
     }
 
-    private int computeX(final Component c, final SummaryController.LinkLabel l) {
+    private int computeX(final Component c, final LinkLabel l) {
         final boolean left = l.isLeft();
         final boolean full = l.isFull();
         final ImageIcon image = l.getImageIcon();
@@ -337,7 +341,7 @@ public class AnnotationSummaryPanel extends JPanel {
                 (full ? image.getIconWidth() / 4 : image.getIconWidth() * 2 / 3);
     }
 
-    private int computeY(final Component c, final SummaryController.LinkLabel l) {
+    private int computeY(final Component c, final LinkLabel l) {
         final boolean bottom = l.isBottom();
         final ImageIcon image = l.getImageIcon();
         return bottom ? c.getY() + c.getHeight() - image.getIconHeight() : c.getY();

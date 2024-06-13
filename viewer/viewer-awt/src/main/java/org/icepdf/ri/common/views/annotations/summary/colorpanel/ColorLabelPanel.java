@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  *
  */
@@ -43,14 +45,12 @@ public class ColorLabelPanel extends JPanel {
 
     public ColorLabelPanel(final Frame frame, final DragDropColorList.ColorLabel colorLabel, final SummaryController summaryController) {
         this.controller = createColorPanelController();
-        this.colorLabel = colorLabel;
-        this.summaryController = summaryController;
+        this.colorLabel = requireNonNull(colorLabel);
+        this.summaryController = requireNonNull(summaryController);
 
         // setup the gui
         setLayout(new BorderLayout());
-        if (colorLabel != null) {
-            add(new JLabel("<html><h3>" + colorLabel.getLabel() + "</h3></html>", JLabel.CENTER), BorderLayout.NORTH);
-        }
+        add(new JLabel("<html><h3>" + colorLabel.getLabel() + "</h3></html>", JLabel.CENTER), BorderLayout.NORTH);
         draggableAnnotationPanel = createDraggableAnnotationPanel(frame);
         draggableAnnotationPanel.addMouseWheelListener(e -> draggableAnnotationPanel.getParent()
                 .dispatchEvent(SwingUtilities.convertMouseEvent(draggableAnnotationPanel, e, draggableAnnotationPanel.getParent())));
@@ -86,7 +86,9 @@ public class ColorLabelPanel extends JPanel {
 
     public AnnotationSummaryBox addAnnotation(final MarkupAnnotation markupAnnotation, final int y) {
         final PopupAnnotation popupAnnotation = markupAnnotation.getPopupAnnotation();
-        if (popupAnnotation != null) {
+        if (popupAnnotation == null) {
+            return null;
+        } else {
             final List<AbstractPageViewComponent> pageComponents =
                     summaryController.getController().getDocumentViewController().getDocumentViewModel().getPageComponents();
             final int pageIndex = markupAnnotation.getPageIndex();
@@ -96,17 +98,17 @@ public class ColorLabelPanel extends JPanel {
                 popupAnnotationComponent.setVisible(true);
                 popupAnnotationComponent.removeMouseListeners();
                 final AnnotationSummaryGroup parent = summaryController.getGroupManager().getParentOf(markupAnnotation);
-                if (parent != null) {
-                    parent.addComponent(popupAnnotationComponent);
-                } else {
+                if (parent == null) {
                     draggableAnnotationPanel.add(popupAnnotationComponent, y);
                     draggableAnnotationPanel.revalidate();
                     draggableAnnotationPanel.repaint();
+                } else {
+                    parent.addComponent(popupAnnotationComponent);
                 }
                 popupAnnotationComponent.fireComponentMoved(false, false, UUID.randomUUID());
                 return popupAnnotationComponent;
             } else return null;
-        } else return null;
+        }
     }
 
     protected AnnotationSummaryBox createSummaryBox(final PopupAnnotation popupAnnotation,
@@ -139,10 +141,10 @@ public class ColorLabelPanel extends JPanel {
     }
 
     public AnnotationSummaryBox addAnnotation(final MarkupAnnotation markupAnnotation) {
-        if (!markupAnnotation.isInReplyTo()) {
-            return addAnnotation(markupAnnotation, -1);
-        } else {
+        if (markupAnnotation.isInReplyTo()) {
             return null;
+        } else {
+            return addAnnotation(markupAnnotation, -1);
         }
     }
 

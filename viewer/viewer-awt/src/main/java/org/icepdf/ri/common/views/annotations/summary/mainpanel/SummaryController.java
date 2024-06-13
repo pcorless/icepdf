@@ -15,7 +15,6 @@ import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryComponent
 import org.icepdf.ri.common.views.annotations.summary.colorpanel.ColorLabelPanel;
 import org.icepdf.ri.common.views.annotations.summary.colorpanel.DraggableAnnotationPanel;
 import org.icepdf.ri.common.widgets.DragDropColorList;
-import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.Pair;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 
@@ -23,7 +22,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -31,12 +29,11 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.List;
@@ -53,7 +50,7 @@ public class SummaryController implements MutableDocument {
     private static final Logger LOG =
             Logger.getLogger(SummaryController.class.toString());
 
-    private static final ImportExportHandler IMPORT_EXPORT_HANDLER = new NoOpImportExportHandler();
+    private static final ImportExportHandler DEFAULT_IMPORT_EXPORT_HANDLER = new NoOpImportExportHandler();
 
     private final Frame frame;
     private final Controller controller;
@@ -61,7 +58,7 @@ public class SummaryController implements MutableDocument {
 
     private final AnnotationSummaryPanel summaryPanel;
 
-    protected ArrayList<ColorLabelPanel> annotationNamedColorPanels;
+    protected List<ColorLabelPanel> annotationNamedColorPanels;
     private int fontSize;
 
     private final Map<Reference, AnnotationSummaryBox> annotationToBox;
@@ -70,8 +67,6 @@ public class SummaryController implements MutableDocument {
     private final GroupManager groupManager;
 
     private final MouseListener mouseListener;
-    private final ComponentListener componentListener;
-    private final PropertyChangeListener propertyListener;
 
     private final Map<AnnotationSummaryComponent, LinkLabel> directLinks;
     private final Map<AnnotationSummaryComponent, LinkLabel> leftLinks;
@@ -101,12 +96,10 @@ public class SummaryController implements MutableDocument {
         this.dragManager = createDragAndLinkManager();
         this.groupManager = createGroupManager();
         this.mouseListener = new SummaryMouseListener();
-        this.componentListener = new SummaryComponentListener();
-        this.propertyListener = new PropertiesListener();
         this.fontSize = new JLabel().getFont().getSize();
         LinkLabel.rescaleAll(192 / fontSize);
-        summaryPanel.addComponentListener(componentListener);
-        controller.getDocumentViewController().getPropertyChangeSupport().addPropertyChangeListener(propertyListener);
+        summaryPanel.addComponentListener(new SummaryComponentListener());
+        controller.getDocumentViewController().getPropertyChangeSupport().addPropertyChangeListener(new PropertiesListener());
     }
 
     protected DragAndLinkManager createDragAndLinkManager() {
@@ -118,7 +111,11 @@ public class SummaryController implements MutableDocument {
     }
 
     protected ImportExportHandler getImportExportHandler() {
-        return IMPORT_EXPORT_HANDLER;
+        return DEFAULT_IMPORT_EXPORT_HANDLER;
+    }
+
+    public boolean canSave(){
+        return getImportExportHandler() != DEFAULT_IMPORT_EXPORT_HANDLER;
     }
 
     public Frame getFrame() {
@@ -419,7 +416,7 @@ public class SummaryController implements MutableDocument {
         xCoordinates.clear();
         yCoordinates.clear();
         if (summaryPanel.getAnnotationsPanel() != null) {
-            Arrays.stream(summaryPanel.getAnnotationsPanel().getComponents()).filter(c -> c instanceof ColorLabelPanel).forEach(clp -> {
+            Arrays.stream(summaryPanel.getAnnotationsPanel().getComponents()).filter(ColorLabelPanel.class::isInstance).forEach(clp -> {
                 final DraggableAnnotationPanel dap = ((ColorLabelPanel) clp).getDraggableAnnotationPanel();
                 final List<Integer> yCoords = new ArrayList<>();
                 Arrays.stream(dap.getComponents()).forEach(c -> {
@@ -451,8 +448,8 @@ public class SummaryController implements MutableDocument {
         if (controller.getDocument() != null) {
             // get the named colour and build out the draggable panels.
             final Document document = controller.getDocument();
-            final ArrayList<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
-            final int numberOfPanels = colorLabels != null ? colorLabels.size() : 1;
+            final List<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
+            final int numberOfPanels = colorLabels.size();
             if (annotationNamedColorPanels != null) annotationNamedColorPanels.clear();
             annotationNamedColorPanels = new ArrayList<>(numberOfPanels);
             annotationToColorPanel.clear();
@@ -460,7 +457,28 @@ public class SummaryController implements MutableDocument {
 
             groupManager.refreshGroups();
 
-            if (colorLabels != null && !colorLabels.isEmpty()) {
+            if (colorLabels.isEmpty()) {
+                // just one big panel with all the named colors.
+                // Create a dummy colorLabel to avoid null checks everywhere
+                final DragDropColorList.ColorLabel label = new DragDropColorList.ColorLabel(Color.WHITE, "default");
+                final ColorLabelPanel annotationColumnPanel = createColorLabelPanel(frame, label);
+                annotationNamedColorPanels.add(annotationColumnPanel);
+                for (int i = 0, max = document.getNumberOfPages(); i < max; i++) {
+                    final List<Annotation> annotations = document.getPageTree().getPage(i).getAnnotations();
+                    if (annotations != null) {
+                        final List<Annotation> copy = List.copyOf(annotations);
+                        for (final Annotation annotation : copy) {
+                            if (annotation instanceof MarkupAnnotation) {
+                                annotationToColorPanel.put(annotation.getPObjectReference(), annotationColumnPanel);
+                                final AnnotationSummaryBox box = annotationColumnPanel.addAnnotation((MarkupAnnotation) annotation);
+                                if (box != null) {
+                                    annotationToBox.put(annotation.getPObjectReference(), box);
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
                 // build a panel for each color
                 for (final DragDropColorList.ColorLabel colorLabel : colorLabels) {
                     final ColorLabelPanel annotationColumnPanel = createColorLabelPanel(frame, colorLabel);
@@ -482,25 +500,6 @@ public class SummaryController implements MutableDocument {
                     }
                     groupManager.addGroupsToPanel(annotationColumnPanel);
                 }
-                // check to make sure a label has
-            } else {
-                // other wise just one big panel with all the named colors.
-                final ColorLabelPanel annotationColumnPanel = createColorLabelPanel(frame, null);
-                annotationNamedColorPanels.add(annotationColumnPanel);
-                for (int i = 0, max = document.getNumberOfPages(); i < max; i++) {
-                    final List<Annotation> annotations = document.getPageTree().getPage(i).getAnnotations();
-                    if (annotations != null) {
-                        for (final Annotation annotation : annotations) {
-                            if (annotation instanceof MarkupAnnotation) {
-                                annotationToColorPanel.put(annotation.getPObjectReference(), annotationColumnPanel);
-                                final AnnotationSummaryBox box = annotationColumnPanel.addAnnotation((MarkupAnnotation) annotation);
-                                if (box != null) {
-                                    annotationToBox.put(annotation.getPObjectReference(), box);
-                                }
-                            }
-                        }
-                    }
-                }
             }
         }
         refreshPanelLayout();
@@ -521,49 +520,57 @@ public class SummaryController implements MutableDocument {
     }
 
     public OutputStream getDefaultSummaryOutputStream() {
-        final File file = getDefaultSummaryFile();
-        if (file != null) {
+        final String file = getDefaultSummaryFile();
+        if (file == null) {
+            return null;
+        } else {
             try {
-                return new FileOutputStream(file);
-            } catch (final FileNotFoundException e) {
+                return Files.newOutputStream(Paths.get(file));
+            } catch (final IOException e) {
+                LOG.log(Level.SEVERE, "Error getting output to " + file, e);
                 return null;
             }
-        } else {
-            return null;
         }
     }
 
     public InputStream getDefaultSummaryInputStream() {
-        final File file = getDefaultSummaryFile();
-        if (file != null) {
-            try {
-                return new BufferedInputStream(Files.newInputStream(Paths.get(file.getAbsolutePath())));
-            } catch (final FileNotFoundException e) {
-                return null;
-            } catch (final IOException e) {
-                LOG.log(Level.SEVERE, "Error getting " + file, e);
+        final String file = getDefaultSummaryFile();
+        if (file == null) {
+            return null;
+        } else {
+            final Path path = Paths.get(file);
+            if (Files.exists(path)) {
+                try {
+                    return new BufferedInputStream(Files.newInputStream(path));
+                } catch (final IOException e) {
+                    LOG.log(Level.SEVERE, "Error getting input from " + file, e);
+                    return null;
+                }
+            } else {
                 return null;
             }
-        } else {
-            return null;
         }
     }
 
     public void deleteSummaryFile() {
-        final File file = getDefaultSummaryFile();
-        if (file != null && file.exists()) {
-            file.delete();
+        final String file = getDefaultSummaryFile();
+        if (file != null) {
+            try {
+                Files.deleteIfExists(Paths.get(file));
+            } catch (final IOException e) {
+                LOG.log(Level.SEVERE, "Error deleting " + file, e);
+            }
         }
     }
 
-    public File getDefaultSummaryFile() {
-        if (controller.getDocument() != null) {
+    public String getDefaultSummaryFile() {
+        if (controller.getDocument() == null) {
+            return null;
+        } else {
             final String location = controller.getDocument().getDocumentLocation();
             final String folder = location.substring(0, location.lastIndexOf('/'));
             final String filename = location.substring(location.lastIndexOf('/') + 1, location.lastIndexOf('.'));
-            return new File(folder + '/' + filename + '.' + IMPORT_EXPORT_HANDLER.getFileExtension());
-        } else {
-            return null;
+            return folder + File.separator + filename + '.' + DEFAULT_IMPORT_EXPORT_HANDLER.getFileExtension();
         }
     }
 
@@ -578,17 +585,19 @@ public class SummaryController implements MutableDocument {
         if (cached && annotationToColorPanel.containsKey(annot.getPObjectReference())) {
             return annotationToColorPanel.get(annot.getPObjectReference());
         } else {
-            final ArrayList<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
-            if (colorLabels != null && !colorLabels.isEmpty() && annotationNamedColorPanels != null) {
+            final List<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
+            if (colorLabels.isEmpty() || annotationNamedColorPanels == null) {
+                if (annotationNamedColorPanels != null && !annotationNamedColorPanels.isEmpty()) {
+                    return annotationNamedColorPanels.get(0);
+                } else {
+                    return null;
+                }
+            } else {
                 for (final ColorLabelPanel annotationColumnPanel : annotationNamedColorPanels) {
                     if (annotationColumnPanel.getColorLabel().getColor().equals(annot.getColor())) {
                         return annotationColumnPanel;
                     }
                 }
-                return null;
-            } else if (annotationNamedColorPanels != null && !annotationNamedColorPanels.isEmpty()) {
-                return annotationNamedColorPanels.get(0);
-            } else {
                 return null;
             }
         }
@@ -642,13 +651,13 @@ public class SummaryController implements MutableDocument {
 
     private int idxOf(final DraggableAnnotationPanel panel) {
         final List<Component> components = Arrays.asList(summaryPanel.getAnnotationsPanel().getComponents());
-        return components.stream().filter(c -> c instanceof ColorLabelPanel).map(c -> ((ColorLabelPanel) c)
+        return components.stream().filter(ColorLabelPanel.class::isInstance).map(c -> ((ColorLabelPanel) c)
                 .getDraggableAnnotationPanel()).collect(Collectors.toList()).indexOf(panel);
     }
 
     private Color getColorForIdx(final int idx) {
-        final List<Component> components = Arrays.stream(summaryPanel.getAnnotationsPanel().getComponents()).filter(c ->
-                c instanceof ColorLabelPanel).collect(Collectors.toList());
+        final List<Component> components = Arrays.stream(summaryPanel.getAnnotationsPanel().getComponents())
+                .filter(ColorLabelPanel.class::isInstance).collect(Collectors.toList());
         return idx >= 0 && idx < components.size() ? ((ColorLabelPanel) components.get(idx)).getColorLabel().getColor() : null;
     }
 
@@ -672,7 +681,7 @@ public class SummaryController implements MutableDocument {
         return controller;
     }
 
-    public ArrayList<ColorLabelPanel> getAnnotationNamedColorPanels() {
+    public List<ColorLabelPanel> getAnnotationNamedColorPanels() {
         return annotationNamedColorPanels;
     }
 
@@ -798,10 +807,10 @@ public class SummaryController implements MutableDocument {
     }
 
     private boolean isBottom(final AnnotationSummaryComponent key, final AnnotationSummaryComponent value, final boolean full, final boolean left) {
-        return (full && ((rightLinks.containsKey(key) && !rightLinks.get(key).isBottom) ||
-                (leftLinks.containsKey(value) && !leftLinks.get(value).isBottom))) ||
-                (!full && left && ((directLinks.containsKey(key) && !directLinks.get(key).isBottom) ||
-                        (rightLinks.containsKey(value) && !rightLinks.get(value).isBottom)));
+        return (full && ((rightLinks.containsKey(key) && !rightLinks.get(key).isBottom()) ||
+                (leftLinks.containsKey(value) && !leftLinks.get(value).isBottom()))) ||
+                (!full && left && ((directLinks.containsKey(key) && !directLinks.get(key).isBottom()) ||
+                        (rightLinks.containsKey(value) && !rightLinks.get(value).isBottom())));
     }
 
     /**
@@ -874,10 +883,14 @@ public class SummaryController implements MutableDocument {
                 if (xIdx > 0 && xIdx < xCoordinates.size() && xIdx % 2 == 0) {
                     final Color color1 = getColorForIdx(xIdx / 2 - 1);
                     final AnnotationSummaryComponent comp1 = getComponentForY(color1, y);
-                    if (comp1 != null) {
+                    if (comp1 == null) {
+                        removeLabel();
+                    } else {
                         final Color color2 = getColorForIdx(xIdx / 2);
                         final AnnotationSummaryComponent comp2 = getComponentForY(color2, y);
-                        if (comp2 != null) {
+                        if (comp2 == null) {
+                            removeLabel();
+                        } else {
                             this.c1 = comp1;
                             this.c2 = comp2;
                             if (!dragManager.areLinked(c1, color2) && !dragManager.areLinked(c2, color1)) {
@@ -895,11 +908,7 @@ public class SummaryController implements MutableDocument {
                                 }
                                 summaryPanel.refreshAnnotationPanel();
                             }
-                        } else {
-                            removeLabel();
                         }
-                    } else {
-                        removeLabel();
                     }
 
                 } else {
@@ -983,106 +992,6 @@ public class SummaryController implements MutableDocument {
             }
         }
     }
-
-    /**
-     * Class representing a label with a Link icon
-     */
-    static class LinkLabel extends JLabel {
-        private final boolean isBottom;
-        private final boolean isFull;
-        private final boolean isLeft;
-        private boolean isDelete = false;
-        private static ImageIcon FULL;
-        private static ImageIcon FULL_DELETE;
-        private static ImageIcon HALF_RIGHT;
-        private static ImageIcon HALF_RIGHT_DELETE;
-        private static ImageIcon HALF_LEFT;
-        private static ImageIcon HALF_LEFT_DELETE;
-
-        public LinkLabel(final boolean isLeft, final boolean isFull, final boolean isBottom) {
-            super();
-            this.isBottom = isBottom;
-            this.isFull = isFull;
-            this.isLeft = isLeft;
-            setCorrectIcon();
-        }
-
-
-        /**
-         * @return if the label is to be at the bottom of the component
-         */
-        public boolean isBottom() {
-            return isBottom;
-        }
-
-        /**
-         * @return if the label is to be the full image
-         */
-        public boolean isFull() {
-            return isFull;
-        }
-
-        /**
-         * @return if the label is to be to the left
-         */
-        public boolean isLeft() {
-            return isLeft;
-        }
-
-        public void toggleIcon() {
-            isDelete = !isDelete;
-            setCorrectIcon();
-        }
-
-        /**
-         * Sets the icon to be displayed
-         *
-         * @param delete If the icon to be displayed is the delete one
-         */
-        public void setDeleteIcon(final boolean delete) {
-            isDelete = delete;
-            setCorrectIcon();
-        }
-
-        /**
-         * @return The current imageicon
-         */
-        public ImageIcon getImageIcon() {
-            return (ImageIcon) getIcon();
-        }
-
-        private void setCorrectIcon() {
-            if (!isDelete) {
-                setIcon(isFull ? FULL : (isLeft ? HALF_LEFT : HALF_RIGHT));
-            } else {
-                setIcon(isFull ? FULL_DELETE : (isLeft ? HALF_LEFT_DELETE : HALF_RIGHT_DELETE));
-            }
-        }
-
-        /**
-         * Rescales all images by the given factor
-         *
-         * @param factor The factor
-         */
-        public static void rescaleAll(final int factor) {
-            FULL = rescale(new ImageIcon(Images.get("link.png")), factor);
-            FULL_DELETE = rescale(new ImageIcon(Images.get("unlink.png")), factor);
-            HALF_RIGHT = rescale(new ImageIcon(Images.get("link1.png")), factor);
-            HALF_RIGHT_DELETE = rescale(new ImageIcon(Images.get("unlink1.png")), factor);
-            HALF_LEFT = rescale(new ImageIcon(Images.get("link2.png")), factor);
-            HALF_LEFT_DELETE = rescale(new ImageIcon(Images.get("unlink2.png")), factor);
-        }
-
-        private static ImageIcon rescale(final ImageIcon icon) {
-            return rescale(icon, 8);
-        }
-
-        private static ImageIcon rescale(final ImageIcon icon, final int factor) {
-            return new ImageIcon(icon.getImage().getScaledInstance(icon.getIconWidth() / factor,
-                    icon.getIconHeight() / factor, Image.SCALE_SMOOTH));
-        }
-    }
-
 
     private class PropertiesListener implements PropertyChangeListener {
         protected MarkupAnnotation lastSelectedMarkupAnnotation;
