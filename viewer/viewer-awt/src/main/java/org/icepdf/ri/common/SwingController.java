@@ -205,8 +205,8 @@ public class SwingController extends ComponentAdapter
     private JLabel numberOfPagesLabel;
     private JButton zoomInButton;
     private JButton zoomOutButton;
-    private JComboBox zoomComboBox;
-    private JComboBox annotationPrivacyComboBox;
+    private JComboBox<String> zoomComboBox;
+    private JComboBox<String> annotationPrivacyComboBox;
     private JToggleButton fitActualSizeButton;
     private JToggleButton fitHeightButton;
     private JToggleButton fitWidthButton;
@@ -1017,7 +1017,7 @@ public class SwingController extends ComponentAdapter
      * @param zcb zoom level combo box values.
      * @param zl  default zoom level.
      */
-    public void setZoomComboBox(JComboBox zcb, float[] zl) {
+    public void setZoomComboBox(JComboBox<String> zcb, float[] zl) {
         zoomComboBox = zcb;
         documentViewController.setZoomLevels(zl);
         zoomComboBox.setSelectedItem(NumberFormat.getPercentInstance().format(1.0));
@@ -1034,7 +1034,7 @@ public class SwingController extends ComponentAdapter
         btn.addActionListener(this);
     }
 
-    public void setAnnotationPermissionComboBox(JComboBox zcb) {
+    public void setAnnotationPermissionComboBox(JComboBox<String> zcb) {
         annotationPrivacyComboBox = zcb;
         zcb.addItemListener(this);
     }
