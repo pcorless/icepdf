@@ -47,10 +47,9 @@ public abstract class AbstractColorButton extends AbstractButton
 
     public AbstractColorButton(Controller controller,
                                ResourceBundle messageBundle) {
-        super();
         this.controller = controller;
-
         dropDownArrowButton = new JButton(new MetalComboBoxIcon());
+        dropDownArrowButton.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5));
         dropDownArrowButton.setContentAreaFilled(false);
         dropDownArrowButton.setRolloverEnabled(false);
         dropDownArrowButton.setFocusPainted(false);

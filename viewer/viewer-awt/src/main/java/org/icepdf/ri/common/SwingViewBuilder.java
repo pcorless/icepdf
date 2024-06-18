@@ -1454,7 +1454,7 @@ public class SwingViewBuilder implements ViewBuilder {
         return btn;
     }
 
-    public JComboBox buildZoomCombBox() {
+    public JComboBox<String> buildZoomCombBox() {
         // Get the properties manager in preparation for trying to get the zoom levels
         doubleCheckPropertiesManager();
 
@@ -1465,7 +1465,7 @@ public class SwingViewBuilder implements ViewBuilder {
 
         JComboBox<String> tmp = new JComboBox<>();
         tmp.setToolTipText(messageBundle.getString("viewer.toolbar.zoom.tooltip"));
-        tmp.setPreferredSize(new Dimension(90, tmp.getPreferredSize().height));
+        tmp.setPreferredSize(new Dimension(115, tmp.getPreferredSize().height));
         for (float zoomLevel : zoomLevels)
             tmp.addItem(NumberFormat.getPercentInstance().format(zoomLevel));
         tmp.setEditable(true);
@@ -1484,11 +1484,11 @@ public class SwingViewBuilder implements ViewBuilder {
         return btn;
     }
 
-    public JComboBox buildAnnotationPermissionCombBox() {
+    public JComboBox<String> buildAnnotationPermissionCombBox() {
         JComboBox<String> tmp = new JComboBox<>();
         tmp.setToolTipText(messageBundle.getString(
                 "viewer.utilityPane.markupAnnotation.view.publicToggleButton.tooltip.label"));
-        tmp.setPreferredSize(new Dimension(65, tmp.getPreferredSize().height));
+        tmp.setPreferredSize(new Dimension(105, tmp.getPreferredSize().height));
         tmp.addItem(messageBundle.getString("viewer.utilityPane.markupAnnotation.view.publicToggleButton.label"));
         tmp.addItem(messageBundle.getString("viewer.utilityPane.markupAnnotation.view.privateToggleButton.label"));
         tmp.setEditable(true);
