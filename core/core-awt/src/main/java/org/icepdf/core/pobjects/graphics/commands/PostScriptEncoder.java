@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.graphics.commands;
 
 import org.icepdf.core.pobjects.LiteralStringObject;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.util.PdfOps;
@@ -45,7 +46,7 @@ public class PostScriptEncoder {
     private static final String NEWLINE = "\r\n";
     private static final String TRUE = "true";
     private static final String FALSE = "false";
-    private static final String NAME = "/";
+    private static final char NAME = '/';
     private static final String BEGIN_ARRAY = "[";
     private static final String END_ARRAY = "]";
     private static final String BEGIN_STRING = "(";
@@ -182,7 +183,7 @@ public class PostScriptEncoder {
                 }
                 // graphics state setup
                 else if (drawCmd instanceof GraphicsStateCmd) {
-                    postScript.append('/')
+                    postScript.append(NAME)
                             .append(((GraphicsStateCmd) drawCmd).getGraphicStateName()).append(SPACE)
                             .append(PdfOps.gs_TOKEN).append(SPACE);
                 }
@@ -200,7 +201,7 @@ public class PostScriptEncoder {
                                 .append(glyphTexts.get(0).getY()).append(SPACE).append(PdfOps.Tm_TOKEN).append(NEWLINE);
 
                         // write out font
-                        postScript.append("/").append(textSprite.getFontName()).append(SPACE)
+                        postScript.append(NAME).append(textSprite.getFontName()).append(SPACE)
                                 .append(textSprite.getFontSize()).append(SPACE).append(PdfOps.Tf_TOKEN).append(NEWLINE);
 
                         // set the colour
@@ -239,6 +240,10 @@ public class PostScriptEncoder {
                         }
                         postScript.append(PdfOps.ET_TOKEN).append(NEWLINE);
                     }
+                } else if (drawCmd instanceof ImageDrawCmd) {
+                    ImageDrawCmd imageDrawCmd = (ImageDrawCmd) drawCmd;
+                    Name imageName = imageDrawCmd.getImageName();
+                    postScript.append(imageName).append(SPACE).append(PdfOps.Do_TOKEN).append(NEWLINE);
                 }
             }
         } catch (Exception e) {

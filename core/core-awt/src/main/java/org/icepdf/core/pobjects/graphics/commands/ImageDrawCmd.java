@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics.commands;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.OptionalContentState;
 import org.icepdf.core.pobjects.graphics.PaintTimer;
@@ -91,6 +92,11 @@ public class ImageDrawCmd extends AbstractDrawCmd {
         }
         return null;
     }
+
+    public Name getImageName() {
+        return image.getXobjectName();
+    }
+
 
     @Override
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,

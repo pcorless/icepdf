@@ -7,10 +7,13 @@ import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.annotations.Appearance;
 import org.icepdf.core.pobjects.annotations.AppearanceState;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
-import org.icepdf.core.pobjects.annotations.utils.RendererUtils;
+import org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.commands.PostScriptEncoder;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
+import org.icepdf.core.pobjects.graphics.images.references.ImageContentWriterReference;
+import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -68,11 +71,11 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         HashMap<Name, Appearance> appearances = signatureWidgetAnnotation.getAppearances();
         Appearance appearance = appearances.get(currentAppearance);
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
-        Shapes shapes = RendererUtils.createAppearanceShapes(appearanceState, INSETS, INSETS);
+        Shapes shapes = ContentWriterUtils.createAppearanceShapes(appearanceState, INSETS, INSETS);
 
         // create the new font to draw with
         if (fontFile == null || fontPropertyChanged) {
-            fontFile = RendererUtils.createFont(fontName);
+            fontFile = ContentWriterUtils.createFont(fontName);
             fontPropertyChanged = false;
         }
 
@@ -84,53 +87,66 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         float advanceY = (float) bbox.getMinY() + offsetY;
         float midX = (float) (bbox.getWidth() + offsetX) / 2;
 
+        // todo, create unique image number using state manager
+        Library library = signatureDictionary.getLibrary();
+        Name imageName = new Name("/sig_img_1");
+        // todo move into the addImageToShapes() don't thing they are used anywhere else.
+        ImageStream imageStream = ContentWriterUtils.createImageStream(library, bufferedImage);
+        ImageReference imageReference = new ImageContentWriterReference(imageStream, imageName);
+        // build the imageDrawCmd
+        // add to lower left corner of signature. todo have this come from configuration object
+        ContentWriterUtils.addImageToShapes(INSETS, (int) (bbox.getHeight() - bufferedImage.getHeight()), imageName,
+                imageReference, shapes);
+
         // title
-        RendererUtils.createTextSprites(fontFile, advanceX, advanceY, shapes, 15, lineSpacing, Color.BLACK, title);
+        ContentWriterUtils.addTextSpritesToShapes(fontFile, advanceX, advanceY, shapes, 15, lineSpacing, Color.BLACK,
+                title);
 
         // reasons
         MessageFormat reasonFormatter = new MessageFormat(messageBundle.getString(
                 "viewer.annotation.signature.handler.properties.reason.label"));
         String reason = reasonFormatter.format(new Object[]{signatureDictionary.getReason()});
-        Point2D.Float lastOffset = RendererUtils.createTextSprites(fontFile, midX, advanceY + 4, shapes, 12,
+        Point2D.Float lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, midX, advanceY + 4, shapes, 12,
                 lineSpacing, Color.BLACK, reason);
 
         float groupSpacing = lineSpacing + 5;
 
         // name
-        RendererUtils.createTextSprites(fontFile, advanceX, lastOffset.y + groupSpacing, shapes, 15, lineSpacing,
+        ContentWriterUtils.addTextSpritesToShapes(fontFile, advanceX, lastOffset.y + groupSpacing, shapes, 15,
+                lineSpacing,
                 Color.BLACK, name);
 
         // contact info
         MessageFormat contactFormatter = new MessageFormat(messageBundle.getString(
                 "viewer.annotation.signature.handler.properties.contact.label"));
         String contactInfo = contactFormatter.format(new Object[]{signatureDictionary.getContactInfo()});
-        lastOffset = RendererUtils.createTextSprites(fontFile, midX, lastOffset.y + groupSpacing, shapes, 12,
+        lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, midX, lastOffset.y + groupSpacing, shapes, 12,
                 lineSpacing, Color.BLACK, contactInfo);
 
         // common name
         MessageFormat signerFormatter = new MessageFormat(messageBundle.getString(
                 "viewer.annotation.signature.handler.properties.signer.label"));
         String commonName = signerFormatter.format(new Object[]{signatureDictionary.getName()});
-        lastOffset = RendererUtils.createTextSprites(fontFile, midX, lastOffset.y + groupSpacing, shapes, 12,
+        lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, midX, lastOffset.y + groupSpacing, shapes, 12,
                 lineSpacing, Color.BLACK, commonName);
 
         // location
         MessageFormat locationFormatter = new MessageFormat(messageBundle.getString(
                 "viewer.annotation.signature.handler.properties.location.label"));
         String location = locationFormatter.format(new Object[]{signatureDictionary.getLocation()});
-        RendererUtils.createTextSprites(fontFile, midX, lastOffset.y + groupSpacing, shapes, 12, lineSpacing,
+        ContentWriterUtils.addTextSpritesToShapes(fontFile, midX, lastOffset.y + groupSpacing, shapes, 12, lineSpacing,
                 Color.BLACK, location);
 
         // finalized appearance stream and generated postscript
         boolean isNew = true;
-        Library library = signatureWidgetAnnotation.getLibrary();
         StateManager stateManager = library.getStateManager();
         AffineTransform matrix = appearanceState.getMatrix();
-        Form form = signatureWidgetAnnotation.updateAppearanceStream(shapes, bbox, matrix,
+
+        Form xObject = signatureWidgetAnnotation.updateAppearanceStream(shapes, bbox, matrix,
                 PostScriptEncoder.generatePostScript(shapes.getShapes()), isNew);
-        RendererUtils.setAppearance(signatureWidgetAnnotation, form, appearanceState, stateManager, isNew);
-        // assign a font.
-        RendererUtils.setFontDictionary(form, fontName, stateManager, isNew);
+        xObject.addFontResource(ContentWriterUtils.createDefaultFontDictionary(fontName));
+        xObject.addImageResource(imageName, imageStream);
+        ContentWriterUtils.setAppearance(signatureWidgetAnnotation, xObject, appearanceState, stateManager, isNew);
     }
 
 }

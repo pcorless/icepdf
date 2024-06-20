@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.security.auth.x500.X500Principal;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -80,7 +81,11 @@ public class SigningTests {
 
             // build basic appearance
             BasicSignatureAppearanceCallback signatureAppearance =
-                    new BasicSignatureAppearanceCallback("Director of Signing", "Patrick Corless", null, messageBundle);
+                    new BasicSignatureAppearanceCallback(
+                            "Mayor",
+                            "Diamond Joe Quimby",
+                            createTestSignatureBufferedImage(),
+                            messageBundle);
             signatureAnnotation.setResetAppearanceCallback(signatureAppearance);
             signatureAnnotation.resetNullAppearanceStream();
 
@@ -141,5 +146,14 @@ public class SigningTests {
         signatureDictionary.setReason("Approval"); // Approval or certification but technically can be anything
         signatureDictionary.setDate(PDate.formatDateTime(new Date()));
     }
+
+    private BufferedImage createTestSignatureBufferedImage() {
+        BufferedImage image = new BufferedImage(150, 50, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D imageGraphics = image.createGraphics();
+        imageGraphics.fillRect(25, 25, 100, 25);
+        imageGraphics.dispose();
+        return image;
+    }
+
 
 }

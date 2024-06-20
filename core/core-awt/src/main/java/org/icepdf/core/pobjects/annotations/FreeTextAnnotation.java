@@ -16,7 +16,7 @@
 package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.*;
-import org.icepdf.core.pobjects.annotations.utils.RendererUtils;
+import org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.commands.*;
@@ -375,7 +375,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         Rectangle2D bbox = appearanceState.getBbox();
         bbox.setRect(0, 0, bbox.getWidth(), bbox.getHeight());
 
-        Shapes shapes = RendererUtils.createAppearanceShapes(appearanceState, INSETS, INSETS);
+        Shapes shapes = ContentWriterUtils.createAppearanceShapes(appearanceState, INSETS, INSETS);
 
         AffineTransform matrix = appearanceState.getMatrix();
 
@@ -387,7 +387,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
         // create the new font to draw with
         if (fontFile == null || fontPropertyChanged) {
-            fontFile = RendererUtils.createFont(fontName);
+            fontFile = ContentWriterUtils.createFont(fontName);
             fontPropertyChanged = false;
         }
 
@@ -424,7 +424,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         // is generally going to be zero, and af takes care of the offset for inset.
         float advanceX = (float) bbox.getMinX() + borderOffsetX;
         float advanceY = (float) bbox.getMinY() + borderOffsetY;
-        RendererUtils.createTextSprites(fontFile, advanceX, advanceY, shapes, 15, 0, fontColor, content);
+        ContentWriterUtils.addTextSpritesToShapes(fontFile, advanceX, advanceY, shapes, 15, 0, fontColor, content);
 
         shapes.add(new AlphaDrawCmd(
                 AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f)));
@@ -435,9 +435,8 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         Form form = updateAppearanceStream(shapes, bbox, matrix,
                 PostScriptEncoder.generatePostScript(shapes.getShapes()), isNew);
         generateExternalGraphicsState(form, opacity);
-        RendererUtils.setAppearance(this, form, appearanceState, stateManager, isNew);
-        // assign a font.
-        RendererUtils.setFontDictionary(form, fontName, stateManager, isNew);
+        ContentWriterUtils.setAppearance(this, form, appearanceState, stateManager, isNew);
+        form.addFontResource(ContentWriterUtils.createDefaultFontDictionary(fontName));
 
         // build out a few backwards compatible strings.
         StringBuilder dsString = new StringBuilder("font-size:")

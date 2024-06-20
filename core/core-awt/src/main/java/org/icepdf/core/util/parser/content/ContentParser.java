@@ -1051,14 +1051,14 @@ public class ContentParser extends AbstractContentParser {
                     // create the image stream
                     imageStream = new ImageStream(library, iih, data);
                     imageStreamReference = ImageReferenceFactory.getImageReference(
-                            imageStream, resources, graphicState, imageIndex.get(), page);
+                            imageStream, null, resources, graphicState, imageIndex.get(), page);
                     inlineImageCache.put(tmpKey, imageStreamReference);
                 }
             } else {
                 // create the image stream
                 imageStream = new ImageStream(library, iih, data);
                 imageStreamReference = ImageReferenceFactory.getImageReference(
-                        imageStream, resources, graphicState, imageIndex.get(), page);
+                        imageStream, null, resources, graphicState, imageIndex.get(), page);
             }
             // experimental display
 //            ImageUtility.displayImage(imageStreamReference.getImage(), "BI");

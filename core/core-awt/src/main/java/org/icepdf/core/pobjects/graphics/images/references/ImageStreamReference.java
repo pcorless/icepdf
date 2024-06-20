@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics.images.references;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
@@ -42,10 +43,10 @@ public class ImageStreamReference extends CachedImageReference {
     private static final Logger logger =
             Logger.getLogger(ImageStreamReference.class.toString());
 
-    protected ImageStreamReference(ImageStream imageStream, GraphicsState graphicsState,
+    protected ImageStreamReference(ImageStream imageStream, Name xobjectName, GraphicsState graphicsState,
                                    Resources resources, int imageIndex,
                                    Page page) {
-        super(imageStream, graphicsState, resources, imageIndex, page);
+        super(imageStream, xobjectName, graphicsState, resources, imageIndex, page);
 
         // kick off a new thread to load the image, if not already in pool.
         ImagePool imagePool = imageStream.getLibrary().getImagePool();

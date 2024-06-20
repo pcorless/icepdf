@@ -10,30 +10,38 @@ import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.TextState;
 import org.icepdf.core.pobjects.graphics.commands.*;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
+import org.icepdf.core.pobjects.graphics.images.references.ImageContentWriterReference;
+import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
+import org.icepdf.core.pobjects.graphics.images.references.ImageStreamReference;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.util.logging.Level;
+import java.awt.image.BufferedImage;
 import java.util.logging.Logger;
 
+import static org.icepdf.core.pobjects.Stream.FILTER_DCT_DECODE;
+import static org.icepdf.core.pobjects.Stream.FILTER_KEY;
 import static org.icepdf.core.pobjects.fonts.Font.SIMPLE_FORMAT;
+import static org.icepdf.core.pobjects.graphics.images.ImageDecoderFactory.DCT_DECODE_FILTERS;
+import static org.icepdf.core.pobjects.graphics.images.ImageParams.HEIGHT_KEY;
+import static org.icepdf.core.pobjects.graphics.images.ImageParams.WIDTH_KEY;
 
 /**
  * Utility for common rendering methods used when generating annotation content stream and supporting resources.
  */
-public class RendererUtils {
+public class ContentWriterUtils {
 
     private static final Logger logger =
-            Logger.getLogger(RendererUtils.class.toString());
+            Logger.getLogger(ContentWriterUtils.class.toString());
 
     protected static final Name EMBEDDED_FONT_NAME = new Name("ice1");
 
-    public static void setFontDictionary(Form form, String fontName, StateManager stateManager, boolean isNew) {
+    public static DictionaryEntries createDefaultFontDictionary(String fontName) {
         // create the font dictionary
-        Library library = form.getLibrary();
         DictionaryEntries fontDictionary = new DictionaryEntries();
         fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.TYPE_KEY,
                 org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY);
@@ -43,36 +51,59 @@ public class RendererUtils {
         fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.ENCODING_KEY, new Name("WinAnsiEncoding"));
         fontDictionary.put(new Name("FirstChar"), 32);
         fontDictionary.put(new Name("LastChar"), 255);
-
-        org.icepdf.core.pobjects.fonts.Font newFont;
-        if (form.getResources() == null ||
-                form.getResources().getFont(EMBEDDED_FONT_NAME) == null) {
-            newFont = new org.icepdf.core.pobjects.fonts.zfont.SimpleFont(library, fontDictionary);
-            newFont.setPObjectReference(stateManager.getNewReferenceNumber());
-            // create font entry
-            DictionaryEntries fontResources = new DictionaryEntries();
-            fontResources.put(EMBEDDED_FONT_NAME, newFont.getPObjectReference());
-            // add the font resource entry.
-            DictionaryEntries resources = new DictionaryEntries();
-            resources.put(new Name("Font"), fontResources);
-            // and finally add it to the form.
-            form.getEntries().put(new Name("Resources"), resources);
-        } else {
-            try {
-                form.init();
-            } catch (InterruptedException e) {
-                logger.log(Level.WARNING, "Could not initialized Annotation", e);
-                throw new IllegalStateException("Could not initialized Annotation");
-            }
-            newFont = form.getResources().getFont(EMBEDDED_FONT_NAME);
-            Reference reference = newFont.getPObjectReference();
-            newFont = new org.icepdf.core.pobjects.fonts.zfont.SimpleFont(library, fontDictionary);
-            newFont.setPObjectReference(reference);
-        }
-        // update hard reference to state manager and weak library reference.
-        stateManager.addChange(new PObject(newFont, newFont.getPObjectReference()), isNew);
-        library.addObject(newFont, newFont.getPObjectReference());
+        return fontDictionary;
     }
+
+    public static DictionaryEntries createImageDictionary() {
+        DictionaryEntries imageDictionary = new DictionaryEntries();
+        imageDictionary.put(org.icepdf.core.pobjects.fonts.Font.TYPE_KEY,
+                org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY);
+        imageDictionary.put(org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY, new Name("Type1"));
+        return imageDictionary;
+    }
+
+//    public static void setFontDictionary(Form form, String fontName, StateManager stateManager, boolean isNew) {
+//        // create the font dictionary
+//        Library library = form.getLibrary();
+//        DictionaryEntries fontDictionary = new DictionaryEntries();
+//        fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.TYPE_KEY,
+//                org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY);
+//        fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY, new Name("Type1"));
+//        fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.NAME_KEY, EMBEDDED_FONT_NAME);
+//        fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.BASEFONT_KEY, new Name(fontName));
+//        fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.ENCODING_KEY, new Name("WinAnsiEncoding"));
+//        fontDictionary.put(new Name("FirstChar"), 32);
+//        fontDictionary.put(new Name("LastChar"), 255);
+//
+//        org.icepdf.core.pobjects.fonts.Font newFont;
+//        if (form.getResources() == null ||
+//                form.getResources().getFont(EMBEDDED_FONT_NAME) == null) {
+//            newFont = new org.icepdf.core.pobjects.fonts.zfont.SimpleFont(library, fontDictionary);
+//            newFont.setPObjectReference(stateManager.getNewReferenceNumber());
+//            // create font entry
+//            DictionaryEntries fontResources = new DictionaryEntries();
+//            fontResources.put(EMBEDDED_FONT_NAME, newFont.getPObjectReference());
+//            // add the font resource entry.
+//            DictionaryEntries resources = new DictionaryEntries();
+//            resources.put(new Name("Font"), fontResources);
+//            // and finally add it to the form.
+//            form.getEntries().put(new Name("Resources"), resources);
+//        } else {
+//            try {
+//                form.init();
+//            } catch (InterruptedException e) {
+//                logger.log(Level.WARNING, "Could not initialized Annotation", e);
+//                throw new IllegalStateException("Could not initialized Annotation");
+//            }
+//            newFont = form.getResources().getFont(EMBEDDED_FONT_NAME);
+//            Reference reference = newFont.getPObjectReference();
+//            newFont = new org.icepdf.core.pobjects.fonts.zfont.SimpleFont(library, fontDictionary);
+//            newFont.setPObjectReference(reference);
+//        }
+//        // update hard reference to state manager and weak library reference.
+//        stateManager.addChange(new PObject(newFont, newFont.getPObjectReference()), isNew);
+//        library.addObject(newFont, newFont.getPObjectReference());
+//    }
 
     public static void setAppearance(Annotation annotation, Form form, AppearanceState appearanceState,
                                      StateManager stateManager, boolean isNew) {
@@ -91,18 +122,18 @@ public class RendererUtils {
 
         // compress the form object stream.
         if (Annotation.isCompressAppearanceStream()) {
-            form.getEntries().put(Stream.FILTER_KEY, new Name("FlateDecode"));
+            form.getEntries().put(FILTER_KEY, new Name("FlateDecode"));
         } else {
-            form.getEntries().remove(Stream.FILTER_KEY);
+            form.getEntries().remove(FILTER_KEY);
         }
     }
 
-    public static Point2D.Float createTextSprites(FontFile fontFile, final float advanceX, final float advanceY,
-                                                  Shapes shapes,
-                                                  int fontSize,
-                                                  float lineSpacing,
-                                                  Color fontColor,
-                                                  String content) {
+    public static Point2D.Float addTextSpritesToShapes(FontFile fontFile, final float advanceX, final float advanceY,
+                                                       Shapes shapes,
+                                                       int fontSize,
+                                                       float lineSpacing,
+                                                       Color fontColor,
+                                                       String content) {
         TextSprite textSprites =
                 new TextSprite(fontFile,
                         SIMPLE_FORMAT,
@@ -190,4 +221,25 @@ public class RendererUtils {
         fontFile = fontFile.deriveFont(Encoding.standardEncoding, null);
         return fontFile;
     }
+
+    public static void addImageToShapes(int x, int y, Name imageName, ImageReference imageReference, Shapes shapes) {
+        shapes.add(new ImageDrawCmd(imageReference));
+    }
+
+    public static ImageStream createImageStream(Library library, BufferedImage bufferedImage) {
+        DictionaryEntries imageDictionary = new DictionaryEntries();
+        // build base dictionary and image params, use jpeg so that we get a png when encoding the stream
+        imageDictionary.put(FILTER_KEY, FILTER_DCT_DECODE);
+        imageDictionary.put(WIDTH_KEY, bufferedImage.getWidth());
+        imageDictionary.put(HEIGHT_KEY, bufferedImage.getHeight());
+        ImageStream imageStream = new ImageStream(library, imageDictionary, null);
+        imageStream.setDecodedImage(bufferedImage);
+        // setup object reference and put in state manager
+        StateManager stateManager = library.getStateManager();
+        Reference reference = stateManager.getNewReferenceNumber();
+        imageStream.setPObjectReference(reference);
+        stateManager.addChange(new PObject(imageStream, reference), true);
+        return imageStream;
+    }
+
 }
