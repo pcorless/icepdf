@@ -150,8 +150,13 @@ public class SigningTests {
     private BufferedImage createTestSignatureBufferedImage() {
         BufferedImage image = new BufferedImage(150, 50, BufferedImage.TYPE_INT_ARGB);
         Graphics2D imageGraphics = image.createGraphics();
+        imageGraphics.setStroke(new BasicStroke(2));
+        imageGraphics.setColor(Color.BLUE);
         imageGraphics.fillRect(25, 25, 100, 25);
+        imageGraphics.setColor(Color.RED);
+        imageGraphics.drawRect(25, 25, 100, 25);
         imageGraphics.dispose();
+        imageGraphics.drawRect(35, 35, 100, 25);
         return image;
     }
 

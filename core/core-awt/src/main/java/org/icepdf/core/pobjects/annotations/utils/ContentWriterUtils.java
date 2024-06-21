@@ -11,9 +11,7 @@ import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.TextState;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
-import org.icepdf.core.pobjects.graphics.images.references.ImageContentWriterReference;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
-import org.icepdf.core.pobjects.graphics.images.references.ImageStreamReference;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -23,10 +21,11 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.logging.Logger;
 
+import static org.icepdf.core.pobjects.Dictionary.SUBTYPE_KEY;
+import static org.icepdf.core.pobjects.Dictionary.TYPE_KEY;
 import static org.icepdf.core.pobjects.Stream.FILTER_DCT_DECODE;
 import static org.icepdf.core.pobjects.Stream.FILTER_KEY;
 import static org.icepdf.core.pobjects.fonts.Font.SIMPLE_FORMAT;
-import static org.icepdf.core.pobjects.graphics.images.ImageDecoderFactory.DCT_DECODE_FILTERS;
 import static org.icepdf.core.pobjects.graphics.images.ImageParams.HEIGHT_KEY;
 import static org.icepdf.core.pobjects.graphics.images.ImageParams.WIDTH_KEY;
 
@@ -230,6 +229,8 @@ public class ContentWriterUtils {
         DictionaryEntries imageDictionary = new DictionaryEntries();
         // build base dictionary and image params, use jpeg so that we get a png when encoding the stream
         imageDictionary.put(FILTER_KEY, FILTER_DCT_DECODE);
+        imageDictionary.put(TYPE_KEY, Form.TYPE_VALUE);
+        imageDictionary.put(SUBTYPE_KEY, ImageStream.TYPE_VALUE);
         imageDictionary.put(WIDTH_KEY, bufferedImage.getWidth());
         imageDictionary.put(HEIGHT_KEY, bufferedImage.getHeight());
         ImageStream imageStream = new ImageStream(library, imageDictionary, null);

@@ -12,6 +12,7 @@ import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.commands.PostScriptEncoder;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
+import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.pobjects.graphics.images.references.ImageContentWriterReference;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.util.Library;
@@ -89,9 +90,10 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
 
         // todo, create unique image number using state manager
         Library library = signatureDictionary.getLibrary();
-        Name imageName = new Name("/sig_img_1");
-        // todo move into the addImageToShapes() don't thing they are used anywhere else.
+        Name imageName = new Name("sig_img_1");
+        // todo move into the addImageToShapes() don't think they are used anywhere else.
         ImageStream imageStream = ContentWriterUtils.createImageStream(library, bufferedImage);
+//        ImageUtility.displayImage(bufferedImage, "sig ");
         ImageReference imageReference = new ImageContentWriterReference(imageStream, imageName);
         // build the imageDrawCmd
         // add to lower left corner of signature. todo have this come from configuration object

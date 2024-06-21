@@ -243,7 +243,16 @@ public class PostScriptEncoder {
                 } else if (drawCmd instanceof ImageDrawCmd) {
                     ImageDrawCmd imageDrawCmd = (ImageDrawCmd) drawCmd;
                     Name imageName = imageDrawCmd.getImageName();
-                    postScript.append(imageName).append(SPACE).append(PdfOps.Do_TOKEN).append(NEWLINE);
+                    postScript.append(PdfOps.q_TOKEN).append(SPACE);
+                    postScript.append(100).append(SPACE)
+                            .append(0).append(SPACE)
+                            .append(0).append(SPACE)
+                            .append(25).append(SPACE)
+                            .append(25).append(SPACE)
+                            .append(50).append(SPACE)
+                            .append(PdfOps.cm_TOKEN).append(NEWLINE);
+                    postScript.append(NAME).append(imageName).append(SPACE).append(PdfOps.Do_TOKEN).append(NEWLINE);
+                    postScript.append(PdfOps.Q_TOKEN).append(SPACE);
                 }
             }
         } catch (Exception e) {
