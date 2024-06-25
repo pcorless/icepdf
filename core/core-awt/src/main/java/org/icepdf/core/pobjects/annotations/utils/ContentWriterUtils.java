@@ -26,8 +26,7 @@ import static org.icepdf.core.pobjects.Dictionary.TYPE_KEY;
 import static org.icepdf.core.pobjects.Stream.FILTER_DCT_DECODE;
 import static org.icepdf.core.pobjects.Stream.FILTER_KEY;
 import static org.icepdf.core.pobjects.fonts.Font.SIMPLE_FORMAT;
-import static org.icepdf.core.pobjects.graphics.images.ImageParams.HEIGHT_KEY;
-import static org.icepdf.core.pobjects.graphics.images.ImageParams.WIDTH_KEY;
+import static org.icepdf.core.pobjects.graphics.images.ImageParams.*;
 
 /**
  * Utility for common rendering methods used when generating annotation content stream and supporting resources.
@@ -230,6 +229,7 @@ public class ContentWriterUtils {
         // build base dictionary and image params, use jpeg so that we get a png when encoding the stream
         imageDictionary.put(FILTER_KEY, FILTER_DCT_DECODE);
         imageDictionary.put(TYPE_KEY, Form.TYPE_VALUE);
+        imageDictionary.put(BITS_PER_COMPONENT_KEY, 8);
         imageDictionary.put(SUBTYPE_KEY, ImageStream.TYPE_VALUE);
         imageDictionary.put(WIDTH_KEY, bufferedImage.getWidth());
         imageDictionary.put(HEIGHT_KEY, bufferedImage.getHeight());
