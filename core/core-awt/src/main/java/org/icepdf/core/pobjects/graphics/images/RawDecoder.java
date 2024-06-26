@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 public class RawDecoder extends AbstractImageDecoder {
 
     private static final Logger logger =
-            Logger.getLogger(JpxDecoder.class.toString());
+            Logger.getLogger(RawDecoder.class.toString());
 
     public RawDecoder(ImageStream imageStream, GraphicsState graphicsState) {
         super(imageStream, graphicsState);

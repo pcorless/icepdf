@@ -3,7 +3,7 @@ package org.icepdf.core.pobjects.annotations;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.*;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
-import org.icepdf.core.pobjects.acroform.signature.handlers.SignatureAppearanceCallback;
+import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureAppearanceCallback;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -124,7 +124,9 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
 
     @Override
     public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew) {
-        signatureAppearanceCallback.createAppearanceStream(this);
+        if (signatureAppearanceCallback != null) {
+            signatureAppearanceCallback.createAppearanceStream(this);
+        }
     }
 
     @Override

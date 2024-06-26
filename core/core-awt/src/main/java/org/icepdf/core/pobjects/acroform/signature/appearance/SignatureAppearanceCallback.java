@@ -1,4 +1,4 @@
-package org.icepdf.core.pobjects.acroform.signature.handlers;
+package org.icepdf.core.pobjects.acroform.signature.appearance;
 
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 

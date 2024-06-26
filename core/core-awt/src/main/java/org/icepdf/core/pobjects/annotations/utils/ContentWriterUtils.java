@@ -11,6 +11,7 @@ import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.TextState;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
+import org.icepdf.core.pobjects.graphics.images.references.ImageContentWriterReference;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.util.Library;
 
@@ -19,6 +20,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 import static org.icepdf.core.pobjects.Dictionary.SUBTYPE_KEY;
@@ -220,11 +222,27 @@ public class ContentWriterUtils {
         return fontFile;
     }
 
-    public static void addImageToShapes(int x, int y, Name imageName, ImageReference imageReference, Shapes shapes) {
+    public static ImageStream addImageToShapes(Library library, Name imageName, int x, int y,
+                                               BufferedImage bufferedImage, Shapes shapes) {
+        // create transform for image placement
+        AffineTransform imageTransform = new AffineTransform(
+                bufferedImage.getWidth(),
+                0, 0,
+                bufferedImage.getHeight(),
+                x,
+                y);
+        // add image xObject
+        ImageStream imageStream = ContentWriterUtils.createImageStream(library, bufferedImage, true);
+        ImageReference imageReference = new ImageContentWriterReference(imageStream, imageName);
+        // stack em up
+        shapes.add(new PushDrawCmd());
+        shapes.add(new TransformDrawCmd(imageTransform));
         shapes.add(new ImageDrawCmd(imageReference));
+        shapes.add(new PopDrawCmd());
+        return imageStream;
     }
 
-    public static ImageStream createImageStream(Library library, BufferedImage bufferedImage) {
+    public static ImageStream createImageStream(Library library, BufferedImage bufferedImage, boolean useMask) {
         DictionaryEntries imageDictionary = new DictionaryEntries();
         // build base dictionary and image params, use jpeg so that we get a png when encoding the stream
         imageDictionary.put(FILTER_KEY, FILTER_DCT_DECODE);
@@ -233,6 +251,10 @@ public class ContentWriterUtils {
         imageDictionary.put(SUBTYPE_KEY, ImageStream.TYPE_VALUE);
         imageDictionary.put(WIDTH_KEY, bufferedImage.getWidth());
         imageDictionary.put(HEIGHT_KEY, bufferedImage.getHeight());
+        // mask out white background if alpha is specified in colour model, this is man
+        if (useMask && bufferedImage.getColorModel().hasAlpha()) {
+            imageDictionary.put(MASK_KEY, Arrays.asList(255, 255, 255, 255, 255, 255));
+        }
         ImageStream imageStream = new ImageStream(library, imageDictionary, null);
         imageStream.setDecodedImage(bufferedImage);
         // setup object reference and put in state manager

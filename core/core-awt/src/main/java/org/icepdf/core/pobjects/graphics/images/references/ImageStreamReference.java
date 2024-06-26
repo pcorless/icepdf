@@ -29,11 +29,11 @@ import java.util.logging.Logger;
 
 /**
  * The ImageStreamReference class is a rudimentary Image Proxy which will
- * try and decode the image data into an Buffered image using a worker thread.
+ * try and decode the image data into a Buffered image using a worker thread.
  * The intent is that the content parser will continue parsing the content stream
- * while the worker thread handles the image decode work.  However the drawImage
+ * while the worker thread handles the image decode work.  However, the drawImage
  * method will block until the worker thread returns.  So generally put not
- * a true image proxy but we do get significantly faster load times with the
+ * a true image proxy, but we do get significantly faster load times with the
  * current implementation.
  *
  * @since 5.0

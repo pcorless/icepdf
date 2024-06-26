@@ -140,8 +140,8 @@ public class PostScriptEncoder {
                 else if (drawCmd instanceof StrokeDrawCmd) {
                     BasicStroke stroke = (BasicStroke) ((StrokeDrawCmd) drawCmd).getStroke();
                     postScript.append(
-                            // line width
-                            stroke.getLineWidth()).append(SPACE)
+                                    // line width
+                                    stroke.getLineWidth()).append(SPACE)
                             .append(PdfOps.w_TOKEN).append(SPACE);
                     // dash phase
                     float[] dashes = stroke.getDashArray();
@@ -240,19 +240,14 @@ public class PostScriptEncoder {
                         }
                         postScript.append(PdfOps.ET_TOKEN).append(NEWLINE);
                     }
+                } else if (drawCmd instanceof PopDrawCmd) {
+                    postScript.append(PdfOps.Q_TOKEN).append(SPACE);
+                } else if (drawCmd instanceof PushDrawCmd) {
+                    postScript.append(PdfOps.q_TOKEN).append(SPACE);
                 } else if (drawCmd instanceof ImageDrawCmd) {
                     ImageDrawCmd imageDrawCmd = (ImageDrawCmd) drawCmd;
                     Name imageName = imageDrawCmd.getImageName();
-                    postScript.append(PdfOps.q_TOKEN).append(SPACE);
-                    postScript.append(100).append(SPACE)
-                            .append(0).append(SPACE)
-                            .append(0).append(SPACE)
-                            .append(25).append(SPACE)
-                            .append(25).append(SPACE)
-                            .append(50).append(SPACE)
-                            .append(PdfOps.cm_TOKEN).append(NEWLINE);
                     postScript.append(NAME).append(imageName).append(SPACE).append(PdfOps.Do_TOKEN).append(NEWLINE);
-                    postScript.append(PdfOps.Q_TOKEN).append(SPACE);
                 }
             }
         } catch (Exception e) {

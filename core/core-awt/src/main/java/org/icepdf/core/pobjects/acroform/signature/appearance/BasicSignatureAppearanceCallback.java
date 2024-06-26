@@ -1,4 +1,4 @@
-package org.icepdf.core.pobjects.acroform.signature.handlers;
+package org.icepdf.core.pobjects.acroform.signature.appearance;
 
 import org.icepdf.core.pobjects.Form;
 import org.icepdf.core.pobjects.Name;
@@ -12,9 +12,6 @@ import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.commands.PostScriptEncoder;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
-import org.icepdf.core.pobjects.graphics.images.ImageUtility;
-import org.icepdf.core.pobjects.graphics.images.references.ImageContentWriterReference;
-import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -37,7 +34,6 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
 
     protected static final int INSETS = 0;
     protected float lineSpacing = 5;
-    protected static final Name EMBEDDED_FONT_NAME = new Name("ice1");
 
     private BufferedImage bufferedImage;
     private final String title;
@@ -88,17 +84,13 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         float advanceY = (float) bbox.getMinY() + offsetY;
         float midX = (float) (bbox.getWidth() + offsetX) / 2;
 
-        // todo, create unique image number using state manager
         Library library = signatureDictionary.getLibrary();
-        Name imageName = new Name("sig_img_1");
-        // todo move into the addImageToShapes() don't think they are used anywhere else.
-        ImageStream imageStream = ContentWriterUtils.createImageStream(library, bufferedImage);
-//        ImageUtility.displayImage(bufferedImage, "sig ");
-        ImageReference imageReference = new ImageContentWriterReference(imageStream, imageName);
-        // build the imageDrawCmd
-        // add to lower left corner of signature. todo have this come from configuration object
-        ContentWriterUtils.addImageToShapes(INSETS, (int) (bbox.getHeight() - bufferedImage.getHeight()), imageName,
-                imageReference, shapes);
+        Name imageName = new Name("sig_img_" + library.getStateManager().getNextImageNumber());
+
+        // create new image stream for the signature image
+        int x = 25;
+        int y = 50;
+        ImageStream imageStream = ContentWriterUtils.addImageToShapes(library, imageName, x, y, bufferedImage, shapes);
 
         // title
         ContentWriterUtils.addTextSpritesToShapes(fontFile, advanceX, advanceY, shapes, 15, lineSpacing, Color.BLACK,
