@@ -4,7 +4,6 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDate;
-import org.icepdf.core.pobjects.acroform.signature.appearance.BasicSignatureAppearanceCallback;
 import org.icepdf.core.pobjects.acroform.signature.handlers.Pkcs12SignerHandler;
 import org.icepdf.core.pobjects.acroform.signature.handlers.SimpleCallbackHandler;
 import org.icepdf.core.pobjects.acroform.signature.utils.SignatureUtilities;
@@ -12,8 +11,9 @@ import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.updater.WriteMode;
+import org.icepdf.ri.common.views.annotations.signing.BasicSignatureAppearanceCallback;
+import org.icepdf.ri.common.views.annotations.signing.SignatureAppearanceModel;
 import org.icepdf.ri.util.FontPropertiesManager;
-import org.icepdf.ri.util.ViewerPropertiesManager;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,15 +28,11 @@ import java.io.InputStream;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.ResourceBundle;
+import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class SigningTests {
-
-
-    private static ResourceBundle messageBundle =
-            ResourceBundle.getBundle(ViewerPropertiesManager.DEFAULT_MESSAGE_BUNDLE);
 
     @BeforeAll
     public static void init() {
@@ -65,7 +61,7 @@ public class SigningTests {
                     (SignatureWidgetAnnotation) AnnotationFactory.buildWidgetAnnotation(
                             document.getPageTree().getLibrary(),
                             FieldDictionaryFactory.TYPE_SIGNATURE,
-                            new Rectangle(100, 250, 375, 125));
+                            new Rectangle(100, 250, 375, 150));
             document.getPageTree().getPage(0).addAnnotation(signatureAnnotation, true);
 
             // Add the signatureWidget to catalog
@@ -80,12 +76,13 @@ public class SigningTests {
             updateSignatureDictionary(signatureDictionary, pkcs12SignerHandler.getCertificate());
 
             // build basic appearance
+            SignatureAppearanceModel signatureAppearanceModel = new SignatureAppearanceModel(
+                    "Mayor", "Diamond Joe Quimby",
+                    createTestSignatureBufferedImage(), Locale.ENGLISH);
+            signatureAppearanceModel.setSignatureImageLocation(25, 50);
+            signatureAppearanceModel.setColumnLayoutWidth((int) signatureAnnotation.getBbox().getWidth() / 2);
             BasicSignatureAppearanceCallback signatureAppearance =
-                    new BasicSignatureAppearanceCallback(
-                            "Mayor",
-                            "Diamond Joe Quimby",
-                            createTestSignatureBufferedImage(),
-                            messageBundle);
+                    new BasicSignatureAppearanceCallback(signatureAppearanceModel);
             signatureAnnotation.setResetAppearanceCallback(signatureAppearance);
             signatureAnnotation.resetNullAppearanceStream();
 
@@ -158,7 +155,6 @@ public class SigningTests {
         imageGraphics.setColor(Color.RED);
         imageGraphics.drawRect(0, 0, 100, 25);
         imageGraphics.dispose();
-//        ImageUtility.displayImage(image, "test");
         return image;
     }
 

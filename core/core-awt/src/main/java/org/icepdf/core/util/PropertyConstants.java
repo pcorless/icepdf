@@ -71,7 +71,8 @@ public class PropertyConstants {
             DESTINATION_UPDATED = "destinationUpdated",
             DESTINATION_DELETED = "destinationDeleted",
 
-    ANNOTATION_SUMMARY_BOX_FONT_SIZE_CHANGE = "annotationSummaryBoxFontSizeChange";
+    ANNOTATION_SUMMARY_BOX_FONT_SIZE_CHANGE = "annotationSummaryBoxFontSizeChange",
 
+    SIGNATURE_ANNOTATION_APPEARANCE_PROPERTY_CHANGE = "signatureAnnotationAppearancePropertyChange";
 
 }
