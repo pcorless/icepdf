@@ -48,10 +48,10 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
     private static final Logger logger =
             Logger.getLogger(SignatureComponent.class.toString());
 
-    protected final JPopupMenu contextMenu;
     protected final JMenuItem validationMenu;
     protected final JMenuItem signaturePropertiesMenu;
     protected final JMenuItem addSignatureMenu;
+    protected final JMenuItem deleteSignatureMenu;
     protected final Controller controller;
 
     public SignatureComponent(SignatureWidgetAnnotation annotation, DocumentViewController documentViewController,
@@ -88,6 +88,10 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
                 "viewer.annotation.signature.menu.addSignature.label"));
         addSignatureMenu.addActionListener(new NewSignatureActionListener());
 
+        deleteSignatureMenu = new JMenuItem(messageBundle.getString(
+                "viewer.annotation.signature.menu.deleteSignature.label"));
+        deleteSignatureMenu.addActionListener(new DeleteSignatureActionListener(this));
+
         updateContextMenu();
     }
 
@@ -101,6 +105,7 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
                 contextMenu.add(signaturePropertiesMenu);
             } else {
                 contextMenu.add(addSignatureMenu);
+                contextMenu.add(deleteSignatureMenu);
             }
         }
     }
@@ -177,6 +182,18 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
     class NewSignatureActionListener implements ActionListener {
         public void actionPerformed(ActionEvent actionEvent) {
             new SignatureCreationDialog(controller.getViewerFrame(), messageBundle, annotation).setVisible(true);
+        }
+    }
+
+    class DeleteSignatureActionListener implements ActionListener {
+        private SignatureComponent signatureComponent;
+
+        public DeleteSignatureActionListener(SignatureComponent signatureComponent) {
+            this.signatureComponent = signatureComponent;
+        }
+
+        public void actionPerformed(ActionEvent actionEvent) {
+            controller.getDocumentViewController().deleteAnnotation(signatureComponent);
         }
     }
 

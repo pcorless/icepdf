@@ -20,7 +20,6 @@ import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
-import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureHandler;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.fonts.Font;
@@ -114,7 +113,7 @@ public class Library {
 
     // handles signature validation and signing.
     private final SignatureHandler signatureHandler;
-    private final ArrayList<SignatureDictionary> signatureDictionaries;
+    private final SignatureDictionaries signatureDictionaries;
 
     // signature permissions
     private Permissions permissions;
@@ -135,7 +134,7 @@ public class Library {
         // set Catalog memory Manager and cache manager.
         imagePool = new ImagePool();
         signatureHandler = new SignatureHandler();
-        signatureDictionaries = new ArrayList<>();
+        signatureDictionaries = new SignatureDictionaries();
     }
 
     /**
@@ -906,20 +905,8 @@ public class Library {
         return signatureHandler;
     }
 
-    public void addSigner(SignatureDictionary signatureDictionary) {
-        signatureDictionaries.add(signatureDictionary);
-    }
-
-    public void addCertificationSigner(SignatureDictionary signatureDictionary) {
-        signatureDictionaries.add(0, signatureDictionary);
-    }
-
-    public boolean hasSigners() {
-        return signatureDictionaries.size() > 0;
-    }
-
-    public SignatureDictionary getSigner() {
-        return signatureDictionaries.remove(0);
+    public SignatureDictionaries getSignatureDictionaries() {
+        return signatureDictionaries;
     }
 
     /**

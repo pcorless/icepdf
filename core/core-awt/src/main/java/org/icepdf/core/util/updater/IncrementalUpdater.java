@@ -9,6 +9,7 @@ import org.icepdf.core.pobjects.acroform.signature.DocumentSigner;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.SignatureDictionaries;
 import org.icepdf.core.util.updater.writeables.BaseWriter;
 
 import java.io.File;
@@ -43,9 +44,10 @@ public class IncrementalUpdater {
             throws IOException {
 
         Library library = document.getCatalog().getLibrary();
+        SignatureDictionaries signatureDictionaries = library.getSignatureDictionaries();
         StateManager stateManager = document.getStateManager();
         CrossReferenceRoot crossReferenceRoot = stateManager.getCrossReferenceRoot();
-        if (stateManager.isNoChange() && !library.hasSigners()) {
+        if (stateManager.isNoChange() && !signatureDictionaries.hasSigners()) {
             return 0L;
         }
 
@@ -91,12 +93,13 @@ public class IncrementalUpdater {
         // certification followed by other approvals.  But for now it will be assumed this is done as seperate steps
         Document tmpDocument = new Document();
         try {
-            if (library.hasSigners()) {
+            if (signatureDictionaries.hasSigners()) {
                 // open new incrementally updated tmp file
                 tmpDocument.setFile(tempFile.toString());
                 // size of new file, this won't change as SignatureDictionary has padding to account for content and
                 // offsets
-                DocumentSigner.signDocument(tmpDocument, tempFile, library.getSigner());
+                DocumentSigner.signDocument(tmpDocument, tempFile,
+                        signatureDictionaries.getCurrentSignatureDictionary());
             }
         } catch (Exception e) {
             logger.log(Level.FINE, "Failed to sign document.", e);

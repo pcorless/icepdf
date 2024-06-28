@@ -4,12 +4,14 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDate;
+import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureType;
 import org.icepdf.core.pobjects.acroform.signature.handlers.Pkcs12SignerHandler;
 import org.icepdf.core.pobjects.acroform.signature.handlers.SimpleCallbackHandler;
 import org.icepdf.core.pobjects.acroform.signature.utils.SignatureUtilities;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.SignatureDictionaries;
 import org.icepdf.core.util.updater.WriteMode;
 import org.icepdf.ri.common.views.annotations.signing.BasicSignatureAppearanceCallback;
 import org.icepdf.ri.common.views.annotations.signing.SignatureAppearanceModel;
@@ -55,6 +57,7 @@ public class SigningTests {
             InputStream fileUrl = SigningTests.class.getResourceAsStream("/signing/test_print.pdf");
             document.setInputStream(fileUrl, "test_print.pdf");
             Library library = document.getCatalog().getLibrary();
+            SignatureDictionaries signatureDictionaries = library.getSignatureDictionaries();
 
             // Creat signature annotation
             SignatureWidgetAnnotation signatureAnnotation =
@@ -68,8 +71,10 @@ public class SigningTests {
             InteractiveForm interactiveForm = document.getCatalog().getOrCreateInteractiveForm();
             interactiveForm.addField(signatureAnnotation);
 
-            // set up signer dictionary
-            SignatureDictionary signatureDictionary = SignatureDictionary.getInstance(signatureAnnotation);
+            // set up signer dictionary as the primary certification signer.
+            SignatureDictionary signatureDictionary =
+                    SignatureDictionary.getInstance(signatureAnnotation, SignatureType.CERTIFIER);
+            signatureDictionaries.addCertifierSignature(signatureDictionary);
             signatureDictionary.setSignerHandler(pkcs12SignerHandler);
 
             // assign cert metadata to dictionary
@@ -86,14 +91,18 @@ public class SigningTests {
             signatureAnnotation.setResetAppearanceCallback(signatureAppearance);
             signatureAnnotation.resetNullAppearanceStream();
 
-            // set this signature as the primary certification signer.
-            library.addCertificationSigner(signatureDictionary);
-
+            // Most common workflow is to add just one signature as we do here, but it is possible to add multiple
+            // signatures via some backend process to create a document with multiple signers/certs.  The following
+            // shows how to iterate over each registered signature and move the pointer.
             File out = new File("./src/test/out/SigningTest_signed_document.pdf");
-            try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 8192)) {
-                document.saveToOutputStream(stream, WriteMode.INCREMENT_UPDATE);
+            ArrayList<SignatureDictionary> signatures = signatureDictionaries.getSignatures();
+            for (SignatureDictionary signature : signatures) {
+                signatureDictionaries.setCurrentSignatureDictionary(signature);
+                try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 8192)) {
+                    document.saveToOutputStream(stream, WriteMode.INCREMENT_UPDATE);
+                }
             }
-
+            signatureDictionaries.setCurrentSignatureDictionary(null);
             // open the signed document
             Document modifiedDocument = new Document();
             modifiedDocument.setFile(out.getAbsolutePath());

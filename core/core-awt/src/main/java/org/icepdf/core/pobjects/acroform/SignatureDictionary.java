@@ -19,6 +19,7 @@ import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.signature.DocumentSigner;
+import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureType;
 import org.icepdf.core.pobjects.acroform.signature.handlers.SignerHandler;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.util.Library;
@@ -204,12 +205,13 @@ public class SignatureDictionary extends Dictionary {
         super(library, entries);
     }
 
-    public static SignatureDictionary getInstance(SignatureWidgetAnnotation signatureWidgetAnnotation) {
+    public static SignatureDictionary getInstance(SignatureWidgetAnnotation signatureWidgetAnnotation,
+                                                  SignatureType signatureType) {
         Library library = signatureWidgetAnnotation.getLibrary();
         DictionaryEntries signatureDictionaryEntries = new DictionaryEntries();
 
         // reference dictionary
-        signatureDictionaryEntries.put(REFERENCE_KEY, List.of(buildReferenceDictionary(library)));
+        signatureDictionaryEntries.put(REFERENCE_KEY, List.of(buildReferenceDictionary(library, signatureType)));
 
         signatureDictionaryEntries.put(TYPE_KEY, TYPE_SIGNATURE);
         signatureDictionaryEntries.put(FILTER_KEY, new Name("Adobe.PPKLite"));
@@ -232,7 +234,7 @@ public class SignatureDictionary extends Dictionary {
         return signatureDictionary;
     }
 
-    private static SignatureReferenceDictionary buildReferenceDictionary(Library library) {
+    private static SignatureReferenceDictionary buildReferenceDictionary(Library library, SignatureType signatureType) {
         DictionaryEntries referenceEntries = new DictionaryEntries();
         referenceEntries.put(TYPE_KEY, SIG_REF_TYPE_VALUE);
         referenceEntries.put(DIGEST_METHOD_KEY, new Name("SHA1"));
@@ -241,7 +243,9 @@ public class SignatureDictionary extends Dictionary {
         DictionaryEntries transformParams = new DictionaryEntries();
         transformParams.put(PERMISSION_KEY, PERMISSION_VALUE_NO_CHANGES);
         transformParams.put(V_KEY, DocMDPTransferParam.getDocMDPVersion());
-        referenceEntries.put(TRANSFORM_PARAMS_KEY, new DocMDPTransferParam(library, transformParams));
+        if (signatureType.equals(SignatureType.CERTIFIER)) {
+            referenceEntries.put(TRANSFORM_PARAMS_KEY, new DocMDPTransferParam(library, transformParams));
+        }
 
         return new SignatureReferenceDictionary(library, referenceEntries);
     }

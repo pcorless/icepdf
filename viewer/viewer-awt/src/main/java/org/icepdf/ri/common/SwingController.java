@@ -1738,7 +1738,7 @@ public class SwingController extends ComponentAdapter
         setEnabled(freeTextAnnotationPropertiesToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(annotationPrivacyComboBox, opened && !pdfCollection && !IS_READONLY);
         setEnabled(textAnnotationPropertiesToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
-        setEnabled(formHighlightButton, opened && !pdfCollection && hasForms());
+        setEnabled(formHighlightButton, opened && !pdfCollection);
         setEnabled(quickSearchToolBar, opened && !pdfCollection);
         setEnabled(facingPageViewContinuousButton, opened && !pdfCollection);
         setEnabled(singlePageViewContinuousButton, opened && !pdfCollection);

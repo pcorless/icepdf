@@ -1,8 +1,10 @@
 package org.icepdf.ri.common.tools;
 
 import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
-import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
+import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
+import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
@@ -50,19 +52,26 @@ public class SignatureAnnotationHandler extends SelectionBoxHandler
 
         // check the bounds on rectToDraw to try and avoid creating
         // an annotation that is very small.
-        // todo push to base class
-        if (rectToDraw.getWidth() < 5 || rectToDraw.getHeight() < 5) {
-            rectToDraw.setSize(new Dimension(15, 25));
+        if (rectToDraw.getWidth() < 15 || rectToDraw.getHeight() < 15) {
+            rectToDraw.setSize(new Dimension(15, 15));
         }
 
         Rectangle tBbox = convertToPageSpace(rectToDraw).getBounds();
 
         // create annotations types that are rectangle based;
         // which is actually just link annotations
-        Annotation annotation = AnnotationFactory.buildWidgetAnnotation(
+        SignatureWidgetAnnotation annotation = (SignatureWidgetAnnotation) AnnotationFactory.buildWidgetAnnotation(
                 documentViewController.getDocument().getPageTree().getLibrary(),
                 FieldDictionaryFactory.TYPE_SIGNATURE,
                 tBbox);
+        // setup widget highlighting
+        ViewModel viewModel = documentViewController.getParentController().getViewModel();
+        annotation.setEnableHighlightedWidget(viewModel.isWidgetAnnotationHighlight());
+
+        // Add the signatureWidget to catalog
+        InteractiveForm interactiveForm =
+                documentViewController.getDocument().getCatalog().getOrCreateInteractiveForm();
+        interactiveForm.addField(annotation);
 
         // create the annotation object.
         AbstractAnnotationComponent comp =

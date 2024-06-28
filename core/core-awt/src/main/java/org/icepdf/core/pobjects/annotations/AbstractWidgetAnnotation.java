@@ -149,8 +149,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
         }
         // check the highlight widgetAnnotation field and if true we draw a light background colour to mark
         // the widgets on a page.
-        if (enableHighlightedWidget &&
-                !(getFieldDictionary() != null && getFieldDictionary().isReadOnly())) {
+        if (enableHighlightedWidget) {
             AffineTransform preHighLightTransform = g.getTransform();
             g.setColor(highlightColor);
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, highlightAlpha));
