@@ -29,6 +29,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
+import static org.icepdf.ri.common.preferences.SigningPreferencesPanel.PKCS_11_TYPE;
+import static org.icepdf.ri.common.preferences.SigningPreferencesPanel.PKCS_12_TYPE;
+
 /**
  * <p>Launches the Viewer Application.  The following parameters can be used
  * to optionally load a PDF document at startup.</p>
@@ -49,6 +52,16 @@ import java.util.prefs.Preferences;
  * URL. Use the following syntax: <br>
  * -loadurl http://www.examplesite.com/file.pdf</td>
  * </tr>
+ * <tr>
+ * <td>-pkcs11path <i>filename</i></td>
+ * <td>Specifies the location of the PKCS#11 provider configuration file to use when signing a document: <br>
+ * -pkcs11path /home/user/myProvider.cfg</td>
+ * </tr>
+ * <tr>
+ * <td>-pkcs12path <i>filename</i></td>
+ * <td>Specifies the location of the PKCS#12 keystore file that will be used when signing a document: <br>
+ * -pkcs12path /home/user/certificate.pfx"</td>
+ * </tr>
  * </table>
  */
 public class Launcher {
@@ -67,6 +80,8 @@ public class Launcher {
 
         String contentURL = "";
         String contentFile = "";
+        String pkcs11ConfigPath = "";
+        String pkcs12KeystorePath = "";
         String printer = null;
         // parse command line arguments
         for (int i = 0; i < argv.length; i++) {
@@ -82,6 +97,12 @@ public class Launcher {
                 case "-loadurl":
                     contentURL = argv[++i].trim();
                     break;
+                case "-pkcs11path":
+                    pkcs11ConfigPath = argv[++i].trim();
+                    break;
+                case "-pkcs12path":
+                    pkcs12KeystorePath = argv[++i].trim();
+                    break;
                 case "-print":
                     printer = argv[++i].trim();
                     break;
@@ -95,13 +116,13 @@ public class Launcher {
         ResourceBundle messageBundle = ResourceBundle.getBundle(
                 ViewerPropertiesManager.DEFAULT_MESSAGE_BUNDLE);
 
-        // Quit if there where any problems parsing the command line arguments
+        // Quit if there were any problems parsing the command line arguments
         if (brokenUsage) {
             System.out.println(messageBundle.getString("viewer.commandLin.error"));
             System.exit(1);
         }
         // start the viewer
-        run(contentFile, contentURL, printer, messageBundle);
+        run(contentFile, contentURL, printer, pkcs11ConfigPath, pkcs12KeystorePath, messageBundle);
     }
 
     /**
@@ -112,11 +133,15 @@ public class Launcher {
      * @param contentURL    URL of a file which will be loaded at runtime, can be
      *                      null.
      * @param printer       The name of the printer to use, can be null
+     * @param pkcs11ConfigPath set path of a PKCS#11 config file to that will be used by the singer UI.
+     * @param pkcs12KeystorePath set path if a PKCS#12 keystore file that will be used by the signer UI
      * @param messageBundle messageBundle to pull strings from
      */
     private static void run(String contentFile,
                             String contentURL,
                             String printer,
+                            String pkcs11ConfigPath,
+                            String pkcs12KeystorePath,
                             ResourceBundle messageBundle) {
 
         // initiate the properties manager.
@@ -132,6 +157,18 @@ public class Launcher {
                 ViewerPropertiesManager.PROPERTY_DEFAULT_FILE_PATH, null));
         ViewModel.setDefaultURL(propertiesManager.getPreferences().get(
                 ViewerPropertiesManager.PROPERTY_DEFAULT_URL, null));
+
+        // override any current PKCS paths with command line overrides.
+        if (pkcs12KeystorePath != null) {
+            propertiesManager.getPreferences().put(ViewerPropertiesManager.PROPERTY_PKCS12_PROVIDER_KEYSTORE_PATH,
+                    pkcs12KeystorePath);
+            propertiesManager.getPreferences().put(ViewerPropertiesManager.PROPERTY_PKCS_KEYSTORE_TYPE, PKCS_12_TYPE);
+        } else if (pkcs11ConfigPath != null) {
+            propertiesManager.getPreferences().put(ViewerPropertiesManager.PROPERTY_PKCS11_PROVIDER_CONFIG_PATH,
+                    pkcs11ConfigPath);
+            propertiesManager.getPreferences().put(ViewerPropertiesManager.PROPERTY_PKCS_KEYSTORE_TYPE, PKCS_11_TYPE);
+        }
+
 
         // application instance
         WindowManager windowManager = WindowManager.createInstance(propertiesManager, messageBundle);

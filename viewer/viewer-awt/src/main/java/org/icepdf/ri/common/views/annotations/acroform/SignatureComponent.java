@@ -27,8 +27,8 @@ import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.signatures.CertificatePropertiesDialog;
-import org.icepdf.ri.common.views.annotations.signatures.SignatureCreationDialog;
 import org.icepdf.ri.common.views.annotations.signatures.SignaturePropertiesDialog;
+import org.icepdf.ri.common.views.annotations.signing.SignatureCreationDialog;
 
 import javax.swing.*;
 import java.awt.*;

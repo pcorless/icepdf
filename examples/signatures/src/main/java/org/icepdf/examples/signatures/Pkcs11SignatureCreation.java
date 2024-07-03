@@ -23,7 +23,8 @@ import java.nio.file.Path;
 
 /**
  * The <code>Pkcs11SignatureCreation</code> class is an example of how to sign a document with a digital signatures
- * using PKCS#11 provider.
+ * using PKCS#11 provider.  More information on the pkcs11 configuration file can be found here,
+ * https://docs.oracle.com/en/java/javase/11/security/pkcs11-reference-guide1.html
  *
  * @since 6.3
  */

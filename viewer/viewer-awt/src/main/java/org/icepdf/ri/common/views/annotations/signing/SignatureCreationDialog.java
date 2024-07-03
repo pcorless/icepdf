@@ -1,4 +1,4 @@
-package org.icepdf.ri.common.views.annotations.signatures;
+package org.icepdf.ri.common.views.annotations.signing;
 
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
@@ -16,8 +16,8 @@ import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
 /**
- * The SignatureCreationDialog allows users to create the appears of their signature annotations
- * and select a certificate to sign the document with
+ * The SignatureCreationDialog allows users to select an available signing certificate and customize various setting
+ * associated with signing a document.
  */
 public class SignatureCreationDialog extends EscapeJDialog {
 

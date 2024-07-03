@@ -89,6 +89,12 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_PAGE_VIEW_BACKGROUND_COLOR = "org.icepdf.core.views.background.color";
     // image reference type.
     public static final String PROPERTY_IMAGING_REFERENCE_TYPE = "org.icepdf.core.imageReference";
+    // signature creation keystore type handler.
+    public static final String PROPERTY_PKCS_KEYSTORE_TYPE = "org.icepdf.core.signatures.keystore.type";
+    public static final String PROPERTY_PKCS11_PROVIDER_CONFIG_PATH = "org.icepdf.core.signatures.keystore.pkcs11" +
+            ".config.path";
+    public static final String PROPERTY_PKCS12_PROVIDER_KEYSTORE_PATH = "org.icepdf.core.signatures.keystore.pkcs12" +
+            ".config.path";
     // advanced threading properties
     public static final String PROPERTY_IMAGE_PROXY_ENABLED = "org.icepdf.core.imageProxy";
     public static final String PROPERTY_IMAGE_PROXY_THREAD_COUNT = "org.icepdf.core.library.imageThreadPoolSize";
@@ -138,6 +144,7 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_SHOW_PREFERENCES_GENERAL = "application.preferences.show.general";
     public static final String PROPERTY_SHOW_PREFERENCES_ANNOTATIONS = "application.preferences.show.annotations";
     public static final String PROPERTY_SHOW_PREFERENCES_IMAGING = "application.preferences.show.imaging";
+    public static final String PROPERTY_SHOW_PREFERENCES_SIGNING = "application.preferences.show.signing";
     public static final String PROPERTY_SHOW_PREFERENCES_FONTS = "application.preferences.show.fonts";
     public static final String PROPERTY_SHOW_PREFERENCES_ADVANCED = "application.preferences.show.advanced";
     public static final String PROPERTY_SHOW_PREFERENCES_EXIMPORT = "application.preferences.show.eximport";
