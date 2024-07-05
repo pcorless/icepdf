@@ -1,17 +1,13 @@
 package org.icepdf.ri.common.views.annotations.signing;
 
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
+import org.icepdf.core.pobjects.acroform.signature.handlers.SignerHandler;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.common.EscapeJDialog;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.security.*;
-import java.security.cert.CertificateException;
-import java.util.Enumeration;
+import java.security.cert.X509Certificate;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
@@ -62,36 +58,50 @@ public class SignatureCreationDialog extends EscapeJDialog {
         });
         final JButton signerButton = new JButton(messageBundle.getString(
                 "viewer.annotation.signature.creation.dialog.sign.button.label"));
+        final JDialog parent = this;
         signerButton.addActionListener(e -> {
             System.out.println("signing.....");
 
             try {
-                String relativeCacertsPath = "/lib/security/cacerts".replace("/", File.separator);
-                String filename = System.getProperty("java.home") + relativeCacertsPath;
-                FileInputStream is = new FileInputStream(filename);
+//                String relativeCacertsPath = "/lib/security/cacerts".replace("/", File.separator);
+//                String filename = System.getProperty("java.home") + relativeCacertsPath;
+//                FileInputStream is = new FileInputStream(filename);
+//
+//                KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
+//                String password = "changeit";
+//                keystore.load(is, password.toCharArray());
+//                Enumeration<String> aliases = keystore.aliases();
+//                System.out.println(aliases);
 
-                KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
-                String password = "changeit";
-                keystore.load(is, password.toCharArray());
-                Enumeration<String> aliases = keystore.aliases();
-                System.out.println(aliases);
+
+                PasswordDialogCallbackHandler passwordDialogCallbackHandler =
+                        new PasswordDialogCallbackHandler(parent, messageBundle);
+
+                SignerHandler signerHandler = PkcsSignerFactory.getInstance(passwordDialogCallbackHandler);
+
+//                ViewerPropertiesManager propertiesManager = ViewerPropertiesManager.getInstance();
+//                Preferences preferences = propertiesManager.getPreferences();
+//
+//                String keyStorePath = preferences.get(ViewerPropertiesManager.PROPERTY_PKCS12_PROVIDER_KEYSTORE_PATH,
+//                        "");
+//                File keystoreFile = new File(keyStorePath);
+//                Pkcs12SignerHandler pkcs12SignerHandler = new Pkcs12SignerHandler(keystoreFile, null,
+//                        passwordDialogCallbackHandler);
+
+
+//                Enumeration<String> aliases = pkcs12SignerHandler.buildKeyStore().aliases();
+//                System.out.println(aliases);
+
+                X509Certificate cert = signerHandler.getCertificate("senderkeypair");
 
                 // load PKCS12 keystore
-                KeyStore myKeystore = KeyStore.getInstance("PKCS12");
-                myKeystore.load(new FileInputStream("/home/pcorless/dev/cert-test/keypair/sender_keystore.pfx"),
-                        password.toCharArray());
-                PrivateKey privateKey = (PrivateKey) myKeystore.getKey("senderKeyPair", password.toCharArray());
-                System.out.println(privateKey.getFormat());
+//                KeyStore myKeystore = KeyStore.getInstance("PKCS12");
+//                myKeystore.load(new FileInputStream("/home/pcorless/dev/cert-test/keypair/sender_keystore.pfx"),
+//                        password.toCharArray());
+//                PrivateKey privateKey = (PrivateKey) myKeystore.getKey("senderKeyPair", password.toCharArray());
+//                System.out.println(privateKey.getFormat());
 
-            } catch (KeyStoreException ex) {
-                throw new RuntimeException(ex);
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            } catch (NoSuchAlgorithmException ex) {
-                throw new RuntimeException(ex);
-            } catch (CertificateException ex) {
-                throw new RuntimeException(ex);
-            } catch (UnrecoverableKeyException ex) {
+            } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
 

@@ -40,6 +40,11 @@ public abstract class SignerHandler {
         return (X509Certificate) keystore.getCertificate(certAlias);
     }
 
+    public X509Certificate getCertificate(String alias) throws KeyStoreException {
+        KeyStore keystore = buildKeyStore();
+        return (X509Certificate) keystore.getCertificate(alias);
+    }
+
     public byte[] signData(byte[] data) throws KeyStoreException, UnrecoverableKeyException, NoSuchAlgorithmException,
             CertificateException, OperatorCreationException, CMSException, IOException {
 

@@ -45,19 +45,19 @@ public class Pkcs11SignerHandler extends SignerHandler {
 
     private static final Logger logger = Logger.getLogger(SimpleCallbackHandler.class.getName());
 
-    private final String configName;
+    private final String providerConfig;
     private final BigInteger certSerial;
 
-    public Pkcs11SignerHandler(String configName, BigInteger certSerial, PasswordCallbackHandler callbackHandler) {
+    public Pkcs11SignerHandler(String providerConfig, BigInteger certSerial, PasswordCallbackHandler callbackHandler) {
         super(null, callbackHandler);
-        this.configName = configName;
+        this.providerConfig = providerConfig;
         this.certSerial = certSerial;
     }
 
     @Override
     protected KeyStore buildKeyStore() throws KeyStoreException {
         Provider provider = Security.getProvider("SunPKCS11");
-        provider = provider.configure(this.configName);
+        provider = provider.configure(this.providerConfig);
         Security.addProvider(provider);
         logger.log(Level.INFO, "buildKeyStore, created SunPKCS11 provider");
         KeyStore.CallbackHandlerProtection chp = new KeyStore.CallbackHandlerProtection(this.callbackHandler);

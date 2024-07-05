@@ -159,16 +159,15 @@ public class Launcher {
                 ViewerPropertiesManager.PROPERTY_DEFAULT_URL, null));
 
         // override any current PKCS paths with command line overrides.
-        if (pkcs12KeystorePath != null) {
+        if (pkcs12KeystorePath != null && !pkcs12KeystorePath.isEmpty()) {
             propertiesManager.getPreferences().put(ViewerPropertiesManager.PROPERTY_PKCS12_PROVIDER_KEYSTORE_PATH,
                     pkcs12KeystorePath);
             propertiesManager.getPreferences().put(ViewerPropertiesManager.PROPERTY_PKCS_KEYSTORE_TYPE, PKCS_12_TYPE);
-        } else if (pkcs11ConfigPath != null) {
+        } else if (pkcs11ConfigPath != null && !pkcs11ConfigPath.isEmpty()) {
             propertiesManager.getPreferences().put(ViewerPropertiesManager.PROPERTY_PKCS11_PROVIDER_CONFIG_PATH,
                     pkcs11ConfigPath);
             propertiesManager.getPreferences().put(ViewerPropertiesManager.PROPERTY_PKCS_KEYSTORE_TYPE, PKCS_11_TYPE);
         }
-
 
         // application instance
         WindowManager windowManager = WindowManager.createInstance(propertiesManager, messageBundle);
