@@ -23,6 +23,7 @@ public abstract class SignerHandler {
     protected static final String algorithm = "SHA256WithRSA";
 
     protected String certAlias;
+    protected KeyStore keystore;
     protected PasswordCallbackHandler callbackHandler;
 
     public SignerHandler(String certAlias, PasswordCallbackHandler callbackHandler) {
@@ -30,25 +31,31 @@ public abstract class SignerHandler {
         this.callbackHandler = callbackHandler;
     }
 
-    protected abstract KeyStore buildKeyStore() throws KeyStoreException;
+    public abstract KeyStore buildKeyStore() throws KeyStoreException;
 
     protected abstract PrivateKey getPrivateKey(KeyStore keyStore) throws KeyStoreException, UnrecoverableKeyException,
             NoSuchAlgorithmException;
 
     public X509Certificate getCertificate() throws KeyStoreException {
-        KeyStore keystore = buildKeyStore();
+        if (keystore == null) {
+            keystore = buildKeyStore();
+        }
         return (X509Certificate) keystore.getCertificate(certAlias);
     }
 
     public X509Certificate getCertificate(String alias) throws KeyStoreException {
-        KeyStore keystore = buildKeyStore();
+        if (keystore == null) {
+            keystore = buildKeyStore();
+        }
         return (X509Certificate) keystore.getCertificate(alias);
     }
 
     public byte[] signData(byte[] data) throws KeyStoreException, UnrecoverableKeyException, NoSuchAlgorithmException,
             CertificateException, OperatorCreationException, CMSException, IOException {
 
-        KeyStore keystore = buildKeyStore();
+        if (keystore == null) {
+            keystore = buildKeyStore();
+        }
         PrivateKey privateKey = getPrivateKey(keystore);
 
         X509Certificate certificate = (X509Certificate) keystore.getCertificate(certAlias);

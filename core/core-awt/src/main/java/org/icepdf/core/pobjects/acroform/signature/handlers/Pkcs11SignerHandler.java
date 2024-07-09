@@ -55,14 +55,15 @@ public class Pkcs11SignerHandler extends SignerHandler {
     }
 
     @Override
-    protected KeyStore buildKeyStore() throws KeyStoreException {
+    public KeyStore buildKeyStore() throws KeyStoreException {
         Provider provider = Security.getProvider("SunPKCS11");
         provider = provider.configure(this.providerConfig);
         Security.addProvider(provider);
         logger.log(Level.INFO, "buildKeyStore, created SunPKCS11 provider");
         KeyStore.CallbackHandlerProtection chp = new KeyStore.CallbackHandlerProtection(this.callbackHandler);
         KeyStore.Builder builder = KeyStore.Builder.newInstance("PKCS11", provider, chp);
-        return builder.getKeyStore();
+        keystore = builder.getKeyStore();
+        return keystore;
     }
 
     @Override

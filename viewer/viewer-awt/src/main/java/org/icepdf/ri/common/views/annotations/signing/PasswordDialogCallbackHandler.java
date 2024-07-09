@@ -38,6 +38,7 @@ public class PasswordDialogCallbackHandler extends PasswordCallbackHandler {
                 PasswordCallback pc = (PasswordCallback) callback;
 
                 JPanel panel = new JPanel();
+                // todo setup i18n, and need to look at the dialog type, pin vs. password verbiage.
                 JLabel label = new JLabel("Enter keystore password:");
                 JPasswordField pass = new JPasswordField(15);
                 panel.add(label);

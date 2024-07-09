@@ -26,7 +26,8 @@ public class Pkcs12SignerHandler extends SignerHandler {
     public KeyStore buildKeyStore() throws KeyStoreException {
         KeyStore.CallbackHandlerProtection chp = new KeyStore.CallbackHandlerProtection(callbackHandler);
         KeyStore.Builder builder = KeyStore.Builder.newInstance(keystoreFile, chp);
-        return builder.getKeyStore();
+        keystore = builder.getKeyStore();
+        return keystore;
     }
 
     @Override
