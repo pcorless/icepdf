@@ -9,6 +9,7 @@ import javax.security.auth.x500.X500Principal;
 import javax.swing.table.AbstractTableModel;
 import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -18,15 +19,19 @@ public class CertificateTableModel extends AbstractTableModel {
 
     private String[] columnNames;
     private String[][] data = new String[][]{};
+    private static SimpleDateFormat validityDateFormat = new SimpleDateFormat("dd/MM/yyyy");
 
     public CertificateTableModel(SignerHandler signerHandler, Enumeration<String> aliases,
                                  ResourceBundle messageBundle) throws KeyStoreException {
         columnNames = new String[]{
-                messageBundle.getString("viewer.annotation.signature.creation.dialog.certificate.table.name.label"),
-                messageBundle.getString("viewer.annotation.signature.creation.dialog.certificate.table.author.label"),
-                messageBundle.getString("viewer.annotation.signature.creation.dialog.certificate.table.validity.label"),
-                messageBundle.getString("viewer.annotation.signature.creation.dialog.certificate.table.description" +
-                        ".label")};
+                messageBundle.getString(
+                        "viewer.annotation.signature.creation.dialog.certificate.table.name.label"),
+                messageBundle.getString(
+                        "viewer.annotation.signature.creation.dialog.certificate.table.author.label"),
+                messageBundle.getString(
+                        "viewer.annotation.signature.creation.dialog.certificate.table.validity.label"),
+                messageBundle.getString(
+                        "viewer.annotation.signature.creation.dialog.certificate.table.description.label")};
 
         // build data from aliases in keystore.
         List<String[]> rows = new ArrayList<>();
@@ -46,9 +51,8 @@ public class CertificateTableModel extends AbstractTableModel {
         // https://javadoc.io/static/org.bouncycastle/bcprov-jdk15on/1.70/org/bouncycastle/asn1/x500/style/BCStyle.html
         if (x500name.getRDNs() != null) {
             String commonName = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.CN);
-            // todo validity and description
             String email = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.EmailAddress);
-            String validity = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.EmailAddress);
+            String validity = validityDateFormat.format(certificate.getNotAfter());
             String description = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.DESCRIPTION);
             return new String[]{commonName, email, validity, description};
         } else {
