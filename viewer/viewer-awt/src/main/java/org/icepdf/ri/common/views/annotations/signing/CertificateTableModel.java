@@ -10,15 +10,14 @@ import javax.swing.table.AbstractTableModel;
 import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 
 public class CertificateTableModel extends AbstractTableModel {
 
     private String[] columnNames;
     private String[][] data = new String[][]{};
+    private ArrayList<X509Certificate> certs;
+    private ArrayList<String> aliases;
     private static SimpleDateFormat validityDateFormat = new SimpleDateFormat("dd/MM/yyyy");
 
     public CertificateTableModel(SignerHandler signerHandler, Enumeration<String> aliases,
@@ -35,13 +34,16 @@ public class CertificateTableModel extends AbstractTableModel {
 
         // build data from aliases in keystore.
         List<String[]> rows = new ArrayList<>();
-        while (aliases.hasMoreElements()) {
-            String alias = aliases.nextElement();
+        certs = new ArrayList<>();
+        this.aliases = Collections.list(aliases);
+        for (String alias : this.aliases) {
             X509Certificate cert = signerHandler.getCertificate(alias);
+            certs.add(cert);
             rows.add(createCertSummaryData(cert));
         }
         data = new String[rows.size()][columnNames.length];
         rows.toArray(data);
+
     }
 
     private static String[] createCertSummaryData(X509Certificate certificate) {
@@ -54,7 +56,7 @@ public class CertificateTableModel extends AbstractTableModel {
             String email = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.EmailAddress);
             String validity = validityDateFormat.format(certificate.getNotAfter());
             String description = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.DESCRIPTION);
-            return new String[]{commonName, email, validity, description};
+            return new String[]{commonName, email, validity, description,};
         } else {
             throw new IllegalStateException("Certificate has no DRNs data");
         }
@@ -73,6 +75,20 @@ public class CertificateTableModel extends AbstractTableModel {
     @Override
     public String getColumnName(int col) {
         return columnNames[col];
+    }
+
+    public String getAliasAt(int row) {
+        if (row < 0 || row >= getRowCount()) {
+            return null;
+        }
+        return aliases.get(row);
+    }
+
+    public X509Certificate getCertificateAt(int row) {
+        if (row < 0 || row >= getRowCount()) {
+            return null;
+        }
+        return certs.get(row);
     }
 
     @Override

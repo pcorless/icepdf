@@ -18,6 +18,12 @@ package org.icepdf.core.pobjects.acroform.signature.utils;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.icepdf.core.pobjects.acroform.SignatureDictionary;
+
+import javax.security.auth.x500.X500Principal;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 
 /**
  * Utility of commonly used signature related algorithms.
@@ -37,5 +43,44 @@ public class SignatureUtilities {
             return rdns[0].getFirst().getValue().toString();
         }
         return null;
+    }
+
+    /**
+     * Populate signature dictionary with values from the certificate
+     *
+     * @param signatureDictionary dictionary to populate
+     * @param certificate         cert to extract values from
+     */
+    public static void updateSignatureDictionary(SignatureDictionary signatureDictionary, X509Certificate certificate) {
+        X500Principal principal = certificate.getSubjectX500Principal();
+        X500Name x500name = new X500Name(principal.getName());
+        // Set up dictionary using certificate values.
+        // https://javadoc.io/static/org.bouncycastle/bcprov-jdk15on/1.70/org/bouncycastle/asn1/x500/style/BCStyle.html
+        if (x500name.getRDNs() != null) {
+            String commonName = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.CN);
+            if (commonName != null) {
+                signatureDictionary.setName(commonName);
+            }
+            String email = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.EmailAddress);
+            if (email != null) {
+                signatureDictionary.setContactInfo(email);
+            }
+            ArrayList<String> location = new ArrayList<>(2);
+            String state = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.ST);
+            if (state != null) {
+                location.add(state);
+            }
+            String country = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.C);
+            if (country != null) {
+                location.add(country);
+            }
+            if (!location.isEmpty()) {
+                signatureDictionary.setLocation(String.join(", ", location));
+            }
+        } else {
+            throw new IllegalStateException("Certificate has no DRNs data");
+        }
+//        signatureDictionary.setReason("Approval"); // Approval or certification but technically can be anything
+//        signatureDictionary.setDate(PDate.formatDateTime(new Date()));
     }
 }

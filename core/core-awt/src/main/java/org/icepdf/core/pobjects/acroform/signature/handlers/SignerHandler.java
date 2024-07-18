@@ -31,9 +31,13 @@ public abstract class SignerHandler {
         this.callbackHandler = callbackHandler;
     }
 
+    public void setCertAlias(String certAlias) {
+        this.certAlias = certAlias;
+    }
+
     public abstract KeyStore buildKeyStore() throws KeyStoreException;
 
-    protected abstract PrivateKey getPrivateKey(KeyStore keyStore) throws KeyStoreException, UnrecoverableKeyException,
+    protected abstract PrivateKey getPrivateKey() throws KeyStoreException, UnrecoverableKeyException,
             NoSuchAlgorithmException;
 
     public X509Certificate getCertificate() throws KeyStoreException {
@@ -56,7 +60,7 @@ public abstract class SignerHandler {
         if (keystore == null) {
             keystore = buildKeyStore();
         }
-        PrivateKey privateKey = getPrivateKey(keystore);
+        PrivateKey privateKey = getPrivateKey();
 
         X509Certificate certificate = (X509Certificate) keystore.getCertificate(certAlias);
 

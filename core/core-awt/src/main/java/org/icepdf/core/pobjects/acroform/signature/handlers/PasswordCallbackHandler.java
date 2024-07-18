@@ -4,13 +4,17 @@ import javax.security.auth.callback.CallbackHandler;
 
 public abstract class PasswordCallbackHandler implements CallbackHandler {
 
-    protected String password;
+    protected char[] password;
 
     public PasswordCallbackHandler(String password) {
+        this.password = password.toCharArray();
+    }
+
+    public PasswordCallbackHandler(char[] password) {
         this.password = password;
     }
 
     protected char[] getPassword() {
-        return password.toCharArray();
+        return password;
     }
 }

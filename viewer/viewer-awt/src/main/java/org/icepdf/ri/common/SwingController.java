@@ -19,6 +19,7 @@ import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.io.SizeInputStream;
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.URIAction;
@@ -3662,25 +3663,33 @@ public class SwingController extends ComponentAdapter
                     //  but that could cause problems with slow network links too,
                     //  and would complicate the incremental update code, so we're
                     //  harmonising on this approach.
-                    try (final FileOutputStream fileOutputStream = new FileOutputStream(file);
-                         final BufferedOutputStream buf = new BufferedOutputStream(fileOutputStream, 8192)) {
+                    // todo still need to decide what do do for FULL_UPDATE
+                    SignatureDictionaries signatureDictionaries =
+                            document.getCatalog().getLibrary().getSignatureDictionaries();
+                    ArrayList<SignatureDictionary> signatures = signatureDictionaries.getSignatures();
+                    for (SignatureDictionary signature : signatures) {
+                        signatureDictionaries.setCurrentSignatureDictionary(signature);
+                        try (final FileOutputStream fileOutputStream = new FileOutputStream(file);
+                             final BufferedOutputStream buf = new BufferedOutputStream(fileOutputStream, 8192)) {
 
-                        // We want 'save as' or 'save a copy to always occur
-                        if (saveMode == SaveMode.EXPORT) {
-                            // save as copy
-                            document.writeToOutputStream(buf, WriteMode.FULL_UPDATE);
-                        } else {
-                            // save as will append changes.
-                            document.saveToOutputStream(buf);
+                            // We want 'save as' or 'save a copy to always occur
+                            if (saveMode == SaveMode.EXPORT) {
+                                // save as copy
+                                document.writeToOutputStream(buf, WriteMode.FULL_UPDATE);
+                            } else {
+                                // save as will append changes.
+                                document.saveToOutputStream(buf);
+                            }
+                            document.getStateManager().setChangesSnapshot();
+                        } catch (MalformedURLException e) {
+                            logger.log(Level.WARNING, "Malformed URL Exception ", e);
+                        } catch (IOException e) {
+                            logger.log(Level.WARNING, "IO Exception ", e);
+                        } catch (Exception e) {
+                            logger.log(Level.WARNING, "Failed to append document changes", e);
                         }
-                        document.getStateManager().setChangesSnapshot();
-                    } catch (MalformedURLException e) {
-                        logger.log(Level.WARNING, "Malformed URL Exception ", e);
-                    } catch (IOException e) {
-                        logger.log(Level.WARNING, "IO Exception ", e);
-                    } catch (Exception e) {
-                        logger.log(Level.WARNING, "Failed to append document changes", e);
                     }
+                    signatureDictionaries.setCurrentSignatureDictionary(null);
                     // save the default directory
                     ViewModel.setDefaultFile(file);
                 }
@@ -5744,7 +5753,7 @@ public class SwingController extends ComponentAdapter
                 // check to see if undo/redo can be enabled/disabled.
                 reflectUndoCommands();
                 break;
-                // divider has been moved, save the location as it changes.
+            // divider has been moved, save the location as it changes.
             case JSplitPane.LAST_DIVIDER_LOCATION_PROPERTY:
                 JSplitPane sourceSplitPane = (JSplitPane) evt.getSource();
                 int dividerLocation = (Integer) evt.getNewValue();

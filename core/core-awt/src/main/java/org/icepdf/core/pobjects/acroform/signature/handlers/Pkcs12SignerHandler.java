@@ -31,8 +31,8 @@ public class Pkcs12SignerHandler extends SignerHandler {
     }
 
     @Override
-    protected PrivateKey getPrivateKey(KeyStore keyStore) throws KeyStoreException, UnrecoverableKeyException,
+    protected PrivateKey getPrivateKey() throws KeyStoreException, UnrecoverableKeyException,
             NoSuchAlgorithmException {
-        return (PrivateKey) keyStore.getKey(certAlias, callbackHandler.getPassword());
+        return (PrivateKey) keystore.getKey(certAlias, callbackHandler.getPassword());
     }
 }

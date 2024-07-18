@@ -18,7 +18,7 @@ public class SimpleCallbackHandler extends PasswordCallbackHandler {
         for (Callback callback : callbacks) {
             if (callback instanceof PasswordCallback) {
                 PasswordCallback pc = (PasswordCallback) callback;
-                pc.setPassword(password.toCharArray());
+                pc.setPassword(password);
             } else if (callback instanceof TextOutputCallback) {
                 TextOutputCallback tc = (TextOutputCallback) callback;
                 logger.log(Level.INFO,

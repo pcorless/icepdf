@@ -6,11 +6,14 @@ import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
+import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureType;
 import org.icepdf.core.pobjects.acroform.signature.handlers.Pkcs12SignerHandler;
 import org.icepdf.core.pobjects.acroform.signature.handlers.SimpleCallbackHandler;
+import org.icepdf.core.pobjects.acroform.signature.utils.SignatureUtilities;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.SignatureDictionaries;
 import org.icepdf.core.util.updater.WriteMode;
 import org.icepdf.ri.util.FontPropertiesManager;
 
@@ -19,6 +22,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.file.Path;
+import java.util.ArrayList;
 
 /**
  * The <code>Pkcs12SignatureCreation</code> class is an example of how to sign a document with a digital signatures
@@ -58,6 +62,7 @@ public class Pkcs12SignatureCreation {
             Document document = new Document();
             document.setFile(filePath.toFile().getPath());
             Library library = document.getCatalog().getLibrary();
+            SignatureDictionaries signatureDictionaries = library.getSignatureDictionaries();
 
             // Creat signature annotation
             SignatureWidgetAnnotation signatureAnnotation = (SignatureWidgetAnnotation)
@@ -72,23 +77,30 @@ public class Pkcs12SignatureCreation {
             interactiveForm.addField(signatureAnnotation);
 
             // update dictionary
-            SignatureDictionary signatureDictionary = SignatureDictionary.getInstance(signatureAnnotation);
+            SignatureDictionary signatureDictionary = SignatureDictionary.getInstance(signatureAnnotation,
+                    SignatureType.SIGNER);
+            signatureDictionaries.addCertifierSignature(signatureDictionary);
             signatureDictionary.setSignerHandler(pkcs12SignerHandler);
             signatureDictionary.setName("Tester McTest");
             signatureDictionary.setLocation("Springfield");
             signatureDictionary.setReason("Make sure stuff didn't change");
             signatureDictionary.setDate("D:20240423082733+02'00'");
 
-            // set this signature as the primary certification signer.
-            library.addCertificationSigner(signatureDictionary);
+            // assign cert metadata to dictionary
+            SignatureUtilities.updateSignatureDictionary(signatureDictionary, pkcs12SignerHandler.getCertificate());
 
             String absolutePath = filePath.toFile().getPath();
             String signedFileName = absolutePath.replace(".pdf", "_signed.pdf");
 
             File out = new File(signedFileName);
-            try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 8192)) {
-                document.saveToOutputStream(stream, WriteMode.INCREMENT_UPDATE);
+            ArrayList<SignatureDictionary> signatures = signatureDictionaries.getSignatures();
+            for (SignatureDictionary signature : signatures) {
+                signatureDictionaries.setCurrentSignatureDictionary(signature);
+                try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 8192)) {
+                    document.saveToOutputStream(stream, WriteMode.INCREMENT_UPDATE);
+                }
             }
+            signatureDictionaries.setCurrentSignatureDictionary(null);
             document.dispose();
         } catch (Exception e) {
             // make sure we have no io errors.

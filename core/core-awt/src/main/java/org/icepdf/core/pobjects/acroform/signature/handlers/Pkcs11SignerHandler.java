@@ -67,13 +67,13 @@ public class Pkcs11SignerHandler extends SignerHandler {
     }
 
     @Override
-    protected PrivateKey getPrivateKey(KeyStore keyStore) throws KeyStoreException, UnrecoverableKeyException,
+    protected PrivateKey getPrivateKey() throws KeyStoreException, UnrecoverableKeyException,
             NoSuchAlgorithmException {
         logger.log(Level.INFO, "search for");
-        certAlias = getAliasByCertificateSerialNumber(keyStore, certSerial);
+        certAlias = getAliasByCertificateSerialNumber(keystore, certSerial);
         logger.log(Level.INFO, "buildKeyStore, retrieved cert alias: " + certAlias);
         logger.log(Level.INFO, "buildKeyStore, should use pin/password from callbackHandler");
-        return (PrivateKey) keyStore.getKey(certAlias, null); // should pull password from callbackHandler
+        return (PrivateKey) keystore.getKey(certAlias, null); // should pull password from callbackHandler
 //        return (PrivateKey) keyStore.getKey(certAlias, callbackHandler.getPassword());
     }
 

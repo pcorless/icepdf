@@ -18,6 +18,7 @@ import org.icepdf.core.util.Library;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.ResourceBundle;
@@ -78,8 +79,12 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         // create new image stream for the signature image
         int x = signatureAppearanceModel.getSignatureCoordinateX();
         int y = signatureAppearanceModel.getSignatureCoordinateY();
-        ImageStream imageStream = ContentWriterUtils.addImageToShapes(library, imageName, x, y,
-                signatureAppearanceModel.getSignatureImage(), shapes);
+        BufferedImage signatureImage = signatureAppearanceModel.getSignatureImage();
+        ImageStream imageStream = null;
+        if (signatureImage != null) {
+            imageStream = ContentWriterUtils.addImageToShapes(library, imageName, x, y,
+                    signatureAppearanceModel.getSignatureImage(), shapes);
+        }
 
         // title
         ContentWriterUtils.addTextSpritesToShapes(fontFile, advanceX, advanceY, shapes,
@@ -147,7 +152,9 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         Form xObject = signatureWidgetAnnotation.updateAppearanceStream(shapes, bbox, matrix,
                 PostScriptEncoder.generatePostScript(shapes.getShapes()), isNew);
         xObject.addFontResource(ContentWriterUtils.createDefaultFontDictionary(signatureAppearanceModel.getFontName()));
-        xObject.addImageResource(imageName, imageStream);
+        if (imageStream != null) {
+            xObject.addImageResource(imageName, imageStream);
+        }
         ContentWriterUtils.setAppearance(signatureWidgetAnnotation, xObject, appearanceState, stateManager, isNew);
     }
 

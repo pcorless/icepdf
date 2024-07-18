@@ -9,6 +9,9 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static javax.swing.JOptionPane.CLOSED_OPTION;
+import static javax.swing.JOptionPane.OK_OPTION;
+
 public class PasswordDialogCallbackHandler extends PasswordCallbackHandler {
 
     private static final Logger logger = Logger.getLogger(PasswordDialogCallbackHandler.class.getName());
@@ -18,7 +21,7 @@ public class PasswordDialogCallbackHandler extends PasswordCallbackHandler {
     private String dialogType;
 
     public PasswordDialogCallbackHandler(JDialog parentDialog, ResourceBundle messageBundle) {
-        super(null);
+        super("");
         this.parentComponent = parentDialog;
         this.messageBundle = messageBundle;
     }
@@ -33,24 +36,25 @@ public class PasswordDialogCallbackHandler extends PasswordCallbackHandler {
         for (Callback callback : callbacks) {
             if (callback instanceof PasswordCallback) {
                 PasswordCallback pc = (PasswordCallback) callback;
-                pc.setPassword("changeit".toCharArray());
-//                JPanel panel = new JPanel();
-//                // todo setup i18n, and need to look at the dialog type, pin vs. password verbiage.
-//                JLabel label = new JLabel("Enter keystore password:");
-//                JPasswordField pass = new JPasswordField(15);
-//                panel.add(label);
-//                panel.add(pass);
-//                String[] options = new String[]{"OK", "Cancel"};
-//                int option = JOptionPane.showOptionDialog(parentComponent, panel, "Keystore Password",
-//                        JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE,
-//                        null, options, options[0]);
-//                if (option == OK_OPTION) {
-//                    char[] password = pass.getPassword();
-//                    System.out.println("Your password is: " + new String(password));
-//                    pc.setPassword(password);
-//                } else if (option == CLOSED_OPTION) {
-//                    System.out.println("closed");
-//                }
+//                pc.setPassword("changeit".toCharArray());
+//                password = "changeit";
+                JPanel panel = new JPanel();
+                // todo setup i18n, and need to look at the dialog type, pin vs. password verbiage.
+                JLabel label = new JLabel("Enter keystore password:");
+                JPasswordField pass = new JPasswordField(15);
+                panel.add(label);
+                panel.add(pass);
+                String[] options = new String[]{"OK", "Cancel"};
+                int option = JOptionPane.showOptionDialog(parentComponent, panel, "Keystore Password",
+                        JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE,
+                        null, options, options[0]);
+                if (option == OK_OPTION) {
+                    char[] password = pass.getPassword();
+                    this.password = password;
+                    pc.setPassword(password);
+                } else if (option == CLOSED_OPTION) {
+                    System.out.println("closed");
+                }
 
             } else if (callback instanceof TextOutputCallback) {
                 TextOutputCallback tc = (TextOutputCallback) callback;

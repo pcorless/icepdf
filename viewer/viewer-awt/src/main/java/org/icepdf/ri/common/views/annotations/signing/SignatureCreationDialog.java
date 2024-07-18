@@ -1,31 +1,71 @@
 package org.icepdf.ri.common.views.annotations.signing;
 
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureType;
 import org.icepdf.core.pobjects.acroform.signature.handlers.SignerHandler;
+import org.icepdf.core.pobjects.acroform.signature.utils.SignatureUtilities;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
+import org.icepdf.core.util.Library;
+import org.icepdf.core.util.SignatureDictionaries;
 import org.icepdf.ri.common.EscapeJDialog;
 
+import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.security.KeyStoreException;
-import java.util.Enumeration;
-import java.util.Locale;
-import java.util.ResourceBundle;
+import java.security.cert.X509Certificate;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
  * The SignatureCreationDialog allows users to select an available signing certificate and customize various setting
  * associated with signing a document.
  */
-public class SignatureCreationDialog extends EscapeJDialog implements ActionListener {
+public class SignatureCreationDialog extends EscapeJDialog implements ActionListener, ListSelectionListener {
 
     private static final Logger logger =
             Logger.getLogger(SignatureCreationDialog.class.toString());
 
+    private static final Locale[] supportedLocales = {
+            new Locale("da"),
+            new Locale("de"),
+            new Locale("en"),
+            new Locale("es"),
+            new Locale("fi"),
+            new Locale("fr"),
+            new Locale("it"),
+            new Locale("nl"),
+            new Locale("no"),
+            new Locale("pt"),
+            new Locale("sv"),
+    };
+
     private GridBagConstraints constraints;
+
+    private JTable certificateTable;
+    private JRadioButton signerRadioButton;
+    private JRadioButton certifyRadioButton;
+    private JCheckBox signerVisibilityCheckBox;
+    private JTextField locationTextField;
+    private JTextField dateTextField;
+    private JTextField titleTextField;
+    private JTextField nameTextField;
+    private JTextField contactTextField;
+    private JTextArea reasonTextArea;
+    private JComboBox<Locale> languagesComboBox;
+    private JButton signButton;
+
+
+    private SignerHandler signerHandler;
 
     private final SignatureValidator signatureValidator;
     protected static ResourceBundle messageBundle;
@@ -47,6 +87,99 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
     @Override
     public void actionPerformed(ActionEvent actionEvent) {
 
+        Object source = actionEvent.getSource();
+        if (source == null) return;
+
+        // todo only enable add signature button if there is a selected certificate
+
+        if (source == signButton) {
+            Library library = signatureWidgetAnnotation.getLibrary();
+            SignatureDictionaries signatureDictionaries = library.getSignatureDictionaries();
+            // set up signer dictionary as the primary certification signer.
+            SignatureDictionary signatureDictionary =
+                    SignatureDictionary.getInstance(signatureWidgetAnnotation,
+                            signerRadioButton.isSelected() ? SignatureType.SIGNER : SignatureType.CERTIFIER);
+            signatureDictionaries.addCertifierSignature(signatureDictionary);
+            signatureDictionary.setSignerHandler(signerHandler);
+
+            // assign cert metadata to dictionary
+            //SignatureUtilities.updateSignatureDictionary(signatureDictionary, signerHandler.getCertificate());
+            signatureDictionary.setName(nameTextField.getText());
+            signatureDictionary.setContactInfo(contactTextField.getText());
+            signatureDictionary.setLocation(locationTextField.getText());
+
+            // build basic appearance
+            SignatureAppearanceModel signatureAppearanceModel = new SignatureAppearanceModel(
+                    titleTextField.getText(),
+                    nameTextField.getText(),
+                    null, //createTestSignatureBufferedImage(),
+                    (Locale) languagesComboBox.getSelectedItem());
+            signatureAppearanceModel.setSignatureImageLocation(25, 50);
+            signatureAppearanceModel.setColumnLayoutWidth((int) signatureWidgetAnnotation.getBbox().getWidth() / 2);
+            BasicSignatureAppearanceCallback signatureAppearance =
+                    new BasicSignatureAppearanceCallback(signatureAppearanceModel);
+            signatureWidgetAnnotation.setResetAppearanceCallback(signatureAppearance);
+            signatureWidgetAnnotation.resetNullAppearanceStream();
+
+//            setVisible(false);
+//            dispose();
+        }
+    }
+
+    @Override
+    public void valueChanged(ListSelectionEvent event) {
+        if (event.getValueIsAdjusting()) {
+            return;
+        }
+        int row = certificateTable.convertRowIndexToModel(certificateTable.getSelectedRow());
+        CertificateTableModel model = (CertificateTableModel) certificateTable.getModel();
+        signerHandler.setCertAlias(model.getAliasAt(row));
+        setSelectedCertificate(model.getCertificateAt(row));
+    }
+
+    private void setSelectedCertificate(X509Certificate certificate) {
+        X509Certificate selectedCertificate;
+        if (certificate == null) {
+            selectedCertificate = null;
+            // clear metadata
+            nameTextField.setText("");
+            contactTextField.setText("");
+            locationTextField.setText("");
+            signerHandler.setCertAlias(null);
+        } else {
+            selectedCertificate = certificate;
+            // pull out metadata from cert.
+            X500Principal principal = certificate.getSubjectX500Principal();
+            X500Name x500name = new X500Name(principal.getName());
+            if (x500name.getRDNs() != null) {
+                nameTextField.setText(SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.CN));
+                contactTextField.setText(SignatureUtilities.parseRelativeDistinguishedName(x500name,
+                        BCStyle.EmailAddress));
+                String address = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.POSTAL_ADDRESS);
+                if (address != null) {
+                    locationTextField.setText(SignatureUtilities.parseRelativeDistinguishedName(x500name,
+                            BCStyle.POSTAL_ADDRESS));
+                } else {
+                    String state = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.ST);
+                    if (state != null) {
+                        locationTextField.setText(SignatureUtilities.parseRelativeDistinguishedName(x500name,
+                                BCStyle.ST));
+                    }
+                }
+                ArrayList<String> location = new ArrayList<>(2);
+                String state = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.ST);
+                if (state != null) {
+                    location.add(state);
+                }
+                String country = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.C);
+                if (country != null) {
+                    location.add(country);
+                }
+                if (!location.isEmpty()) {
+                    locationTextField.setText(String.join(", ", location));
+                }
+            }
+        }
     }
 
     private void buildUI() throws KeyStoreException {
@@ -55,7 +188,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         final JDialog parent = this;
         PasswordDialogCallbackHandler passwordDialogCallbackHandler =
                 new PasswordDialogCallbackHandler(parent, messageBundle);
-        SignerHandler signerHandler = PkcsSignerFactory.getInstance(passwordDialogCallbackHandler);
+        signerHandler = PkcsSignerFactory.getInstance(passwordDialogCallbackHandler);
 
         this.setTitle(messageBundle.getString("viewer.annotation.signature.creation.dialog.title"));
 
@@ -67,16 +200,18 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         // keystore certificate table
         Enumeration<String> aliases = signerHandler.buildKeyStore().aliases();
         CertificateTableModel certificateTableModel = new CertificateTableModel(signerHandler, aliases, messageBundle);
-        JTable certTable = new JTable(certificateTableModel);
-        certTable.setPreferredScrollableViewportSize(new Dimension(600, 100));
-        certTable.setFillsViewportHeight(true);
+        certificateTable = new JTable(certificateTableModel);
+        certificateTable.getSelectionModel().addListSelectionListener(this);
+        certificateTable.setPreferredScrollableViewportSize(new Dimension(600, 100));
+        certificateTable.setFillsViewportHeight(true);
 
         // certificate type selection
-        JRadioButton signerRadioButton = new JRadioButton(messageBundle.getString(
+        signerRadioButton = new JRadioButton(messageBundle.getString(
                 "viewer.annotation.signature.creation.dialog.certificate.type.signer.label"));
+        signerRadioButton.setSelected(true);
         signerRadioButton.addActionListener(this);
         signerRadioButton.setActionCommand(SignatureType.SIGNER.toString());
-        JRadioButton certifyRadioButton = new JRadioButton(messageBundle.getString(
+        certifyRadioButton = new JRadioButton(messageBundle.getString(
                 "viewer.annotation.signature.creation.dialog.certificate.type.certify.label"));
         certifyRadioButton.addActionListener(this);
         signerRadioButton.setActionCommand(SignatureType.CERTIFIER.toString());
@@ -85,27 +220,38 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         certificateTypeButtonGroup.add(certifyRadioButton);
 
         // signature visibility
-        JCheckBox signerVisibilityCheckBox = new JCheckBox(messageBundle.getString(
+        signerVisibilityCheckBox = new JCheckBox(messageBundle.getString(
                 "viewer.annotation.signature.creation.dialog.certificate.visibility.certify.label"));
+        signerVisibilityCheckBox.setSelected(true);
+        signerVisibilityCheckBox.addActionListener(this);
 
         // location and date
-        JTextField locationTextField = new JTextField();
-        JTextField dateTextField = new JTextField();
+        locationTextField = new JTextField();
+        locationTextField.addActionListener(this);
+        dateTextField = new JTextField();
+        dateTextField.setEnabled(false);
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        String today = df.format(new Date());
+        dateTextField.setText(today);
+        // title
+        titleTextField = new JTextField();
+        // name
+        nameTextField = new JTextField();
         // contact
-        JTextField contactTextField = new JTextField();
+        contactTextField = new JTextField();
+        contactTextField.addActionListener(this);
         // reason
-        JTextArea responseTextField = new JTextArea(4, 20);
-        responseTextField.setLineWrap(true);
-        responseTextField.setWrapStyleWord(true);
+        reasonTextArea = new JTextArea(4, 20);
+        reasonTextArea.setLineWrap(true);
+        reasonTextArea.setWrapStyleWord(true);
 
         // todo Timestamp
 
         // language
-        Locale[] supportedLocales = {
-                new Locale("en", "CA"),
-                new Locale("fr", "FR")
-        };
-        JComboBox<Locale> languagesComboBox = new JComboBox<>(supportedLocales);
+        languagesComboBox = new JComboBox<>(supportedLocales);
+        // be nice to do this and take into account country too.
+        languagesComboBox.setSelectedItem(new Locale(Locale.getDefault().getLanguage()));
+        languagesComboBox.addActionListener(this);
 
         // close buttons.
         final JButton closeButton = new JButton(messageBundle.getString(
@@ -115,19 +261,15 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
             setVisible(false);
             dispose();
         });
-        final JButton signerButton = new JButton(messageBundle.getString(
+        signButton = new JButton(messageBundle.getString(
                 "viewer.annotation.signature.creation.dialog.sign.button.label"));
-
-        signerButton.addActionListener(e -> {
-            setVisible(false);
-            dispose();
-        });
+        signButton.addActionListener(this);
 
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.weightx = 1.0;
         constraints.weighty = 0;
-        constraints.insets = new Insets(5, 5, 5, 5);
+        constraints.insets = new Insets(2, 10, 2, 10);
 
         // cert selection label
         addGB(certificateSelectionPanel, new JLabel(messageBundle.getString(
@@ -135,7 +277,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
                 0, 0, 1, 3);
 
         // cert table
-        addGB(certificateSelectionPanel, new JScrollPane(certTable), 0, 1, 1, 4);
+        addGB(certificateSelectionPanel, new JScrollPane(certificateTable), 0, 1, 1, 4);
 
         // type of signature.
         addGB(certificateSelectionPanel, new JLabel(messageBundle.getString(
@@ -153,37 +295,48 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         addGB(certificateSelectionPanel, locationTextField, 1, 3, 1, 1);
         addGB(certificateSelectionPanel, dateTextField, 2, 3, 1, 1);
 
+        // title
+        addGB(certificateSelectionPanel, new JLabel(messageBundle.getString(
+                        "viewer.annotation.signature.creation.dialog.certificate.title.label")),
+                0, 4, 1, 1);
+        addGB(certificateSelectionPanel, titleTextField, 1, 4, 1, 3);
+
+        // name
+        addGB(certificateSelectionPanel, new JLabel(messageBundle.getString(
+                        "viewer.annotation.signature.creation.dialog.certificate.name.label")),
+                0, 5, 1, 1);
+        addGB(certificateSelectionPanel, nameTextField, 1, 5, 1, 3);
+
         // contact
         addGB(certificateSelectionPanel, new JLabel(messageBundle.getString(
                         "viewer.annotation.signature.creation.dialog.certificate.contact.label")),
-                0, 4, 1, 1);
-        addGB(certificateSelectionPanel, contactTextField, 1, 4, 1, 3);
+                0, 6, 1, 1);
+        addGB(certificateSelectionPanel, contactTextField, 1, 6, 1, 3);
 
         // Reason
         constraints.anchor = GridBagConstraints.FIRST_LINE_START;
         addGB(certificateSelectionPanel, new JLabel(messageBundle.getString(
                         "viewer.annotation.signature.creation.dialog.certificate.reason.label")),
-                0, 5, 1, 1);
-        addGB(certificateSelectionPanel, responseTextField, 1, 5, 1, 3);
+                0, 7, 1, 1);
+        addGB(certificateSelectionPanel, new JScrollPane(reasonTextArea), 1, 7, 1, 3);
 
         // language selection
         constraints.anchor = GridBagConstraints.LINE_START;
         addGB(certificateSelectionPanel, new JLabel(messageBundle.getString(
                         "viewer.annotation.signature.creation.dialog.certificate.i18n.label")),
-                0, 6, 1, 1);
-        addGB(certificateSelectionPanel, languagesComboBox, 1, 6, 1, 1);
+                0, 8, 1, 1);
+        addGB(certificateSelectionPanel, languagesComboBox, 1, 8, 1, 1);
 
         constraints.weighty = 1.0;
-        addGB(certificateSelectionPanel, new Label(" "), 0, 7, 1, 1);
+        addGB(certificateSelectionPanel, new Label(" "), 0, 9, 1, 1);
 
         // close and sign input
         constraints.anchor = GridBagConstraints.WEST;
         constraints.fill = GridBagConstraints.NONE;
-        addGB(certificateSelectionPanel, closeButton, 0, 8, 1, 1);
+        addGB(certificateSelectionPanel, closeButton, 0, 10, 1, 1);
 
         constraints.anchor = GridBagConstraints.EAST;
-        addGB(certificateSelectionPanel, signerButton, 3, 8, 1, 1);
-
+        addGB(certificateSelectionPanel, signButton, 3, 10, 1, 1);
 
 
         // pack it up and go.
