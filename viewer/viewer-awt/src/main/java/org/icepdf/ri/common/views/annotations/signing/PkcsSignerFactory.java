@@ -11,11 +11,23 @@ import java.util.prefs.Preferences;
 import static org.icepdf.ri.common.preferences.SigningPreferencesPanel.PKCS_11_TYPE;
 import static org.icepdf.ri.common.preferences.SigningPreferencesPanel.PKCS_12_TYPE;
 
+/**
+ * Factory class for creating a SignerHandler instance based on the keystore type.
+ *
+ * @since 7.3
+ */
 public class PkcsSignerFactory {
 
     private PkcsSignerFactory() {
     }
 
+    /**
+     * Factory method for creating a SignerHandler instance based on the keystore type. Two instance types are supported
+     * PKCS12 and PKCS11.
+     *
+     * @param passwordDialogCallbackHandler
+     * @return SignerHandler instance based on the keystore type.  Null if the keystore type is not supported.
+     */
     public static SignerHandler getInstance(PasswordDialogCallbackHandler passwordDialogCallbackHandler) {
         ViewerPropertiesManager propertiesManager = ViewerPropertiesManager.getInstance();
         Preferences preferences = propertiesManager.getPreferences();
