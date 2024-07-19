@@ -29,10 +29,14 @@ module org.icepdf.core {
     exports org.icepdf.core.pobjects;
     exports org.icepdf.core.pobjects.acroform;
     exports org.icepdf.core.pobjects.acroform.signature;
+    exports org.icepdf.core.pobjects.acroform.signature.appearance;
     exports org.icepdf.core.pobjects.acroform.signature.certificates;
     exports org.icepdf.core.pobjects.acroform.signature.exceptions;
+    exports org.icepdf.core.pobjects.acroform.signature.handlers;
+    exports org.icepdf.core.pobjects.acroform.signature.utils;
     exports org.icepdf.core.pobjects.actions;
     exports org.icepdf.core.pobjects.annotations;
+    exports org.icepdf.core.pobjects.annotations.utils;
     exports org.icepdf.core.pobjects.fonts;
     exports org.icepdf.core.pobjects.graphics;
     exports org.icepdf.core.pobjects.graphics.commands;
