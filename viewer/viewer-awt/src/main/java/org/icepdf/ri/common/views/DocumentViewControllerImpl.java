@@ -37,6 +37,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -1385,6 +1386,35 @@ public class DocumentViewControllerImpl
 
             // fire event notification
             firePropertyChange(PropertyConstants.ANNOTATION_DELETED, annotationComponent, null);
+
+            // clear previously selected annotation and fire event.
+            assignSelectedAnnotation(null);
+
+            // repaint the view.
+            documentView.repaint();
+        }
+    }
+
+    @Override
+    public void deleteAnnotations(final Collection<AnnotationComponent> annotations) {
+        if (documentViewModel != null) {
+            final List<Memento> addMementos = new ArrayList<>(annotations.size());
+            final List<Memento> deleteMementos = new ArrayList<>(annotations.size());
+            annotations.forEach(ac -> {
+                // parent component
+                final PageViewComponent pageComponent =
+                        ac.getPageViewComponent();
+
+                if (annotationCallback != null) {
+                    annotationCallback.removeAnnotation(pageComponent, ac);
+                }
+                addMementos.add(new AnnotationState(ac, AnnotationState.Operation.ADD));
+                deleteMementos.add(new AnnotationState(ac, AnnotationState.Operation.DELETE));
+
+                // fire event notification
+                firePropertyChange(PropertyConstants.ANNOTATION_DELETED, ac, null);
+            });
+            documentViewModel.addMemento(new CombinedMemento(addMementos), new CombinedMemento(deleteMementos));
 
             // clear previously selected annotation and fire event.
             assignSelectedAnnotation(null);

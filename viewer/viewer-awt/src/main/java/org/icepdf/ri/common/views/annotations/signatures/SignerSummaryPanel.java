@@ -32,7 +32,8 @@ public class SignerSummaryPanel extends JPanel {
     private final GridBagConstraints constraints;
 
     public SignerSummaryPanel(SignatureValidationStatus signatureValidationStatus, ResourceBundle messageBundle,
-                              SignatureWidgetAnnotation signatureWidgetAnnotation, SignatureValidator signatureValidator,
+                              SignatureWidgetAnnotation signatureWidgetAnnotation,
+                              SignatureValidator signatureValidator,
                               boolean showIcon) {
 
         String validity = signatureValidationStatus.getValidity();
@@ -47,7 +48,7 @@ public class SignerSummaryPanel extends JPanel {
         String location = formatter.format(new Object[]{signatureValidationStatus.getDictionaryLocation()});
 
         // get the respective image.
-        JLabel validityIconLabel = new JLabel(new ImageIcon(signatureValidationStatus.getValidityIconPath()));
+        JLabel validityIconLabel = new JLabel(signatureValidationStatus.getValidityIcon());
 
         // put it all together.
         setAlignmentY(JPanel.TOP_ALIGNMENT);

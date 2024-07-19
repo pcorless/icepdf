@@ -201,6 +201,7 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_ANNOTATION_EDITING_MODE_ENABLED = "application.annotation.editing.mode.enabled";
     // Individual controls for the annotation toolbar button commands
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_SELECTION = "application.toolbar.annotation.selection.enabled";
+    public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_DELETE = "application.toolbar.annotation.delete.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_HIGHLIGHT = "application.toolbar.annotation.highlight.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_REDACTION = "application.toolbar.annotation.redaction" +
             ".enabled";

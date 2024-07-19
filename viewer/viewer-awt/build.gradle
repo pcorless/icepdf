@@ -19,7 +19,7 @@ repositories {
 dependencies {
     implementation project(':core:core-awt')
     // signature validation.
-    implementation 'org.bouncycastle:bcprov-ext-jdk18on:' + "${BOUNCY_VERSION}"
+    implementation 'org.bouncycastle:bcprov-jdk18on:' + "${BOUNCY_VERSION}"
     implementation 'org.bouncycastle:bcpkix-jdk18on:' + "${BOUNCY_VERSION}"
     // tests
     testImplementation(platform("org.junit:junit-bom:${JUNIT_BOM_VERSION}"))

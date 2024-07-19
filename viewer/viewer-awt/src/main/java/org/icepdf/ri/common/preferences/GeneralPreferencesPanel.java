@@ -90,14 +90,16 @@ public class GeneralPreferencesPanel extends JPanel implements PropertyChangeLis
         constraints.insets = new Insets(5, 5, 5, 5);
 
         addGB(generalPreferences, new JLabel(
-                        messageBundle.getString("viewer.dialog.viewerPreferences.section.general.textSelectionColor.label")),
+                        messageBundle.getString("viewer.dialog.viewerPreferences.section.general.textSelectionColor" +
+                                ".label")),
                 0, 0, 1, 1);
         constraints.anchor = GridBagConstraints.EAST;
         addGB(generalPreferences, selectionColorChooserButton, 1, 0, 1, 1);
 
         constraints.anchor = GridBagConstraints.WEST;
         addGB(generalPreferences, new JLabel(
-                        messageBundle.getString("viewer.dialog.viewerPreferences.section.general.searchHighlightColor.label")),
+                        messageBundle.getString("viewer.dialog.viewerPreferences.section.general.searchHighlightColor" +
+                                ".label")),
                 0, 1, 1, 1);
         constraints.anchor = GridBagConstraints.EAST;
         addGB(generalPreferences, highlightColorChooserButton, 1, 1, 1, 1);
@@ -116,7 +118,8 @@ public class GeneralPreferencesPanel extends JPanel implements PropertyChangeLis
         Color paperBorderColor = new Color(preferences.getInt(
                 ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BORDER_COLOR, PageViewDecorator.pageBorderColor.getRGB()));
         Color viewBackgroundColor = new Color(preferences.getInt(
-                ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, AbstractDocumentView.backgroundColour.getRGB()));
+                ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR,
+                AbstractDocumentView.backgroundColour.getRGB()));
 
         paperShadowColorChooserButton = new ColorChooserButton(paperShadowColor);
         paperShadowColorChooserButton.addPropertyChangeListener("background", this);
@@ -143,28 +146,32 @@ public class GeneralPreferencesPanel extends JPanel implements PropertyChangeLis
 
         constraints.anchor = GridBagConstraints.WEST;
         addGB(pageViewPreferences, new JLabel(
-                        messageBundle.getString("viewer.dialog.viewerPreferences.section.general.pageView.shadowColor.label")),
+                        messageBundle.getString("viewer.dialog.viewerPreferences.section.general.pageView.shadowColor" +
+                                ".label")),
                 0, 0, 1, 1);
         constraints.anchor = GridBagConstraints.EAST;
         addGB(pageViewPreferences, paperShadowColorChooserButton, 1, 0, 1, 1);
 
         constraints.anchor = GridBagConstraints.WEST;
         addGB(pageViewPreferences, new JLabel(
-                        messageBundle.getString("viewer.dialog.viewerPreferences.section.general.pageView.paperColor.label")),
+                        messageBundle.getString("viewer.dialog.viewerPreferences.section.general.pageView.paperColor" +
+                                ".label")),
                 0, 1, 1, 1);
         constraints.anchor = GridBagConstraints.EAST;
         addGB(pageViewPreferences, paperColorChooserButton, 1, 1, 1, 1);
 
         constraints.anchor = GridBagConstraints.WEST;
         addGB(pageViewPreferences, new JLabel(
-                        messageBundle.getString("viewer.dialog.viewerPreferences.section.general.pageView.borderColor.label")),
+                        messageBundle.getString("viewer.dialog.viewerPreferences.section.general.pageView.borderColor" +
+                                ".label")),
                 0, 2, 1, 1);
         constraints.anchor = GridBagConstraints.EAST;
         addGB(pageViewPreferences, paperBorderColorChooserButton, 1, 2, 1, 1);
 
         constraints.anchor = GridBagConstraints.WEST;
         addGB(pageViewPreferences, new JLabel(
-                        messageBundle.getString("viewer.dialog.viewerPreferences.section.general.pageView.backgroundColor.label")),
+                        messageBundle.getString("viewer.dialog.viewerPreferences.section.general.pageView" +
+                                ".backgroundColor.label")),
                 0, 3, 1, 1);
         constraints.anchor = GridBagConstraints.EAST;
         addGB(pageViewPreferences, viewBackgroundColorChooserButton, 1, 3, 1, 1);
@@ -184,12 +191,14 @@ public class GeneralPreferencesPanel extends JPanel implements PropertyChangeLis
 
         ValueLabelItem[] sizeList = new ValueLabelItem[]{
                 new ValueLabelItem(Boolean.TRUE,
-                        messageBundle.getString("viewer.dialog.viewerPreferences.section.general.iconSize.small.label")),
+                        messageBundle.getString("viewer.dialog.viewerPreferences.section.general.iconSize.small" +
+                                ".label")),
                 new ValueLabelItem(Boolean.FALSE,
-                        messageBundle.getString("viewer.dialog.viewerPreferences.section.general.iconSize.large.label"))};
+                        messageBundle.getString("viewer.dialog.viewerPreferences.section.general.iconSize.large" +
+                                ".label"))};
         iconSizeComboBox = new JComboBox<>(sizeList);
         iconSizeComboBox.setSelectedIndex(
-                preferences.get(ViewerPropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_SMALL).equals(Images.SIZE_SMALL)
+                Images.getDefaultIconSizeOr(preferences, Images.IconSize.SMALL) == Images.IconSize.SMALL
                         ? 0 : 1);
         iconSizeComboBox.addItemListener(this);
         constraints.anchor = GridBagConstraints.WEST;
@@ -213,7 +222,8 @@ public class GeneralPreferencesPanel extends JPanel implements PropertyChangeLis
         Object source = e.getItemSelectable();
         if (source == iconSizeComboBox) {
             preferences.put(ViewerPropertiesManager.PROPERTY_ICON_DEFAULT_SIZE,
-                    iconSizeComboBox.getSelectedIndex() == 0 ? Images.SIZE_SMALL : Images.SIZE_LARGE);
+                    iconSizeComboBox.getSelectedIndex() == 0 ? Images.IconSize.SMALL.toString() :
+                            Images.IconSize.LARGE.toString());
         }
     }
 
@@ -228,16 +238,20 @@ public class GeneralPreferencesPanel extends JPanel implements PropertyChangeLis
             preferences.putInt(ViewerPropertiesManager.PROPERTY_TEXT_SELECTION_COLOR, Page.selectionColor.getRGB());
         } else if (source == paperShadowColorChooserButton) {
             PageViewDecorator.pageShadowColor = paperShadowColorChooserButton.getBackground();
-            preferences.putInt(ViewerPropertiesManager.PROPERTY_PAGE_VIEW_SHADOW_COLOR, PageViewDecorator.pageShadowColor.getRGB());
+            preferences.putInt(ViewerPropertiesManager.PROPERTY_PAGE_VIEW_SHADOW_COLOR,
+                    PageViewDecorator.pageShadowColor.getRGB());
         } else if (source == paperColorChooserButton) {
             PageViewDecorator.pageColor = paperColorChooserButton.getBackground();
-            preferences.putInt(ViewerPropertiesManager.PROPERTY_PAGE_VIEW_PAPER_COLOR, PageViewDecorator.pageColor.getRGB());
+            preferences.putInt(ViewerPropertiesManager.PROPERTY_PAGE_VIEW_PAPER_COLOR,
+                    PageViewDecorator.pageColor.getRGB());
         } else if (source == paperBorderColorChooserButton) {
             PageViewDecorator.pageBorderColor = paperBorderColorChooserButton.getBackground();
-            preferences.putInt(ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, PageViewDecorator.pageBorderColor.getRGB());
+            preferences.putInt(ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR,
+                    PageViewDecorator.pageBorderColor.getRGB());
         } else if (source == viewBackgroundColorChooserButton) {
             AbstractDocumentView.backgroundColour = viewBackgroundColorChooserButton.getBackground();
-            preferences.putInt(ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, AbstractDocumentView.backgroundColour.getRGB());
+            preferences.putInt(ViewerPropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR,
+                    AbstractDocumentView.backgroundColour.getRGB());
         }
     }
 
