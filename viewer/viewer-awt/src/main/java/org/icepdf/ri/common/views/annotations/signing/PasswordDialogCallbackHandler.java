@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 
 import static javax.swing.JOptionPane.CLOSED_OPTION;
 import static javax.swing.JOptionPane.OK_OPTION;
+import static org.icepdf.ri.common.preferences.SigningPreferencesPanel.PKCS_11_TYPE;
 
 public class PasswordDialogCallbackHandler extends PasswordCallbackHandler {
 
@@ -26,7 +27,6 @@ public class PasswordDialogCallbackHandler extends PasswordCallbackHandler {
         this.messageBundle = messageBundle;
     }
 
-    // todo really need a enum to handle the repeat of this constant
     public void setType(String dialogType) {
         this.dialogType = dialogType;
     }
@@ -39,13 +39,28 @@ public class PasswordDialogCallbackHandler extends PasswordCallbackHandler {
 //                pc.setPassword("changeit".toCharArray());
 //                password = "changeit";
                 JPanel panel = new JPanel();
-                // todo setup i18n, and need to look at the dialog type, pin vs. password verbiage.
-                JLabel label = new JLabel("Enter keystore password:");
+                String[] options = new String[]{
+                        messageBundle.getString("viewer.button.ok.label"),
+                        messageBundle.getString("viewer.button.cancel.label")};
+                String dialogTitle = null;
+                // slightly different verbiage for pkcs11 or pks12.
+                if (dialogType.equals(PKCS_11_TYPE)) {
+                    dialogTitle = messageBundle.getString(
+                            "viewer.annotation.signature.creation.keystore.pkcs11.dialog.title");
+                    JLabel label = new JLabel(messageBundle.getString(
+                            "viewer.annotation.signature.creation.keystore.pkcs11.dialog.label"));
+                    panel.add(label);
+                } else {
+                    dialogTitle = messageBundle.getString(
+                            "viewer.annotation.signature.creation.keystore.pkcs12.dialog.title");
+                    JLabel label = new JLabel(messageBundle.getString(
+                            "viewer.annotation.signature.creation.keystore.pkcs12.dialog.label"));
+                    panel.add(label);
+                }
                 JPasswordField pass = new JPasswordField(15);
-                panel.add(label);
                 panel.add(pass);
-                String[] options = new String[]{"OK", "Cancel"};
-                int option = JOptionPane.showOptionDialog(parentComponent, panel, "Keystore Password",
+                int option = JOptionPane.showOptionDialog(parentComponent, panel,
+                        dialogTitle,
                         JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE,
                         null, options, options[0]);
                 if (option == OK_OPTION) {
