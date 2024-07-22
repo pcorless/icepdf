@@ -86,7 +86,7 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
         signaturePropertiesMenu.addActionListener(new SignerPropertiesActionListener());
 
         addSignatureMenu = new JMenuItem(messageBundle.getString(
-                "viewer.annotation.signature.menu.addCertificate.label"));
+                "viewer.annotation.signature.menu.addSignature.label"));
         addSignatureMenu.addActionListener(new NewSignatureActionListener());
 
         deleteSignatureMenu = new JMenuItem(messageBundle.getString(

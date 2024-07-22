@@ -107,6 +107,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
             signatureDictionary.setName(nameTextField.getText());
             signatureDictionary.setContactInfo(contactTextField.getText());
             signatureDictionary.setLocation(locationTextField.getText());
+            signatureDictionary.setReason(reasonTextArea.getText());
 
             // build basic appearance
             SignatureAppearanceModel signatureAppearanceModel = new SignatureAppearanceModel(
@@ -138,16 +139,13 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
     }
 
     private void setSelectedCertificate(X509Certificate certificate) {
-        X509Certificate selectedCertificate;
         if (certificate == null) {
-            selectedCertificate = null;
             // clear metadata
             nameTextField.setText("");
             contactTextField.setText("");
             locationTextField.setText("");
             signerHandler.setCertAlias(null);
         } else {
-            selectedCertificate = certificate;
             // pull out metadata from cert.
             X500Principal principal = certificate.getSubjectX500Principal();
             X500Name x500name = new X500Name(principal.getName());
@@ -185,13 +183,34 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
     private void buildUI() throws KeyStoreException {
 
         // need to build keystore right up front, so we can build out the JTable to show certs in the keychain
-        final JDialog parent = this;
         PasswordDialogCallbackHandler passwordDialogCallbackHandler =
-                new PasswordDialogCallbackHandler(parent, messageBundle);
+                new PasswordDialogCallbackHandler(this, messageBundle);
         signerHandler = PkcsSignerFactory.getInstance(passwordDialogCallbackHandler);
 
         this.setTitle(messageBundle.getString("viewer.annotation.signature.creation.dialog.title"));
 
+        JPanel certificateSelectionPanel = buildCertificateSelectionPanel();
+        JPanel signatureBuilderPanel = buildSignatureBuilderPanel();
+        JTabbedPane signatureTabbedPane = new JTabbedPane();
+        signatureTabbedPane.addTab(
+                messageBundle.getString("viewer.annotation.signature.creation.dialog.certificate.tab.title"),
+                certificateSelectionPanel);
+        signatureTabbedPane.addTab(
+                messageBundle.getString("viewer.annotation.signature.creation.dialog.signature.tab.title"),
+                signatureBuilderPanel);
+
+        // pack it up and go.
+        getContentPane().add(signatureTabbedPane);
+        pack();
+        setLocationRelativeTo(getOwner());
+        setResizable(true);
+    }
+
+    private JPanel buildSignatureBuilderPanel() {
+        return new JPanel();
+    }
+
+    private JPanel buildCertificateSelectionPanel() throws KeyStoreException {
         JPanel certificateSelectionPanel = new JPanel(new GridBagLayout());
         certificateSelectionPanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
         this.setLayout(new BorderLayout());
@@ -337,13 +356,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
 
         constraints.anchor = GridBagConstraints.EAST;
         addGB(certificateSelectionPanel, signButton, 3, 10, 1, 1);
-
-
-        // pack it up and go.
-        getContentPane().add(certificateSelectionPanel);
-        pack();
-        setLocationRelativeTo(getOwner());
-        setResizable(true);
+        return certificateSelectionPanel;
     }
 
     private void addGB(JPanel layout, Component component,

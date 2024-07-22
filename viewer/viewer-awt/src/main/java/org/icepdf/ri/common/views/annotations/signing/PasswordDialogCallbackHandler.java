@@ -13,6 +13,12 @@ import static javax.swing.JOptionPane.CLOSED_OPTION;
 import static javax.swing.JOptionPane.OK_OPTION;
 import static org.icepdf.ri.common.preferences.SigningPreferencesPanel.PKCS_11_TYPE;
 
+/**
+ * PasswordDialogCallbackHandler handles requesting passwords or pins when accessing a users keystore.   The password
+ * is used to open the keystore as well as retrieve the private key used when signing a document.
+ *
+ * @since 7.3
+ */
 public class PasswordDialogCallbackHandler extends PasswordCallbackHandler {
 
     private static final Logger logger = Logger.getLogger(PasswordDialogCallbackHandler.class.getName());
