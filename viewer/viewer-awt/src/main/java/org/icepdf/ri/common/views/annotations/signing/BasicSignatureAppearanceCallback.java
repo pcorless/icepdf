@@ -86,13 +86,6 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
                     signatureAppearanceModel.getSignatureImage(), shapes);
         }
 
-        // title
-        ContentWriterUtils.addTextSpritesToShapes(fontFile, advanceX, advanceY, shapes,
-                signatureAppearanceModel.getFontSize() + 2,
-                signatureAppearanceModel.getLineSpacing(),
-                signatureAppearanceModel.getFontColor(),
-                signatureAppearanceModel.getTitle());
-
         // reasons
         MessageFormat reasonFormatter = new MessageFormat(messageBundle.getString(
                 "viewer.annotation.signature.handler.properties.reason.label"));
@@ -105,14 +98,6 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
                 reason);
 
         float groupSpacing = signatureAppearanceModel.getLineSpacing() + 5;
-
-        // name
-        ContentWriterUtils.addTextSpritesToShapes(fontFile, advanceX,
-                lastOffset.y + groupSpacing, shapes,
-                signatureAppearanceModel.getFontSize() + 2,
-                signatureAppearanceModel.getLineSpacing(),
-                signatureAppearanceModel.getFontColor(),
-                signatureAppearanceModel.getName());
 
         // contact info
         MessageFormat contactFormatter = new MessageFormat(messageBundle.getString(

@@ -80,7 +80,6 @@ public class SigningTests {
 
             // build basic appearance
             SignatureAppearanceModel signatureAppearanceModel = new SignatureAppearanceModel(
-                    "Mayor", "Diamond Joe Quimby",
                     createTestSignatureBufferedImage(), Locale.ENGLISH);
             signatureAppearanceModel.setSignatureImageLocation(25, 50);
             signatureAppearanceModel.setColumnLayoutWidth((int) signatureAnnotation.getBbox().getWidth() / 2);

@@ -20,7 +20,7 @@ import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.MutableDocument;
-import org.icepdf.ri.common.utility.annotation.properties.FreeTextAnnotationPanel;
+import org.icepdf.ri.common.utility.annotation.properties.FontWidgetUtilities;
 import org.icepdf.ri.common.utility.annotation.properties.ValueLabelItem;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
@@ -200,7 +200,7 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
 
         ViewerPropertiesManager propertiesManager = controller.getPropertiesManager();
 
-        fontSizeBox = new JComboBox<>(FreeTextAnnotationPanel.generateFontSizeNameList(messageBundle));
+        fontSizeBox = new JComboBox<>(FontWidgetUtilities.generateFontSizeNameList(messageBundle));
         applySelectedValue(fontSizeBox, propertiesManager.checkAndStoreIntProperty(
                 ViewerPropertiesManager.PROPERTY_ANNOTATION_SUMMARY_FONT_SIZE, new JLabel().getFont().getSize()));
         fontSizeBox.addItemListener(this);

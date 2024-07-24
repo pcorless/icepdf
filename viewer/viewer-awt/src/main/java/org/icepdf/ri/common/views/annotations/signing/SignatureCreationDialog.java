@@ -11,14 +11,20 @@ import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.SignatureDictionaries;
 import org.icepdf.ri.common.EscapeJDialog;
+import org.icepdf.ri.common.utility.annotation.properties.FontWidgetUtilities;
+import org.icepdf.ri.common.utility.annotation.properties.ValueLabelItem;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
+import javax.swing.border.EtchedBorder;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
 import java.text.DateFormat;
@@ -30,7 +36,8 @@ import java.util.logging.Logger;
  * The SignatureCreationDialog allows users to select an available signing certificate and customize various setting
  * associated with signing a document.
  */
-public class SignatureCreationDialog extends EscapeJDialog implements ActionListener, ListSelectionListener {
+public class SignatureCreationDialog extends EscapeJDialog implements ActionListener, ListSelectionListener,
+        ItemListener {
 
     private static final Logger logger =
             Logger.getLogger(SignatureCreationDialog.class.toString());
@@ -57,10 +64,15 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
     private JCheckBox signerVisibilityCheckBox;
     private JTextField locationTextField;
     private JTextField dateTextField;
-    private JTextField titleTextField;
     private JTextField nameTextField;
     private JTextField contactTextField;
     private JTextArea reasonTextArea;
+
+    private JComboBox<ValueLabelItem> fontNameBox;
+    private JComboBox<ValueLabelItem> fontSizeBox;
+    private JCheckBox showTextCheckBox;
+    private JCheckBox showSignatureCheckBox;
+
     private JComboBox<Locale> languagesComboBox;
     private JButton signButton;
 
@@ -110,9 +122,8 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
             signatureDictionary.setReason(reasonTextArea.getText());
 
             // build basic appearance
+            // todo make this an instance so we can update it as needed.
             SignatureAppearanceModel signatureAppearanceModel = new SignatureAppearanceModel(
-                    titleTextField.getText(),
-                    nameTextField.getText(),
                     null, //createTestSignatureBufferedImage(),
                     (Locale) languagesComboBox.getSelectedItem());
             signatureAppearanceModel.setSignatureImageLocation(25, 50);
@@ -124,6 +135,26 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
 
 //            setVisible(false);
 //            dispose();
+        }
+    }
+
+    @Override
+    public void itemStateChanged(ItemEvent e) {
+        if (e.getStateChange() != ItemEvent.SELECTED) {
+            return;
+        }
+        if (e.getSource() == fontSizeBox) {
+            ValueLabelItem item = (ValueLabelItem) fontSizeBox.getSelectedItem();
+            if (item != null) {
+                // todo update font size
+                System.out.println("font size: " + item.getValue());
+            }
+        } else if (e.getSource() == fontNameBox) {
+            ValueLabelItem item = (ValueLabelItem) fontNameBox.getSelectedItem();
+            if (item != null) {
+                // todo update font name
+                System.out.println("font name: " + item.getValue());
+            }
         }
     }
 
@@ -207,7 +238,54 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
     }
 
     private JPanel buildSignatureBuilderPanel() {
-        return new JPanel();
+        JPanel appearancePanel = new JPanel(new GridBagLayout());
+        appearancePanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
+
+        constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.weightx = 1.0;
+        constraints.weighty = 0;
+        constraints.insets = new Insets(2, 10, 2, 10);
+
+        JPanel visibilityPanel = new JPanel(new GridBagLayout());
+        visibilityPanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
+        visibilityPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
+                messageBundle.getString("viewer.annotation.signature.creation.dialog.signature.appearance.title")));
+        fontNameBox = new JComboBox<>(FontWidgetUtilities.generateFontNameList(messageBundle));
+        fontNameBox.addItemListener(this);
+        fontSizeBox = new JComboBox<>(FontWidgetUtilities.generateFontSizeNameList(messageBundle));
+        fontSizeBox.addItemListener(this);
+        showTextCheckBox = new JCheckBox(messageBundle.getString(
+                "viewer.annotation.signature.creation.dialog.signature.appearance.showText.label"));
+        showSignatureCheckBox = new JCheckBox(messageBundle.getString(
+                "viewer.annotation.signature.creation.dialog.signature.appearance.showSignature.label"));
+
+        addGB(visibilityPanel, new JLabel(messageBundle.getString(
+                        "viewer.annotation.signature.creation.dialog.signature.appearance.font.label")),
+                0, 0, 1, 1);
+        addGB(visibilityPanel, fontNameBox, 1, 0, 1, 1);
+        addGB(visibilityPanel, new JLabel(messageBundle.getString(
+                        "viewer.annotation.signature.creation.dialog.signature.appearance.fontSize.label")),
+                2, 0, 1, 1);
+        addGB(visibilityPanel, fontSizeBox, 3, 0, 1, 1);
+        addGB(visibilityPanel, showTextCheckBox, 0, 1, 1, 2);
+        addGB(visibilityPanel, showSignatureCheckBox, 2, 1, 1, 2);
+
+        JPanel signaturePanel = new JPanel(new GridBagLayout());
+        signaturePanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
+        signaturePanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
+                messageBundle.getString("viewer.annotation.signature.creation.dialog.signature.canvas.title")));
+        // todo drawing panel
+        signaturePanel.add(new JButton("test 1"));
+
+
+        constraints.insets = new Insets(2, 10, 2, 10);
+        addGB(appearancePanel, visibilityPanel, 0, 0, 1, 1);
+        addGB(appearancePanel, signaturePanel, 0, 1, 1, 1);
+        constraints.weighty = 1.0;
+        addGB(appearancePanel, new Label(" "), 0, 9, 1, 1);
+
+        return appearancePanel;
     }
 
     private JPanel buildCertificateSelectionPanel() throws KeyStoreException {
@@ -252,8 +330,6 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         String today = df.format(new Date());
         dateTextField.setText(today);
-        // title
-        titleTextField = new JTextField();
         // name
         nameTextField = new JTextField();
         // contact
@@ -313,12 +389,6 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
                 0, 3, 1, 1);
         addGB(certificateSelectionPanel, locationTextField, 1, 3, 1, 1);
         addGB(certificateSelectionPanel, dateTextField, 2, 3, 1, 1);
-
-        // title
-        addGB(certificateSelectionPanel, new JLabel(messageBundle.getString(
-                        "viewer.annotation.signature.creation.dialog.certificate.title.label")),
-                0, 4, 1, 1);
-        addGB(certificateSelectionPanel, titleTextField, 1, 4, 1, 3);
 
         // name
         addGB(certificateSelectionPanel, new JLabel(messageBundle.getString(

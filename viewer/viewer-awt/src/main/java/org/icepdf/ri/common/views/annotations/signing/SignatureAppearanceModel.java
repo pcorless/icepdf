@@ -42,27 +42,18 @@ public class SignatureAppearanceModel {
     private int signatureCoordinateY;
     private BufferedImage signatureImage;
 
-    //
-    private String title;
-    private String name;
-
     private final String fontName = "Helvetica";
-    private int fontSize = 15;
+    private int fontSize = 10;
     private float lineSpacing = 5;
     private Color fontColor = Color.BLACK;
 
     private final PropertyChangeSupport changeDispatcher = new PropertyChangeSupport(this);
 
     /**
-     * @param title          signature user's title
-     * @param name           display name, may be different from what is defined in the signature
      * @param signatureImage image to embedded in the appearance stream
      * @param locale         locale to use when translating labels.
      */
-    public SignatureAppearanceModel(String title, String name,
-                                    BufferedImage signatureImage, Locale locale) {
-        this.title = title;
-        this.name = name;
+    public SignatureAppearanceModel(BufferedImage signatureImage, Locale locale) {
         this.signatureImage = signatureImage;
         this.locale = locale;
         messageBundle = ResourceBundle.getBundle(ViewerPropertiesManager.DEFAULT_MESSAGE_BUNDLE, locale);
@@ -140,24 +131,6 @@ public class SignatureAppearanceModel {
 
     public void setSignatureImage(BufferedImage signatureImage) {
         this.signatureImage = signatureImage;
-        firePropertyChange(SIGNATURE_ANNOTATION_APPEARANCE_PROPERTY_CHANGE, null, null);
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-        firePropertyChange(SIGNATURE_ANNOTATION_APPEARANCE_PROPERTY_CHANGE, null, null);
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
         firePropertyChange(SIGNATURE_ANNOTATION_APPEARANCE_PROPERTY_CHANGE, null, null);
     }
 
