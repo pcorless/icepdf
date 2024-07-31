@@ -95,6 +95,7 @@ public final class ViewerPropertiesManager {
             ".config.path";
     public static final String PROPERTY_PKCS12_PROVIDER_KEYSTORE_PATH = "org.icepdf.core.signatures.keystore.pkcs12" +
             ".config.path";
+    public static final String PROPERTY_SIGNATURE_IMAGE_PATH = "org.icepdf.core.signatures.image.path";
     // advanced threading properties
     public static final String PROPERTY_IMAGE_PROXY_ENABLED = "org.icepdf.core.imageProxy";
     public static final String PROPERTY_IMAGE_PROXY_THREAD_COUNT = "org.icepdf.core.library.imageThreadPoolSize";

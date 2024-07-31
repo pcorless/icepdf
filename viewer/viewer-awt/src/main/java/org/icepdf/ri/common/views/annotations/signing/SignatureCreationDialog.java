@@ -13,6 +13,7 @@ import org.icepdf.core.util.SignatureDictionaries;
 import org.icepdf.ri.common.EscapeJDialog;
 import org.icepdf.ri.common.utility.annotation.properties.FontWidgetUtilities;
 import org.icepdf.ri.common.utility.annotation.properties.ValueLabelItem;
+import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
@@ -25,12 +26,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.image.BufferedImage;
 import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.prefs.Preferences;
 
 /**
  * The SignatureCreationDialog allows users to select an available signing certificate and customize various setting
@@ -72,10 +75,13 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
     private JComboBox<ValueLabelItem> fontSizeBox;
     private JCheckBox showTextCheckBox;
     private JCheckBox showSignatureCheckBox;
+    private JTextField imagePathTextField;
+    private BufferedImage signatureImage;
 
     private JComboBox<Locale> languagesComboBox;
     private JButton signButton;
 
+    private final Preferences preferences;
 
     private SignerHandler signerHandler;
 
@@ -91,6 +97,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
                                    SignatureWidgetAnnotation signatureWidgetAnnotation) throws KeyStoreException {
         super(parent, true);
         this.messageBundle = messageBundle;
+        this.preferences = ViewerPropertiesManager.getInstance().getPreferences();
         this.signatureValidator = signatureWidgetAnnotation.getSignatureValidator();
         this.signatureWidgetAnnotation = signatureWidgetAnnotation;
         buildUI();
@@ -122,9 +129,10 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
             signatureDictionary.setReason(reasonTextArea.getText());
 
             // build basic appearance
-            // todo make this an instance so we can update it as needed.
+            // todo make this an instance so we can update it on various event and we can pick up on the properties
+            //  change event to repaint the annotation.
             SignatureAppearanceModel signatureAppearanceModel = new SignatureAppearanceModel(
-                    null, //createTestSignatureBufferedImage(),
+                    signatureImage,
                     (Locale) languagesComboBox.getSelectedItem());
             signatureAppearanceModel.setSignatureImageLocation(25, 50);
             signatureAppearanceModel.setColumnLayoutWidth((int) signatureWidgetAnnotation.getBbox().getWidth() / 2);
@@ -132,10 +140,16 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
                     new BasicSignatureAppearanceCallback(signatureAppearanceModel);
             signatureWidgetAnnotation.setResetAppearanceCallback(signatureAppearance);
             signatureWidgetAnnotation.resetNullAppearanceStream();
+            // todo: might need component so we can force repaint.
 
 //            setVisible(false);
 //            dispose();
+        } else if (source == imagePathTextField) {
+            preferences.put(ViewerPropertiesManager.PROPERTY_SIGNATURE_IMAGE_PATH,
+                    imagePathTextField.getText());
+            signatureImage = SignatureUtilities.loadSignatureImage(imagePathTextField.getText());
         }
+        System.out.println("actionPerformed: " + actionEvent.getActionCommand());
     }
 
     @Override
@@ -259,7 +273,19 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
                 "viewer.annotation.signature.creation.dialog.signature.appearance.showText.label"));
         showSignatureCheckBox = new JCheckBox(messageBundle.getString(
                 "viewer.annotation.signature.creation.dialog.signature.appearance.showSignature.label"));
+        JLabel imagePathLabel = new JLabel(messageBundle.getString(
+                "viewer.annotation.signature.creation.dialog.signature.imagePath.label"));
+        imagePathTextField = new JTextField();
+        String imagePath = preferences.get(ViewerPropertiesManager.PROPERTY_SIGNATURE_IMAGE_PATH, "");
+        ;
+        imagePathTextField.setText(imagePath);
+        if (!imagePath.isEmpty()) {
+            signatureImage = SignatureUtilities.loadSignatureImage(imagePath);
+        }
+        imagePathTextField.addActionListener(this);
+        // TODO add browse button
 
+        // font name and size
         addGB(visibilityPanel, new JLabel(messageBundle.getString(
                         "viewer.annotation.signature.creation.dialog.signature.appearance.font.label")),
                 0, 0, 1, 1);
@@ -275,8 +301,9 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         signaturePanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
         signaturePanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
                 messageBundle.getString("viewer.annotation.signature.creation.dialog.signature.canvas.title")));
-        // todo drawing panel
-        signaturePanel.add(new JButton("test 1"));
+        // image path input
+        addGB(signaturePanel, imagePathLabel, 0, 0, 1, 1);
+        addGB(signaturePanel, imagePathTextField, 1, 0, 1, 1);
 
 
         constraints.insets = new Insets(2, 10, 2, 10);

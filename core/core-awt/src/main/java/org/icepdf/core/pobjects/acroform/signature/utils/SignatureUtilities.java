@@ -21,14 +21,23 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 
+import javax.imageio.ImageIO;
 import javax.security.auth.x500.X500Principal;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Utility of commonly used signature related algorithms.
  */
 public class SignatureUtilities {
+
+    private static final Logger logger =
+            Logger.getLogger(SignatureUtilities.class.toString());
 
     /**
      * Parse out a known data element from an X500Name.
@@ -82,5 +91,14 @@ public class SignatureUtilities {
         }
 //        signatureDictionary.setReason("Approval"); // Approval or certification but technically can be anything
 //        signatureDictionary.setDate(PDate.formatDateTime(new Date()));
+    }
+
+    public static BufferedImage loadSignatureImage(String imagePath) {
+        try {
+            return ImageIO.read(new File(imagePath));
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Error loading signature image", e);
+        }
+        return null;
     }
 }

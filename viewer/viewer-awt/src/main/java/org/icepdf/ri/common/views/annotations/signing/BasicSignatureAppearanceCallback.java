@@ -15,6 +15,9 @@ import org.icepdf.core.pobjects.graphics.commands.PostScriptEncoder;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.util.Library;
 
+import java.awt.*;
+import java.awt.font.FontRenderContext;
+import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -86,11 +89,28 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
                     signatureAppearanceModel.getSignatureImage(), shapes);
         }
 
+        // todo get text from appearance model it will be up  up to date
+
         // reasons
         MessageFormat reasonFormatter = new MessageFormat(messageBundle.getString(
                 "viewer.annotation.signature.handler.properties.reason.label"));
         String reason = reasonFormatter.format(new Object[]{signatureDictionary.getReason()});
-        Point2D.Float lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, midX, advanceY,
+        // contact info
+        MessageFormat contactFormatter = new MessageFormat(messageBundle.getString(
+                "viewer.annotation.signature.handler.properties.contact.label"));
+        String contactInfo = contactFormatter.format(new Object[]{signatureDictionary.getContactInfo()});
+        // common name
+        MessageFormat signerFormatter = new MessageFormat(messageBundle.getString(
+                "viewer.annotation.signature.handler.properties.signer.label"));
+        String commonName = signerFormatter.format(new Object[]{signatureDictionary.getName()});
+        // location
+        MessageFormat locationFormatter = new MessageFormat(messageBundle.getString(
+                "viewer.annotation.signature.handler.properties.location.label"));
+        String location = locationFormatter.format(new Object[]{signatureDictionary.getLocation()});
+
+        int leftMargin = calculateLeftMargin(bbox, reason, contactInfo, commonName, location);
+
+        Point2D.Float lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, leftMargin, advanceY,
                 shapes,
                 signatureAppearanceModel.getFontSize(),
                 signatureAppearanceModel.getLineSpacing(),
@@ -99,31 +119,21 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
 
         float groupSpacing = signatureAppearanceModel.getLineSpacing() + 5;
 
-        // contact info
-        MessageFormat contactFormatter = new MessageFormat(messageBundle.getString(
-                "viewer.annotation.signature.handler.properties.contact.label"));
-        String contactInfo = contactFormatter.format(new Object[]{signatureDictionary.getContactInfo()});
-        lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, midX, lastOffset.y + groupSpacing, shapes,
+        lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, leftMargin, lastOffset.y + groupSpacing,
+                shapes,
                 signatureAppearanceModel.getFontSize(),
                 signatureAppearanceModel.getLineSpacing(),
                 signatureAppearanceModel.getFontColor(),
                 contactInfo);
 
-        // common name
-        MessageFormat signerFormatter = new MessageFormat(messageBundle.getString(
-                "viewer.annotation.signature.handler.properties.signer.label"));
-        String commonName = signerFormatter.format(new Object[]{signatureDictionary.getName()});
-        lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, midX, lastOffset.y + groupSpacing, shapes,
+        lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, leftMargin, lastOffset.y + groupSpacing,
+                shapes,
                 signatureAppearanceModel.getFontSize(),
                 signatureAppearanceModel.getLineSpacing(),
                 signatureAppearanceModel.getFontColor(),
                 commonName);
 
-        // location
-        MessageFormat locationFormatter = new MessageFormat(messageBundle.getString(
-                "viewer.annotation.signature.handler.properties.location.label"));
-        String location = locationFormatter.format(new Object[]{signatureDictionary.getLocation()});
-        ContentWriterUtils.addTextSpritesToShapes(fontFile, midX, lastOffset.y + groupSpacing, shapes,
+        ContentWriterUtils.addTextSpritesToShapes(fontFile, leftMargin, lastOffset.y + groupSpacing, shapes,
                 signatureAppearanceModel.getFontSize(),
                 signatureAppearanceModel.getLineSpacing(),
                 signatureAppearanceModel.getFontColor(),
@@ -141,6 +151,22 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
             xObject.addImageResource(imageName, imageStream);
         }
         ContentWriterUtils.setAppearance(signatureWidgetAnnotation, xObject, appearanceState, stateManager, isNew);
+    }
+
+    private int calculateLeftMargin(Rectangle2D bbox, String... text) {
+        Font font = new Font(signatureAppearanceModel.getFontName(), Font.PLAIN,
+                signatureAppearanceModel.getFontSize());
+        FontRenderContext fontRenderContext = new FontRenderContext(new AffineTransform(), true, true);
+        int maxWidth = 0;
+
+        for (String s : text) {
+            GlyphVector glyphVector = font.createGlyphVector(fontRenderContext, s);
+            Rectangle2D rect = glyphVector.getOutline().getBounds2D();
+            if (rect.getWidth() > maxWidth) {
+                maxWidth = (int) rect.getWidth();
+            }
+        }
+        return (int) bbox.getWidth() - maxWidth;
     }
 
 }
