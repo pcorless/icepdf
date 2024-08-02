@@ -5,12 +5,9 @@ import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-import static org.icepdf.core.util.PropertyConstants.SIGNATURE_ANNOTATION_APPEARANCE_PROPERTY_CHANGE;
 
 /**
  * Signature appearance state allows the signature builder to dialog/ui and a SignatureAppearanceCallback
@@ -22,41 +19,21 @@ import static org.icepdf.core.util.PropertyConstants.SIGNATURE_ANNOTATION_APPEAR
  */
 public class SignatureAppearanceModel {
 
-    private int margin = 0;
-
-    private ResourceBundle messageBundle;
-
-    // middle margin
-    private int middleMargin;
-
-    // need signature type
-    private SignatureType signatureType;
-
-    // language selection
-    private Locale locale;
-
-    // signature visibility
-    private boolean signatureVisible;
-
-    private int signatureCoordinateX;
-    private int signatureCoordinateY;
     private BufferedImage signatureImage;
-
-    private final String fontName = "Helvetica";
+    private String fontName = "Helvetica";
     private int fontSize = 10;
-    private float lineSpacing = 5;
     private Color fontColor = Color.BLACK;
 
-    private final PropertyChangeSupport changeDispatcher = new PropertyChangeSupport(this);
+    private ResourceBundle messageBundle;
+    private Locale locale;
 
-    /**
-     * @param signatureImage image to embedded in the appearance stream
-     * @param locale         locale to use when translating labels.
-     */
-    public SignatureAppearanceModel(BufferedImage signatureImage, Locale locale) {
-        this.signatureImage = signatureImage;
-        this.locale = locale;
-        messageBundle = ResourceBundle.getBundle(ViewerPropertiesManager.DEFAULT_MESSAGE_BUNDLE, locale);
+    private SignatureType signatureType;
+    private boolean signatureVisible;
+    private String location;
+    private String contact;
+    private String name;
+
+    public SignatureAppearanceModel() {
     }
 
     public Locale getLocale() {
@@ -66,16 +43,6 @@ public class SignatureAppearanceModel {
     public void setLocale(Locale locale) {
         this.locale = locale;
         messageBundle = ResourceBundle.getBundle(ViewerPropertiesManager.DEFAULT_MESSAGE_BUNDLE, locale);
-        firePropertyChange(SIGNATURE_ANNOTATION_APPEARANCE_PROPERTY_CHANGE, null, null);
-    }
-
-    public int getColumnLayoutWidth() {
-        return middleMargin;
-    }
-
-    public void setColumnLayoutWidth(int middleMargin) {
-        this.middleMargin = middleMargin;
-        firePropertyChange(SIGNATURE_ANNOTATION_APPEARANCE_PROPERTY_CHANGE, null, null);
     }
 
     public SignatureType getSignatureType() {
@@ -84,7 +51,6 @@ public class SignatureAppearanceModel {
 
     public void setSignatureType(SignatureType signatureType) {
         this.signatureType = signatureType;
-        firePropertyChange(SIGNATURE_ANNOTATION_APPEARANCE_PROPERTY_CHANGE, null, null);
     }
 
     public boolean isSignatureVisible() {
@@ -93,36 +59,6 @@ public class SignatureAppearanceModel {
 
     public void setSignatureVisible(boolean signatureVisible) {
         this.signatureVisible = signatureVisible;
-        firePropertyChange(SIGNATURE_ANNOTATION_APPEARANCE_PROPERTY_CHANGE, null, null);
-    }
-
-    public int getSignatureCoordinateX() {
-        return signatureCoordinateX;
-    }
-
-    /**
-     * Sets the location of the signature image relative the annotation's bounding box (bbox)
-     *
-     * @param x x coordinate
-     * @param y y coordinate
-     */
-    public void setSignatureImageLocation(int x, int y) {
-        this.signatureCoordinateX = x;
-        this.signatureCoordinateY = y;
-    }
-
-    public void setSignatureCoordinateX(int signatureCoordinateX) {
-        this.signatureCoordinateX = signatureCoordinateX;
-        firePropertyChange(SIGNATURE_ANNOTATION_APPEARANCE_PROPERTY_CHANGE, null, null);
-    }
-
-    public int getSignatureCoordinateY() {
-        return signatureCoordinateY;
-    }
-
-    public void setSignatureCoordinateY(int signatureCoordinateY) {
-        this.signatureCoordinateY = signatureCoordinateY;
-        firePropertyChange(SIGNATURE_ANNOTATION_APPEARANCE_PROPERTY_CHANGE, null, null);
     }
 
     public BufferedImage getSignatureImage() {
@@ -131,11 +67,14 @@ public class SignatureAppearanceModel {
 
     public void setSignatureImage(BufferedImage signatureImage) {
         this.signatureImage = signatureImage;
-        firePropertyChange(SIGNATURE_ANNOTATION_APPEARANCE_PROPERTY_CHANGE, null, null);
     }
 
     public String getFontName() {
         return fontName;
+    }
+
+    public void setFontName(String fontName) {
+        this.fontName = fontName;
     }
 
     public int getFontSize() {
@@ -144,16 +83,6 @@ public class SignatureAppearanceModel {
 
     public void setFontSize(int fontSize) {
         this.fontSize = fontSize;
-        firePropertyChange(SIGNATURE_ANNOTATION_APPEARANCE_PROPERTY_CHANGE, null, null);
-    }
-
-    public float getLineSpacing() {
-        return lineSpacing;
-    }
-
-    public void setLineSpacing(float lineSpacing) {
-        this.lineSpacing = lineSpacing;
-        firePropertyChange(SIGNATURE_ANNOTATION_APPEARANCE_PROPERTY_CHANGE, null, null);
     }
 
     public Color getFontColor() {
@@ -162,32 +91,34 @@ public class SignatureAppearanceModel {
 
     public void setFontColor(Color fontColor) {
         this.fontColor = fontColor;
-        firePropertyChange(SIGNATURE_ANNOTATION_APPEARANCE_PROPERTY_CHANGE, null, null);
     }
 
-    public int getMargin() {
-        return margin;
+    public String getLocation() {
+        return location;
     }
 
-    public void setMargin(int margin) {
-        this.margin = margin;
-        firePropertyChange(SIGNATURE_ANNOTATION_APPEARANCE_PROPERTY_CHANGE, null, null);
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public String getContact() {
+        return contact;
+    }
+
+    public void setContact(String contact) {
+        this.contact = contact;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public ResourceBundle getMessageBundle() {
         return messageBundle;
     }
 
-    public void firePropertyChange(String event, Object oldValue,
-                                   Object newValue) {
-        changeDispatcher.firePropertyChange(event, oldValue, newValue);
-    }
-
-    public void addPropertyChangeListener(PropertyChangeListener l) {
-        changeDispatcher.addPropertyChangeListener(l);
-    }
-
-    public void removePropertyChangeListener(PropertyChangeListener l) {
-        changeDispatcher.removePropertyChangeListener(l);
-    }
 }

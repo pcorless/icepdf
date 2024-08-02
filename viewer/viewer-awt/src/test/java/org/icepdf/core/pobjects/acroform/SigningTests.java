@@ -79,10 +79,15 @@ public class SigningTests {
             SignatureUtilities.updateSignatureDictionary(signatureDictionary, pkcs12SignerHandler.getCertificate());
 
             // build basic appearance
-            SignatureAppearanceModel signatureAppearanceModel = new SignatureAppearanceModel(
-                    createTestSignatureBufferedImage(), Locale.ENGLISH);
-            signatureAppearanceModel.setSignatureImageLocation(25, 50);
-            signatureAppearanceModel.setColumnLayoutWidth((int) signatureAnnotation.getBbox().getWidth() / 2);
+            SignatureAppearanceModel signatureAppearanceModel = new SignatureAppearanceModel();
+            signatureAppearanceModel.setLocale(Locale.ENGLISH);
+            signatureAppearanceModel.setName(signatureDictionary.getName());
+            signatureAppearanceModel.setContact(signatureDictionary.getContactInfo());
+            signatureAppearanceModel.setLocation(signatureDictionary.getLocation());
+            signatureAppearanceModel.setSignatureType(signatureDictionary.getReason().equals("Approval") ?
+                    SignatureType.SIGNER : SignatureType.CERTIFIER);
+            signatureAppearanceModel.setSignatureImage(createTestSignatureBufferedImage());
+
             BasicSignatureAppearanceCallback signatureAppearance =
                     new BasicSignatureAppearanceCallback(signatureAppearanceModel);
             signatureAnnotation.setResetAppearanceCallback(signatureAppearance);

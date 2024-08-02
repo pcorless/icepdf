@@ -20,8 +20,8 @@ import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
-import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.pobjects.acroform.signature.utils.SignatureUtilities;
+import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 
@@ -137,7 +137,7 @@ public class SignatureValidationStatus {
                 && signatureValidator.isSignaturesCoverDocumentLength()) {
             return Images.getSingleIcon("signature_valid", IconPack.Variant.NONE, Images.IconSize.HUGE);
         } else if (!signatureValidator.isSignedDataModified() && signatureValidator.isSignaturesCoverDocumentLength()) {
-            return Images.getSingleIcon("signature_cation", IconPack.Variant.NONE, Images.IconSize.HUGE);
+            return Images.getSingleIcon("signature_caution", IconPack.Variant.NONE, Images.IconSize.HUGE);
         } else {
             return Images.getSingleIcon("signature_invalid", IconPack.Variant.NONE, Images.IconSize.HUGE);
         }

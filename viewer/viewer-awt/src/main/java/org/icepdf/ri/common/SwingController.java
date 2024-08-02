@@ -3685,33 +3685,15 @@ public class SwingController extends ComponentAdapter
                     //  but that could cause problems with slow network links too,
                     //  and would complicate the incremental update code, so we're
                     //  harmonising on this approach.
-                    // todo still need to decide what do do for FULL_UPDATE
+
                     SignatureDictionaries signatureDictionaries =
                             document.getCatalog().getLibrary().getSignatureDictionaries();
-                    ArrayList<SignatureDictionary> signatures = signatureDictionaries.getSignatures();
-                    for (SignatureDictionary signature : signatures) {
-                        signatureDictionaries.setCurrentSignatureDictionary(signature);
-                        try (final FileOutputStream fileOutputStream = new FileOutputStream(file);
-                             final BufferedOutputStream buf = new BufferedOutputStream(fileOutputStream, 8192)) {
-
-                            // We want 'save as' or 'save a copy to always occur
-                            if (saveMode == SaveMode.EXPORT) {
-                                // save as copy
-                                document.writeToOutputStream(buf, WriteMode.FULL_UPDATE);
-                            } else {
-                                // save as will append changes.
-                                document.saveToOutputStream(buf);
-                            }
-                            document.getStateManager().setChangesSnapshot();
-                        } catch (MalformedURLException e) {
-                            logger.log(Level.WARNING, "Malformed URL Exception ", e);
-                        } catch (IOException e) {
-                            logger.log(Level.WARNING, "IO Exception ", e);
-                        } catch (Exception e) {
-                            logger.log(Level.WARNING, "Failed to append document changes", e);
-                        }
+                    if (signatureDictionaries != null && !signatureDictionaries.getSignatures().isEmpty()) {
+                        // todo still need to decide what do do for FULL_UPDATE
+                        writeSignedDocuments(signatureDictionaries, saveMode, file);
+                    } else {
+                        writeDocument(saveMode, file);
                     }
-                    signatureDictionaries.setCurrentSignatureDictionary(null);
                     // save the default directory
                     ViewModel.setDefaultFile(file);
                 }
@@ -3726,6 +3708,54 @@ public class SwingController extends ComponentAdapter
                 saveFileAs();
             }
         }
+    }
+
+    private void writeDocument(SaveMode saveMode, File file) {
+        try (final FileOutputStream fileOutputStream = new FileOutputStream(file);
+             final BufferedOutputStream buf = new BufferedOutputStream(fileOutputStream, 8192)) {
+            // We want 'save as' or 'save a copy to always occur
+            if (saveMode == SaveMode.EXPORT) {
+                // save as copy
+                document.writeToOutputStream(buf, WriteMode.FULL_UPDATE);
+            } else {
+                // save as will append changes.
+                document.saveToOutputStream(buf);
+            }
+            document.getStateManager().setChangesSnapshot();
+        } catch (MalformedURLException e) {
+            logger.log(Level.WARNING, "Malformed URL Exception ", e);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "IO Exception ", e);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Failed to append document changes", e);
+        }
+    }
+
+    private void writeSignedDocuments(SignatureDictionaries signatureDictionaries, SaveMode saveMode, File file) {
+        ArrayList<SignatureDictionary> signatures = signatureDictionaries.getSignatures();
+        for (SignatureDictionary signature : signatures) {
+            signatureDictionaries.setCurrentSignatureDictionary(signature);
+            try (final FileOutputStream fileOutputStream = new FileOutputStream(file);
+                 final BufferedOutputStream buf = new BufferedOutputStream(fileOutputStream, 8192)) {
+
+                // We want 'save as' or 'save a copy to always occur
+                if (saveMode == SaveMode.EXPORT) {
+                    // save as copy
+                    document.writeToOutputStream(buf, WriteMode.FULL_UPDATE);
+                } else {
+                    // save as will append changes.
+                    document.saveToOutputStream(buf);
+                }
+                document.getStateManager().setChangesSnapshot();
+            } catch (MalformedURLException e) {
+                logger.log(Level.WARNING, "Malformed URL Exception ", e);
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "IO Exception ", e);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed to append document changes", e);
+            }
+        }
+        signatureDictionaries.setCurrentSignatureDictionary(null);
     }
 
     /**

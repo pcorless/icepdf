@@ -87,7 +87,7 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
 
         addSignatureMenu = new JMenuItem(messageBundle.getString(
                 "viewer.annotation.signature.menu.addSignature.label"));
-        addSignatureMenu.addActionListener(new NewSignatureActionListener());
+        addSignatureMenu.addActionListener(new NewSignatureActionListener(this));
 
         deleteSignatureMenu = new JMenuItem(messageBundle.getString(
                 "viewer.annotation.signature.menu.deleteSignature.label"));
@@ -181,9 +181,16 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
      * Opens the SignaturePropertiesDialog from a context menu.
      */
     class NewSignatureActionListener implements ActionListener {
+
+        private SignatureComponent signatureComponent;
+
+        public NewSignatureActionListener(SignatureComponent signatureComponent) {
+            this.signatureComponent = signatureComponent;
+        }
+
         public void actionPerformed(ActionEvent actionEvent) {
             try {
-                new SignatureCreationDialog(controller.getViewerFrame(), messageBundle, annotation).setVisible(true);
+                new SignatureCreationDialog(controller.getViewerFrame(), messageBundle, signatureComponent).setVisible(true);
             } catch (KeyStoreException e) {
                 // todo show authentication failed dialog, could not open keystore
                 logger.warning("failed to authenticate keystore");

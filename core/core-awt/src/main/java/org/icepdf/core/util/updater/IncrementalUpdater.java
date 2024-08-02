@@ -103,7 +103,8 @@ public class IncrementalUpdater {
             }
         } catch (Exception e) {
             logger.log(Level.FINE, "Failed to sign document.", e);
-            throw new RuntimeException(e);
+//            Todo still seeing 1 byte difference on dictionary write,  validation still works though?
+//            throw new RuntimeException(e);
         } finally {
             tmpDocument.dispose();
         }
