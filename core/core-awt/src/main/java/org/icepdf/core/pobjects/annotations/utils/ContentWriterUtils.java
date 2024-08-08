@@ -112,7 +112,8 @@ public class ContentWriterUtils {
         Rectangle2D bbox = appearanceState.getBbox();
         Rectangle2D formBbox = new Rectangle2D.Float(0, 0,
                 (float) bbox.getWidth(), (float) bbox.getHeight());
-
+        // todo fix coordinate space for text
+        //        matrix.scale(1,-1);
         form.setAppearance(shapes, matrix, formBbox);
         stateManager.addChange(new PObject(form, form.getPObjectReference()), isNew);
         // update the AP's stream bytes so contents can be written out
@@ -223,15 +224,22 @@ public class ContentWriterUtils {
         return fontFile;
     }
 
-    public static ImageStream addImageToShapes(Library library, Name imageName, int x, int y,
-                                               BufferedImage bufferedImage, Shapes shapes) {
+    public static ImageStream addImageToShapes(Library library, Name imageName,
+                                               BufferedImage bufferedImage, Shapes shapes,
+                                               Rectangle2D bbox, int leftMargin) {
+
+        // calculate the scale factor to fit in width - leftMargin
+        double scaleWidth = (float) bufferedImage.getWidth() / leftMargin;
+        double scaleHeight = bufferedImage.getHeight() / bbox.getHeight();
+        double scale = Math.max(scaleWidth, scaleHeight);
+
         // create transform for image placement
         AffineTransform imageTransform = new AffineTransform(
-                bufferedImage.getWidth(),
+                bufferedImage.getWidth() / scale,
                 0, 0,
-                bufferedImage.getHeight(),
-                x,
-                y);
+                -bufferedImage.getHeight() / scale,
+                0,
+                bbox.getHeight());
         // add image xObject
         ImageStream imageStream = ContentWriterUtils.createImageStream(library, bufferedImage, true);
         ImageReference imageReference = new ImageContentWriterReference(imageStream, imageName);

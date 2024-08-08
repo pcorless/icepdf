@@ -19,6 +19,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -79,7 +80,7 @@ public class SigningTests {
             SignatureUtilities.updateSignatureDictionary(signatureDictionary, pkcs12SignerHandler.getCertificate());
 
             // build basic appearance
-            SignatureAppearanceModel signatureAppearanceModel = new SignatureAppearanceModel();
+            SignatureAppearanceModel signatureAppearanceModel = new SignatureAppearanceModel(library);
             signatureAppearanceModel.setLocale(Locale.ENGLISH);
             signatureAppearanceModel.setName(signatureDictionary.getName());
             signatureAppearanceModel.setContact(signatureDictionary.getContactInfo());
@@ -91,7 +92,7 @@ public class SigningTests {
             BasicSignatureAppearanceCallback signatureAppearance =
                     new BasicSignatureAppearanceCallback(signatureAppearanceModel);
             signatureAnnotation.setResetAppearanceCallback(signatureAppearance);
-            signatureAnnotation.resetNullAppearanceStream();
+            signatureAnnotation.resetAppearanceStream(new AffineTransform());
 
             // Most common workflow is to add just one signature as we do here, but it is possible to add multiple
             // signatures via some backend process to create a document with multiple signers/certs.  The following

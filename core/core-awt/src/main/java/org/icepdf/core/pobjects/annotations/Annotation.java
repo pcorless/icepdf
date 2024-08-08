@@ -874,7 +874,7 @@ public abstract class Annotation extends Dictionary {
         return null;
     }
 
-    public void resetNullAppearanceStream() {
+    protected void resetNullAppearanceStream() {
         // try and generate an appearance stream.
         if (!hasAppearanceStream()) {
             Object tmp = getObject(RECTANGLE_KEY);

@@ -39,8 +39,6 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
 
     protected final SignatureAppearanceModel signatureAppearanceModel;
 
-    protected FontFile fontFile;
-
     /**
      * Create a new signature appearance stream builder
      *
@@ -63,9 +61,7 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         Shapes shapes = ContentWriterUtils.createAppearanceShapes(appearanceState, margin, margin);
 
         // create the new font to draw with
-        if (fontFile == null) {
-            fontFile = ContentWriterUtils.createFont(signatureAppearanceModel.getFontName());
-        }
+        FontFile fontFile = ContentWriterUtils.createFont(signatureAppearanceModel.getFontName());
 
         ResourceBundle messageBundle = signatureAppearanceModel.getMessageBundle();
 
@@ -78,17 +74,7 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         float midX = (float) bbox.getWidth() / 2;
 
         Library library = signatureDictionary.getLibrary();
-        Name imageName = new Name("sig_img_" + library.getStateManager().getNextImageNumber());
-
-        // create new image stream for the signature image 25, 50
-        int x = 0;
-        int y = 0;
-        BufferedImage signatureImage = signatureAppearanceModel.getSignatureImage();
-        ImageStream imageStream = null;
-        if (signatureImage != null) {
-            imageStream = ContentWriterUtils.addImageToShapes(library, imageName, x, y,
-                    signatureAppearanceModel.getSignatureImage(), shapes);
-        }
+        Name imageName = signatureAppearanceModel.getImageXObjectName();
 
         // reasons
         MessageFormat reasonFormatter = new MessageFormat(messageBundle.getString(
@@ -116,6 +102,15 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         String location = locationFormatter.format(new Object[]{signatureAppearanceModel.getLocation()});
 
         int leftMargin = calculateLeftMargin(bbox, reason, contactInfo, commonName, location);
+
+        // create new image stream for the signature image 25, 50
+        BufferedImage signatureImage = signatureAppearanceModel.getSignatureImage();
+        ImageStream imageStream = null;
+        if (signatureImage != null) {
+            imageStream = ContentWriterUtils.addImageToShapes(library, imageName,
+                    signatureAppearanceModel.getSignatureImage(), shapes, bbox, leftMargin);
+        }
+
         int lineSpacing = 5;
         Point2D.Float lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, leftMargin, advanceY,
                 shapes,

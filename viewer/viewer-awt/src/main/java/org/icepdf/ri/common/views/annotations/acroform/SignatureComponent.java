@@ -219,6 +219,7 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
         }
         // pick up on the context menu display
         else if (e.getButton() == MouseEvent.BUTTON3 || e.getButton() == MouseEvent.BUTTON2) {
+            updateContextMenu();
             contextMenu.show(e.getComponent(), e.getX(), e.getY());
         }
     }

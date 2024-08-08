@@ -98,7 +98,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         this.signatureWidgetAnnotation = signatureComponent.getAnnotation();
         this.signatureValidator = this.signatureWidgetAnnotation.getSignatureValidator();
 
-        signatureAppearanceModel = new SignatureAppearanceModel();
+        signatureAppearanceModel = new SignatureAppearanceModel(signatureComponent.getAnnotation().getLibrary());
 
         buildUI();
     }

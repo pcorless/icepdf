@@ -1,6 +1,8 @@
 package org.icepdf.ri.common.views.annotations.signing;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureType;
+import org.icepdf.core.util.Library;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import java.awt.*;
@@ -20,6 +22,7 @@ import java.util.ResourceBundle;
 public class SignatureAppearanceModel {
 
     private BufferedImage signatureImage;
+    private Name imageXObjectName;
     private String fontName = "Helvetica";
     private int fontSize = 10;
     private Color fontColor = Color.BLACK;
@@ -33,7 +36,8 @@ public class SignatureAppearanceModel {
     private String contact;
     private String name;
 
-    public SignatureAppearanceModel() {
+    public SignatureAppearanceModel(Library library) {
+        imageXObjectName = new Name("sig_img_" + library.getStateManager().getNextImageNumber());
     }
 
     public Locale getLocale() {
@@ -44,6 +48,11 @@ public class SignatureAppearanceModel {
         this.locale = locale;
         messageBundle = ResourceBundle.getBundle(ViewerPropertiesManager.DEFAULT_MESSAGE_BUNDLE, locale);
     }
+
+    public Name getImageXObjectName() {
+        return imageXObjectName;
+    }
+
 
     public SignatureType getSignatureType() {
         return signatureType;
