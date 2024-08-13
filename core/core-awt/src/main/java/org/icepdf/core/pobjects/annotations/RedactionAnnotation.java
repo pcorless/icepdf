@@ -71,7 +71,7 @@ public class RedactionAnnotation extends MarkupAnnotation {
 
     /*
      * (Required if OverlayText is present, ignored otherwise) The appearance string to be used in formatting the
-     * overlay text when it is drawn after the affected content has been removed (see 12.7.3.3, “Variable Text”).
+     * overlay text when it is drawn after the affected content has been removed (see 12.7.3.3, "Variable Text").
      * This entry is ignored if the RO entry is present.
      */
     public static final Name DA_KEY = new Name("DA");

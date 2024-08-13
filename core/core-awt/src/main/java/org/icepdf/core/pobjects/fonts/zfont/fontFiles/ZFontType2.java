@@ -4,6 +4,7 @@ import org.apache.fontbox.ttf.GlyphData;
 import org.apache.fontbox.ttf.OTFParser;
 import org.apache.fontbox.ttf.OpenTypeFont;
 import org.apache.fontbox.ttf.TrueTypeFont;
+import org.apache.pdfbox.io.RandomAccessReadBuffer;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Encoding;
@@ -15,7 +16,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Map;
 import java.util.logging.Level;
@@ -35,7 +35,7 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
             byte[] fontBytes = fontStream.getDecodedStreamBytes();
             // embedded OTF or TTF
             OTFParser otfParser = new OTFParser(true);
-            OpenTypeFont openTypeFont = otfParser.parse(new ByteArrayInputStream(fontBytes));
+            OpenTypeFont openTypeFont = otfParser.parse(new RandomAccessReadBuffer(fontBytes));
             trueTypeFont = openTypeFont;
             if (openTypeFont.isPostScript()) {
                 isDamaged = true;
@@ -145,7 +145,8 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     }
 
     @Override
-    public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
+    public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent,
+                               Rectangle2D bbox, char[] diff) {
         ZFontType2 font = new ZFontType2(this);
         font.firstCh = firstCh;
         font.ascent = ascent;
@@ -160,7 +161,8 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     }
 
     @Override
-    public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
+    public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent,
+                               float descent, Rectangle2D bbox, char[] diff) {
         ZFontType2 font = new ZFontType2(this);
         font.firstCh = firstCh;
         font.ascent = ascent;
