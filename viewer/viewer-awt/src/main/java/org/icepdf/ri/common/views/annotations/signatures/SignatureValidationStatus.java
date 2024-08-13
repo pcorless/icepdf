@@ -137,7 +137,7 @@ public class SignatureValidationStatus {
                 && signatureValidator.isSignaturesCoverDocumentLength()) {
             return Images.getSingleIcon("signature_valid", IconPack.Variant.NONE, Images.IconSize.HUGE);
         } else if (!signatureValidator.isSignedDataModified() && signatureValidator.isSignaturesCoverDocumentLength()) {
-            return Images.getSingleIcon("signature_cation", IconPack.Variant.NONE, Images.IconSize.HUGE);
+            return Images.getSingleIcon("signature_caution", IconPack.Variant.NONE, Images.IconSize.HUGE);
         } else {
             return Images.getSingleIcon("signature_invalid", IconPack.Variant.NONE, Images.IconSize.HUGE);
         }
