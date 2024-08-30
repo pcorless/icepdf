@@ -112,8 +112,6 @@ public class ContentWriterUtils {
         Rectangle2D bbox = appearanceState.getBbox();
         Rectangle2D formBbox = new Rectangle2D.Float(0, 0,
                 (float) bbox.getWidth(), (float) bbox.getHeight());
-        // todo fix coordinate space for text
-        //        matrix.scale(1,-1);
         form.setAppearance(shapes, matrix, formBbox);
         stateManager.addChange(new PObject(form, form.getPObjectReference()), isNew);
         // update the AP's stream bytes so contents can be written out
@@ -142,7 +140,7 @@ public class ContentWriterUtils {
                         content.length(),
                         new AffineTransform(), null);
         textSprites.setRMode(TextState.MODE_FILL);
-        textSprites.setStrokeColor(Color.BLACK);
+        textSprites.setStrokeColor(fontColor);
         textSprites.setFontName(EMBEDDED_FONT_NAME.toString());
         textSprites.setFontSize(fontSize);
 

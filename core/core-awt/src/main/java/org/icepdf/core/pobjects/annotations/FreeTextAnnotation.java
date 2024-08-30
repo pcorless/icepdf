@@ -379,7 +379,6 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
         AffineTransform matrix = appearanceState.getMatrix();
 
-
         // iterate over each line of text painting the strings.
         if (content == null) {
             setContents("");

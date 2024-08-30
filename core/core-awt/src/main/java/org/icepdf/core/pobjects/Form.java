@@ -238,10 +238,17 @@ public class Form extends Stream {
             newFont.setPObjectReference(stateManager.getNewReferenceNumber());
             // create font entry
             fontsDictionary.put(EMBEDDED_FONT_NAME, newFont.getPObjectReference());
-            // todo just add to state manager for this case
+            // sync font resources with form object.
+            entries.put(RESOURCES_KEY, formResources.entries);
+            setRawBytes("".getBytes());
+            try {
+                init();
+            } catch (InterruptedException e) {
+                logger.log(Level.WARNING, "Could not initialized Annotation", e);
+                throw new IllegalStateException("Could not initialized Annotation");
+            }
         } else {
             // reuse previously defined 'common' annotation font
-            // todo, don't think this is needed, everything should already be setup.
             try {
                 init();
             } catch (InterruptedException e) {
@@ -253,8 +260,7 @@ public class Form extends Stream {
             newFont = new org.icepdf.core.pobjects.fonts.zfont.SimpleFont(library, fontDictionary);
             newFont.setPObjectReference(reference);
         }
-        // sync font resources with form object.
-        entries.put(RESOURCES_KEY, formResources.entries);
+
         // update hard reference to state manager and weak library reference.
         stateManager.addChange(new PObject(newFont, newFont.getPObjectReference()), isNew);
         library.addObject(newFont, newFont.getPObjectReference());
