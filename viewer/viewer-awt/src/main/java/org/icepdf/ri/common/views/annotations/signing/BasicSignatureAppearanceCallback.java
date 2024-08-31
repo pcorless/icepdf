@@ -62,6 +62,7 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
 
         // create the new font to draw with
         FontFile fontFile = ContentWriterUtils.createFont(signatureAppearanceModel.getFontName());
+        fontFile = fontFile.deriveFont(signatureAppearanceModel.getFontSize());
 
         ResourceBundle messageBundle = signatureAppearanceModel.getMessageBundle();
 

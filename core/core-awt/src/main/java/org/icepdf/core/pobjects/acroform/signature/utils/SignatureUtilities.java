@@ -94,6 +94,9 @@ public class SignatureUtilities {
     }
 
     public static BufferedImage loadSignatureImage(String imagePath) {
+        if (imagePath == null || imagePath.isEmpty()) {
+            return null;
+        }
         try {
             return ImageIO.read(new File(imagePath));
         } catch (IOException e) {

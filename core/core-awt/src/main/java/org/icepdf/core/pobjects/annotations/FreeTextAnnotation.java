@@ -389,6 +389,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             fontFile = ContentWriterUtils.createFont(fontName);
             fontPropertyChanged = false;
         }
+        fontFile = fontFile.deriveFont(fontSize);
 
         BasicStroke stroke;
         if (strokeType && borderStyle.isStyleDashed()) {
@@ -423,10 +424,8 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         // is generally going to be zero, and af takes care of the offset for inset.
         float advanceX = (float) bbox.getMinX() + borderOffsetX;
         float advanceY = (float) bbox.getMinY() + borderOffsetY;
-        ContentWriterUtils.addTextSpritesToShapes(fontFile, advanceX, advanceY, shapes, 15, 0, fontColor, content);
-
-        shapes.add(new AlphaDrawCmd(
-                AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f)));
+        ContentWriterUtils.addTextSpritesToShapes(fontFile, advanceX, advanceY, shapes, fontSize, 0, fontColor,
+                content);
 
         // update the appearance stream
         // create/update the appearance stream of the xObject.
