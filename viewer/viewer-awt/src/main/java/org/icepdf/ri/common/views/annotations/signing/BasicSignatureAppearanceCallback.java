@@ -50,7 +50,8 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
     }
 
     @Override
-    public void createAppearanceStream(SignatureWidgetAnnotation signatureWidgetAnnotation) {
+    public void createAppearanceStream(SignatureWidgetAnnotation signatureWidgetAnnotation, AffineTransform pageSpace
+            , boolean isNew) {
         SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
         Name currentAppearance = signatureWidgetAnnotation.getCurrentAppearance();
         HashMap<Name, Appearance> appearances = signatureWidgetAnnotation.getAppearances();
@@ -108,8 +109,8 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         BufferedImage signatureImage = signatureAppearanceModel.getSignatureImage();
         ImageStream imageStream = null;
         if (signatureImage != null) {
-            imageStream = ContentWriterUtils.addImageToShapes(library, imageName,
-                    signatureAppearanceModel.getSignatureImage(), shapes, bbox, leftMargin);
+            imageStream = ContentWriterUtils.addImageToShapes(library, imageName, signatureImage, shapes, bbox,
+                    leftMargin);
         }
 
         int lineSpacing = 5;
@@ -143,17 +144,25 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
                 location);
 
         // finalized appearance stream and generated postscript
-        boolean isNew = true;
         StateManager stateManager = library.getStateManager();
         AffineTransform matrix = appearanceState.getMatrix();
 
-        Form xObject = signatureWidgetAnnotation.updateAppearanceStream(shapes, bbox, matrix,
-                PostScriptEncoder.generatePostScript(shapes.getShapes()), isNew);
+        byte[] postScript = PostScriptEncoder.generatePostScript(shapes.getShapes());
+        Form xObject = signatureWidgetAnnotation.updateAppearanceStream(shapes, bbox, matrix, postScript, isNew);
         xObject.addFontResource(ContentWriterUtils.createDefaultFontDictionary(signatureAppearanceModel.getFontName()));
         if (imageStream != null) {
             xObject.addImageResource(imageName, imageStream);
         }
+        try {
+            xObject.init();
+            // the image make it more difficult to use the shapes array, so we generated
+            // from the postscript array to get a proper shapes
+            appearanceState.setShapes(xObject.getShapes());
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         ContentWriterUtils.setAppearance(signatureWidgetAnnotation, xObject, appearanceState, stateManager, isNew);
+
     }
 
     private int calculateLeftMargin(Rectangle2D bbox, String... text) {

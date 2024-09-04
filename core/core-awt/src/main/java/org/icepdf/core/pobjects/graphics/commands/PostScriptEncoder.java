@@ -81,21 +81,21 @@ public class PostScriptEncoder {
                 // setup an affine transform
                 if (drawCmd instanceof TransformDrawCmd) {
                     AffineTransform af = ((TransformDrawCmd) drawCmd).getAffineTransform();
-                    postScript.append(af.getScaleX()).append(SPACE)
-                            .append(af.getShearX()).append(SPACE)
-                            .append(af.getShearY()).append(SPACE)
-                            .append(af.getScaleY()).append(SPACE)
-                            .append(af.getTranslateX()).append(SPACE)
-                            .append(af.getTranslateY()).append(SPACE)
+                    postScript.append(roundCoordinate(af.getScaleX())).append(SPACE)
+                            .append(roundCoordinate(af.getShearX())).append(SPACE)
+                            .append(roundCoordinate(af.getShearY())).append(SPACE)
+                            .append(roundCoordinate(af.getScaleY())).append(SPACE)
+                            .append(roundCoordinate(af.getTranslateX())).append(SPACE)
+                            .append(roundCoordinate(af.getTranslateY())).append(SPACE)
                             .append(PdfOps.cm_TOKEN).append(NEWLINE);
                 } else if (drawCmd instanceof TextTransformDrawCmd) {
                     AffineTransform af = ((TransformDrawCmd) drawCmd).getAffineTransform();
-                    postScript.append(af.getScaleX()).append(SPACE)
-                            .append(af.getShearX()).append(SPACE)
-                            .append(af.getShearY()).append(SPACE)
-                            .append(af.getScaleY()).append(SPACE)
-                            .append(af.getTranslateX()).append(SPACE)
-                            .append(af.getTranslateY()).append(SPACE)
+                    postScript.append(roundCoordinate(af.getScaleX())).append(SPACE)
+                            .append(roundCoordinate(af.getShearX())).append(SPACE)
+                            .append(roundCoordinate(af.getShearY())).append(SPACE)
+                            .append(roundCoordinate(af.getScaleY())).append(SPACE)
+                            .append(roundCoordinate(af.getTranslateX())).append(SPACE)
+                            .append(roundCoordinate(af.getTranslateY())).append(SPACE)
                             .append(PdfOps.Tm_TOKEN).append(NEWLINE);
                 }
                 // reference the colour, we'll decide later if its fill or stroke.
@@ -257,6 +257,10 @@ public class PostScriptEncoder {
             logger.finer("PostEncoding: " + postScript);
         }
         return postScript.toString().getBytes();
+    }
+
+    private static double roundCoordinate(double value) {
+        return Math.round(value * 10000.0) / 10000.0;
     }
 
     /**

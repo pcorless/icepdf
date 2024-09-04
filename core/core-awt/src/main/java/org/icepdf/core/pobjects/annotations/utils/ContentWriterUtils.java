@@ -62,49 +62,6 @@ public class ContentWriterUtils {
         return imageDictionary;
     }
 
-//    public static void setFontDictionary(Form form, String fontName, StateManager stateManager, boolean isNew) {
-//        // create the font dictionary
-//        Library library = form.getLibrary();
-//        DictionaryEntries fontDictionary = new DictionaryEntries();
-//        fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.TYPE_KEY,
-//                org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY);
-//        fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY, new Name("Type1"));
-//        fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.NAME_KEY, EMBEDDED_FONT_NAME);
-//        fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.BASEFONT_KEY, new Name(fontName));
-//        fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.ENCODING_KEY, new Name("WinAnsiEncoding"));
-//        fontDictionary.put(new Name("FirstChar"), 32);
-//        fontDictionary.put(new Name("LastChar"), 255);
-//
-//        org.icepdf.core.pobjects.fonts.Font newFont;
-//        if (form.getResources() == null ||
-//                form.getResources().getFont(EMBEDDED_FONT_NAME) == null) {
-//            newFont = new org.icepdf.core.pobjects.fonts.zfont.SimpleFont(library, fontDictionary);
-//            newFont.setPObjectReference(stateManager.getNewReferenceNumber());
-//            // create font entry
-//            DictionaryEntries fontResources = new DictionaryEntries();
-//            fontResources.put(EMBEDDED_FONT_NAME, newFont.getPObjectReference());
-//            // add the font resource entry.
-//            DictionaryEntries resources = new DictionaryEntries();
-//            resources.put(new Name("Font"), fontResources);
-//            // and finally add it to the form.
-//            form.getEntries().put(new Name("Resources"), resources);
-//        } else {
-//            try {
-//                form.init();
-//            } catch (InterruptedException e) {
-//                logger.log(Level.WARNING, "Could not initialized Annotation", e);
-//                throw new IllegalStateException("Could not initialized Annotation");
-//            }
-//            newFont = form.getResources().getFont(EMBEDDED_FONT_NAME);
-//            Reference reference = newFont.getPObjectReference();
-//            newFont = new org.icepdf.core.pobjects.fonts.zfont.SimpleFont(library, fontDictionary);
-//            newFont.setPObjectReference(reference);
-//        }
-//        // update hard reference to state manager and weak library reference.
-//        stateManager.addChange(new PObject(newFont, newFont.getPObjectReference()), isNew);
-//        library.addObject(newFont, newFont.getPObjectReference());
-//    }
-
     public static void setAppearance(Annotation annotation, Form form, AppearanceState appearanceState,
                                      StateManager stateManager, boolean isNew) {
         AffineTransform matrix = appearanceState.getMatrix();
@@ -114,8 +71,6 @@ public class ContentWriterUtils {
                 (float) bbox.getWidth(), (float) bbox.getHeight());
         form.setAppearance(shapes, matrix, formBbox);
         stateManager.addChange(new PObject(form, form.getPObjectReference()), isNew);
-        // update the AP's stream bytes so contents can be written out
-        form.setRawBytes(PostScriptEncoder.generatePostScript(shapes.getShapes()));
         DictionaryEntries appearanceRefs = new DictionaryEntries();
         appearanceRefs.put(Annotation.APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
         annotation.getEntries().put(Annotation.APPEARANCE_STREAM_KEY, appearanceRefs);
