@@ -2,6 +2,7 @@ package org.icepdf.ri.common.views.annotations.signing;
 
 import org.icepdf.core.pobjects.Form;
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.StateManager;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureAppearanceCallback;
@@ -50,8 +51,8 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
     }
 
     @Override
-    public void createAppearanceStream(SignatureWidgetAnnotation signatureWidgetAnnotation, AffineTransform pageSpace
-            , boolean isNew) {
+    public void createAppearanceStream(SignatureWidgetAnnotation signatureWidgetAnnotation,
+                                       AffineTransform pageSpace, boolean isNew) {
         SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
         Name currentAppearance = signatureWidgetAnnotation.getCurrentAppearance();
         HashMap<Name, Appearance> appearances = signatureWidgetAnnotation.getAppearances();
@@ -60,6 +61,10 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
 
         int margin = 0;
         Shapes shapes = ContentWriterUtils.createAppearanceShapes(appearanceState, margin, margin);
+
+        if (!signatureAppearanceModel.isSignatureVisible() || !signatureAppearanceModel.isSelectedCertificate()) {
+            return;
+        }
 
         // create the new font to draw with
         FontFile fontFile = ContentWriterUtils.createFont(signatureAppearanceModel.getFontName());
@@ -76,7 +81,7 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         float midX = (float) bbox.getWidth() / 2;
 
         Library library = signatureDictionary.getLibrary();
-        Name imageName = signatureAppearanceModel.getImageXObjectName();
+
 
         // reasons
         MessageFormat reasonFormatter = new MessageFormat(messageBundle.getString(
@@ -107,10 +112,14 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
 
         // create new image stream for the signature image 25, 50
         BufferedImage signatureImage = signatureAppearanceModel.getSignatureImage();
+        Name imageName = signatureAppearanceModel.getImageXObjectName();
+        Reference imageReference = signatureAppearanceModel.getImageXObjectReference();
         ImageStream imageStream = null;
         if (signatureImage != null) {
-            imageStream = ContentWriterUtils.addImageToShapes(library, imageName, signatureImage, shapes, bbox,
+            imageStream = ContentWriterUtils.addImageToShapes(library, imageName, imageReference, signatureImage,
+                    shapes, bbox,
                     leftMargin);
+            signatureAppearanceModel.setImageXObjectReference(imageStream.getPObjectReference());
         }
 
         int lineSpacing = 5;

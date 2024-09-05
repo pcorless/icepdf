@@ -104,6 +104,8 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
             if (signatureValidator != null) {
                 contextMenu.add(validationMenu);
                 contextMenu.add(signaturePropertiesMenu);
+            } else if (annotation.hasSignatureDictionary()) {
+                contextMenu.add(deleteSignatureMenu);
             } else {
                 contextMenu.add(addSignatureMenu);
                 contextMenu.add(deleteSignatureMenu);

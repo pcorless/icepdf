@@ -1,6 +1,7 @@
 package org.icepdf.ri.common.views.annotations.signing;
 
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureType;
 import org.icepdf.core.util.Library;
 import org.icepdf.ri.util.ViewerPropertiesManager;
@@ -23,6 +24,7 @@ public class SignatureAppearanceModel {
 
     private BufferedImage signatureImage;
     private Name imageXObjectName;
+    private Reference imageXObjectReference;
     private String fontName = "Helvetica";
     private int fontSize = 10;
     private Color fontColor = Color.BLACK;
@@ -31,7 +33,8 @@ public class SignatureAppearanceModel {
     private Locale locale;
 
     private SignatureType signatureType;
-    private boolean signatureVisible;
+    private boolean signatureVisible = true;
+    private boolean isSelectedCertificate;
     private String location;
     private String contact;
     private String name;
@@ -53,6 +56,13 @@ public class SignatureAppearanceModel {
         return imageXObjectName;
     }
 
+    public Reference getImageXObjectReference() {
+        return imageXObjectReference;
+    }
+
+    public void setImageXObjectReference(Reference imageXObjectReference) {
+        this.imageXObjectReference = imageXObjectReference;
+    }
 
     public SignatureType getSignatureType() {
         return signatureType;
@@ -64,6 +74,14 @@ public class SignatureAppearanceModel {
 
     public boolean isSignatureVisible() {
         return signatureVisible;
+    }
+
+    public boolean isSelectedCertificate() {
+        return isSelectedCertificate;
+    }
+
+    public void setSelectedCertificate(boolean selectedCertificate) {
+        isSelectedCertificate = selectedCertificate;
     }
 
     public void setSignatureVisible(boolean signatureVisible) {

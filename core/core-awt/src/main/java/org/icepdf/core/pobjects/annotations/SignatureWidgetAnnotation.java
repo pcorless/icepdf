@@ -67,6 +67,10 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
         return signatureValidator;
     }
 
+    public boolean hasSignatureDictionary() {
+        return signatureDictionary != null && !signatureDictionary.getEntries().isEmpty();
+    }
+
     public SignatureWidgetAnnotation(Annotation widgetAnnotation) {
         super(widgetAnnotation.getLibrary(), widgetAnnotation.getEntries());
         fieldDictionary = new SignatureFieldDictionary(library, entries);
@@ -99,7 +103,7 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
             stateManager.addChange(new PObject(signatureAnnotation, signatureAnnotation.getPObjectReference()));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            logger.fine("Text markup annotation instance creation was interrupted");
+            logger.fine("Signature markup annotation instance creation was interrupted");
         }
         return signatureAnnotation;
     }

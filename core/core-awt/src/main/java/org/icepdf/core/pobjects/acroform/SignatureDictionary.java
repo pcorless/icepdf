@@ -332,17 +332,8 @@ public class SignatureDictionary extends Dictionary {
         entries.put(BYTE_RANGE_KEY, range);
     }
 
-    public ArrayList<SignatureReferenceDictionary> getReferences() {
-        List<DictionaryEntries> tmp = library.getArray(entries, REFERENCE_KEY);
-        if (tmp != null && tmp.size() > 0) {
-            ArrayList<SignatureReferenceDictionary> references = new ArrayList<>(tmp.size());
-            for (DictionaryEntries reference : tmp) {
-                references.add(new SignatureReferenceDictionary(library, reference));
-            }
-            return references;
-        } else {
-            return null;
-        }
+    public List<SignatureReferenceDictionary> getReferences() {
+        return library.getArray(entries, REFERENCE_KEY);
     }
 
     public ArrayList<Integer> getChanges() {

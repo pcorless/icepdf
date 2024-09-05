@@ -177,7 +177,7 @@ public class ContentWriterUtils {
         return fontFile;
     }
 
-    public static ImageStream addImageToShapes(Library library, Name imageName,
+    public static ImageStream addImageToShapes(Library library, Name imageName, Reference reference,
                                                BufferedImage bufferedImage, Shapes shapes,
                                                Rectangle2D bbox, int leftMargin) {
 
@@ -194,7 +194,7 @@ public class ContentWriterUtils {
                 0,
                 bbox.getHeight());
         // add image xObject
-        ImageStream imageStream = ContentWriterUtils.createImageStream(library, bufferedImage, true);
+        ImageStream imageStream = ContentWriterUtils.createImageStream(library, reference, bufferedImage, true);
         ImageReference imageReference = new ImageContentWriterReference(imageStream, imageName);
         // stack em up
         shapes.add(new PushDrawCmd());
@@ -204,7 +204,8 @@ public class ContentWriterUtils {
         return imageStream;
     }
 
-    public static ImageStream createImageStream(Library library, BufferedImage bufferedImage, boolean useMask) {
+    public static ImageStream createImageStream(Library library, Reference reference, BufferedImage bufferedImage,
+                                                boolean useMask) {
         DictionaryEntries imageDictionary = new DictionaryEntries();
         // build base dictionary and image params, use jpeg so that we get a png when encoding the stream
         imageDictionary.put(FILTER_KEY, FILTER_DCT_DECODE);
@@ -221,7 +222,9 @@ public class ContentWriterUtils {
         imageStream.setDecodedImage(bufferedImage);
         // setup object reference and put in state manager
         StateManager stateManager = library.getStateManager();
-        Reference reference = stateManager.getNewReferenceNumber();
+        if (reference == null) {
+            reference = stateManager.getNewReferenceNumber();
+        }
         imageStream.setPObjectReference(reference);
         stateManager.addChange(new PObject(imageStream, reference), true);
         return imageStream;

@@ -77,6 +77,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
 
     private JComboBox<Locale> languagesComboBox;
     private JButton signButton;
+    private JButton closeButton;
 
     private final Preferences preferences;
 
@@ -110,14 +111,23 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         if (source == null) return;
 
         if (source == signButton) {
-            SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
             Library library = signatureWidgetAnnotation.getLibrary();
             SignatureDictionaries signatureDictionaries = library.getSignatureDictionaries();
 
             // set up signer dictionary as the primary certification signer.
-            signatureDictionary = SignatureDictionary.getInstance(signatureWidgetAnnotation,
-                    signerRadioButton.isSelected() ? SignatureType.SIGNER : SignatureType.CERTIFIER);
-            signatureDictionaries.addCertifierSignature(signatureDictionary);
+            SignatureDictionary signatureDictionary;
+            if (signerRadioButton.isSelected()) {
+                signatureDictionary = SignatureDictionary.getInstance(signatureWidgetAnnotation, SignatureType.SIGNER);
+                signatureDictionaries.addSignerSignature(signatureDictionary);
+            } else {
+                if (signatureDictionaries.hasExistingCertifier()) {
+                    showErrorDialog("Certifier signature already exists");
+                    return;
+                }
+                signatureDictionary = SignatureDictionary.getInstance(signatureWidgetAnnotation,
+                        SignatureType.CERTIFIER);
+                signatureDictionaries.addCertifierSignature(signatureDictionary);
+            }
             signatureDictionary.setSignerHandler(signerHandler);
 
             // assign original values from cert
@@ -127,23 +137,26 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
             signatureDictionary.setReason(signerRadioButton.isSelected() ?
                     SignatureType.SIGNER.toString().toLowerCase() :
                     SignatureType.CERTIFIER.toString().toLowerCase());
-
             buildAppearanceStream();
 
-//            setVisible(false);
-//            dispose();
+            setVisible(false);
+            dispose();
+        } else if (source == closeButton) {
+
         } else if (source == imagePathTextField) {
             setSignatureImage();
+            buildAppearanceStream();
         } else if (source == signerRadioButton) {
             signatureAppearanceModel.setSignatureType(SignatureType.SIGNER);
         } else if (source == certifyRadioButton) {
             signatureAppearanceModel.setSignatureType(SignatureType.CERTIFIER);
         } else if (source == signerVisibilityCheckBox) {
             signatureAppearanceModel.setSignatureVisible(signerVisibilityCheckBox.isSelected());
+            buildAppearanceStream();
         } else if (source == languagesComboBox) {
             signatureAppearanceModel.setLocale((Locale) languagesComboBox.getSelectedItem());
+            buildAppearanceStream();
         }
-        System.out.println("actionPerformed: " + actionEvent.getActionCommand());
     }
 
     @Override
@@ -154,14 +167,14 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         if (e.getSource() == fontSizeBox) {
             ValueLabelItem item = (ValueLabelItem) fontSizeBox.getSelectedItem();
             if (item != null) {
-                // todo update font size
-                System.out.println("font size: " + item.getValue());
+                signatureAppearanceModel.setFontSize((int) item.getValue());
+                buildAppearanceStream();
             }
         } else if (e.getSource() == fontNameBox) {
             ValueLabelItem item = (ValueLabelItem) fontNameBox.getSelectedItem();
             if (item != null) {
-                // todo update font name
-                System.out.println("font name: " + item.getValue());
+                signatureAppearanceModel.setFontName(item.getValue().toString());
+                buildAppearanceStream();
             }
         }
     }
@@ -175,6 +188,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         CertificateTableModel model = (CertificateTableModel) certificateTable.getModel();
         signerHandler.setCertAlias(model.getAliasAt(row));
         setSelectedCertificate(model.getCertificateAt(row));
+        buildAppearanceStream();
     }
 
     @Override
@@ -233,6 +247,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
     }
 
     private void setSelectedCertificate(X509Certificate certificate) {
+        signatureAppearanceModel.setSelectedCertificate(certificate != null);
         if (certificate == null) {
             // clear metadata
             nameTextField.setText("");
@@ -323,6 +338,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         visibilityPanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
         visibilityPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
                 messageBundle.getString("viewer.annotation.signature.creation.dialog.signature.appearance.title")));
+        // todo need to store default values for font size and font name
         fontNameBox = new JComboBox<>(FontWidgetUtilities.generateFontNameList(messageBundle));
         fontNameBox.addItemListener(this);
         fontSizeBox = new JComboBox<>(FontWidgetUtilities.generateFontSizeNameList(messageBundle));
@@ -440,7 +456,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         signatureAppearanceModel.setLocale(defaultLocal);
 
         // close buttons.
-        final JButton closeButton = new JButton(messageBundle.getString(
+        closeButton = new JButton(messageBundle.getString(
                 "viewer.annotation.signature.creation.dialog.close.button.label"));
         closeButton.setMnemonic(messageBundle.getString("viewer.button.cancel.mnemonic").charAt(0));
         closeButton.addActionListener(e -> {
@@ -534,6 +550,10 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         showTextCheckBox.setEnabled(enable);
         showSignatureCheckBox.setEnabled(enable);
         imagePathTextField.setEnabled(enable);
+    }
+
+    private void showErrorDialog(String message) {
+        JOptionPane.showMessageDialog(this, message, "Signature Error", JOptionPane.ERROR_MESSAGE);
     }
 
     private void addGB(JPanel layout, Component component,

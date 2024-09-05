@@ -15,7 +15,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 /**
- * Signer handles the setup and singing work to generate a PKCS7 signed hash for the given data. Implementing
+ * Signer handles the setup and signing work to generate a PKCS7 signed hash for the given data. Implementing
  * classes must implement the abstract methods to create a keystore with access to a private key used for signing.
  */
 public abstract class SignerHandler {

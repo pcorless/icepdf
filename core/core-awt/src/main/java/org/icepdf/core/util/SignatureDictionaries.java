@@ -4,6 +4,7 @@ import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureReferenceDictionary;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * SignatureDictionaries keeps track of all signatures added to a document instance and is primarily used to keep
@@ -51,10 +52,9 @@ public class SignatureDictionaries {
         return !signatureDictionaries.isEmpty();
     }
 
-    private boolean hasExistingCertifier() {
+    public boolean hasExistingCertifier() {
         for (SignatureDictionary signatureDictionary : signatureDictionaries) {
-            ArrayList<SignatureReferenceDictionary> signatureReferenceDictionaries =
-                    signatureDictionary.getReferences();
+            List<SignatureReferenceDictionary> signatureReferenceDictionaries = signatureDictionary.getReferences();
             for (SignatureReferenceDictionary signatureReferenceDictionary : signatureReferenceDictionaries) {
                 if (signatureReferenceDictionary.getTransformMethod().equals(SignatureReferenceDictionary.TransformMethods.DocMDP)) {
                     return true;

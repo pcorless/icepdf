@@ -282,7 +282,7 @@ public class Form extends Stream {
             xObjectsDictionary = new DictionaryEntries();
             formResources.entries.put(XOBJECT_KEY, xObjectsDictionary);
         }
-        // sync font resources with form object.
+        // sync form resources with form object.
         entries.put(RESOURCES_KEY, formResources.entries);
         xObjectsDictionary.put(imageName, imageStream.getPObjectReference());
         StateManager stateManager = library.getStateManager();
