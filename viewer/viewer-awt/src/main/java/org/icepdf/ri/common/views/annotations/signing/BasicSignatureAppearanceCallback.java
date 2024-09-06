@@ -115,42 +115,44 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         Name imageName = signatureAppearanceModel.getImageXObjectName();
         Reference imageReference = signatureAppearanceModel.getImageXObjectReference();
         ImageStream imageStream = null;
-        if (signatureImage != null) {
+        if (signatureAppearanceModel.isSignatureImageVisible() && signatureImage != null) {
             imageStream = ContentWriterUtils.addImageToShapes(library, imageName, imageReference, signatureImage,
                     shapes, bbox,
                     leftMargin);
             signatureAppearanceModel.setImageXObjectReference(imageStream.getPObjectReference());
         }
 
-        int lineSpacing = 5;
-        Point2D.Float lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, leftMargin, advanceY,
-                shapes,
-                signatureAppearanceModel.getFontSize(),
-                lineSpacing,
-                signatureAppearanceModel.getFontColor(),
-                reason);
+        if (signatureAppearanceModel.isSignatureTextVisible()) {
+            int lineSpacing = 5;
+            Point2D.Float lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, leftMargin, advanceY,
+                    shapes,
+                    signatureAppearanceModel.getFontSize(),
+                    lineSpacing,
+                    signatureAppearanceModel.getFontColor(),
+                    reason);
 
-        float groupSpacing = lineSpacing + 5;
+            float groupSpacing = lineSpacing + 5;
 
-        lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, leftMargin, lastOffset.y + groupSpacing,
-                shapes,
-                signatureAppearanceModel.getFontSize(),
-                lineSpacing,
-                signatureAppearanceModel.getFontColor(),
-                contactInfo);
+            lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, leftMargin, lastOffset.y + groupSpacing,
+                    shapes,
+                    signatureAppearanceModel.getFontSize(),
+                    lineSpacing,
+                    signatureAppearanceModel.getFontColor(),
+                    contactInfo);
 
-        lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, leftMargin, lastOffset.y + groupSpacing,
-                shapes,
-                signatureAppearanceModel.getFontSize(),
-                lineSpacing,
-                signatureAppearanceModel.getFontColor(),
-                commonName);
+            lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, leftMargin, lastOffset.y + groupSpacing,
+                    shapes,
+                    signatureAppearanceModel.getFontSize(),
+                    lineSpacing,
+                    signatureAppearanceModel.getFontColor(),
+                    commonName);
 
-        ContentWriterUtils.addTextSpritesToShapes(fontFile, leftMargin, lastOffset.y + groupSpacing, shapes,
-                signatureAppearanceModel.getFontSize(),
-                lineSpacing,
-                signatureAppearanceModel.getFontColor(),
-                location);
+            ContentWriterUtils.addTextSpritesToShapes(fontFile, leftMargin, lastOffset.y + groupSpacing, shapes,
+                    signatureAppearanceModel.getFontSize(),
+                    lineSpacing,
+                    signatureAppearanceModel.getFontColor(),
+                    location);
+        }
 
         // finalized appearance stream and generated postscript
         StateManager stateManager = library.getStateManager();
@@ -159,7 +161,7 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         byte[] postScript = PostScriptEncoder.generatePostScript(shapes.getShapes());
         Form xObject = signatureWidgetAnnotation.updateAppearanceStream(shapes, bbox, matrix, postScript, isNew);
         xObject.addFontResource(ContentWriterUtils.createDefaultFontDictionary(signatureAppearanceModel.getFontName()));
-        if (imageStream != null) {
+        if (signatureAppearanceModel.isSignatureImageVisible() && imageStream != null) {
             xObject.addImageResource(imageName, imageStream);
         }
         try {

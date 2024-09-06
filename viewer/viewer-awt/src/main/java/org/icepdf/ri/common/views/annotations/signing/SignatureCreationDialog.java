@@ -156,6 +156,15 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         } else if (source == languagesComboBox) {
             signatureAppearanceModel.setLocale((Locale) languagesComboBox.getSelectedItem());
             buildAppearanceStream();
+        } else if (source == showTextCheckBox) {
+            preferences.putBoolean(ViewerPropertiesManager.PROPERTY_SIGNATURE_SHOW_TEXT, showTextCheckBox.isSelected());
+            signatureAppearanceModel.setSignatureTextVisible(showTextCheckBox.isSelected());
+            buildAppearanceStream();
+        } else if (source == showSignatureCheckBox) {
+            preferences.putBoolean(ViewerPropertiesManager.PROPERTY_SIGNATURE_SHOW_IMAGE,
+                    showSignatureCheckBox.isSelected());
+            signatureAppearanceModel.setSignatureImageVisible(showSignatureCheckBox.isSelected());
+            buildAppearanceStream();
         }
     }
 
@@ -167,13 +176,17 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         if (e.getSource() == fontSizeBox) {
             ValueLabelItem item = (ValueLabelItem) fontSizeBox.getSelectedItem();
             if (item != null) {
-                signatureAppearanceModel.setFontSize((int) item.getValue());
+                int fontSize = (int) item.getValue();
+                preferences.put(ViewerPropertiesManager.PROPERTY_SIGNATURE_FONT_SIZE, String.valueOf(fontSize));
+                signatureAppearanceModel.setFontSize(fontSize);
                 buildAppearanceStream();
             }
         } else if (e.getSource() == fontNameBox) {
             ValueLabelItem item = (ValueLabelItem) fontNameBox.getSelectedItem();
             if (item != null) {
-                signatureAppearanceModel.setFontName(item.getValue().toString());
+                String fontName = item.getValue().toString();
+                preferences.put(ViewerPropertiesManager.PROPERTY_SIGNATURE_FONT_NAME, fontName);
+                signatureAppearanceModel.setFontName(fontName);
                 buildAppearanceStream();
             }
         }
@@ -338,15 +351,35 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         visibilityPanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
         visibilityPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
                 messageBundle.getString("viewer.annotation.signature.creation.dialog.signature.appearance.title")));
-        // todo need to store default values for font size and font name
-        fontNameBox = new JComboBox<>(FontWidgetUtilities.generateFontNameList(messageBundle));
+        // font name setup
+        String fontName = preferences.get(ViewerPropertiesManager.PROPERTY_SIGNATURE_FONT_NAME, "Helvetica");
+        ValueLabelItem[] fontNameItems = FontWidgetUtilities.generateFontNameList(messageBundle);
+        fontNameBox = new JComboBox<>(fontNameItems);
+        fontNameBox.setSelectedItem(Arrays.stream(fontNameItems).filter(t -> t.getValue() == fontName).findAny().orElse(fontNameItems[0]));
         fontNameBox.addItemListener(this);
-        fontSizeBox = new JComboBox<>(FontWidgetUtilities.generateFontSizeNameList(messageBundle));
+
+        // font size setup
+        int fontSize = preferences.getInt(ViewerPropertiesManager.PROPERTY_SIGNATURE_FONT_SIZE, 6);
+        ValueLabelItem[] fontSizeItems = FontWidgetUtilities.generateFontSizeNameList(messageBundle);
+        fontSizeBox = new JComboBox<>(fontSizeItems);
+        fontSizeBox.setSelectedItem(Arrays.stream(fontSizeItems).filter(t -> (int) t.getValue() == fontSize).findAny().orElse(fontSizeItems[0]));
         fontSizeBox.addItemListener(this);
+
+        // show text on signature appearance stream
+        boolean showText = preferences.getBoolean(ViewerPropertiesManager.PROPERTY_SIGNATURE_SHOW_TEXT, true);
+        signatureAppearanceModel.setSignatureTextVisible(showText);
         showTextCheckBox = new JCheckBox(messageBundle.getString(
-                "viewer.annotation.signature.creation.dialog.signature.appearance.showText.label"));
+                "viewer.annotation.signature.creation.dialog.signature.appearance.showText.label"), showText);
+        showTextCheckBox.addActionListener(this);
+
+        // show image on signature appearance stream
+        boolean showImage = preferences.getBoolean(ViewerPropertiesManager.PROPERTY_SIGNATURE_SHOW_IMAGE, true);
+        signatureAppearanceModel.setSignatureImageVisible(showImage);
         showSignatureCheckBox = new JCheckBox(messageBundle.getString(
-                "viewer.annotation.signature.creation.dialog.signature.appearance.showSignature.label"));
+                "viewer.annotation.signature.creation.dialog.signature.appearance.showSignature.label"), showImage);
+        showSignatureCheckBox.addActionListener(this);
+
+        // image path
         JLabel imagePathLabel = new JLabel(messageBundle.getString(
                 "viewer.annotation.signature.creation.dialog.signature.imagePath.label"));
         imagePathTextField = new JTextField();

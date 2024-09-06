@@ -34,6 +34,8 @@ public class SignatureAppearanceModel {
 
     private SignatureType signatureType;
     private boolean signatureVisible = true;
+    private boolean signatureTextVisible = true;
+    private boolean signatureImageVisible = true;
     private boolean isSelectedCertificate;
     private String location;
     private String contact;
@@ -110,6 +112,22 @@ public class SignatureAppearanceModel {
 
     public void setFontSize(int fontSize) {
         this.fontSize = fontSize;
+    }
+
+    public boolean isSignatureTextVisible() {
+        return signatureTextVisible;
+    }
+
+    public void setSignatureTextVisible(boolean signatureTextVisible) {
+        this.signatureTextVisible = signatureTextVisible;
+    }
+
+    public boolean isSignatureImageVisible() {
+        return signatureImageVisible;
+    }
+
+    public void setSignatureImageVisible(boolean signatureImageVisible) {
+        this.signatureImageVisible = signatureImageVisible;
     }
 
     public Color getFontColor() {

@@ -96,6 +96,10 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_PKCS12_PROVIDER_KEYSTORE_PATH = "org.icepdf.core.signatures.keystore.pkcs12" +
             ".config.path";
     public static final String PROPERTY_SIGNATURE_IMAGE_PATH = "org.icepdf.core.signatures.image.path";
+    public static final String PROPERTY_SIGNATURE_SHOW_TEXT = "org.icepdf.core.signatures.show.txt";
+    public static final String PROPERTY_SIGNATURE_SHOW_IMAGE = "org.icepdf.core.signatures.show.image";
+    public static final String PROPERTY_SIGNATURE_FONT_NAME = "org.icepdf.core.signatures.font.name";
+    public static final String PROPERTY_SIGNATURE_FONT_SIZE = "org.icepdf.core.signatures.font.size";
     // advanced threading properties
     public static final String PROPERTY_IMAGE_PROXY_ENABLED = "org.icepdf.core.imageProxy";
     public static final String PROPERTY_IMAGE_PROXY_THREAD_COUNT = "org.icepdf.core.library.imageThreadPoolSize";
