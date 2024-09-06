@@ -222,6 +222,18 @@ public class InteractiveForm extends Dictionary {
         }
     }
 
+    public void removeField(Object field) {
+        if (!(field instanceof AbstractWidgetAnnotation)) {
+            throw new IllegalStateException("Field must be an AbstractWidgetAnnotation");
+        }
+        if (fields != null) {
+            fields.remove(field);
+            List<Reference> fieldReferences = (List<Reference>) library.getObject(entries, FIELDS_KEY);
+            fieldReferences.remove(((AbstractWidgetAnnotation) field).getPObjectReference());
+        }
+    }
+
+
     /**
      * Gets the fields associated with this form.
      *

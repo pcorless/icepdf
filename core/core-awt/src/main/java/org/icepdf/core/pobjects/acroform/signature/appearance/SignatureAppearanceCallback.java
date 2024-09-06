@@ -19,4 +19,7 @@ public interface SignatureAppearanceCallback {
      */
     void createAppearanceStream(SignatureWidgetAnnotation signatureWidgetAnnotation, AffineTransform pageSpace,
                                 boolean isNew);
+
+    void removeAppearanceStream(SignatureWidgetAnnotation signatureWidgetAnnotation, AffineTransform pageSpace,
+                                boolean isNew);
 }

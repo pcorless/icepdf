@@ -122,7 +122,7 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
 
     }
 
-    public void setResetAppearanceCallback(SignatureAppearanceCallback signatureAppearanceCallback) {
+    public void setAppearanceCallback(SignatureAppearanceCallback signatureAppearanceCallback) {
         this.signatureAppearanceCallback = signatureAppearanceCallback;
     }
 

@@ -91,7 +91,7 @@ public class SigningTests {
 
             BasicSignatureAppearanceCallback signatureAppearance =
                     new BasicSignatureAppearanceCallback(signatureAppearanceModel);
-            signatureAnnotation.setResetAppearanceCallback(signatureAppearance);
+            signatureAnnotation.setAppearanceCallback(signatureAppearance);
             signatureAnnotation.resetAppearanceStream(new AffineTransform());
 
             // Most common workflow is to add just one signature as we do here, but it is possible to add multiple

@@ -142,7 +142,12 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
             setVisible(false);
             dispose();
         } else if (source == closeButton) {
-
+            // clean anything we set up and just leave the signature with an empty dictionary
+            new BasicSignatureAppearanceCallback(signatureAppearanceModel)
+                    .removeAppearanceStream(signatureWidgetAnnotation, new AffineTransform(), true);
+            signatureWidgetAnnotation.setAppearanceCallback(null);
+            setVisible(false);
+            dispose();
         } else if (source == imagePathTextField) {
             setSignatureImage();
             buildAppearanceStream();
@@ -254,7 +259,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         // todo should be set via the SwingController so it can be swapped out.
         BasicSignatureAppearanceCallback signatureAppearance =
                 new BasicSignatureAppearanceCallback(signatureAppearanceModel);
-        signatureWidgetAnnotation.setResetAppearanceCallback(signatureAppearance);
+        signatureWidgetAnnotation.setAppearanceCallback(signatureAppearance);
         signatureWidgetAnnotation.resetAppearanceStream(new AffineTransform());
         signatureWidgetComponent.repaint();
     }
@@ -492,10 +497,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         closeButton = new JButton(messageBundle.getString(
                 "viewer.annotation.signature.creation.dialog.close.button.label"));
         closeButton.setMnemonic(messageBundle.getString("viewer.button.cancel.mnemonic").charAt(0));
-        closeButton.addActionListener(e -> {
-            setVisible(false);
-            dispose();
-        });
+        closeButton.addActionListener(this);
         signButton = new JButton(messageBundle.getString(
                 "viewer.annotation.signature.creation.dialog.sign.button.label"));
         signButton.addActionListener(this);

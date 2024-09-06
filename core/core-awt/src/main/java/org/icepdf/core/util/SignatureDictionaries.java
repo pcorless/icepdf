@@ -31,6 +31,10 @@ public class SignatureDictionaries {
         signatureDictionaries.add(signatureDictionary);
     }
 
+    public void removeSignature(SignatureDictionary signatureDictionary) {
+        signatureDictionaries.remove(signatureDictionary);
+    }
+
     public ArrayList<SignatureDictionary> getSignatures() {
         return signatureDictionaries;
     }

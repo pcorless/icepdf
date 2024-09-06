@@ -1,9 +1,6 @@
 package org.icepdf.ri.common.views.annotations.signing;
 
-import org.icepdf.core.pobjects.Form;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.Reference;
-import org.icepdf.core.pobjects.StateManager;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureAppearanceCallback;
 import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureType;
@@ -16,6 +13,7 @@ import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.commands.PostScriptEncoder;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.SignatureDictionaries;
 
 import java.awt.*;
 import java.awt.font.FontRenderContext;
@@ -28,6 +26,8 @@ import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
+
+import static org.icepdf.core.pobjects.Form.RESOURCES_KEY;
 
 /**
  * Builds a basic appearance stream using the given signatureImage.  This is meant to be a reference implementation
@@ -48,6 +48,30 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
      */
     public BasicSignatureAppearanceCallback(SignatureAppearanceModel signatureAppearanceModel) {
         this.signatureAppearanceModel = signatureAppearanceModel;
+    }
+
+    @Override
+    public void removeAppearanceStream(SignatureWidgetAnnotation signatureWidgetAnnotation, AffineTransform pageSpace
+            , boolean isNew) {
+
+        Library library = signatureWidgetAnnotation.getLibrary();
+        SignatureDictionaries signatureDictionaries = library.getSignatureDictionaries();
+        SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
+        signatureWidgetAnnotation.setSignatureDictionary(new SignatureDictionary(library, new DictionaryEntries()));
+        signatureDictionaries.removeSignature(signatureDictionary);
+        StateManager stateManager = library.getStateManager();
+        stateManager.removeChange(new PObject(null, signatureAppearanceModel.getImageXObjectReference()));
+
+        Name currentAppearance = signatureWidgetAnnotation.getCurrentAppearance();
+        HashMap<Name, Appearance> appearances = signatureWidgetAnnotation.getAppearances();
+        Appearance appearance = appearances.get(currentAppearance);
+        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
+        Shapes shapes = ContentWriterUtils.createAppearanceShapes(appearanceState, 0, 0);
+        byte[] postScript = PostScriptEncoder.generatePostScript(shapes.getShapes());
+        Rectangle2D bbox = appearanceState.getBbox();
+        AffineTransform matrix = appearanceState.getMatrix();
+        Form xObject = signatureWidgetAnnotation.updateAppearanceStream(shapes, bbox, matrix, postScript, isNew);
+        xObject.getEntries().remove(RESOURCES_KEY);
     }
 
     @Override
