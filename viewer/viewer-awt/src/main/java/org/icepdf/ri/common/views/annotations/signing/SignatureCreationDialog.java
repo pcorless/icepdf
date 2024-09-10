@@ -76,6 +76,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
     private JCheckBox showTextCheckBox;
     private JCheckBox showSignatureCheckBox;
     private JTextField imagePathTextField;
+    private JButton imagePathBrowseButton;
     private JSlider imageScaleSlider;
 
     private JComboBox<Locale> languagesComboBox;
@@ -173,6 +174,20 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
                     showSignatureCheckBox.isSelected());
             signatureAppearanceModel.setSignatureImageVisible(showSignatureCheckBox.isSelected());
             buildAppearanceStream();
+        } else if (source == imagePathBrowseButton) {
+            String imagePath = preferences.get(ViewerPropertiesManager.PROPERTY_SIGNATURE_IMAGE_PATH, "");
+            JFileChooser fileChooser = new JFileChooser(imagePath);
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            fileChooser.setMultiSelectionEnabled(false);
+            fileChooser.setDialogTitle(messageBundle.getString(
+                    "viewer.annotation.signature.creation.dialog.signature.selection.title"));
+            final int responseValue = fileChooser.showDialog(this, messageBundle.getString(
+                    "viewer.annotation.signature.creation.dialog.signature.selection.accept.label"));
+            if (responseValue == JFileChooser.APPROVE_OPTION) {
+                imagePathTextField.setText(fileChooser.getSelectedFile().getAbsolutePath());
+                setSignatureImage();
+                buildAppearanceStream();
+            }
         }
     }
 
@@ -411,7 +426,9 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
             signatureAppearanceModel.setSignatureImage(SignatureUtilities.loadSignatureImage(imagePath));
         }
         imagePathTextField.addFocusListener(this);
-        // TODO add browse button
+        imagePathBrowseButton = new JButton(messageBundle.getString(
+                "viewer.annotation.signature.creation.dialog.signature.selection.browse.label"));
+        imagePathBrowseButton.addActionListener(this);
 
         // image scale
         int imageScale = preferences.getInt(ViewerPropertiesManager.PROPERTY_SIGNATURE_IMAGE_SCALE, 100);
@@ -443,8 +460,9 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         // image path input
         addGB(signaturePanel, imagePathLabel, 0, 0, 1, 1);
         addGB(signaturePanel, imagePathTextField, 1, 0, 1, 1);
+        addGB(signaturePanel, imagePathBrowseButton, 2, 0, 1, 1);
         addGB(signaturePanel, imageScaleLabel, 0, 1, 1, 1);
-        addGB(signaturePanel, imageScaleSlider, 1, 1, 1, 1);
+        addGB(signaturePanel, imageScaleSlider, 1, 1, 1, 2);
 
 
         constraints.insets = new Insets(2, 10, 2, 10);

@@ -32,6 +32,7 @@ public class SigningPreferencesPanel extends JPanel {
     private final JComboBox<KeystoreTypeItem> keystoreTypeComboBox;
     private final JLabel pkcsPathLabel;
     private final JTextField pkcsPathTextField;
+    private final JButton pkcsPathBrowseButton;
 
     private final Preferences preferences;
 
@@ -59,9 +60,11 @@ public class SigningPreferencesPanel extends JPanel {
 
         // setup default state
         pkcsPathLabel = new JLabel();
-        // todo should really have file chooser to set this up.
         pkcsPathTextField = new JTextField();
         updatePkcsPaths(messageBundle);
+        pkcsPathBrowseButton = new JButton(messageBundle.getString(
+                "viewer.dialog.viewerPreferences.section.signatures.pkcs.keystore.path.browse.label"));
+        pkcsPathBrowseButton.addActionListener(e -> showBrowseDialog(messageBundle));
 
         pkcsPathTextField.addActionListener(e -> savePkcsPaths(keystoreTypeComboBox));
 
@@ -91,7 +94,7 @@ public class SigningPreferencesPanel extends JPanel {
                 0, 0, 1, 1);
 
         constraints.anchor = GridBagConstraints.EAST;
-        addGB(imagingPreferencesPanel, keystoreTypeComboBox, 1, 0, 1, 1);
+        addGB(imagingPreferencesPanel, keystoreTypeComboBox, 1, 0, 2, 1);
 
         constraints.anchor = GridBagConstraints.WEST;
         addGB(imagingPreferencesPanel, pkcsPathLabel, 0, 1, 1, 1);
@@ -99,6 +102,7 @@ public class SigningPreferencesPanel extends JPanel {
         constraints.weightx = 1.0;
         constraints.fill = GridBagConstraints.BOTH;
         addGB(imagingPreferencesPanel, pkcsPathTextField, 1, 1, 1, 1);
+        addGB(imagingPreferencesPanel, pkcsPathBrowseButton, 2, 1, 1, 1);
 
         constraints.anchor = GridBagConstraints.NORTHWEST;
         constraints.fill = GridBagConstraints.BOTH;
@@ -130,6 +134,20 @@ public class SigningPreferencesPanel extends JPanel {
         } else if (cb.getSelectedIndex() == PKCS12) {
             preferences.put(ViewerPropertiesManager.PROPERTY_PKCS12_PROVIDER_KEYSTORE_PATH,
                     pkcsPathTextField.getText());
+        }
+    }
+
+    private void showBrowseDialog(ResourceBundle messageBundle) {
+        String pkcsPath = pkcsPathTextField.getText();
+        JFileChooser fileChooser = new JFileChooser(pkcsPath);
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        fileChooser.setMultiSelectionEnabled(false);
+        fileChooser.setDialogTitle(messageBundle.getString(
+                "viewer.dialog.viewerPreferences.section.signatures.pkcs.keystore.path.selection.title"));
+        final int responseValue = fileChooser.showDialog(this, messageBundle.getString(
+                "viewer.dialog.viewerPreferences.section.signatures.pkcs.keystore.path.accept.label"));
+        if (responseValue == JFileChooser.APPROVE_OPTION) {
+            pkcsPathTextField.setText(fileChooser.getSelectedFile().getAbsolutePath());
         }
     }
 
