@@ -56,7 +56,7 @@ public class SigningTests {
             Library library = document.getCatalog().getLibrary();
             SignatureDictionaries signatureDictionaries = library.getSignatureDictionaries();
 
-            // Creat signature annotation
+            // Create signature annotation
             SignatureWidgetAnnotation signatureAnnotation =
                     (SignatureWidgetAnnotation) AnnotationFactory.buildWidgetAnnotation(
                             document.getPageTree().getLibrary(),

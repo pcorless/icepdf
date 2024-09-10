@@ -20,6 +20,8 @@ import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
@@ -38,7 +40,7 @@ import java.util.prefs.Preferences;
  * associated with signing a document.
  */
 public class SignatureCreationDialog extends EscapeJDialog implements ActionListener, ListSelectionListener,
-        ItemListener, FocusListener {
+        ItemListener, FocusListener, ChangeListener {
 
     private static final Logger logger =
             Logger.getLogger(SignatureCreationDialog.class.toString());
@@ -74,6 +76,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
     private JCheckBox showTextCheckBox;
     private JCheckBox showSignatureCheckBox;
     private JTextField imagePathTextField;
+    private JSlider imageScaleSlider;
 
     private JComboBox<Locale> languagesComboBox;
     private JButton signButton;
@@ -198,6 +201,18 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
     }
 
     @Override
+    public void stateChanged(ChangeEvent e) {
+        JSlider source = (JSlider) e.getSource();
+        if (!source.getValueIsAdjusting()) {
+            int scale = source.getValue();
+            // todo move preference to model, should simplify things.
+            preferences.putInt(ViewerPropertiesManager.PROPERTY_SIGNATURE_IMAGE_SCALE, scale);
+            signatureAppearanceModel.setImageScale(scale);
+            buildAppearanceStream();
+        }
+    }
+
+    @Override
     public void valueChanged(ListSelectionEvent event) {
         if (event.getValueIsAdjusting()) {
             return;
@@ -245,6 +260,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         signatureAppearanceModel.setFontName(fontNameBox.getSelectedItem().toString());
         signatureAppearanceModel.setFontSize((int) ((ValueLabelItem) fontSizeBox.getSelectedItem()).getValue());
         signatureAppearanceModel.setSignatureImage(SignatureUtilities.loadSignatureImage(imagePathTextField.getText()));
+        signatureAppearanceModel.setImageScale(imageScaleSlider.getValue());
         setSignatureImage();
     }
 
@@ -397,6 +413,17 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         imagePathTextField.addFocusListener(this);
         // TODO add browse button
 
+        // image scale
+        int imageScale = preferences.getInt(ViewerPropertiesManager.PROPERTY_SIGNATURE_IMAGE_SCALE, 100);
+        JLabel imageScaleLabel = new JLabel(messageBundle.getString(
+                "viewer.annotation.signature.creation.dialog.signature.imageScale.label"));
+        imageScaleSlider = new JSlider(JSlider.HORIZONTAL, 0, 300, imageScale);
+        imageScaleSlider.setMajorTickSpacing(50);
+        imageScaleSlider.setPaintLabels(true);
+
+        imageScaleSlider.setPaintTicks(true);
+        imageScaleSlider.addChangeListener(this);
+
         // font name and size
         addGB(visibilityPanel, new JLabel(messageBundle.getString(
                         "viewer.annotation.signature.creation.dialog.signature.appearance.font.label")),
@@ -416,6 +443,8 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         // image path input
         addGB(signaturePanel, imagePathLabel, 0, 0, 1, 1);
         addGB(signaturePanel, imagePathTextField, 1, 0, 1, 1);
+        addGB(signaturePanel, imageScaleLabel, 0, 1, 1, 1);
+        addGB(signaturePanel, imageScaleSlider, 1, 1, 1, 1);
 
 
         constraints.insets = new Insets(2, 10, 2, 10);

@@ -98,6 +98,7 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_SIGNATURE_IMAGE_PATH = "org.icepdf.core.signatures.image.path";
     public static final String PROPERTY_SIGNATURE_SHOW_TEXT = "org.icepdf.core.signatures.show.txt";
     public static final String PROPERTY_SIGNATURE_SHOW_IMAGE = "org.icepdf.core.signatures.show.image";
+    public static final String PROPERTY_SIGNATURE_IMAGE_SCALE = "org.icepdf.core.signatures.show.imageScale";
     public static final String PROPERTY_SIGNATURE_FONT_NAME = "org.icepdf.core.signatures.font.name";
     public static final String PROPERTY_SIGNATURE_FONT_SIZE = "org.icepdf.core.signatures.font.size";
     // advanced threading properties

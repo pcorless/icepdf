@@ -142,7 +142,7 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         if (signatureAppearanceModel.isSignatureImageVisible() && signatureImage != null) {
             imageStream = ContentWriterUtils.addImageToShapes(library, imageName, imageReference, signatureImage,
                     shapes, bbox,
-                    leftMargin);
+                    leftMargin, signatureAppearanceModel.getImageScale());
             signatureAppearanceModel.setImageXObjectReference(imageStream.getPObjectReference());
         }
 

@@ -179,18 +179,14 @@ public class ContentWriterUtils {
 
     public static ImageStream addImageToShapes(Library library, Name imageName, Reference reference,
                                                BufferedImage bufferedImage, Shapes shapes,
-                                               Rectangle2D bbox, int leftMargin) {
+                                               Rectangle2D bbox, int leftMargin, float scale) {
 
-        // calculate the scale factor to fit in width - leftMargin
-        double scaleWidth = (float) bufferedImage.getWidth() / leftMargin;
-        double scaleHeight = bufferedImage.getHeight() / bbox.getHeight();
-        double scale = Math.max(scaleWidth, scaleHeight);
-
+        scale = scale / 100;
         // create transform for image placement
         AffineTransform imageTransform = new AffineTransform(
-                bufferedImage.getWidth() / scale,
+                bufferedImage.getWidth() * scale,
                 0, 0,
-                -bufferedImage.getHeight() / scale,
+                -bufferedImage.getHeight() * scale,
                 0,
                 bbox.getHeight());
         // add image xObject

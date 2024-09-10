@@ -25,6 +25,8 @@ public class SignatureAppearanceModel {
     private BufferedImage signatureImage;
     private Name imageXObjectName;
     private Reference imageXObjectReference;
+    private int imageScale = 100;
+
     private String fontName = "Helvetica";
     private int fontSize = 10;
     private Color fontColor = Color.BLACK;
@@ -128,6 +130,14 @@ public class SignatureAppearanceModel {
 
     public void setSignatureImageVisible(boolean signatureImageVisible) {
         this.signatureImageVisible = signatureImageVisible;
+    }
+
+    public int getImageScale() {
+        return imageScale;
+    }
+
+    public void setImageScale(int imageScale) {
+        this.imageScale = imageScale;
     }
 
     public Color getFontColor() {
