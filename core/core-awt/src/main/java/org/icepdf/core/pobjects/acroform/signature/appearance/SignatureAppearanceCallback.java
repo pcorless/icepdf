@@ -10,6 +10,14 @@ import java.awt.geom.AffineTransform;
 public interface SignatureAppearanceCallback {
 
     /**
+     * Set the SignatureAppearanceModel for the callback.  The model is used to store appearance properties needed
+     * to build out the appearance stream.  The model just be set before the create or remove methods are called.
+     *
+     * @param signatureAppearanceModel
+     */
+    void setSignatureAppearanceModel(SignatureAppearanceModel signatureAppearanceModel);
+
+    /**
      * Create appearance stream for the given SignatureWidgetAnnotation.  The appearance must be associated with
      * the SignatureWidgetAnnotation and all new objects registered with the StateManager
      *

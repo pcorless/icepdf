@@ -3,7 +3,7 @@ package org.icepdf.ri.common.views.annotations.signing;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
-import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
+import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureAppearanceCallback;
 import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureType;
 import org.icepdf.core.pobjects.acroform.signature.handlers.SignerHandler;
 import org.icepdf.core.pobjects.acroform.signature.utils.SignatureUtilities;
@@ -13,8 +13,8 @@ import org.icepdf.core.util.SignatureDictionaries;
 import org.icepdf.ri.common.EscapeJDialog;
 import org.icepdf.ri.common.utility.annotation.properties.FontWidgetUtilities;
 import org.icepdf.ri.common.utility.annotation.properties.ValueLabelItem;
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.annotations.acroform.SignatureComponent;
-import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
@@ -33,7 +33,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.prefs.Preferences;
 
 /**
  * The SignatureCreationDialog allows users to select an available signing certificate and customize various setting
@@ -66,10 +65,8 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
     private JRadioButton certifyRadioButton;
     private JCheckBox signerVisibilityCheckBox;
     private JTextField locationTextField;
-    private JTextField dateTextField;
     private JTextField nameTextField;
     private JTextField contactTextField;
-    private JTextArea reasonTextArea;
 
     private JComboBox<ValueLabelItem> fontNameBox;
     private JComboBox<ValueLabelItem> fontSizeBox;
@@ -83,27 +80,26 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
     private JButton signButton;
     private JButton closeButton;
 
-    private final Preferences preferences;
-
     private SignerHandler signerHandler;
 
-    private final SignatureValidator signatureValidator;
-    private SignatureAppearanceModel signatureAppearanceModel;
+    private final SignatureAppearanceCallback signatureAppearanceCallback;
+    private final SignatureAppearanceModelImpl signatureAppearanceModel;
 
     protected static ResourceBundle messageBundle;
     protected final SignatureComponent signatureWidgetComponent;
     protected final SignatureWidgetAnnotation signatureWidgetAnnotation;
 
-    public SignatureCreationDialog(Frame parent, ResourceBundle messageBundle,
+    public SignatureCreationDialog(Controller controller, ResourceBundle messageBundle,
                                    SignatureComponent signatureComponent) throws KeyStoreException {
-        super(parent, true);
-        this.messageBundle = messageBundle;
-        this.preferences = ViewerPropertiesManager.getInstance().getPreferences();
+        super(controller.getViewerFrame(), true);
+        SignatureCreationDialog.messageBundle = messageBundle;
         this.signatureWidgetComponent = signatureComponent;
         this.signatureWidgetAnnotation = signatureComponent.getAnnotation();
-        this.signatureValidator = this.signatureWidgetAnnotation.getSignatureValidator();
 
-        signatureAppearanceModel = new SignatureAppearanceModel(signatureComponent.getAnnotation().getLibrary());
+        signatureAppearanceCallback = controller.getDocumentViewController().getSignatureAppearanceCallback();
+        signatureAppearanceModel = new SignatureAppearanceModelImpl(signatureComponent.getAnnotation().getLibrary());
+        signatureAppearanceCallback.setSignatureAppearanceModel(signatureAppearanceModel);
+        signatureWidgetAnnotation.setAppearanceCallback(signatureAppearanceCallback);
 
         buildUI();
     }
@@ -125,7 +121,10 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
                 signatureDictionaries.addSignerSignature(signatureDictionary);
             } else {
                 if (signatureDictionaries.hasExistingCertifier()) {
-                    showErrorDialog("Certifier signature already exists");
+                    JOptionPane.showMessageDialog(this,
+                            messageBundle.getString("viewer.annotation.signature.creation.dialog.certify.error.msg"),
+                            messageBundle.getString("viewer.annotation.signature.creation.dialog.certify.error.title"),
+                            JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 signatureDictionary = SignatureDictionary.getInstance(signatureWidgetAnnotation,
@@ -147,8 +146,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
             dispose();
         } else if (source == closeButton) {
             // clean anything we set up and just leave the signature with an empty dictionary
-            new BasicSignatureAppearanceCallback(signatureAppearanceModel)
-                    .removeAppearanceStream(signatureWidgetAnnotation, new AffineTransform(), true);
+            signatureAppearanceCallback.removeAppearanceStream(signatureWidgetAnnotation, new AffineTransform(), true);
             signatureWidgetAnnotation.setAppearanceCallback(null);
             setVisible(false);
             dispose();
@@ -166,16 +164,13 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
             signatureAppearanceModel.setLocale((Locale) languagesComboBox.getSelectedItem());
             buildAppearanceStream();
         } else if (source == showTextCheckBox) {
-            preferences.putBoolean(ViewerPropertiesManager.PROPERTY_SIGNATURE_SHOW_TEXT, showTextCheckBox.isSelected());
             signatureAppearanceModel.setSignatureTextVisible(showTextCheckBox.isSelected());
             buildAppearanceStream();
         } else if (source == showSignatureCheckBox) {
-            preferences.putBoolean(ViewerPropertiesManager.PROPERTY_SIGNATURE_SHOW_IMAGE,
-                    showSignatureCheckBox.isSelected());
             signatureAppearanceModel.setSignatureImageVisible(showSignatureCheckBox.isSelected());
             buildAppearanceStream();
         } else if (source == imagePathBrowseButton) {
-            String imagePath = preferences.get(ViewerPropertiesManager.PROPERTY_SIGNATURE_IMAGE_PATH, "");
+            String imagePath = signatureAppearanceModel.getSignatureImagePath();
             JFileChooser fileChooser = new JFileChooser(imagePath);
             fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
             fileChooser.setMultiSelectionEnabled(false);
@@ -200,7 +195,6 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
             ValueLabelItem item = (ValueLabelItem) fontSizeBox.getSelectedItem();
             if (item != null) {
                 int fontSize = (int) item.getValue();
-                preferences.put(ViewerPropertiesManager.PROPERTY_SIGNATURE_FONT_SIZE, String.valueOf(fontSize));
                 signatureAppearanceModel.setFontSize(fontSize);
                 buildAppearanceStream();
             }
@@ -208,7 +202,6 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
             ValueLabelItem item = (ValueLabelItem) fontNameBox.getSelectedItem();
             if (item != null) {
                 String fontName = item.getValue().toString();
-                preferences.put(ViewerPropertiesManager.PROPERTY_SIGNATURE_FONT_NAME, fontName);
                 signatureAppearanceModel.setFontName(fontName);
                 buildAppearanceStream();
             }
@@ -220,8 +213,6 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         JSlider source = (JSlider) e.getSource();
         if (!source.getValueIsAdjusting()) {
             int scale = source.getValue();
-            // todo move preference to model, should simplify things.
-            preferences.putInt(ViewerPropertiesManager.PROPERTY_SIGNATURE_IMAGE_SCALE, scale);
             signatureAppearanceModel.setImageScale(scale);
             buildAppearanceStream();
         }
@@ -272,25 +263,20 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         signatureAppearanceModel.setName(nameTextField.getText());
         signatureAppearanceModel.setSignatureType(signerRadioButton.isSelected() ?
                 SignatureType.SIGNER : SignatureType.CERTIFIER);
-        signatureAppearanceModel.setFontName(fontNameBox.getSelectedItem().toString());
-        signatureAppearanceModel.setFontSize((int) ((ValueLabelItem) fontSizeBox.getSelectedItem()).getValue());
-        signatureAppearanceModel.setSignatureImage(SignatureUtilities.loadSignatureImage(imagePathTextField.getText()));
+        signatureAppearanceModel.setFontName(Objects.requireNonNull(fontNameBox.getSelectedItem()).toString());
+        signatureAppearanceModel.setFontSize((int) ((ValueLabelItem) Objects.requireNonNull(fontSizeBox.getSelectedItem())).getValue());
+        signatureAppearanceModel.setSignatureImagePath(imagePathTextField.getText());
         signatureAppearanceModel.setImageScale(imageScaleSlider.getValue());
         setSignatureImage();
     }
 
 
     private void setSignatureImage() {
-        preferences.put(ViewerPropertiesManager.PROPERTY_SIGNATURE_IMAGE_PATH,
-                imagePathTextField.getText());
-        signatureAppearanceModel.setSignatureImage(SignatureUtilities.loadSignatureImage(imagePathTextField.getText()));
+        signatureAppearanceModel.setSignatureImagePath(imagePathTextField.getText());
     }
 
     private void buildAppearanceStream() {
-        // todo should be set via the SwingController so it can be swapped out.
-        BasicSignatureAppearanceCallback signatureAppearance =
-                new BasicSignatureAppearanceCallback(signatureAppearanceModel);
-        signatureWidgetAnnotation.setAppearanceCallback(signatureAppearance);
+
         signatureWidgetAnnotation.resetAppearanceStream(new AffineTransform());
         signatureWidgetComponent.repaint();
     }
@@ -388,29 +374,27 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         visibilityPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
                 messageBundle.getString("viewer.annotation.signature.creation.dialog.signature.appearance.title")));
         // font name setup
-        String fontName = preferences.get(ViewerPropertiesManager.PROPERTY_SIGNATURE_FONT_NAME, "Helvetica");
+        String fontName = signatureAppearanceModel.getFontName();
         ValueLabelItem[] fontNameItems = FontWidgetUtilities.generateFontNameList(messageBundle);
         fontNameBox = new JComboBox<>(fontNameItems);
         fontNameBox.setSelectedItem(Arrays.stream(fontNameItems).filter(t -> t.getValue() == fontName).findAny().orElse(fontNameItems[0]));
         fontNameBox.addItemListener(this);
 
         // font size setup
-        int fontSize = preferences.getInt(ViewerPropertiesManager.PROPERTY_SIGNATURE_FONT_SIZE, 6);
+        int fontSize = signatureAppearanceModel.getFontSize();
         ValueLabelItem[] fontSizeItems = FontWidgetUtilities.generateFontSizeNameList(messageBundle);
         fontSizeBox = new JComboBox<>(fontSizeItems);
         fontSizeBox.setSelectedItem(Arrays.stream(fontSizeItems).filter(t -> (int) t.getValue() == fontSize).findAny().orElse(fontSizeItems[0]));
         fontSizeBox.addItemListener(this);
 
         // show text on signature appearance stream
-        boolean showText = preferences.getBoolean(ViewerPropertiesManager.PROPERTY_SIGNATURE_SHOW_TEXT, true);
-        signatureAppearanceModel.setSignatureTextVisible(showText);
+        boolean showText = signatureAppearanceModel.isSignatureTextVisible();
         showTextCheckBox = new JCheckBox(messageBundle.getString(
                 "viewer.annotation.signature.creation.dialog.signature.appearance.showText.label"), showText);
         showTextCheckBox.addActionListener(this);
 
         // show image on signature appearance stream
-        boolean showImage = preferences.getBoolean(ViewerPropertiesManager.PROPERTY_SIGNATURE_SHOW_IMAGE, true);
-        signatureAppearanceModel.setSignatureImageVisible(showImage);
+        boolean showImage = signatureAppearanceModel.isSignatureImageVisible();
         showSignatureCheckBox = new JCheckBox(messageBundle.getString(
                 "viewer.annotation.signature.creation.dialog.signature.appearance.showSignature.label"), showImage);
         showSignatureCheckBox.addActionListener(this);
@@ -419,11 +403,11 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         JLabel imagePathLabel = new JLabel(messageBundle.getString(
                 "viewer.annotation.signature.creation.dialog.signature.imagePath.label"));
         imagePathTextField = new JTextField();
-        String imagePath = preferences.get(ViewerPropertiesManager.PROPERTY_SIGNATURE_IMAGE_PATH, "");
+        String imagePath = signatureAppearanceModel.getSignatureImagePath();
 
         imagePathTextField.setText(imagePath);
         if (!imagePath.isEmpty()) {
-            signatureAppearanceModel.setSignatureImage(SignatureUtilities.loadSignatureImage(imagePath));
+            signatureAppearanceModel.setSignatureImagePath(imagePath);
         }
         imagePathTextField.addFocusListener(this);
         imagePathBrowseButton = new JButton(messageBundle.getString(
@@ -431,7 +415,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         imagePathBrowseButton.addActionListener(this);
 
         // image scale
-        int imageScale = preferences.getInt(ViewerPropertiesManager.PROPERTY_SIGNATURE_IMAGE_SCALE, 100);
+        int imageScale = signatureAppearanceModel.getImageScale();
         JLabel imageScaleLabel = new JLabel(messageBundle.getString(
                 "viewer.annotation.signature.creation.dialog.signature.imageScale.label"));
         imageScaleSlider = new JSlider(JSlider.HORIZONTAL, 0, 300, imageScale);
@@ -513,7 +497,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         // location and date
         locationTextField = new JTextField();
         locationTextField.addFocusListener(this);
-        dateTextField = new JTextField();
+        JTextField dateTextField = new JTextField();
         dateTextField.setEnabled(false);
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         String today = df.format(new Date());
@@ -524,11 +508,6 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         // contact
         contactTextField = new JTextField();
         contactTextField.addFocusListener(this);
-        // reason
-        // todo remove, no longer needed as is.
-        reasonTextArea = new JTextArea(4, 20);
-        reasonTextArea.setLineWrap(true);
-        reasonTextArea.setWrapStyleWord(true);
 
         // todo very much needed -> Timestamp service
 
@@ -591,13 +570,6 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
                 0, 6, 1, 1);
         addGB(certificateSelectionPanel, contactTextField, 1, 6, 1, 3);
 
-        // Reason
-//        constraints.anchor = GridBagConstraints.FIRST_LINE_START;
-//        addGB(certificateSelectionPanel, new JLabel(messageBundle.getString(
-//                        "viewer.annotation.signature.creation.dialog.certificate.reason.label")),
-//                0, 7, 1, 1);
-//        addGB(certificateSelectionPanel, new JScrollPane(reasonTextArea), 1, 7, 1, 3);
-
         // language selection
         constraints.anchor = GridBagConstraints.LINE_START;
         addGB(certificateSelectionPanel, new JLabel(messageBundle.getString(
@@ -632,10 +604,6 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         showTextCheckBox.setEnabled(enable);
         showSignatureCheckBox.setEnabled(enable);
         imagePathTextField.setEnabled(enable);
-    }
-
-    private void showErrorDialog(String message) {
-        JOptionPane.showMessageDialog(this, message, "Signature Error", JOptionPane.ERROR_MESSAGE);
     }
 
     private void addGB(JPanel layout, Component component,

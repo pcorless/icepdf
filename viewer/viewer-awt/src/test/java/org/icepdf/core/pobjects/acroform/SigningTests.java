@@ -12,7 +12,7 @@ import org.icepdf.core.util.Library;
 import org.icepdf.core.util.SignatureDictionaries;
 import org.icepdf.core.util.updater.WriteMode;
 import org.icepdf.ri.common.views.annotations.signing.BasicSignatureAppearanceCallback;
-import org.icepdf.ri.common.views.annotations.signing.SignatureAppearanceModel;
+import org.icepdf.ri.common.views.annotations.signing.SignatureAppearanceModelImpl;
 import org.icepdf.ri.util.FontPropertiesManager;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -80,7 +80,7 @@ public class SigningTests {
             SignatureUtilities.updateSignatureDictionary(signatureDictionary, pkcs12SignerHandler.getCertificate());
 
             // build basic appearance
-            SignatureAppearanceModel signatureAppearanceModel = new SignatureAppearanceModel(library);
+            SignatureAppearanceModelImpl signatureAppearanceModel = new SignatureAppearanceModelImpl(library);
             signatureAppearanceModel.setLocale(Locale.ENGLISH);
             signatureAppearanceModel.setName(signatureDictionary.getName());
             signatureAppearanceModel.setContact(signatureDictionary.getContactInfo());

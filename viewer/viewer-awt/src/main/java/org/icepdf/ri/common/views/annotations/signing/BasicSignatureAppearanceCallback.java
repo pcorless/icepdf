@@ -3,6 +3,7 @@ package org.icepdf.ri.common.views.annotations.signing;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureAppearanceCallback;
+import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureAppearanceModel;
 import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureType;
 import org.icepdf.core.pobjects.annotations.Appearance;
 import org.icepdf.core.pobjects.annotations.AppearanceState;
@@ -38,22 +39,20 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
     protected static final Logger logger =
             Logger.getLogger(BasicSignatureAppearanceCallback.class.toString());
 
-    protected final SignatureAppearanceModel signatureAppearanceModel;
+    protected SignatureAppearanceModel signatureAppearanceModel;
 
-    /**
-     * Create a new signature appearance stream builder
-     *
-     * @param signatureAppearanceModel model to store signature properties that are shared between the UI build and
-     *                                 annotation appearance builder
-     */
-    public BasicSignatureAppearanceCallback(SignatureAppearanceModel signatureAppearanceModel) {
+
+    @Override
+    public void setSignatureAppearanceModel(SignatureAppearanceModel signatureAppearanceModel) {
         this.signatureAppearanceModel = signatureAppearanceModel;
     }
 
     @Override
-    public void removeAppearanceStream(SignatureWidgetAnnotation signatureWidgetAnnotation, AffineTransform pageSpace
-            , boolean isNew) {
-
+    public void removeAppearanceStream(SignatureWidgetAnnotation signatureWidgetAnnotation,
+                                       AffineTransform pageSpace, boolean isNew) {
+        if (signatureAppearanceModel == null) {
+            throw new IllegalStateException("SignatureAppearanceModel must be set before calling this method.");
+        }
         Library library = signatureWidgetAnnotation.getLibrary();
         SignatureDictionaries signatureDictionaries = library.getSignatureDictionaries();
         SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
@@ -77,6 +76,9 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
     @Override
     public void createAppearanceStream(SignatureWidgetAnnotation signatureWidgetAnnotation,
                                        AffineTransform pageSpace, boolean isNew) {
+        if (signatureAppearanceModel == null) {
+            throw new IllegalStateException("SignatureAppearanceModel must be set before calling this method.");
+        }
         SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
         Name currentAppearance = signatureWidgetAnnotation.getCurrentAppearance();
         HashMap<Name, Appearance> appearances = signatureWidgetAnnotation.getAppearances();
@@ -216,4 +218,7 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         return (int) bbox.getWidth() - maxWidth;
     }
 
+    public void setSignatureAppearanceModel(SignatureAppearanceModelImpl signatureAppearanceModel) {
+        this.signatureAppearanceModel = signatureAppearanceModel;
+    }
 }

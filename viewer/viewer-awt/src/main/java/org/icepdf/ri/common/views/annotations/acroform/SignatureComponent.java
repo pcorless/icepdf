@@ -192,7 +192,7 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
 
         public void actionPerformed(ActionEvent actionEvent) {
             try {
-                new SignatureCreationDialog(controller.getViewerFrame(), messageBundle, signatureComponent).setVisible(true);
+                new SignatureCreationDialog(controller, messageBundle, signatureComponent).setVisible(true);
             } catch (KeyStoreException e) {
                 // todo show authentication failed dialog, could not open keystore
                 logger.warning("failed to authenticate keystore");
