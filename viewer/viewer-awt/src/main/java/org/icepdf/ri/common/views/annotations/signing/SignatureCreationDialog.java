@@ -101,6 +101,12 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         signatureAppearanceCallback.setSignatureAppearanceModel(signatureAppearanceModel);
         signatureWidgetAnnotation.setAppearanceCallback(signatureAppearanceCallback);
 
+        this.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                cancelOrCloseSignatureCleanup();
+            }
+        });
+
         buildUI();
     }
 
@@ -146,8 +152,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
             dispose();
         } else if (source == closeButton) {
             // clean anything we set up and just leave the signature with an empty dictionary
-            signatureAppearanceCallback.removeAppearanceStream(signatureWidgetAnnotation, new AffineTransform(), true);
-            signatureWidgetAnnotation.setAppearanceCallback(null);
+            cancelOrCloseSignatureCleanup();
             setVisible(false);
             dispose();
         } else if (source == imagePathTextField) {
@@ -257,6 +262,11 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         }
     }
 
+    private void cancelOrCloseSignatureCleanup() {
+        signatureAppearanceCallback.removeAppearanceStream(signatureWidgetAnnotation, new AffineTransform(), true);
+        signatureWidgetAnnotation.setAppearanceCallback(null);
+    }
+
     private void updateModelAppearanceState() {
         signatureAppearanceModel.setLocation(locationTextField.getText());
         signatureAppearanceModel.setContact(contactTextField.getText());
@@ -342,6 +352,8 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
 
         JPanel certificateSelectionPanel = buildCertificateSelectionPanel();
         JPanel signatureBuilderPanel = buildSignatureBuilderPanel();
+        JPanel signatureControlPanel = buildSignatureControlPanel();
+
         JTabbedPane signatureTabbedPane = new JTabbedPane();
         signatureTabbedPane.addTab(
                 messageBundle.getString("viewer.annotation.signature.creation.dialog.certificate.tab.title"),
@@ -352,8 +364,12 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
 
         enableInputComponents(false);
 
+        JPanel contentPane = new JPanel(new BorderLayout());
+        contentPane.add(signatureTabbedPane, BorderLayout.CENTER);
+        contentPane.add(signatureControlPanel, BorderLayout.SOUTH);
+
         // pack it up and go.
-        getContentPane().add(signatureTabbedPane);
+        getContentPane().add(contentPane);
         pack();
         setLocationRelativeTo(getOwner());
         setResizable(true);
@@ -448,7 +464,6 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         addGB(signaturePanel, imageScaleLabel, 0, 1, 1, 1);
         addGB(signaturePanel, imageScaleSlider, 1, 1, 1, 2);
 
-
         constraints.insets = new Insets(2, 10, 2, 10);
         addGB(appearancePanel, visibilityPanel, 0, 0, 1, 1);
         addGB(appearancePanel, signaturePanel, 0, 1, 1, 1);
@@ -456,6 +471,34 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         addGB(appearancePanel, new Label(" "), 0, 9, 1, 1);
 
         return appearancePanel;
+    }
+
+    private JPanel buildSignatureControlPanel() {
+        JPanel controlPanel = new JPanel(new GridBagLayout());
+        controlPanel.setAlignmentY(JPanel.BOTTOM_ALIGNMENT);
+
+        // close buttons.
+        closeButton = new JButton(messageBundle.getString(
+                "viewer.annotation.signature.creation.dialog.close.button.label"));
+        closeButton.setMnemonic(messageBundle.getString("viewer.button.cancel.mnemonic").charAt(0));
+        closeButton.addActionListener(this);
+        signButton = new JButton(messageBundle.getString(
+                "viewer.annotation.signature.creation.dialog.sign.button.label"));
+        signButton.addActionListener(this);
+
+        constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.weightx = 1.0;
+        constraints.weighty = 0;
+        constraints.insets = new Insets(5, 10, 5, 10);
+
+        // close and sign input
+        constraints.anchor = GridBagConstraints.WEST;
+        addGB(controlPanel, closeButton, 0, 0, 1, 1);
+
+        constraints.anchor = GridBagConstraints.EAST;
+        addGB(controlPanel, signButton, 1, 0, 1, 1);
+        return controlPanel;
     }
 
     private JPanel buildCertificateSelectionPanel() throws KeyStoreException {
@@ -473,8 +516,6 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         certificateTable.setFillsViewportHeight(true);
 
         // certificate type selection
-        // todo need to add a way to select the type of signature, signer or certifier as we can only have one certifier
-        // either disable the radio box or simply override the certifier if the user selects a signer.
         signerRadioButton = new JRadioButton(messageBundle.getString(
                 "viewer.annotation.signature.creation.dialog.certificate.type.signer.label"));
         signerRadioButton.setSelected(true);
@@ -519,14 +560,6 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         languagesComboBox.addActionListener(this);
         signatureAppearanceModel.setLocale(defaultLocal);
 
-        // close buttons.
-        closeButton = new JButton(messageBundle.getString(
-                "viewer.annotation.signature.creation.dialog.close.button.label"));
-        closeButton.setMnemonic(messageBundle.getString("viewer.button.cancel.mnemonic").charAt(0));
-        closeButton.addActionListener(this);
-        signButton = new JButton(messageBundle.getString(
-                "viewer.annotation.signature.creation.dialog.sign.button.label"));
-        signButton.addActionListener(this);
 
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.HORIZONTAL;
@@ -580,13 +613,6 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         constraints.weighty = 1.0;
         addGB(certificateSelectionPanel, new Label(" "), 0, 9, 1, 1);
 
-        // close and sign input
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.fill = GridBagConstraints.NONE;
-        addGB(certificateSelectionPanel, closeButton, 0, 10, 1, 1);
-
-        constraints.anchor = GridBagConstraints.EAST;
-        addGB(certificateSelectionPanel, signButton, 3, 10, 1, 1);
         return certificateSelectionPanel;
     }
 
@@ -604,6 +630,8 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         showTextCheckBox.setEnabled(enable);
         showSignatureCheckBox.setEnabled(enable);
         imagePathTextField.setEnabled(enable);
+
+        signButton.setEnabled(enable);
     }
 
     private void addGB(JPanel layout, Component component,

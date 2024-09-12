@@ -89,8 +89,8 @@ public class SigningTests {
                     SignatureType.SIGNER : SignatureType.CERTIFIER);
             signatureAppearanceModel.setSignatureImage(createTestSignatureBufferedImage());
 
-            BasicSignatureAppearanceCallback signatureAppearance =
-                    new BasicSignatureAppearanceCallback(signatureAppearanceModel);
+            BasicSignatureAppearanceCallback signatureAppearance = new BasicSignatureAppearanceCallback();
+            signatureAppearance.setSignatureAppearanceModel(signatureAppearanceModel);
             signatureAnnotation.setAppearanceCallback(signatureAppearance);
             signatureAnnotation.resetAppearanceStream(new AffineTransform());
 
