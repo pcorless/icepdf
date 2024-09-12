@@ -165,9 +165,6 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         } else if (source == signerVisibilityCheckBox) {
             signatureAppearanceModel.setSignatureVisible(signerVisibilityCheckBox.isSelected());
             buildAppearanceStream();
-        } else if (source == languagesComboBox) {
-            signatureAppearanceModel.setLocale((Locale) languagesComboBox.getSelectedItem());
-            buildAppearanceStream();
         } else if (source == showTextCheckBox) {
             signatureAppearanceModel.setSignatureTextVisible(showTextCheckBox.isSelected());
             buildAppearanceStream();
@@ -210,6 +207,9 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
                 signatureAppearanceModel.setFontName(fontName);
                 buildAppearanceStream();
             }
+        } else if (e.getSource() == languagesComboBox) {
+            signatureAppearanceModel.setLocale((Locale) languagesComboBox.getSelectedItem());
+            buildAppearanceStream();
         }
     }
 
@@ -557,7 +557,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         // be nice to do this and take into account country too.
         Locale defaultLocal = new Locale(Locale.getDefault().getLanguage());
         languagesComboBox.setSelectedItem(new Locale(Locale.getDefault().getLanguage()));
-        languagesComboBox.addActionListener(this);
+        languagesComboBox.addItemListener(this);
         signatureAppearanceModel.setLocale(defaultLocal);
 
 

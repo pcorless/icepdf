@@ -179,7 +179,7 @@ public class ContentWriterUtils {
 
     public static ImageStream addImageToShapes(Library library, Name imageName, Reference reference,
                                                BufferedImage bufferedImage, Shapes shapes,
-                                               Rectangle2D bbox, int leftMargin, float scale) {
+                                               Rectangle2D bbox, float scale) {
 
         scale = scale / 100;
         // create transform for image placement

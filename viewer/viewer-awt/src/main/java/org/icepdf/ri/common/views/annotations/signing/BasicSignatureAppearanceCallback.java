@@ -3,7 +3,6 @@ package org.icepdf.ri.common.views.annotations.signing;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureAppearanceCallback;
-import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureAppearanceModel;
 import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureType;
 import org.icepdf.core.pobjects.annotations.Appearance;
 import org.icepdf.core.pobjects.annotations.AppearanceState;
@@ -34,16 +33,16 @@ import static org.icepdf.core.pobjects.Form.RESOURCES_KEY;
  * Builds a basic appearance stream using the given signatureImage.  This is meant to be a reference implementation
  * that can be easily tweaked as needed.
  */
-public class BasicSignatureAppearanceCallback implements SignatureAppearanceCallback {
+public class BasicSignatureAppearanceCallback implements SignatureAppearanceCallback<SignatureAppearanceModelImpl> {
 
     protected static final Logger logger =
             Logger.getLogger(BasicSignatureAppearanceCallback.class.toString());
 
-    protected SignatureAppearanceModel signatureAppearanceModel;
+    protected SignatureAppearanceModelImpl signatureAppearanceModel;
 
 
     @Override
-    public void setSignatureAppearanceModel(SignatureAppearanceModel signatureAppearanceModel) {
+    public void setSignatureAppearanceModel(SignatureAppearanceModelImpl signatureAppearanceModel) {
         this.signatureAppearanceModel = signatureAppearanceModel;
     }
 
@@ -98,16 +97,7 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
 
         ResourceBundle messageBundle = signatureAppearanceModel.getMessageBundle();
 
-        float offsetX = margin;
-        float offsetY = margin;
-        // is generally going to be zero, and af takes care of the offset for inset.
-        Rectangle2D bbox = appearanceState.getBbox();
-        float advanceX = (float) bbox.getMinX() + offsetX;
-        float advanceY = (float) bbox.getMinY() + offsetY;
-        float midX = (float) bbox.getWidth() / 2;
-
         Library library = signatureDictionary.getLibrary();
-
 
         // reasons
         MessageFormat reasonFormatter = new MessageFormat(messageBundle.getString(
@@ -134,22 +124,31 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
                 "viewer.annotation.signature.handler.properties.location.label"));
         String location = locationFormatter.format(new Object[]{signatureAppearanceModel.getLocation()});
 
-        int leftMargin = calculateLeftMargin(bbox, reason, contactInfo, commonName, location);
+        float offsetX = margin;
+        float offsetY = margin;
+        // is generally going to be zero, and af takes care of the offset for inset.
+        Rectangle2D bbox = appearanceState.getBbox();
 
-        // create new image stream for the signature image 25, 50
+        // create new image stream for the signature image
         BufferedImage signatureImage = signatureAppearanceModel.getSignatureImage();
         Name imageName = signatureAppearanceModel.getImageXObjectName();
         Reference imageReference = signatureAppearanceModel.getImageXObjectReference();
         ImageStream imageStream = null;
         if (signatureAppearanceModel.isSignatureImageVisible() && signatureImage != null) {
+            // todo calculate image height, so we can center the image
+            //  insert the offset as transform between q and Q.
+
             imageStream = ContentWriterUtils.addImageToShapes(library, imageName, imageReference, signatureImage,
-                    shapes, bbox,
-                    leftMargin, signatureAppearanceModel.getImageScale());
+                    shapes, bbox, signatureAppearanceModel.getImageScale());
             signatureAppearanceModel.setImageXObjectReference(imageStream.getPObjectReference());
         }
 
         if (signatureAppearanceModel.isSignatureTextVisible()) {
+            int leftMargin = calculateLeftMargin(bbox, reason, contactInfo, commonName, location);
+            // todo calculate height, so we can center the text
+            float advanceY = (float) bbox.getMinY() + offsetY;
             int lineSpacing = 5;
+
             Point2D.Float lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, leftMargin, advanceY,
                     shapes,
                     signatureAppearanceModel.getFontSize(),
@@ -218,7 +217,4 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         return (int) bbox.getWidth() - maxWidth;
     }
 
-    public void setSignatureAppearanceModel(SignatureAppearanceModelImpl signatureAppearanceModel) {
-        this.signatureAppearanceModel = signatureAppearanceModel;
-    }
 }
