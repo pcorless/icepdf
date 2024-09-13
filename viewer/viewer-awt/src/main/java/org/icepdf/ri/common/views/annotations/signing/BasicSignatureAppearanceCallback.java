@@ -11,6 +11,7 @@ import org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.commands.PostScriptEncoder;
+import org.icepdf.core.pobjects.graphics.commands.TransformDrawCmd;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.SignatureDictionaries;
@@ -84,8 +85,7 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         Appearance appearance = appearances.get(currentAppearance);
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
 
-        int margin = 0;
-        Shapes shapes = ContentWriterUtils.createAppearanceShapes(appearanceState, margin, margin);
+        Shapes shapes = ContentWriterUtils.createAppearanceShapes(appearanceState, 0, 0);
 
         if (!signatureAppearanceModel.isSignatureVisible() || !signatureAppearanceModel.isSelectedCertificate()) {
             return;
@@ -124,9 +124,6 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
                 "viewer.annotation.signature.handler.properties.location.label"));
         String location = locationFormatter.format(new Object[]{signatureAppearanceModel.getLocation()});
 
-        float offsetX = margin;
-        float offsetY = margin;
-        // is generally going to be zero, and af takes care of the offset for inset.
         Rectangle2D bbox = appearanceState.getBbox();
 
         // create new image stream for the signature image
@@ -135,48 +132,35 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         Reference imageReference = signatureAppearanceModel.getImageXObjectReference();
         ImageStream imageStream = null;
         if (signatureAppearanceModel.isSignatureImageVisible() && signatureImage != null) {
-            // todo calculate image height, so we can center the image
-            //  insert the offset as transform between q and Q.
-
             imageStream = ContentWriterUtils.addImageToShapes(library, imageName, imageReference, signatureImage,
                     shapes, bbox, signatureAppearanceModel.getImageScale());
             signatureAppearanceModel.setImageXObjectReference(imageStream.getPObjectReference());
         }
 
         if (signatureAppearanceModel.isSignatureTextVisible()) {
-            int leftMargin = calculateLeftMargin(bbox, reason, contactInfo, commonName, location);
-            // todo calculate height, so we can center the text
-            float advanceY = (float) bbox.getMinY() + offsetY;
-            int lineSpacing = 5;
 
-            Point2D.Float lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, leftMargin, advanceY,
-                    shapes,
-                    signatureAppearanceModel.getFontSize(),
-                    lineSpacing,
-                    signatureAppearanceModel.getFontColor(),
-                    reason);
-
+            float offsetY = 0;
+            int lineSpacing = signatureAppearanceModel.getFontSize();
+            int fontSize = signatureAppearanceModel.getFontSize();
             float groupSpacing = lineSpacing + 5;
 
-            lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, leftMargin, lastOffset.y + groupSpacing,
-                    shapes,
-                    signatureAppearanceModel.getFontSize(),
-                    lineSpacing,
-                    signatureAppearanceModel.getFontColor(),
-                    contactInfo);
+            String[] signatureText = {reason, contactInfo, commonName, location};
+            int leftMargin = calculateLeftMargin(bbox, signatureText);
+            AffineTransform centeringTransform = calculateCenteringTransform(bbox, fontSize, lineSpacing,
+                    groupSpacing, signatureText);
 
-            lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, leftMargin, lastOffset.y + groupSpacing,
-                    shapes,
-                    signatureAppearanceModel.getFontSize(),
-                    lineSpacing,
-                    signatureAppearanceModel.getFontColor(),
-                    commonName);
-
-            ContentWriterUtils.addTextSpritesToShapes(fontFile, leftMargin, lastOffset.y + groupSpacing, shapes,
-                    signatureAppearanceModel.getFontSize(),
-                    lineSpacing,
-                    signatureAppearanceModel.getFontColor(),
-                    location);
+            Point2D.Float lastOffset;
+            float advanceY = (float) bbox.getMinY() + offsetY;
+            shapes.add(new TransformDrawCmd(centeringTransform));
+            for (String text : signatureText) {
+                lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, leftMargin, advanceY,
+                        shapes,
+                        fontSize,
+                        lineSpacing,
+                        signatureAppearanceModel.getFontColor(),
+                        text);
+                advanceY = lastOffset.y + groupSpacing;
+            }
         }
 
         // finalized appearance stream and generated postscript
@@ -201,7 +185,19 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
 
     }
 
-    private int calculateLeftMargin(Rectangle2D bbox, String... text) {
+    private AffineTransform calculateCenteringTransform(Rectangle2D bbox, int fontSize, int lineSpacing,
+                                                        float groupSpacing, String[] text) {
+        // this is a little fuzzy but should work for most cases to center text in the middle of the bbox
+        double height = text.length * (fontSize + lineSpacing);
+        height += groupSpacing;
+        float offset = bbox.getHeight() > height ? (float) (bbox.getHeight() - height) / 2 : 0;
+        return new AffineTransform(
+                1, 0, 0,
+                1, 0,
+                offset);
+    }
+
+    private int calculateLeftMargin(Rectangle2D bbox, String[] text) {
         Font font = new Font(signatureAppearanceModel.getFontName(), Font.PLAIN,
                 signatureAppearanceModel.getFontSize());
         FontRenderContext fontRenderContext = new FontRenderContext(new AffineTransform(), true, true);

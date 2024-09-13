@@ -83,7 +83,9 @@ public class ContentWriterUtils {
         }
     }
 
-    public static Point2D.Float addTextSpritesToShapes(FontFile fontFile, final float advanceX, final float advanceY,
+    public static Point2D.Float addTextSpritesToShapes(FontFile fontFile,
+                                                       final float advanceX,
+                                                       final float advanceY,
                                                        Shapes shapes,
                                                        int fontSize,
                                                        float lineSpacing,
@@ -180,8 +182,16 @@ public class ContentWriterUtils {
     public static ImageStream addImageToShapes(Library library, Name imageName, Reference reference,
                                                BufferedImage bufferedImage, Shapes shapes,
                                                Rectangle2D bbox, float scale) {
-
         scale = scale / 100;
+
+        // create transform for centering image
+        float scaledImageHeight = bufferedImage.getHeight() * scale;
+        float offset = bbox.getHeight() > scaledImageHeight ? (float) (bbox.getHeight() - scaledImageHeight) / 2 : 0;
+        AffineTransform centeringTransform = new AffineTransform(
+                1, 0, 0,
+                1, 0,
+                -offset);
+
         // create transform for image placement
         AffineTransform imageTransform = new AffineTransform(
                 bufferedImage.getWidth() * scale,
@@ -194,6 +204,7 @@ public class ContentWriterUtils {
         ImageReference imageReference = new ImageContentWriterReference(imageStream, imageName);
         // stack em up
         shapes.add(new PushDrawCmd());
+        shapes.add(new TransformDrawCmd(centeringTransform));
         shapes.add(new TransformDrawCmd(imageTransform));
         shapes.add(new ImageDrawCmd(imageReference));
         shapes.add(new PopDrawCmd());
