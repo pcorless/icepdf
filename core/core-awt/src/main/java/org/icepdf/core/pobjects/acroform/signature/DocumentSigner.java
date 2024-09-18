@@ -100,16 +100,12 @@ public class DocumentSigner {
             // update /contents with adjusted length for byteRange offset
             Pattern pattern = Pattern.compile("/Contents <([A-Fa-f0-9]+)>");
             Matcher matcher = pattern.matcher(rawSignatureDiciontary);
-            int placeholderPadding = byteRangeDelta;
-            if (placeholderPadding % 2 != 0) {
-                placeholderPadding++;
-            }
             rawSignatureDiciontary =
-                    matcher.replaceFirst("/Contents <" + generateContentsPlaceholder(placeholderPadding) + ">");
+                    matcher.replaceFirst("/Contents <" + generateContentsPlaceholder(byteRangeDelta) + ">");
 
             // write the altered signature dictionary
             fc.position(signatureDictionaryOffset);
-            int writtenn = fc.write(ByteBuffer.wrap(rawSignatureDiciontary.getBytes()));
+            fc.write(ByteBuffer.wrap(rawSignatureDiciontary.getBytes()));
 
             // digest the file creating the content signature
             ByteBuffer preContent = ByteBuffer.allocateDirect(firstOffset);
@@ -129,10 +125,6 @@ public class DocumentSigner {
             String hexContent = HexStringObject.encodeHexString(signature);
             if (hexContent.length() < PLACEHOLDER_PADDING_LENGTH) {
                 int padding = PLACEHOLDER_PADDING_LENGTH - byteRangeDelta - hexContent.length();
-                // make sure the contents stream is an even hex number
-                if (byteRangeDelta % 2 != 0) {
-                    padding--;
-                }
                 hexContent = hexContent + "0".repeat(Math.max(0, padding));
             } else {
                 throw new IllegalStateException("signature content is larger than placeholder");
