@@ -112,8 +112,8 @@ public class DocumentSigner {
             int writtenn = fc.write(ByteBuffer.wrap(rawSignatureDiciontary.getBytes()));
 
             // digest the file creating the content signature
-            ByteBuffer preContent = ByteBuffer.allocateDirect(firstOffset - firstStart);
-            ByteBuffer postContent = ByteBuffer.allocateDirect(secondStart + secondOffset);
+            ByteBuffer preContent = ByteBuffer.allocateDirect(firstOffset);
+            ByteBuffer postContent = ByteBuffer.allocateDirect(secondOffset);
             fc.position(firstStart);
             fc.read(preContent);
             fc.position(secondStart);

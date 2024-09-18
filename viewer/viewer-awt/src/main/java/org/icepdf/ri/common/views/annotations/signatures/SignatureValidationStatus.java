@@ -79,7 +79,7 @@ public class SignatureValidationStatus {
             documentModified = "viewer.annotation.signature.validation.common.doc.unmodified.label";
         } else if (!signatureValidator.isSignedDataModified() && signatureValidator.isDocumentDataModified() && signatureValidator.isSignaturesCoverDocumentLength()) {
             documentModified = "viewer.annotation.signature.validation.common.doc.modified.label";
-        } else if (!signatureValidator.isSignaturesCoverDocumentLength()) {
+        } else if (signatureValidator.isSignaturesCoverDocumentLength() && signatureValidator.isSignedDataModified()) {
             documentModified = "viewer.annotation.signature.validation.common.doc.major.label";
         }
         documentModified = messageBundle.getString(documentModified);

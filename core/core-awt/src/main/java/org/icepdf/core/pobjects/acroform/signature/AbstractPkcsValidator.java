@@ -591,7 +591,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
                     logger.finest("Encapsulated data verified: " + verifyEncContentInfoData);
                 }
                 // verify the attributes.
-                if ((encapsulatedDigestCheck || nonEncapsulatedDigestCheck) && verifyEncContentInfoData) {
+                if (encapsulatedDigestCheck && nonEncapsulatedDigestCheck && verifyEncContentInfoData) {
                     isSignedDataModified = false;
                 }
             } else {
@@ -620,8 +620,6 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
             while (aliases.hasMoreElements()) {
                 trusted.add((X509Certificate) trustStore.getCertificate(aliases.nextElement()));
             }
-            // todo trust chain test, remove
-//            trusted.add(cers[0]);
             CertificateVerifier.verifyCertificate(signerCertificate, cers, trusted);
             isCertificateChainTrusted = true;
             isCertificateDateValid = true;
