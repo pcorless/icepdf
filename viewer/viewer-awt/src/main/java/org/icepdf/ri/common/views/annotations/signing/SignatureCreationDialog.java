@@ -98,6 +98,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
 
         signatureAppearanceCallback = controller.getDocumentViewController().getSignatureAppearanceCallback();
         signatureAppearanceModel = new SignatureAppearanceModelImpl(signatureComponent.getAnnotation().getLibrary());
+        signatureAppearanceModel.setSelectedCertificate(false);
         signatureAppearanceCallback.setSignatureAppearanceModel(signatureAppearanceModel);
         signatureWidgetAnnotation.setAppearanceCallback(signatureAppearanceCallback);
 
@@ -338,7 +339,6 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
             }
         }
         updateModelAppearanceState();
-        buildAppearanceStream();
     }
 
     private void buildUI() throws KeyStoreException {

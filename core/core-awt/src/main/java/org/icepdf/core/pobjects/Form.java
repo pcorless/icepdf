@@ -240,21 +240,8 @@ public class Form extends Stream {
             fontsDictionary.put(EMBEDDED_FONT_NAME, newFont.getPObjectReference());
             // sync font resources with form object.
             entries.put(RESOURCES_KEY, formResources.entries);
-            setRawBytes("".getBytes());
-            try {
-                init();
-            } catch (InterruptedException e) {
-                logger.log(Level.WARNING, "Could not initialized Annotation", e);
-                throw new IllegalStateException("Could not initialized Annotation");
-            }
         } else {
             // reuse previously defined 'common' annotation font
-            try {
-                init();
-            } catch (InterruptedException e) {
-                logger.log(Level.WARNING, "Could not initialized Annotation", e);
-                throw new IllegalStateException("Could not initialized Annotation");
-            }
             newFont = formResources.getFont(EMBEDDED_FONT_NAME);
             Reference reference = newFont.getPObjectReference();
             newFont = new org.icepdf.core.pobjects.fonts.zfont.SimpleFont(library, fontDictionary);

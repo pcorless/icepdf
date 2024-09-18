@@ -33,7 +33,7 @@ public class SignatureAppearanceModelImpl implements SignatureAppearanceModel {
 
     private SignatureType signatureType;
     private boolean signatureVisible = true;
-    private boolean isSelectedCertificate;
+    private boolean isSelectedCertificate = true;
     private String location;
     private String contact;
     private String name;

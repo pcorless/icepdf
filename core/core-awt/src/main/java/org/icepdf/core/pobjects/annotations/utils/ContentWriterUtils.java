@@ -11,6 +11,7 @@ import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.TextState;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
+import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.pobjects.graphics.images.references.ImageContentWriterReference;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.util.Library;
@@ -227,6 +228,11 @@ public class ContentWriterUtils {
         }
         ImageStream imageStream = new ImageStream(library, imageDictionary, null);
         imageStream.setDecodedImage(bufferedImage);
+        // this is pretty rough, will maks any alpha value,  should build a proper maask
+        if (useMask && bufferedImage.getColorModel().hasAlpha()) {
+            // we need s softer mask for the image.
+            ImageUtility.encodeColorKeyMask(imageStream);
+        }
         // setup object reference and put in state manager
         StateManager stateManager = library.getStateManager();
         if (reference == null) {
