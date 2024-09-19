@@ -22,6 +22,7 @@ import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -214,7 +215,8 @@ public class InteractiveForm extends Dictionary {
         if (fields == null) {
             fields = new ArrayList<>();
             fields.add(field);
-            entries.put(FIELDS_KEY, List.of(((AbstractWidgetAnnotation) field).getPObjectReference()));
+            entries.put(FIELDS_KEY,
+                    new ArrayList<>(Arrays.asList(((AbstractWidgetAnnotation) field).getPObjectReference())));
         } else {
             fields.add(field);
             List<Reference> fieldReferences = (List<Reference>) library.getObject(entries, FIELDS_KEY);
