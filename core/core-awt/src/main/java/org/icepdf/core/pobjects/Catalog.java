@@ -393,7 +393,7 @@ public class Catalog extends Dictionary {
      */
     public InteractiveForm getOrCreateInteractiveForm() {
         if (interactiveForm == null) {
-            InteractiveForm interactiveForm = new InteractiveForm(library, new DictionaryEntries());
+            interactiveForm = new InteractiveForm(library, new DictionaryEntries());
             StateManager stateManager = library.getStateManager();
             this.entries.put(ACRO_FORM_KEY, interactiveForm);
             stateManager.addChange(new PObject(this, this.getPObjectReference()));
