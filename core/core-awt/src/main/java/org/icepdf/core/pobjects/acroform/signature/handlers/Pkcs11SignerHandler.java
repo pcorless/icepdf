@@ -74,6 +74,7 @@ public class Pkcs11SignerHandler extends SignerHandler {
         logger.log(Level.INFO, "buildKeyStore, retrieved cert alias: " + certAlias);
         logger.log(Level.INFO, "buildKeyStore, should use pin/password from callbackHandler");
         return (PrivateKey) keystore.getKey(certAlias, null); // should pull password from callbackHandler
+        // todo needs review
 //        return (PrivateKey) keyStore.getKey(certAlias, callbackHandler.getPassword());
     }
 

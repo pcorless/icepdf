@@ -89,8 +89,6 @@ public class SignatureUtilities {
         } else {
             throw new IllegalStateException("Certificate has no DRNs data");
         }
-//        signatureDictionary.setReason("Approval"); // Approval or certification but technically can be anything
-//        signatureDictionary.setDate(PDate.formatDateTime(new Date()));
     }
 
     public static BufferedImage loadSignatureImage(String imagePath) {

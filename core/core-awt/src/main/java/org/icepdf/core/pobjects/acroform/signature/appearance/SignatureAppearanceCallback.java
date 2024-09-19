@@ -28,6 +28,14 @@ public interface SignatureAppearanceCallback<T extends SignatureAppearanceModel>
     void createAppearanceStream(SignatureWidgetAnnotation signatureWidgetAnnotation, AffineTransform pageSpace,
                                 boolean isNew);
 
+    /**
+     * Remove appearance stream for the given SignatureWidgetAnnotation.  Clean up any resources or StateManager state
+     * associated with the SignatureWidgetAnnotation.
+     *
+     * @param signatureWidgetAnnotation
+     * @param pageSpace
+     * @param isNew
+     */
     void removeAppearanceStream(SignatureWidgetAnnotation signatureWidgetAnnotation, AffineTransform pageSpace,
                                 boolean isNew);
 }

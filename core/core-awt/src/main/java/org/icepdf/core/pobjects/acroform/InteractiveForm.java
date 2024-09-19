@@ -220,6 +220,11 @@ public class InteractiveForm extends Dictionary {
             List<Reference> fieldReferences = (List<Reference>) library.getObject(entries, FIELDS_KEY);
             fieldReferences.add(((AbstractWidgetAnnotation) field).getPObjectReference());
         }
+        // mark the catalog as changed, this object is always contained in the catalog as a dictionary, it
+        // should never be an indirect reference.
+        Catalog catalog = library.getCatalog();
+        StateManager stateManager = library.getStateManager();
+        stateManager.addChange(new PObject(catalog, catalog.getPObjectReference()));
     }
 
     public void removeField(Object field) {

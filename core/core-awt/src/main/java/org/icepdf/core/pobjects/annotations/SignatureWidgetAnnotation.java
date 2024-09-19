@@ -46,10 +46,6 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
     public SignatureWidgetAnnotation(Library l, DictionaryEntries h) {
         super(l, h);
         fieldDictionary = new SignatureFieldDictionary(library, entries);
-
-//        DictionaryEntries valueDict = library.getDictionary(entries, FieldDictionary.V_KEY);
-//        signatureDictionary = new SignatureDictionary(library, valueDict);
-
     }
 
     @Override

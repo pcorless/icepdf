@@ -34,6 +34,7 @@ public class IncrementalUpdater {
      * Appends modified objects to the specified output stream.
      *
      * @param document       The Document that is being saved
+     * @param documentByteBuffer ByteBuffer of the original document
      * @param outputStream   OutputStream to write the incremental update to
      * @param documentLength start of appender bytes,  can be zero if storing the bytes to another source.
      * @return The number of bytes written in the incremental update
@@ -103,8 +104,7 @@ public class IncrementalUpdater {
             }
         } catch (Exception e) {
             logger.log(Level.FINE, "Failed to sign document.", e);
-//            Todo still seeing 1 byte difference on dictionary write,  validation still works though?
-//            throw new RuntimeException(e);
+            throw new RuntimeException(e);
         } finally {
             tmpDocument.dispose();
         }

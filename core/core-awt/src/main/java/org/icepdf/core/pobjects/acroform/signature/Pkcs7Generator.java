@@ -14,6 +14,9 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 
+/**
+ * Pkcs7Generator is a utility class for creating a PKCS7 signature.
+ */
 public class Pkcs7Generator {
 
     private CMSSignedDataGenerator signedDataGenerator;

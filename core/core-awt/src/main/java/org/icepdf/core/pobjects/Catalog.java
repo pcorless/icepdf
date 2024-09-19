@@ -35,7 +35,7 @@ import java.util.logging.Logger;
  * class for convenience, but can also be accessed via the {@link PTrailer} class.
  * Useful information about the document can be extracted from the Catalog
  * Dictionary, such as PDF version information and Viewer Preferences.  All
- * Catalog dictionary properties can be accesed via the getEntries method.
+ * Catalog dictionary properties can be accessed via the getEntries method.
  * See section 3.6.1 of the PDF Reference version 1.6 for more information on
  * the properties available in the Catalog Object. </p>
  *

@@ -220,6 +220,12 @@ public class StateManager {
         return crossReferenceRoot;
     }
 
+    /**
+     * Checks to see if any redaction annotations are present in the changes.  This is used to determine if
+     * the document has redactions that need to be burned in.
+     *
+     * @return true if redactions are present, false otherwise.
+     */
     public boolean hasRedactions() {
         if (changes.isEmpty()) return false;
         Collection<Change> changesValues = changes.values();
