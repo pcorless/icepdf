@@ -4,6 +4,7 @@ import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
+import org.icepdf.core.util.SignatureDictionaries;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -11,9 +12,11 @@ import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 
+import javax.swing.*;
 import javax.swing.event.MouseInputListener;
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
 /**
@@ -38,6 +41,19 @@ public class SignatureAnnotationHandler extends SelectionBoxHandler
     }
 
     public void mousePressed(MouseEvent e) {
+        // only one signature annotation can currently be created using the UI,  this might change in the future
+        // for backend signing but that will likely use a different API and flagging system.
+        SignatureDictionaries signatureDictionaries =
+                documentViewController.getDocument().getCatalog().getLibrary().getSignatureDictionaries();
+        if (signatureDictionaries.hasSigners()) {
+            ResourceBundle messageBundle = documentViewController.getParentController().getMessageBundle();
+            JOptionPane.showMessageDialog(documentViewController.getViewContainer(),
+                    messageBundle.getString("viewer.dialog.signature.creation.msgs"),
+                    messageBundle.getString("viewer.dialog.signature.creation.title"),
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         // annotation selection box.
         int x = e.getX();
         int y = e.getY();

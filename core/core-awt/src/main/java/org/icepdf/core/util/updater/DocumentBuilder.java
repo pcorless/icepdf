@@ -28,7 +28,6 @@ public class DocumentBuilder {
         long length = -1;
         if (writeMode == WriteMode.FULL_UPDATE) {
             // kick of a full rewrite of the document, replacing any updates objects with new data
-            // todo does it make sense to sign a full update, probably?
             length = new FullUpdater().writeDocument(
                     document,
                     out);

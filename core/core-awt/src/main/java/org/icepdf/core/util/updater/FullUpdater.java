@@ -20,6 +20,8 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Writes a document stream in its entirety.  The document's root object is used ot traverse the page tree
@@ -29,6 +31,9 @@ import java.util.List;
  * @since 7.2.0
  */
 public class FullUpdater {
+
+    private static final Logger logger =
+            Logger.getLogger(FullUpdater.class.toString());
 
     /**
      * Write the xrefTable in a compressed format by default.  Can be disabled if to aid in debugging or to
@@ -94,17 +99,15 @@ public class FullUpdater {
         Document tmpDocument = new Document();
         try {
             SignatureDictionaries signatureDictionaries = library.getSignatureDictionaries();
-            // todo: can likely, maybe write all the signatures at once, should work but not a real world use case
-            // need to think about this. For now we will just write the first signature we find.
             if (signatureDictionaries.hasSigners()) {
                 tmpDocument.setFile(currentPath.toString());
                 File tempFile = currentPath.toFile();
                 DocumentSigner.signDocument(tmpDocument, tempFile,
-                        signatureDictionaries.getCurrentSignatureDictionary());
+                        signatureDictionaries.getCurrentSignature());
                 Files.copy(currentPath, outputStream);
             }
         } catch (Exception e) {
-//            logger.log(Level.FINE, "Failed to sign document.", e);
+            logger.log(Level.FINE, "Failed to sign document.", e);
             throw new RuntimeException(e);
         } finally {
             // clean of the tmp files

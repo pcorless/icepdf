@@ -100,7 +100,7 @@ public class IncrementalUpdater {
                 // size of new file, this won't change as SignatureDictionary has padding to account for content and
                 // offsets
                 DocumentSigner.signDocument(tmpDocument, tempFile,
-                        signatureDictionaries.getCurrentSignatureDictionary());
+                        signatureDictionaries.getCurrentSignature());
             }
         } catch (Exception e) {
             logger.log(Level.FINE, "Failed to sign document.", e);

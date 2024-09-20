@@ -19,7 +19,6 @@ import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.io.SizeInputStream;
 import org.icepdf.core.pobjects.*;
-import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.URIAction;
@@ -1248,7 +1247,8 @@ public class SwingController extends ComponentAdapter
             documentViewController.getDocumentViewModel().getPageComponents().forEach(pvc -> {
                 final List<AbstractAnnotationComponent> comps = ((PageViewComponentImpl) pvc).getAnnotationComponents();
                 if (comps != null) {
-                    final Collection<AnnotationComponent> toDelete = comps.stream().filter(comp -> comp instanceof MarkupAnnotationComponent
+                    final Collection<AnnotationComponent> toDelete =
+                            comps.stream().filter(comp -> comp instanceof MarkupAnnotationComponent
                             && ((MarkupAnnotation) comp.getAnnotation()).isCurrentUserOwner()).collect(Collectors.toSet());
                     documentViewController.deleteAnnotations(toDelete);
                     reflectUndoCommands();
@@ -3685,15 +3685,7 @@ public class SwingController extends ComponentAdapter
                     //  but that could cause problems with slow network links too,
                     //  and would complicate the incremental update code, so we're
                     //  harmonising on this approach.
-
-                    SignatureDictionaries signatureDictionaries =
-                            document.getCatalog().getLibrary().getSignatureDictionaries();
-                    if (signatureDictionaries != null && !signatureDictionaries.getSignatures().isEmpty()) {
-                        // todo still need to decide what do do for FULL_UPDATE
-                        writeSignedDocuments(signatureDictionaries, saveMode, file);
-                    } else {
-                        writeDocument(saveMode, file);
-                    }
+                    writeDocument(saveMode, file);
                     // save the default directory
                     ViewModel.setDefaultFile(file);
                 }
@@ -3713,13 +3705,12 @@ public class SwingController extends ComponentAdapter
     private void writeDocument(SaveMode saveMode, File file) {
         try (final FileOutputStream fileOutputStream = new FileOutputStream(file);
              final BufferedOutputStream buf = new BufferedOutputStream(fileOutputStream, 8192)) {
-            // We want 'save as' or 'save a copy to always occur
             if (saveMode == SaveMode.EXPORT) {
                 // save as copy
                 document.writeToOutputStream(buf, WriteMode.FULL_UPDATE);
             } else {
                 // save as will append changes.
-                document.saveToOutputStream(buf);
+                document.writeToOutputStream(buf, WriteMode.INCREMENT_UPDATE);
             }
             document.getStateManager().setChangesSnapshot();
         } catch (MalformedURLException e) {
@@ -3729,33 +3720,6 @@ public class SwingController extends ComponentAdapter
         } catch (Exception e) {
             logger.log(Level.WARNING, "Failed to append document changes", e);
         }
-    }
-
-    private void writeSignedDocuments(SignatureDictionaries signatureDictionaries, SaveMode saveMode, File file) {
-        ArrayList<SignatureDictionary> signatures = signatureDictionaries.getSignatures();
-        for (SignatureDictionary signature : signatures) {
-            signatureDictionaries.setCurrentSignatureDictionary(signature);
-            try (final FileOutputStream fileOutputStream = new FileOutputStream(file);
-                 final BufferedOutputStream buf = new BufferedOutputStream(fileOutputStream, 8192)) {
-
-                // We want 'save as' or 'save a copy to always occur
-                if (saveMode == SaveMode.EXPORT) {
-                    // save as copy
-                    document.writeToOutputStream(buf, WriteMode.FULL_UPDATE);
-                } else {
-                    // save as will append changes.
-                    document.saveToOutputStream(buf);
-                }
-                document.getStateManager().setChangesSnapshot();
-            } catch (MalformedURLException e) {
-                logger.log(Level.WARNING, "Malformed URL Exception ", e);
-            } catch (IOException e) {
-                logger.log(Level.WARNING, "IO Exception ", e);
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Failed to append document changes", e);
-            }
-        }
-        signatureDictionaries.setCurrentSignatureDictionary(null);
     }
 
     /**

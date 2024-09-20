@@ -127,7 +127,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
                 signatureDictionary = SignatureDictionary.getInstance(signatureWidgetAnnotation, SignatureType.SIGNER);
                 signatureDictionaries.addSignerSignature(signatureDictionary);
             } else {
-                if (signatureDictionaries.hasExistingCertifier()) {
+                if (signatureDictionaries.hasExistingCertifier(library)) {
                     JOptionPane.showMessageDialog(this,
                             messageBundle.getString("viewer.annotation.signature.creation.dialog.certify.error.msg"),
                             messageBundle.getString("viewer.annotation.signature.creation.dialog.certify.error.title"),
