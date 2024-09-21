@@ -15,14 +15,17 @@ import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.SignatureDictionaries;
 import org.icepdf.core.util.updater.WriteMode;
+import org.icepdf.ri.common.views.annotations.signing.BasicSignatureAppearanceCallback;
+import org.icepdf.ri.common.views.annotations.signing.SignatureAppearanceModelImpl;
 import org.icepdf.ri.util.FontPropertiesManager;
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.Locale;
 
 /**
  * The <code>Pkcs12SignatureCreation</code> class is an example of how to sign a document with a digital signatures
@@ -79,28 +82,38 @@ public class Pkcs12SignatureCreation {
             // update dictionary
             SignatureDictionary signatureDictionary = SignatureDictionary.getInstance(signatureAnnotation,
                     SignatureType.SIGNER);
-            signatureDictionaries.addCertifierSignature(signatureDictionary);
             signatureDictionary.setSignerHandler(pkcs12SignerHandler);
             signatureDictionary.setName("Tester McTest");
             signatureDictionary.setLocation("Springfield");
             signatureDictionary.setReason("Make sure stuff didn't change");
             signatureDictionary.setDate("D:20240423082733+02'00'");
+            signatureDictionaries.addCertifierSignature(signatureDictionary);
 
             // assign cert metadata to dictionary
             SignatureUtilities.updateSignatureDictionary(signatureDictionary, pkcs12SignerHandler.getCertificate());
+
+            // build basic appearance
+            SignatureAppearanceModelImpl signatureAppearanceModel = new SignatureAppearanceModelImpl(library);
+            signatureAppearanceModel.setLocale(Locale.ENGLISH);
+            signatureAppearanceModel.setName(signatureDictionary.getName());
+            signatureAppearanceModel.setContact(signatureDictionary.getContactInfo());
+            signatureAppearanceModel.setLocation(signatureDictionary.getLocation());
+            signatureAppearanceModel.setSignatureType(signatureDictionary.getReason().equals("Approval") ?
+                    SignatureType.SIGNER : SignatureType.CERTIFIER);
+            signatureAppearanceModel.setSignatureImageVisible(false);
+
+            BasicSignatureAppearanceCallback signatureAppearance = new BasicSignatureAppearanceCallback();
+            signatureAppearance.setSignatureAppearanceModel(signatureAppearanceModel);
+            signatureAnnotation.setAppearanceCallback(signatureAppearance);
+            signatureAnnotation.resetAppearanceStream(new AffineTransform());
 
             String absolutePath = filePath.toFile().getPath();
             String signedFileName = absolutePath.replace(".pdf", "_signed.pdf");
 
             File out = new File(signedFileName);
-            ArrayList<SignatureDictionary> signatures = signatureDictionaries.getSignatures();
-            for (SignatureDictionary signature : signatures) {
-                signatureDictionaries.setCurrentSignatureDictionary(signature);
-                try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 8192)) {
-                    document.saveToOutputStream(stream, WriteMode.INCREMENT_UPDATE);
-                }
+            try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 8192)) {
+                document.saveToOutputStream(stream, WriteMode.INCREMENT_UPDATE);
             }
-            signatureDictionaries.setCurrentSignatureDictionary(null);
             document.dispose();
         } catch (Exception e) {
             // make sure we have no io errors.
