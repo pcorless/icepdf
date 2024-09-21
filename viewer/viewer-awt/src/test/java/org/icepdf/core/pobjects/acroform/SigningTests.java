@@ -25,7 +25,6 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
@@ -71,10 +70,10 @@ public class SigningTests {
             // set up signer dictionary as the primary certification signer.
             SignatureDictionary signatureDictionary =
                     SignatureDictionary.getInstance(signatureAnnotation, SignatureType.CERTIFIER);
-            signatureDictionaries.addCertifierSignature(signatureDictionary);
             signatureDictionary.setSignerHandler(pkcs12SignerHandler);
             signatureDictionary.setReason("Approval"); // Approval or certification but technically can be anything
             signatureDictionary.setDate(PDate.formatDateTime(new Date()));
+            signatureDictionaries.addCertifierSignature(signatureDictionary);
 
             // assign cert metadata to dictionary
             SignatureUtilities.updateSignatureDictionary(signatureDictionary, pkcs12SignerHandler.getCertificate());
@@ -94,19 +93,11 @@ public class SigningTests {
             signatureAnnotation.setAppearanceCallback(signatureAppearance);
             signatureAnnotation.resetAppearanceStream(new AffineTransform());
 
-            // Most common workflow is to add just one signature as we do here, but it is possible to add multiple
-            // signatures via some backend process to create a document with multiple signers/certs.  The following
-            // shows how to iterate over each registered signature and move the pointer.
+            // Most common workflow is to add just one signature as we do here
             File out = new File("./src/test/out/SigningTest_signed_document.pdf");
-            // todo doing this a lot, should probably be a utility
-            ArrayList<SignatureDictionary> signatures = signatureDictionaries.getSignatures();
-            for (SignatureDictionary signature : signatures) {
-                signatureDictionaries.setCurrentSignatureDictionary(signature);
-                try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 8192)) {
-                    document.saveToOutputStream(stream, WriteMode.INCREMENT_UPDATE);
-                }
+            try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 8192)) {
+                document.saveToOutputStream(stream, WriteMode.INCREMENT_UPDATE);
             }
-            signatureDictionaries.setCurrentSignatureDictionary(null);
             // open the signed document
             Document modifiedDocument = new Document();
             modifiedDocument.setFile(out.getAbsolutePath());
