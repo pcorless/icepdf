@@ -9,7 +9,7 @@ import org.icepdf.core.pobjects.acroform.signature.utils.SignatureUtilities;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.SignatureDictionaries;
+import org.icepdf.core.util.SignatureManager;
 import org.icepdf.core.util.updater.WriteMode;
 import org.icepdf.ri.common.views.annotations.signing.BasicSignatureAppearanceCallback;
 import org.icepdf.ri.common.views.annotations.signing.SignatureAppearanceModelImpl;
@@ -53,7 +53,7 @@ public class SigningTests {
             InputStream fileUrl = SigningTests.class.getResourceAsStream("/signing/test_print.pdf");
             document.setInputStream(fileUrl, "test_print.pdf");
             Library library = document.getCatalog().getLibrary();
-            SignatureDictionaries signatureDictionaries = library.getSignatureDictionaries();
+            SignatureManager signatureManager = library.getSignatureDictionaries();
 
             // Create signature annotation
             SignatureWidgetAnnotation signatureAnnotation =
@@ -73,7 +73,7 @@ public class SigningTests {
             signatureDictionary.setSignerHandler(pkcs12SignerHandler);
             signatureDictionary.setReason("Approval"); // Approval or certification but technically can be anything
             signatureDictionary.setDate(PDate.formatDateTime(new Date()));
-            signatureDictionaries.addCertifierSignature(signatureDictionary);
+            signatureManager.addSignature(signatureDictionary, signatureAnnotation);
 
             // assign cert metadata to dictionary
             SignatureUtilities.updateSignatureDictionary(signatureDictionary, pkcs12SignerHandler.getCertificate());

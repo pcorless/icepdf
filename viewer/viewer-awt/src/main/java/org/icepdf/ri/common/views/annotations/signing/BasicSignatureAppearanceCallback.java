@@ -14,7 +14,7 @@ import org.icepdf.core.pobjects.graphics.commands.PostScriptEncoder;
 import org.icepdf.core.pobjects.graphics.commands.TransformDrawCmd;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.SignatureDictionaries;
+import org.icepdf.core.util.SignatureManager;
 
 import java.awt.*;
 import java.awt.font.FontRenderContext;
@@ -54,10 +54,9 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
             throw new IllegalStateException("SignatureAppearanceModel must be set before calling this method.");
         }
         Library library = signatureWidgetAnnotation.getLibrary();
-        SignatureDictionaries signatureDictionaries = library.getSignatureDictionaries();
-        SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
+        SignatureManager signatureManager = library.getSignatureDictionaries();
         signatureWidgetAnnotation.setSignatureDictionary(new SignatureDictionary(library, new DictionaryEntries()));
-        signatureDictionaries.removeSignature(signatureDictionary);
+        signatureManager.clearSignatures();
         StateManager stateManager = library.getStateManager();
         stateManager.removeChange(new PObject(null, signatureAppearanceModel.getImageXObjectReference()));
 

@@ -9,7 +9,7 @@ import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.SignatureDictionaries;
+import org.icepdf.core.util.SignatureManager;
 import org.icepdf.core.util.redaction.Redactor;
 import org.icepdf.core.util.updater.writeables.BaseWriter;
 
@@ -98,12 +98,12 @@ public class FullUpdater {
         // apply any signatures
         Document tmpDocument = new Document();
         try {
-            SignatureDictionaries signatureDictionaries = library.getSignatureDictionaries();
-            if (signatureDictionaries.hasSigners()) {
+            SignatureManager signatureManager = library.getSignatureDictionaries();
+            if (signatureManager.hasSignatureDictionary()) {
                 tmpDocument.setFile(currentPath.toString());
                 File tempFile = currentPath.toFile();
                 DocumentSigner.signDocument(tmpDocument, tempFile,
-                        signatureDictionaries.getCurrentSignature());
+                        signatureManager.getCurrentSignatureDictionary());
                 Files.copy(currentPath, outputStream);
             }
         } catch (Exception e) {

@@ -229,14 +229,11 @@ public class InteractiveForm extends Dictionary {
         stateManager.addChange(new PObject(catalog, catalog.getPObjectReference()));
     }
 
-    public void removeField(Object field) {
-        if (!(field instanceof AbstractWidgetAnnotation)) {
-            throw new IllegalStateException("Field must be an AbstractWidgetAnnotation");
-        }
+    public void removeField(AbstractWidgetAnnotation field) {
         if (fields != null) {
             fields.remove(field);
             List<Reference> fieldReferences = (List<Reference>) library.getObject(entries, FIELDS_KEY);
-            fieldReferences.remove(((AbstractWidgetAnnotation) field).getPObjectReference());
+            fieldReferences.remove((field).getPObjectReference());
         }
     }
 

@@ -113,7 +113,7 @@ public class Library {
 
     // handles signature validation and signing.
     private final SignatureHandler signatureHandler;
-    private final SignatureDictionaries signatureDictionaries;
+    private final SignatureManager signatureManager;
 
     // signature permissions
     private Permissions permissions;
@@ -134,7 +134,7 @@ public class Library {
         // set Catalog memory Manager and cache manager.
         imagePool = new ImagePool();
         signatureHandler = new SignatureHandler();
-        signatureDictionaries = new SignatureDictionaries();
+        signatureManager = new SignatureManager();
     }
 
     /**
@@ -905,8 +905,8 @@ public class Library {
         return signatureHandler;
     }
 
-    public SignatureDictionaries getSignatureDictionaries() {
-        return signatureDictionaries;
+    public SignatureManager getSignatureDictionaries() {
+        return signatureManager;
     }
 
     /**

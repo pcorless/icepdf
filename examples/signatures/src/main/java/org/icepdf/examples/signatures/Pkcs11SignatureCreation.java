@@ -13,7 +13,7 @@ import org.icepdf.core.pobjects.acroform.signature.utils.SignatureUtilities;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.SignatureDictionaries;
+import org.icepdf.core.util.SignatureManager;
 import org.icepdf.core.util.updater.WriteMode;
 import org.icepdf.ri.common.views.annotations.signing.BasicSignatureAppearanceCallback;
 import org.icepdf.ri.common.views.annotations.signing.SignatureAppearanceModelImpl;
@@ -69,7 +69,7 @@ public class Pkcs11SignatureCreation {
             Document document = new Document();
             document.setFile(filePath.toFile().getPath());
             Library library = document.getCatalog().getLibrary();
-            SignatureDictionaries signatureDictionaries = library.getSignatureDictionaries();
+            SignatureManager signatureManager = library.getSignatureDictionaries();
 
             // Creat signature annotation
             SignatureWidgetAnnotation signatureAnnotation = (SignatureWidgetAnnotation)
@@ -91,7 +91,7 @@ public class Pkcs11SignatureCreation {
             signatureDictionary.setLocation("Springfield");
             signatureDictionary.setReason("Make sure stuff didn't change");
             signatureDictionary.setDate("D:20240423082733+02'00'");
-            signatureDictionaries.addCertifierSignature(signatureDictionary);
+            signatureManager.addSignature(signatureDictionary, signatureAnnotation);
 
             // assign cert metadata to dictionary
             SignatureUtilities.updateSignatureDictionary(signatureDictionary, pkcs11SignerHandler.getCertificate());

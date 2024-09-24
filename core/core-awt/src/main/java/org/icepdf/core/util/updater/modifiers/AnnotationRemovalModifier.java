@@ -68,6 +68,7 @@ public class AnnotationRemovalModifier implements Modifier<Annotation> {
             if (v instanceof Reference) {
                 stateManager.addDeletion((Reference) v);
             }
+            library.getSignatureDictionaries().clearSignatures();
         }
 
         // check to see if this is an existing annotations, if the annotations

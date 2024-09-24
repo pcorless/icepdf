@@ -9,7 +9,7 @@ import org.icepdf.core.pobjects.acroform.signature.handlers.SignerHandler;
 import org.icepdf.core.pobjects.acroform.signature.utils.SignatureUtilities;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.SignatureDictionaries;
+import org.icepdf.core.util.SignatureManager;
 import org.icepdf.ri.common.EscapeJDialog;
 import org.icepdf.ri.common.utility.annotation.properties.FontWidgetUtilities;
 import org.icepdf.ri.common.utility.annotation.properties.ValueLabelItem;
@@ -119,15 +119,14 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
 
         if (source == signButton) {
             Library library = signatureWidgetAnnotation.getLibrary();
-            SignatureDictionaries signatureDictionaries = library.getSignatureDictionaries();
+            SignatureManager signatureManager = library.getSignatureDictionaries();
 
             // set up signer dictionary as the primary certification signer.
             SignatureDictionary signatureDictionary;
             if (signerRadioButton.isSelected()) {
                 signatureDictionary = SignatureDictionary.getInstance(signatureWidgetAnnotation, SignatureType.SIGNER);
-                signatureDictionaries.addSignerSignature(signatureDictionary);
             } else {
-                if (signatureDictionaries.hasExistingCertifier(library)) {
+                if (signatureManager.hasExistingCertifier(library)) {
                     JOptionPane.showMessageDialog(this,
                             messageBundle.getString("viewer.annotation.signature.creation.dialog.certify.error.msg"),
                             messageBundle.getString("viewer.annotation.signature.creation.dialog.certify.error.title"),
@@ -136,9 +135,9 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
                 }
                 signatureDictionary = SignatureDictionary.getInstance(signatureWidgetAnnotation,
                         SignatureType.CERTIFIER);
-                signatureDictionaries.addCertifierSignature(signatureDictionary);
             }
             signatureDictionary.setSignerHandler(signerHandler);
+            signatureManager.addSignature(signatureDictionary, signatureWidgetAnnotation);
 
             // assign original values from cert
             signatureDictionary.setName(nameTextField.getText());

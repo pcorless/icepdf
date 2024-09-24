@@ -240,7 +240,7 @@ public class MyAnnotationCallback implements AnnotationCallback {
         if (annotationComponent.getAnnotation() instanceof AbstractWidgetAnnotation) {
             InteractiveForm interactiveForm =
                     documentViewController.getDocument().getCatalog().getOrCreateInteractiveForm();
-            interactiveForm.removeField(annotationComponent.getAnnotation());
+            interactiveForm.removeField((AbstractWidgetAnnotation) annotationComponent.getAnnotation());
         }
 
     }
