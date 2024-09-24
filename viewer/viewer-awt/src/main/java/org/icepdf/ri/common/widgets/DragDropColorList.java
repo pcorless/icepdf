@@ -139,10 +139,9 @@ public class DragDropColorList extends JList<DragDropColorList.ColorLabel> {
     public static ArrayList<ColorLabel> retrieveColorLabels() {
         String currentColorLabels = ViewerPropertiesManager.getInstance().getPreferences().get(
                 PROPERTY_ANNOTATION_RECENT_COLOR_LABEL, "");
-        ArrayList<ColorLabel> colorLabels = null;
+        ArrayList<ColorLabel> colorLabels = new ArrayList<>();
         try {
             StringTokenizer toker = new StringTokenizer(currentColorLabels, ViewerPropertiesManager.PROPERTY_TOKEN_SEPARATOR);
-            colorLabels = new ArrayList<>();
             while (toker.hasMoreTokens()) {
                 int rgb = Integer.parseInt(toker.nextToken());
                 String label = toker.nextToken();
@@ -151,6 +150,7 @@ public class DragDropColorList extends JList<DragDropColorList.ColorLabel> {
         } catch (NumberFormatException e) {
             ViewerPropertiesManager.getInstance().getPreferences().put(PROPERTY_ANNOTATION_RECENT_COLOR_LABEL, "");
         }
+
         return colorLabels;
     }
 
@@ -172,7 +172,7 @@ public class DragDropColorList extends JList<DragDropColorList.ColorLabel> {
         private final Color color;
         private final String label;
 
-        ColorLabel(Color color, String label) {
+        public ColorLabel(Color color, String label) {
             this.color = color;
             this.label = label;
         }

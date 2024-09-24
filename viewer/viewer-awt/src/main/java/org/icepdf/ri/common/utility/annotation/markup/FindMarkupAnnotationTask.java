@@ -319,11 +319,9 @@ public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
     }
 
     private String findColor(Color color) {
-        if (colorLabels != null) {
-            for (DragDropColorList.ColorLabel colorLabel : colorLabels) {
-                if (color.equals(colorLabel.getColor())) {
-                    return colorLabel.getLabel();
-                }
+        for (DragDropColorList.ColorLabel colorLabel : colorLabels) {
+            if (color.equals(colorLabel.getColor())) {
+                return colorLabel.getLabel();
             }
         }
         // see if we can't return a hex color

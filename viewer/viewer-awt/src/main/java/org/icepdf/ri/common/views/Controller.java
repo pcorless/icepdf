@@ -26,6 +26,7 @@ import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import java.awt.*;
 import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ResourceBundle;
