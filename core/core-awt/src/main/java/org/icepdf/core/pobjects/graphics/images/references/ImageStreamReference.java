@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics.images.references;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
@@ -28,11 +29,11 @@ import java.util.logging.Logger;
 
 /**
  * The ImageStreamReference class is a rudimentary Image Proxy which will
- * try and decode the image data into an Buffered image using a worker thread.
+ * try and decode the image data into a Buffered image using a worker thread.
  * The intent is that the content parser will continue parsing the content stream
- * while the worker thread handles the image decode work.  However the drawImage
+ * while the worker thread handles the image decode work.  However, the drawImage
  * method will block until the worker thread returns.  So generally put not
- * a true image proxy but we do get significantly faster load times with the
+ * a true image proxy, but we do get significantly faster load times with the
  * current implementation.
  *
  * @since 5.0
@@ -42,10 +43,10 @@ public class ImageStreamReference extends CachedImageReference {
     private static final Logger logger =
             Logger.getLogger(ImageStreamReference.class.toString());
 
-    protected ImageStreamReference(ImageStream imageStream, GraphicsState graphicsState,
+    protected ImageStreamReference(ImageStream imageStream, Name xobjectName, GraphicsState graphicsState,
                                    Resources resources, int imageIndex,
                                    Page page) {
-        super(imageStream, graphicsState, resources, imageIndex, page);
+        super(imageStream, xobjectName, graphicsState, resources, imageIndex, page);
 
         // kick off a new thread to load the image, if not already in pool.
         ImagePool imagePool = imageStream.getLibrary().getImagePool();

@@ -75,10 +75,10 @@ public class LinkAnnotationComponent extends AbstractAnnotationComponent<LinkAnn
     }
 
     public void paintComponent(Graphics g) {
-        // sniff out tool bar state to set correct annotation border
+        // sniff out toolbar state to set correct annotation border
         isEditable = isAnnotationEditable();
 
-        // check for the annotation editing mode and draw the link effect so it's easier to see.
+        // check for the annotation editing mode and draw the link effect, so it's easier to see.
         if (documentViewController.getParentController().getViewModel().isAnnotationEditingMode()) {
             Graphics2D g2d = (Graphics2D) g;
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);

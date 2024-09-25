@@ -62,50 +62,9 @@ public class SecurityManager {
     // Pointer to class which implements the SecurityHandler interface
     private final SecurityHandler securityHandler;
 
-    // flag for detecting JCE
-    private static boolean foundJCE = false;
-
     // key caches, fairly expensive calculation
     private byte[] encryptionKey;
     private byte[] decryptionKey;
-
-    // Add security provider of choice before Sun RSA provider (if any)
-    static {
-        // Load security handler from system property if possible
-        String defaultSecurityProvider =
-                "org.bouncycastle.jce.provider.BouncyCastleProvider";
-
-        // check system property security provider
-        String customSecurityProvider =
-                Defs.sysProperty("org.icepdf.core.security.jceProvider");
-
-        // if no custom security provider load default security provider
-        if (customSecurityProvider != null) {
-            defaultSecurityProvider = customSecurityProvider;
-        }
-        try {
-            // try and create a new provider
-            Object provider = Class.forName(defaultSecurityProvider).getDeclaredConstructor().newInstance();
-            Security.addProvider((Provider) provider);
-        } catch (ClassNotFoundException e) {
-            logger.log(Level.FINE, "Optional BouncyCastle security provider not found");
-        } catch (NoSuchMethodException e) {
-            logger.log(Level.FINE, "Optional BouncyCastle security provider no such method error");
-        } catch (InstantiationException e) {
-            logger.log(Level.FINE, "Optional BouncyCastle security provider could not be instantiated");
-        } catch (IllegalAccessException e) {
-            logger.log(Level.FINE, "Optional BouncyCastle security provider could not be created");
-        } catch (InvocationTargetException e) {
-            logger.log(Level.FINE, "Optional BouncyCastle security provider invocation target exception");
-        }
-
-        try {
-            Class.forName("javax.crypto.Cipher");
-            foundJCE = true;
-        } catch (ClassNotFoundException e) {
-            logger.log(Level.SEVERE, "Sun JCE Support Not Found");
-        }
-    }
 
     /**
      * Disposes of the security handler instance.
@@ -125,13 +84,6 @@ public class SecurityManager {
     public SecurityManager(Library library, DictionaryEntries encryptionDictionary,
                            List fileID)
             throws PDFSecurityException {
-
-        // Check to make sure that if run under JDK 1.3 that the JCE libraries
-        // are installed as extra packages
-        if (!foundJCE) {
-            logger.log(Level.SEVERE, "Sun JCE support was not found on classpath");
-            throw new PDFSecurityException("Sun JCE Support Not Found");
-        }
 
         // create dictionary for document
         encryptDictionary =

@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics.images.references;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
@@ -99,25 +100,29 @@ public class ImageReferenceFactory {
      * or by the static instance variable scale type.
      *
      * @param imageStream   image data
+     * @param xobjectName   image name if specified via do xobject reference, can be null
      * @param resources     parent resource object.
      * @param graphicsState image graphic state.
-     * @param page page that image belongs to .
-     * @param imageIndex image index number of total images for the page.
+     * @param page          page that image belongs to .
+     * @param imageIndex    image index number of total images for the page.
      * @return newly create ImageReference.
      */
     public static org.icepdf.core.pobjects.graphics.images.references.ImageReference getImageReference(
-            ImageStream imageStream, Resources resources, GraphicsState graphicsState, Integer imageIndex, Page page) {
+            ImageStream imageStream, Name xobjectName, Resources resources, GraphicsState graphicsState,
+            Integer imageIndex, Page page) {
         switch (imageReferenceType) {
             case SCALED:
-                return new ScaledImageReference(imageStream, graphicsState, resources, imageIndex, page);
+                return new ScaledImageReference(imageStream, xobjectName, graphicsState, resources, imageIndex, page);
             case SMOOTH_SCALED:
-                return new SmoothScaledImageReference(imageStream, graphicsState, resources, imageIndex, page);
+                return new SmoothScaledImageReference(imageStream, xobjectName, graphicsState, resources, imageIndex,
+                        page);
             case MIP_MAP:
-                return new MipMappedImageReference(imageStream, graphicsState, resources, imageIndex, page);
+                return new MipMappedImageReference(imageStream, xobjectName, graphicsState, resources, imageIndex,
+                        page);
             case BLURRED:
-                return new BlurredImageReference(imageStream, graphicsState, resources, imageIndex, page);
+                return new BlurredImageReference(imageStream, xobjectName, graphicsState, resources, imageIndex, page);
             default:
-                return new ImageStreamReference(imageStream, graphicsState, resources, imageIndex, page);
+                return new ImageStreamReference(imageStream, xobjectName, graphicsState, resources, imageIndex, page);
         }
     }
 

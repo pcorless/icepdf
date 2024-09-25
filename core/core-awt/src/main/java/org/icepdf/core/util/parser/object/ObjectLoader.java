@@ -47,4 +47,20 @@ public class ObjectLoader {
         }
         return null;
     }
+
+    public synchronized int getObjectOffset(CrossReference crossReference, Reference reference)
+            throws ObjectStateException, CrossReferenceStateException, IOException {
+
+        CrossReferenceEntry entry = crossReference.getEntry(reference);
+
+        if (entry instanceof CrossReferenceUsedEntry) {
+            CrossReferenceUsedEntry crossReferenceEntry = (CrossReferenceUsedEntry) entry;
+            // parse the object
+            int offset = crossReferenceEntry.getFilePositionOfObject();
+            return offset;
+        } else if (entry instanceof CrossReferenceCompressedEntry) {
+            throw new IllegalStateException("The cross reference compressed entry is not supported.");
+        }
+        return -1;
+    }
 }

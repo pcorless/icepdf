@@ -116,6 +116,8 @@ public interface DocumentViewModel {
 
     int DISPLAY_TOOL_REDACTION_ANNOTATION = 19;
 
+    int DISPLAY_TOOL_SIGNATURE_ANNOTATION = 20;
+
     /**
      * Display tool constant for setting no tools
      */
