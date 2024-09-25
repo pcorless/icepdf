@@ -148,7 +148,9 @@ public class SigningPreferencesPanel extends JPanel {
                 "viewer.dialog.viewerPreferences.section.signatures.pkcs.keystore.path.accept.label"));
         if (responseValue == JFileChooser.APPROVE_OPTION) {
             pkcsPathTextField.setText(fileChooser.getSelectedFile().getAbsolutePath());
+            savePkcsPaths(keystoreTypeComboBox);
         }
+
     }
 
     private void addGB(JPanel layout, Component component,
