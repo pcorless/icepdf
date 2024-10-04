@@ -5,11 +5,15 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class SimpleCallbackHandler extends PasswordCallbackHandler {
+/**
+ * PasswordCallbackHandler is a simple implementation of the CallbackHandler interface that is used to provide a
+ * password to the SignatureValidator implementations.
+ */
+public class SimplePasswordCallbackHandler extends PasswordCallbackHandler {
 
-    private static final Logger logger = Logger.getLogger(SimpleCallbackHandler.class.getName());
+    private static final Logger logger = Logger.getLogger(SimplePasswordCallbackHandler.class.getName());
 
-    public SimpleCallbackHandler(String password) {
+    public SimplePasswordCallbackHandler(String password) {
         super(password);
     }
 

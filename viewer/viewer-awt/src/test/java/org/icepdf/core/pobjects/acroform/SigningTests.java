@@ -4,7 +4,7 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureType;
 import org.icepdf.core.pobjects.acroform.signature.handlers.Pkcs12SignerHandler;
-import org.icepdf.core.pobjects.acroform.signature.handlers.SimpleCallbackHandler;
+import org.icepdf.core.pobjects.acroform.signature.handlers.SimplePasswordCallbackHandler;
 import org.icepdf.core.pobjects.acroform.signature.utils.SignatureUtilities;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
@@ -47,7 +47,7 @@ public class SigningTests {
             String certAlias = "senderKeyPair";
 
             Pkcs12SignerHandler pkcs12SignerHandler = new Pkcs12SignerHandler(new File(keystorePath), certAlias,
-                    new SimpleCallbackHandler(password));
+                    new SimplePasswordCallbackHandler(password));
 
             Document document = new Document();
             InputStream fileUrl = SigningTests.class.getResourceAsStream("/signing/test_print.pdf");

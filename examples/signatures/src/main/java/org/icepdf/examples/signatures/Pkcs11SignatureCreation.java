@@ -8,7 +8,7 @@ import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureType;
 import org.icepdf.core.pobjects.acroform.signature.handlers.Pkcs11SignerHandler;
-import org.icepdf.core.pobjects.acroform.signature.handlers.SimpleCallbackHandler;
+import org.icepdf.core.pobjects.acroform.signature.handlers.SimplePasswordCallbackHandler;
 import org.icepdf.core.pobjects.acroform.signature.utils.SignatureUtilities;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
@@ -64,7 +64,7 @@ public class Pkcs11SignatureCreation {
             Pkcs11SignerHandler pkcs11SignerHandler = new Pkcs11SignerHandler(
                     providerConfig,
                     certSerial,
-                    new SimpleCallbackHandler(password));
+                    new SimplePasswordCallbackHandler(password));
 
             Document document = new Document();
             document.setFile(filePath.toFile().getPath());

@@ -43,7 +43,7 @@ import java.util.logging.Logger;
  */
 public class Pkcs11SignerHandler extends SignerHandler {
 
-    private static final Logger logger = Logger.getLogger(SimpleCallbackHandler.class.getName());
+    private static final Logger logger = Logger.getLogger(SimplePasswordCallbackHandler.class.getName());
 
     private final String providerConfig;
     private final BigInteger certSerial;
