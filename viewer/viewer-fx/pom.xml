@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>org.icepdf.examples</groupId>
-        <artifactId>examples</artifactId>
+        <groupId>com.github.pcorless.icepdf</groupId>
+        <artifactId>viewer</artifactId>
         <version>7.3.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>javafx</artifactId>
+    <artifactId>icepdf-viewer-fx</artifactId>
     <packaging>jar</packaging>
-    <name>ICEpdf :: Examples :: JavaFx</name>
+    <name>ICEpdf :: Viewer : JavaFX Viewer RI</name>
+    <description>
+        ICEpdf JavaFX reference implementation.
+    </description>
 
     <dependencies>
         <dependency>
@@ -17,9 +20,14 @@
             <version>11</version>
         </dependency>
         <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-swing</artifactId>
-            <version>11</version>
+            <groupId>com.github.pcorless.icepdf</groupId>
+            <artifactId>icepdf-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.9.3</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -35,7 +43,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>PdfFXViewer</mainClass>
+                    <mainClass>org.icepdf.qa.viewer.Launcher</mainClass>
                 </configuration>
             </plugin>
         </plugins>
