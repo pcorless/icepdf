@@ -9,10 +9,10 @@ repositories {
 
 description 'ICEpdf FX viewer reference implementation project'
 
-mainClassName = "org.icepdf.fx.viewer.Main"
+mainClassName = "org.icepdf.fx.ri.viewer.Launcher"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
 
-def sectionName = 'com/icepdf/fx/viewer'
+def sectionName = 'org/icepdf/fx/ri/viewer'
 def baseJarName = 'icepdf'
 def baseAppendixName  = 'viewer-fx'
 

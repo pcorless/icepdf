@@ -20,6 +20,11 @@
             <version>11</version>
         </dependency>
         <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-swing</artifactId>
+            <version>11</version>
+        </dependency>
+        <dependency>
             <groupId>com.github.pcorless.icepdf</groupId>
             <artifactId>icepdf-core</artifactId>
         </dependency>
@@ -43,7 +48,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>org.icepdf.qa.viewer.Launcher</mainClass>
+                    <mainClass>org.icepdf.fx.ri.viewer.Launcher</mainClass>
                 </configuration>
             </plugin>
         </plugins>
