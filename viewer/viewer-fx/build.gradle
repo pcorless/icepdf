@@ -15,6 +15,7 @@ applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
 def sectionName = 'org/icepdf/fx/ri/viewer'
 def baseJarName = 'icepdf'
 def baseAppendixName  = 'viewer-fx'
+def commandlineArgs = '-loadfile "/home/pcorless/dev/pdf-qa/PDF32000_2008.pdf"'
 
 repositories {
     mavenCentral()

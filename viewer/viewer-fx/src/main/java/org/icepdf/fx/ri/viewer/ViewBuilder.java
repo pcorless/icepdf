@@ -19,9 +19,10 @@ public class ViewBuilder implements Builder<Region> {
 
     private Consumer<Runnable> openDocumentActionHandler;
 
-    DocumentViewPane documentViewPane = new DocumentViewPane(null);
+    DocumentViewPane documentViewPane;
 
     public ViewBuilder(ViewerModel model) {
+
         this.model = model;
     }
 
@@ -29,6 +30,7 @@ public class ViewBuilder implements Builder<Region> {
     public Region build() {
         BorderPane borderPane = new BorderPane();
         borderPane.setTop(createToolbar());
+        documentViewPane = new DocumentViewPane(model);
         borderPane.setCenter(documentViewPane);
         return borderPane;
     }

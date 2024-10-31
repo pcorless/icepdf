@@ -17,8 +17,8 @@ public class ViewerStageManager {
 
     public void createViewer(Stage stage, Document document) {
         FxController controller = new FxController();
-        controller.getModel().document.set(document);
         Scene scene = new Scene(controller.getView(), 400, 200);
+        controller.getModel().document.set(document);
         stage.setScene(scene);
         stage.setOnCloseRequest(new StageCloseRequestListener(controller.getModel()));
     }

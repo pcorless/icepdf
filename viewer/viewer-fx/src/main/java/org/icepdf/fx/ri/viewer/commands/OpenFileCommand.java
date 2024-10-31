@@ -31,8 +31,9 @@ public class OpenFileCommand implements Command {
             // set document
             try {
                 Document document = new Document();
+                document.setFile(file.getAbsolutePath());
 
-                if (model.useSingleViewerStage.get()) {
+                if (model.useSingleViewerStage.get() || model.document.get() == null) {
                     model.document.set(document);
                     model.filePath.set(file.getAbsolutePath());
                 } else {
