@@ -3,6 +3,7 @@ package org.icepdf.fx.ri.viewer;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.fx.ri.util.FontPropertiesManager;
 
 import java.util.logging.Logger;
 
@@ -12,6 +13,14 @@ public class Launcher extends Application {
 
 
     public static void main(String[] args) throws Exception {
+        FontPropertiesManager fontPropertiesManager = FontPropertiesManager.getInstance();
+
+        if (fontPropertiesManager.isPropertiesEmpty()) {
+            fontPropertiesManager.readDefaultProperties();
+            fontPropertiesManager.updateProperties();
+        } else {
+            fontPropertiesManager.loadProperties();
+        }
         Application.launch(args);
     }
 

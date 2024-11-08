@@ -17,7 +17,7 @@ public class DocumentViewPane extends Region {
     private FloatProperty rotation = new SimpleFloatProperty(0.0f);
     private IntegerProperty currentPageIndex = new SimpleIntegerProperty(0);
 
-    private Pane tilePane;
+    private TilePane tilePane;
     private ScrollPane scrollPane;
 
     public DocumentViewPane(ViewerModel model) {
@@ -29,7 +29,7 @@ public class DocumentViewPane extends Region {
             Document document = model.document.get();
             if (document != null) {
                 for (int i = 0, max = document.getNumberOfPages(); i < max; i++) {
-                    PageViewWidget pageViewPane = new PageViewWidget(i, scale, rotation, scrollPane);
+                    PageViewWidget pageViewPane = new PageViewWidget(model, i, scale, rotation, scrollPane);
                     pageViewPane.setBorder(new Border(new BorderStroke(null, BorderStrokeStyle.SOLID, null,
                             new BorderWidths(1))));
                     tilePane.getChildren().add(pageViewPane);
@@ -40,6 +40,7 @@ public class DocumentViewPane extends Region {
             long end = System.currentTimeMillis();
             System.out.printf("Page creation time: %dms%n", end - start);
         });
+
     }
 
 
@@ -50,27 +51,8 @@ public class DocumentViewPane extends Region {
         scrollPane.prefWidthProperty().bind(this.widthProperty());
         scrollPane.prefHeightProperty().bind(this.heightProperty());
 
-        tilePane = new VBox();
-
-        scrollPane.vvalueProperty().addListener((observable, oldValue, newValue) -> {
-            long start = System.currentTimeMillis();
-            for (int i = 0; i < tilePane.getChildren().size(); i++) {
-                Node label = (Node) tilePane.getChildren().get(i);
-                if (isNodeIntersectingViewport(scrollPane, label)) {
-                    System.out.println("Page " + ((PageViewWidget) label).getPageIndex() + " is in the viewport");
-                    // todo trigger a page capture
-                    //  - page should be doing intersection check
-                    //  - any size change would trigger a repaint
-                    //  - eventually bring clipped painting
-                    //  - try painting to a buffer and then paint that buffer to the screen (from prevoius work
-                    //  - try painting to graphics contet too,  maybe it's fast/optimized for reactive painting.
-                }
-            }
-            long end = System.currentTimeMillis();
-//            System.out.println("Viewport check time: " + (end - start) + "ms");
-//            System.out.println();
-        });
-
+        tilePane = new TilePane();
+        tilePane.setPrefColumns(1);
         scrollPane.setContent(tilePane);
         getChildren().add(scrollPane);
     }

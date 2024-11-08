@@ -23,7 +23,7 @@ repositories {
 }
 
 javafx {
-    version = "11.0.2"
+    version = "21.0.5"
     modules = [ 'javafx.base', 'javafx.controls', 'javafx.graphics', 'javafx.swing' ]
 }
 
@@ -33,6 +33,8 @@ dependencies {
     // signature validation.
     implementation 'org.bouncycastle:bcprov-jdk18on:' + "${BOUNCY_VERSION}"
     implementation 'org.bouncycastle:bcpkix-jdk18on:' + "${BOUNCY_VERSION}"
+    // drawing tests
+    implementation 'org.jfree:org.jfree.fxgraphics2d:2.1'
     // tests
     testImplementation(platform("org.junit:junit-bom:${JUNIT_BOM_VERSION}"))
     testImplementation('org.junit.jupiter:junit-jupiter')
