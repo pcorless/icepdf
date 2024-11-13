@@ -5,6 +5,7 @@ import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleFloatProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Bounds;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.*;
@@ -17,13 +18,13 @@ public class DocumentViewPane extends Region {
     private FloatProperty rotation = new SimpleFloatProperty(0.0f);
     private IntegerProperty currentPageIndex = new SimpleIntegerProperty(0);
 
-    private TilePane tilePane;
+    private VBox pageLayoutPane;
     private ScrollPane scrollPane;
 
     public DocumentViewPane(ViewerModel model) {
         createLayout(model);
         model.document.addListener((observable, oldValue, newValue) -> {
-            tilePane.getChildren().clear();
+            pageLayoutPane.getChildren().clear();
             // create a page view for each page
             long start = System.currentTimeMillis();
             Document document = model.document.get();
@@ -32,7 +33,7 @@ public class DocumentViewPane extends Region {
                     PageViewWidget pageViewPane = new PageViewWidget(model, i, scale, rotation, scrollPane);
                     pageViewPane.setBorder(new Border(new BorderStroke(null, BorderStrokeStyle.SOLID, null,
                             new BorderWidths(1))));
-                    tilePane.getChildren().add(pageViewPane);
+                    pageLayoutPane.getChildren().add(pageViewPane);
                     pageViewPane.viewportBounds.bind(scrollPane.viewportBoundsProperty());
                 }
             }
@@ -48,12 +49,22 @@ public class DocumentViewPane extends Region {
         scrollPane = new ScrollPane();
 
         scrollPane.setFitToWidth(true);
+        scrollPane.setPannable(true);
         scrollPane.prefWidthProperty().bind(this.widthProperty());
         scrollPane.prefHeightProperty().bind(this.heightProperty());
 
-        tilePane = new TilePane();
-        tilePane.setPrefColumns(1);
-        scrollPane.setContent(tilePane);
+
+        VBox parent = new VBox();
+        parent.setAlignment(Pos.CENTER);
+
+        pageLayoutPane = new VBox();
+        pageLayoutPane.setAlignment(Pos.CENTER);
+        pageLayoutPane.setSpacing(10);
+        pageLayoutPane.setMaxWidth(Region.USE_PREF_SIZE);
+
+        parent.getChildren().add(pageLayoutPane);
+
+        scrollPane.setContent(parent);
         getChildren().add(scrollPane);
     }
 

@@ -1,8 +1,11 @@
 package org.icepdf.fx.ri.views;
 
+import javafx.animation.PauseTransition;
+import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.concurrent.Task;
 import javafx.geometry.Bounds;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -14,8 +17,10 @@ import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.ArcType;
 import javafx.scene.text.FontSmoothingType;
+import javafx.util.Duration;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
+import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.fx.ri.viewer.ViewerModel;
 import org.jfree.fx.FXGraphics2D;
@@ -45,6 +50,11 @@ public class PageViewWidget extends Region {
 
     private Canvas canvas;
 
+    private Task<Void> pageCaptureTask;
+
+    private static final Duration SCROLL_PAUSE_DURATION = Duration.millis(200);
+    private PauseTransition scrollPause;
+
     public PageViewWidget(ViewerModel model, int pageIndex, FloatProperty scale, FloatProperty rotation, ScrollPane scrollPane) {
         this.pageIndex = new SimpleIntegerProperty(pageIndex);
         this.scale = new SimpleFloatProperty();
@@ -53,6 +63,10 @@ public class PageViewWidget extends Region {
         this.rotation.bind(rotation);
         this.scrollPane = scrollPane;
         this.model = model;
+        scrollPause = new PauseTransition(SCROLL_PAUSE_DURATION);
+        scrollPause.setOnFinished(event -> {
+            draw();
+        });
 
 
         this.viewportBounds = new SimpleObjectProperty<>();
@@ -64,9 +78,8 @@ public class PageViewWidget extends Region {
         pageHeight = pageSize.getHeight();
         width = new SimpleDoubleProperty(pageWidth);
         height = new SimpleDoubleProperty(pageHeight);
-
-
-
+        setWidth(pageWidth);
+        setHeight(pageHeight);
 
         scale.addListener((observable, oldValue, newValue) -> {
             width.set(pageWidth * newValue.floatValue());
@@ -74,16 +87,15 @@ public class PageViewWidget extends Region {
         });
 
         scrollPane.vvalueProperty().addListener((observable, oldValue, newValue) -> {
-            if (isNodeIntersectingViewport(scrollPane, this)) {
+
 //                System.out.println("Page " + this.getPageIndex() + " is in the viewport");
-                draw();
-                // todo trigger a page capture
-                //  - page should be doing intersection check
-                //  - any size change would trigger a repaint
-                //  - eventually bring clipped painting
-                //  - try painting to a buffer and then paint that buffer to the screen (from prevoius work
-                //  - try painting to graphics contet too,  maybe it's fast/optimized for reactive painting.
-            }
+            scrollPause.playFromStart();
+            // todo trigger a page capture
+            //  - page should be doing intersection check
+            //  - any size change would trigger a repaint
+            //  - eventually bring clipped painting
+            //  - try painting to a buffer and then paint that buffer to the screen (from prevoius work
+            //  - try painting to graphics contet too,  maybe it's fast/optimized for reactive painting.
         });
 
         pageIndexLabel = new Label("Page " + pageIndex);
@@ -96,7 +108,9 @@ public class PageViewWidget extends Region {
         });
 
         scrollPane.viewportBoundsProperty().addListener((observable, oldValue, newValue) -> {
-            draw();
+            if (isNodeIntersectingViewport(scrollPane, this)) {
+                draw();
+            }
         });
 
         // Add listener to detect when the node has valid bounds and is laid out
@@ -114,31 +128,75 @@ public class PageViewWidget extends Region {
         if (canvas == null && isNodeIntersectingViewport(scrollPane, this)) {
             System.out.println("drawing page " + this.pageIndex);
 
-            canvas = new Canvas(pageWidth, pageHeight);
-            Group root = new Group();
-            GraphicsContext gc = canvas.getGraphicsContext2D();
-//            drawShapes(gc);
-            root.getChildren().add(canvas);
-            getChildren().add(root);
-
-
-            gc.setFontSmoothingType(FontSmoothingType.LCD);
-            FXGraphics2D fxg2 = new FXGraphics2D(gc);
-            fxg2.setRenderingHint(FXHints.KEY_USE_FX_FONT_METRICS, true);
-            fxg2.setZeroStrokeWidth(0.1);
-            fxg2.setRenderingHint(
-                    RenderingHints.KEY_FRACTIONALMETRICS,
-                    RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-            fxg2.setClip(0, 0, (int) width.get(), (int) height.get());
-            fxg2.scale(1, -1);
-            fxg2.translate(0, -height.get());
             try {
-                model.document.get().getPageTree().getPage(pageIndex.get())
-                        .paintPageContent(fxg2, GraphicsRenderingHints.PRINT, rotation.get(), scale.get(), true, true);
+                Page page = model.document.get().getPageTree().getPage(pageIndex.get());
+                if (!page.isInitiated() && (pageCaptureTask == null || pageCaptureTask.isDone())) {
+                    pageCaptureTask = new Task<>() {
+                        @Override
+                        protected Void call() throws Exception {
+                            long start = System.currentTimeMillis();
+                            page.init();
+                            long end = System.currentTimeMillis();
+                            System.out.println("Page init time: " + (end - start) + "ms");
+                            Platform.runLater(() -> draw());
+//
+//                            WritableImage image = new WritableImage((int) width.get(), (int) height.get());
+//                            image.getPixelWriter().
+
+                            return null;
+                        }
+                    };
+                    Thread pageInitThread = new Thread(pageCaptureTask);
+                    pageInitThread.start();
+                    return;
+                }
+
+                canvas = new Canvas(pageWidth, pageHeight);
+
+                Group root = new Group();
+                GraphicsContext gc = canvas.getGraphicsContext2D();
+                root.getChildren().add(canvas);
+                getChildren().add(root);
+
+                // try and get this working with
+                canvas.scaleXProperty().bind(scale);
+                canvas.scaleYProperty().bind(scale);
+
+                gc.setStroke(Color.RED);
+                gc.setLineWidth(5);
+                calculateAndDrawClip(gc);
+
+                gc.setFontSmoothingType(FontSmoothingType.LCD);
+                FXGraphics2D fxg2 = new FXGraphics2D(gc);
+                fxg2.setRenderingHint(FXHints.KEY_USE_FX_FONT_METRICS, true);
+                fxg2.setZeroStrokeWidth(0.1);
+                fxg2.setRenderingHint(
+                        RenderingHints.KEY_FRACTIONALMETRICS,
+                        RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+                fxg2.setClip(0, 0, (int) width.get(), (int) height.get());
+                fxg2.scale(1, -1);
+                fxg2.translate(0, -height.get());
+
+
+                long start = System.currentTimeMillis();
+                page.paintPageContent(fxg2, GraphicsRenderingHints.PRINT, rotation.get(), scale.get(), true, true);
+                long end = System.currentTimeMillis();
+                System.out.println("Page paint time: " + (end - start) + "ms");
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    private void calculateAndDrawClip(GraphicsContext gc) {
+        Bounds viewportBounds = scrollPane.getViewportBounds();
+        Bounds nodeBounds = localToScene(getBoundsInLocal());
+        Bounds scrollPaneBounds = scrollPane.localToScene(scrollPane.getBoundsInLocal());
+        double x = scrollPaneBounds.getMinX() + viewportBounds.getMinX();
+        double y = scrollPaneBounds.getMinY() + viewportBounds.getMinY();
+        double width = viewportBounds.getWidth();
+        double height = viewportBounds.getHeight();
+        gc.strokeRect(x, y, width, height);
     }
 
     private void drawShapes(GraphicsContext gc) {
@@ -202,6 +260,35 @@ public class PageViewWidget extends Region {
                 viewportBounds.getWidth(),
                 viewportBounds.getHeight()
         );
+    }
+
+    private Bounds intersectionClip(ScrollPane scrollPane, Node node) {
+
+        Bounds nodeBounds = node.getBoundsInParent();
+
+        Bounds viewportBounds = scrollPane.getViewportBounds();
+
+        double hmin = scrollPane.getHmin();
+        double hmax = scrollPane.getHmax();
+        double hvalue = scrollPane.getHvalue();
+        double contentWidth = scrollPane.getContent().getLayoutBounds().getWidth();
+        double viewportWidth = scrollPane.getViewportBounds().getWidth();
+
+        double hoffset =
+                Math.max(0, contentWidth - viewportWidth) * (hvalue - hmin) / (hmax - hmin);
+
+        double vmin = scrollPane.getVmin();
+        double vmax = scrollPane.getVmax();
+        double vvalue = scrollPane.getVvalue();
+        double contentHeight = scrollPane.getContent().getLayoutBounds().getHeight();
+        double viewportHeight = scrollPane.getViewportBounds().getHeight();
+
+        double voffset =
+                Math.max(0, contentHeight - viewportHeight) * (vvalue - vmin) / (vmax - vmin);
+
+        // todo calculate intersection, so we can define a small canvas to draw to on high zoom levels
+
+        return null;
     }
 
     private void createLayout() {
