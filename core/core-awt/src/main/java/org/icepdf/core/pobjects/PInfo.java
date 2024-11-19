@@ -420,7 +420,7 @@ public class PInfo extends Dictionary {
     private LiteralStringObject getEncryptedString(final String value) {
         if (securityManager != null) {
             try {
-                return new LiteralStringObject(value, getPObjectReference(), securityManager);
+                return new LiteralStringObject(value, getPObjectReference());
             } catch (final Exception e){
                 return new LiteralStringObject(value);
             }

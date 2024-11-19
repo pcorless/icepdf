@@ -375,7 +375,8 @@ public class PageText implements TextSelect {
 
     public String toString() {
         StringBuilder extractedText = new StringBuilder();
-        for (LineText lineText : pageLines) {
+        final List<LineText> sortedLines = getPageLines();
+        for (LineText lineText : sortedLines) {
 
             for (WordText wordText : lineText.getWords()) {
                 extractedText.append(wordText.getText());

@@ -1,63 +1,57 @@
 package org.icepdf.core.util.updater.writeables;
 
 import org.icepdf.core.io.CountingOutputStream;
-import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.security.SecurityManager;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
+
+import static java.util.zip.Deflater.BEST_COMPRESSION;
 
 public class StreamWriter extends BaseWriter {
 
-    private static final byte[] BEGIN_STREAM = "stream\r\n".getBytes();
-    private static final byte[] END_STREAM = "endstream\r\n".getBytes();
+    protected static final byte[] BEGIN_STREAM = "stream\n".getBytes();
+    protected static final byte[] END_STREAM = "endstream\n".getBytes();
 
-    public void write(Stream obj, SecurityManager securityManager, CountingOutputStream output) throws IOException {
-        Reference ref = obj.getPObjectReference();
+    public StreamWriter(SecurityManager securityManager) {
+        this.securityManager = securityManager;
+    }
 
+    public void write(Stream stream, SecurityManager securityManager, CountingOutputStream output) throws IOException {
         byte[] outputData;
-        if (!obj.isRawBytesCompressed() &&
-                obj.getEntries().containsKey(Stream.FILTER_KEY)) {
-            byte[] rawBytes = obj.getRawBytes();
-            byte[] decompressedOutput = new byte[rawBytes.length];
-            Deflater compressor = new Deflater();
-            compressor.setInput(rawBytes);
-            compressor.finish();
-            int compressedDataLength = compressor.deflate(decompressedOutput);
-            outputData = new byte[compressedDataLength];
-            System.arraycopy(decompressedOutput, 0, outputData, 0, compressedDataLength);
+        if (!stream.isRawBytesCompressed() &&
+                stream.getEntries().containsKey(Stream.FILTER_KEY)) {
+
+            // compress raw bytes
+            final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            final Deflater deflater = new Deflater(Deflater.HUFFMAN_ONLY);
+            deflater.setLevel(BEST_COMPRESSION);
+            final DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(byteArrayOutputStream, deflater);
+            deflaterOutputStream.write(stream.getRawBytes());
+            deflaterOutputStream.close();
+            byteArrayOutputStream.close();
+            outputData = byteArrayOutputStream.toByteArray();
+
+            // update the dictionary filter /FlateDecode removing previous values.
+            stream.getEntries().put(Stream.FILTER_KEY, Stream.FILTER_FLATE_DECODE);
 
             // check if we need to encrypt the stream
             if (securityManager != null) {
-                DictionaryEntries decodeParams = null;
-                if (obj.getEntries().get(Stream.DECODEPARAM_KEY) != null) {
-                    decodeParams = obj.getLibrary().getDictionary(obj.getEntries(), Stream.DECODEPARAM_KEY);
-                } else {
-                    // default crypt filter
-                }
-                InputStream decryptedStream = securityManager.encryptInputStream(
-                        obj.getPObjectReference(),
-                        securityManager.getDecryptionKey(),
-                        decodeParams,
-                        new ByteArrayInputStream(outputData), true);
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                int nRead;
-                byte[] data = new byte[16384];
-                while ((nRead = decryptedStream.read(data, 0, data.length)) != -1) {
-                    out.write(data, 0, nRead);
-                }
-                outputData = out.toByteArray();
+                outputData = encryptStream(stream, outputData);
             }
         } else {
-            outputData = obj.getRawBytes();
+            outputData = stream.getRawBytes();
         }
+        writeStreamObject(output, stream, outputData);
+    }
 
+    protected void writeStreamObject(CountingOutputStream output, Stream obj, byte[] outputData) throws IOException {
+        Reference ref = obj.getPObjectReference();
         writeInteger(ref.getObjectNumber(), output);
         output.write(SPACE);
         writeInteger(ref.getGenerationNumber(), output);
@@ -65,7 +59,6 @@ public class StreamWriter extends BaseWriter {
         output.write(BEGIN_OBJECT);
 
         obj.getEntries().put(Stream.LENGTH_KEY, outputData.length);
-        obj.getEntries().put(Stream.FORM_TYPE_KEY, 1);
         writeDictionary(new PObject(obj, ref), output);
         output.write(NEWLINE);
         output.write(BEGIN_STREAM);

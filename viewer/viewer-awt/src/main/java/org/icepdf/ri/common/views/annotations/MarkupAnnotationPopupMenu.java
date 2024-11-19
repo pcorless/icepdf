@@ -27,11 +27,13 @@ import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.PageViewComponentImpl;
 import org.icepdf.ri.common.widgets.DragDropColorList;
+import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -77,6 +79,8 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
     // Change color
     protected JMenu changeColorMenu;
 
+    protected JMenuItem extractTextMenuItem;
+
     // delete root annotation and all child popup annotations.
     protected final boolean deleteRoot;
 
@@ -115,6 +119,7 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
         minimizeAllMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.minimizeAll.label"));
         changeColorMenu = buildColorMenu();
+        extractTextMenuItem = new JMenuItem(messageBundle.getString("viewer.annotation.popup.text.extract.label"));
 
         // annotation and destination creation shortcuts.
         if (propertiesManager.checkAndStoreBooleanProperty(
@@ -124,16 +129,16 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
                     messageBundle.getString("viewer.utilityPane.view.selectionTool.contextMenu.addDestination.label"));
             addDestinationMenuItem.setEnabled(modifyDocument);
             addDestinationMenuItem.addActionListener(this);
-            addDestinationMenuItem.setIcon(new ImageIcon(Images.get("destination_20.png")));
+            Images.applyIcon(addDestinationMenuItem, "destination", IconPack.Variant.NONE, Images.IconSize.MINI);
             addFreeTextMenuItem1 = new JMenuItem(
                     messageBundle.getString("viewer.annotation.popup.addAnnotation.freeText.label"));
             addFreeTextMenuItem1.setEnabled(modifyDocument);
-            addFreeTextMenuItem1.setIcon(new ImageIcon(Images.get("freetext_annot_a_20.png")));
+            Images.applyIcon(addFreeTextMenuItem1, "freetext_annot", IconPack.Variant.NORMAL, Images.IconSize.MINI);
             addFreeTextMenuItem1.addActionListener(this);
             addFreeTextMenuItem2 = new JMenuItem(
                     messageBundle.getString("viewer.annotation.popup.addAnnotation.freeText.label"));
             addFreeTextMenuItem2.setEnabled(modifyDocument);
-            addFreeTextMenuItem2.setIcon(new ImageIcon(Images.get("freetext_annot_a_20.png")));
+            Images.applyIcon(addFreeTextMenuItem2, "freetext_annot", IconPack.Variant.NORMAL, Images.IconSize.MINI);
             addFreeTextMenuItem2.addActionListener(this);
             // addition of set status menu
             JMenu submenu = new JMenu(
@@ -184,13 +189,16 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
 
         if (PRIVATE_PROPERTY_ENABLED) {
             final JMenu submenu = new JMenu(messageBundle.getString("viewer.annotation.popup.privacy.label"));
-            togglePrivacyMenuItem = new JMenuItem(messageBundle.getString("viewer.annotation.popup.privacy.toggle.label"));
+            togglePrivacyMenuItem = new JMenuItem(messageBundle.getString("viewer.annotation.popup.privacy.toggle" +
+                    ".label"));
             togglePrivacyMenuItem.addActionListener(this);
             submenu.add(togglePrivacyMenuItem);
-            setAllPrivateMenuItem = new JMenuItem(messageBundle.getString("viewer.annotation.popup.privacy.all.private.label"));
+            setAllPrivateMenuItem = new JMenuItem(messageBundle.getString("viewer.annotation.popup.privacy.all" +
+                    ".private.label"));
             setAllPrivateMenuItem.addActionListener(this);
             submenu.add(setAllPrivateMenuItem);
-            setAllPublicMenuItem = new JMenuItem(messageBundle.getString("viewer.annotation.popup.privacy.all.public.label"));
+            setAllPublicMenuItem = new JMenuItem(messageBundle.getString("viewer.annotation.popup.privacy.all.public" +
+                    ".label"));
             setAllPublicMenuItem.addActionListener(this);
             submenu.add(setAllPublicMenuItem);
             add(submenu);
@@ -208,6 +216,12 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
         add(deleteMenuItem);
         deleteMenuItem.addActionListener(this);
         addSeparator();
+
+        if (annotationComponent instanceof TextMarkupAnnotationComponent) {
+            add(extractTextMenuItem);
+            extractTextMenuItem.addActionListener(this);
+            addSeparator();
+        }
 
         // properties
         add(propertiesMenuItem);
@@ -342,6 +356,13 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationC
                     .map(Dictionary::getPObjectReference).collect(Collectors.toSet());
             ((SwingController) controller).changeAnnotationsPrivacy(a -> references.contains(a.getPObjectReference())
                     || a.getPObjectReference().equals(annot.getPObjectReference()), !annot.getFlagPrivateContents());
+        } else if (source == extractTextMenuItem) {
+            final TextMarkupAnnotation annot = (TextMarkupAnnotation) annotationComponent.getAnnotation();
+            final String selectedText = annot.getContents();
+            if (selectedText != null && !selectedText.isEmpty()) {
+                final StringSelection selection = new StringSelection(selectedText);
+                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
+            }
         }
     }
 

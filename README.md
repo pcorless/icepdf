@@ -24,12 +24,12 @@ ICEpdf is an open source project and is always looking for more contributors.  T
  <dependency>
      <groupId>com.github.pcorless.icepdf</groupId>
      <artifactId>icepdf-core</artifactId>
-     <version>7.1.3</version>
+ <version>7.2.1</version>
 </dependency>
 <dependency>
      <groupId>com.github.pcorless.icepdf</groupId>
      <artifactId>icepdf-viewer</artifactId>
-     <version>7.1.3</version>
+     <version>7.2.1</version>
 </dependency>
  ```
  
@@ -103,6 +103,9 @@ Build the distribution zip and tar archives
  The following code snippet illustrates how to build a PDF Viewer component:
  ```java
 String filePath = "somefilepath/myfile.pdf";
+
+// initiate font caching for faster startups
+FontPropertiesManager.getInstance().loadOrReadSystemFonts();
 
 // build a controller
 SwingController controller = new SwingController();

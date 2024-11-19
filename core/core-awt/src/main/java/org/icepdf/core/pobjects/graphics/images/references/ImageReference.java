@@ -108,6 +108,15 @@ public abstract class ImageReference implements Callable<BufferedImage> {
     }
 
     /**
+     * Gets the original image unaltered, bypassing any ImageReference modifications.
+     *
+     * @return
+     */
+    public BufferedImage getBaseImage() {
+        return imageStream.getImage(graphicsState, resources);
+    }
+
+    /**
      * Creates a scaled image to match that of the instance vars width/height.
      *
      * @return decoded/encoded BufferedImage for the respective ImageStream.

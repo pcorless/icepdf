@@ -37,4 +37,15 @@ public class DictionaryWriter extends BaseWriter {
         }
         output.write(END_DICTIONARY);
     }
+
+    public void writeInline(DictionaryEntries dictEntries, CountingOutputStream output) throws IOException {
+        Set<Name> keys = dictEntries.keySet();
+        for (Name key : keys) {
+            Object val = dictEntries.get(key);
+            writeName(key, output);
+            output.write(SPACE);
+            writeValue(new PObject(val, null, true), output);
+            output.write(NEWLINE);
+        }
+    }
 }

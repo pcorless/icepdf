@@ -2,6 +2,7 @@ package org.icepdf.core.pobjects.fonts.zfont.fontFiles;
 
 import org.apache.fontbox.cff.Type2CharString;
 import org.apache.fontbox.ttf.*;
+import org.apache.pdfbox.io.RandomAccessReadBuffer;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Encoding;
@@ -14,7 +15,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Map;
@@ -57,7 +57,7 @@ public class ZFontTrueType extends ZSimpleFont {
         try {
             if (fontBytes != null) {
                 TTFParser ttfParser = new TTFParser(true);
-                trueTypeFont = ttfParser.parse(new ByteArrayInputStream(fontBytes));
+                trueTypeFont = ttfParser.parse(new RandomAccessReadBuffer(fontBytes));
                 fontBoxFont = trueTypeFont;
 
                 extractCmapTable();
@@ -108,19 +108,18 @@ public class ZFontTrueType extends ZSimpleFont {
     }
 
     @Override
-    public void paint(Graphics2D g, String estr, float x, float y, long layout, int mode, Color strokeColor) {
+    public void paint(Graphics2D g, char estr, float x, float y, long layout, int mode, Color strokeColor) {
         try {
             AffineTransform af = g.getTransform();
-            char echar = estr.charAt(0);
 
             Shape outline;
             int gid;
             if (trueTypeFont instanceof OpenTypeFont) {
-                int cid = codeToGID(echar);
+                int cid = codeToGID(estr);
                 Type2CharString charstring = ((OpenTypeFont) trueTypeFont).getCFF().getFont().getType2CharString(cid);
                 outline = charstring.getPath();
             } else {
-                gid = getCharToGid(echar);
+                gid = getCharToGid(estr);
                 GlyphData glyphData = trueTypeFont.getGlyph().getGlyph(gid);
                 if (glyphData == null) {
                     outline = new GeneralPath();

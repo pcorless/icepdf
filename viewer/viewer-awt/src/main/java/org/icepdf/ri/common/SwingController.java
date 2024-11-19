@@ -51,7 +51,6 @@ import org.icepdf.ri.common.utility.signatures.SignaturesHandlerPanel;
 import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
 import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
-import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryFrame;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
@@ -206,8 +205,8 @@ public class SwingController extends ComponentAdapter
     private JLabel numberOfPagesLabel;
     private JButton zoomInButton;
     private JButton zoomOutButton;
-    private JComboBox zoomComboBox;
-    private JComboBox annotationPrivacyComboBox;
+    private JComboBox<String> zoomComboBox;
+    private JComboBox<String> annotationPrivacyComboBox;
     private JToggleButton fitActualSizeButton;
     private JToggleButton fitHeightButton;
     private JToggleButton fitWidthButton;
@@ -224,7 +223,9 @@ public class SwingController extends ComponentAdapter
     private JToggleButton zoomDynamicToolButton;
     private JToggleButton selectToolButton;
     // main annotation toolbar
+    private JButton deleteAllAnnotationsButton;
     private AnnotationColorToggleButton highlightAnnotationToolButton;
+    private JToggleButton redactionAnnotationToolButton;
     private JToggleButton linkAnnotationToolButton;
     private AnnotationColorToggleButton strikeOutAnnotationToolButton;
     private AnnotationColorToggleButton underlineAnnotationToolButton;
@@ -1016,7 +1017,7 @@ public class SwingController extends ComponentAdapter
      * @param zcb zoom level combo box values.
      * @param zl  default zoom level.
      */
-    public void setZoomComboBox(JComboBox zcb, float[] zl) {
+    public void setZoomComboBox(JComboBox<String> zcb, float[] zl) {
         zoomComboBox = zcb;
         documentViewController.setZoomLevels(zl);
         zoomComboBox.setSelectedItem(NumberFormat.getPercentInstance().format(1.0));
@@ -1033,7 +1034,7 @@ public class SwingController extends ComponentAdapter
         btn.addActionListener(this);
     }
 
-    public void setAnnotationPermissionComboBox(JComboBox zcb) {
+    public void setAnnotationPermissionComboBox(JComboBox<String> zcb) {
         annotationPrivacyComboBox = zcb;
         zcb.addItemListener(this);
     }
@@ -1238,6 +1239,26 @@ public class SwingController extends ComponentAdapter
      *
      * @param btn button to assign
      */
+    public void setDeleteAllButton(final JButton btn) {
+        deleteAllAnnotationsButton = btn;
+        btn.addActionListener(e -> {
+            documentViewController.getDocumentViewModel().getPageComponents().forEach(pvc -> {
+                final List<AbstractAnnotationComponent> comps = ((PageViewComponentImpl) pvc).getAnnotationComponents();
+                if (comps != null) {
+                    final Collection<AnnotationComponent> toDelete = comps.stream().filter(comp -> comp instanceof MarkupAnnotationComponent
+                            && ((MarkupAnnotation) comp.getAnnotation()).isCurrentUserOwner()).collect(Collectors.toSet());
+                    documentViewController.deleteAnnotations(toDelete);
+                    reflectUndoCommands();
+                }
+            });
+        });
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
+     *
+     * @param btn button to assign
+     */
     public void setLinkAnnotationPropertiesToolButton(JToggleButton btn) {
         linkAnnotationPropertiesToolButton = btn;
         btn.addItemListener(this);
@@ -1250,6 +1271,11 @@ public class SwingController extends ComponentAdapter
      */
     public void setHighlightAnnotationToolButton(AnnotationColorToggleButton btn) {
         highlightAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    public void setRedactionAnnotationToolButton(JToggleButton btn) {
+        redactionAnnotationToolButton = btn;
         btn.addItemListener(this);
     }
 
@@ -1698,7 +1724,9 @@ public class SwingController extends ComponentAdapter
         setEnabled(zoomDynamicToolButton, opened && !pdfCollection);
         setEnabled(textSelectToolButton, opened && canExtract && !pdfCollection);
         setEnabled(selectToolButton, opened && canModify && !pdfCollection);
+        setEnabled(deleteAllAnnotationsButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(highlightAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(redactionAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(strikeOutAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(underlineAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(lineAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
@@ -1997,6 +2025,11 @@ public class SwingController extends ComponentAdapter
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION);
                 documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
                 setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
+            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_REDACTION_ANNOTATION) {
+                actualToolMayHaveChanged =
+                        documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_REDACTION_ANNOTATION);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION);
@@ -2081,6 +2114,11 @@ public class SwingController extends ComponentAdapter
         }
     }
 
+    private void getDefaultDisplayTool() {
+        setDisplayTool(propertiesManager.getPreferences().getInt(PROPERTY_DEFAULT_DISPLAY_TOOL,
+                DocumentViewModelImpl.DISPLAY_TOOL_PAN));
+    }
+
 
     private void setCursorOnComponents(final int cursorType) {
         Cursor cursor = documentViewController.getViewCursor(cursorType);
@@ -2113,6 +2151,10 @@ public class SwingController extends ComponentAdapter
         reflectSelectionInButton(highlightAnnotationToolButton,
                 documentViewController.isToolModeSelected(
                         DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION
+                ));
+        reflectSelectionInButton(redactionAnnotationToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_REDACTION_ANNOTATION
                 ));
         reflectSelectionInButton(underlineAnnotationToolButton,
                 documentViewController.isToolModeSelected(
@@ -2563,7 +2605,7 @@ public class SwingController extends ComponentAdapter
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
             } finally {
-                setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
+                getDefaultDisplayTool();
             }
         }
     }
@@ -2683,7 +2725,7 @@ public class SwingController extends ComponentAdapter
                             // create default security callback is user has not created one
                             setupSecurityHandler(document, documentViewController.getSecurityCallback());
                             commonNewDocumentHandling(location.getPath());
-                            setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
+                            getDefaultDisplayTool();
                         } catch (IOException ex) {
                             if (in != null) {
                                 try {
@@ -2803,7 +2845,7 @@ public class SwingController extends ComponentAdapter
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
             } finally {
-                setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
+                getDefaultDisplayTool();
             }
         }
     }
@@ -2840,7 +2882,7 @@ public class SwingController extends ComponentAdapter
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
             } finally {
-                setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
+                getDefaultDisplayTool();
             }
         }
     }
@@ -2895,7 +2937,7 @@ public class SwingController extends ComponentAdapter
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
             } finally {
-                setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
+                getDefaultDisplayTool();
             }
         }
     }
@@ -3340,6 +3382,7 @@ public class SwingController extends ComponentAdapter
         textSelectToolButton = null;
         selectToolButton = null;
         highlightAnnotationToolButton = null;
+        redactionAnnotationToolButton = null;
         strikeOutAnnotationToolButton = null;
         underlineAnnotationToolButton = null;
         lineAnnotationToolButton = null;
@@ -3432,6 +3475,18 @@ public class SwingController extends ComponentAdapter
      */
     public void saveFile() {
         if (IS_READONLY) return;
+        // check for annotations
+        if (hasUnburnedRedactions()) {
+            int option = showRedactionWarningDialog();
+            if (option == JOptionPane.CANCEL_OPTION) {
+                return;
+            } else if (option == JOptionPane.YES_OPTION) {
+                exportDocument();
+                return;
+            } else if (option == JOptionPane.NO_OPTION) {
+                // continue with saving the document
+            }
+        }
         if (document.getStateManager().isChange() &&
                 saveFilePath != null &&
                 !saveFilePath.isEmpty()) {
@@ -3442,12 +3497,12 @@ public class SwingController extends ComponentAdapter
                         document.saveToOutputStream(stream);
                         stream.flush();
                         document.getStateManager().setChangesSnapshot();
-                    } catch (IOException e) {
+                    } catch (IOException | InterruptedException e) {
                         logger.log(Level.FINE, "IO Exception ", e);
                     }
                 }
             } else {
-                //Probably got loaded from an InputStream, can't simply save
+                // Probably got loaded from an InputStream, can't inline save, so call saveAs
                 saveFileAs(SaveMode.SAVE);
             }
         } else {
@@ -3478,7 +3533,32 @@ public class SwingController extends ComponentAdapter
         saveFileAs(SaveMode.EXPORT);
     }
 
+    protected boolean hasUnburnedRedactions() {
+        return document.hasRedactions();
+    }
+
+    protected int showRedactionWarningDialog() {
+        // show dialog warning user they are about to save has unburned redaction annotations
+        return JOptionPane.showConfirmDialog(getViewerFrame(),
+                messageBundle.getString("viewer.dialog.redaction.unburned.msgs"),
+                messageBundle.getString("viewer.dialog.redaction.unburned.title"),
+                JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+    }
+
+
     protected void saveFileAs(SaveMode saveMode) {
+        if (saveMode != SaveMode.EXPORT && hasUnburnedRedactions()) {
+            int option = showRedactionWarningDialog();
+            if (option == JOptionPane.CANCEL_OPTION) {
+                return;
+            } else if (option == JOptionPane.YES_OPTION) {
+                exportDocument();
+                return;
+            } else if (option == JOptionPane.NO_OPTION) {
+                // continue with saving the document
+            }
+        }
+
         String originalFileName = getOriginalFileName();
         String newFileName = originalFileName == null || originalFileName.isEmpty() ? null :
                 generateNewSaveName(originalFileName);
@@ -5124,6 +5204,11 @@ public class SwingController extends ComponentAdapter
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION);
                 }
+            } else if (source == redactionAnnotationToolButton) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    tool = DocumentViewModelImpl.DISPLAY_TOOL_REDACTION_ANNOTATION;
+                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_REDACTION_ANNOTATION);
+                }
             } else if (checkAnnotationButton(source, strikeOutAnnotationToolButton,
                     strikeOutAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
@@ -5647,26 +5732,14 @@ public class SwingController extends ComponentAdapter
                     setEnabled(deleteMenuItem, false);
                 }
                 break;
-            // annotation bounds have changed.
+            // annotation bounds have changed or annotation as been deleted or added.
             case PropertyConstants.ANNOTATION_BOUNDS:
-                if (documentViewController.getToolMode() ==
-                        DocumentViewModelImpl.DISPLAY_TOOL_SELECTION) {
-                    AnnotationState oldAnnotationState = (AnnotationState) oldValue;
-                    AnnotationState newAnnotationState = (AnnotationState) newValue;
-
-                    // saves the state changes back to the document structure.
-                    newAnnotationState.apply(newAnnotationState);
-                    newAnnotationState.restore();
-
-                    // add new states to care taker implementation.
-                    documentViewController.getDocumentViewModel()
-                            .addMemento(oldAnnotationState,
-                                    newAnnotationState);
-                }
+            case PropertyConstants.ANNOTATION_DELETED:
+            case PropertyConstants.ANNOTATION_ADDED:
                 // check to see if undo/redo can be enabled/disabled.
                 reflectUndoCommands();
                 break;
-            // divider has been moved, save the location as it changes.
+                // divider has been moved, save the location as it changes.
             case JSplitPane.LAST_DIVIDER_LOCATION_PROPERTY:
                 JSplitPane sourceSplitPane = (JSplitPane) evt.getSource();
                 int dividerLocation = (Integer) evt.getNewValue();

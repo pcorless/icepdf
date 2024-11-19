@@ -54,6 +54,11 @@ public class InkAnnotationComponent extends MarkupAnnotationComponent<InkAnnotat
 
     @Override
     public void mouseReleased(MouseEvent mouseEvent) {
+        if (wasResized){
+            documentViewController.getDocumentViewModel().addMemento(previousAnnotationState,
+                    new AnnotationState(this, AnnotationState.Operation.MOVE));
+            previousAnnotationState = null;
+        }
         wasResized = false;
         super.mouseReleased(mouseEvent);
     }

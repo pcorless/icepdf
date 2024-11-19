@@ -142,20 +142,30 @@ public class Library {
      * object reference can not be found.
      */
     public Object getObject(Reference reference) {
-        Object obj = getObject(reference, null);
+        Object obj = getObject(reference, null, true);
         if (obj != null) {
-            return getObject(reference, null).getObject();
+            return getObject(reference, null, true).getObject();
         }
         return null;
     }
 
     public PObject getPObject(Reference reference) {
-        return getObject(reference, null);
+        return getObject(reference, null, true);
     }
 
-    private PObject getObject(Reference reference, Name hint) {
+    /**
+     * Retrieves object from library.
+     *
+     * @param reference reference to resolve
+     * @param useCache  use cached values which maybe fully parsed objects not the original data structures.
+     * @return resolved reference or null if objects could not be found.
+     */
+    public PObject getPObject(Reference reference, boolean useCache) {
+        return getObject(reference, null, useCache);
+    }
+
+    private PObject getObject(Reference reference, Name hint, boolean useCache) {
         Object obj;
-        java.lang.ref.Reference<Object> obRef = objectStore.get(reference);
         // check stateManager first to allow for annotations to be injected
         // from a separate file.
         if (stateManager != null) {
@@ -167,6 +177,8 @@ public class Library {
                 return null;
             }
         }
+        // check cache for initiated object.
+        java.lang.ref.Reference<Object> obRef = useCache ? objectStore.get(reference) : null;
         obj = obRef != null ? obRef.get() : null;
         if (obj == null && crossReferenceRoot != null) {
             try {
@@ -208,7 +220,8 @@ public class Library {
         return new PObject(obj, reference);
     }
 
-    private boolean isSoftReferenceAble(Object object) {
+    private boolean isSoftReferenceAble(PObject pObject) {
+        Object object = pObject.getObject();
         if (object instanceof Dictionary) {
             DictionaryEntries entries = ((Dictionary) object).getEntries();
             Name type = getName(entries, Dictionary.TYPE_KEY);
@@ -295,9 +308,7 @@ public class Library {
             Permissions permissions = catalog.getPermissions();
             if (permissions != null) {
                 this.permissions = permissions;
-                if (logger.isLoggable(Level.FINER)) {
-                    logger.finer("Document perms dictionary found and configured. ");
-                }
+                logger.finer(() -> "Document perms dictionary found and configured. ");
                 return true;
             }
         }
@@ -488,13 +499,6 @@ public class Library {
             return getObject((Reference) referenceObject);
         }
         return referenceObject;
-    }
-
-    public PObject getPObject(Object referenceObject) {
-        if (referenceObject instanceof Reference) {
-            return getPObject((Reference) referenceObject);
-        }
-        return null;
     }
 
     /**

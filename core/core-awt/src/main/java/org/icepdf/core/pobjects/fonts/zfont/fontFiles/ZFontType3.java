@@ -15,6 +15,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.List;
@@ -156,7 +157,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
      * @param layout layout mode of this font, not value for type3 font
      * @param mode   rendering mode, not applicable for type3 fonts.
      */
-    public void paint(Graphics2D g2d, String string,
+    public void paint(Graphics2D g2d, char estr,
                       float x, float y,
                       long layout, int mode, Color color) {
 
@@ -169,13 +170,9 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
         g2d.scale(size, -size);
         char displayChar;
         try {
-            Shapes shape;
-            for (int i = 0, length = string.length(); i < length; i++) {
-                displayChar = string.charAt(i);
-                shape = getGlyph(displayChar, color);
-                if (shape != null) {
-                    shape.paint(g2d);
-                }
+            Shapes shape = getGlyph(estr, color);
+            if (shape != null) {
+                shape.paint(g2d);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -340,9 +337,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
                     gs.setFillColor(fillColor);
                     cp.setGraphicsState(gs);
                     cp.setGlyph2UserSpaceScale((float) glyph2user.getScaleX());
-                    Shapes charShapes = cp.parse(
-                            new byte[][]{stream.getDecodedStreamBytes()},
-                            new Reference[]{stream.getPObjectReference()},
+                    Shapes charShapes = cp.parse(new Stream[]{stream},
                             null).getShapes();
                     TextState textState = cp.getGraphicsState().getTextState();
                     setBBox(charName, textState.getType3BBox());
@@ -353,6 +348,8 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
                     return charShapes;
                 } catch (InterruptedException e) {
                     logger.log(Level.FINE, "Thread Interrupted while parsing Type3 stream data.", e);
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "IOException while parsing Type3 stream data.", e);
                 }
             }
         } else {

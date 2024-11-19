@@ -51,18 +51,18 @@ public class ZFontType1C extends ZSimpleFont {
     }
 
     @Override
-    protected String codeToName(String estr) {
+    protected String codeToName(char estr) {
         // This isn't quite right yet.  But if we are using the standard encoding as set in the TypeFont class
         // use the font's internal encoding.
         if (org.icepdf.core.pobjects.fonts.zfont.Encoding.STANDARD_ENCODING_NAME.equals(encoding.getName())) {
-            return cffType1Font.getEncoding().getName(estr.charAt(0));
+            return cffType1Font.getEncoding().getName(estr);
         } else {
-            return estr;
+            return String.valueOf(estr);
         }
     }
 
     @Override
-    public void paint(Graphics2D g, String estr, float x, float y, long layout, int mode, Color strokeColor) {
+    public void paint(Graphics2D g, char estr, float x, float y, long layout, int mode, Color strokeColor) {
         super.paint(g, estr, x, y, layout, mode, strokeColor);
     }
 

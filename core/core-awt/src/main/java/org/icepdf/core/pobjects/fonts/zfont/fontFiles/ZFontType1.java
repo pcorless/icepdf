@@ -79,8 +79,8 @@ public class ZFontType1 extends ZSimpleFont {
     }
 
     @Override
-    protected String codeToName(String estr) {
-        return codeToName(estr.charAt(0));
+    protected String codeToName(char code) {
+        return codeToName((int) code);
     }
 
     protected String codeToName(int code) {
@@ -93,7 +93,7 @@ public class ZFontType1 extends ZSimpleFont {
     }
 
     @Override
-    public void paint(Graphics2D g, String estr, float x, float y, long layout, int mode, Color strokeColor) {
+    public void paint(Graphics2D g, char estr, float x, float y, long layout, int mode, Color strokeColor) {
         super.paint(g, estr, x, y, layout, mode, strokeColor);
     }
 
@@ -170,7 +170,7 @@ public class ZFontType1 extends ZSimpleFont {
         return type1Font.getName();
     }
 
-    private void calculateFontBbox() {
+    private void calculateFontBbox() throws IOException {
         BoundingBox fontBBox = type1Font.getFontBBox();
         if (fontBBox.getWidth() > 0 && fontBBox.getHeight() > 0) {
             bbox = new Rectangle2D.Double(

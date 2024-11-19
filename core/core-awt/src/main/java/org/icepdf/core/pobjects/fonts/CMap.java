@@ -43,7 +43,7 @@ public interface CMap {
     /**
      * Maps the character id to an underlying to unicode table. This method should
      * be called when looking for a unicode value for a CID.  This method differs
-     * slightly from #toSelector in that it can return at String rather then a
+     * slightly from #toSelector in that it can return at String rather than a
      * single character code.
      *
      * @param ch character id to look for corresponding unicode values.

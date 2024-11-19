@@ -61,11 +61,11 @@ public class QuickPaintAnnotationButton extends AnnotationColorButton {
     }
 
     public QuickPaintAnnotationButton(Controller controller, ResourceBundle messageBundle, String title,
-                                      String toolTip, String imageName, String imageSize, Font font) {
+                                      String toolTip, String imageName, Images.IconSize imageSize, Font font) {
         super(controller, messageBundle, title, toolTip, imageName, imageSize, font);
 
         PaintButtonInterface paintButton = (PaintButtonInterface) colorButton;
-        paintButton.setColorBound(imageSize.equals(Images.SIZE_LARGE) ? textIconPathLarge : textIconPathSmall);
+        paintButton.setColorBound(imageSize == Images.IconSize.LARGE ? textIconPathLarge : textIconPathSmall);
 
         setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
         setContentAreaFilled(true);

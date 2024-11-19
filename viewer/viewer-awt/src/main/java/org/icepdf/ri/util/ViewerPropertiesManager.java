@@ -77,6 +77,8 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_DEFAULT_ROTATION = "document.rotation";
     // page rotation
     public static final String PROPERTY_DEFAULT_VIEW_TYPE = "document.viewtype";
+    // display tool
+    public static final String PROPERTY_DEFAULT_DISPLAY_TOOL = "document.displaytool.mode";
     // highlight and selection text colours.
     public static final String PROPERTY_TEXT_SELECTION_COLOR = "org.icepdf.core.views.page.text.selection.color";
     public static final String PROPERTY_TEXT_HIGHLIGHT_COLOR = "org.icepdf.core.views.page.text.highlight.color";
@@ -154,6 +156,9 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_VIEWPREF_ANNOTATION_EDIT_MODE = "application.viewerpreferences.annotation.editmode";
     // annotation handler default to selected tool after annotation is created.
     public static final String PROPERTY_ANNOTATION_HIGHLIGHT_SELECTION_TYPE = "application.annotation.highlight.selection.type";
+
+    public static final String PROPERTY_ANNOTATION_REDACTION_SELECTION_TYPE = "application.annotation.redaction" +
+            ".selection.type";
     public static final String PROPERTY_ANNOTATION_LINE_SELECTION_TYPE = "application.annotation.line.selection.type";
     public static final String PROPERTY_ANNOTATION_LINK_SELECTION_TYPE = "application.annotation.link.selection.type";
     public static final String PROPERTY_ANNOTATION_SQUARE_SELECTION_TYPE = "application.annotation.rectangle.selection.type";
@@ -186,7 +191,10 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_ANNOTATION_EDITING_MODE_ENABLED = "application.annotation.editing.mode.enabled";
     // Individual controls for the annotation toolbar button commands
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_SELECTION = "application.toolbar.annotation.selection.enabled";
+    public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_DELETE = "application.toolbar.annotation.delete.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_HIGHLIGHT = "application.toolbar.annotation.highlight.enabled";
+    public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_REDACTION = "application.toolbar.annotation.redaction" +
+            ".enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_UNDERLINE = "application.toolbar.annotation.underline.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_STRIKE_OUT = "application.toolbar.annotation.strikeout.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_LINE = "application.toolbar.annotation.line.enabled";

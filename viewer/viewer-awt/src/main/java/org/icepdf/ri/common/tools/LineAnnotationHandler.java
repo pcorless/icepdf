@@ -193,7 +193,8 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         annotation.setInteriorColor(internalColor);
         annotation.setOpacity(opacity);
 
-        AffineTransform pageTransform = getToPageSpaceTransform();
+        AffineTransform toPageSpaceTransform = getToPageSpaceTransform();
+        AffineTransform pageTransform = getPageTransform();
 
         // setup the markup properties.
         annotation.setContents(annotation.getSubType().toString());
@@ -202,7 +203,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
 
         // pass outline shapes and bounds to create the highlight shapes
         annotation.setBBox(tBbox);
-        annotation.resetAppearanceStream(pageTransform);
+        annotation.resetAppearanceStream(toPageSpaceTransform);
 
         // create the annotation object.
         MarkupAnnotationComponent comp = (MarkupAnnotationComponent)

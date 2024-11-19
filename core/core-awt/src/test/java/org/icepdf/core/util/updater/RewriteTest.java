@@ -5,7 +5,6 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.annotations.Annotation;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -46,7 +45,7 @@ public class RewriteTest {
             Page page = document.getPageTree().getPage(0);
             // annot, popup and glue
             assertEquals(3, page.getAnnotations().size());
-        } catch (PDFSecurityException | IOException e) {
+        } catch (PDFSecurityException | IOException | InterruptedException e) {
             // make sure we have no io errors.
             fail("should not be any exceptions");
         }
@@ -82,7 +81,7 @@ public class RewriteTest {
             // check annotation for edit
             assertEquals("This should not be in file if deleted - edited", annotations.get(0).getContents());
 
-        } catch (PDFSecurityException | IOException e) {
+        } catch (PDFSecurityException | IOException | InterruptedException e) {
             // make sure we have no io errors.
             fail("should not be any exceptions");
         }
@@ -117,7 +116,7 @@ public class RewriteTest {
             page = document.getPageTree().getPage(0);
             // annot, popup and glue
             assertEquals(0, page.getAnnotations().size());
-        } catch (PDFSecurityException | IOException e) {
+        } catch (PDFSecurityException | IOException | InterruptedException e) {
             // make sure we have no io errors.
             fail("should not be any exceptions");
         }
@@ -125,7 +124,6 @@ public class RewriteTest {
 
     @DisplayName("full write - write and open and fail if there is an exception loading the new file")
     @Test
-    @Disabled
     public void testBatchFullUpdate() {
         String testDirectory = "/test-suite-path/";
         Path contentPath = Paths.get(testDirectory);
@@ -155,7 +153,7 @@ public class RewriteTest {
                         modifiedDocument.dispose();
                     }
                 }
-            } catch (IOException | PDFSecurityException e) {
+            } catch (IOException | PDFSecurityException | InterruptedException e) {
                 // make sure we have no io errors.
                 fail("should not be any exceptions", e);
             }

@@ -21,10 +21,14 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
+import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.PageViewComponentImpl;
 
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Stores state parameters for annotation objects to be used in conjunction
@@ -35,37 +39,40 @@ import java.awt.geom.Rectangle2D;
 public class AnnotationState implements Memento {
 
     // annotation bounding rectangle in user space.
-    protected Rectangle2D.Float userSpaceRectangle;
+    private final Rectangle2D.Float userSpaceRectangle;
+    private final Operation operation;
+    private final AnnotationComponent annotationComponent;
+    private final PopupState popupState;
 
-    // original rectangle reference.
-    protected final AnnotationComponent annotationComponent;
+    public enum Operation {
+        ADD, DELETE, MOVE
+    }
 
     /**
      * Stores the annotation state associated with the AnnotationComponents
      * annotation object.  When a new instance of this object is created
-     * the annotation's proeprties are saved.
+     * the annotation's properties are saved.
      *
-     * @param annotationComponent annotation component who's state will be stored.
+     * @param annotationComponent annotation component whose state will be stored.
+     * @param operation           The operation applied to the annotation
      */
-    public AnnotationState(AnnotationComponent annotationComponent) {
+    public AnnotationState(final AnnotationComponent annotationComponent, final Operation operation) {
         // reference to component so we can apply the state parameters if
         // restore() is called.
-        this.annotationComponent = annotationComponent;
+        this.annotationComponent = requireNonNull(annotationComponent);
+        this.operation = requireNonNull(operation);
+        this.userSpaceRectangle = annotationComponent.getAnnotation().getUserSpaceRectangle();
+        this.popupState = annotationComponent instanceof MarkupAnnotationComponent ?
+                new PopupState(((MarkupAnnotationComponent) annotationComponent).getPopupAnnotationComponent()) : null;
+
     }
 
+    public AnnotationComponent getAnnotationComponent() {
+        return annotationComponent;
+    }
 
-    public void apply(AnnotationState applyState) {
-
-        // store user space rectangle SpaceRectangle.
-        Rectangle2D.Float rect = applyState.userSpaceRectangle;
-        if (rect != null) {
-            userSpaceRectangle = new Rectangle2D.Float(rect.x, rect.y,
-                    rect.width, rect.height);
-        }
-
-        // apply the new state to the annotation and schedule a sync
-        restore();
-
+    public Operation getOperation() {
+        return operation;
     }
 
     /**
@@ -76,56 +83,75 @@ public class AnnotationState implements Memento {
         if (annotationComponent != null &&
                 annotationComponent.getAnnotation() != null) {
             // get reference to annotation
-            Annotation annotation = annotationComponent.getAnnotation();
+            final Annotation annotation = annotationComponent.getAnnotation();
 
-            restore(annotation);
+            if (annotation.getBorderStyle() == null) {
+                annotation.setBorderStyle(new BorderStyle());
+            }
+
+            // apply old user rectangle
+            annotation.setUserSpaceRectangle(userSpaceRectangle);
 
             // update the document with current state.
             synchronizeState();
         }
     }
 
-    /**
-     * Restores the annotation state in this instance to the Annotation
-     * specified as a param. This method is ment to bue used in
-     *
-     * @param annotation annotation to retore state to.
-     */
-    public void restore(Annotation annotation) {
-        // create a new Border style entry as an inline dictionary
-        if (annotation.getBorderStyle() == null) {
-            annotation.setBorderStyle(new BorderStyle());
-        }
-
-        // apply old user rectangle
-        annotation.setUserSpaceRectangle(userSpaceRectangle);
-    }
-
     public void synchronizeState() {
         // update the document with this change.
-        int pageIndex = annotationComponent.getPageIndex();
-        Document document = annotationComponent.getDocument();
-        Annotation annotation = annotationComponent.getAnnotation();
-        PageTree pageTree = document.getPageTree();
-        Page page = pageTree.getPage(pageIndex);
-        // state behind draw state.
-        if (!annotation.isDeleted()) {
-            page.updateAnnotation(annotation);
-            // refresh bounds for any resizes
-            annotationComponent.refreshDirtyBounds();
-        }
-        // special case for an undelete as we need to make the component
-        // visible again.
-        else {
+        final int pageIndex = annotationComponent.getPageIndex();
+        final Document document = annotationComponent.getDocument();
+        final Annotation annotation = annotationComponent.getAnnotation();
+        final PageTree pageTree = document.getPageTree();
+        final Page page = pageTree.getPage(pageIndex);
+        if (operation == Operation.ADD) {
+            // Special case for an undelete as we need to make the component
+            // visible again.
+
             // mark it as not deleted
             annotation.setDeleted(false);
             // re-add it to the page
             page.addAnnotation(annotation, true);
+            // re-add to the page view if needed
+            final PageViewComponentImpl pageViewComponent = (PageViewComponentImpl) annotationComponent.getPageViewComponent();
+            if (!pageViewComponent.getAnnotationComponents().contains(annotationComponent)) {
+                pageViewComponent.addAnnotation(annotationComponent);
+            }
+            if (annotationComponent instanceof MarkupAnnotationComponent) {
+                PopupAnnotationComponent popupAnnotationComponent =
+                        ((MarkupAnnotationComponent<?>) annotationComponent).getPopupAnnotationComponent();
+                if (popupAnnotationComponent == null) {
+                    popupAnnotationComponent = ((MarkupAnnotationComponent<?>) annotationComponent).createPopupAnnotationComponent(true);
+                } else if (!pageViewComponent.getAnnotationComponents().contains(popupAnnotationComponent)) {
+                    pageViewComponent.addAnnotation(popupAnnotationComponent);
+                }
+                if (popupState != null) {
+                    final PopupAnnotation popupAnnotation = popupAnnotationComponent.getAnnotation();
+                    popupAnnotation.setOpen(popupState.isVisible());
+                    popupAnnotationComponent.setVisible(popupState.isVisible());
+                    popupAnnotationComponent.setTextAreaFontSize(popupState.getTextAreaFontSize());
+                    popupAnnotationComponent.setHeaderLabelsFontSize(popupState.getHeaderTextSize());
+                }
+            }
             // finally update the pageComponent so we can see it again.
             ((Component) annotationComponent).setVisible(true);
             // refresh bounds for any resizes
-            annotationComponent.refreshDirtyBounds();
+        } else if (operation == Operation.DELETE) {
+            // Special case for an un-add
+            page.deleteAnnotation(annotation);
+            ((Component) annotationComponent).setVisible(false);
+            if (annotationComponent instanceof MarkupAnnotationComponent) {
+                ((MarkupAnnotationComponent<?>) annotationComponent).getPopupAnnotationComponent().setVisible(false);
+            }
+        } else if (operation == Operation.MOVE) {
+            // Simply update the annotation
+            page.updateAnnotation(annotation);
+            if (annotationComponent instanceof MarkupAnnotationComponent) {
+                ((MarkupAnnotationComponent<?>) annotationComponent).getPopupAnnotationComponent()
+                        .getMarkupGlueComponent().refreshDirtyBounds();
+            }
         }
+        annotationComponent.refreshDirtyBounds();
     }
 
 

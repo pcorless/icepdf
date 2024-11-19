@@ -65,7 +65,7 @@ public class ActionFactory {
             entries.put(Action.ACTION_TYPE_KEY, Action.ACTION_TYPE_URI);
             // add a null uri string entry
             Reference pObjectReference = stateManager.getNewReferenceNumber();
-            entries.put(URIAction.URI_KEY, new LiteralStringObject("", pObjectReference, library.getSecurityManager()));
+            entries.put(URIAction.URI_KEY, new LiteralStringObject("", pObjectReference));
             URIAction action = new URIAction(library, entries);
             action.setPObjectReference(stateManager.getNewReferenceNumber());
             return action;
@@ -75,7 +75,7 @@ public class ActionFactory {
             entries.put(Action.ACTION_TYPE_KEY, Action.ACTION_TYPE_LAUNCH);
             // add a null file string entry
             Reference pObjectReference = stateManager.getNewReferenceNumber();
-            entries.put(LaunchAction.FILE_KEY, new LiteralStringObject("", pObjectReference, library.getSecurityManager()));
+            entries.put(LaunchAction.FILE_KEY, new LiteralStringObject("", pObjectReference));
             LaunchAction action = new LaunchAction(library, entries);
             action.setPObjectReference(stateManager.getNewReferenceNumber());
             return action;

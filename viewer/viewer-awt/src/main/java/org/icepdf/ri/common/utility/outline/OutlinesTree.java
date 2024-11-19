@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.utility.outline;
 
+import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
@@ -39,9 +40,10 @@ public class OutlinesTree extends JTree {
                 TreeSelectionModel.SINGLE_TREE_SELECTION);
         // change the look & feel of the jtree
         DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
-        renderer.setOpenIcon(new ImageIcon(Images.get("page.gif")));
-        renderer.setClosedIcon(new ImageIcon(Images.get("page.gif")));
-        renderer.setLeafIcon(new ImageIcon(Images.get("page.gif")));
+        Icon icon = Images.getSingleIcon("page", IconPack.Variant.NONE, Images.IconSize.TINY);
+        renderer.setOpenIcon(icon);
+        renderer.setClosedIcon(icon);
+        renderer.setLeafIcon(icon);
         setCellRenderer(renderer);
 
         setModel(null);

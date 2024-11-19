@@ -16,10 +16,10 @@
 package org.icepdf.ri.common;
 
 import org.icepdf.ri.common.views.Controller;
+import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.logging.Logger;
@@ -39,11 +39,11 @@ public class DropDownButton extends JButton
     protected final JPopupMenu popupMenu;
 
     protected final String imageName;
-    protected final String imageSize;
+    protected final Images.IconSize imageSize;
 
     public DropDownButton(Controller controller,
                           String title, String toolTip, String imageName,
-                          final String imageSize, java.awt.Font font) {
+                          final Images.IconSize imageSize, java.awt.Font font) {
         super(title);
         this.controller = controller;
 
@@ -54,18 +54,9 @@ public class DropDownButton extends JButton
         this.imageSize = imageSize;
 
         if (imageName != null) {
-            try {
-                ImageIcon image = new ImageIcon(Images.get(imageName + "_a" + imageSize + ".png"));
-                setIcon(new ImageIcon(Images.get(imageName + "_a" + imageSize + ".png")));
-                setPressedIcon(new ImageIcon(Images.get(imageName + "_i" + imageSize + ".png")));
-                setRolloverIcon(new ImageIcon(Images.get(imageName + "_r" + imageSize + ".png")));
-                setDisabledIcon(new ImageIcon(Images.get(imageName + "_i" + imageSize + ".png")));
-                // set size based on imageIcon size.
-                setPreferredSize(new Dimension(image.getIconWidth(), image.getIconHeight()));
-            } catch (NullPointerException e) {
-                logger.warning("Failed to load dropdown image button images: " + imageName + "_i" + imageSize + ".png");
-            }
+            Images.applyIcons(this, imageName, imageSize);
         }
+        validate();
 
         popupMenu = new JPopupMenu();
 
@@ -82,15 +73,7 @@ public class DropDownButton extends JButton
     @Override
     public void setSelected(boolean b) {
         super.setSelected(b);
-        try {
-            if (b) {
-                setIcon(new ImageIcon(Images.get(imageName + "_selected_a" + imageSize + ".png")));
-            } else {
-                setIcon(new ImageIcon(Images.get(imageName + "_a" + imageSize + ".png")));
-            }
-        } catch (Exception e) {
-            logger.warning("Could not load icon" + imageName + "_a" + imageSize + ".png");
-        }
+        Images.applyIcon(this, imageName, b ? IconPack.Variant.SELECTED : IconPack.Variant.NORMAL, imageSize);
     }
 
     public void add(JMenuItem menuItem, int idx) {

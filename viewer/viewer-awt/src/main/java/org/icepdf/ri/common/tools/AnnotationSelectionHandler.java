@@ -17,6 +17,7 @@ package org.icepdf.ri.common.tools;
 
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
@@ -28,7 +29,7 @@ import java.util.ResourceBundle;
 
 /**
  * The AnnotationSelectionHandler is responsible for deselecting all annotations
- * when the a mouse click event has been fired.
+ * when a mouse click event has been fired.
  *
  * @since 5.0
  */
@@ -55,13 +56,13 @@ public class AnnotationSelectionHandler extends CommonToolHandler
         // create destination menu item
         addDestinationMenuItem = new JMenuItem(messageBundle.getString(
                 "viewer.utilityPane.view.selectionTool.contextMenu.addDestination.label"));
-        addDestinationMenuItem.setIcon(new ImageIcon(Images.get("destination_20.png")));
+        Images.applyIcon(addDestinationMenuItem, "destination", IconPack.Variant.NONE, Images.IconSize.MINI);
         addDestinationMenuItem.addActionListener(this);
         contextMenu.add(addDestinationMenuItem);
         // create free text menu item.
         freeTextMenuItem = new JMenuItem(messageBundle.getString(
                 "viewer.utilityPane.view.selectionTool.contextMenu.addFreeText.label"));
-        freeTextMenuItem.setIcon(new ImageIcon(Images.get("freetext_annot_a_20.png")));
+        Images.applyIcon(freeTextMenuItem, "freetext_annot", IconPack.Variant.NORMAL, Images.IconSize.MINI);
         freeTextMenuItem.addActionListener(this);
         contextMenu.add(freeTextMenuItem);
     }

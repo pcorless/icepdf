@@ -242,7 +242,7 @@ public class Parser {
         // use parser to get xref stream object.
         CrossReferenceStream crossReferenceStream = (CrossReferenceStream) getPObject(byteBuffer, offset).getObject();
         crossReferenceStream.initialize();
-        crossReferenceStream.setXrefStartPos(offset - XREF_MARKER.length);
+        crossReferenceStream.setXrefStartPos(offset);
         return crossReferenceStream;
     }
 }
