@@ -249,13 +249,16 @@ public abstract class AbstractPageViewComponent
         }
     }
 
-    protected static int calculateScaleForDefaultScreen() {
+    protected static double calculateScaleForDefaultScreen() {
+//        GraphicsConfiguration gc = g2d.getDeviceConfiguration();
+//        double scaleFactor = gc.getDefaultTransform().getScaleX();
         double scale = GraphicsEnvironment.getLocalGraphicsEnvironment()
                 .getDefaultScreenDevice()
                 .getDefaultConfiguration()
                 .getDefaultTransform()
                 .getScaleX();
-        return (int) Math.round(scale);
+        System.out.printf("scale: %f\n", scale);
+        return scale;
     }
 
     @Override
@@ -285,10 +288,20 @@ public abstract class AbstractPageViewComponent
                 repaint();
             }
             // get scale which will be > 1.0 on high dpi monitors
-            int scale = calculateScaleForDefaultScreen();
-            g2d.drawImage(pageImage, paintingClip.x, paintingClip.y, paintingClip.width, paintingClip.height,
-                    paintingClip.x, paintingClip.y, paintingClip.width, paintingClip.height,
-                    null);
+            double scale = calculateScaleForDefaultScreen();
+//            g2d.drawImage(pageImage,
+//                    // destination
+//                    paintingClip.x,
+//                    paintingClip.y,
+//                    paintingClip.x + paintingClip.width,
+//                    paintingClip.y + paintingClip.height,
+//                    // source
+//                    paintingClip.x,
+//                    paintingClip.y,
+//                    paintingClip.x + paintingClip.width,
+//                    paintingClip.y + paintingClip.height,
+//                    null);
+            g2d.drawImage(pageImage, paintingClip.x, paintingClip.y, paintingClip.width, paintingClip.height, null);
         }
         g2d.dispose();
     }
@@ -426,9 +439,10 @@ public abstract class AbstractPageViewComponent
                 page.init();
                 pageInitializedCallback(page);
 
-                int scale = AbstractPageViewComponent.calculateScaleForDefaultScreen();
+                double scale = 1.2; //AbstractPageViewComponent.calculateScaleForDefaultScreen();
                 BufferedImage pageBufferImage = graphicsConfiguration.createCompatibleImage(
-                        imageLocation.width, imageLocation.height,
+                        (int) (imageLocation.width * scale),
+                        (int) (imageLocation.height * scale),
                         BufferedImage.TYPE_INT_ARGB);
                 Graphics2D g2d = pageBufferImage.createGraphics();
                 g2d.scale(scale, scale);
