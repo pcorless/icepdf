@@ -250,14 +250,12 @@ public abstract class AbstractPageViewComponent
     }
 
     protected static double calculateScaleForDefaultScreen() {
-//        GraphicsConfiguration gc = g2d.getDeviceConfiguration();
-//        double scaleFactor = gc.getDefaultTransform().getScaleX();
         double scale = GraphicsEnvironment.getLocalGraphicsEnvironment()
                 .getDefaultScreenDevice()
                 .getDefaultConfiguration()
                 .getDefaultTransform()
                 .getScaleX();
-        System.out.printf("scale: %f\n", scale);
+        System.out.printf("device scale: %f\n", scale);
         return scale;
     }
 
@@ -439,13 +437,17 @@ public abstract class AbstractPageViewComponent
                 page.init();
                 pageInitializedCallback(page);
 
-                double scale = 1.2; //AbstractPageViewComponent.calculateScaleForDefaultScreen();
+                double scale = AbstractPageViewComponent.calculateScaleForDefaultScreen();
                 BufferedImage pageBufferImage = graphicsConfiguration.createCompatibleImage(
                         (int) (imageLocation.width * scale),
                         (int) (imageLocation.height * scale),
                         BufferedImage.TYPE_INT_ARGB);
                 Graphics2D g2d = pageBufferImage.createGraphics();
+                GraphicsConfiguration gc = g2d.getDeviceConfiguration();
+                double scaleFactor = gc.getDefaultTransform().getScaleX();
+                System.out.println("gc scaleFactor: " + scaleFactor);
                 g2d.scale(scale, scale);
+
 
                 // if we don't have a soft reference then we are likely on a first clean paint at which
                 // point we can kick off the animated paint.
