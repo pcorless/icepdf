@@ -5,7 +5,9 @@ import javafx.stage.WindowEvent;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.fx.ri.viewer.ViewerModel;
 
-
+/**
+ * Stage close request listener that will dispose of the document when the stage is closed.
+ */
 public class StageCloseRequestListener implements EventHandler<WindowEvent> {
 
     private final ViewerModel model;

@@ -7,26 +7,19 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
 import javafx.geometry.Bounds;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.ArcType;
-import javafx.scene.text.FontSmoothingType;
 import javafx.util.Duration;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.fx.ri.viewer.ViewerModel;
-import org.jfree.fx.FXGraphics2D;
-import org.jfree.fx.FXHints;
-
-import java.awt.*;
 
 public class PageViewWidget extends Region {
 
@@ -40,10 +33,6 @@ public class PageViewWidget extends Region {
     private DoubleProperty height;
     private double pageWidth;
     private double pageHeight;
-
-    private Label pageIndexLabel;
-    private Label scaleLabel;
-    private Label rotationLabel;
 
     private ViewerModel model;
     private ScrollPane scrollPane;
@@ -87,20 +76,9 @@ public class PageViewWidget extends Region {
         });
 
         scrollPane.vvalueProperty().addListener((observable, oldValue, newValue) -> {
-
-//                System.out.println("Page " + this.getPageIndex() + " is in the viewport");
             scrollPause.playFromStart();
-            // todo trigger a page capture
-            //  - page should be doing intersection check
-            //  - any size change would trigger a repaint
-            //  - eventually bring clipped painting
-            //  - try painting to a buffer and then paint that buffer to the screen (from prevoius work
-            //  - try painting to graphics contet too,  maybe it's fast/optimized for reactive painting.
         });
 
-        pageIndexLabel = new Label("Page " + pageIndex);
-        scaleLabel = new Label();
-        rotationLabel = new Label();
         createLayout();
 
         setOnMouseClicked(event -> {
@@ -125,7 +103,7 @@ public class PageViewWidget extends Region {
     }
 
     public void draw() {
-        if (canvas == null && isNodeIntersectingViewport(scrollPane, this)) {
+        if (isNodeIntersectingViewport(scrollPane, this)) {
             System.out.println("drawing page " + this.pageIndex);
 
             try {
@@ -139,10 +117,6 @@ public class PageViewWidget extends Region {
                             long end = System.currentTimeMillis();
                             System.out.println("Page init time: " + (end - start) + "ms");
                             Platform.runLater(() -> draw());
-//
-//                            WritableImage image = new WritableImage((int) width.get(), (int) height.get());
-//                            image.getPixelWriter().
-
                             return null;
                         }
                     };
@@ -151,76 +125,66 @@ public class PageViewWidget extends Region {
                     return;
                 }
 
-                canvas = new Canvas(pageWidth, pageHeight);
-
-                Group root = new Group();
+                if (canvas == null) {
+                    canvas = new Canvas(pageWidth, pageHeight);
+                    Group root = new Group();
+                    root.getChildren().add(canvas);
+                    getChildren().add(root);
+//                    canvas.scaleXProperty().bind(scale);
+//                    canvas.scaleYProperty().bind(scale);
+                }
                 GraphicsContext gc = canvas.getGraphicsContext2D();
-                root.getChildren().add(canvas);
-                getChildren().add(root);
 
-                // try and get this working with
-                canvas.scaleXProperty().bind(scale);
-                canvas.scaleYProperty().bind(scale);
-
-                gc.setStroke(Color.RED);
-                gc.setLineWidth(5);
+                gc.clearRect(0, 0, width.get(), height.get());
+                gc.save();
+                // clip testing
+                gc.setFill(Color.BLUE);
+                gc.fillRect(0, 0, 50, 50);
                 calculateAndDrawClip(gc);
 
-                gc.setFontSmoothingType(FontSmoothingType.LCD);
-                FXGraphics2D fxg2 = new FXGraphics2D(gc);
-                fxg2.setRenderingHint(FXHints.KEY_USE_FX_FONT_METRICS, true);
-                fxg2.setZeroStrokeWidth(0.1);
-                fxg2.setRenderingHint(
-                        RenderingHints.KEY_FRACTIONALMETRICS,
-                        RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-                fxg2.setClip(0, 0, (int) width.get(), (int) height.get());
-                fxg2.scale(1, -1);
-                fxg2.translate(0, -height.get());
+                // paint page to canvas
+                // todo: likely fall back on paint directly to image and pain this image as node at the
+                //  correct location.  Canvas is a buffer but a lot of work would be need to convert the
+                //  rendering core to full javafx draw ops.  Not ruling it out as there are some benefits to
+                //  some of the blending effects that are build into javafx.
+//                gc.save();
+//                Affine prePaintTransform = gc.getTransform();
+//                gc.setFontSmoothingType(FontSmoothingType.LCD);
+//                FXGraphics2D fxg2 = new FXGraphics2D(gc);
+//                AffineTransform test = fxg2.getTransform();
+//                fxg2.setRenderingHint(FXHints.KEY_USE_FX_FONT_METRICS, true);
+//                fxg2.setZeroStrokeWidth(0.1);
+//                fxg2.setRenderingHint(
+//                        RenderingHints.KEY_FRACTIONALMETRICS,
+//                        RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+//                fxg2.setClip(0, 0, (int) width.get(), (int) height.get());
+//                fxg2.scale(1, -1);
+//                fxg2.translate(0, -height.get());
 
-
-                long start = System.currentTimeMillis();
-                page.paintPageContent(fxg2, GraphicsRenderingHints.PRINT, rotation.get(), scale.get(), true, true);
-                long end = System.currentTimeMillis();
-                System.out.println("Page paint time: " + (end - start) + "ms");
-            } catch (InterruptedException e) {
+//                long start = System.currentTimeMillis();
+//                page.paintPageContent(fxg2, GraphicsRenderingHints.PRINT, rotation.get(), scale.get(), true, true);
+//                long end = System.currentTimeMillis();
+//                fxg2.transform(test);
+//
+//                System.out.println("Page paint time: " + (end - start) + "ms");
+//                gc.restore();
+//                fxg2.scale(1, -1);
+//                gc.transform(prePaintTransform);
+            } catch (Throwable e) {
                 throw new RuntimeException(e);
             }
         }
     }
 
     private void calculateAndDrawClip(GraphicsContext gc) {
-        Bounds viewportBounds = scrollPane.getViewportBounds();
-        Bounds nodeBounds = localToScene(getBoundsInLocal());
-        Bounds scrollPaneBounds = scrollPane.localToScene(scrollPane.getBoundsInLocal());
-        double x = scrollPaneBounds.getMinX() + viewportBounds.getMinX();
-        double y = scrollPaneBounds.getMinY() + viewportBounds.getMinY();
-        double width = viewportBounds.getWidth();
-        double height = viewportBounds.getHeight();
-        gc.strokeRect(x, y, width, height);
+        Rectangle2D rect = intersectionClip(scrollPane, this);
+        gc.setStroke(Color.RED);
+        gc.setLineWidth(5);
+        System.out.println("Drawing clip: " + rect);
+        gc.strokeRect(rect.getMinX(), rect.getMinY(), rect.getWidth(), rect.getHeight());
+        ;
     }
 
-    private void drawShapes(GraphicsContext gc) {
-        gc.setFill(Color.GREEN);
-        gc.setStroke(Color.BLUE);
-        gc.setLineWidth(5);
-        gc.strokeLine(40, 10, 10, 40);
-        gc.fillOval(10, 60, 30, 30);
-        gc.strokeOval(60, 60, 30, 30);
-        gc.fillRoundRect(110, 60, 30, 30, 10, 10);
-        gc.strokeRoundRect(160, 60, 30, 30, 10, 10);
-        gc.fillArc(10, 110, 30, 30, 45, 240, ArcType.OPEN);
-        gc.fillArc(60, 110, 30, 30, 45, 240, ArcType.CHORD);
-        gc.fillArc(110, 110, 30, 30, 45, 240, ArcType.ROUND);
-        gc.strokeArc(10, 160, 30, 30, 45, 240, ArcType.OPEN);
-        gc.strokeArc(60, 160, 30, 30, 45, 240, ArcType.CHORD);
-        gc.strokeArc(110, 160, 30, 30, 45, 240, ArcType.ROUND);
-        gc.fillPolygon(new double[]{10, 40, 10, 40},
-                new double[]{210, 210, 240, 240}, 4);
-        gc.strokePolygon(new double[]{60, 90, 60, 90},
-                new double[]{210, 210, 240, 240}, 4);
-        gc.strokePolyline(new double[]{110, 140, 110, 140},
-                new double[]{210, 210, 240, 240}, 4);
-    }
 
     private boolean isNodeIntersectingViewport(ScrollPane scrollPane, Node node) {
 
@@ -262,7 +226,7 @@ public class PageViewWidget extends Region {
         );
     }
 
-    private Bounds intersectionClip(ScrollPane scrollPane, Node node) {
+    private Rectangle2D intersectionClip(ScrollPane scrollPane, Node node) {
 
         Bounds nodeBounds = node.getBoundsInParent();
 
@@ -286,21 +250,44 @@ public class PageViewWidget extends Region {
         double voffset =
                 Math.max(0, contentHeight - viewportHeight) * (vvalue - vmin) / (vmax - vmin);
 
-        // todo calculate intersection, so we can define a small canvas to draw to on high zoom levels
+        Rectangle2D intersection = new Rectangle2D(
+                Math.max(hoffset, nodeBounds.getMinX()),
+                Math.max(voffset, nodeBounds.getMinY()),
+                Math.min(viewportWidth, nodeBounds.getWidth()),
+                Math.min(viewportHeight, nodeBounds.getHeight())
+        );
+//        Rectangle2D intersection = findIntersection(
+//                new Rectangle2D(hoffset, voffset, viewportWidth, viewportHeight),
+//                new Rectangle2D(nodeBounds.getMinX(), nodeBounds.getMinY(), nodeBounds.getWidth(), nodeBounds.getHeight())
+//        );
+        Rectangle2D normalizedToNode = new Rectangle2D(
+                intersection.getMinX() - nodeBounds.getMinX(),
+                intersection.getMinY() - nodeBounds.getMinY(),
+                intersection.getWidth(),
+                intersection.getHeight()
+        );
 
+
+        return normalizedToNode;
+    }
+
+    // second method to calculate intersection
+    public static Rectangle2D findIntersection(Rectangle2D rect1, Rectangle2D rect2) {
+        double x1 = Math.max(rect1.getMinX(), rect2.getMinX());
+        double y1 = Math.max(rect1.getMinY(), rect2.getMinY());
+        double x2 = Math.min(rect1.getMinX() + rect1.getWidth(), rect2.getMinX() + rect2.getWidth());
+        double y2 = Math.min(rect1.getMinY() + rect1.getHeight(), rect2.getMinY() + rect2.getWidth());
+
+        if (x1 < x2 && y1 < y2) {
+            return new Rectangle2D(x1, y1, x2 - x1, y2 - y1);
+        }
+        // No intersection
         return null;
     }
 
     private void createLayout() {
         minWidthProperty().bind(width);
         minHeightProperty().bind(height);
-
-//        VBox vBox = new VBox();
-//        scaleLabel.textProperty().bind(scale.asString());
-//        rotationLabel.textProperty().bind(width.asString());
-//        vBox.getChildren().addAll(pageIndexLabel, scaleLabel, rotationLabel);
-//        getChildren().add(vBox);
-
     }
 
     public int getPageIndex() {

@@ -7,7 +7,6 @@ public class ViewerModel {
 
     public final BooleanProperty useSingleViewerStage = new SimpleBooleanProperty(false);
 
-    // document
     public final ObjectProperty<Document> document;
 
     // todo, pretty sure we don't need this property:  file/url path

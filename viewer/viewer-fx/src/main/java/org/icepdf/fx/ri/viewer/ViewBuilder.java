@@ -9,6 +9,7 @@ import javafx.stage.Window;
 import javafx.util.Builder;
 import org.icepdf.fx.ri.viewer.commands.OpenFileCommand;
 import org.icepdf.fx.ri.viewer.commands.ZoomInCommand;
+import org.icepdf.fx.ri.viewer.commands.ZoomOutCommand;
 import org.icepdf.fx.ri.views.DocumentViewPane;
 
 import java.util.function.Consumer;
@@ -44,7 +45,7 @@ public class ViewBuilder implements Builder<Region> {
         });
 
         Button zoomOut = new Button("Zoom Out");
-        zoomOut.setOnAction(event -> new ZoomInCommand(documentViewPane, model).execute());
+        zoomOut.setOnAction(event -> new ZoomOutCommand(documentViewPane, model).execute());
         zoomOut.disableProperty().bind(model.toolbarDisabled);
 
         Button zoomIn = new Button("Zoom In");

@@ -8,7 +8,6 @@ public class ZoomInCommand implements Command {
     private final ViewerModel model;
     private final DocumentViewPane documentViewPane;
 
-
     public ZoomInCommand(DocumentViewPane documentViewPane, ViewerModel model) {
         this.model = model;
         this.documentViewPane = documentViewPane;

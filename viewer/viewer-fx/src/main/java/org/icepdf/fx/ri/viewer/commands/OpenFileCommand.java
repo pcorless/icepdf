@@ -23,7 +23,6 @@ public class OpenFileCommand implements Command {
 
     @Override
     public void execute() {
-        // show file chooser
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Resource File");
         File file = fileChooser.showOpenDialog(stage);

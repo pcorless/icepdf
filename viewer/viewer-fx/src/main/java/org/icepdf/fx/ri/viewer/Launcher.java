@@ -35,20 +35,10 @@ public class Launcher extends Application {
             document.setFile(filePath);
         }
 
-
-        // read stored system font properties.
-//        FontPropertiesManager.getInstance().loadOrReadSystemFonts();
-
-        // setup the viewer ri properties manager
-
+        // create first viewer window
         ViewerStageManager stageManager = ViewerStageManager.getInstance();
         stageManager.createViewer(primaryStage, document);
         stageManager.setTitleAndIcons(primaryStage);
-
         primaryStage.show();
-
-
     }
-
-
 }

@@ -4,9 +4,7 @@ import javafx.beans.property.FloatProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleFloatProperty;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.geometry.Bounds;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.*;
 import org.icepdf.core.pobjects.Document;
@@ -44,15 +42,12 @@ public class DocumentViewPane extends Region {
 
     }
 
-
     private void createLayout(ViewerModel model) {
         scrollPane = new ScrollPane();
-
         scrollPane.setFitToWidth(true);
         scrollPane.setPannable(true);
         scrollPane.prefWidthProperty().bind(this.widthProperty());
         scrollPane.prefHeightProperty().bind(this.heightProperty());
-
 
         VBox parent = new VBox();
         parent.setAlignment(Pos.CENTER);
@@ -61,27 +56,10 @@ public class DocumentViewPane extends Region {
         pageLayoutPane.setAlignment(Pos.CENTER);
         pageLayoutPane.setSpacing(10);
         pageLayoutPane.setMaxWidth(Region.USE_PREF_SIZE);
-
         parent.getChildren().add(pageLayoutPane);
 
         scrollPane.setContent(parent);
         getChildren().add(scrollPane);
-    }
-
-    private boolean isNodeIntersectingViewport(ScrollPane scrollPane, Node node) {
-        Bounds viewportBounds = scrollPane.getViewportBounds();
-        Bounds nodeBounds = node.localToScene(node.getBoundsInLocal());
-        Bounds scrollPaneBounds = scrollPane.localToScene(scrollPane.getBoundsInLocal());
-        double x = scrollPaneBounds.getMinX() + viewportBounds.getMinX();
-        double y = scrollPaneBounds.getMinY() + viewportBounds.getMinY();
-        double width = viewportBounds.getWidth();
-        double height = viewportBounds.getHeight();
-        return nodeBounds.intersects(
-                x,
-                y,
-                width,
-                height
-        );
     }
 
     public FloatProperty scaleProperty() {

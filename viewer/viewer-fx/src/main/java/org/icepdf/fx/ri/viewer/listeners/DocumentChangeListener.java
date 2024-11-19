@@ -4,6 +4,9 @@ import javafx.beans.value.ChangeListener;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.fx.ri.viewer.ViewerModel;
 
+/**
+ * Document change listener that will dispose of the old document and enable the toolbar if a new document is set.
+ */
 public class DocumentChangeListener implements ChangeListener<Document> {
 
     private ViewerModel model;

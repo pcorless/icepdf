@@ -9,7 +9,7 @@ import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 /**
- * \
+ * todo: figure out module issue, can't access core classes from viewer.
  */
 public class FontPropertiesManager {
 
