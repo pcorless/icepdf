@@ -143,7 +143,7 @@ public class HexStringObject extends AbstractStringObject {
      * @return a String representation of the object's data in hexadecimal notation.
      */
     public String getHexString() {
-        return stringData.toString();
+        return stringData.toString().toUpperCase();
     }
 
     /**

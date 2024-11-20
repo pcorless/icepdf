@@ -20,6 +20,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.release>11</maven.compiler.release>
         <bouncy.version>1.78.1</bouncy.version>
         <twelve-monkey.version>3.10.1</twelve-monkey.version>
         <jai-imageio.version>1.4.0</jai-imageio.version>
