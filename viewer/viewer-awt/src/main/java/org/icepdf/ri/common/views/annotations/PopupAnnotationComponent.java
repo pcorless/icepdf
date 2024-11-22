@@ -494,13 +494,15 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     }
 
     public void buildContextMenu() {
-        //Create the popup menu.
+        // Create the popup menu.
         MarkupAnnotationComponent comp = (MarkupAnnotationComponent) getAnnotationParentComponent();
-        contextMenu = new MarkupAnnotationPopupMenu(comp, documentViewController.getParentController(),
-                getPageViewComponent(), false);
-        // Add listener to components that can bring up popup menus.
-        popupListener = new PopupListener(contextMenu);
-        commentPanel.addMouseListener(popupListener);
+        if (comp != null) {
+            contextMenu = new MarkupAnnotationPopupMenu(comp, documentViewController.getParentController(),
+                    getPageViewComponent(), false);
+            // Add listener to components that can bring up popup menus.
+            popupListener = new PopupListener(contextMenu);
+            commentPanel.addMouseListener(popupListener);
+        }
     }
 
     public void replyToSelectedMarkupExecute() {
@@ -1079,6 +1081,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     }
 
     protected AnnotationComponent findAnnotationComponent(Annotation annotation) {
+        if (annotation == null) return null;
         return pageViewComponent.getComponentFor(annotation);
     }
 
