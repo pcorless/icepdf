@@ -138,19 +138,24 @@ public abstract class ZSimpleFont implements FontFile {
     }
 
     @Override
+    public Shape getGlphyShape(char estr) throws IOException {
+        String name = codeToName(estr);
+        Shape outline = fontBoxFont.getPath(name);
+        if (encoding != null && !fontBoxFont.hasGlyph(name)) {
+            name = encoding.getName(estr);
+            if (name != null) {
+                outline = fontBoxFont.getPath(name);
+            }
+        }
+        return outline;
+    }
+
+    @Override
     public void paint(Graphics2D g, char estr, float x, float y, long layout, int mode, Color strokeColor) {
         try {
             AffineTransform af = g.getTransform();
-            String name = codeToName(estr);
-            Shape outline = fontBoxFont.getPath(name);
-            if (encoding != null && !fontBoxFont.hasGlyph(name)) {
-                name = encoding.getName(estr);
-                if (name != null) {
-                    outline = fontBoxFont.getPath(name);
-                }
-            }
+            Shape outline = getGlphyShape(estr);
 
-            // clean up,  not very efficient
             g.translate(x, y);
             g.transform(this.fontTransform);
 
@@ -171,15 +176,7 @@ public abstract class ZSimpleFont implements FontFile {
     @Override
     public Shape getOutline(char estr, float x, float y) {
         try {
-            String name = codeToName(estr);
-            Shape glyph = fontBoxFont.getPath(name);
-            if (encoding != null && !fontBoxFont.hasGlyph(name)) {
-                name = encoding.getName(estr);
-                if (name != null) {
-                    glyph = fontBoxFont.getPath(name);
-                }
-            }
-
+            Shape glyph = getGlphyShape(estr);
             Area outline = new Area(glyph);
             AffineTransform transform = new AffineTransform();
             transform.translate(x, y);

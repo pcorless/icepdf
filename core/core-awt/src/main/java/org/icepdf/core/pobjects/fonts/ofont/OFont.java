@@ -29,6 +29,7 @@ import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -301,6 +302,11 @@ public class OFont implements FontFile {
     }
 
     public String getFormat() {
+        return null;
+    }
+
+    @Override
+    public Shape getGlphyShape(char estr) throws IOException {
         return null;
     }
 

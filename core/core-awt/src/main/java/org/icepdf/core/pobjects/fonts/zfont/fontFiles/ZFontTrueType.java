@@ -8,7 +8,6 @@ import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.zfont.GlyphList;
-import org.icepdf.core.pobjects.graphics.TextState;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -108,40 +107,23 @@ public class ZFontTrueType extends ZSimpleFont {
     }
 
     @Override
-    public void paint(Graphics2D g, char estr, float x, float y, long layout, int mode, Color strokeColor) {
-        try {
-            AffineTransform af = g.getTransform();
-
-            Shape outline;
-            int gid;
-            if (trueTypeFont instanceof OpenTypeFont) {
-                int cid = codeToGID(estr);
-                Type2CharString charstring = ((OpenTypeFont) trueTypeFont).getCFF().getFont().getType2CharString(cid);
-                outline = charstring.getPath();
+    public Shape getGlphyShape(char estr) throws IOException {
+        Shape outline;
+        int gid;
+        if (trueTypeFont instanceof OpenTypeFont) {
+            int cid = codeToGID(estr);
+            Type2CharString charstring = ((OpenTypeFont) trueTypeFont).getCFF().getFont().getType2CharString(cid);
+            outline = charstring.getPath();
+        } else {
+            gid = getCharToGid(estr);
+            GlyphData glyphData = trueTypeFont.getGlyph().getGlyph(gid);
+            if (glyphData == null) {
+                outline = new GeneralPath();
             } else {
-                gid = getCharToGid(estr);
-                GlyphData glyphData = trueTypeFont.getGlyph().getGlyph(gid);
-                if (glyphData == null) {
-                    outline = new GeneralPath();
-                } else {
-                    outline = glyphData.getPath();
-                }
+                outline = glyphData.getPath();
             }
-            g.translate(x, y);
-            g.transform(this.fontTransform);
-
-            if (TextState.MODE_FILL == mode || TextState.MODE_FILL_STROKE == mode ||
-                    TextState.MODE_FILL_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
-                g.fill(outline);
-            }
-            if (TextState.MODE_STROKE == mode || TextState.MODE_FILL_STROKE == mode ||
-                    TextState.MODE_STROKE_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
-                g.draw(outline);
-            }
-            g.setTransform(af);
-        } catch (IOException e) {
-            logger.log(Level.FINE, "Error painting TrueType font", e);
         }
+        return outline;
     }
 
     @Override
