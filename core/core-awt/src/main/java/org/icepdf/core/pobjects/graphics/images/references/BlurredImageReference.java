@@ -1,5 +1,6 @@
 package org.icepdf.core.pobjects.graphics.images.references;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
@@ -59,9 +60,9 @@ public class BlurredImageReference extends CachedImageReference {
         }
     }
 
-    protected BlurredImageReference(ImageStream imageStream, GraphicsState graphicsState,
+    protected BlurredImageReference(ImageStream imageStream, Name xobjectName, GraphicsState graphicsState,
                                     Resources resources, int imageIndex, Page page) {
-        super(imageStream, graphicsState, resources, imageIndex, page);
+        super(imageStream, xobjectName, graphicsState, resources, imageIndex, page);
         // kick off a new thread to load the image, if not already in pool.
         ImagePool imagePool = imageStream.getLibrary().getImagePool();
         if (useProxy && imagePool.get(reference) == null) {
@@ -92,7 +93,7 @@ public class BlurredImageReference extends CachedImageReference {
                     logger.finest("Falling back on smooth scaled image reference processing. ");
                 }
                 image = new SmoothScaledImageReference(
-                        imageStream, graphicsState, resources, imageIndex, parentPage).call();
+                        imageStream, xobjectName, graphicsState, resources, imageIndex, parentPage).call();
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, e, () -> "Error loading image: " + imageStream.getPObjectReference() +

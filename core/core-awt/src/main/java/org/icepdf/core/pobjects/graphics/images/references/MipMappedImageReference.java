@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics.images.references;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
@@ -43,16 +44,16 @@ class MipMappedImageReference extends ImageReference {
 
     private final ArrayList<ImageReference> images;
 
-    protected MipMappedImageReference(ImageStream imageStream, GraphicsState graphicsState,
+    protected MipMappedImageReference(ImageStream imageStream, Name xobjectName, GraphicsState graphicsState,
                                       Resources resources, int imageIndex,
                                       Page page) {
 
-        super(imageStream, graphicsState, resources, imageIndex, page);
+        super(imageStream, xobjectName, graphicsState, resources, imageIndex, page);
 
         images = new ArrayList<>();
 
         ImageReference imageReference =
-                new ImageStreamReference(imageStream, graphicsState, resources, imageIndex, page);
+                new ImageStreamReference(imageStream, xobjectName, graphicsState, resources, imageIndex, page);
         images.add(imageReference);
 
         int width = imageReference.getWidth();
@@ -64,7 +65,7 @@ class MipMappedImageReference extends ImageReference {
             while (width > 20 && height > 20) {
                 width /= 2;
                 height /= 2;
-                imageReference = new ScaledImageReference(imageReference, graphicsState, resources,
+                imageReference = new ScaledImageReference(imageReference, xobjectName, graphicsState, resources,
                         width, height, imageIndex, page);
                 images.add(imageReference);
             }

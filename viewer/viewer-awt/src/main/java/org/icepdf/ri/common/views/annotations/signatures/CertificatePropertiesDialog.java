@@ -20,7 +20,7 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.icepdf.core.util.HexDumper;
 import org.icepdf.ri.common.EscapeJDialog;
-import org.icepdf.ri.common.utility.signatures.SignatureUtilities;
+import org.icepdf.core.pobjects.acroform.signature.utils.SignatureUtilities;
 import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 

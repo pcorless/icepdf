@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics.images.references;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
@@ -37,10 +38,10 @@ public class InlineImageStreamReference extends ImageReference {
     private static final Logger logger =
             Logger.getLogger(InlineImageStreamReference.class.toString());
 
-    public InlineImageStreamReference(ImageStream imageStream, GraphicsState graphicsState,
+    public InlineImageStreamReference(ImageStream imageStream, Name xobjectName, GraphicsState graphicsState,
                                       Resources resources, int iamgeIndex,
                                       Page page) {
-        super(imageStream, graphicsState, resources, iamgeIndex, page);
+        super(imageStream, xobjectName, graphicsState, resources, iamgeIndex, page);
 
         // kick off a new thread to load the image, if not already in pool.
         ImagePool imagePool = imageStream.getLibrary().getImagePool();
