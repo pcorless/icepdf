@@ -5,10 +5,8 @@ import org.apache.fontbox.ttf.OTFParser;
 import org.apache.fontbox.ttf.OpenTypeFont;
 import org.apache.pdfbox.io.RandomAccessReadBuffer;
 import org.icepdf.core.pobjects.Stream;
-import org.icepdf.core.pobjects.graphics.TextState;
 
 import java.awt.*;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.io.IOException;
 import java.util.logging.Level;
@@ -44,32 +42,15 @@ public class ZFontOpenType extends ZFontTrueType {
     }
 
     @Override
-    public void paint(Graphics2D g, char estr, float x, float y, long layout, int mode, Color strokeColor) {
-        try {
-            AffineTransform af = g.getTransform();
-            int gid = getCharToGid(estr);
-            GlyphData glyphData = trueTypeFont.getGlyph().getGlyph(gid);
-            Shape outline;
-            if (glyphData == null) {
-                outline = new GeneralPath();
-            } else {
-                outline = glyphData.getPath();
-            }
-
-            g.translate(x, y);
-            g.transform(this.fontTransform);
-
-            if (TextState.MODE_FILL == mode || TextState.MODE_FILL_STROKE == mode ||
-                    TextState.MODE_FILL_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
-                g.fill(outline);
-            }
-            if (TextState.MODE_STROKE == mode || TextState.MODE_FILL_STROKE == mode ||
-                    TextState.MODE_STROKE_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
-                g.draw(outline);
-            }
-            g.setTransform(af);
-        } catch (IOException e) {
-            logger.log(Level.FINE, "Error painting OpenType font", e);
+    public Shape getGlphyShape(char estr) throws IOException {
+        int gid = getCharToGid(estr);
+        GlyphData glyphData = trueTypeFont.getGlyph().getGlyph(gid);
+        Shape outline;
+        if (glyphData == null) {
+            outline = new GeneralPath();
+        } else {
+            outline = glyphData.getPath();
         }
+        return outline;
     }
 }

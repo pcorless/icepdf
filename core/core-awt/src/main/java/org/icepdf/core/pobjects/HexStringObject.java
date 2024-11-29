@@ -158,7 +158,7 @@ public class HexStringObject extends AbstractStringObject {
      * @return a String representation of the object's data in hexadecimal notation.
      */
     public String getHexString() {
-        return stringData.toString();
+        return stringData.toString().toUpperCase();
     }
 
     /**
@@ -353,7 +353,7 @@ public class HexStringObject extends AbstractStringObject {
             sb = new StringBuilder(length / 4);
             String subStr;
             // make sure to skip the marker
-            for (int i = 4, max = length - 4; i < max; i = i + 4) {
+            for (int i = 4; i < length; i = i + 4) {
                 subStr = hh.substring(i, i + 4);
                 sb.append((char) Integer.parseInt(subStr, 16));
             }

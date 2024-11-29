@@ -6,7 +6,6 @@ import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
-import org.icepdf.core.pobjects.graphics.TextState;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -83,34 +82,16 @@ public class ZFontType0 extends ZSimpleFont {
     }
 
     @Override
-    public void paint(Graphics2D g, char estr, float x, float y, long layout, int mode, Color strokeColor) {
-        try {
-            AffineTransform af = g.getTransform();
-            Shape outline = null;
+    public Shape getGlphyShape(char estr) throws IOException {
+        Shape outline = null;
 
-            Type2CharString charstring = getType2CharString(estr);
-            if (charstring != null) {
-                outline = charstring.getPath();
-            } else if (t1Font instanceof CFFType1Font) {
-                outline = ((CFFType1Font) t1Font).getType2CharString(estr).getPath();
-            }
-
-            // clean up,  not very efficient
-            g.translate(x, y);
-            g.transform(this.fontTransform);
-
-            if (TextState.MODE_FILL == mode || TextState.MODE_FILL_STROKE == mode ||
-                    TextState.MODE_FILL_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
-                g.fill(outline);
-            }
-            if (TextState.MODE_STROKE == mode || TextState.MODE_FILL_STROKE == mode ||
-                    TextState.MODE_STROKE_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
-                g.draw(outline);
-            }
-            g.setTransform(af);
-        } catch (IOException e) {
-            logger.log(Level.FINE, "Error painting FontType0 font", e);
+        Type2CharString charString = getType2CharString(estr);
+        if (charString != null) {
+            outline = charString.getPath();
+        } else if (t1Font instanceof CFFType1Font) {
+            outline = ((CFFType1Font) t1Font).getType2CharString(estr).getPath();
         }
+        return outline;
     }
 
     public FontFile deriveFont(float defaultWidth, float[] widths) {

@@ -134,7 +134,8 @@ public class PopupAnnotation extends Annotation {
     @Override
     protected void renderAppearanceStream(Graphics2D g2d, float rotation, float zoom) {
         GraphicsConfiguration graphicsConfiguration = g2d.getDeviceConfiguration();
-        boolean isPrintingAllowed = getParent().getFlagPrint();
+
+        boolean isPrintingAllowed = getParent() != null && getParent().getFlagPrint();
         if (graphicsConfiguration.getDevice().getType() == GraphicsDevice.TYPE_PRINTER &&
                 isOpen() &&
                 isPrintingAllowed) {
@@ -179,7 +180,8 @@ public class PopupAnnotation extends Annotation {
     private void buildPopupPaintables() {
 
         Rectangle2D.Float popupBounds = getUserSpaceRectangle();
-        Rectangle popupBoundsNormalized = new Rectangle2D.Double(0, 0, popupBounds.width, popupBounds.height).getBounds();
+        Rectangle popupBoundsNormalized =
+                new Rectangle2D.Double(0, 0, popupBounds.width, popupBounds.height).getBounds();
 
         popupPaintablesPanel = new JPanel();
 
@@ -229,7 +231,8 @@ public class PopupAnnotation extends Annotation {
             yOffset += comp.getHeight() + padding;
         }
         // stretch text area.
-        textArea.setSize((int) (popupBounds.width - (padding * 2)), (int) (popupBounds.height + textArea.getHeight() - yOffset));
+        textArea.setSize((int) (popupBounds.width - (padding * 2)),
+                (int) (popupBounds.height + textArea.getHeight() - yOffset));
         resetPopupPaintables = false;
     }
 
