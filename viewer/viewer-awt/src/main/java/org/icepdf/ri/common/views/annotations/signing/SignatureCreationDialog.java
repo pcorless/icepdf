@@ -160,8 +160,10 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
             buildAppearanceStream();
         } else if (source == signerRadioButton) {
             signatureAppearanceModel.setSignatureType(SignatureType.SIGNER);
+            buildAppearanceStream();
         } else if (source == certifyRadioButton) {
             signatureAppearanceModel.setSignatureType(SignatureType.CERTIFIER);
+            buildAppearanceStream();
         } else if (source == signerVisibilityCheckBox) {
             signatureAppearanceModel.setSignatureVisible(signerVisibilityCheckBox.isSelected());
             buildAppearanceStream();
