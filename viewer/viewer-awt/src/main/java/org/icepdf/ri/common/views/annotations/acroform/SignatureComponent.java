@@ -36,6 +36,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.security.KeyStoreException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -184,7 +185,7 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
      */
     class NewSignatureActionListener implements ActionListener {
 
-        private SignatureComponent signatureComponent;
+        private final SignatureComponent signatureComponent;
 
         public NewSignatureActionListener(SignatureComponent signatureComponent) {
             this.signatureComponent = signatureComponent;
@@ -195,13 +196,13 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
                 new SignatureCreationDialog(controller, messageBundle, signatureComponent).setVisible(true);
             } catch (KeyStoreException e) {
                 // todo show authentication failed dialog, could not open keystore
-                logger.warning("failed to authenticate keystore");
+                logger.log(Level.WARNING, "failed to authenticate keystore", e);
             }
         }
     }
 
     class DeleteSignatureActionListener implements ActionListener {
-        private SignatureComponent signatureComponent;
+        private final SignatureComponent signatureComponent;
 
         public DeleteSignatureActionListener(SignatureComponent signatureComponent) {
             this.signatureComponent = signatureComponent;

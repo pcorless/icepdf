@@ -48,7 +48,7 @@ public class PasswordDialogCallbackHandler extends PasswordCallbackHandler {
                 String[] options = new String[]{
                         messageBundle.getString("viewer.button.ok.label"),
                         messageBundle.getString("viewer.button.cancel.label")};
-                String dialogTitle = null;
+                String dialogTitle;
                 // slightly different verbiage for pkcs11 or pks12.
                 if (dialogType.equals(PKCS_11_TYPE)) {
                     dialogTitle = messageBundle.getString(
@@ -79,7 +79,7 @@ public class PasswordDialogCallbackHandler extends PasswordCallbackHandler {
 
             } else if (callback instanceof TextOutputCallback) {
                 TextOutputCallback tc = (TextOutputCallback) callback;
-                logger.log(Level.INFO,
+                logger.log(Level.WARNING,
                         "TextOutputCallback type {0} message: {1}",
                         new Object[]{tc.getMessageType(), tc.getMessage()});
                 throw new UnsupportedCallbackException(callback);
