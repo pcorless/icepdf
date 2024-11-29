@@ -195,8 +195,13 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
             try {
                 new SignatureCreationDialog(controller, messageBundle, signatureComponent).setVisible(true);
             } catch (KeyStoreException e) {
-                // todo show authentication failed dialog, could not open keystore
                 logger.log(Level.WARNING, "failed to authenticate keystore", e);
+                JOptionPane.showMessageDialog(this.signatureComponent,
+                        messageBundle.getString("viewer.annotation.signature.authentication.failure.dialog.certify" +
+                                ".error.msg"),
+                        messageBundle.getString("viewer.annotation.signature.authentication.failure.dialog.certify" +
+                                ".error.title"),
+                        JOptionPane.WARNING_MESSAGE);
             }
         }
     }
