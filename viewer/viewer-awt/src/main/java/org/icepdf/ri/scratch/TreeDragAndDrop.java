@@ -1,18 +1,18 @@
 package org.icepdf.ri.scratch;
 
+/**
+ * Edited from https://coderanch.com/t/346509/java/JTree-drag-drop-tree-Java
+ * by Craig Wood and mentioned on
+ * https://stackoverflow.com/questions/4588109/drag-and-drop-nodes-in-jtree
+ */
+
 import javax.swing.*;
 import javax.swing.tree.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
+import java.util.*;
 
-/**
- * https://stackoverflow.com/questions/4588109/drag-and-drop-nodes-in-jtree#4589122
- * https://docs.oracle.com/javase/tutorial/uiswing/dnd/intro.html
- */
 public class TreeDragAndDrop {
     private JScrollPane getContent() {
         JTree tree = new JTree();
@@ -21,22 +21,6 @@ public class TreeDragAndDrop {
         tree.setTransferHandler(new TreeTransferHandler());
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.CONTIGUOUS_TREE_SELECTION);
         expandTree(tree);
-        tree.addTreeSelectionListener(e -> {
-            // should contain all the nodes state (selected/non-selected)
-            TreePath[] selection = e.getPaths();
-            for (TreePath treePath : selection) {
-                // for each node state that changed, either add or remove it form
-                // the selected nodes
-                if (e.isAddedPath(treePath)) {
-                    // node was selected
-                    System.out.println("Selected: " + treePath);
-                } else {
-                    // node was de-selected
-                    System.out.println("De-selected: " + treePath);
-                }
-            }
-        });
-
         return new JScrollPane(tree);
     }
 
@@ -69,7 +53,8 @@ class TreeTransferHandler extends TransferHandler {
     public TreeTransferHandler() {
         try {
             String mimeType =
-                    DataFlavor.javaJVMLocalObjectMimeType + ";class=\"" + javax.swing.tree.DefaultMutableTreeNode[].class.getName() + "\"";
+                    DataFlavor.javaJVMLocalObjectMimeType + ";class=\"" + DefaultMutableTreeNode[].class.getName() +
+                            "\"";
             nodesFlavor = new DataFlavor(mimeType);
             flavors[0] = nodesFlavor;
         } catch (ClassNotFoundException e) {
@@ -77,7 +62,7 @@ class TreeTransferHandler extends TransferHandler {
         }
     }
 
-    public boolean canImport(TransferHandler.TransferSupport support) {
+    public boolean canImport(TransferSupport support) {
         if (!support.isDrop()) {
             return false;
         }
@@ -94,40 +79,10 @@ class TreeTransferHandler extends TransferHandler {
             if (selRows[i] == dropRow) {
                 return false;
             }
-        }
-        // Do not allow MOVE-action drops if a non-leaf node is
-        // selected unless all of its children are also selected.
-        int action = support.getDropAction();
-        if (action == MOVE) {
-            return haveCompleteNode(tree);
-        }
-        // Do not allow a non-leaf node to be copied to a level
-        // which is less than its source level.
-        TreePath dest = dl.getPath();
-        DefaultMutableTreeNode target = (DefaultMutableTreeNode) dest.getLastPathComponent();
-        TreePath path = tree.getPathForRow(selRows[0]);
-        DefaultMutableTreeNode firstNode = (DefaultMutableTreeNode) path.getLastPathComponent();
-        if (firstNode.getChildCount() > 0 && target.getLevel() < firstNode.getLevel()) {
-            return false;
-        }
-        return true;
-    }
-
-    private boolean haveCompleteNode(JTree tree) {
-        int[] selRows = tree.getSelectionRows();
-        TreePath path = tree.getPathForRow(selRows[0]);
-        DefaultMutableTreeNode first = (DefaultMutableTreeNode) path.getLastPathComponent();
-        int childCount = first.getChildCount();
-        // first has children and no children are selected.
-        if (childCount > 0 && selRows.length == 1) return false;
-        // first may have children.
-        for (int i = 1; i < selRows.length; i++) {
-            path = tree.getPathForRow(selRows[i]);
-            DefaultMutableTreeNode next = (DefaultMutableTreeNode) path.getLastPathComponent();
-            if (first.isNodeChild(next)) {
-                // Found a child of first.
-                if (childCount > selRows.length - 1) {
-                    // Not all children of first are selected.
+            DefaultMutableTreeNode treeNode =
+                    (DefaultMutableTreeNode) tree.getPathForRow(selRows[i]).getLastPathComponent();
+            for (TreeNode offspring : Collections.list(treeNode.depthFirstEnumeration())) {
+                if (tree.getRowForPath(new TreePath(((DefaultMutableTreeNode) offspring).getPath())) == dropRow) {
                     return false;
                 }
             }
@@ -138,41 +93,50 @@ class TreeTransferHandler extends TransferHandler {
     protected Transferable createTransferable(JComponent c) {
         JTree tree = (JTree) c;
         TreePath[] paths = tree.getSelectionPaths();
-        if (paths != null) {
-            // Make up a node array of copies for transfer and
-            // another for/of the nodes that will be removed in
-            // exportDone after a successful drop.
-            List<DefaultMutableTreeNode> copies = new ArrayList<DefaultMutableTreeNode>();
-            List<DefaultMutableTreeNode> toRemove = new ArrayList<DefaultMutableTreeNode>();
-            DefaultMutableTreeNode node = (DefaultMutableTreeNode) paths[0].getLastPathComponent();
-            DefaultMutableTreeNode copy = copy(node);
-            copies.add(copy);
-            toRemove.add(node);
-            for (int i = 1; i < paths.length; i++) {
-                DefaultMutableTreeNode next = (DefaultMutableTreeNode) paths[i].getLastPathComponent();
-                // Do not allow higher level nodes to be added to list.
-                if (next.getLevel() < node.getLevel()) {
-                    break;
-                } else if (next.getLevel() > node.getLevel()) {  // child node
-                    copy.add(copy(next));
-                    // node already contains child
-                } else {                                        // sibling
-                    copies.add(copy(next));
-                    toRemove.add(next);
-                }
-            }
-            DefaultMutableTreeNode[] nodes = copies.toArray(new DefaultMutableTreeNode[copies.size()]);
-            nodesToRemove = toRemove.toArray(new DefaultMutableTreeNode[toRemove.size()]);
-            return new NodesTransferable(nodes);
+        if (paths == null) {
+            return null;
         }
-        return null;
+        // Make up a node array of copies for transfer and
+        // another for/of the nodes that will be removed in
+        // exportDone after a successful drop.
+        List<DefaultMutableTreeNode> copies = new ArrayList<DefaultMutableTreeNode>();
+        List<DefaultMutableTreeNode> toRemove = new ArrayList<DefaultMutableTreeNode>();
+        DefaultMutableTreeNode firstNode = (DefaultMutableTreeNode) paths[0].getLastPathComponent();
+        HashSet<TreeNode> doneItems = new LinkedHashSet<>(paths.length);
+        DefaultMutableTreeNode copy = copy(firstNode, doneItems, tree);
+        copies.add(copy);
+        toRemove.add(firstNode);
+        for (int i = 1; i < paths.length; i++) {
+            DefaultMutableTreeNode next = (DefaultMutableTreeNode) paths[i].getLastPathComponent();
+            if (doneItems.contains(next)) {
+                continue;
+            }
+            // Do not allow higher level nodes to be added to list.
+            if (next.getLevel() < firstNode.getLevel()) {
+                break;
+            } else if (next.getLevel() > firstNode.getLevel()) {  // child node
+                copy.add(copy(next, doneItems, tree));
+                // node already contains child
+            } else {                                        // sibling
+                copies.add(copy(next, doneItems, tree));
+                toRemove.add(next);
+            }
+            doneItems.add(next);
+        }
+        DefaultMutableTreeNode[] nodes = copies.toArray(new DefaultMutableTreeNode[copies.size()]);
+        nodesToRemove = toRemove.toArray(new DefaultMutableTreeNode[toRemove.size()]);
+        return new NodesTransferable(nodes);
     }
 
-    /**
-     * Defensive copy used in createTransferable.
-     */
-    private DefaultMutableTreeNode copy(TreeNode node) {
-        return new DefaultMutableTreeNode(node);
+    private DefaultMutableTreeNode copy(DefaultMutableTreeNode node, HashSet<TreeNode> doneItems, JTree tree) {
+        DefaultMutableTreeNode copy = new DefaultMutableTreeNode(node);
+        doneItems.add(node);
+        for (int i = 0; i < node.getChildCount(); i++) {
+            copy.add(copy((DefaultMutableTreeNode) ((TreeNode) node).getChildAt(i), doneItems, tree));
+        }
+        int row = tree.getRowForPath(new TreePath(copy.getPath()));
+        tree.expandRow(row);
+        return copy;
     }
 
     protected void exportDone(JComponent source, Transferable data, int action) {
@@ -190,7 +154,7 @@ class TreeTransferHandler extends TransferHandler {
         return COPY_OR_MOVE;
     }
 
-    public boolean importData(TransferHandler.TransferSupport support) {
+    public boolean importData(TransferSupport support) {
         if (!canImport(support)) {
             return false;
         }
