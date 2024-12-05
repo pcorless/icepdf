@@ -49,7 +49,7 @@ public class Pkcs7Validator extends AbstractPkcsValidator {
 
         // get the signature bytes.
         HexStringObject hexStringObject = signatureDictionary.getContents();
-        // make sure we don't loose any bytes converting the string in the raw.
+        // make sure we don't lose any bytes converting the string in the raw.
         byte[] cmsData = Utils.convertByteCharSequenceToByteArray(hexStringObject.getLiteralString());
 
         // Signed-data content type -- start of parsing

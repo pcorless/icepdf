@@ -51,8 +51,8 @@ public class Resources extends Dictionary {
     private static final Logger logger =
             Logger.getLogger(Resources.class.toString());
 
-    final DictionaryEntries fonts;
-    final DictionaryEntries xobjects;
+    DictionaryEntries fonts;
+    DictionaryEntries xobjects;
     final DictionaryEntries colorspaces;
     final DictionaryEntries patterns;
     final DictionaryEntries shading;
@@ -71,6 +71,9 @@ public class Resources extends Dictionary {
     }
 
     public DictionaryEntries getFonts() {
+        if (fonts == null) {
+            fonts = library.getDictionary(entries, FONT_KEY);
+        }
         return fonts;
     }
 
@@ -213,6 +216,9 @@ public class Resources extends Dictionary {
     }
 
     public DictionaryEntries getXObjects() {
+        if (xobjects == null) {
+            xobjects = library.getDictionary(entries, XOBJECT_KEY);
+        }
         return xobjects;
     }
 

@@ -91,7 +91,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
     private boolean isCertificateDateValid = true;
     private boolean isRevocation;
     private boolean isSelfSigned;
-    // todo impelement singer time check.
+    // todo implement singer time check.
     private boolean isSignerTimeValid;
     private boolean isEmbeddedTimeStamp;
     // last time validate call was made.
@@ -101,7 +101,9 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
 
     public AbstractPkcsValidator(SignatureFieldDictionary signatureFieldDictionary) throws SignatureIntegrityException {
         this.signatureFieldDictionary = signatureFieldDictionary;
-        init();
+        if (signatureFieldDictionary != null) {
+            init();
+        }
     }
 
     /**
@@ -336,7 +338,6 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
              SubjectKeyIdentifier ::= OCTET STRING
          */
         ASN1Sequence issuerAndSerialNumber = (ASN1Sequence) signerInfo.getObjectAt(1);
-        signerCertificate = null;
         if (signerVersion == 1) {
             // parse out the issue and SerialNumber.
             X500Principal issuer;
@@ -347,7 +348,6 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
                 throw new SignatureIntegrityException("Could not create X500 Principle data");
             }
             BigInteger serialNumber = ((ASN1Integer) issuerAndSerialNumber.getObjectAt(1)).getValue();
-            signerCertificate = null;
             // signer cert should always be the first in the list.
             for (Object element : certificateChain) {
                 X509Certificate certificate = (X509Certificate) element;
@@ -381,7 +381,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
      * @return ASN1Sequence
      * @throws SignatureIntegrityException error parsing certificate dat.
      */
-    protected ASN1Sequence captureSignedData(byte[] cmsData)
+    public ASN1Sequence captureSignedData(byte[] cmsData)
             throws SignatureIntegrityException {
         ASN1Sequence cmsSequence = buildASN1Primitive(cmsData);
         if (cmsSequence == null || cmsSequence.getObjectAt(0) == null) {
@@ -520,10 +520,8 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         try {
             String provider = signatureDictionary.getFilter().getName();
 
-            messageDigestAlgorithm = AlgorithmIdentifier.getDigestInstance(
-                    digestAlgorithmIdentifier, provider);
-            eConMessageDigestAlgorithm = AlgorithmIdentifier.getDigestInstance(
-                    digestAlgorithmIdentifier, provider);
+            messageDigestAlgorithm = AlgorithmIdentifier.getDigestInstance(digestAlgorithmIdentifier, provider);
+            eConMessageDigestAlgorithm = AlgorithmIdentifier.getDigestInstance(digestAlgorithmIdentifier, provider);
 
             signature = createSignature(signerCertificate.getPublicKey(), provider,
                     signatureAlgorithmIdentifier, digestAlgorithmIdentifier);
@@ -593,7 +591,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
                     logger.finest("Encapsulated data verified: " + verifyEncContentInfoData);
                 }
                 // verify the attributes.
-                if ((encapsulatedDigestCheck || nonEncapsulatedDigestCheck) && verifyEncContentInfoData) {
+                if (encapsulatedDigestCheck && nonEncapsulatedDigestCheck && verifyEncContentInfoData) {
                     isSignedDataModified = false;
                 }
             } else {
