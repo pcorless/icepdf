@@ -43,7 +43,12 @@ public class Indexer {
         DictionaryEntries xRefDictionary = null;
         Lexer lexer = new Lexer(library);
         Parser parser = new Parser(library);
+        int previousPos = -1;
         while (pos > 0) {
+            if (previousPos == pos) {
+                throw new IOException("Failed to index objects (infinite loop)");
+            }
+            previousPos = pos;
             if (xRefDictionary == null) {
                 int end = 0;
                 int trailerPosition = pos = ByteBufferUtil.findReverseString(byteBuffer, byteBuffer.limit(), end, Parser.TRAILER_MARKER);
