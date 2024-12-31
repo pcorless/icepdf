@@ -1,9 +1,9 @@
 package org.icepdf.ri.scratch;
 
-/**
- * Edited from https://coderanch.com/t/346509/java/JTree-drag-drop-tree-Java
- * by Craig Wood and mentioned on
- * https://stackoverflow.com/questions/4588109/drag-and-drop-nodes-in-jtree
+/*
+  Edited from https://coderanch.com/t/346509/java/JTree-drag-drop-tree-Java
+  by Craig Wood and mentioned on
+  https://stackoverflow.com/questions/4588109/drag-and-drop-nodes-in-jtree
  */
 
 import javax.swing.*;
@@ -17,16 +17,17 @@ public class TreeDragAndDrop {
     private JScrollPane getContent() {
         JTree tree = new JTree();
         tree.setDragEnabled(true);
+        tree.setModel(null);
         tree.setDropMode(DropMode.ON_OR_INSERT);
         tree.setTransferHandler(new TreeTransferHandler());
-        tree.getSelectionModel().setSelectionMode(TreeSelectionModel.CONTIGUOUS_TREE_SELECTION);
+        tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         expandTree(tree);
         return new JScrollPane(tree);
     }
 
     private void expandTree(JTree tree) {
         DefaultMutableTreeNode root = (DefaultMutableTreeNode) tree.getModel().getRoot();
-        Enumeration e = root.breadthFirstEnumeration();
+        Enumeration<TreeNode> e = root.breadthFirstEnumeration();
         while (e.hasMoreElements()) {
             DefaultMutableTreeNode node = (DefaultMutableTreeNode) e.nextElement();
             if (node.isLeaf()) continue;
@@ -75,12 +76,12 @@ class TreeTransferHandler extends TransferHandler {
         JTree tree = (JTree) support.getComponent();
         int dropRow = tree.getRowForPath(dl.getPath());
         int[] selRows = tree.getSelectionRows();
-        for (int i = 0; i < selRows.length; i++) {
-            if (selRows[i] == dropRow) {
+        for (int selRow : Objects.requireNonNull(selRows)) {
+            if (selRow == dropRow) {
                 return false;
             }
             DefaultMutableTreeNode treeNode =
-                    (DefaultMutableTreeNode) tree.getPathForRow(selRows[i]).getLastPathComponent();
+                    (DefaultMutableTreeNode) tree.getPathForRow(selRow).getLastPathComponent();
             for (TreeNode offspring : Collections.list(treeNode.depthFirstEnumeration())) {
                 if (tree.getRowForPath(new TreePath(((DefaultMutableTreeNode) offspring).getPath())) == dropRow) {
                     return false;
@@ -99,8 +100,8 @@ class TreeTransferHandler extends TransferHandler {
         // Make up a node array of copies for transfer and
         // another for/of the nodes that will be removed in
         // exportDone after a successful drop.
-        List<DefaultMutableTreeNode> copies = new ArrayList<DefaultMutableTreeNode>();
-        List<DefaultMutableTreeNode> toRemove = new ArrayList<DefaultMutableTreeNode>();
+        List<DefaultMutableTreeNode> copies = new ArrayList<>();
+        List<DefaultMutableTreeNode> toRemove = new ArrayList<>();
         DefaultMutableTreeNode firstNode = (DefaultMutableTreeNode) paths[0].getLastPathComponent();
         HashSet<TreeNode> doneItems = new LinkedHashSet<>(paths.length);
         DefaultMutableTreeNode copy = copy(firstNode, doneItems, tree);
@@ -123,8 +124,8 @@ class TreeTransferHandler extends TransferHandler {
             }
             doneItems.add(next);
         }
-        DefaultMutableTreeNode[] nodes = copies.toArray(new DefaultMutableTreeNode[copies.size()]);
-        nodesToRemove = toRemove.toArray(new DefaultMutableTreeNode[toRemove.size()]);
+        DefaultMutableTreeNode[] nodes = copies.toArray(new DefaultMutableTreeNode[0]);
+        nodesToRemove = toRemove.toArray(new DefaultMutableTreeNode[0]);
         return new NodesTransferable(nodes);
     }
 
@@ -132,7 +133,7 @@ class TreeTransferHandler extends TransferHandler {
         DefaultMutableTreeNode copy = new DefaultMutableTreeNode(node);
         doneItems.add(node);
         for (int i = 0; i < node.getChildCount(); i++) {
-            copy.add(copy((DefaultMutableTreeNode) ((TreeNode) node).getChildAt(i), doneItems, tree));
+            copy.add(copy((DefaultMutableTreeNode) node.getChildAt(i), doneItems, tree));
         }
         int row = tree.getRowForPath(new TreePath(copy.getPath()));
         tree.expandRow(row);
@@ -144,8 +145,8 @@ class TreeTransferHandler extends TransferHandler {
             JTree tree = (JTree) source;
             DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
             // Remove nodes saved in nodesToRemove in createTransferable.
-            for (int i = 0; i < nodesToRemove.length; i++) {
-                model.removeNodeFromParent(nodesToRemove[i]);
+            for (DefaultMutableTreeNode defaultMutableTreeNode : nodesToRemove) {
+                model.removeNodeFromParent(defaultMutableTreeNode);
             }
         }
     }
@@ -181,7 +182,7 @@ class TreeTransferHandler extends TransferHandler {
             index = parent.getChildCount();
         }
         // Add data to model.
-        for (int i = 0; i < nodes.length; i++) {
+        for (int i = 0; i < Objects.requireNonNull(nodes).length; i++) {
             model.insertNodeInto(nodes[i], parent, index++);
         }
         return true;
