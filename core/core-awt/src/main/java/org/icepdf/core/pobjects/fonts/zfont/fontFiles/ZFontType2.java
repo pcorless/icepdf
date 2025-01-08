@@ -69,7 +69,12 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
             advance = widths[ech];
         }
         if (advance == 0) {
-            advance = 1.0f;
+           if (defaultWidth > 0.0f) {
+                advance = defaultWidth;
+            }
+            else {
+                advance = 1.0f;
+            }
         }
         float x = advance * size * (float) gsTransform.getScaleX();
         float y = advance * size * (float) gsTransform.getShearY();
