@@ -69,7 +69,7 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
             advance = widths[ech];
         }
         if (advance == 0) {
-           if (defaultWidth > 0.0f) {
+            if (defaultWidth > 0.0f) {
                 advance = defaultWidth;
             }
             else {
