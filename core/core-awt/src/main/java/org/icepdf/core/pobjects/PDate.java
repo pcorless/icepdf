@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.security.SecurityManager;
 
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
 /**
@@ -354,6 +355,10 @@ public class PDate {
         int min = Integer.parseInt(minute);
         int sec = Integer.parseInt(second);
         return LocalDateTime.of(y, m, d, h, min, sec);
+    }
+
+    public long toEpochSecond() {
+        return asLocalDateTime().atZone(ZoneId.systemDefault()).toEpochSecond();
     }
 
     /**

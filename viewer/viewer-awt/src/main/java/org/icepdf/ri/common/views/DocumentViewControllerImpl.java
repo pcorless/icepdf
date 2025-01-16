@@ -1302,6 +1302,11 @@ public class DocumentViewControllerImpl
         changes.firePropertyChange(event, oldValue, newValue);
     }
 
+    @Override
+    public PropertyChangeSupport getPropertyChangeSupport() {
+        return changes;
+    }
+
     public void addPropertyChangeListener(PropertyChangeListener l) {
         changes.addPropertyChangeListener(l);
     }
