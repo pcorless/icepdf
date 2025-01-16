@@ -43,6 +43,7 @@ public class StateManager {
     private final CrossReferenceRoot crossReferenceRoot;
 
     private final AtomicInteger nextReferenceNumber;
+    private final AtomicInteger nextImageNumber;
 
     // snapshot of currently saved changes
     private Map<Reference, StateManager.Change> savedChangesSnapshot = new HashMap<>();
@@ -61,6 +62,8 @@ public class StateManager {
         // thus the next available number.
         nextReferenceNumber = new AtomicInteger();
         nextReferenceNumber.set(this.crossReferenceRoot.getNextAvailableReferenceNumber());
+        // named image reference count
+        nextImageNumber = new AtomicInteger((int) (Math.random() * 1000));
     }
 
     /**
@@ -73,6 +76,17 @@ public class StateManager {
         // deleted references and increment the rev number.  For no we
         // keep it simple
         return new Reference(nextReferenceNumber.getAndIncrement(), 0);
+    }
+
+    /**
+     * Gets an image number to be used when generating image references.  The initial value is randomly
+     * generated and incremented for each addition image added to the document.  There should be very little
+     * chance that signature would have the same name.
+     *
+     * @return unique image number for building images names
+     */
+    public int getNextImageNumber() {
+        return nextImageNumber.getAndIncrement();
     }
 
     /**
@@ -206,6 +220,12 @@ public class StateManager {
         return crossReferenceRoot;
     }
 
+    /**
+     * Checks to see if any redaction annotations are present in the changes.  This is used to determine if
+     * the document has redactions that need to be burned in.
+     *
+     * @return true if redactions are present, false otherwise.
+     */
     public boolean hasRedactions() {
         if (changes.isEmpty()) return false;
         Collection<Change> changesValues = changes.values();

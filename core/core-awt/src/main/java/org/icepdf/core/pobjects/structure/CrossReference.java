@@ -16,6 +16,9 @@ public interface CrossReference {
     PObject loadObject(ObjectLoader objectLoader, Reference reference, Name hint)
             throws ObjectStateException, CrossReferenceStateException, IOException;
 
+    int getObjectOffset(ObjectLoader objectLoader, Reference reference)
+            throws ObjectStateException, CrossReferenceStateException, IOException;
+
     CrossReferenceEntry getEntry(Reference reference)
             throws ObjectStateException, CrossReferenceStateException, IOException;
 
