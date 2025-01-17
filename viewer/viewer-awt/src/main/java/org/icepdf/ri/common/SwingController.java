@@ -2391,7 +2391,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                     final String filePath = toker.nextToken();
                     JMenuItem mi = SwingViewBuilder.makeMenuItem(fileName,
                             SwingViewBuilder.buildKeyStroke(KeyEvent.VK_1 + count,
-                             KeyEventConstants.MODIFIER_OPEN_FILE));
+                                    KeyEventConstants.MODIFIER_OPEN_FILE));
                     mi.addActionListener(e -> openFileInSomeViewer(filePath));
                     recentFilesSubMenu.add(mi);
                     count++;
@@ -2452,9 +2452,9 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                         } catch (IOException e) {
                             org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE,
                                     messageBundle, "viewer.dialog.restore.exception.title", "viewer.dialog.restore" +
-                                     ".exception" +
+                                            ".exception" +
                                             ".label", e.getMessage() != null && !e.getMessage().isEmpty() ?
-                                             e.getMessage() :
+                                            e.getMessage() :
                                             e.toString());
                         }
                     } else {
@@ -2479,7 +2479,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
             } catch (Exception e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE, messageBundle
                         , "viewer.dialog.openDocument.exception.title", "viewer.dialog.openDocument.exception.msg",
-                         pathname);
+                        pathname);
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
             } finally {
@@ -2718,7 +2718,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
             } catch (Exception e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE, messageBundle
                         , "viewer.dialog.openDocument.exception.title", "viewer.dialog.openDocument.exception.msg",
-                         fileName);
+                        fileName);
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
             } finally {
@@ -3427,14 +3427,14 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 } else if (!extension.equals(FileExtensionUtils.pdf)) {
                     org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE,
                             messageBundle, "viewer.dialog.saveAs.extensionError.title", "viewer.dialog.saveAs" +
-                             ".extensionError" +
+                                    ".extensionError" +
                                     ".msg", file.getName());
                     saveFileAs(saveMode);
                 } else if (originalFileName != null && originalFileName.equalsIgnoreCase(file.getName())) {
                     // Ensure a unique filename
                     org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE,
                             messageBundle, "viewer.dialog.saveAs.noneUniqueName.title", "viewer.dialog.saveAs" +
-                             ".noneUniqueName" +
+                                    ".noneUniqueName" +
                                     ".msg", file.getName());
                     saveFileAs(saveMode);
                 } else {
@@ -4674,7 +4674,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                         } else {
                             Runnable doSwingWork = () -> org.icepdf.ri.util.Resources.showMessageDialog(viewer,
                                     JOptionPane.INFORMATION_MESSAGE, messageBundle, "viewer.dialog.information" +
-                                     ".copyAll" +
+                                            ".copyAll" +
                                             ".title", "viewer.dialog.information.copyAll.msg",
                                              MAX_SELECT_ALL_PAGE_COUNT);
                             SwingUtilities.invokeLater(doSwingWork);
@@ -4755,7 +4755,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
             String message = e.getMessage() == null || e.getMessage().isEmpty() ? e.toString() : e.getMessage();
             Runnable doSwingWork = () -> org.icepdf.ri.util.Resources.showMessageDialog(viewer,
                     JOptionPane.INFORMATION_MESSAGE, messageBundle, "viewer.dialog.error.exception.title", "viewer" +
-                     ".dialog" +
+                            ".dialog" +
                             ".error.exception.msg", message);
             SwingUtilities.invokeLater(doSwingWork);
             logger.log(Level.FINE, "Error processing action event.", e);
