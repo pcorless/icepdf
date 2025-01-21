@@ -268,11 +268,8 @@ public class ZFontTrueType extends ZSimpleFont {
                         }
                     }
                 }
-                // 'post' table - comment is incorrect but keeping it for now as the post table is an encoding
-                // that we can use. With this little hack we still have issue showing some glyphs correctly.
-                // likely looking at font substitutions corner cases.
+                // still not happy with this, lots of mystery and deception that needs to be figured out.
                 if (gid == 0) {
-                    // still not happy with this, lots of mystery and deception that needs to be figured out.
                     if (encoding != null) {
                         if (cmapWinUnicode != null &&
                                 (encoding.getName().equals(org.icepdf.core.pobjects.fonts.zfont.Encoding.WIN_ANSI_ENCODING_NAME)
@@ -282,6 +279,7 @@ public class ZFontTrueType extends ZSimpleFont {
                             gid = cmapMacRoman.getGlyphId(code);
                         } else if (trueTypeFont.getPostScript() != null &&
                                 trueTypeFont.getPostScript().getGlyphNames() != null) {
+                            // fall back on the 'post' table
                             String[] glyphNames = trueTypeFont.getPostScript().getGlyphNames();
                             // find in index of the glyph name, a cache might be nice have here
                             for (int i = 0; i < glyphNames.length; i++) {
