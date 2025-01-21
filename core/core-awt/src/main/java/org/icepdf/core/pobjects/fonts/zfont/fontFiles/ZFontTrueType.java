@@ -164,7 +164,8 @@ public class ZFontTrueType extends ZSimpleFont {
     }
 
     @Override
-    public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
+    public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent,
+                               Rectangle2D bbox, char[] diff) {
         ZFontTrueType font = new ZFontTrueType(this);
         font.firstCh = firstCh;
         font.ascent = ascent;
@@ -182,7 +183,8 @@ public class ZFontTrueType extends ZSimpleFont {
     }
 
     @Override
-    public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
+    public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent,
+                               float descent, Rectangle2D bbox, char[] diff) {
         ZFontTrueType font = new ZFontTrueType(this);
         font.firstCh = firstCh;
         font.ascent = ascent;
@@ -259,7 +261,8 @@ public class ZFontTrueType extends ZSimpleFont {
                     }
                     // (1, 0) - (Macintosh, Roman)
                     if (gid == 0 && cmapMacRoman != null && name != null) {
-                        Character macCode = org.icepdf.core.pobjects.fonts.zfont.Encoding.macRomanEncoding.getChar(name);
+                        Character macCode =
+                                org.icepdf.core.pobjects.fonts.zfont.Encoding.macRomanEncoding.getChar(name);
                         if (macCode != null) {
                             gid = cmapMacRoman.getGlyphId(macCode);
                         }
@@ -277,6 +280,17 @@ public class ZFontTrueType extends ZSimpleFont {
                             gid = cmapWinUnicode.getGlyphId(code);
                         } else if (encoding.getName().startsWith("Mac") && cmapMacRoman != null) {
                             gid = cmapMacRoman.getGlyphId(code);
+                        } else if (trueTypeFont.getPostScript() != null &&
+                                trueTypeFont.getPostScript().getGlyphNames() != null) {
+                            String[] glyphNames = trueTypeFont.getPostScript().getGlyphNames();
+                            // find in index of the glyph name, a cache might be nice have here
+                            for (int i = 0; i < glyphNames.length; i++) {
+                                if (glyphNames[i].equals(name)) {
+                                    gid = i;
+                                    return gid;
+                                }
+                            }
+                            gid = code;
                         } else {
                             gid = code;
                         }
@@ -341,7 +355,7 @@ public class ZFontTrueType extends ZSimpleFont {
         calculateFontBbox();
     }
 
-    private void calculateFontBbox(){
+    private void calculateFontBbox() {
         if (headerTable != null) {
             Rectangle2D bbox = new Rectangle2D.Float(
                     headerTable.getXMin(), headerTable.getYMin(), headerTable.getXMax(), headerTable.getYMax());
