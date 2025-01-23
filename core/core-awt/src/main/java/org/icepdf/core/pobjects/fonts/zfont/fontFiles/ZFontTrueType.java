@@ -242,7 +242,7 @@ public class ZFontTrueType extends ZSimpleFont {
     }
 
     public int codeToGID(int code) {
-        int gid = 0;
+        int gid = 0; // worried about this, 0 is a valid glyph id for some CID fonts.
         try {
             if (cmapWinSymbol == null) {
                 if (encoding == null) {
@@ -270,28 +270,25 @@ public class ZFontTrueType extends ZSimpleFont {
                 }
                 // still not happy with this, lots of mystery and deception that needs to be figured out.
                 if (gid == 0) {
-                    if (encoding != null) {
-                        if (cmapWinUnicode != null &&
-                                (encoding.getName().equals(org.icepdf.core.pobjects.fonts.zfont.Encoding.WIN_ANSI_ENCODING_NAME)
-                                        || encoding.getName().equals("diff"))) {
-                            gid = cmapWinUnicode.getGlyphId(code);
-                        } else if (encoding.getName().startsWith("Mac") && cmapMacRoman != null) {
-                            gid = cmapMacRoman.getGlyphId(code);
-                        } else if (trueTypeFont.getPostScript() != null &&
-                                trueTypeFont.getPostScript().getGlyphNames() != null) {
-                            // fall back on the 'post' table
-                            String[] glyphNames = trueTypeFont.getPostScript().getGlyphNames();
-                            // find in index of the glyph name, a cache might be nice have here
-                            for (int i = 0; i < glyphNames.length; i++) {
-                                if (glyphNames[i].equals(name)) {
-                                    gid = i;
-                                    return gid;
-                                }
+                    if (encoding != null && cmapWinUnicode != null &&
+                            (encoding.getName().equals(org.icepdf.core.pobjects.fonts.zfont.Encoding.WIN_ANSI_ENCODING_NAME)
+                                    || encoding.getName().equals("diff"))) {
+                        gid = cmapWinUnicode.getGlyphId(code);
+                    } else if (encoding != null && encoding.getName().startsWith("Mac") && cmapMacRoman != null) {
+                        gid = cmapMacRoman.getGlyphId(code);
+                    } else if (trueTypeFont.getPostScript() != null &&
+                            trueTypeFont.getPostScript().getGlyphNames() != null) {
+                        // fall back on the 'post' table
+                        String[] glyphNames = trueTypeFont.getPostScript().getGlyphNames();
+                        // find in index of the glyph name, a cache might be nice have here
+                        for (int i = 0; i < glyphNames.length; i++) {
+                            if (glyphNames[i].equals(name)) {
+                                gid = i;
+                                // hard break out, we found it.
+                                return gid;
                             }
-                            gid = code;
-                        } else {
-                            gid = code;
                         }
+                        gid = code;
                     } else {
                         gid = code;
                     }
@@ -340,7 +337,6 @@ public class ZFontTrueType extends ZSimpleFont {
         } catch (Exception e) {
             logger.log(Level.WARNING, "Error deriving codeToGID", e);
         }
-
         return gid;
     }
 
