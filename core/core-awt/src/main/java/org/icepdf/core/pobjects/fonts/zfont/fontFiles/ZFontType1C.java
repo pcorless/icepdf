@@ -56,6 +56,8 @@ public class ZFontType1C extends ZSimpleFont {
         // use the font's internal encoding.
         if (org.icepdf.core.pobjects.fonts.zfont.Encoding.STANDARD_ENCODING_NAME.equals(encoding.getName())) {
             return cffType1Font.getEncoding().getName(estr);
+        } else if (encoding != null && "diff".equals(encoding.getName())) {
+            return encoding.getName(estr);
         } else {
             return String.valueOf(estr);
         }
@@ -89,7 +91,8 @@ public class ZFontType1C extends ZSimpleFont {
     }
 
     @Override
-    public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
+    public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent,
+                               Rectangle2D bbox, char[] diff) {
         ZFontType1C font = new ZFontType1C(this);
         font.missingWidth = this.missingWidth;
         font.firstCh = firstCh;
@@ -105,7 +108,8 @@ public class ZFontType1C extends ZSimpleFont {
     }
 
     @Override
-    public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
+    public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent,
+                               float descent, Rectangle2D bbox, char[] diff) {
         ZFontType1C font = new ZFontType1C(this);
         font.missingWidth = this.missingWidth;
         font.firstCh = firstCh;
