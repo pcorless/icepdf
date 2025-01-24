@@ -157,6 +157,14 @@ public class OutlineItem extends Dictionary {
         return first;
     }
 
+    public void setFirst(Reference reference) {
+        if (first == null || !first.equals(reference)) {
+            this.first = reference;
+            entries.put(FIRST_KEY, reference);
+            library.getStateManager().addChange(new PObject(this, this.getPObjectReference()));
+        }
+    }
+
     /**
      * Gets a reference to an outline item dictionary representing the last
      * top-level item in the outline.
@@ -171,6 +179,14 @@ public class OutlineItem extends Dictionary {
             }
         }
         return last;
+    }
+
+    public void setLast(Reference reference) {
+        if (last == null || !last.equals(reference)) {
+            this.last = reference;
+            entries.put(LAST_KEY, reference);
+            library.getStateManager().addChange(new PObject(this, this.getPObjectReference()));
+        }
     }
 
     /**
@@ -188,6 +204,18 @@ public class OutlineItem extends Dictionary {
         return next;
     }
 
+    public void setNext(Reference reference) {
+        if (next == null || !next.equals(reference)) {
+            if (reference == null) {
+                entries.remove(NEXT_KEY);
+            } else {
+                entries.put(NEXT_KEY, reference);
+            }
+            this.next = reference;
+            library.getStateManager().addChange(new PObject(this, this.getPObjectReference()));
+        }
+    }
+
     /**
      * Gets the previous outline item at this outline level.
      *
@@ -201,6 +229,18 @@ public class OutlineItem extends Dictionary {
             }
         }
         return prev;
+    }
+
+    public void setPrev(Reference reference) {
+        if (prev == null || !prev.equals(reference)) {
+            if (reference == null) {
+                entries.remove(PREV_KEY);
+            } else {
+                entries.put(PREV_KEY, reference);
+            }
+            this.prev = reference;
+            library.getStateManager().addChange(new PObject(this, this.getPObjectReference()));
+        }
     }
 
     /**
@@ -230,6 +270,14 @@ public class OutlineItem extends Dictionary {
             count = library.getInt(entries, COUNT_KEY);
         }
         return count;
+    }
+
+    public void setCount(int count) {
+        if (count != this.count) {
+            this.count = count;
+            entries.put(COUNT_KEY, count);
+            library.getStateManager().addChange(new PObject(this, this.getPObjectReference()));
+        }
     }
 
     /**
@@ -292,6 +340,7 @@ public class OutlineItem extends Dictionary {
                 }
                 // create the new outline
                 outLineItem = new OutlineItem(library, dictionary);
+                outLineItem.setPObjectReference(nextReference);
 
                 // add the new item to the list of children
                 subItems.add(outLineItem);

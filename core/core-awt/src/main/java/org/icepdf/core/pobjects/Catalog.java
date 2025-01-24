@@ -161,9 +161,11 @@ public class Catalog extends Dictionary {
     public Outlines getOutlines() {
         synchronized (this) {
             if (!outlinesInited) {
-                Object o = library.getObject(entries, OUTLINES_KEY);
+                Reference ref = library.getReference(entries, OUTLINES_KEY);
+                PObject o = library.getPObject(ref);
                 if (o != null) {
-                    outlines = new Outlines(library, (DictionaryEntries) o);
+                    outlines = new Outlines(library, (DictionaryEntries) o.getObject());
+                    outlines.setPObjectReference(o.getReference());
                 }
                 outlinesInited = true;
             }

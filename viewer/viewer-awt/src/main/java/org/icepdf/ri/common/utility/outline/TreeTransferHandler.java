@@ -38,7 +38,6 @@ class TreeTransferHandler extends TransferHandler {
         JTree.DropLocation dropLocation = (JTree.DropLocation) support.getDropLocation();
         JTree tree = (JTree) support.getComponent();
         int dropRow = tree.getRowForPath(dropLocation.getPath());
-        System.out.println("dropRow: " + dropLocation.getPath() + dropRow);
         int[] selRows = tree.getSelectionRows();
         for (int selRow : Objects.requireNonNull(selRows)) {
             if (selRow == dropRow) {

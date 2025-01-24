@@ -65,7 +65,9 @@ public class Outlines extends Dictionary {
     public OutlineItem getRootOutlineItem() {
         if (count == null)
             return null;
-        return new OutlineItem(library, entries);
+        OutlineItem outlineItem = new OutlineItem(library, entries);
+        outlineItem.setPObjectReference(getPObjectReference());
+        return outlineItem;
     }
 
 }

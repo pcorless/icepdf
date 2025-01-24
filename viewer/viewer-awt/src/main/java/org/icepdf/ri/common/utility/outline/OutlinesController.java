@@ -25,7 +25,7 @@ public class OutlinesController implements TreeModelListener, TreeSelectionListe
     private final SwingController viewerController;
     private final JTree outlinesTree;
 
-    // likelyi going to set this to match the document permissions for encryption permissions
+    // likely going to set this to match the document permissions for encryption permissions
     private boolean editable = true;
 
 
@@ -37,24 +37,79 @@ public class OutlinesController implements TreeModelListener, TreeSelectionListe
 
     // todo add editable tree node text
 
-    @Override
-    public void treeNodesChanged(TreeModelEvent treeModelEvent) {
-        System.out.println("treeNodesChanged " + treeModelEvent.toString());
+    // todo tree expansion event to update the branch count, basically toggling -1 for collapsed
+    //  and the actual count for expanded.
+
+    public void updateOutlineItemSate(OutlineItemTreeNode parentNode) {
+        updateParentCount(parentNode);
+        updateParentFirstAndLast(parentNode);
+        updateChildNextAndPrevious(parentNode);
+    }
+
+    // update the parent's child count, will be off if moving in the same node but will be corrected on the remove event
+    private void updateParentCount(OutlineItemTreeNode parentNode) {
+        int childCount = parentNode.getChildCount();
+        OutlineItem outlineItem = parentNode.getOutlineItem();
+        outlineItem.setCount(childCount);
+    }
+
+    private void updateParentFirstAndLast(OutlineItemTreeNode parentNode) {
+        int childCount = parentNode.getChildCount();
+        // get first and last child and update the parent's first and last references
+        if (childCount > 0) {
+            OutlineItemTreeNode firstChild = (OutlineItemTreeNode) parentNode.getChildAt(0);
+            OutlineItemTreeNode lastChild = (OutlineItemTreeNode) parentNode.getChildAt(childCount - 1);
+            OutlineItem outlineItem = parentNode.getOutlineItem();
+            outlineItem.setFirst(firstChild.getOutlineItem().getPObjectReference());
+            outlineItem.setLast(lastChild.getOutlineItem().getPObjectReference());
+        }
+    }
+
+    private void updateChildNextAndPrevious(OutlineItemTreeNode parentNode) {
+        int childCount = parentNode.getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            OutlineItemTreeNode child = (OutlineItemTreeNode) parentNode.getChildAt(i);
+            OutlineItem outlineItem = child.getOutlineItem();
+            if (i == 0) {
+                outlineItem.setPrev(null);
+            } else {
+                OutlineItemTreeNode previousChild = (OutlineItemTreeNode) parentNode.getChildAt(i - 1);
+                outlineItem.setPrev(previousChild.getOutlineItem().getPObjectReference());
+            }
+            if (i == childCount - 1) {
+                // update parent's /Last reference
+                outlineItem.setNext(null);
+            } else {
+                // update parent's /Prev reference
+                OutlineItemTreeNode nextChild = (OutlineItemTreeNode) parentNode.getChildAt(i + 1);
+                outlineItem.setNext(nextChild.getOutlineItem().getPObjectReference());
+            }
+        }
     }
 
     @Override
     public void treeNodesInserted(TreeModelEvent treeModelEvent) {
         System.out.println("treeNodesInserted " + treeModelEvent.toString());
+        TreePath insertTreePath = treeModelEvent.getTreePath();
+        OutlineItemTreeNode parentNode = (OutlineItemTreeNode) insertTreePath.getLastPathComponent();
+        updateOutlineItemSate(parentNode);
+        // todo could queue treeModelEvents as the mememto token for undoing a move.
     }
 
     @Override
     public void treeNodesRemoved(TreeModelEvent treeModelEvent) {
         System.out.println("treeNodesRemoved " + treeModelEvent.toString());
+        TreePath insertTreePath = treeModelEvent.getTreePath();
+        OutlineItemTreeNode parentNode = (OutlineItemTreeNode) insertTreePath.getLastPathComponent();
+        updateOutlineItemSate(parentNode);
+    }
+
+    @Override
+    public void treeNodesChanged(TreeModelEvent treeModelEvent) {
     }
 
     @Override
     public void treeStructureChanged(TreeModelEvent treeModelEvent) {
-        System.out.println("treeStructureChanged " + treeModelEvent.toString());
     }
 
     public void followOutlineItem(OutlineItemTreeNode node) {
