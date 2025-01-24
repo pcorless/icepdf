@@ -649,7 +649,6 @@ public class Page extends Dictionary {
         // paint annotations if available and desired.
         if (annotations != null && paintAnnotations) {
             float totalRotation = getTotalRotation(userRotation);
-            int num = annotations.size();
             Annotation annotation;
             for (Annotation annotation1 : annotations) {
                 annotation = annotation1;
