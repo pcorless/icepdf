@@ -13,14 +13,11 @@ import org.icepdf.ri.common.views.DocumentViewModelImpl;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
 
 import javax.swing.*;
-import javax.swing.event.TreeModelEvent;
-import javax.swing.event.TreeModelListener;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
+import javax.swing.event.*;
 import javax.swing.tree.TreePath;
 import java.awt.*;
 
-public class OutlinesController implements TreeModelListener, TreeSelectionListener {
+public class OutlinesController implements TreeModelListener, TreeSelectionListener, TreeExpansionListener {
 
     private final SwingController viewerController;
     private final JTree outlinesTree;
@@ -33,12 +30,8 @@ public class OutlinesController implements TreeModelListener, TreeSelectionListe
         this.viewerController = viewerController;
         this.outlinesTree = outlinesTree;
         outlinesTree.addTreeSelectionListener(this);
+        outlinesTree.addTreeExpansionListener(this);
     }
-
-    // todo add editable tree node text
-
-    // todo tree expansion event to update the branch count, basically toggling -1 for collapsed
-    //  and the actual count for expanded.
 
     public void updateOutlineItemSate(OutlineItemTreeNode parentNode) {
         updateParentCount(parentNode);
@@ -88,8 +81,23 @@ public class OutlinesController implements TreeModelListener, TreeSelectionListe
     }
 
     @Override
+    public void treeExpanded(TreeExpansionEvent treeExpansionEvent) {
+        TreePath expandedTreePath = treeExpansionEvent.getPath();
+        OutlineItemTreeNode node = (OutlineItemTreeNode) expandedTreePath.getLastPathComponent();
+        OutlineItem outlineItem = node.getOutlineItem();
+        outlineItem.setCount(node.getChildCount());
+    }
+
+    @Override
+    public void treeCollapsed(TreeExpansionEvent treeExpansionEvent) {
+        TreePath collapsedTreePath = treeExpansionEvent.getPath();
+        OutlineItemTreeNode node = (OutlineItemTreeNode) collapsedTreePath.getLastPathComponent();
+        OutlineItem outlineItem = node.getOutlineItem();
+        outlineItem.setCount(-1);
+    }
+
+    @Override
     public void treeNodesInserted(TreeModelEvent treeModelEvent) {
-        System.out.println("treeNodesInserted " + treeModelEvent.toString());
         TreePath insertTreePath = treeModelEvent.getTreePath();
         OutlineItemTreeNode parentNode = (OutlineItemTreeNode) insertTreePath.getLastPathComponent();
         updateOutlineItemSate(parentNode);
@@ -98,7 +106,6 @@ public class OutlinesController implements TreeModelListener, TreeSelectionListe
 
     @Override
     public void treeNodesRemoved(TreeModelEvent treeModelEvent) {
-        System.out.println("treeNodesRemoved " + treeModelEvent.toString());
         TreePath insertTreePath = treeModelEvent.getTreePath();
         OutlineItemTreeNode parentNode = (OutlineItemTreeNode) insertTreePath.getLastPathComponent();
         updateOutlineItemSate(parentNode);
@@ -106,6 +113,12 @@ public class OutlinesController implements TreeModelListener, TreeSelectionListe
 
     @Override
     public void treeNodesChanged(TreeModelEvent treeModelEvent) {
+        Object[] children = treeModelEvent.getChildren();
+        for (Object child : children) {
+            OutlineItemTreeNode node = (OutlineItemTreeNode) child;
+            OutlineItem outlineItem = node.getOutlineItem();
+            outlineItem.setTitle(node.getUserObject().toString());
+        }
     }
 
     @Override

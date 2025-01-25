@@ -20,6 +20,7 @@ import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
 import javax.swing.text.Position;
+import javax.swing.tree.DefaultTreeCellEditor;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
@@ -45,6 +46,10 @@ public class OutlinesTree extends JTree {
         renderer.setClosedIcon(icon);
         renderer.setLeafIcon(icon);
         setCellRenderer(renderer);
+
+        setEditable(true);
+        DefaultTreeCellEditor editor = new DefaultTreeCellEditor(this, renderer);
+        setCellEditor(editor);
 
         setModel(null);
         setRootVisible(true);

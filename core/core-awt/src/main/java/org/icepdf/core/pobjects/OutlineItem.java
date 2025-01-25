@@ -33,8 +33,9 @@ import java.util.List;
  * <p>This class is used mainly by the Outlines class to build the outline
  * hierarchy.  The root node of the outline hierarchy can be accessed through
  * the Outlines class. </p>
- *
+ * <p>
  * {@link org.icepdf.core.pobjects.Outlines}
+ *
  * @since 2.0
  */
 public class OutlineItem extends Dictionary {
@@ -158,6 +159,9 @@ public class OutlineItem extends Dictionary {
     }
 
     public void setFirst(Reference reference) {
+        if (getFirst() == null && reference == null) {
+            return;
+        }
         if (first == null || !first.equals(reference)) {
             this.first = reference;
             entries.put(FIRST_KEY, reference);
@@ -182,6 +186,9 @@ public class OutlineItem extends Dictionary {
     }
 
     public void setLast(Reference reference) {
+        if (getLast() == null && reference == null) {
+            return;
+        }
         if (last == null || !last.equals(reference)) {
             this.last = reference;
             entries.put(LAST_KEY, reference);
@@ -205,6 +212,9 @@ public class OutlineItem extends Dictionary {
     }
 
     public void setNext(Reference reference) {
+        if (getNext() == null && reference == null) {
+            return;
+        }
         if (next == null || !next.equals(reference)) {
             if (reference == null) {
                 entries.remove(NEXT_KEY);
@@ -232,6 +242,9 @@ public class OutlineItem extends Dictionary {
     }
 
     public void setPrev(Reference reference) {
+        if (getPrev() == null && reference == null) {
+            return;
+        }
         if (prev == null || !prev.equals(reference)) {
             if (reference == null) {
                 entries.remove(PREV_KEY);
@@ -294,6 +307,17 @@ public class OutlineItem extends Dictionary {
             }
         }
         return title;
+    }
+
+    public void setTitle(String title) {
+        if (getTitle() == null && title == null) {
+            return;
+        }
+        if (this.title == null || !this.title.equals(title)) {
+            this.title = title;
+            entries.put(TITLE_KEY, new LiteralStringObject(title));
+            library.getStateManager().addChange(new PObject(this, this.getPObjectReference()));
+        }
     }
 
     /**
