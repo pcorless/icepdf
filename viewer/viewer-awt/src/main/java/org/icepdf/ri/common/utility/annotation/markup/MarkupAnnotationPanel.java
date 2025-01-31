@@ -310,12 +310,10 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
 
         ArrayList<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
         String colorLabelString = null;
-        if (colorLabels != null) {
-            for (DragDropColorList.ColorLabel colorLabel : colorLabels) {
-                if (annotation.getColor() != null && colorLabel.getColor().equals(annotation.getColor())) {
-                    colorLabelString = colorLabel.getLabel();
-                    break;
-                }
+        for (DragDropColorList.ColorLabel colorLabel : colorLabels) {
+            if (annotation.getColor() != null && colorLabel.getColor().equals(annotation.getColor())) {
+                colorLabelString = colorLabel.getLabel();
+                break;
             }
         }
         StringBuilder statusLabel = new StringBuilder();

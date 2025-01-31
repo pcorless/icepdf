@@ -5086,7 +5086,7 @@ public class SwingController extends ComponentAdapter
                     "viewer.dialog.error.exception.msg",
                     message);
             SwingUtilities.invokeLater(doSwingWork);
-            logger.log(Level.FINE, "Error processing action event.", e);
+            logger.log(Level.SEVERE, "Error processing action event.", e);
         }
 
         if (!cancelSetFocus) {
@@ -5760,7 +5760,7 @@ public class SwingController extends ComponentAdapter
                 }
                 if (annotationSummaryFrame != null &&
                         annotationSummaryFrame.getAnnotationSummaryPanel() != null) {
-                    annotationSummaryFrame.getAnnotationSummaryPanel().refreshDocumentInstance();
+                    annotationSummaryFrame.refreshDocumentInstance();
                 }
                 break;
             case PropertyConstants.DESTINATION_ADDED:

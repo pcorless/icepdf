@@ -18,13 +18,12 @@ package org.icepdf.ri.common.views;
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
-import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyListener;
+import java.beans.PropertyChangeSupport;
 import java.util.Collection;
-import java.util.Set;
 
 
 /**
@@ -233,6 +232,11 @@ public interface DocumentViewController {
     void firePropertyChange(String event, int oldValue, int newValue);
 
     void firePropertyChange(String event, Object oldValue, Object newValue);
+
+    /**
+     * @return The property change support for this controller
+     */
+    PropertyChangeSupport getPropertyChangeSupport();
 
     void deleteAnnotations(Collection<AnnotationComponent> annotations);
 }
