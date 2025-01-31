@@ -17,14 +17,19 @@ import javax.swing.event.*;
 import javax.swing.tree.TreePath;
 import java.awt.*;
 
+/**
+ * The OutlinesController class is responsible for managing the Outlines (Bookmarks) JTree.  When editing is enabled
+ * a user can drag and drop outline items to new locations in the tree as well as editing the title of the outline item.
+ * Not expansion state will also be updated when the tree is expanded or collapsed.  Changes will persist when the
+ * document is saved.
+ */
 public class OutlinesController implements TreeModelListener, TreeSelectionListener, TreeExpansionListener {
 
     private final SwingController viewerController;
     private final JTree outlinesTree;
 
-    // likely going to set this to match the document permissions for encryption permissions
+    // match the document permissions for encryption permissions
     private boolean editable = true;
-
 
     public OutlinesController(final SwingController viewerController, final JTree outlinesTree) {
         this.viewerController = viewerController;
@@ -34,9 +39,15 @@ public class OutlinesController implements TreeModelListener, TreeSelectionListe
     }
 
     public void updateOutlineItemSate(OutlineItemTreeNode parentNode) {
-        updateParentCount(parentNode);
-        updateParentFirstAndLast(parentNode);
-        updateChildNextAndPrevious(parentNode);
+        if (editable) {
+            updateParentCount(parentNode);
+            updateParentFirstAndLast(parentNode);
+            updateChildNextAndPrevious(parentNode);
+        }
+    }
+
+    public void setEditable(boolean editable) {
+        this.editable = editable;
     }
 
     // update the parent's child count, will be off if moving in the same node but will be corrected on the remove event
@@ -82,18 +93,22 @@ public class OutlinesController implements TreeModelListener, TreeSelectionListe
 
     @Override
     public void treeExpanded(TreeExpansionEvent treeExpansionEvent) {
-        TreePath expandedTreePath = treeExpansionEvent.getPath();
-        OutlineItemTreeNode node = (OutlineItemTreeNode) expandedTreePath.getLastPathComponent();
-        OutlineItem outlineItem = node.getOutlineItem();
-        outlineItem.setCount(node.getChildCount());
+        if (editable) {
+            TreePath expandedTreePath = treeExpansionEvent.getPath();
+            OutlineItemTreeNode node = (OutlineItemTreeNode) expandedTreePath.getLastPathComponent();
+            OutlineItem outlineItem = node.getOutlineItem();
+            outlineItem.setCount(node.getChildCount());
+        }
     }
 
     @Override
     public void treeCollapsed(TreeExpansionEvent treeExpansionEvent) {
-        TreePath collapsedTreePath = treeExpansionEvent.getPath();
-        OutlineItemTreeNode node = (OutlineItemTreeNode) collapsedTreePath.getLastPathComponent();
-        OutlineItem outlineItem = node.getOutlineItem();
-        outlineItem.setCount(-1);
+        if (editable) {
+            TreePath collapsedTreePath = treeExpansionEvent.getPath();
+            OutlineItemTreeNode node = (OutlineItemTreeNode) collapsedTreePath.getLastPathComponent();
+            OutlineItem outlineItem = node.getOutlineItem();
+            outlineItem.setCount(-1);
+        }
     }
 
     @Override
@@ -101,7 +116,7 @@ public class OutlinesController implements TreeModelListener, TreeSelectionListe
         TreePath insertTreePath = treeModelEvent.getTreePath();
         OutlineItemTreeNode parentNode = (OutlineItemTreeNode) insertTreePath.getLastPathComponent();
         updateOutlineItemSate(parentNode);
-        // todo could queue treeModelEvents as the mememto token for undoing a move.
+        // todo could queue treeModelEvents as the memento token for undoing a move.  Will circle back on this some day.
     }
 
     @Override

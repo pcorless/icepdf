@@ -2901,6 +2901,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
             outlinesTree.getModel().addTreeModelListener(outlinesController);
             outlinesTree.setRootVisible(!item.isEmpty());
             outlinesTree.setShowsRootHandles(true);
+            outlinesController.setEditable(havePermissionToModifyDocument());
             if (utilityTabbedPane != null && outlinesScrollPane != null) {
                 if (utilityTabbedPane.indexOfComponent(outlinesScrollPane) > -1) {
                     utilityTabbedPane.setEnabledAt(utilityTabbedPane.indexOfComponent(outlinesScrollPane), true);
@@ -2922,7 +2923,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         if (hideUtilityPane) {
             setUtilityPaneVisible(false);
         } else {
-            setUtilityPaneVisible(showUtilityPane);
+            setUtilityPaneVisible(true);
         }
 
         // apply state value for whether form highlight is being used or not.
