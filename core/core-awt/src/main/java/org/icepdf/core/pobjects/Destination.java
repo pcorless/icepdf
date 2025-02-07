@@ -71,8 +71,8 @@ public class Destination extends Dictionary {
     public static final Name TYPE_FITBH = new Name("FitBH");
     public static final Name TYPE_FITBV = new Name("FitBV");
 
-    // object containing all of the destinations parameters
-    private Object object;
+    // object containing all the destinations parameters
+    private Object rawDest;
 
     // Reference object for destination
     private Reference ref;
@@ -101,7 +101,7 @@ public class Destination extends Dictionary {
      */
     public Destination(Library l, Object h) {
         super(l, null);
-        object = h;
+        rawDest = h;
         init();
     }
 
@@ -113,7 +113,7 @@ public class Destination extends Dictionary {
         destination.add(x);
         destination.add(y);
         destination.add(null);
-        object = destination;
+        rawDest = destination;
         init();
     }
 
@@ -134,32 +134,28 @@ public class Destination extends Dictionary {
         }
         inited = true;
 
-        if (object instanceof Reference) {
-            object = library.getObject((Reference) object);
+        if (rawDest instanceof Reference) {
+            rawDest = library.getObject((Reference) rawDest);
         }
-
         // some name tree's use this format which is closer to an action format for defining a destination.
-        if (object instanceof HashMap) {
-            object = ((HashMap<?, ?>) object).get(GoToAction.DESTINATION_KEY);
+        else if (rawDest instanceof HashMap) {
+            rawDest = ((HashMap<?, ?>) rawDest).get(GoToAction.DESTINATION_KEY);
+        } else if (rawDest instanceof Destination) {
+            rawDest = ((Destination) rawDest).getEncodedDestination();
         }
-        if (object instanceof Destination) {
-            object = ((Destination) object).getEncodedDestination();
-        }
-
         // if vector we have found /XYZ
-        if (object instanceof List) {
-            parse((List) object);
+        else if (rawDest instanceof List) {
+            parse((List) rawDest);
         }
-
         // find named Destinations, this however is incomplete
         // @see #parser for more detailed information
-        else if (object instanceof Name || object instanceof StringObject) {
+        else if (rawDest instanceof Name || rawDest instanceof StringObject) {
             // Make sure to decrypt this attribute
-            if (object instanceof StringObject) {
-                StringObject stringObject = (StringObject) object;
+            if (rawDest instanceof StringObject) {
+                StringObject stringObject = (StringObject) rawDest;
                 namedDestination = stringObject.getDecryptedLiteralString(library.getSecurityManager());
             } else {
-                namedDestination = object.toString();
+                namedDestination = rawDest.toString();
             }
             boolean found = false;
             Catalog catalog = library.getCatalog();
@@ -195,7 +191,7 @@ public class Destination extends Dictionary {
                 if (!found) {
                     Dictionary dests = catalog.getDestinations();
                     if (dests != null) {
-                        Object ob = dests.getObject((Name) object);
+                        Object ob = dests.getObject((Name) rawDest);
                         // list of destinations name->Dest pairs.
                         if (ob instanceof List) {
                             parse((List) ob);
@@ -218,7 +214,7 @@ public class Destination extends Dictionary {
      * @return associated destination object, ref, dest array or named destination.
      */
     public Object getObject() {
-        return object;
+        return rawDest;
     }
 
     /**
@@ -341,6 +337,13 @@ public class Destination extends Dictionary {
         init();
     }
 
+    public void setNamedDestination(StringObject dest) {
+        rawDest = dest;
+        // re-parse as object should point to a new destination.
+        inited = false;
+        init();
+    }
+
     /**
      * Sets the destination syntax to the specified value.  The Destination
      * object clears the named destination and re initializes itself after the
@@ -350,28 +353,28 @@ public class Destination extends Dictionary {
      */
     public void setDestinationSyntax(List destinationSyntax) {
         // clear named destination
-        object = destinationSyntax;
+        rawDest = destinationSyntax;
         // re-parse as object should point to a new destination.
         inited = false;
         init();
     }
 
     public DictionaryEntries getRawDestination() {
-        if (object instanceof List) {
+        if (rawDest instanceof List) {
             DictionaryEntries map = new DictionaryEntries();
-            map.put(D_KEY, object);
+            map.put(D_KEY, rawDest);
             return map;
-        } else if (object instanceof DictionaryEntries) {
-            return (DictionaryEntries) object;
+        } else if (rawDest instanceof DictionaryEntries) {
+            return (DictionaryEntries) rawDest;
         }
         return null;
     }
 
     public List getRawListDestination() {
-        if (object instanceof List) {
-            return (List) object;
-        } else if (object instanceof HashMap) {
-            return (List) ((HashMap<?, ?>) object).get(D_KEY);
+        if (rawDest instanceof List) {
+            return (List) rawDest;
+        } else if (rawDest instanceof HashMap) {
+            return (List) ((HashMap<?, ?>) rawDest).get(D_KEY);
         }
         return null;
     }
@@ -577,7 +580,7 @@ public class Destination extends Dictionary {
      */
     public Object getEncodedDestination() {
         // build and return a fector of changed valued.
-        if (object instanceof List) {
+        if (rawDest instanceof List) {
             List<Object> v = new ArrayList<>(7);
             if (ref != null) {
                 v.add(ref);

@@ -22,7 +22,7 @@ import org.icepdf.core.util.Library;
 
 /**
  * The class <code>GoToAction</code> represents the Action type "GoTo".  It's
- * purpose when called to to navigate the a destination in the document
+ * purpose when called is to navigate to a destination in the document
  * specified by this action.
  *
  * @since 2.6
@@ -44,7 +44,7 @@ public class GoToAction extends Action {
     /**
      * Set the destination and adds the new data to the action's dictionary
      *
-     * @param destination new destionat, replace old values.
+     * @param destination new destination, replace old values.
      */
     public void setDestination(Destination destination) {
         entries.put(DESTINATION_KEY, destination.getObject());

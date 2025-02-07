@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects;
 
 import org.icepdf.core.pobjects.actions.Action;
+import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
@@ -134,9 +135,10 @@ public class OutlineItem extends Dictionary {
     public Action getAction() {
         // grab the action attribute
         if (action == null) {
-            Object obj = library.getObject(entries, A_KEY);
-            if (obj instanceof DictionaryEntries) {
-                action = new org.icepdf.core.pobjects.actions.Action(library, (DictionaryEntries) obj);
+            DictionaryEntries ref = library.getDictionary(entries, A_KEY);
+            if (ref != null) {
+                Action.buildAction(library, ref);
+                action = Action.buildAction(library, ref);
             }
         }
         return action;
@@ -331,6 +333,16 @@ public class OutlineItem extends Dictionary {
             Object obj = library.getObject(entries, DEST_KEY);
             if (obj != null) {
                 dest = new Destination(library, obj);
+            }
+            if (dest == null && getAction() != null) {
+                Action action = getAction();
+                if (action instanceof GoToAction) {
+                    dest = ((GoToAction) action).getDestination();
+                } else {
+                    Library library = action.getLibrary();
+                    DictionaryEntries entries = action.getEntries();
+                    dest = new Destination(library, library.getObject(entries, Destination.D_KEY));
+                }
             }
         }
         return dest;

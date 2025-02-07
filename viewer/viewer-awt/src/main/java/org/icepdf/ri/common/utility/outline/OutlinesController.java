@@ -1,13 +1,9 @@
 package org.icepdf.ri.common.utility.outline;
 
 import org.icepdf.core.pobjects.Destination;
-import org.icepdf.core.pobjects.DictionaryEntries;
-import org.icepdf.core.pobjects.NamedDestinations;
 import org.icepdf.core.pobjects.OutlineItem;
 import org.icepdf.core.pobjects.actions.Action;
-import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.URIAction;
-import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.DocumentViewModelImpl;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
@@ -16,6 +12,8 @@ import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.tree.TreePath;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 /**
  * The OutlinesController class is responsible for managing the Outlines (Bookmarks) JTree.  When editing is enabled
@@ -23,7 +21,8 @@ import java.awt.*;
  * Not expansion state will also be updated when the tree is expanded or collapsed.  Changes will persist when the
  * document is saved.
  */
-public class OutlinesController implements TreeModelListener, TreeSelectionListener, TreeExpansionListener {
+public class OutlinesController extends MouseAdapter implements TreeModelListener, TreeSelectionListener,
+        TreeExpansionListener {
 
     private final SwingController viewerController;
     private final JTree outlinesTree;
@@ -36,9 +35,10 @@ public class OutlinesController implements TreeModelListener, TreeSelectionListe
         this.outlinesTree = outlinesTree;
         outlinesTree.addTreeSelectionListener(this);
         outlinesTree.addTreeExpansionListener(this);
+        outlinesTree.addMouseListener(this);
     }
 
-    public void updateOutlineItemSate(OutlineItemTreeNode parentNode) {
+    public void updateOutlineItemState(OutlineItemTreeNode parentNode) {
         if (editable) {
             updateParentCount(parentNode);
             updateParentFirstAndLast(parentNode);
@@ -92,6 +92,21 @@ public class OutlinesController implements TreeModelListener, TreeSelectionListe
     }
 
     @Override
+    public void mouseClicked(MouseEvent mouseEvent) {
+        int x = mouseEvent.getX();
+        int y = mouseEvent.getY();
+        int row = outlinesTree.getRowForLocation(x, y);
+        TreePath path = outlinesTree.getPathForRow(row);
+        if (path != null) {
+            OutlineItemTreeNode node = (OutlineItemTreeNode) path.getLastPathComponent();
+            if ((mouseEvent.getButton() == MouseEvent.BUTTON3 || mouseEvent.getButton() == MouseEvent.BUTTON2)) {
+                OutlinesPopupMenu contextMenu = new OutlinesPopupMenu(viewerController, outlinesTree, node);
+                contextMenu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
+            }
+        }
+    }
+
+    @Override
     public void treeExpanded(TreeExpansionEvent treeExpansionEvent) {
         if (editable) {
             TreePath expandedTreePath = treeExpansionEvent.getPath();
@@ -115,7 +130,7 @@ public class OutlinesController implements TreeModelListener, TreeSelectionListe
     public void treeNodesInserted(TreeModelEvent treeModelEvent) {
         TreePath insertTreePath = treeModelEvent.getTreePath();
         OutlineItemTreeNode parentNode = (OutlineItemTreeNode) insertTreePath.getLastPathComponent();
-        updateOutlineItemSate(parentNode);
+        updateOutlineItemState(parentNode);
         // todo could queue treeModelEvents as the memento token for undoing a move.  Will circle back on this some day.
     }
 
@@ -123,7 +138,7 @@ public class OutlinesController implements TreeModelListener, TreeSelectionListe
     public void treeNodesRemoved(TreeModelEvent treeModelEvent) {
         TreePath insertTreePath = treeModelEvent.getTreePath();
         OutlineItemTreeNode parentNode = (OutlineItemTreeNode) insertTreePath.getLastPathComponent();
-        updateOutlineItemSate(parentNode);
+        updateOutlineItemState(parentNode);
     }
 
     @Override
@@ -173,33 +188,18 @@ public class OutlinesController implements TreeModelListener, TreeSelectionListe
             // capture the action if no destination is found and point to the
             // actions destination information
             Destination dest = outlineItem.getDest();
-            if (outlineItem.getAction() != null) {
+            if (dest == null && outlineItem.getAction() != null) {
                 Action action = outlineItem.getAction();
-                if (action instanceof GoToAction) {
-                    dest = ((GoToAction) action).getDestination();
-                } else if (action instanceof URIAction) {
+                if (action instanceof URIAction) {
                     BareBonesBrowserLaunch.openURL(
                             ((URIAction) action).getURI());
-                } else {
-                    Library library = action.getLibrary();
-                    DictionaryEntries entries = action.getEntries();
-                    dest = new Destination(library, library.getObject(entries, Destination.D_KEY));
-                }
-            } else if (dest.getNamedDestination() != null) {
-                // building the namedDestination tree can be very time-consuming, so we need
-                // update the icons accordingly.
-                NamedDestinations namedDestinations = viewerController.getDocument().getCatalog().getDestinations();
-                if (namedDestinations != null) {
-                    dest = namedDestinations.getDestination(dest.getNamedDestination());
                 }
             }
-
             // Process the destination information
-            if (dest == null)
-                return;
-
-            // let the document view controller resolve the destination
-            viewerController.getDocumentViewController().setDestinationTarget(dest);
+            if (dest != null) {
+                // let the document view controller resolve the destination
+                viewerController.getDocumentViewController().setDestinationTarget(dest);
+            }
         } finally {
             // set the icon back to the pointer
             viewerController.setDisplayTool(oldTool);
