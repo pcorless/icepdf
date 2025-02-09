@@ -348,6 +348,36 @@ public class OutlineItem extends Dictionary {
         return dest;
     }
 
+    public void setDest(Destination destination) {
+        if (getDest() == null && destination == null) {
+            return;
+        }
+        if (dest == null || !dest.equals(destination)) {
+            Object obj = library.getObjectReference(entries, DEST_KEY);
+            // check if we only need to update the referenced destination
+            if (obj != null) {
+                entries.put(DEST_KEY, destination.getPObjectReference());
+                library.getStateManager().addChange(new PObject(this, destination.getPObjectReference()));
+            }
+            // otherwise we need to update the destination as an inline string or array
+            else {
+                if (destination.getNamedDestination() != null) {
+                    entries.put(DEST_KEY, new LiteralStringObject(destination.getNamedDestination()));
+                } else {
+                    entries.put(DEST_KEY, destination.getRawListDestination());
+                }
+                library.getStateManager().addChange(new PObject(this, this.getPObjectReference()));
+            }
+            // clear any goto action that might be present
+            if (getAction() != null) {
+                entries.remove(A_KEY);
+                action = null;
+            }
+            // set to null so it will be fetched using the new model.
+            dest = null;
+        }
+    }
+
     /**
      * Utility method for loading all children of this outline.  The main purpose
      * of this is to make sure the count is accurate.

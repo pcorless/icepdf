@@ -35,9 +35,8 @@ public class OutlineDialog extends EscapeJDialog implements ItemListener, TreeSe
     private final Controller controller;
     private final OutlineItemTreeNode outlineItemTreeNode;
 
-    private String namedDestination;
-    private Destination implicitDestination;
-    private Destination goToDestination;
+    // copy of the destination for editing
+    private Destination outlineDestination;
 
     private JTextField titleTextField;
     private JComboBox<ValueLabelItem> destinationTypeComboBox;
@@ -56,18 +55,10 @@ public class OutlineDialog extends EscapeJDialog implements ItemListener, TreeSe
         this.outlineItemTreeNode = outlineItemTreeNode;
         this.messageBundle = this.controller.getMessageBundle();
 
-        // sniff out a reference to the destination
-        // outlineItemTreeNode.getDestinationType(): enum  // use to split UI functionality
-        // outlineItemTreeNode.isDestinationEditable(): boolean  // avoid url launches.
-        // outlineItemTreeNode.getDestination();
-        // named -> destination
-
-        // implicit destination
-
-        // action -> gotAction -> destination
-
-        // does the lifting of inserting the destination into the outline item
-        // outlineItem.setDesitnation(destination | namedDestination);
+        // copy the destination for editing
+        Destination destination = outlineItemTreeNode.getOutlineItem().getDest();
+        outlineDestination = new Destination(destination.getLibrary(),
+                destination.getEntries().clone());
 
         buildGui();
 
@@ -77,15 +68,20 @@ public class OutlineDialog extends EscapeJDialog implements ItemListener, TreeSe
     @Override
     public void actionPerformed(ActionEvent actionEvent) {
         if (actionEvent.getSource() == okButton) {
-            // save the state of the outlineItem
-            // dest will always be set the destination, even if it's named or an action
-            // steps: 1. clear actions regardless,
-            //        2. any edits to the dest[] will clear the named destination
-            //        3. dest[] will match the named destination ref.
-
+            // check the state of the destination type to see what should be updated.
+            if (destinationTypeComboBox.getSelectedIndex() == NAMED_DESTINATION_INDEX) {
+                // update the named destination
+                outlineItemTreeNode.getOutlineItem().setDest(outlineDestination);
+            } else {
+                // get the updated destination
+                Destination destination = implicitDestinationPanel.getDestination(outlineDestination.getLibrary());
+                destination.clearNamedDestination();
+                outlineItemTreeNode.getOutlineItem().setDest(destination);
+            }
             setVisible(false);
             dispose();
         } else if (actionEvent.getSource() == cancelButton) {
+            outlineDestination = null;
             setVisible(false);
             dispose();
         }
@@ -97,9 +93,8 @@ public class OutlineDialog extends EscapeJDialog implements ItemListener, TreeSe
         TreePath selectedPath = nameJTree.getSelectionPath();
         if (selectedPath != null) {
             NameTreeNode selectedNode = (NameTreeNode) selectedPath.getLastPathComponent();
-            Destination dest = outlineItemTreeNode.getOutlineItem().getDest();
-            dest.setNamedDestination(selectedNode.getName());
-            implicitDestinationPanel.setDestination(dest);
+            outlineDestination.setNamedDestination(selectedNode.getName());
+            implicitDestinationPanel.setDestination(outlineDestination);
         }
     }
 

@@ -332,14 +332,21 @@ public class Destination extends Dictionary {
      */
     public void setNamedDestination(String dest) {
         namedDestination = dest;
-        // re-parse as object should point to a new destination.
+        // reparse as object should point to a new destination.
         inited = false;
         init();
     }
 
-    public void setNamedDestination(StringObject dest) {
-        rawDest = dest;
-        // re-parse as object should point to a new destination.
+    public void setNamedDestination(StringObject namedDestination) {
+        rawDest = namedDestination;
+        // reparse as object should point to a new destination.
+        inited = false;
+        init();
+    }
+
+    public void clearNamedDestination() {
+        namedDestination = null;
+        // reparse as object should point to a new destination.
         inited = false;
         init();
     }
