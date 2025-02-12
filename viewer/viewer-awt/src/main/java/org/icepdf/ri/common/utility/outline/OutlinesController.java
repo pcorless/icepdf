@@ -33,9 +33,6 @@ public class OutlinesController extends MouseAdapter implements TreeModelListene
     public OutlinesController(final SwingController viewerController, final JTree outlinesTree) {
         this.viewerController = viewerController;
         this.outlinesTree = outlinesTree;
-        outlinesTree.addTreeSelectionListener(this);
-        outlinesTree.addTreeExpansionListener(this);
-        outlinesTree.addMouseListener(this);
     }
 
     public void updateOutlineItemState(OutlineItemTreeNode parentNode) {
@@ -48,6 +45,17 @@ public class OutlinesController extends MouseAdapter implements TreeModelListene
 
     public void setEditable(boolean editable) {
         this.editable = editable;
+        if (editable) {
+            outlinesTree.addMouseListener(this);
+            outlinesTree.addTreeSelectionListener(this);
+            outlinesTree.addTreeExpansionListener(this);
+            outlinesTree.setEditable(true);
+        } else {
+            outlinesTree.removeMouseListener(this);
+            outlinesTree.removeTreeSelectionListener(this);
+            outlinesTree.removeTreeExpansionListener(this);
+            outlinesTree.setEditable(false);
+        }
     }
 
     // update the parent's child count, will be off if moving in the same node but will be corrected on the remove event

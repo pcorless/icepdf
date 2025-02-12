@@ -317,7 +317,7 @@ public class OutlineItem extends Dictionary {
         }
         if (this.title == null || !this.title.equals(title)) {
             this.title = title;
-            entries.put(TITLE_KEY, new LiteralStringObject(title));
+            entries.put(TITLE_KEY, new LiteralStringObject(title, this.pObjectReference));
             library.getStateManager().addChange(new PObject(this, this.getPObjectReference()));
         }
     }
@@ -362,7 +362,8 @@ public class OutlineItem extends Dictionary {
             // otherwise we need to update the destination as an inline string or array
             else {
                 if (destination.getNamedDestination() != null) {
-                    entries.put(DEST_KEY, new LiteralStringObject(destination.getNamedDestination()));
+                    entries.put(DEST_KEY, new LiteralStringObject(destination.getNamedDestination(),
+                            this.pObjectReference));
                 } else {
                     entries.put(DEST_KEY, destination.getRawListDestination());
                 }

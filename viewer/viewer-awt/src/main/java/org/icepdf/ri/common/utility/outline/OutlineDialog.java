@@ -2,6 +2,9 @@ package org.icepdf.ri.common.utility.outline;
 
 import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.NameTree;
+import org.icepdf.core.pobjects.OutlineItem;
+import org.icepdf.core.pobjects.PObject;
+import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.EscapeJDialog;
 import org.icepdf.ri.common.NameJTree;
 import org.icepdf.ri.common.NameTreeNode;
@@ -17,13 +20,11 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
+import java.awt.event.*;
 import java.util.ResourceBundle;
 
-public class OutlineDialog extends EscapeJDialog implements ItemListener, TreeSelectionListener, ActionListener {
+public class OutlineDialog extends EscapeJDialog implements ItemListener, TreeSelectionListener, ActionListener,
+        FocusListener {
 
     private final ResourceBundle messageBundle;
 
@@ -33,10 +34,13 @@ public class OutlineDialog extends EscapeJDialog implements ItemListener, TreeSe
     private static final int NAMED_DESTINATION_INDEX = 1;
 
     private final Controller controller;
+    private boolean isNewOutlineItem = false;
     private final OutlineItemTreeNode outlineItemTreeNode;
 
     // copy of the destination for editing
+    private JTree parentTree;
     private Destination outlineDestination;
+    private String title;
 
     private JTextField titleTextField;
     private JComboBox<ValueLabelItem> destinationTypeComboBox;
@@ -48,17 +52,30 @@ public class OutlineDialog extends EscapeJDialog implements ItemListener, TreeSe
     private GridBagConstraints constraints;
 
 
-    public OutlineDialog(Controller controller, OutlineItemTreeNode outlineItemTreeNode)
+    public OutlineDialog(Controller controller, JTree parentTree, OutlineItemTreeNode outlineItemTreeNode) {
+        this(controller, parentTree, outlineItemTreeNode, false);
+    }
+
+    public OutlineDialog(Controller controller, JTree parentTree, OutlineItemTreeNode outlineItemTreeNode,
+                         boolean isNewOutlineItem)
             throws HeadlessException {
         super(controller.getViewerFrame());
         this.controller = controller;
+        this.parentTree = parentTree;
+        this.isNewOutlineItem = isNewOutlineItem;
         this.outlineItemTreeNode = outlineItemTreeNode;
         this.messageBundle = this.controller.getMessageBundle();
 
         // copy the destination for editing
         Destination destination = outlineItemTreeNode.getOutlineItem().getDest();
-        outlineDestination = new Destination(destination.getLibrary(),
-                destination.getEntries().clone());
+        if (destination != null) {
+            outlineDestination = new Destination(destination.getLibrary(),
+                    destination.getEntries().clone());
+        } else {
+            outlineDestination = new Destination(controller.getDocument().getCatalog().getLibrary(), "");
+            outlineItemTreeNode.getOutlineItem().setDest(outlineDestination);
+        }
+        title = outlineItemTreeNode.getOutlineItem().getTitle();
 
         buildGui();
 
@@ -78,12 +95,40 @@ public class OutlineDialog extends EscapeJDialog implements ItemListener, TreeSe
                 destination.clearNamedDestination();
                 outlineItemTreeNode.getOutlineItem().setDest(destination);
             }
+            // update the title
+            outlineItemTreeNode.getOutlineItem().setTitle(title);
+            outlineItemTreeNode.setUserObject(title);
+
+            if (isNewOutlineItem) {
+                // add the new node to the tree
+                Library library = controller.getDocument().getCatalog().getLibrary();
+                OutlineItem outline = outlineItemTreeNode.getOutlineItem();
+                library.getStateManager().addChange(new PObject(outline, outline.getPObjectReference()));
+            }
+
+            // update the tree model
+            DefaultTreeModel model = (DefaultTreeModel) parentTree.getModel();
+            model.nodeChanged(outlineItemTreeNode);
             setVisible(false);
             dispose();
         } else if (actionEvent.getSource() == cancelButton) {
             outlineDestination = null;
             setVisible(false);
             dispose();
+        } else if (actionEvent.getSource() == titleTextField) {
+            title = titleTextField.getText();
+        }
+    }
+
+    @Override
+    public void focusGained(FocusEvent focusEvent) {
+
+    }
+
+    @Override
+    public void focusLost(FocusEvent focusEvent) {
+        if (focusEvent.getSource() == titleTextField) {
+            title = titleTextField.getText();
         }
     }
 
@@ -131,15 +176,17 @@ public class OutlineDialog extends EscapeJDialog implements ItemListener, TreeSe
         addGB(outlinePanel, titleLabel, 0, 0, 1, 1);
         // title input
         titleTextField = new JTextField();
-        titleTextField.setColumns(30);
+        titleTextField.setColumns(35);
+        titleTextField.addActionListener(this);
+        titleTextField.addFocusListener(this);
         constraints.insets = new Insets(0, 0, 5, 0);
         constraints.anchor = GridBagConstraints.WEST;
         addGB(outlinePanel, titleTextField, 1, 0, 1, 1);
 
         // destination type compo
         buildDestinationTypeComboBox();
-        JLabel destinationLabel = new JLabel(messageBundle.getString("viewer.utilityPane.outline.destination.type" +
-                ".label"));
+        JLabel destinationLabel = new JLabel(
+                messageBundle.getString("viewer.utilityPane.outline.destination.type.label"));
         constraints.insets = new Insets(0, 0, 5, 5);
         constraints.anchor = GridBagConstraints.WEST;
         addGB(outlinePanel, destinationLabel, 0, 1, 1, 1);
@@ -150,7 +197,7 @@ public class OutlineDialog extends EscapeJDialog implements ItemListener, TreeSe
         destinationTypesCards.add(implicitDestinationPanel, IMPLICIT_DESTINATION);
         destinationTypesCards.add(buildNameTreePanel(), NAMED_DESTINATION);
 
-        // todo put in helper method
+        // set up the two destination panels types.
         titleTextField.setText(outlineItemTreeNode.getOutlineItem().getTitle());
         Destination des = outlineItemTreeNode.getOutlineItem().getDest();
         CardLayout cl = (CardLayout) destinationTypesCards.getLayout();

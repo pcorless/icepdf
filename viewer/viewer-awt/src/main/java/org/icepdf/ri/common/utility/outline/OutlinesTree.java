@@ -47,7 +47,6 @@ public class OutlinesTree extends JTree {
         renderer.setLeafIcon(icon);
         setCellRenderer(renderer);
 
-        setEditable(true);
         DefaultTreeCellEditor editor = new DefaultTreeCellEditor(this, renderer);
         setCellEditor(editor);
 

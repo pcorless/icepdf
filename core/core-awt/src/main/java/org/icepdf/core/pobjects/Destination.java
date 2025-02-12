@@ -149,7 +149,7 @@ public class Destination extends Dictionary {
         }
         // find named Destinations, this however is incomplete
         // @see #parser for more detailed information
-        else if (rawDest instanceof Name || rawDest instanceof StringObject) {
+        else if (rawDest instanceof Name || rawDest instanceof StringObject || rawDest instanceof String) {
             // Make sure to decrypt this attribute
             if (rawDest instanceof StringObject) {
                 StringObject stringObject = (StringObject) rawDest;

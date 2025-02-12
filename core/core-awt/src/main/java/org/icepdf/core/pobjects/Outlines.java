@@ -70,4 +70,11 @@ public class Outlines extends Dictionary {
         return outlineItem;
     }
 
+    public static OutlineItem createNewOutlineItem(Library library) {
+        OutlineItem outlineItem = new OutlineItem(library, new DictionaryEntries());
+        Reference reference = library.getStateManager().getNewReferenceNumber();
+        outlineItem.setPObjectReference(reference);
+        return outlineItem;
+    }
+
 }

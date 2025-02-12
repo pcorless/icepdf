@@ -182,7 +182,11 @@ public class ImplicitDestinationPanel extends JPanel implements ItemListener, An
 
     public void setDestination(Destination destination) {
         applyTypeValues(destination, null);
-        enableFitTypeFields(destination.getType());
+        Name destType = destination.getType();
+        if (destType == null) {
+            destType = Destination.TYPE_XYZ;
+        }
+        enableFitTypeFields(destType);
         // apply page
         Reference ref = destination.getPageReference();
         if (ref != null) {

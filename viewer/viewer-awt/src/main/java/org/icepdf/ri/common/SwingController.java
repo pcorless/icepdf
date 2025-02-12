@@ -2825,6 +2825,8 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         // selected the utility tab defined by the page mode key
         if (showUtilityPane) {
             Name pageMode = catalog.getPageMode();
+            utilityTabbedPane.setSelectedComponent(outlinesScrollPane);
+            showOutlinePanel(true);
             if (pageMode.equals(Catalog.PAGE_MODE_USE_OUTLINES_VALUE) && utilityTabbedPane.indexOfComponent(outlinesScrollPane) > 0) {
                 utilityTabbedPane.setSelectedComponent(outlinesScrollPane);
             } else if (pageMode.equals(Catalog.PAGE_MODE_OPTIONAL_CONTENT_VALUE) && utilityTabbedPane.indexOfComponent(layersPanel) > 0) {
