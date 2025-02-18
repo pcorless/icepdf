@@ -181,6 +181,7 @@ public class ImplicitDestinationPanel extends JPanel implements ItemListener, An
     }
 
     public void setDestination(Destination destination) {
+        if (destination == null) return;
         applyTypeValues(destination, null);
         Name destType = destination.getType();
         if (destType == null) {
@@ -429,7 +430,7 @@ public class ImplicitDestinationPanel extends JPanel implements ItemListener, An
     }
 
     /**
-     * Utility for parsing input text coordinates into valide numbers used
+     * Utility for parsing input text coordinates into valid numbers used
      * for destinations.  If an empty string or Na, we return a null value
      * which is valid in post script.
      *

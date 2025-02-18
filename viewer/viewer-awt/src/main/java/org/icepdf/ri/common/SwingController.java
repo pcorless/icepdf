@@ -163,6 +163,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
     private JMenuItem selectAllMenuItem;
     private JMenuItem deselectAllMenuItem;
     private JMenuItem fitActualSizeMenuItem;
+    private JMenuItem insertOutlineMenuItem;
     private JMenuItem fitPageMenuItem;
     private JMenuItem fitWidthMenuItem;
     private JMenuItem fullScreenMenuItem;
@@ -640,6 +641,11 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
      */
     public void setFitActualSizeMenuItem(JMenuItem mi) {
         fitActualSizeMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    public void setInsertOutlineMenuItem(JMenuItem mi) {
+        insertOutlineMenuItem = mi;
         mi.addActionListener(this);
     }
 
@@ -1435,6 +1441,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         outlinesTree = tree;
         outlinesScrollPane = scroll;
         outlinesController = new OutlinesController(this, outlinesTree);
+        outlinesScrollPane.addMouseListener(outlinesController);
     }
 
     public JTree getOutlineTree() {
@@ -2895,27 +2902,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         applyViewerPreferences(catalog, propertiesManager);
 
         // Only show utility panel if there is an outline or layers
-        OutlineItem item = null;
-        Outlines outlines = document.getCatalog().getOutlines();
-        if (outlines != null && outlinesTree != null) item = outlines.getRootOutlineItem();
-        if (item != null) {
-            outlinesTree.setModel(new DefaultTreeModel(new OutlineItemTreeNode(item)));
-            outlinesTree.getModel().addTreeModelListener(outlinesController);
-            outlinesTree.setRootVisible(!item.isEmpty());
-            outlinesTree.setShowsRootHandles(true);
-            outlinesController.setEditable(havePermissionToModifyDocument());
-            if (utilityTabbedPane != null && outlinesScrollPane != null) {
-                if (utilityTabbedPane.indexOfComponent(outlinesScrollPane) > -1) {
-                    utilityTabbedPane.setEnabledAt(utilityTabbedPane.indexOfComponent(outlinesScrollPane), true);
-                }
-            }
-        } else {
-            if (utilityTabbedPane != null && outlinesScrollPane != null) {
-                if (utilityTabbedPane.indexOfComponent(outlinesScrollPane) > -1) {
-                    utilityTabbedPane.setEnabledAt(utilityTabbedPane.indexOfComponent(outlinesScrollPane), false);
-                }
-            }
-        }
+        initializeOutline();
 
         // showUtilityPane will be true the document has an outline, but the
         // visibility can be over-ridden with the property application.utilitypane.show
@@ -3505,6 +3492,14 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         return null;
     }
 
+    protected void enableUtilityTabbedPanel(JComponent tabbedPanel) {
+        if (utilityTabbedPane != null && tabbedPanel != null) {
+            if (utilityTabbedPane.indexOfComponent(tabbedPanel) > -1) {
+                utilityTabbedPane.setEnabledAt(utilityTabbedPane.indexOfComponent(tabbedPanel), true);
+            }
+        }
+    }
+
     /**
      * Utility method for exporting all of a Document's text to a text file.
      * Shows a file save dialog for the user to select where to save the
@@ -3698,6 +3693,33 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 messageBundle);
         annotationPropertiesDialog.setAnnotationComponent(annotationComponent);
         annotationPropertiesDialog.setVisible(true);
+    }
+
+    protected void initializeOutline() {
+        OutlineItem item = null;
+        Outlines outlines = document.getCatalog().getOutlines();
+        insertOutlineMenuItem.setEnabled(outlines == null);
+
+        if (outlines != null && outlinesTree != null) item = outlines.getRootOutlineItem();
+
+        if (item != null) {
+            outlinesTree.setModel(new DefaultTreeModel(new OutlineItemTreeNode(item)));
+            outlinesTree.getModel().addTreeModelListener(outlinesController);
+            outlinesTree.setRootVisible(!item.isEmpty());
+            outlinesTree.setShowsRootHandles(true);
+            outlinesController.setEditable(havePermissionToModifyDocument());
+            if (utilityTabbedPane != null && outlinesScrollPane != null) {
+                if (utilityTabbedPane.indexOfComponent(outlinesScrollPane) > -1) {
+                    utilityTabbedPane.setEnabledAt(utilityTabbedPane.indexOfComponent(outlinesScrollPane), true);
+                }
+            }
+        } else {
+            if (utilityTabbedPane != null && outlinesScrollPane != null) {
+                if (utilityTabbedPane.indexOfComponent(outlinesScrollPane) > -1) {
+                    utilityTabbedPane.setEnabledAt(utilityTabbedPane.indexOfComponent(outlinesScrollPane), false);
+                }
+            }
+        }
     }
 
     /**
@@ -4746,6 +4768,12 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                         showPageFromTextField();
                     } else if (source == annotationSummaryButton || source == annotationPreviewMenuItem) {
                         showAnnotationPreviewWindow();
+                    } else if (source == insertOutlineMenuItem) {
+                        enableUtilityTabbedPanel(outlinesScrollPane);
+                        outlinesController.insertNewOutline();
+                        initializeOutline();
+                        insertOutlineMenuItem.setEnabled(false);
+                        outlinesTree.updateUI();
                     } else {
                         logger.log(Level.FINE, "Unknown action event: " + source);
                     }

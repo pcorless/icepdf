@@ -1,7 +1,9 @@
 package org.icepdf.ri.common.utility.outline;
 
 import org.icepdf.core.pobjects.Destination;
+import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.OutlineItem;
+import org.icepdf.core.pobjects.Outlines;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.ri.common.SwingController;
@@ -14,6 +16,7 @@ import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ResourceBundle;
 
 /**
  * The OutlinesController class is responsible for managing the Outlines (Bookmarks) JTree.  When editing is enabled
@@ -24,15 +27,29 @@ import java.awt.event.MouseEvent;
 public class OutlinesController extends MouseAdapter implements TreeModelListener, TreeSelectionListener,
         TreeExpansionListener {
 
-    private final SwingController viewerController;
+    private final ResourceBundle messageBundle;
+
+    private final SwingController controller;
     private final JTree outlinesTree;
 
     // match the document permissions for encryption permissions
     private boolean editable = true;
 
-    public OutlinesController(final SwingController viewerController, final JTree outlinesTree) {
-        this.viewerController = viewerController;
+    public OutlinesController(final SwingController controller, final JTree outlinesTree) {
+        this.controller = controller;
         this.outlinesTree = outlinesTree;
+        this.messageBundle = this.controller.getMessageBundle();
+    }
+
+    public boolean isOutlineCreated() {
+        return controller.getDocument().getCatalog().getOutlines() != null;
+    }
+
+    public void insertNewOutline() throws InterruptedException {
+        Document document = controller.getDocument();
+        OutlineItem outline = Outlines.createNewOutlineItem(document.getCatalog().getLibrary());
+        outline.setTitle(messageBundle.getString("viewer.utilityPane.outline.contextMenu.new.label"));
+        document.getCatalog().createOutlines(outline);
     }
 
     public void updateOutlineItemState(OutlineItemTreeNode parentNode) {
@@ -96,6 +113,7 @@ public class OutlinesController extends MouseAdapter implements TreeModelListene
                 OutlineItemTreeNode nextChild = (OutlineItemTreeNode) parentNode.getChildAt(i + 1);
                 outlineItem.setNext(nextChild.getOutlineItem().getPObjectReference());
             }
+            outlineItem.setParent(parentNode.getOutlineItem().getPObjectReference());
         }
     }
 
@@ -108,7 +126,7 @@ public class OutlinesController extends MouseAdapter implements TreeModelListene
         if (path != null) {
             OutlineItemTreeNode node = (OutlineItemTreeNode) path.getLastPathComponent();
             if ((mouseEvent.getButton() == MouseEvent.BUTTON3 || mouseEvent.getButton() == MouseEvent.BUTTON2)) {
-                OutlinesPopupMenu contextMenu = new OutlinesPopupMenu(viewerController, outlinesTree, node);
+                OutlinesPopupMenu contextMenu = new OutlinesPopupMenu(controller, outlinesTree, node);
                 contextMenu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
             }
         }
@@ -186,12 +204,11 @@ public class OutlinesController extends MouseAdapter implements TreeModelListene
     private void followOutlineItem(OutlineItem outlineItem) {
         if (outlineItem == null)
             return;
-        int oldTool = viewerController.getDocumentViewToolMode();
+        int oldTool = controller.getDocumentViewToolMode();
         try {
-
             // set hour glass
             outlinesTree.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-            viewerController.setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_WAIT);
+            controller.setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_WAIT);
 
             // capture the action if no destination is found and point to the
             // actions destination information
@@ -206,11 +223,11 @@ public class OutlinesController extends MouseAdapter implements TreeModelListene
             // Process the destination information
             if (dest != null) {
                 // let the document view controller resolve the destination
-                viewerController.getDocumentViewController().setDestinationTarget(dest);
+                controller.getDocumentViewController().setDestinationTarget(dest);
             }
         } finally {
             // set the icon back to the pointer
-            viewerController.setDisplayTool(oldTool);
+            controller.setDisplayTool(oldTool);
             outlinesTree.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         }
     }

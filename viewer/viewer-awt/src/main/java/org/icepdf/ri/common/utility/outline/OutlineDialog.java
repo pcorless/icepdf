@@ -1,9 +1,6 @@
 package org.icepdf.ri.common.utility.outline;
 
-import org.icepdf.core.pobjects.Destination;
-import org.icepdf.core.pobjects.NameTree;
-import org.icepdf.core.pobjects.OutlineItem;
-import org.icepdf.core.pobjects.PObject;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.EscapeJDialog;
 import org.icepdf.ri.common.NameJTree;
@@ -195,13 +192,16 @@ public class OutlineDialog extends EscapeJDialog implements ItemListener, TreeSe
         destinationTypesCards = new JPanel(new CardLayout());
         implicitDestinationPanel = new ImplicitDestinationPanel(controller);
         destinationTypesCards.add(implicitDestinationPanel, IMPLICIT_DESTINATION);
-        destinationTypesCards.add(buildNameTreePanel(), NAMED_DESTINATION);
+        Names names = controller.getDocument().getCatalog().getNames();
+        if (names != null && names.getDestsNameTree() != null) {
+            destinationTypesCards.add(buildNameTreePanel(), NAMED_DESTINATION);
+        }
 
         // set up the two destination panels types.
         titleTextField.setText(outlineItemTreeNode.getOutlineItem().getTitle());
         Destination des = outlineItemTreeNode.getOutlineItem().getDest();
         CardLayout cl = (CardLayout) destinationTypesCards.getLayout();
-        if (des.getNamedDestination() != null) {
+        if (des != null && des.getNamedDestination() != null) {
             destinationTypeComboBox.setSelectedIndex(NAMED_DESTINATION_INDEX);
             cl.show(destinationTypesCards, NAMED_DESTINATION);
         } else {
@@ -232,8 +232,9 @@ public class OutlineDialog extends EscapeJDialog implements ItemListener, TreeSe
     }
 
     private JComponent buildNameTreePanel() {
-        NameTree nameTree = controller.getDocument().getCatalog().getNames().getDestsNameTree();
-        if (nameTree != null) {
+        Catalog catalog = controller.getDocument().getCatalog();
+        if (catalog.getNames() != null && catalog.getNames().getDestsNameTree() != null) {
+            NameTree nameTree = catalog.getNames().getDestsNameTree();
             NameJTree nameJTree = new NameJTree();
             DefaultTreeModel namesTreeModel = new DefaultTreeModel(new NameTreeNode(nameTree.getRoot(), messageBundle));
             nameJTree.setModel(namesTreeModel);
@@ -267,11 +268,14 @@ public class OutlineDialog extends EscapeJDialog implements ItemListener, TreeSe
     }
 
     private void buildDestinationTypeComboBox() {
+        Names names = controller.getDocument().getCatalog().getNames();
         destinationTypeComboBox = new JComboBox<>();
         destinationTypeComboBox.addItem(new ValueLabelItem(IMPLICIT_DESTINATION,
                 messageBundle.getString("viewer.utilityPane.outline.destination.type.implicit.label")));
-        destinationTypeComboBox.addItem(new ValueLabelItem(NAMED_DESTINATION,
-                messageBundle.getString("viewer.utilityPane.outline.destination.type.named.label")));
+        if (names != null && names.getDestsNameTree() != null) {
+            destinationTypeComboBox.addItem(new ValueLabelItem(NAMED_DESTINATION,
+                    messageBundle.getString("viewer.utilityPane.outline.destination.type.named.label")));
+        }
         destinationTypeComboBox.addItemListener(this);
     }
 

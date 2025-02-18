@@ -175,6 +175,26 @@ public class Catalog extends Dictionary {
         return outlines;
     }
 
+    public void createOutlines(OutlineItem outline) throws InterruptedException {
+        if (outlines != null) {
+            throw new IllegalStateException("Outlines already exist");
+        }
+        DictionaryEntries outlinesDictionary = new DictionaryEntries();
+        outlinesDictionary.put(Outlines.TYPE_KEY, OUTLINES_KEY);
+        outlinesDictionary.put(Outlines.COUNT_KEY, 1);
+        outlinesDictionary.put(OutlineItem.FIRST_KEY, outline.getPObjectReference());
+        outlinesDictionary.put(OutlineItem.LAST_KEY, outline.getPObjectReference());
+        outlines = new Outlines(library, outlinesDictionary);
+        outlines.init();
+        outlines.setPObjectReference(library.getStateManager().getNewReferenceNumber());
+        entries.put(OUTLINES_KEY, outlines.getPObjectReference());
+        outline.setParent(outlines.getPObjectReference());
+
+        library.getStateManager().addChange(new PObject(this, getPObjectReference()));
+        library.getStateManager().addChange(new PObject(outlines, outlines.getPObjectReference()));
+        outlinesInited = true;
+    }
+
     /**
      * Adds a destination to the names tree of a document.  If no names exist a new tree is created and attached
      * to the document catalogue.  State manager is updated appropriately to allow the new state to be saved.

@@ -274,6 +274,21 @@ public class OutlineItem extends Dictionary {
         return parent;
     }
 
+    public void setParent(Reference reference) {
+        if (getPrev() == null && reference == null) {
+            return;
+        }
+        if (parent == null || !parent.equals(reference)) {
+            if (reference == null) {
+                entries.remove(PARENT_KEY);
+            } else {
+                entries.put(PARENT_KEY, reference);
+            }
+            this.parent = reference;
+            library.getStateManager().addChange(new PObject(this, this.getPObjectReference()));
+        }
+    }
+
     /**
      * Gets the number of descendants that would appear under this outline item.
      *
@@ -400,14 +415,17 @@ public class OutlineItem extends Dictionary {
             while (nextReference != null) {
                 // result the outline dictionary
                 tmp = library.getObject(nextReference);
-                if (!(tmp instanceof DictionaryEntries)) {
+                if (!(tmp instanceof DictionaryEntries || tmp instanceof OutlineItem)) {
                     break;
-                } else {
-                    dictionary = (DictionaryEntries) tmp;
                 }
                 // create the new outline
-                outLineItem = new OutlineItem(library, dictionary);
-                outLineItem.setPObjectReference(nextReference);
+                if (tmp instanceof OutlineItem) {
+                    outLineItem = (OutlineItem) tmp;
+                } else {
+                    dictionary = (DictionaryEntries) tmp;
+                    outLineItem = new OutlineItem(library, dictionary);
+                    outLineItem.setPObjectReference(nextReference);
+                }
 
                 // add the new item to the list of children
                 subItems.add(outLineItem);

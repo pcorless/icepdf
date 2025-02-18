@@ -154,13 +154,15 @@ public class Destination extends Dictionary {
             if (rawDest instanceof StringObject) {
                 StringObject stringObject = (StringObject) rawDest;
                 namedDestination = stringObject.getDecryptedLiteralString(library.getSecurityManager());
+            } else if (rawDest instanceof String) {
+                namedDestination = ((String) rawDest).isEmpty() ? null : (String) rawDest;
             } else {
                 namedDestination = rawDest.toString();
             }
             boolean found = false;
             Catalog catalog = library.getCatalog();
 
-            if (catalog != null && catalog.getNames() != null) {
+            if (catalog != null && catalog.getNames() != null && namedDestination != null) {
                 NameTree nameTree = catalog.getNames().getDestsNameTree();
                 if (nameTree != null) {
                     Object o = nameTree.searchName(namedDestination);
@@ -222,7 +224,7 @@ public class Destination extends Dictionary {
      *
      * @param v vector of attributes associated with the Destination
      */
-    private void parse(List v) {
+    private void parse(List<Object> v) {
 
         if (v == null) return;
 
@@ -353,15 +355,15 @@ public class Destination extends Dictionary {
 
     /**
      * Sets the destination syntax to the specified value.  The Destination
-     * object clears the named destination and re initializes itself after the
+     * object clears the named destination and reinitialize itself after the
      * assignment has been made.
      *
      * @param destinationSyntax new vector of destination syntax.
      */
-    public void setDestinationSyntax(List destinationSyntax) {
+    public void setDestinationSyntax(List<Object> destinationSyntax) {
         // clear named destination
         rawDest = destinationSyntax;
-        // re-parse as object should point to a new destination.
+        // reparse as object should point to a new destination.
         inited = false;
         init();
     }
