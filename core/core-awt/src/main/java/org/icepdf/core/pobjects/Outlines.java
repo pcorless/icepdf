@@ -70,6 +70,12 @@ public class Outlines extends Dictionary {
         return outlineItem;
     }
 
+    /**
+     * Creates a new instance of an OutlineItem and sets the reference number
+     *
+     * @param library document library
+     * @return new instance of an OutlineItem that is not registered with the state manager.
+     */
     public static OutlineItem createNewOutlineItem(Library library) {
         OutlineItem outlineItem = new OutlineItem(library, new DictionaryEntries());
         Reference reference = library.getStateManager().getNewReferenceNumber();

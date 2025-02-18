@@ -8,8 +8,21 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.util.*;
+import java.util.logging.Logger;
 
+/**
+ * TreeTransferHandler is a TransferHandler for JTree that allows drag and drop of nodes within the tree.
+ * <p>
+ * Based on work by Craig Wood
+ * <a href="https://coderanch.com/t/346509/java/JTree-drag-drop-tree-Java">JTree-drag-drop-tree-Java</a>
+ *
+ * @since 7.3.0
+ */
 class TreeTransferHandler extends TransferHandler {
+
+    protected static final Logger logger =
+            Logger.getLogger(TreeTransferHandler.class.toString());
+
     DataFlavor nodesFlavor;
     DataFlavor[] flavors = new DataFlavor[1];
     OutlineItemTreeNode[] nodesToRemove;
@@ -22,7 +35,7 @@ class TreeTransferHandler extends TransferHandler {
             nodesFlavor = new DataFlavor(mimeType);
             flavors[0] = nodesFlavor;
         } catch (ClassNotFoundException e) {
-            System.out.println("ClassNotFound: " + e.getMessage());
+            logger.warning("ClassNotFound: " + e.getMessage());
         }
     }
 
@@ -129,9 +142,11 @@ class TreeTransferHandler extends TransferHandler {
             Transferable t = support.getTransferable();
             nodes = (OutlineItemTreeNode[]) t.getTransferData(nodesFlavor);
         } catch (UnsupportedFlavorException ufe) {
-            System.out.println("UnsupportedFlavor: " + ufe.getMessage());
+            logger.warning("UnsupportedFlavor: " + ufe.getMessage());
+            return false;
         } catch (java.io.IOException ioe) {
-            System.out.println("I/O error: " + ioe.getMessage());
+            logger.warning("I/O error: " + ioe.getMessage());
+            return false;
         }
         // Get drop location info.
         JTree.DropLocation dl = (JTree.DropLocation) support.getDropLocation();

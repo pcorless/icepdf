@@ -10,6 +10,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
 
+/**
+ * OutlinesPopupMenu is a JPopupMenu that is used to add, edit, and delete outline items in the outline tree.
+ */
 public class OutlinesPopupMenu extends JPopupMenu implements ActionListener {
 
     private final ResourceBundle messageBundle;

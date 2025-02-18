@@ -21,7 +21,7 @@ import java.util.ResourceBundle;
 /**
  * The OutlinesController class is responsible for managing the Outlines (Bookmarks) JTree.  When editing is enabled
  * a user can drag and drop outline items to new locations in the tree as well as editing the title of the outline item.
- * Not expansion state will also be updated when the tree is expanded or collapsed.  Changes will persist when the
+ * Expansion state will also be updated when the tree is expanded or collapsed.  Changes will persist when the
  * document is saved.
  */
 public class OutlinesController extends MouseAdapter implements TreeModelListener, TreeSelectionListener,
@@ -39,10 +39,6 @@ public class OutlinesController extends MouseAdapter implements TreeModelListene
         this.controller = controller;
         this.outlinesTree = outlinesTree;
         this.messageBundle = this.controller.getMessageBundle();
-    }
-
-    public boolean isOutlineCreated() {
-        return controller.getDocument().getCatalog().getOutlines() != null;
     }
 
     public void insertNewOutline() throws InterruptedException {
@@ -240,6 +236,5 @@ public class OutlinesController extends MouseAdapter implements TreeModelListene
             return;
         OutlineItemTreeNode node = (OutlineItemTreeNode) treePath.getLastPathComponent();
         followOutlineItem(node);
-
     }
 }

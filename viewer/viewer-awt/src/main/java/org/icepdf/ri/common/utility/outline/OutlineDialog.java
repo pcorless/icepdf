@@ -20,6 +20,13 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ResourceBundle;
 
+/**
+ * OutlineDialog provides a dialog for editing the properties of an outline item.  User can select either an implicit
+ * or named destination.  If a named destination is selected a tree of named destinations is displayed for selection,
+ * otherwise the implicit destination panel is displayed.
+ * <p>
+ * The dialog is modal and will return the updated outline item when the user clicks the OK button.
+ */
 public class OutlineDialog extends EscapeJDialog implements ItemListener, TreeSelectionListener, ActionListener,
         FocusListener {
 
@@ -31,11 +38,11 @@ public class OutlineDialog extends EscapeJDialog implements ItemListener, TreeSe
     private static final int NAMED_DESTINATION_INDEX = 1;
 
     private final Controller controller;
-    private boolean isNewOutlineItem = false;
+    private final boolean isNewOutlineItem;
     private final OutlineItemTreeNode outlineItemTreeNode;
 
     // copy of the destination for editing
-    private JTree parentTree;
+    private final JTree parentTree;
     private Destination outlineDestination;
     private String title;
 
@@ -192,9 +199,9 @@ public class OutlineDialog extends EscapeJDialog implements ItemListener, TreeSe
         destinationTypesCards = new JPanel(new CardLayout());
         implicitDestinationPanel = new ImplicitDestinationPanel(controller);
         destinationTypesCards.add(implicitDestinationPanel, IMPLICIT_DESTINATION);
-        Names names = controller.getDocument().getCatalog().getNames();
-        if (names != null && names.getDestsNameTree() != null) {
-            destinationTypesCards.add(buildNameTreePanel(), NAMED_DESTINATION);
+        JComponent nameTreePanel = buildNameTreePanel();
+        if (nameTreePanel != null) {
+            destinationTypesCards.add(nameTreePanel, NAMED_DESTINATION);
         }
 
         // set up the two destination panels types.

@@ -175,6 +175,12 @@ public class Catalog extends Dictionary {
         return outlines;
     }
 
+    /**
+     * Creates a new Outlines object and sets the root outline item.
+     *
+     * @param outline root outline item.
+     * @throws InterruptedException
+     */
     public void createOutlines(OutlineItem outline) throws InterruptedException {
         if (outlines != null) {
             throw new IllegalStateException("Outlines already exist");

@@ -105,6 +105,13 @@ public class Destination extends Dictionary {
         init();
     }
 
+    /**
+     * Creates a new instance of a Destination for the given page and x, y offset
+     *
+     * @param page page to show
+     * @param x    offset
+     * @param y    offset
+     */
     public Destination(Page page, int x, int y) {
         super(page.getLibrary(), null);
         ArrayList<Object> destination = new ArrayList<>();
