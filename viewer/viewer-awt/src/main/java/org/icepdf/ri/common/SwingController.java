@@ -1249,7 +1249,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 final List<AbstractAnnotationComponent> comps = ((PageViewComponentImpl) pvc).getAnnotationComponents();
                 if (comps != null) {
                     final Collection<AnnotationComponent> toDelete =
-                     comps.stream().filter(comp -> comp instanceof MarkupAnnotationComponent
+                            comps.stream().filter(comp -> comp instanceof MarkupAnnotationComponent
                             && ((MarkupAnnotation) comp.getAnnotation()).isCurrentUserOwner()).collect(Collectors.toSet());
                     documentViewController.deleteAnnotations(toDelete);
                     reflectUndoCommands();
