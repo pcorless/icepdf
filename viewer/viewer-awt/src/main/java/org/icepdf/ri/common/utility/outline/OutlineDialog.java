@@ -249,23 +249,25 @@ public class OutlineDialog extends EscapeJDialog implements ItemListener, TreeSe
             nameJTree.setExpandsSelectedPaths(true);
             nameJTree.addTreeSelectionListener(this);
             // select the current destination
-            String name = outlineItemTreeNode.getOutlineItem().getDest().getNamedDestination();
-            if (name != null) {
-                ((DefaultMutableTreeNode) namesTreeModel.getRoot()).depthFirstEnumeration().asIterator().forEachRemaining(node -> {
-                    if (node instanceof NameTreeNode) {
-                        NameTreeNode nameTreeNode = (NameTreeNode) node;
-                        if (nameTreeNode.getName() != null &&
-                                name.equals(nameTreeNode.getName().toString())) {
-                            TreePath path = new TreePath(nameTreeNode.getPath());
-                            SwingUtilities.invokeLater(() -> {
-                                nameJTree.setSelectionPath(path);
-                                nameJTree.scrollPathToVisible(path);
-                                nameJTree.expandPath(path);
-                            });
+            if (outlineItemTreeNode.getOutlineItem().getDest() != null) {
+                String name = outlineItemTreeNode.getOutlineItem().getDest().getNamedDestination();
+                if (name != null) {
+                    ((DefaultMutableTreeNode) namesTreeModel.getRoot()).depthFirstEnumeration().asIterator().forEachRemaining(node -> {
+                        if (node instanceof NameTreeNode) {
+                            NameTreeNode nameTreeNode = (NameTreeNode) node;
+                            if (nameTreeNode.getName() != null &&
+                                    name.equals(nameTreeNode.getName().toString())) {
+                                TreePath path = new TreePath(nameTreeNode.getPath());
+                                SwingUtilities.invokeLater(() -> {
+                                    nameJTree.setSelectionPath(path);
+                                    nameJTree.scrollPathToVisible(path);
+                                    nameJTree.expandPath(path);
+                                });
+                            }
                         }
-                    }
-                });
+                    });
 
+                }
             }
             JScrollPane nameTreeScroller = new JScrollPane(nameJTree);
             nameTreeScroller.setPreferredSize(new Dimension(325, 225));

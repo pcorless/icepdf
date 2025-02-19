@@ -1249,7 +1249,8 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 final List<AbstractAnnotationComponent> comps = ((PageViewComponentImpl) pvc).getAnnotationComponents();
                 if (comps != null) {
                     final Collection<AnnotationComponent> toDelete =
-                            comps.stream().filter(comp -> comp instanceof MarkupAnnotationComponent && ((MarkupAnnotation) comp.getAnnotation()).isCurrentUserOwner()).collect(Collectors.toSet());
+                     comps.stream().filter(comp -> comp instanceof MarkupAnnotationComponent
+                            && ((MarkupAnnotation) comp.getAnnotation()).isCurrentUserOwner()).collect(Collectors.toSet());
                     documentViewController.deleteAnnotations(toDelete);
                     reflectUndoCommands();
                 }
@@ -1677,14 +1678,17 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
 
         if (showHideToolBarMenuItem != null) {
             boolean vis = (completeToolBar != null) && completeToolBar.isVisible();
-            showHideToolBarMenuItem.setText(vis ? messageBundle.getString("viewer.toolbar.hideToolBar.label") :
-                    messageBundle.getString("viewer.toolbar.showToolBar.label"));
+            showHideToolBarMenuItem.setText(
+                    vis ? messageBundle.getString("viewer.toolbar.hideToolBar.label") :
+                            messageBundle.getString("viewer.toolbar.showToolBar.label"));
         }
         setEnabled(showHideToolBarMenuItem, completeToolBar != null);
         if (showHideUtilityPaneMenuItem != null) {
             boolean vis = isUtilityPaneVisible();
-            showHideUtilityPaneMenuItem.setText((opened && vis) ? messageBundle.getString("viewer.toolbar" +
-                    ".hideUtilityPane.label") : messageBundle.getString("viewer.toolbar.showUtilityPane.label"));
+            showHideUtilityPaneMenuItem.setText(
+                    (opened && vis) ?
+                            messageBundle.getString("viewer.toolbar.hideUtilityPane.label") :
+                            messageBundle.getString("viewer.toolbar.showUtilityPane.label"));
         }
         setEnabled(showHideUtilityPaneMenuItem, opened && utilityTabbedPane != null);
         setEnabled(searchMenuItem, opened && searchPanel != null && !pdfCollection);
@@ -1768,7 +1772,10 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
     }
 
     private boolean hasForms() {
-        return document != null && !(document.getCatalog().getInteractiveForm() == null || document.getCatalog().getInteractiveForm().getFields() == null || document.getCatalog().getInteractiveForm().getFields().size() == 0);
+        return document != null &&
+                !(document.getCatalog().getInteractiveForm() == null ||
+                        document.getCatalog().getInteractiveForm().getFields() == null ||
+                        document.getCatalog().getInteractiveForm().getFields().size() == 0);
     }
 
     private void reflectPageChangeInComponents() {
@@ -1864,8 +1871,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
      * This will query the UndoCaretaker for the status of the queue first
      */
     public void reflectUndoCommands() {
-        UndoCaretaker undoCaretaker =
-                ((DocumentViewModelImpl) documentViewController.getDocumentViewModel()).getAnnotationCareTaker();
+        UndoCaretaker undoCaretaker = documentViewController.getDocumentViewModel().getAnnotationCareTaker();
         setEnabled(undoMenuItem, undoCaretaker.isUndo());
         setEnabled(redoMenuItem, undoCaretaker.isRedo());
     }
@@ -1932,8 +1938,8 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
     private void reflectAnnotationDefaultPrivacy() {
         // check properties to get last state.
         Preferences preferences = ViewerPropertiesManager.getInstance().getPreferences();
-        boolean annotationPrivacy =
-                !SystemProperties.PRIVATE_PROPERTY_ENABLED || preferences.getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_LAST_USED_PUBLIC_FLAG, true);
+        boolean annotationPrivacy = !SystemProperties.PRIVATE_PROPERTY_ENABLED ||
+                preferences.getBoolean(ViewerPropertiesManager.PROPERTY_ANNOTATION_LAST_USED_PUBLIC_FLAG, true);
 
 
         // store the current state in the model and annotation tool handlers will pull from the current state.
@@ -2303,8 +2309,11 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                     }
                     openFileInSomeViewer(file);
                 } else {
-                    org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE,
-                            messageBundle, "viewer.dialog.openFile.error.title", "viewer.dialog.openFile.error.msg",
+                    org.icepdf.ri.util.Resources.showMessageDialog(viewer,
+                            JOptionPane.INFORMATION_MESSAGE,
+                            messageBundle,
+                            "viewer.dialog.openFile.error.title",
+                            "viewer.dialog.openFile.error.msg",
                             file.getPath());
                 }
 
@@ -2457,11 +2466,13 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                             Files.copy(tmpFile.toPath(), new File(pathname).toPath(),
                                     StandardCopyOption.REPLACE_EXISTING);
                         } catch (IOException e) {
-                            org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE,
-                                    messageBundle, "viewer.dialog.restore.exception.title", "viewer.dialog.restore" +
-                                            ".exception" +
-                                            ".label", e.getMessage() != null && !e.getMessage().isEmpty() ?
-                                            e.getMessage() :
+                            org.icepdf.ri.util.Resources.showMessageDialog(
+                                    viewer,
+                                    JOptionPane.INFORMATION_MESSAGE,
+                                    messageBundle,
+                                    "viewer.dialog.restore.exception.title",
+                                    "viewer.dialog.restore.exception.label",
+                                    e.getMessage() != null && !e.getMessage().isEmpty() ? e.getMessage() :
                                             e.toString());
                         }
                     } else {
@@ -2478,14 +2489,22 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 document.setFile(pathname);
                 commonNewDocumentHandling(pathname);
             } catch (PDFSecurityException e) {
-                org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE, messageBundle
-                        , "viewer.dialog.openDocument.pdfSecurityException.title", "viewer.dialog.openDocument" +
-                                ".pdfSecurityException.msg", pathname);
+                org.icepdf.ri.util.Resources.showMessageDialog(
+                        viewer,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        messageBundle,
+                        "viewer.dialog.openDocument.pdfSecurityException.title",
+                        "viewer.dialog.openDocument.pdfSecurityException.msg",
+                        pathname);
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
             } catch (Exception e) {
-                org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE, messageBundle
-                        , "viewer.dialog.openDocument.exception.title", "viewer.dialog.openDocument.exception.msg",
+                org.icepdf.ri.util.Resources.showMessageDialog(
+                        viewer,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        messageBundle,
+                        "viewer.dialog.openDocument.exception.title",
+                        "viewer.dialog.openDocument.exception.msg",
                         pathname);
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
@@ -2501,7 +2520,8 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         final String name = pathSplit[pathSplit.length - 1];
         final String[] dotSplit = name.split("\\.");
         final String basename = getBasename(dotSplit);
-        return Arrays.stream(pathSplit).limit(pathSplit.length - 1).collect(Collectors.joining(separator)) + separator + '.' + basename + "-tmp.pdf";
+        return Arrays.stream(pathSplit).limit(pathSplit.length - 1).collect(Collectors.joining(separator))
+                + separator + '.' + basename + "-tmp.pdf";
     }
 
     private static String getBasename(final String[] dotSplit) {
@@ -2525,9 +2545,15 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
             URLAccess urlAccess = URLAccess.doURLAccess(o.toString());
             urlAccess.closeConnection();
             if (urlAccess.errorMessage != null) {
-                org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE, messageBundle
-                        , "viewer.dialog.openURL.exception.title", "viewer.dialog.openURL.exception.msg",
-                        urlAccess.errorMessage, urlAccess.urlLocation);
+                org.icepdf.ri.util.Resources.showMessageDialog(
+                        viewer,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        messageBundle,
+                        "viewer.dialog.openURL.exception.title",
+                        "viewer.dialog.openURL.exception.msg",
+                        urlAccess.errorMessage,
+                        urlAccess.urlLocation
+                );
             } else {
                 if (viewer != null) {
                     viewer.toFront();
@@ -2584,8 +2610,8 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                             // Create ProgressMonitorInputStream
                             String pathOrURL = location.toString();
                             Object[] messageArguments = {pathOrURL};
-                            MessageFormat formatter = new MessageFormat(messageBundle.getString("viewer.dialog" +
-                                    ".openURL.downloading.msg"));
+                            MessageFormat formatter = new MessageFormat(
+                                    messageBundle.getString("viewer.dialog.openURL.downloading.msg"));
                             ProgressMonitorInputStream progressMonitorInputStream =
                                     new ProgressMonitorInputStream(viewer, formatter.format(messageArguments),
                                             new SizeInputStream(urlConnection.getInputStream(), size));
@@ -2607,17 +2633,23 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                             closeDocument();
                             document = null;
                         } catch (PDFSecurityException e) {
-                            org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE,
-                                    messageBundle, "viewer.dialog.openDocument.pdfSecurityException.title", "viewer" +
-                                     ".dialog" +
-                                            ".openDocument.pdfSecurityException.msg", location);
+                            org.icepdf.ri.util.Resources.showMessageDialog(
+                                    viewer,
+                                    JOptionPane.INFORMATION_MESSAGE,
+                                    messageBundle,
+                                    "viewer.dialog.openDocument.pdfSecurityException.title",
+                                    "viewer.dialog.openDocument.pdfSecurityException.msg",
+                                    location);
                             document = null;
                             logger.log(Level.FINE, "Error opening document.", e);
                         } catch (Exception e) {
-                            org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE,
-                                    messageBundle, "viewer.dialog.openDocument.exception.title", "viewer.dialog" +
-                                     ".openDocument" +
-                                            ".exception.msg", location);
+                            org.icepdf.ri.util.Resources.showMessageDialog(
+                                    viewer,
+                                    JOptionPane.INFORMATION_MESSAGE,
+                                    messageBundle,
+                                    "viewer.dialog.openDocument.exception.title",
+                                    "viewer.dialog.openDocument.exception.msg",
+                                    location);
                             document = null;
                             logger.log(Level.FINE, "Error opening document.", e);
                         }
@@ -2628,12 +2660,13 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                         // Create ProgressMonitorInputStream
                         String pathOrURL = location.toString();
                         Object[] messageArguments = {pathOrURL};
-                        MessageFormat formatter = new MessageFormat(messageBundle.getString("viewer.dialog.openURL" +
-                                ".downloading.msg"));
-                        ProgressMonitorInputStream progressMonitorInputStream = new ProgressMonitorInputStream(viewer
-                                , formatter.format(messageArguments),
-                                 new SizeInputStream(urlConnection.getInputStream(),
-                                size));
+                        MessageFormat formatter = new MessageFormat(
+                                messageBundle.getString("viewer.dialog.openURL.downloading.msg"));
+                        ProgressMonitorInputStream progressMonitorInputStream =
+                                new ProgressMonitorInputStream(
+                                        viewer,
+                                        formatter.format(messageArguments),
+                                        new SizeInputStream(urlConnection.getInputStream(), size));
                         // Create a stream on the URL connection
                         in = new BufferedInputStream(progressMonitorInputStream);
                         return null;
@@ -2642,9 +2675,13 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 worker.execute();
 
             } catch (Exception e) {
-                org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE, messageBundle
-                        , "viewer.dialog.openDocument.exception.title", "viewer.dialog.openDocument.exception.msg",
-                         location);
+                org.icepdf.ri.util.Resources.showMessageDialog(
+                        viewer,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        messageBundle,
+                        "viewer.dialog.openDocument.exception.title",
+                        "viewer.dialog.openDocument.exception.msg",
+                        location);
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
             }
@@ -2684,14 +2721,22 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
 
                 commonNewDocumentHandling(description);
             } catch (PDFSecurityException e) {
-                org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE, messageBundle
-                        , "viewer.dialog.openDocument.pdfSecurityException.title", "viewer.dialog.openDocument" +
-                                ".pdfSecurityException.msg", description);
+                org.icepdf.ri.util.Resources.showMessageDialog(
+                        viewer,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        messageBundle,
+                        "viewer.dialog.openDocument.pdfSecurityException.title",
+                        "viewer.dialog.openDocument.pdfSecurityException.msg",
+                        description);
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
             } catch (Exception e) {
-                org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE, messageBundle
-                        , "viewer.dialog.openDocument.exception.title", "viewer.dialog.openDocument.exception.msg",
+                org.icepdf.ri.util.Resources.showMessageDialog(
+                        viewer,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        messageBundle,
+                        "viewer.dialog.openDocument.exception.title",
+                        "viewer.dialog.openDocument.exception.msg",
                         description);
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
@@ -2723,8 +2768,12 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 setupSecurityHandler(document, documentViewController.getSecurityCallback());
                 commonNewDocumentHandling(fileName);
             } catch (Exception e) {
-                org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE, messageBundle
-                        , "viewer.dialog.openDocument.exception.title", "viewer.dialog.openDocument.exception.msg",
+                org.icepdf.ri.util.Resources.showMessageDialog(
+                        viewer,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        messageBundle,
+                        "viewer.dialog.openDocument.exception.title",
+                        "viewer.dialog.openDocument.exception.msg",
                         fileName);
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
@@ -2764,14 +2813,22 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
 
                 commonNewDocumentHandling(description);
             } catch (PDFSecurityException e) {
-                org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE, messageBundle
-                        , "viewer.dialog.openDocument.pdfSecurityException.title", "viewer.dialog.openDocument" +
-                                ".pdfSecurityException.msg", description);
+                org.icepdf.ri.util.Resources.showMessageDialog(
+                        viewer,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        messageBundle,
+                        "viewer.dialog.openDocument.pdfSecurityException.title",
+                        "viewer.dialog.openDocument.pdfSecurityException.msg",
+                        description);
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
             } catch (Exception e) {
-                org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE, messageBundle
-                        , "viewer.dialog.openDocument.exception.title", "viewer.dialog.openDocument.exception.msg",
+                org.icepdf.ri.util.Resources.showMessageDialog(
+                        viewer,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        messageBundle,
+                        "viewer.dialog.openDocument.exception.title",
+                        "viewer.dialog.openDocument.exception.msg",
                         description);
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
@@ -2825,22 +2882,26 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
             // Page mode by default is UseNone, where other options are, UseOutlines,
             // UseThumbs, FullScreen (ignore), UseOC(ignore), Use Attachments(ignore);
             Name pageMode = catalog.getPageMode();
-            showUtilityPane =
-                    pageMode.equals(Catalog.PAGE_MODE_USE_OUTLINES_VALUE) || pageMode.equals(Catalog.PAGE_MODE_OPTIONAL_CONTENT_VALUE) || pageMode.equals(Catalog.PAGE_MODE_USE_ATTACHMENTS_VALUE) || pageMode.equals(Catalog.PAGE_MODE_USE_THUMBS_VALUE);
+            showUtilityPane = pageMode.equals(Catalog.PAGE_MODE_USE_OUTLINES_VALUE) ||
+                    pageMode.equals(Catalog.PAGE_MODE_OPTIONAL_CONTENT_VALUE) ||
+                    pageMode.equals(Catalog.PAGE_MODE_USE_ATTACHMENTS_VALUE) ||
+                    pageMode.equals(Catalog.PAGE_MODE_USE_THUMBS_VALUE);
         }
 
         // selected the utility tab defined by the page mode key
         if (showUtilityPane) {
             Name pageMode = catalog.getPageMode();
-            utilityTabbedPane.setSelectedComponent(outlinesScrollPane);
-            showOutlinePanel(true);
-            if (pageMode.equals(Catalog.PAGE_MODE_USE_OUTLINES_VALUE) && utilityTabbedPane.indexOfComponent(outlinesScrollPane) > 0) {
+            if (pageMode.equals(Catalog.PAGE_MODE_USE_OUTLINES_VALUE) &&
+                    utilityTabbedPane.indexOfComponent(outlinesScrollPane) >= 0) {
                 utilityTabbedPane.setSelectedComponent(outlinesScrollPane);
-            } else if (pageMode.equals(Catalog.PAGE_MODE_OPTIONAL_CONTENT_VALUE) && utilityTabbedPane.indexOfComponent(layersPanel) > 0) {
+            } else if (pageMode.equals(Catalog.PAGE_MODE_OPTIONAL_CONTENT_VALUE) &&
+                    utilityTabbedPane.indexOfComponent(layersPanel) >= 0) {
                 utilityTabbedPane.setSelectedComponent(layersPanel);
-            } else if (pageMode.equals(Catalog.PAGE_MODE_USE_ATTACHMENTS_VALUE) && utilityTabbedPane.indexOfComponent(attachmentPanel) > 0) {
+            } else if (pageMode.equals(Catalog.PAGE_MODE_USE_ATTACHMENTS_VALUE) &&
+                    utilityTabbedPane.indexOfComponent(attachmentPanel) >= 0) {
                 utilityTabbedPane.setSelectedComponent(attachmentPanel);
-            } else if (pageMode.equals(Catalog.PAGE_MODE_USE_THUMBS_VALUE) && utilityTabbedPane.indexOfComponent(thumbnailsPanel) > 0) {
+            } else if (pageMode.equals(Catalog.PAGE_MODE_USE_THUMBS_VALUE) &&
+                    utilityTabbedPane.indexOfComponent(thumbnailsPanel) >= 0) {
                 utilityTabbedPane.setSelectedComponent(thumbnailsPanel);
             } else {
                 // Catalog.PAGE_MODE_USE_NONE_VALUE
@@ -2906,22 +2967,21 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
 
         // showUtilityPane will be true the document has an outline, but the
         // visibility can be over-ridden with the property application.utilitypane.show
-        boolean hideUtilityPane =
-                propertiesManager.getPreferences().getBoolean(ViewerPropertiesManager.PROPERTY_HIDE_UTILITYPANE, false);
+        boolean hideUtilityPane = propertiesManager.getPreferences().getBoolean(
+                ViewerPropertiesManager.PROPERTY_HIDE_UTILITYPANE, false);
         // hide utility pane
         if (hideUtilityPane) {
             setUtilityPaneVisible(false);
         } else {
-            setUtilityPaneVisible(true);
+            setUtilityPaneVisible(showUtilityPane);
         }
 
         // apply state value for whether form highlight is being used or not.
-        boolean showFormHighlight =
-                propertiesManager.getPreferences().getBoolean(ViewerPropertiesManager.PROPERTY_VIEWPREF_FORM_HIGHLIGHT, true);
+        boolean showFormHighlight = propertiesManager.getPreferences().getBoolean(
+                ViewerPropertiesManager.PROPERTY_VIEWPREF_FORM_HIGHLIGHT, true);
         setFormHighlightVisible(showFormHighlight);
-        boolean showAnnotationEditingMode =
-                propertiesManager.getPreferences().getBoolean(ViewerPropertiesManager.PROPERTY_VIEWPREF_ANNOTATION_EDIT_MODE
-                        , false);
+        boolean showAnnotationEditingMode = propertiesManager.getPreferences().getBoolean(
+                ViewerPropertiesManager.PROPERTY_VIEWPREF_ANNOTATION_EDIT_MODE, false);
         setAnnotationEditModeVisible(showAnnotationEditingMode);
 
         // check if there are layers and enable/disable the tab as needed
@@ -3044,7 +3104,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
             document = null;
         }
 
-        // remove the page numbers in the go to page combo box in the mainToolbar
+        // remove the page numbers in the goto page combo box in the mainToolbar
         if (currentPageNumberTextField != null) currentPageNumberTextField.setText("");
         if (numberOfPagesLabel != null) numberOfPagesLabel.setText("");
         if (currentPageNumberTextField != null) currentPageNumberTextField.setEnabled(false);
@@ -3280,7 +3340,9 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 // continue with saving the document
             }
         }
-        if (document.getStateManager().isChange() && saveFilePath != null && !saveFilePath.isEmpty()) {
+        if (document.getStateManager().isChange() &&
+                saveFilePath != null &&
+                !saveFilePath.isEmpty()) {
             File out = new File(saveFilePath);
             if (out.getParentFile() != null) {
                 if (Files.isWritable(out.getParentFile().toPath())) {
@@ -3330,8 +3392,9 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
 
     protected int showRedactionWarningDialog() {
         // show dialog warning user they are about to save has unburned redaction annotations
-        return JOptionPane.showConfirmDialog(getViewerFrame(), messageBundle.getString("viewer.dialog.redaction" +
-                        ".unburned.msgs"), messageBundle.getString("viewer.dialog.redaction.unburned.title"),
+        return JOptionPane.showConfirmDialog(getViewerFrame(),
+                messageBundle.getString("viewer.dialog.redaction.unburned.msgs"),
+                messageBundle.getString("viewer.dialog.redaction.unburned.title"),
                 JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
     }
 
@@ -3394,7 +3457,10 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
     private String getOriginalFileName() {
         String origin = document.getDocumentOrigin();
         if (origin != null) {
-            int lastSeparator = Math.max(Math.max(origin.lastIndexOf('/'), origin.lastIndexOf('\\')),
+            int lastSeparator = Math.max(
+                    Math.max(
+                            origin.lastIndexOf('/'),
+                            origin.lastIndexOf('\\')),
                     origin.lastIndexOf(File.separator) // Might not be / or \
             );
             if (lastSeparator >= 0) {
@@ -3410,22 +3476,32 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 // make sure file path being saved to is valid
                 String extension = FileExtensionUtils.getExtension(file);
                 if (extension == null) {
-                    org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE,
-                            messageBundle, "viewer.dialog.saveAs.noExtensionError.title", "viewer.dialog.saveAs" +
-                                    ".noExtensionError.msg");
+                    org.icepdf.ri.util.Resources.showMessageDialog(
+                            viewer,
+                            JOptionPane.INFORMATION_MESSAGE,
+                            messageBundle,
+                            "viewer.dialog.saveAs.noExtensionError.title",
+                            "viewer.dialog.saveAs.noExtensionError.msg");
                     saveFileAs(saveMode);
                 } else if (!extension.equals(FileExtensionUtils.pdf)) {
-                    org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE,
-                            messageBundle, "viewer.dialog.saveAs.extensionError.title", "viewer.dialog.saveAs" +
-                                    ".extensionError" +
-                                    ".msg", file.getName());
+                    org.icepdf.ri.util.Resources.showMessageDialog(
+                            viewer,
+                            JOptionPane.INFORMATION_MESSAGE,
+                            messageBundle,
+                            "viewer.dialog.saveAs.extensionError.title",
+                            "viewer.dialog.saveAs.extensionError.msg",
+                            file.getName());
                     saveFileAs(saveMode);
-                } else if (originalFileName != null && originalFileName.equalsIgnoreCase(file.getName())) {
+                } else if (originalFileName != null &&
+                        originalFileName.equalsIgnoreCase(file.getName())) {
                     // Ensure a unique filename
-                    org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE,
-                            messageBundle, "viewer.dialog.saveAs.noneUniqueName.title", "viewer.dialog.saveAs" +
-                                    ".noneUniqueName" +
-                                    ".msg", file.getName());
+                    org.icepdf.ri.util.Resources.showMessageDialog(
+                            viewer,
+                            JOptionPane.INFORMATION_MESSAGE,
+                            messageBundle,
+                            "viewer.dialog.saveAs.noneUniqueName.title",
+                            "viewer.dialog.saveAs.noneUniqueName.msg",
+                            file.getName());
                     saveFileAs(saveMode);
                 } else {
                     // save file stream
@@ -3439,7 +3515,8 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                     //  but that could cause problems with slow network links too,
                     //  and would complicate the incremental update code, so we're
                     //  harmonising on this approach.
-                    try (final FileOutputStream fileOutputStream = new FileOutputStream(file); final BufferedOutputStream buf = new BufferedOutputStream(fileOutputStream, 8192)) {
+                    try (final FileOutputStream fileOutputStream = new FileOutputStream(file);
+                         final BufferedOutputStream buf = new BufferedOutputStream(fileOutputStream, 8192)) {
 
                         // We want 'save as' or 'save a copy to always occur
                         if (saveMode == SaveMode.EXPORT) {
@@ -3461,8 +3538,12 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                     ViewModel.setDefaultFile(file);
                 }
             } else {
-                org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE, messageBundle
-                        , "viewer.dialog.saveAs.cantwrite.title", "viewer.dialog.saveAs.cantwrite.msg",
+                org.icepdf.ri.util.Resources.showMessageDialog(
+                        viewer,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        messageBundle,
+                        "viewer.dialog.saveAs.cantwrite.title",
+                        "viewer.dialog.saveAs.cantwrite.msg",
                         file.getParentFile().getName());
                 saveFileAs();
             }
@@ -3545,14 +3626,18 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
             String extension = FileExtensionUtils.getExtension(file);
             if (extension != null) {
                 int lengthOfTask = document.getNumberOfPages();
-                ProgressMonitor progressMonitor = new ProgressMonitor(viewer, messageBundle.getString("viewer.dialog" +
-                        ".exportText.progress.msg"), "", 0, lengthOfTask);
+                ProgressMonitor progressMonitor = new ProgressMonitor(
+                        viewer, messageBundle.getString("viewer.dialog.exportText.progress.msg"),
+                        "", 0, lengthOfTask);
 
                 new TextExtractionTask(document, file, progressMonitor, messageBundle).execute();
             } else {
-                org.icepdf.ri.util.Resources.showMessageDialog(viewer, JOptionPane.INFORMATION_MESSAGE, messageBundle
-                        , "viewer.dialog.exportText.noExtensionError.title", "viewer.dialog.exportText" +
-                         ".noExtensionError.msg");
+                org.icepdf.ri.util.Resources.showMessageDialog(
+                        viewer,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        messageBundle,
+                        "viewer.dialog.exportText.noExtensionError.title",
+                        "viewer.dialog.exportText.noExtensionError.msg");
                 exportText();
             }
         }
@@ -3571,12 +3656,14 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         if (document != null && !IS_READONLY) {
             boolean documentChanges = document.getStateManager().hasChangedSinceLastSnapshot();
             if (documentChanges) {
-                MessageFormat formatter = new MessageFormat(messageBundle.getString("viewer.dialog.saveOnClose" +
-                        ".noUpdates.msg"));
+                MessageFormat formatter = new MessageFormat(
+                        messageBundle.getString("viewer.dialog.saveOnClose.noUpdates.msg"));
                 String dialogMessage = formatter.format(new Object[]{document.getDocumentOrigin()});
 
-                int res = JOptionPane.showConfirmDialog(viewer, dialogMessage, messageBundle.getString("viewer.dialog" +
-                        ".saveOnClose.noUpdates.title"), JOptionPane.YES_NO_CANCEL_OPTION);
+                int res = JOptionPane.showConfirmDialog(viewer,
+                        dialogMessage,
+                        messageBundle.getString("viewer.dialog.saveOnClose.noUpdates.title"),
+                        JOptionPane.YES_NO_CANCEL_OPTION);
                 if (res == JOptionPane.OK_OPTION) {
                     // start save as process.
                     saveFileAs();
@@ -3689,8 +3776,8 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
      * Show tabbed pane interface for annotation properties centered on the given frame
      */
     public void showAnnotationProperties(AnnotationComponent annotationComponent, Frame frame) {
-        AnnotationPropertiesDialog annotationPropertiesDialog = new AnnotationPropertiesDialog(frame, this,
-                messageBundle);
+        AnnotationPropertiesDialog annotationPropertiesDialog =
+                new AnnotationPropertiesDialog(frame, this, messageBundle);
         annotationPropertiesDialog.setAnnotationComponent(annotationComponent);
         annotationPropertiesDialog.setVisible(true);
     }
@@ -3758,8 +3845,11 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
      * @param mediaSize MediaSizeName constant of paper size to print to.
      */
     public void setPrintDefaultMediaSizeName(MediaSizeName mediaSize) {
-        PrintHelper printHelper = getPrintHelperFactory().createPrintHelper(documentViewController.getViewContainer()
-                , getPageTree(), documentViewController.getRotation(), mediaSize, PrintQuality.NORMAL);
+        PrintHelper printHelper = getPrintHelperFactory().createPrintHelper(
+                documentViewController.getViewContainer(), getPageTree(),
+                documentViewController.getRotation(),
+                mediaSize,
+                PrintQuality.NORMAL);
         viewModel.setPrintHelper(printHelper);
     }
 
@@ -3824,8 +3914,10 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 printHelper.setPrinter(printer);
             }
             // set the printer to show a print dialog
-            canPrint = printHelper.setupPrintService(0, document.getNumberOfPages() - 1, viewModel.getPrintCopies(),
-                    // default number of copies.
+            canPrint = printHelper.setupPrintService(
+                    0,
+                    document.getNumberOfPages() - 1,
+                    viewModel.getPrintCopies(),           // default number of copies.
                     viewModel.isShrinkToPrintableArea(),        // shrink to printable area
                     withDialog  // show print dialog
             );
@@ -3864,8 +3956,9 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         // Create the ProgressMonitor in the Swing thread
         SwingUtilities.invokeLater(() -> {
             // launch progress dialog
-            printProgressMonitor = new ProgressMonitor(viewer, messageBundle.getString("viewer.dialog.printing.status" +
-                    ".start.msg"), "", 1, printHelper.getNumberOfPages());
+            printProgressMonitor = new ProgressMonitor(viewer,
+                    messageBundle.getString("viewer.dialog.printing.status.start.msg"),
+                    "", 1, printHelper.getNumberOfPages());
         });
 
         final Thread printingThread = Thread.currentThread();
@@ -3873,37 +3966,41 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         // create background printer job
         final PrinterTask printerTask = new PrinterTask(printHelper, this);
         // create activity monitor
-        printActivityMonitor = new Timer(250, event -> {
-            int limit = printHelper.getNumberOfPages();
-            int current = printHelper.getCurrentPage();
-            // progress bar for printing
-            Object[] messageArguments = new Object[]{String.valueOf(current + 1), String.valueOf(limit)};
-            MessageFormat formatter = new MessageFormat(messageBundle.getString("viewer.dialog.printing.status" +
-                    ".progress.msg"));
-            SwingUtilities.invokeLater(() -> {
-                printProgressMonitor.setProgress(current);
-                printProgressMonitor.setNote(formatter.format(messageArguments));
-            });
+        printActivityMonitor = new Timer(250,
+                event -> {
+                    int limit = printHelper.getNumberOfPages();
+                    int current = printHelper.getCurrentPage();
+                    // progress bar for printing
+                    Object[] messageArguments = new Object[]{
+                            String.valueOf(current + 1),
+                            String.valueOf(limit)};
+                    MessageFormat formatter =
+                            new MessageFormat(
+                                    messageBundle.getString("viewer.dialog.printing.status.progress.msg"));
+                    SwingUtilities.invokeLater(() -> {
+                        printProgressMonitor.setProgress(current);
+                        printProgressMonitor.setNote(formatter.format(messageArguments));
+                    });
 
-            // check for job completed or cancelled.
-            if (!printingThread.isAlive() || printProgressMonitor.isCanceled()) {
-                printerTask.cancel();
-                // make sure kill the printing thread, otherwise we'll keep going for none cancellable jobs.
-                printingThread.interrupt();
-                // stop the timers, monitors and thread.
-                SwingUtilities.invokeLater(() -> {
-                    printProgressMonitor.close();
-                    printActivityMonitor.stop();
-                    // enable print UI controls.
-                    if (printMenuItem != null) {
-                        printMenuItem.setEnabled(true);
-                    }
-                    if (printButton != null) {
-                        printButton.setEnabled(true);
+                    // check for job completed or cancelled.
+                    if (!printingThread.isAlive() || printProgressMonitor.isCanceled()) {
+                        printerTask.cancel();
+                        // make sure kill the printing thread, otherwise we'll keep going for none cancellable jobs.
+                        printingThread.interrupt();
+                        // stop the timers, monitors and thread.
+                        SwingUtilities.invokeLater(() -> {
+                            printProgressMonitor.close();
+                            printActivityMonitor.stop();
+                            // enable print UI controls.
+                            if (printMenuItem != null) {
+                                printMenuItem.setEnabled(true);
+                            }
+                            if (printButton != null) {
+                                printButton.setEnabled(true);
+                            }
+                        });
                     }
                 });
-            }
-        });
         // start the timer.
         SwingUtilities.invokeLater(() -> printActivityMonitor.start());
 
@@ -4064,8 +4161,9 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
 
                 if (pageTree != null) {
                     Object[] messageArguments = new Object[]{String.valueOf(pageTree.getNumberOfPages())};
-                    MessageFormat formatter = new MessageFormat(messageBundle.getString("viewer.toolbar" +
-                            ".pageIndicator"));
+                    MessageFormat formatter =
+                            new MessageFormat(
+                                    messageBundle.getString("viewer.toolbar.pageIndicator"));
                     String numberOfPages = formatter.format(messageArguments);
 
                     numberOfPagesLabel.setText(numberOfPages);
@@ -4075,11 +4173,12 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
             if (statusLabel != null) {
                 if (pageTree != null) {
                     // progress bar for printing
-                    Object[] messageArguments =
-                            new Object[]{String.valueOf(documentViewController.getCurrentPageDisplayValue()),
-                                    String.valueOf(pageTree.getNumberOfPages())};
-                    MessageFormat formatter = new MessageFormat(messageBundle.getString("viewer.statusbar" +
-                            ".currentPage"));
+                    Object[] messageArguments = new Object[]{
+                            String.valueOf(documentViewController.getCurrentPageDisplayValue()),
+                            String.valueOf(pageTree.getNumberOfPages())
+                    };
+                    MessageFormat formatter = new MessageFormat(
+                            messageBundle.getString("viewer.statusbar.currentPage"));
                     statusLabel.setText(formatter.format(messageArguments));
                 }
             }
@@ -4482,9 +4581,13 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
             s[i] = Integer.toString(i + 1);
         }
         Object initialSelection = s[documentViewController.getCurrentPageIndex()];
-        Object ob = JOptionPane.showInputDialog(viewer, messageBundle.getString("viewer.dialog.goToPage.description" +
-                        ".label"), messageBundle.getString("viewer.dialog.goToPage.title"),
-                         JOptionPane.QUESTION_MESSAGE, null, s,
+        Object ob = JOptionPane.showInputDialog(
+                viewer,
+                messageBundle.getString("viewer.dialog.goToPage.description.label"),
+                messageBundle.getString("viewer.dialog.goToPage.title"),
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                s,
                 initialSelection);
         if (ob != null) {
             try {
@@ -4519,7 +4622,10 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
             }
         } else {
             if (completeToolBar != null) {
-                completeToolBar.setVisible(!propertiesManager.getPreferences().getBoolean(ViewerPropertiesManager.PROPERTY_VIEWPREF_HIDETOOLBAR, false));
+                completeToolBar.setVisible(
+                        !propertiesManager.getPreferences().getBoolean(
+                                ViewerPropertiesManager.PROPERTY_VIEWPREF_HIDETOOLBAR,
+                                false));
             }
         }
 
@@ -4534,7 +4640,10 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 }
             } else {
                 if (menuBar != null) {
-                    menuBar.setVisible(!propertiesManager.getPreferences().getBoolean(ViewerPropertiesManager.PROPERTY_VIEWPREF_HIDEMENUBAR, false));
+                    menuBar.setVisible(
+                            !propertiesManager.getPreferences().getBoolean(
+                                    ViewerPropertiesManager.PROPERTY_VIEWPREF_HIDEMENUBAR,
+                                    false));
                 }
             }
         }
@@ -4547,8 +4656,8 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 }
             }
         } else {
-            if (propertiesManager.getPreferences().getBoolean(ViewerPropertiesManager.PROPERTY_VIEWPREF_FITWINDOW,
-                    false) && viewer != null) {
+            if (propertiesManager.getPreferences().getBoolean(
+                    ViewerPropertiesManager.PROPERTY_VIEWPREF_FITWINDOW, false) && viewer != null) {
                 viewer.setSize(documentViewController.getDocumentView().getDocumentSize());
             }
         }
@@ -4689,19 +4798,25 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                     } else if (source == deleteMenuItem) {
                         documentViewController.deleteCurrentAnnotation();
                         reflectUndoCommands();
-                    } else if (source == copyMenuItem || source == copyContextMenuItem) {
-                        if (document != null && havePermissionToExtractContent() && !(documentViewController.getDocumentViewModel().isSelectAll() && document.getNumberOfPages() > MAX_SELECT_ALL_PAGE_COUNT)) {
+                    } else if (source == copyMenuItem ||
+                            source == copyContextMenuItem) {
+                        if (document != null &&
+                                havePermissionToExtractContent() &&
+                                !(documentViewController.getDocumentViewModel().isSelectAll() &&
+                                        document.getNumberOfPages() > MAX_SELECT_ALL_PAGE_COUNT)) {
                             // get the text.
-                            StringSelection stringSelection =
-                                    new StringSelection(documentViewController.getFlatSelectedText());
-                            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(stringSelection,
-                                    stringSelection);
+                            StringSelection stringSelection = new StringSelection(
+                                    documentViewController.getFlatSelectedText());
+                            Toolkit.getDefaultToolkit().getSystemClipboard()
+                                    .setContents(stringSelection, stringSelection);
                         } else {
-                            Runnable doSwingWork = () -> org.icepdf.ri.util.Resources.showMessageDialog(viewer,
-                                    JOptionPane.INFORMATION_MESSAGE, messageBundle, "viewer.dialog.information" +
-                                            ".copyAll" +
-                                            ".title", "viewer.dialog.information.copyAll.msg",
-                                             MAX_SELECT_ALL_PAGE_COUNT);
+                            Runnable doSwingWork = () -> org.icepdf.ri.util.Resources.showMessageDialog(
+                                    viewer,
+                                    JOptionPane.INFORMATION_MESSAGE,
+                                    messageBundle,
+                                    "viewer.dialog.information.copyAll.title",
+                                    "viewer.dialog.information.copyAll.msg",
+                                    MAX_SELECT_ALL_PAGE_COUNT);
                             SwingUtilities.invokeLater(doSwingWork);
                         }
                     } else if (source == selectAllMenuItem) {
@@ -4784,10 +4899,13 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
             }
         } catch (Exception e) {
             String message = e.getMessage() == null || e.getMessage().isEmpty() ? e.toString() : e.getMessage();
-            Runnable doSwingWork = () -> org.icepdf.ri.util.Resources.showMessageDialog(viewer,
-                    JOptionPane.INFORMATION_MESSAGE, messageBundle, "viewer.dialog.error.exception.title", "viewer" +
-                            ".dialog" +
-                            ".error.exception.msg", message);
+            Runnable doSwingWork = () -> org.icepdf.ri.util.Resources.showMessageDialog(
+                    viewer,
+                    JOptionPane.INFORMATION_MESSAGE,
+                    messageBundle,
+                    "viewer.dialog.error.exception.title",
+                    "viewer.dialog.error.exception.msg",
+                    message);
             SwingUtilities.invokeLater(doSwingWork);
             logger.log(Level.FINE, "Error processing action event.", e);
         }
