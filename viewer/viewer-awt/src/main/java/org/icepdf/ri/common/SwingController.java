@@ -5047,6 +5047,11 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_REDACTION_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_REDACTION_ANNOTATION);
                 }
+            } else if (source == signatureAnnotationToolButton) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    tool = DocumentViewModelImpl.DISPLAY_TOOL_SIGNATURE_ANNOTATION;
+                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SIGNATURE_ANNOTATION);
+                }
             } else if (checkAnnotationButton(source, strikeOutAnnotationToolButton,
                     strikeOutAnnotationPropertiesToolButton)) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
