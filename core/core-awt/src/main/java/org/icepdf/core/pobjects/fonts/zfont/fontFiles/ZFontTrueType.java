@@ -164,7 +164,8 @@ public class ZFontTrueType extends ZSimpleFont {
     }
 
     @Override
-    public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
+    public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent,
+                               Rectangle2D bbox, char[] diff) {
         ZFontTrueType font = new ZFontTrueType(this);
         font.firstCh = firstCh;
         font.ascent = ascent;
@@ -182,7 +183,8 @@ public class ZFontTrueType extends ZSimpleFont {
     }
 
     @Override
-    public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent, float descent, Rectangle2D bbox, char[] diff) {
+    public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth, float ascent,
+                               float descent, Rectangle2D bbox, char[] diff) {
         ZFontTrueType font = new ZFontTrueType(this);
         font.firstCh = firstCh;
         font.ascent = ascent;
@@ -240,7 +242,7 @@ public class ZFontTrueType extends ZSimpleFont {
     }
 
     public int codeToGID(int code) {
-        int gid = 0;
+        int gid = 0; // worried about this, 0 is a valid glyph id for some CID fonts.
         try {
             if (cmapWinSymbol == null) {
                 if (encoding == null) {
@@ -259,27 +261,34 @@ public class ZFontTrueType extends ZSimpleFont {
                     }
                     // (1, 0) - (Macintosh, Roman)
                     if (gid == 0 && cmapMacRoman != null && name != null) {
-                        Character macCode = org.icepdf.core.pobjects.fonts.zfont.Encoding.macRomanEncoding.getChar(name);
+                        Character macCode =
+                                org.icepdf.core.pobjects.fonts.zfont.Encoding.macRomanEncoding.getChar(name);
                         if (macCode != null) {
                             gid = cmapMacRoman.getGlyphId(macCode);
                         }
                     }
                 }
-                // 'post' table - comment is incorrect but keeping it for now as the post table is an encoding
-                // that we can use. With this little hack we still have issue showing some glyphs correctly.
-                // likely looking at font substitutions corner cases.
+                // still not happy with this, lots of mystery and deception that needs to be figured out.
                 if (gid == 0) {
-                    // still not happy with this, lots of mystery and deception that needs to be figured out.
-                    if (encoding != null) {
-                        if (cmapWinUnicode != null &&
-                                (encoding.getName().equals(org.icepdf.core.pobjects.fonts.zfont.Encoding.WIN_ANSI_ENCODING_NAME)
-                                        || encoding.getName().equals("diff"))) {
-                            gid = cmapWinUnicode.getGlyphId(code);
-                        } else if (encoding.getName().startsWith("Mac") && cmapMacRoman != null) {
-                            gid = cmapMacRoman.getGlyphId(code);
-                        } else {
-                            gid = code;
+                    if (encoding != null && cmapWinUnicode != null &&
+                            (encoding.getName().equals(org.icepdf.core.pobjects.fonts.zfont.Encoding.WIN_ANSI_ENCODING_NAME)
+                                    || encoding.getName().equals("diff"))) {
+                        gid = cmapWinUnicode.getGlyphId(code);
+                    } else if (encoding != null && encoding.getName().startsWith("Mac") && cmapMacRoman != null) {
+                        gid = cmapMacRoman.getGlyphId(code);
+                    } else if (trueTypeFont.getPostScript() != null &&
+                            trueTypeFont.getPostScript().getGlyphNames() != null) {
+                        // fall back on the 'post' table
+                        String[] glyphNames = trueTypeFont.getPostScript().getGlyphNames();
+                        // find in index of the glyph name, a cache might be nice have here
+                        for (int i = 0; i < glyphNames.length; i++) {
+                            if (glyphNames[i].equals(name)) {
+                                gid = i;
+                                // hard break out, we found it.
+                                return gid;
+                            }
                         }
+                        gid = code;
                     } else {
                         gid = code;
                     }
@@ -328,7 +337,6 @@ public class ZFontTrueType extends ZSimpleFont {
         } catch (Exception e) {
             logger.log(Level.WARNING, "Error deriving codeToGID", e);
         }
-
         return gid;
     }
 
@@ -341,7 +349,7 @@ public class ZFontTrueType extends ZSimpleFont {
         calculateFontBbox();
     }
 
-    private void calculateFontBbox(){
+    private void calculateFontBbox() {
         if (headerTable != null) {
             Rectangle2D bbox = new Rectangle2D.Float(
                     headerTable.getXMin(), headerTable.getYMin(), headerTable.getXMax(), headerTable.getYMax());

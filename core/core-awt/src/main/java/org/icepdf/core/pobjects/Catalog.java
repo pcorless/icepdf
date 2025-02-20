@@ -161,14 +161,44 @@ public class Catalog extends Dictionary {
     public Outlines getOutlines() {
         synchronized (this) {
             if (!outlinesInited) {
-                Object o = library.getObject(entries, OUTLINES_KEY);
-                if (o != null) {
-                    outlines = new Outlines(library, (DictionaryEntries) o);
+                Reference ref = library.getReference(entries, OUTLINES_KEY);
+                if (ref != null) {
+                    PObject o = library.getPObject(ref);
+                    if (o != null) {
+                        outlines = new Outlines(library, (DictionaryEntries) o.getObject());
+                        outlines.setPObjectReference(o.getReference());
+                    }
                 }
                 outlinesInited = true;
             }
         }
         return outlines;
+    }
+
+    /**
+     * Creates a new Outlines object and sets the root outline item.
+     *
+     * @param outline root outline item.
+     * @throws InterruptedException
+     */
+    public void createOutlines(OutlineItem outline) throws InterruptedException {
+        if (outlines != null) {
+            throw new IllegalStateException("Outlines already exist");
+        }
+        DictionaryEntries outlinesDictionary = new DictionaryEntries();
+        outlinesDictionary.put(Outlines.TYPE_KEY, OUTLINES_KEY);
+        outlinesDictionary.put(Outlines.COUNT_KEY, 1);
+        outlinesDictionary.put(OutlineItem.FIRST_KEY, outline.getPObjectReference());
+        outlinesDictionary.put(OutlineItem.LAST_KEY, outline.getPObjectReference());
+        outlines = new Outlines(library, outlinesDictionary);
+        outlines.init();
+        outlines.setPObjectReference(library.getStateManager().getNewReferenceNumber());
+        entries.put(OUTLINES_KEY, outlines.getPObjectReference());
+        outline.setParent(outlines.getPObjectReference());
+
+        library.getStateManager().addChange(new PObject(this, getPObjectReference()));
+        library.getStateManager().addChange(new PObject(outlines, outlines.getPObjectReference()));
+        outlinesInited = true;
     }
 
     /**

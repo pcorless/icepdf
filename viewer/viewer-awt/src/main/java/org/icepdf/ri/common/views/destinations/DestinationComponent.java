@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 import static org.icepdf.core.util.SystemProperties.INTERACTIVE_ANNOTATIONS;
 
 /**
- * Component representing a a destination on a given page.
+ * Component representing a destination on a given page.
  *
  * @since 6.2
  */

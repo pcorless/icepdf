@@ -65,7 +65,22 @@ public class Outlines extends Dictionary {
     public OutlineItem getRootOutlineItem() {
         if (count == null)
             return null;
-        return new OutlineItem(library, entries);
+        OutlineItem outlineItem = new OutlineItem(library, entries);
+        outlineItem.setPObjectReference(getPObjectReference());
+        return outlineItem;
+    }
+
+    /**
+     * Creates a new instance of an OutlineItem and sets the reference number
+     *
+     * @param library document library
+     * @return new instance of an OutlineItem that is not registered with the state manager.
+     */
+    public static OutlineItem createNewOutlineItem(Library library) {
+        OutlineItem outlineItem = new OutlineItem(library, new DictionaryEntries());
+        Reference reference = library.getStateManager().getNewReferenceNumber();
+        outlineItem.setPObjectReference(reference);
+        return outlineItem;
     }
 
 }

@@ -472,9 +472,9 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     public void setBoundsRelativeToParent(int x, int y, AffineTransform pageInverseTransform) {
         Rectangle pageBounds = pageViewComponent.getParent().getBounds();
         // position the new popup on the icon center.
-        Rectangle bBox2 = new Rectangle(x, y,
-                (int) Math.abs(DEFAULT_WIDTH * pageInverseTransform.getScaleX()),
-                (int) Math.abs(DEFAULT_HEIGHT * pageInverseTransform.getScaleY()));
+        Rectangle rect = pageInverseTransform.createTransformedShape(new Rectangle(0, 0, DEFAULT_WIDTH,
+                DEFAULT_HEIGHT)).getBounds();
+        Rectangle bBox2 = new Rectangle(x, y, rect.width, rect.height);
 
         // add page offset
         bBox2.x += pageBounds.x;

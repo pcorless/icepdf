@@ -58,6 +58,12 @@ public class OutlineItemTreeNode extends DefaultMutableTreeNode {
         setUserObject(item.getTitle());
     }
 
+    public OutlineItemTreeNode(OutlineItemTreeNode userObject) {
+        super(userObject, true);
+        loadedChildren = userObject.loadedChildren;
+        item = userObject.item;
+    }
+
     public OutlineItemTreeNode(OutlineItem item, Pattern searchPattern, boolean isCaseSensitive) {
         super();
         this.item = item;
