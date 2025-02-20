@@ -4888,6 +4888,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                         outlinesController.insertNewOutline();
                         initializeOutline();
                         insertOutlineMenuItem.setEnabled(false);
+                        showOutlinePanel(true);
                         outlinesTree.updateUI();
                     } else {
                         logger.log(Level.FINE, "Unknown action event: " + source);
