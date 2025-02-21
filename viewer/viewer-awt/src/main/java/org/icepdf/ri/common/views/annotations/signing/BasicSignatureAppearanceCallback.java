@@ -137,22 +137,21 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         }
 
         if (signatureAppearanceModel.isSignatureTextVisible()) {
-
             float offsetY = 0;
             int lineSpacing = signatureAppearanceModel.getFontSize();
             int fontSize = signatureAppearanceModel.getFontSize();
-            float groupSpacing = lineSpacing + 5;
 
             String[] signatureText = {reason, contactInfo, commonName, location};
             int leftMargin = calculateLeftMargin(bbox, signatureText);
-            AffineTransform centeringTransform = calculateCenteringTransform(bbox, fontSize, lineSpacing,
-                    groupSpacing, signatureText);
+            int padding = 3;
+            float groupSpacing = calculateTextSpacing(bbox, signatureText, fontSize, padding);
+            AffineTransform centeringTransform = calculatePaddingTransform(leftMargin, padding);
 
             Point2D.Float lastOffset;
             float advanceY = (float) bbox.getMinY() + offsetY;
             shapes.add(new TransformDrawCmd(centeringTransform));
             for (String text : signatureText) {
-                lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, leftMargin, advanceY,
+                lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, 0, advanceY,
                         shapes,
                         fontSize,
                         lineSpacing,
@@ -184,16 +183,22 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
 
     }
 
-    private AffineTransform calculateCenteringTransform(Rectangle2D bbox, int fontSize, int lineSpacing,
-                                                        float groupSpacing, String[] text) {
-        // this is a little fuzzy but should work for most cases to center text in the middle of the bbox
-        double height = text.length * (fontSize + lineSpacing);
-        height += groupSpacing;
-        float offset = bbox.getHeight() > height ? (float) (bbox.getHeight() - height) / 2 : 0;
+    private float calculateTextSpacing(Rectangle2D bbox, String[] text, int fontSize, int padding) {
+        float textHeight = text.length * fontSize;
+        float bboxHeight = (float) bbox.getHeight() - (padding * 2);
+        if (textHeight > bboxHeight) {
+            return 0;
+        } else {
+            return (bboxHeight - textHeight) / (text.length - 1);
+        }
+    }
+
+    private AffineTransform calculatePaddingTransform(int leftMargin, int padding) {
+        // this is a little fuzzy but should work for most cases to center text in the middle of the bbox0;
         return new AffineTransform(
                 1, 0, 0,
-                1, 0,
-                offset);
+                1, leftMargin,
+                padding);
     }
 
     private int calculateLeftMargin(Rectangle2D bbox, String[] text) {
