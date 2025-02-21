@@ -3785,7 +3785,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
     protected void initializeOutline() {
         OutlineItem item = null;
         Outlines outlines = document.getCatalog().getOutlines();
-        insertOutlineMenuItem.setEnabled(outlines == null);
+        insertOutlineMenuItem.setEnabled(outlines == null && havePermissionToModifyDocument());
 
         if (outlines != null && outlinesTree != null) item = outlines.getRootOutlineItem();
 
