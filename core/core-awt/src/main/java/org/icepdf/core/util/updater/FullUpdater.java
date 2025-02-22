@@ -59,7 +59,7 @@ public class FullUpdater {
      * @param document     The Document that is being saved
      * @param outputStream OutputStream to write the full document to
      * @return The number of bytes written generating the new document
-     * @throws java.io.IOException error writing stream.
+     * @throws java.io.IOException  error writing stream.
      * @throws InterruptedException
      */
     public long writeDocument(
@@ -104,8 +104,8 @@ public class FullUpdater {
                 File tempFile = currentPath.toFile();
                 DocumentSigner.signDocument(tmpDocument, tempFile,
                         signatureManager.getCurrentSignatureDictionary());
-                Files.copy(currentPath, outputStream);
             }
+            Files.copy(currentPath, outputStream);
         } catch (Exception e) {
             logger.log(Level.FINE, "Failed to sign document.", e);
             throw new RuntimeException(e);
