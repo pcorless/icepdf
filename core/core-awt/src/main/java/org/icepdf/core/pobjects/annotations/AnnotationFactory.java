@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -35,7 +36,7 @@ public class AnnotationFactory {
 
     /**
      * Creates a new Annotation object using properties from the annotationState
-     * paramater.  If no annotaitonState is provided a LinkAnnotation is returned
+     * parameter.  If no annotationState is provided a LinkAnnotation is returned
      * with a black border.  The rect specifies where the annotation should
      * be located in user space.
      * <br>
@@ -75,6 +76,30 @@ public class AnnotationFactory {
             return PopupAnnotation.getInstance(library, rect);
         } else if (subType.equals(Annotation.SUBTYPE_REDACT)) {
             return RedactionAnnotation.getInstance(library, rect);
+        } else {
+            logger.warning("Unsupported Annotation type. ");
+            return null;
+        }
+    }
+
+    /**
+     * Creates a new Widget Annotation object using properties from the annotationState
+     * parameter.
+     * <br>
+     * This call adds the new Annotation object to the document library as well
+     * as the document StateManager.
+     *
+     * @param library   library to register annotation with
+     * @param fieldType field type to create
+     * @param rect      bounds of new annotation specified in user space.
+     * @return new annotation object
+     */
+    public static Annotation buildWidgetAnnotation(Library library,
+                                                   final Name fieldType,
+                                                   Rectangle rect) {
+        // build up a link annotation
+        if (fieldType.equals(FieldDictionaryFactory.TYPE_SIGNATURE)) {
+            return SignatureWidgetAnnotation.getInstance(library, rect);
         } else {
             logger.warning("Unsupported Annotation type. ");
             return null;

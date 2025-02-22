@@ -22,6 +22,7 @@ import org.icepdf.ri.common.print.PrintHelper;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
+import org.icepdf.ri.common.views.annotations.signing.BasicSignatureAppearanceCallback;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import javax.swing.*;
@@ -152,6 +153,8 @@ public class WindowManager implements WindowManagementCallback {
         // add interactive mouse link annotation support
         controller.getDocumentViewController().setAnnotationCallback(
                 new MyAnnotationCallback(controller.getDocumentViewController()));
+        // add custom signature appearance stream callback
+        controller.getDocumentViewController().setSignatureAppearanceCallback(new BasicSignatureAppearanceCallback());
 
         controllers.add(controller);
         // guild a new swing viewer with remembered view settings.

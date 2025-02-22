@@ -89,6 +89,18 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_PAGE_VIEW_BACKGROUND_COLOR = "org.icepdf.core.views.background.color";
     // image reference type.
     public static final String PROPERTY_IMAGING_REFERENCE_TYPE = "org.icepdf.core.imageReference";
+    // signature creation keystore type handler.
+    public static final String PROPERTY_PKCS_KEYSTORE_TYPE = "org.icepdf.core.signatures.keystore.type";
+    public static final String PROPERTY_PKCS11_PROVIDER_CONFIG_PATH = "org.icepdf.core.signatures.keystore.pkcs11" +
+            ".config.path";
+    public static final String PROPERTY_PKCS12_PROVIDER_KEYSTORE_PATH = "org.icepdf.core.signatures.keystore.pkcs12" +
+            ".config.path";
+    public static final String PROPERTY_SIGNATURE_IMAGE_PATH = "org.icepdf.core.signatures.image.path";
+    public static final String PROPERTY_SIGNATURE_SHOW_TEXT = "org.icepdf.core.signatures.show.txt";
+    public static final String PROPERTY_SIGNATURE_SHOW_IMAGE = "org.icepdf.core.signatures.show.image";
+    public static final String PROPERTY_SIGNATURE_IMAGE_SCALE = "org.icepdf.core.signatures.show.imageScale";
+    public static final String PROPERTY_SIGNATURE_FONT_NAME = "org.icepdf.core.signatures.font.name";
+    public static final String PROPERTY_SIGNATURE_FONT_SIZE = "org.icepdf.core.signatures.font.size";
     // advanced threading properties
     public static final String PROPERTY_IMAGE_PROXY_ENABLED = "org.icepdf.core.imageProxy";
     public static final String PROPERTY_IMAGE_PROXY_THREAD_COUNT = "org.icepdf.core.library.imageThreadPoolSize";
@@ -138,6 +150,7 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_SHOW_PREFERENCES_GENERAL = "application.preferences.show.general";
     public static final String PROPERTY_SHOW_PREFERENCES_ANNOTATIONS = "application.preferences.show.annotations";
     public static final String PROPERTY_SHOW_PREFERENCES_IMAGING = "application.preferences.show.imaging";
+    public static final String PROPERTY_SHOW_PREFERENCES_SIGNING = "application.preferences.show.signing";
     public static final String PROPERTY_SHOW_PREFERENCES_FONTS = "application.preferences.show.fonts";
     public static final String PROPERTY_SHOW_PREFERENCES_ADVANCED = "application.preferences.show.advanced";
     public static final String PROPERTY_SHOW_PREFERENCES_EXIMPORT = "application.preferences.show.eximport";
@@ -161,6 +174,8 @@ public final class ViewerPropertiesManager {
             ".selection.type";
     public static final String PROPERTY_ANNOTATION_LINE_SELECTION_TYPE = "application.annotation.line.selection.type";
     public static final String PROPERTY_ANNOTATION_LINK_SELECTION_TYPE = "application.annotation.link.selection.type";
+    public static final String PROPERTY_ANNOTATION_SIGNATURE_SELECTION_TYPE = "application.annotation.signature" +
+            ".selection.type";
     public static final String PROPERTY_ANNOTATION_SQUARE_SELECTION_TYPE = "application.annotation.rectangle.selection.type";
     public static final String PROPERTY_ANNOTATION_CIRCLE_SELECTION_TYPE = "application.annotation.circle.selection.type";
     public static final String PROPERTY_ANNOTATION_INK_SELECTION_TYPE = "application.annotation.ink.selection.type";
@@ -172,6 +187,7 @@ public final class ViewerPropertiesManager {
             ViewerPropertiesManager.PROPERTY_ANNOTATION_INK_SELECTION_TYPE,
             ViewerPropertiesManager.PROPERTY_ANNOTATION_LINE_SELECTION_TYPE,
             ViewerPropertiesManager.PROPERTY_ANNOTATION_LINK_SELECTION_TYPE,
+            ViewerPropertiesManager.PROPERTY_ANNOTATION_SIGNATURE_SELECTION_TYPE,
             ViewerPropertiesManager.PROPERTY_ANNOTATION_SQUARE_SELECTION_TYPE,
             ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_SELECTION_TYPE,
             ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SELECTION_TYPE
@@ -194,6 +210,8 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_DELETE = "application.toolbar.annotation.delete.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_HIGHLIGHT = "application.toolbar.annotation.highlight.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_REDACTION = "application.toolbar.annotation.redaction" +
+            ".enabled";
+    public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_SIGNATURE = "application.toolbar.annotation.signature" +
             ".enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_UNDERLINE = "application.toolbar.annotation.underline.enabled";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_STRIKE_OUT = "application.toolbar.annotation.strikeout.enabled";

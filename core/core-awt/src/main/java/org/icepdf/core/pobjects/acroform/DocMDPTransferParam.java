@@ -90,6 +90,10 @@ public class DocMDPTransferParam extends Dictionary implements TransformParams {
      * @return always returns 1.2 as a name.
      */
     public Name getVersion() {
+        return DocMDPTransferParam.getDocMDPVersion();
+    }
+
+    public static Name getDocMDPVersion() {
         return new Name("1.2");
     }
 
