@@ -36,32 +36,6 @@ public class SignatureHandler {
     private static final Logger logger =
             Logger.getLogger(SignatureHandler.class.toString());
 
-    static {
-        // Load security handler from system property if possible
-        String defaultSecurityProvider =
-                "org.bouncycastle.jce.provider.BouncyCastleProvider";
-
-        // check system property security provider
-        String customSecurityProvider =
-                Defs.sysProperty("org.icepdf.core.security.jceProvider");
-
-        // if no custom security provider load default security provider
-        if (customSecurityProvider != null) {
-            defaultSecurityProvider = customSecurityProvider;
-        }
-        try {
-            // try and create a new provider
-            Object provider = Class.forName(defaultSecurityProvider).getDeclaredConstructor().newInstance();
-            Security.insertProviderAt((Provider) provider, 2);
-        } catch (ClassNotFoundException e) {
-            logger.log(Level.FINE, "Optional BouncyCastle security provider not found");
-        } catch (InstantiationException e) {
-            logger.log(Level.FINE, "Optional BouncyCastle security provider could not be instantiated");
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            logger.log(Level.FINE, "Optional BouncyCastle security provider could not be created");
-        }
-    }
-
     public SignatureHandler() {
     }
 

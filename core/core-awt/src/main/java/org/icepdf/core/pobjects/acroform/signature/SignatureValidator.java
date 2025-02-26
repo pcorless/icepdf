@@ -45,9 +45,9 @@ public interface SignatureValidator {
     boolean isSignedDataModified();
 
     /**
-     * Indicates that data after the signature definition has been been modified.  This is most likely do to another
-     * signature being added to the document or some form or page manipulation.  However it is possible that
-     * an major update has been appended to the document.
+     * Indicates that data after the signature definition has been modified.  This is most likely do to another
+     * signature being added to the document or some form or page manipulation.  However, it is possible that
+     * a major update has been appended to the document.
      *
      * @return true if the document has been modified outside the byte range of the signature.
      */
@@ -62,7 +62,7 @@ public interface SignatureValidator {
     boolean isSignaturesCoverDocumentLength();
 
     /**
-     * Sets the signaturesCoverDocumentLength param to indicate that all signatures have been check and cover
+     * Sets the signaturesCoverDocumentLength param to indicate that all signatures have been checked and cover
      * all the bytes in the document.
      *
      * @param signaturesCoverDocumentLength true if signatures covers document length.
@@ -86,7 +86,7 @@ public interface SignatureValidator {
     /**
      * Indicates the signature was self singed and the certificate can not be trusted.
      *
-     * @return true if self signed, false otherwise.
+     * @return true if self-signed, false otherwise.
      */
     boolean isSelfSigned();
 

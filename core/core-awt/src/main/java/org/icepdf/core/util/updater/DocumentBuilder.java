@@ -5,9 +5,6 @@ import org.icepdf.core.pobjects.Document;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.WritableByteChannel;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -28,29 +25,21 @@ public class DocumentBuilder {
             OutputStream out,
             long documentLength) throws IOException, InterruptedException {
 
-        try (WritableByteChannel channel = Channels.newChannel(out)) {
-            if (writeMode == WriteMode.FULL_UPDATE) {
-                // kick of a full rewrite of the document, replacing any updates objects with new data
-                long newLength = new FullUpdater().writeDocument(
-                        document,
-                        out);
-                return newLength;
-            } else if (writeMode == WriteMode.INCREMENT_UPDATE) {
-                // copy original file data
-                channel.write(documentByteBuffer);
-                // append the data from the incremental updater
-                long appendedLength = new IncrementalUpdater().appendIncrementalUpdate(
-                        document,
-                        out,
-                        documentLength);
-                channel.close();
-                return documentLength + appendedLength;
-            }
-        } catch (IOException | InterruptedException e) {
-            logger.log(Level.FINE, "Error writing PDF output stream.", e);
-            throw e;
+        long length = -1;
+        if (writeMode == WriteMode.FULL_UPDATE) {
+            // kick of a full rewrite of the document, replacing any updates objects with new data
+            length = new FullUpdater().writeDocument(
+                    document,
+                    out);
+        } else if (writeMode == WriteMode.INCREMENT_UPDATE) {
+            // append the data from the incremental updater
+            long appendedLength = new IncrementalUpdater().appendIncrementalUpdate(
+                    document,
+                    documentByteBuffer,
+                    out,
+                    documentLength);
+            length = documentLength + appendedLength;
         }
-
-        return 0;
+        return length;
     }
 }
