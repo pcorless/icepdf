@@ -312,8 +312,11 @@ public class TextSprite {
         if (scale <= 0) {
             scale = 1;
         }
-        gg.setStroke(new BasicStroke((float) (scale)));
-        gg.setColor(Color.blue);
+
+        float[] dashPattern = {(float) (10 * scale), (float) (5 * scale)}; // 10 pixels on, 10 pixels off
+        gg.setStroke(new BasicStroke((float) (scale), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10, dashPattern,
+                0));
+        gg.setColor(Color.LIGHT_GRAY);
 
         charOutline = new GeneralPath(bounds);
         gg.draw(charOutline);
