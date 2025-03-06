@@ -1,11 +1,14 @@
 package org.icepdf.ri.common.tools;
 
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.util.edit.content.TextContentEditor;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.awt.geom.GeneralPath;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import static org.icepdf.ri.common.tools.HighLightAnnotationHandler.getSelectedTextBounds;
@@ -30,12 +33,16 @@ public class EditTextHandler extends TextSelection
 
             // get the bounds and text
             ArrayList<Shape> highlightBounds = getSelectedTextBounds(pageViewComponent, getPageTransform());
-            String text = documentViewController.getSelectedText();
-            System.out.println("Selected text: " + text);
-
-            // open the dialog
-
-        } catch (InterruptedException e) {
+            if (highlightBounds != null && !highlightBounds.isEmpty()) {
+                GeneralPath highlightPath = convertTextShapesToBounds(highlightBounds);
+                Rectangle textBounds = convertToPageSpace(highlightBounds, highlightPath);
+                // todo we need to build a rule set for when editing would be allowed.
+                //  is there a toUnicode mapping
+                //  what font type is being used
+                TextContentEditor.updateText(currentPage, textBounds, "new text");
+                // repaint page
+            }
+        } catch (InterruptedException | IOException e) {
             throw new RuntimeException(e);
         }
     }

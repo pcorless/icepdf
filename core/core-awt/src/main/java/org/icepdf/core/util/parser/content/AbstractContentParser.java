@@ -27,7 +27,7 @@ import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorCallback;
+import org.icepdf.core.util.updater.callbacks.ContentStreamCallback;
 
 import java.awt.*;
 import java.awt.geom.*;
@@ -96,7 +96,7 @@ public abstract class AbstractContentParser {
     protected GraphicsState graphicState;
     protected Library library;
     protected Resources resources;
-    protected ContentStreamRedactorCallback contentStreamRedactorCallback;
+    protected ContentStreamCallback contentStreamCallback;
 
     protected Shapes shapes;
     // keep track of embedded marked content
@@ -128,10 +128,10 @@ public abstract class AbstractContentParser {
      * @param l PDF library master object.
      * @param r resources
      */
-    public AbstractContentParser(Library l, Resources r, ContentStreamRedactorCallback contentStreamRedactorCallback) {
+    public AbstractContentParser(Library l, Resources r, ContentStreamCallback contentStreamCallback) {
         library = l;
         resources = r;
-        this.contentStreamRedactorCallback = contentStreamRedactorCallback;
+        this.contentStreamCallback = contentStreamCallback;
     }
 
     /**
@@ -487,7 +487,7 @@ public abstract class AbstractContentParser {
                                               Shapes shapes, Resources resources,
                                               boolean viewParse, // events
                                               AtomicInteger imageIndex, Page page,
-                                              ContentStreamRedactorCallback contentStreamRedactorCallback,
+                                              ContentStreamCallback contentStreamCallback,
                                               boolean inTextBlock) throws InterruptedException, IOException {
         Name xobjectName = (Name) stack.pop();
         if (resources == null) return graphicState;
@@ -524,11 +524,11 @@ public abstract class AbstractContentParser {
             // one in the hope that any resources can be found.
             formXObject.setParentResources(resources);
             // need a new instance, so we don't corrupt the stream offset.
-            ContentStreamRedactorCallback formContentStreamRedactorCallback = null;
-            if (contentStreamRedactorCallback != null) {
+            ContentStreamCallback formContentStreamRedactorCallback = null;
+            if (contentStreamCallback != null) {
                 AffineTransform xObjectTransform = graphicState.getCTM();
                 xObjectTransform.concatenate(formXObject.getMatrix());
-                formContentStreamRedactorCallback = contentStreamRedactorCallback.createChildInstance(xObjectTransform);
+                formContentStreamRedactorCallback = contentStreamCallback.createChildInstance(xObjectTransform);
             }
             formXObject.init(formContentStreamRedactorCallback);
             // 2. concatenate matrix entry with the current CTM
@@ -607,7 +607,7 @@ public abstract class AbstractContentParser {
                 }
             }
             // Some Do object will have images, and we need to make sure we account for localized space.
-            if (contentStreamRedactorCallback != null &&
+            if (contentStreamCallback != null &&
                     formXObject.getShapes() != null) {
                 formContentStreamRedactorCallback.endContentStream();
                 Shapes pageShapes = formXObject.getShapes();
@@ -662,8 +662,8 @@ public abstract class AbstractContentParser {
                 setAlpha(shapes, graphicState, AlphaPaintType.ALPHA_FILL);
 
 
-                if (contentStreamRedactorCallback != null) {
-                    contentStreamRedactorCallback.checkAndRedactImageXObject(imageReference);
+                if (contentStreamCallback != null) {
+                    contentStreamCallback.checkAndModifyImageXObject(imageReference);
                 }
 
                 shapes.add(new ImageDrawCmd(imageReference));
@@ -949,14 +949,14 @@ public abstract class AbstractContentParser {
                                                TextMetrics textMetrics,
                                                GlyphOutlineClip glyphOutlineClip,
                                                LinkedList<OptionalContents> oCGs,
-                                               ContentStreamRedactorCallback contentStreamRedactorCallback) throws IOException {
+                                               ContentStreamCallback contentStreamCallback) throws IOException {
         StringObject stringObject = (StringObject) stack.pop();
         graphicState.getTextState().cspace = ((Number) stack.pop()).floatValue();
         graphicState.getTextState().wspace = ((Number) stack.pop()).floatValue();
         // push the string back on, so we can reuse the single quote layout code
         stack.push(stringObject);
         consume_T_star(graphicState, textMetrics, shapes.getPageText(), oCGs);
-        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs, contentStreamRedactorCallback);
+        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs, contentStreamCallback);
     }
 
     protected static void consume_single_quote(GraphicsState graphicState, Stack<Object> stack,
@@ -964,11 +964,11 @@ public abstract class AbstractContentParser {
                                                TextMetrics textMetrics,
                                                GlyphOutlineClip glyphOutlineClip,
                                                LinkedList<OptionalContents> oCGs,
-                                               ContentStreamRedactorCallback contentStreamRedactorCallback)
+                                               ContentStreamCallback contentStreamCallback)
             throws IOException {
         // ' = T* + Tj,  who knew?
         consume_T_star(graphicState, textMetrics, shapes.getPageText(), oCGs);
-        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs, contentStreamRedactorCallback);
+        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs, contentStreamCallback);
     }
 
     protected static void consume_Td(GraphicsState graphicState, Stack<Object> stack,
@@ -1376,7 +1376,7 @@ public abstract class AbstractContentParser {
                                      TextMetrics textMetrics,
                                      GlyphOutlineClip glyphOutlineClip,
                                      LinkedList<OptionalContents> oCGs,
-                                     ContentStreamRedactorCallback contentStreamRedactorCallback) throws IOException {
+                                     ContentStreamCallback contentStreamCallback) throws IOException {
         // apply scaling
         AffineTransform tmp = applyTextScaling(graphicState);
         // apply transparency
@@ -1397,7 +1397,7 @@ public abstract class AbstractContentParser {
                                     textState.font.getFont()),
                             textMetrics,
                             graphicState.getTextState(), shapes, glyphOutlineClip,
-                            graphicState, oCGs, contentStreamRedactorCallback);
+                            graphicState, oCGs, contentStreamCallback);
                     textOperators.add(textSprite);
                 }
             } else if (currentObject instanceof Number) {
@@ -1408,8 +1408,8 @@ public abstract class AbstractContentParser {
             textMetrics.setPreviousAdvance(textMetrics.getAdvance().x);
         }
         graphicState.set(tmp);
-        if (contentStreamRedactorCallback != null) {
-            contentStreamRedactorCallback.writeRedactedStringObject(textOperators, Operands.TJ);
+        if (contentStreamCallback != null) {
+            contentStreamCallback.writeModifiedStringObject(textOperators, Operands.TJ);
         }
     }
 
@@ -1418,7 +1418,7 @@ public abstract class AbstractContentParser {
                                      TextMetrics textMetrics,
                                      GlyphOutlineClip glyphOutlineClip,
                                      LinkedList<OptionalContents> oCGs,
-                                     ContentStreamRedactorCallback contentStreamRedactorCallback) throws IOException {
+                                     ContentStreamCallback contentStreamCallback) throws IOException {
         if (stack.size() != 0) {
             Object tjValue = stack.pop();
             StringObject stringObject;
@@ -1440,13 +1440,13 @@ public abstract class AbstractContentParser {
                             textState,
                             shapes,
                             glyphOutlineClip,
-                            graphicState, oCGs, contentStreamRedactorCallback);
+                            graphicState, oCGs, contentStreamCallback);
                     textOperators.add(textSprite);
                 }
                 graphicState.set(tmp);
                 // pass them back to the redactor,
-                if (contentStreamRedactorCallback != null) {
-                    contentStreamRedactorCallback.writeRedactedStringObject(textOperators, Operands.Tj);
+                if (contentStreamCallback != null) {
+                    contentStreamCallback.writeModifiedStringObject(textOperators, Operands.Tj);
                 }
             }
         }
@@ -1475,7 +1475,7 @@ public abstract class AbstractContentParser {
             GlyphOutlineClip glyphOutlineClip,
             GraphicsState graphicState,
             LinkedList<OptionalContents> oCGs,
-            ContentStreamRedactorCallback contentStreamRedactorCallback) {
+            ContentStreamCallback contentStreamCallback) {
 
         float advanceX = textMetrics.getAdvance().x;
         float advanceY = textMetrics.getAdvance().y;
@@ -1562,8 +1562,8 @@ public abstract class AbstractContentParser {
                     currentX, currentY, newAdvanceX, newAdvanceY);
             shapes.getPageText().addGlyph(glyphText, oCGs);
 
-            if (contentStreamRedactorCallback != null) {
-                contentStreamRedactorCallback.checkAndRedactText(glyphText);
+            if (contentStreamCallback != null) {
+                contentStreamCallback.checkAndModifyText(glyphText);
             }
 
         }
