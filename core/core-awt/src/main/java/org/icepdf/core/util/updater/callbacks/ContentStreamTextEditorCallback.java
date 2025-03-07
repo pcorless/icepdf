@@ -7,6 +7,7 @@ import org.icepdf.core.util.edit.content.TextStringObjectWriter;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 
 /**
@@ -45,21 +46,18 @@ public class ContentStreamTextEditorCallback extends ContentStreamCallback {
      * @param glyphText text to test for intersection with flagged content bounds
      */
     public void checkAndModifyText(GlyphText glyphText) {
-        System.out.println("Text: " + glyphText.getUnicode());
-//        for (RedactionAnnotation annotation : redactionAnnotations) {
-//            GeneralPath reactionPaths = annotation.getMarkupPath();
-//            glyphText.normalizeToUserSpace(transform, null);
-//            Rectangle2D glyphBounds = glyphText.getBounds();
-//            if (reactionPaths != null && reactionPaths.contains(glyphBounds)) {
-//                logger.finer(() -> "Redacting Text: " + glyphText.getCid() + " " + glyphText.getUnicode());
-//                glyphText.flagged();
-//            }
-//        }
+        glyphText.normalizeToUserSpace(transform, null);
+        Rectangle2D glyphBounds = glyphText.getBounds();
+        if (textBounds != null && textBounds.contains(glyphBounds)) {
+            logger.finer(() -> "Editing Text: " + glyphText.getCid() + " " + glyphText.getUnicode());
+//            glyphText.flagged();
+        }
     }
 
     public void checkAndModifyInlineImage(ImageReference imageReference, int pos) throws InterruptedException,
             IOException {
         // nothing to do
+        lastTokenPosition = pos;
     }
 
     public void checkAndModifyImageXObject(ImageReference imageReference) throws InterruptedException {

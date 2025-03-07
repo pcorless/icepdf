@@ -7,7 +7,6 @@ import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.parser.content.Operands;
-import org.icepdf.core.util.redaction.RedactedStringObjectWriter;
 
 import java.awt.geom.AffineTransform;
 import java.io.ByteArrayOutputStream;
@@ -147,7 +146,7 @@ public abstract class ContentStreamCallback {
 
     // write string/hex Object stored in glyphText, skipping and offsetting for any redacted glyphs.
     public void writeModifiedStringObject(ArrayList<TextSprite> textOperators, final int operand) throws IOException {
-        if (RedactedStringObjectWriter.containsFlaggedText(textOperators)) {
+        if (stringObjectWriter.containsFlaggedText(textOperators)) {
             // apply redaction
             if (Operands.TJ == operand) {
                 lastTjOffset = stringObjectWriter.writeTJ(burnedContentOutputStream, textOperators, lastTjOffset);

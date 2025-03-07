@@ -34,7 +34,7 @@ public abstract class StringObjectWriter {
         return false;
     }
 
-    public static boolean allFlagged(ArrayList<GlyphText> glyphTexts) {
+    public static boolean notFlagged(ArrayList<GlyphText> glyphTexts) {
         for (GlyphText glyphText : glyphTexts) {
             if (!glyphText.isFlagged()) {
                 return false;

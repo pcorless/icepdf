@@ -28,22 +28,15 @@ public class EditTextHandler extends TextSelection
             // select the word under the mouse
             Page currentPage = pageViewComponent.getPage();
             // handle text selection mouse coordinates
-            Point mouseLocation = (Point) selectionPoint.clone();
-            wordSelectHandler(currentPage, mouseLocation);
+            wordSelectHandler(currentPage, selectionPoint);
 
-            // get the bounds and text
-            ArrayList<Shape> highlightBounds = getSelectedTextBounds(pageViewComponent, getPageTransform());
-            if (highlightBounds != null && !highlightBounds.isEmpty()) {
-                GeneralPath highlightPath = convertTextShapesToBounds(highlightBounds);
-                Rectangle textBounds = convertToPageSpace(highlightBounds, highlightPath);
-                // todo we need to build a rule set for when editing would be allowed.
-                //  is there a toUnicode mapping
-                //  what font type is being used
-                TextContentEditor.updateText(currentPage, textBounds, "new text");
-                // repaint page
-            }
+            updateSelectedText("new text");
+
+            // reselect the text as we have a new model now
+            wordSelectHandler(currentPage, selectionPoint);
+
         } catch (InterruptedException | IOException e) {
-            throw new RuntimeException(e);
+            logger.severe("Error editing word: " + e);
         }
     }
 
@@ -52,19 +45,30 @@ public class EditTextHandler extends TextSelection
             // select the word under the mouse
             Page currentPage = pageViewComponent.getPage();
             // handle text selection mouse coordinates
-            Point mouseLocation = (Point) selectionPoint.clone();
-            lineSelectHandler(currentPage, mouseLocation);
+            lineSelectHandler(currentPage, selectionPoint);
 
-            // get the bounds and text
-            ArrayList<Shape> highlightBounds = getSelectedTextBounds(pageViewComponent, getPageTransform());
-            String text = documentViewController.getSelectedText();
-            System.out.println("Selected text: " + text);
+            // todo show edit dialog
 
+            updateSelectedText("new text");
 
-            // open the dialog
+            lineSelectHandler(currentPage, selectionPoint);
 
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+        } catch (InterruptedException | IOException e) {
+            logger.severe("Error editing line: " + e);
+        }
+    }
+
+    private void updateSelectedText(String newText) throws IOException, InterruptedException {
+        // get the bounds and text
+        ArrayList<Shape> highlightBounds = getSelectedTextBounds(pageViewComponent, getPageTransform());
+        if (highlightBounds != null && !highlightBounds.isEmpty()) {
+            GeneralPath highlightPath = convertTextShapesToBounds(highlightBounds);
+            Rectangle textBounds = convertToPageSpace(highlightBounds, highlightPath);
+            // todo we need to build a rule set for when editing would be allowed.
+            //  is there a toUnicode mapping
+            //  what font type is being used
+            TextContentEditor.updateText(pageViewComponent.getPage(), textBounds, newText);
+            // todo repaint page
         }
     }
 
