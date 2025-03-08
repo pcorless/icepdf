@@ -10,6 +10,12 @@ import java.util.ArrayList;
 
 public class TextStringObjectWriter extends StringObjectWriter {
 
+    private final String newText;
+
+    public TextStringObjectWriter(String newText) {
+        this.newText = newText;
+    }
+
     public float writeTj(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators,
                          float lastTdOffset) throws IOException {
         int operatorCount = 0;

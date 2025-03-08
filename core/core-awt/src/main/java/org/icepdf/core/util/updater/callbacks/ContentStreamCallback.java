@@ -146,7 +146,7 @@ public abstract class ContentStreamCallback {
 
     // write string/hex Object stored in glyphText, skipping and offsetting for any redacted glyphs.
     public void writeModifiedStringObject(ArrayList<TextSprite> textOperators, final int operand) throws IOException {
-        if (stringObjectWriter.containsFlaggedText(textOperators)) {
+        if (StringObjectWriter.containsFlaggedText(textOperators)) {
             // apply redaction
             if (Operands.TJ == operand) {
                 lastTjOffset = stringObjectWriter.writeTJ(burnedContentOutputStream, textOperators, lastTjOffset);
