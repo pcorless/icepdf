@@ -30,10 +30,11 @@ public class EditTextHandler extends TextSelection
             // handle text selection mouse coordinates
             wordSelectHandler(currentPage, selectionPoint);
 
-            updateSelectedText("new text");
+            updateSelectedText("BRAND");
 
-            // reselect the text as we have a new model now
-            wordSelectHandler(currentPage, selectionPoint);
+            // reinitialize the page and repaint with new content stream
+            pageViewComponent.reinitialize();
+            pageViewComponent.repaint();
 
         } catch (InterruptedException | IOException e) {
             logger.severe("Error editing word: " + e);
@@ -49,9 +50,11 @@ public class EditTextHandler extends TextSelection
 
             // todo show edit dialog
 
-            updateSelectedText("new text");
+            updateSelectedText("BRAND");
 
-            lineSelectHandler(currentPage, selectionPoint);
+            // reinitialize the page and repaint with new content stream
+            pageViewComponent.reinitialize();
+            pageViewComponent.repaint();
 
         } catch (InterruptedException | IOException e) {
             logger.severe("Error editing line: " + e);
@@ -67,6 +70,7 @@ public class EditTextHandler extends TextSelection
             // todo we need to build a rule set for when editing would be allowed.
             //  is there a toUnicode mapping
             //  what font type is being used
+            //  would likely be a utility method on this class that would be called from the TextSelectionViewHandler
             TextContentEditor.updateText(pageViewComponent.getPage(), textBounds, newText);
             // todo repaint page
         }

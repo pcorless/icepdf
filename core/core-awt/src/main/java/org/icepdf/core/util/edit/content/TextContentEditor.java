@@ -15,7 +15,6 @@ public class TextContentEditor {
         ContentStreamTextEditorCallback contentStreamCallback =
                 new ContentStreamTextEditorCallback(library, textBounds, newText);
         page.init(contentStreamCallback);
-        // wrap up, ends the last or only content stream being processed and store the bytes
         contentStreamCallback.endContentStream();
     }
 }

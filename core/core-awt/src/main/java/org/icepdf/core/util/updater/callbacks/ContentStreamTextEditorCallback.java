@@ -50,7 +50,7 @@ public class ContentStreamTextEditorCallback extends ContentStreamCallback {
         Rectangle2D glyphBounds = glyphText.getBounds();
         if (textBounds != null && textBounds.contains(glyphBounds)) {
             logger.finer(() -> "Editing Text: " + glyphText.getCid() + " " + glyphText.getUnicode());
-//            glyphText.flagged();
+            glyphText.flagged();
         }
     }
 
