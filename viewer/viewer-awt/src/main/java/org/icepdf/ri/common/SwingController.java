@@ -62,8 +62,8 @@ import org.icepdf.ri.viewer.WindowManager;
 
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.PrintQuality;
-import javax.swing.Timer;
 import javax.swing.*;
+import javax.swing.Timer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
@@ -87,8 +87,8 @@ import java.nio.file.StandardCopyOption;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
-import java.util.List;
 import java.util.*;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -4867,10 +4867,10 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                         goToDeltaPage(documentView.getNextPageIncrement());
                     } else if (source == lastPageMenuItem || source == lastPageButton) {
                         showPage(getPageTree().getNumberOfPages() - 1);
-                    } else if (source == searchMenuItem || source == searchButton) {
+                    } else if (source == searchMenuItem) {
                         cancelSetFocus = true;
                         showSearch();
-                    } else if (source == advancedSearchMenuItem) {
+                    } else if (source == advancedSearchMenuItem || source == searchButton) {
                         cancelSetFocus = true;
                         showSearchPanel();
                     } else if (source == searchNextMenuItem) {
