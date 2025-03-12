@@ -24,7 +24,7 @@ public class RedactedStringObjectWriter extends StringObjectWriter {
             GlyphText glyphText = null;
 
             // can skip it completely
-            if (notFlagged(glyphTexts)) {
+            if (fullyFlagged(glyphTexts)) {
                 continue;
             }
 
@@ -63,7 +63,7 @@ public class RedactedStringObjectWriter extends StringObjectWriter {
 
             operatorCount++;
             // can skip it completely
-            if (notFlagged(glyphTexts)) {
+            if (fullyFlagged(glyphTexts)) {
                 continue;
             }
 

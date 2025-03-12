@@ -299,6 +299,10 @@ public class TextSprite {
         this.fontSize = fontSize;
     }
 
+    public byte getSubTypeFormat() {
+        return subTypeFormat;
+    }
+
     private void drawBoundBox(Graphics2D gg) {
 
         // draw the characters

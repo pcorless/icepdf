@@ -34,7 +34,7 @@ public abstract class StringObjectWriter {
         return false;
     }
 
-    public static boolean notFlagged(ArrayList<GlyphText> glyphTexts) {
+    public static boolean fullyFlagged(ArrayList<GlyphText> glyphTexts) {
         for (GlyphText glyphText : glyphTexts) {
             if (!glyphText.isFlagged()) {
                 return false;
@@ -48,6 +48,30 @@ public abstract class StringObjectWriter {
 
     public abstract float writeTJ(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators,
                                   float lastTdOffset) throws IOException;
+
+    protected static float writeEditedText(ByteArrayOutputStream contentOutputStream,
+                                           TextSprite textSprite, String newText) throws IOException {
+        float newTextOffset = 0;
+        for (int i = 0, max = newText.length(); i < max; i++) {
+            char c = newText.charAt(i);
+            newTextOffset += (float) textSprite.getFont().getAdvance(c).getX();
+            // todo this is a raw right without any type of mapping, we should be using a reverse toUnicode mapping
+            writeCharacterCode(c, textSprite.getSubTypeFormat(), contentOutputStream);
+        }
+        return newTextOffset;
+    }
+
+    protected static float writeLastTdOffset(ByteArrayOutputStream contentOutputStream, float lastTdOffset,
+                                             float start, float advance) throws IOException {
+        // still not sure how to handle this in a 100% of cases as advance can technically be negative
+        // but if we have a negative glyph advance we likely have a negative font value and should
+        // treat this as a positive value when writing the advance.
+        advance += start;
+        if (advance < 0) {
+            advance = Math.abs(advance);
+        }
+        return writeTdOffset(contentOutputStream, advance, lastTdOffset);
+    }
 
     protected static float writeLastTdOffset(ByteArrayOutputStream contentOutputStream, float lastTdOffset,
                                              GlyphText glyphText) throws IOException {
@@ -79,16 +103,20 @@ public abstract class StringObjectWriter {
         return lastTdOffset;
     }
 
-    protected static void writeCharacterCode(GlyphText glyphText, ByteArrayOutputStream contentOutputStream) throws IOException {
-        if (glyphText.getFontSubTypeFormat() == Font.SIMPLE_FORMAT) {
-            writeSimpleCharacterCode(glyphText, contentOutputStream);
+    protected static void writeCharacterCode(GlyphText glyphText, ByteArrayOutputStream contentOutputStream)
+            throws IOException {
+        writeCharacterCode(glyphText.getCid(), glyphText.getFontSubTypeFormat(), contentOutputStream);
+    }
+
+    protected static void writeCharacterCode(char cid, int subType, ByteArrayOutputStream contentOutputStream) throws IOException {
+        if (subType == Font.SIMPLE_FORMAT) {
+            writeSimpleCharacterCode(cid, contentOutputStream);
         } else {
-            writeCidCharacterCode(glyphText, contentOutputStream);
+            writeCidCharacterCode(cid, contentOutputStream);
         }
     }
 
-    protected static void writeSimpleCharacterCode(GlyphText glyphText, ByteArrayOutputStream contentOutputStream) throws IOException {
-        char cid = glyphText.getCid();
+    protected static void writeSimpleCharacterCode(char cid, ByteArrayOutputStream contentOutputStream) throws IOException {
         // simple fonts
         if (cid <= 127) {
             if (cid == '(' || cid == ')' || cid == '\\') {
@@ -102,8 +130,7 @@ public abstract class StringObjectWriter {
         }
     }
 
-    protected static void writeCidCharacterCode(GlyphText glyphText, ByteArrayOutputStream contentOutputStream) throws IOException {
-        char cid = glyphText.getCid();
+    protected static void writeCidCharacterCode(char cid, ByteArrayOutputStream contentOutputStream) throws IOException {
         String hex = Integer.toHexString(cid);
         if (hex.length() == 2) {
             hex = "00" + hex;
