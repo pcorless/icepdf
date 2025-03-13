@@ -64,6 +64,7 @@ public class EditTextHandler extends TextSelection
     private void updateSelectedText(String newText) throws IOException, InterruptedException {
         // get the bounds and text
         ArrayList<Shape> highlightBounds = getSelectedTextBounds(pageViewComponent, getPageTransform());
+
         if (highlightBounds != null && !highlightBounds.isEmpty()) {
             GeneralPath highlightPath = convertTextShapesToBounds(highlightBounds);
             Rectangle textBounds = convertToPageSpace(highlightBounds, highlightPath);
@@ -71,7 +72,9 @@ public class EditTextHandler extends TextSelection
             //  is there a toUnicode mapping
             //  what font type is being used
             //  would likely be a utility method on this class that would be called from the TextSelectionViewHandler
-            TextContentEditor.updateText(pageViewComponent.getPage(), textBounds, newText);
+            Page currentPage = pageViewComponent.getPage();
+            String selectedText = currentPage.getViewText().getSelected().toString().trim();
+            TextContentEditor.updateText(pageViewComponent.getPage(), selectedText, textBounds, newText);
             // todo repaint page
         }
     }

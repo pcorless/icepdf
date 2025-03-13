@@ -9,11 +9,11 @@ import java.io.IOException;
 
 public class TextContentEditor {
 
-    public static void updateText(Page page, Rectangle textBounds, String newText) throws InterruptedException,
+    public static void updateText(Page page, String text, Rectangle textBounds, String newText) throws InterruptedException,
             IOException {
         Library library = page.getLibrary();
         ContentStreamTextEditorCallback contentStreamCallback =
-                new ContentStreamTextEditorCallback(library, textBounds, newText);
+                new ContentStreamTextEditorCallback(library, text, textBounds, newText);
         page.init(contentStreamCallback);
         contentStreamCallback.endContentStream();
     }

@@ -43,23 +43,22 @@ public abstract class StringObjectWriter {
         return true;
     }
 
+    public static int flaggedCount(ArrayList<GlyphText> glyphTexts) {
+        int count = 0;
+        for (GlyphText glyphText : glyphTexts) {
+            if (glyphText.isFlagged()) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     public abstract float writeTj(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators,
                                   float lastTdOffset) throws IOException;
 
     public abstract float writeTJ(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators,
                                   float lastTdOffset) throws IOException;
 
-    protected static float writeEditedText(ByteArrayOutputStream contentOutputStream,
-                                           TextSprite textSprite, String newText) throws IOException {
-        float newTextOffset = 0;
-        for (int i = 0, max = newText.length(); i < max; i++) {
-            char c = newText.charAt(i);
-            newTextOffset += (float) textSprite.getFont().getAdvance(c).getX();
-            // todo this is a raw right without any type of mapping, we should be using a reverse toUnicode mapping
-            writeCharacterCode(c, textSprite.getSubTypeFormat(), contentOutputStream);
-        }
-        return newTextOffset;
-    }
 
     protected static float writeLastTdOffset(ByteArrayOutputStream contentOutputStream, float lastTdOffset,
                                              float start, float advance) throws IOException {

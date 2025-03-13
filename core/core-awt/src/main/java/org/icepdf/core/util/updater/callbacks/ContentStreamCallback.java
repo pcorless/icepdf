@@ -144,10 +144,10 @@ public abstract class ContentStreamCallback {
         return token == Tj || token == TJ || token == Td || token == TD || token == Tm || token == T_STAR || token == BT;
     }
 
-    // write string/hex Object stored in glyphText, skipping and offsetting for any redacted glyphs.
+    // write string/hex Object stored in glyphText using the specified StringObjectWriter
     public void writeModifiedStringObject(ArrayList<TextSprite> textOperators, final int operand) throws IOException {
         if (StringObjectWriter.containsFlaggedText(textOperators)) {
-            // apply redaction
+            // apply end string writer
             if (Operands.TJ == operand) {
                 lastTjOffset = stringObjectWriter.writeTJ(burnedContentOutputStream, textOperators, lastTjOffset);
             } else {

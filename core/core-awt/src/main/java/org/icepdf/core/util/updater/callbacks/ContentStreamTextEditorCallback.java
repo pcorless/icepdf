@@ -21,22 +21,27 @@ import java.io.IOException;
 public class ContentStreamTextEditorCallback extends ContentStreamCallback {
 
     private final Rectangle textBounds;
+    private String text;
     private String newText;
 
-    public ContentStreamTextEditorCallback(Library library, Rectangle textBounds, String newText) {
-        super(library, new TextStringObjectWriter(newText));
+
+    public ContentStreamTextEditorCallback(Library library, String text, Rectangle textBounds, String newText) {
+        super(library, new TextStringObjectWriter(text, newText));
         this.newText = newText;
+        this.text = text;
         this.textBounds = textBounds;
     }
 
-    protected ContentStreamTextEditorCallback(Library library, Rectangle textBounds, String newText,
+    protected ContentStreamTextEditorCallback(Library library, String text, Rectangle textBounds, String newText,
                                               AffineTransform transform) {
-        super(library, new TextStringObjectWriter(newText), transform);
+        super(library, new TextStringObjectWriter(text, newText), transform);
         this.textBounds = textBounds;
+        this.newText = newText;
+        this.text = text;
     }
 
     public ContentStreamCallback createChildInstance(AffineTransform transform) {
-        return new ContentStreamTextEditorCallback(this.library, this.textBounds, this.newText, transform);
+        return new ContentStreamTextEditorCallback(this.library, this.text, this.textBounds, this.newText, transform);
     }
 
     /**
