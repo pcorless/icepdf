@@ -2,6 +2,7 @@ package org.icepdf.core.pobjects.fonts.zfont;
 
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.AFM;
 import org.icepdf.core.pobjects.fonts.FontManager;
@@ -132,9 +133,25 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
         widths = (List) library.getObject(entries, WIDTHS_KEY);
         if (widths != null) {
             float[] newWidth = new float[256 - firstchar];
+            float widthValue = 0;
             for (int i = 0, max = widths.size(), max2 = newWidth.length; i < max && i < max2; i++) {
                 if (widths.get(i) != null) {
-                    newWidth[i] = ((Number) widths.get(i)).floatValue() / 1000f;
+                    Object tmp = widths.get(i);
+                    if (tmp instanceof Number) {
+                        widthValue = ((Number) tmp).floatValue();
+                    }
+                    // unusual case where the width is a reference to a number, technically not allowed by spec.
+                    // sometimes I wonder if encoders do this on purpose.
+                    else if (tmp instanceof Reference) {
+                        tmp = library.getObject((Reference) tmp);
+                        if (tmp instanceof Number) {
+                            newWidth[i] = ((Number) tmp).floatValue();
+                        } else {
+                            logger.warning("Error reading width value, expected number but found: " + tmp);
+                            throw new IllegalStateException("Error reading width value, expected number but found: " + tmp);
+                        }
+                    }
+                    newWidth[i] = widthValue / 1000f;
                 }
             }
             font = font.deriveFont(newWidth, firstchar, missingWidth, ascent, descent, bbox, null);
