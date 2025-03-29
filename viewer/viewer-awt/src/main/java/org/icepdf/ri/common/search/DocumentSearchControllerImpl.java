@@ -34,8 +34,8 @@ import org.icepdf.ri.common.views.PageViewComponentImpl;
 
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
-import java.util.List;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -267,8 +267,8 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                                     // add word to potentials
                                     searchPhraseHitCount++;
                                 }
-                                // reset the counters.
                                 else {
+                                    // reset the counters.
                                     searchPhraseHitCount = 0;
                                 }
                             } else {

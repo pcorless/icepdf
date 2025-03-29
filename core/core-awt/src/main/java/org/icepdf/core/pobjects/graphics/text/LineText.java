@@ -31,8 +31,14 @@ public class LineText extends AbstractText implements TextSelect {
 
     private List<WordText> words;
 
+
     public LineText() {
+        this(0f);
+    }
+
+    public LineText(float pageRotation) {
         words = new ArrayList<>(16);
+        this.pageRotation = pageRotation;
     }
 
     public Rectangle2D.Double getBounds() {
@@ -67,14 +73,14 @@ public class LineText extends AbstractText implements TextSelect {
         if (WordText.detectWhiteSpace(sprite) ||
                 WordText.detectPunctuation(sprite, currentWord)) {
             // add as a new word, nothing special otherwise
-            WordText newWord = new WordText();
+            WordText newWord = new WordText(this.pageRotation);
             newWord.setWhiteSpace(true);
             newWord.addText(sprite);
             addWord(newWord);
             // ready new word
             currentWord = null;
         }
-        // we just a a new work sorting later will add the line breaks
+        // we just a new work sorting later will add the line breaks
         else if (getCurrentWord().detectNewLine(sprite)) {
             // add the break
             WordText spaceWord = currentWord.buildSpaceWord(sprite, false);
@@ -84,7 +90,7 @@ public class LineText extends AbstractText implements TextSelect {
             // ready a new word
             currentWord = null;
             // add as a new word, nothing special otherwise
-            WordText newWord = new WordText();
+            WordText newWord = new WordText(this.pageRotation);
             newWord.setWhiteSpace(true);
             newWord.addText(sprite);
             addWord(newWord);
@@ -148,7 +154,7 @@ public class LineText extends AbstractText implements TextSelect {
      */
     private WordText getCurrentWord() {
         if (currentWord == null) {
-            currentWord = new WordText();
+            currentWord = new WordText(this.pageRotation);
             words.add(currentWord);
         }
         return currentWord;

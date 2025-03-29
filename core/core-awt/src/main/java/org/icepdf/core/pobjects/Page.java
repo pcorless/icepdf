@@ -34,8 +34,8 @@ import java.awt.*;
 import java.awt.geom.*;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -1259,7 +1259,7 @@ public class Page extends Dictionary {
         return totalRotation;
     }
 
-    private float getPageRotation() {
+    public float getPageRotation() {
         // Get the pages default orientation if available, if not defined
         // then it is zero.
         Object tmpRotation = library.getObject(entries, ROTATE_KEY);
