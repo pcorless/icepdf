@@ -962,9 +962,10 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         try {
             if (viewerController != null) {
                 // get access to currently open document instance.
-                pageText = viewerController.getDocument().getPageText(pageIndex);
+
+                pageText = viewerController.getDocument().getPageViewText(pageIndex);
             } else if (document != null) {
-                pageText = document.getPageText(pageIndex);
+                pageText = document.getPageViewText(pageIndex);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
