@@ -218,7 +218,7 @@ public abstract class AbstractText implements Text {
      * Gets the original bounds of the text unit, this value is not normalized
      * to page space and represents the raw layout coordinates of the text as
      * defined in the Post Script notation. This is primarily used for text
-     * extraction line and word break calculations.
+     * selection contains calculations.
      *
      * @return text bounds.
      */
@@ -228,9 +228,9 @@ public abstract class AbstractText implements Text {
 
     /**
      * Gets the bounds of the text unit, this value is normalized to page space and removes any page
-     * level rotations.  This is primarily used for text searching and text extraction formating.
-     * Where the textExtractionBounds represent the raw layout coordinates of the text as defined in the document
-     * which is good for text selection calculations but breaks down when trying to do text extraction formatting.
+     * level rotations.  This is primarily used text coordinate sorting for extraction and searching.
+     * Where the getTextSelectionBounds represent the raw layout coordinates of the text as defined in the document
+     * which is good for text selection calculations but breaks down when trying to do text extraction sorting.
      *
      * @return text bounds.
      */
@@ -238,6 +238,7 @@ public abstract class AbstractText implements Text {
         if (textExtractionBounds == null) {
             if (pageRotation != 0) {
                 AffineTransform transform = new AffineTransform();
+                // rotation without centering as we want the margin to be the same
                 transform.rotate(Math.toRadians(pageRotation));
                 textExtractionBounds =
                         (Rectangle2D.Double) transform.createTransformedShape(textSelectionBounds).getBounds2D();

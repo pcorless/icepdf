@@ -160,7 +160,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * <br>
      * This class differences from {@link #searchHighlightPage(int)} in that
      * is returns a list of lineText fragments for each hit but the LinText
-     * is padded by pre and post words that surround the hit in the page
+     * is padded by pre- and post-words that surround the hit in the page
      * context.
      * <br>
      * This method represent the org.icepdf.core search algorithm for this
@@ -962,7 +962,8 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         try {
             if (viewerController != null) {
                 // get access to currently open document instance.
-
+                // this has been getPageText in the past when the search cursor was introduced, but I can't see
+                // a good reason for not using the view text in this circumatstance
                 pageText = viewerController.getDocument().getPageViewText(pageIndex);
             } else if (document != null) {
                 pageText = document.getPageViewText(pageIndex);
