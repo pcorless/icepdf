@@ -239,6 +239,19 @@ public abstract class ZSimpleFont implements FontFile {
     }
 
     @Override
+    public char toSelector(char unicode) {
+        // the toUnicode map is used for font substitution and especially for CID fonts.  If toUnicode is available
+        // we use it as is, if not then we can use the charDiff mapping, which takes care of font encoding
+        // differences.
+        char c = toUnicode == null ? getReverseCharDiff(unicode) : unicode;
+
+        if (toUnicode != null) {
+            return toUnicode.toSelector(c);
+        }
+        return c;
+    }
+
+    @Override
     public float getSize() {
         return size;
     }
@@ -359,6 +372,17 @@ public abstract class ZSimpleFont implements FontFile {
         } else {
             return character;
         }
+    }
+
+    protected char getReverseCharDiff(char character) {
+        if (cMap != null) {
+            for (int i = 0; i < cMap.length; i++) {
+                if (cMap[i] == character) {
+                    return (char) i;
+                }
+            }
+        }
+        return character;
     }
 
     protected AffineTransform convertFontMatrix(FontBoxFont fontBoxFont) {

@@ -31,27 +31,30 @@ public class TextStringObjectWriter extends StringObjectWriter {
                 char c = newText.charAt(i);
                 newTextOffset += (float) textSprite.getFont().getAdvance(c).getX();
                 // todo this is a raw right without any type of mapping, we should be using a reverse toUnicode mapping
-                writeCharacterCode(c, textSprite.getSubTypeFormat(), contentOutputStream);
+                char selector = textSprite.getFont().toSelector(c);
+                writeCharacterCode(selector, textSprite.getSubTypeFormat(), contentOutputStream);
             }
         } else {
             for (int i = 0, max = newText.length(); i < flaggedCount && i < max; i++) {
                 char c = newText.charAt(i);
                 newTextOffset += (float) textSprite.getFont().getAdvance(c).getX();
                 // todo this is a raw right without any type of mapping, we should be using a reverse toUnicode mapping
-                writeCharacterCode(c, textSprite.getSubTypeFormat(), contentOutputStream);
+                char selector = textSprite.getFont().toSelector(c);
+                writeCharacterCode(selector, textSprite.getSubTypeFormat(), contentOutputStream);
             }
         }
         newText = newText.substring(Math.min(flaggedCount, newText.length()));
         remainingSelectedText -= flaggedCount;
-        if (remainingSelectedText == 0 && !newText.isEmpty()) {
-            for (int i = 0, max = newText.length(); i < max; i++) {
-                char c = newText.charAt(i);
-                newTextOffset += (float) textSprite.getFont().getAdvance(c).getX();
-                // todo this is a raw right without any type of mapping, we should be using a reverse toUnicode mapping
-                writeCharacterCode(c, textSprite.getSubTypeFormat(), contentOutputStream);
-            }
-            remainingSelectedText = 0;
-        }
+//        if (remainingSelectedText == 0 && !newText.isEmpty()) {
+//            for (int i = 0, max = newText.length(); i < max; i++) {
+//                char c = newText.charAt(i);
+//                newTextOffset += (float) textSprite.getFont().getAdvance(c).getX();
+//                // todo this is a raw right without any type of mapping, we should be using a reverse toUnicode
+//                 mapping
+//                writeCharacterCode(c, textSprite.getSubTypeFormat(), contentOutputStream);
+//            }
+//            remainingSelectedText = 0;
+//        }
         return newTextOffset;
     }
 
@@ -110,33 +113,19 @@ public class TextStringObjectWriter extends StringObjectWriter {
             int flaggedCount = flaggedCount(glyphTexts);
             for (int i = 0, glyphTextMax = glyphTexts.size(); i < glyphTextMax; i++) {
                 glyphText = glyphTexts.get(i);
-
+                // todo keep track of previous glyph text to see if we need to write a new string object
                 if (glyphText.isFlagged()) {
-                    if (editStartOffset < 0) {
-                        editStartOffset = glyphText.getX();
-                    }
                     if (glyphWrittenCount > 0) {
                         glyphWrittenCount = 0;
                         // close off the current string object
                         writeDelimiterEnd(glyphText, contentOutputStream);
                     }
-                    if ((i + 1 < glyphTextMax && !glyphTexts.get(i + 1).isFlagged()) ||
-                            (glyphTextMax == 1)) {
-                        // future me,  translating TJ to Tj here to make layout offsets easier to manage.
-                        writeDelimiterStart(glyphText, contentOutputStream);
-                        float advance = writeEditedText(contentOutputStream, textSprite, flaggedCount);
-                        writeDelimiterEnd(glyphText, contentOutputStream);
-                        lastTdOffset = writeLastTdOffset(contentOutputStream, lastTdOffset, editStartOffset, advance);
-                        editStartOffset = -1;
+                    if (i + 1 < glyphTextMax && !glyphTexts.get(i + 1).isFlagged()) {
+                        lastTdOffset = writeLastTdOffset(contentOutputStream, lastTdOffset, glyphText);
                     }
                 } else {
                     if (i == 0 && operatorCount > 1) {
-//                        lastTdOffset = writeStartTdOffset(contentOutputStream, lastTdOffset, glyphText);
-//                        writeDelimiterStart(glyphText, contentOutputStream);
-//                        float advance = writeEditedText(contentOutputStream, textSprite, flaggedCount);
-//                        writeDelimiterEnd(glyphText, contentOutputStream);
-//                        lastTdOffset = writeLastTdOffset(contentOutputStream, lastTdOffset, editStartOffset, advance);
-//                        editStartOffset = -1;
+                        lastTdOffset = writeStartTdOffset(contentOutputStream, lastTdOffset, glyphText);
                     }
                     if (glyphWrittenCount == 0) {
                         writeDelimiterStart(glyphText, contentOutputStream);
