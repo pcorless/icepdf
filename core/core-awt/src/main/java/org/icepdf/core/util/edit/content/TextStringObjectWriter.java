@@ -78,12 +78,13 @@ public class TextStringObjectWriter extends StringObjectWriter {
                         writeDelimiterEnd(glyphText, contentOutputStream);
                     }
                     if (i + 1 < glyphTextMax && !glyphTexts.get(i + 1).isFlagged()) {
-                        // write out new string object returning the new offset
-                        writeDelimiterStart(glyphText, contentOutputStream);
-                        float advance = writeEditedText(contentOutputStream, textSprite, flaggedCount);
-                        writeDelimiterEnd(glyphText, contentOutputStream);
-                        lastTdOffset = writeLastTdOffset(contentOutputStream, lastTdOffset, editStartOffset, advance);
-                        editStartOffset = -1;
+//                        // write out new string object returning the new offset
+//                        writeDelimiterStart(glyphText, contentOutputStream);
+//                        float advance = writeEditedText(contentOutputStream, textSprite, flaggedCount);
+//                        writeDelimiterEnd(glyphText, contentOutputStream);
+//                        lastTdOffset = writeLastTdOffset(contentOutputStream, lastTdOffset, editStartOffset, advance);
+//                        editStartOffset = -1;
+                        lastTdOffset = writeLastTdOffset(contentOutputStream, lastTdOffset, glyphText);
                     }
                 } else {
                     if (operatorCount == 0) {
@@ -100,20 +101,33 @@ public class TextStringObjectWriter extends StringObjectWriter {
         return lastTdOffset;
     }
 
+    protected float writeTJEditedText(ByteArrayOutputStream contentOutputStream,
+                                      TextSprite textSprite, int flaggedCount) throws IOException {
+        float newTextOffset = 0;
+        for (int i = 0, max = newText.length(); i < max; i++) {
+            char c = newText.charAt(i);
+            newTextOffset += (float) textSprite.getFont().getAdvance(c).getX();
+            char selector = textSprite.getFont().toSelector(c);
+            writeCharacterCode(selector, textSprite.getSubTypeFormat(), contentOutputStream);
+        }
+        return newTextOffset;
+    }
+
     public float writeTJ(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators,
                          float lastTdOffset) throws IOException {
         int operatorCount = 0;
 
+        GlyphText glyphText = null;
+        GlyphText prevousGlyphText = null;
+
         for (TextSprite textSprite : textOperators) {
             ArrayList<GlyphText> glyphTexts = textSprite.getGlyphSprites();
             operatorCount++;
-            GlyphText glyphText = null;
+
             int glyphWrittenCount = 0;
-            float editStartOffset = -1;
             int flaggedCount = flaggedCount(glyphTexts);
             for (int i = 0, glyphTextMax = glyphTexts.size(); i < glyphTextMax; i++) {
                 glyphText = glyphTexts.get(i);
-                // todo keep track of previous glyph text to see if we need to write a new string object
                 if (glyphText.isFlagged()) {
                     if (glyphWrittenCount > 0) {
                         glyphWrittenCount = 0;
@@ -125,7 +139,27 @@ public class TextStringObjectWriter extends StringObjectWriter {
                     }
                 } else {
                     if (i == 0 && operatorCount > 1) {
-                        lastTdOffset = writeStartTdOffset(contentOutputStream, lastTdOffset, glyphText);
+                        if (prevousGlyphText != null && prevousGlyphText.isFlagged()) {
+                            // write offset to start off the new text
+                            float charOffset = lastTdOffset > 0 ?
+                                    (float) textSprite.getFont().getAdvance(newText.charAt(0)).getX() : 0;
+                            float advance = lastTdOffset + charOffset;
+
+                            lastTdOffset = writeTdOffset(contentOutputStream, advance, lastTdOffset);
+
+                            // write the new text
+                            writeDelimiterStart(glyphText, contentOutputStream);
+                            float textAdvance = writeTJEditedText(contentOutputStream, textSprite, flaggedCount);
+                            writeDelimiterEnd(glyphText, contentOutputStream);
+
+                            // write offset to push or contract next text
+                            advance = glyphText.getX();
+                            float textAdvanceOffset = textAdvance - (advance - lastTdOffset);
+                            lastTdOffset -= textAdvanceOffset;
+                            lastTdOffset = writeTdOffset(contentOutputStream, advance, lastTdOffset);
+                        } else {
+                            lastTdOffset = writeStartTdOffset(contentOutputStream, lastTdOffset, glyphText);
+                        }
                     }
                     if (glyphWrittenCount == 0) {
                         writeDelimiterStart(glyphText, contentOutputStream);
@@ -133,6 +167,7 @@ public class TextStringObjectWriter extends StringObjectWriter {
                     glyphWrittenCount++;
                     writeCharacterCode(glyphText, contentOutputStream);
                 }
+                prevousGlyphText = glyphText;
             }
             if (glyphWrittenCount > 0) {
                 writeDelimiterEnd(glyphText, contentOutputStream);
