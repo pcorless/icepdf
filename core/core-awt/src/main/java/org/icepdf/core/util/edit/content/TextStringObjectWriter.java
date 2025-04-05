@@ -10,62 +10,30 @@ import java.util.ArrayList;
 
 public class TextStringObjectWriter extends StringObjectWriter {
 
-    private String newText;
-    private final String selectedText;
-    private int replacedCount = 0;
-    private int selectedTextCount = 0;
-    private int remainingSelectedText = 0;
+    private final String newText;
+    private int replacedCount;
 
-    public TextStringObjectWriter(String selectedText, String newText) {
-        this.selectedText = selectedText;
-        this.selectedTextCount = selectedText.length();
-        this.remainingSelectedText = selectedText.length();
+    public TextStringObjectWriter(String newText) {
+        this.replacedCount = newText.length() - 1;
         this.newText = newText;
-    }
-
-    protected float writeEditedText(ByteArrayOutputStream contentOutputStream,
-                                    TextSprite textSprite, int flaggedCount) throws IOException {
-        float newTextOffset = 0;
-        if (flaggedCount >= selectedTextCount) {
-            for (int i = 0, max = newText.length(); i < max; i++) {
-                char c = newText.charAt(i);
-                newTextOffset += (float) textSprite.getFont().getAdvance(c).getX();
-                // todo this is a raw right without any type of mapping, we should be using a reverse toUnicode mapping
-                char selector = textSprite.getFont().toSelector(c);
-                writeCharacterCode(selector, textSprite.getSubTypeFormat(), contentOutputStream);
-            }
-        } else {
-            for (int i = 0, max = newText.length(); i < flaggedCount && i < max; i++) {
-                char c = newText.charAt(i);
-                newTextOffset += (float) textSprite.getFont().getAdvance(c).getX();
-                // todo this is a raw right without any type of mapping, we should be using a reverse toUnicode mapping
-                char selector = textSprite.getFont().toSelector(c);
-                writeCharacterCode(selector, textSprite.getSubTypeFormat(), contentOutputStream);
-            }
-        }
-        newText = newText.substring(Math.min(flaggedCount, newText.length()));
-        remainingSelectedText -= flaggedCount;
-//        if (remainingSelectedText == 0 && !newText.isEmpty()) {
-//            for (int i = 0, max = newText.length(); i < max; i++) {
-//                char c = newText.charAt(i);
-//                newTextOffset += (float) textSprite.getFont().getAdvance(c).getX();
-//                // todo this is a raw right without any type of mapping, we should be using a reverse toUnicode
-//                 mapping
-//                writeCharacterCode(c, textSprite.getSubTypeFormat(), contentOutputStream);
-//            }
-//            remainingSelectedText = 0;
-//        }
-        return newTextOffset;
     }
 
     public float writeTj(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators,
                          float lastTdOffset) throws IOException {
         int operatorCount = 0;
+        GlyphText glyphText = null;
+        GlyphText previousGlyphText = null;
         for (TextSprite textSprite : textOperators) {
             ArrayList<GlyphText> glyphTexts = textSprite.getGlyphSprites();
-            GlyphText glyphText = null;
+            if (fullyFlagged(glyphTexts)) {
+                if (replacedCount > 0) {
+                    writeNewText(contentOutputStream, glyphTexts.get(0), textSprite);
+                }
+                continue;
+            }
+
             float editStartOffset = -1;
-            int flaggedCount = flaggedCount(glyphTexts);
+
             for (int i = 0, glyphTextMax = glyphTexts.size(); i < glyphTextMax; i++) {
                 glyphText = glyphTexts.get(i);
                 if (glyphText.isFlagged()) {
@@ -78,13 +46,12 @@ public class TextStringObjectWriter extends StringObjectWriter {
                         writeDelimiterEnd(glyphText, contentOutputStream);
                     }
                     if (i + 1 < glyphTextMax && !glyphTexts.get(i + 1).isFlagged()) {
-//                        // write out new string object returning the new offset
-//                        writeDelimiterStart(glyphText, contentOutputStream);
-//                        float advance = writeEditedText(contentOutputStream, textSprite, flaggedCount);
-//                        writeDelimiterEnd(glyphText, contentOutputStream);
-//                        lastTdOffset = writeLastTdOffset(contentOutputStream, lastTdOffset, editStartOffset, advance);
-//                        editStartOffset = -1;
-                        lastTdOffset = writeLastTdOffset(contentOutputStream, lastTdOffset, glyphText);
+                        // write offset to start off the new text
+                        lastTdOffset = writeLastTdOffset(contentOutputStream, lastTdOffset, previousGlyphText);
+                        // write the new text
+                        if (replacedCount > 0) {
+                            writeNewText(contentOutputStream, glyphText, textSprite);
+                        }
                     }
                 } else {
                     if (operatorCount == 0) {
@@ -92,25 +59,34 @@ public class TextStringObjectWriter extends StringObjectWriter {
                     }
                     operatorCount++;
                     writeCharacterCode(glyphText, contentOutputStream);
+                    previousGlyphText = glyphText;
                 }
             }
-            if (operatorCount > 0 && glyphText != null) {
+            if (operatorCount > 0) {
                 writeDelimiterEnd(glyphText, contentOutputStream);
             }
         }
         return lastTdOffset;
     }
 
-    protected float writeTJEditedText(ByteArrayOutputStream contentOutputStream,
-                                      TextSprite textSprite, int flaggedCount) throws IOException {
+    private float writeEditedText(ByteArrayOutputStream contentOutputStream,
+                                  TextSprite textSprite) throws IOException {
         float newTextOffset = 0;
         for (int i = 0, max = newText.length(); i < max; i++) {
             char c = newText.charAt(i);
             newTextOffset += (float) textSprite.getFont().getAdvance(c).getX();
             char selector = textSprite.getFont().toSelector(c);
             writeCharacterCode(selector, textSprite.getSubTypeFormat(), contentOutputStream);
+            replacedCount -= 1;
         }
         return newTextOffset;
+    }
+
+    public void writeNewText(ByteArrayOutputStream contentOutputStream,
+                             GlyphText glyphText, TextSprite textSprite) throws IOException {
+        writeDelimiterStart(glyphText, contentOutputStream);
+        writeEditedText(contentOutputStream, textSprite);
+        writeDelimiterEnd(glyphText, contentOutputStream);
     }
 
     public float writeTJ(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators,
@@ -118,14 +94,22 @@ public class TextStringObjectWriter extends StringObjectWriter {
         int operatorCount = 0;
 
         GlyphText glyphText = null;
-        GlyphText prevousGlyphText = null;
+        GlyphText previousGlyphText = null;
+        GlyphText lastUnflaggedGlyphText = null;
 
         for (TextSprite textSprite : textOperators) {
             ArrayList<GlyphText> glyphTexts = textSprite.getGlyphSprites();
             operatorCount++;
 
+            // can skip it completely
+            if (fullyFlagged(glyphTexts)) {
+                if (replacedCount > 0) {
+                    writeNewText(contentOutputStream, glyphTexts.get(0), textSprite);
+                }
+                continue;
+            }
+
             int glyphWrittenCount = 0;
-            int flaggedCount = flaggedCount(glyphTexts);
             for (int i = 0, glyphTextMax = glyphTexts.size(); i < glyphTextMax; i++) {
                 glyphText = glyphTexts.get(i);
                 if (glyphText.isFlagged()) {
@@ -135,11 +119,17 @@ public class TextStringObjectWriter extends StringObjectWriter {
                         writeDelimiterEnd(glyphText, contentOutputStream);
                     }
                     if (i + 1 < glyphTextMax && !glyphTexts.get(i + 1).isFlagged()) {
-                        lastTdOffset = writeLastTdOffset(contentOutputStream, lastTdOffset, glyphText);
+                        // write offset to start off the new text
+                        lastTdOffset = writeLastTdOffset(contentOutputStream, lastTdOffset, lastUnflaggedGlyphText);
+
+                        // write the new text
+                        if (replacedCount > 0) {
+                            writeNewText(contentOutputStream, glyphText, textSprite);
+                        }
                     }
                 } else {
                     if (i == 0 && operatorCount > 1) {
-                        if (prevousGlyphText != null && prevousGlyphText.isFlagged()) {
+                        if (previousGlyphText != null && previousGlyphText.isFlagged()) {
                             // write offset to start off the new text
                             float charOffset = lastTdOffset > 0 ?
                                     (float) textSprite.getFont().getAdvance(newText.charAt(0)).getX() : 0;
@@ -148,15 +138,17 @@ public class TextStringObjectWriter extends StringObjectWriter {
                             lastTdOffset = writeTdOffset(contentOutputStream, advance, lastTdOffset);
 
                             // write the new text
-                            writeDelimiterStart(glyphText, contentOutputStream);
-                            float textAdvance = writeTJEditedText(contentOutputStream, textSprite, flaggedCount);
-                            writeDelimiterEnd(glyphText, contentOutputStream);
+                            if (replacedCount > 0) {
+                                writeDelimiterStart(glyphText, contentOutputStream);
+                                float textAdvance = writeEditedText(contentOutputStream, textSprite);
+                                writeDelimiterEnd(glyphText, contentOutputStream);
 
-                            // write offset to push or contract next text
-                            advance = glyphText.getX();
-                            float textAdvanceOffset = textAdvance - (advance - lastTdOffset);
-                            lastTdOffset -= textAdvanceOffset;
-                            lastTdOffset = writeTdOffset(contentOutputStream, advance, lastTdOffset);
+                                // write offset to push or contract next text
+                                advance = glyphText.getX();
+                                float textAdvanceOffset = textAdvance - (advance - lastTdOffset);
+                                lastTdOffset -= textAdvanceOffset;
+                                lastTdOffset = writeTdOffset(contentOutputStream, advance, lastTdOffset);
+                            }
                         } else {
                             lastTdOffset = writeStartTdOffset(contentOutputStream, lastTdOffset, glyphText);
                         }
@@ -166,8 +158,9 @@ public class TextStringObjectWriter extends StringObjectWriter {
                     }
                     glyphWrittenCount++;
                     writeCharacterCode(glyphText, contentOutputStream);
+                    lastUnflaggedGlyphText = glyphText;
                 }
-                prevousGlyphText = glyphText;
+                previousGlyphText = glyphText;
             }
             if (glyphWrittenCount > 0) {
                 writeDelimiterEnd(glyphText, contentOutputStream);

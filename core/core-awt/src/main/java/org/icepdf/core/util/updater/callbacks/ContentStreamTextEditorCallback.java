@@ -26,7 +26,7 @@ public class ContentStreamTextEditorCallback extends ContentStreamCallback {
 
 
     public ContentStreamTextEditorCallback(Library library, String text, Rectangle textBounds, String newText) {
-        super(library, new TextStringObjectWriter(text, newText));
+        super(library, new TextStringObjectWriter(newText));
         this.newText = newText;
         this.text = text;
         this.textBounds = textBounds;
@@ -34,7 +34,7 @@ public class ContentStreamTextEditorCallback extends ContentStreamCallback {
 
     protected ContentStreamTextEditorCallback(Library library, String text, Rectangle textBounds, String newText,
                                               AffineTransform transform) {
-        super(library, new TextStringObjectWriter(text, newText), transform);
+        super(library, new TextStringObjectWriter(newText), transform);
         this.textBounds = textBounds;
         this.newText = newText;
         this.text = text;

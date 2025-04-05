@@ -550,6 +550,22 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
      * @return mapped character value.
      */
     public char toSelector(char ch) {
+        if (bfChars != null) {
+            for (Integer key : bfChars.keySet()) {
+                if (String.valueOf(bfChars.get(key)).equals(String.valueOf(ch))) {
+                    return (char) key.intValue();
+                }
+            }
+        }
+        // check bfRange for matches, there may be many ranges to check
+        // todo implement a reverse lookup for the bfRange
+//        if (bfRange != null) {
+//            for (CMapBfRange aBfRange : bfRange) {
+//                if (aBfRange.inRange(ch)) {
+//                    return String.valueOf(aBfRange.getCMapValue(ch));
+//                }
+//            }
+//        }
         if (codeSpaceRange != null && codeSpaceRange[0] != null && ch < codeSpaceRange[0].length - 1) {
             for (int i = 0; i < codeSpaceRange[0].length; i++) {
                 if (codeSpaceRange[0][i] == ch) {

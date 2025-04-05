@@ -30,7 +30,7 @@ public class EditTextHandler extends TextSelection
             // handle text selection mouse coordinates
             wordSelectHandler(currentPage, selectionPoint);
 
-            updateSelectedText("BRAND");
+            updateSelectedText("test");
 
             // reinitialize the page and repaint with new content stream
             pageViewComponent.reinitialize();
@@ -50,7 +50,7 @@ public class EditTextHandler extends TextSelection
 
             // todo show edit dialog
 
-            updateSelectedText("BRAND");
+            updateSelectedText("test");
 
             // reinitialize the page and repaint with new content stream
             pageViewComponent.reinitialize();
