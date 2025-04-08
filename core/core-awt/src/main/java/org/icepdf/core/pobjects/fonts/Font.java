@@ -385,6 +385,11 @@ public abstract class Font extends Dictionary {
         return font;
     }
 
+    /**
+     * Gets an approximate count of the number of characters in the font.
+     *
+     * @return number of characters in the font.
+     */
     public int getCharacterCount() {
         return lastchar - firstchar + 1;
     }

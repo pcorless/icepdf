@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.tools;
 
+import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
@@ -48,6 +49,9 @@ public class TextSelectionViewHandler extends TextSelection
             Logger.getLogger(TextSelectionViewHandler.class.toString());
 
     protected final JComponent parentComponent;
+
+    private static boolean textEditingEnabled = Defs.booleanProperty(
+            "org.icepdf.viewer.textEdit.enabled", true);
 
     protected boolean isDragging;
     protected boolean isSelecting;
@@ -111,7 +115,8 @@ public class TextSelectionViewHandler extends TextSelection
                 contextMenu.show(parentComponent, e.getX(), e.getY());
             }
             // if nothing is selected show context menu for editing the line of text below the mouse.
-            else if (modifyDocument &&
+            else if (textEditingEnabled &&
+                    modifyDocument &&
                     (documentViewController.getSelectedText() == null ||
                             documentViewController.getSelectedText().isEmpty())) {
                 PageViewComponentImpl pageComponent = isOverPageComponent(parentComponent, e);

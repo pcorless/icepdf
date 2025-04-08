@@ -21,8 +21,7 @@ import static org.icepdf.core.util.parser.content.Operands.*;
 /**
  * ContentStreamCallback is called when a pages content stream has been set for editing content streams.  The callback
  * is called as a content parsing starts, tokens are parsed and the content stream ends.   The callback writes
- * the original content stream to a new output stream using the current content parsers state to redact content as
- * the original content stream is digested.
+ * the original content stream to a new output stream using the current StringObjectWriter implementation.
  *
  * @since 7.3.0
  */
@@ -51,7 +50,7 @@ public abstract class ContentStreamCallback {
         this.library = library;
         this.stringObjectWriter = stringObjectWriter;
         // xObject text will have it's on transform that must be taken into when determining intersections of the
-        // redaction and glyph bounds.
+        // selected bounds and glyph bounds.
         this.transform = transform;
     }
 
@@ -155,7 +154,7 @@ public abstract class ContentStreamCallback {
             }
             modifiedStream = true;
         } else {
-            // copy none redacted StringObjects verbatim
+            // copy not flagged StringObjects verbatim
             int length = lastTextPosition - lastTokenPosition;
             burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition, length);
         }

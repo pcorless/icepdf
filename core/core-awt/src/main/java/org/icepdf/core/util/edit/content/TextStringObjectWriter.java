@@ -8,6 +8,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
+/**
+ * TextStringObjectWriter is a utility class that provides methods to update text in a content stream
+ */
 public class TextStringObjectWriter extends StringObjectWriter {
 
     private final String newText;
