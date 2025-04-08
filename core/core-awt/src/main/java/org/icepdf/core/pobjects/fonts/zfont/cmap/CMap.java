@@ -558,14 +558,12 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
             }
         }
         // check bfRange for matches, there may be many ranges to check
-        // todo implement a reverse lookup for the bfRange
-//        if (bfRange != null) {
-//            for (CMapBfRange aBfRange : bfRange) {
-//                if (aBfRange.inRange(ch)) {
-//                    return String.valueOf(aBfRange.getCMapValue(ch));
-//                }
-//            }
-//        }
+        if (bfRange != null) {
+            for (CMapBfRange aBfRange : bfRange) {
+                int cid = ch - aBfRange.offsetValue + aBfRange.startRange;
+                return (char) cid;
+            }
+        }
         if (codeSpaceRange != null && codeSpaceRange[0] != null && ch < codeSpaceRange[0].length - 1) {
             for (int i = 0; i < codeSpaceRange[0].length; i++) {
                 if (codeSpaceRange[0][i] == ch) {

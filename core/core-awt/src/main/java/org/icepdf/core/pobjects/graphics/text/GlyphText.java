@@ -15,6 +15,8 @@
  */
 package org.icepdf.core.pobjects.graphics.text;
 
+import org.icepdf.core.pobjects.Name;
+
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
@@ -41,6 +43,7 @@ public class GlyphText extends AbstractText {
 
     // character code used to represent glyph, maybe ascii or CID value
     private final char cid;
+    private final Name fontName;
 
     // Unicode/ASCII value that is represented by glyph, a cid can be
     // represented by one or more characters.
@@ -50,7 +53,7 @@ public class GlyphText extends AbstractText {
     private int fontSubTypeFormat;
 
     public GlyphText(float x, float y, float advanceX, float advanceY, Rectangle2D.Double bounds,
-                     char cid, String unicode) {
+                     char cid, String unicode, Name FontName) {
         this.x = x;
         this.y = y;
         this.advanceX = advanceX;
@@ -59,6 +62,7 @@ public class GlyphText extends AbstractText {
         this.textExtractionBounds = new Rectangle2D.Double(bounds.x, bounds.y, bounds.width, bounds.height);
         this.cid = cid;
         this.unicode = unicode;
+        this.fontName = FontName;
     }
 
     /**
@@ -129,5 +133,9 @@ public class GlyphText extends AbstractText {
 
     public Rectangle2D.Double getBounds() {
         return bounds;
+    }
+
+    public Name getFontName() {
+        return fontName;
     }
 }

@@ -1,6 +1,9 @@
 package org.icepdf.ri.common.tools;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.fonts.CMap;
+import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.edit.content.TextContentEditor;
 import org.icepdf.ri.common.EscapeJDialog;
 import org.icepdf.ri.common.SwingController;
@@ -9,8 +12,6 @@ import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.geom.GeneralPath;
 import java.io.IOException;
@@ -19,6 +20,15 @@ import java.util.ResourceBundle;
 
 import static org.icepdf.ri.common.tools.HighLightAnnotationHandler.getSelectedTextBounds;
 
+/**
+ * EditTextHandler is a tool handler that allows the user to edit text.  Text selection can be specified by either
+ * work or line.  The text is selected and a dialog is shown to allow the user to edit the text.  The edited text
+ * is then used to update the content stream of the page.
+ * <p>
+ * Editing success depends on how the text was encoded in the PDF.  If the text has been encoded using a sub font that
+ * does not contain the glyphs for the text, then the text will be editable but may not be displayed correctly.  In
+ * such a case the dialog will show warning message that the text may not be displayed correctly.
+ */
 public class EditTextHandler extends TextSelection
         implements ToolHandler {
 
@@ -66,28 +76,45 @@ public class EditTextHandler extends TextSelection
     }
 
     private void updateSelectedText() throws IOException, InterruptedException {
-        // get the bounds and text
         ArrayList<Shape> highlightBounds = getSelectedTextBounds(pageViewComponent, getPageTransform());
-
         if (highlightBounds != null && !highlightBounds.isEmpty()) {
             GeneralPath highlightPath = convertTextShapesToBounds(highlightBounds);
             Rectangle textBounds = convertToPageSpace(highlightBounds, highlightPath);
-            // todo we need to build a rule set for when editing would be allowed.
-            //  is there a toUnicode mapping
-            //  what font type is being used
-            //  would likely be a utility method on this class that would be called from the TextSelectionViewHandler
             Page currentPage = pageViewComponent.getPage();
             String selectedText = currentPage.getViewText().getSelected().toString().trim();
 
             TextEditDialog textEditDialog = new TextEditDialog(controller,
                     controller.getMessageBundle(),
-                    selectedText);
+                    selectedText, isEditingSupported(currentPage));
             textEditDialog.setVisible(true);
-
-            String newText = textEditDialog.getText();
-
-            TextContentEditor.updateText(pageViewComponent.getPage(), selectedText, textBounds, newText);
+            if (!textEditDialog.isCancelled()) {
+                String newText = textEditDialog.getText();
+                // update the text in the content stream
+                TextContentEditor.updateText(pageViewComponent.getPage(), selectedText, textBounds, newText);
+            }
         }
+    }
+
+    /**
+     * Check if the font supports editing.  Very basic check ot count number of glphs define and if a ToUnicode map
+     * exists.
+     *
+     * @param currentPage page being edited.
+     * @return true if page can be edited with the current font.
+     * @throws InterruptedException if page parse is interrupted.
+     */
+    private boolean isEditingSupported(Page currentPage) throws InterruptedException {
+        ArrayList<WordText> selectedLineText = currentPage.getViewText().getSelectedWordText();
+        if (selectedLineText != null && !selectedLineText.isEmpty()) {
+            if (selectedLineText.get(0).getGlyphs() != null && !selectedLineText.get(0).getGlyphs().isEmpty()) {
+                Name fontName = selectedLineText.get(0).getGlyphs().get(0).getFontName();
+                org.icepdf.core.pobjects.fonts.Font font = currentPage.getResources().getFont(fontName);
+                int glyphCount = font.getCharacterCount();
+                CMap toUnicode = font.getFont().getToUnicode();
+                return toUnicode != null || glyphCount > 94;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -140,18 +167,24 @@ public class EditTextHandler extends TextSelection
 
     }
 
-    public class TextEditDialog extends EscapeJDialog implements ActionListener {
+    /**
+     * TextEditDialog is a simple dialog that allows the user to edit text that was selected by teh edit text tool.
+     * Edited text is then used to update the content stream of the page.
+     */
+    public static class TextEditDialog extends EscapeJDialog {
 
         private GridBagConstraints constraints;
+        private boolean cancelled;
+        private boolean showEditWarning;
         private JTextField editTextField;
-
 
         protected ResourceBundle messageBundle;
 
         public TextEditDialog(Controller controller, ResourceBundle messageBundle,
-                              String selectedText) {
+                              String selectedText, boolean isEditingSupported) {
             super(controller.getViewerFrame(), true);
             this.messageBundle = messageBundle;
+            this.showEditWarning = !isEditingSupported;
             buildUI(selectedText);
         }
 
@@ -169,14 +202,27 @@ public class EditTextHandler extends TextSelection
 
             editTextField = new JTextField(50);
             editTextField.setText(selectedText);
-            addGB(layout, editTextField, 0, 0, 1, 1);
+            addGB(layout, editTextField, 0, 0, 1, 2);
 
-            JButton okButton = new JButton(messageBundle.getString("viewer.button.ok.label"));
+            if (showEditWarning) {
+                JLabel warningLabel = new JLabel(messageBundle.getString("viewer.dialog.textEdit.warning.label"));
+                addGB(layout, warningLabel, 0, 1, 1, 2);
+            }
+
+            JButton cancelButton = new JButton(messageBundle.getString("viewer.dialog.textEdit.cancel.label"));
+            cancelButton.addActionListener(e -> {
+                cancelled = true;
+                setVisible(false);
+                dispose();
+            });
+            addGB(layout, cancelButton, 0, 2, 1, 1);
+
+            JButton okButton = new JButton(messageBundle.getString("viewer.dialog.textEdit.save.label"));
             okButton.addActionListener(e -> {
                 setVisible(false);
                 dispose();
             });
-            addGB(layout, okButton, 0, 1, 1, 1);
+            addGB(layout, okButton, 1, 2, 1, 1);
 
             setContentPane(layout);
 
@@ -198,9 +244,8 @@ public class EditTextHandler extends TextSelection
             return editTextField.getText();
         }
 
-        @Override
-        public void actionPerformed(ActionEvent actionEvent) {
-
+        public boolean isCancelled() {
+            return cancelled;
         }
     }
 }

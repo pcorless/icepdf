@@ -1558,6 +1558,7 @@ public abstract class AbstractContentParser {
             // get normalized from text sprite
             GlyphText glyphText = textSprites.addText(
                     currentChar, // cid
+                    textState.fontName,
                     textState.currentfont.toUnicode(currentChar), // unicode value
                     currentX, currentY, newAdvanceX, newAdvanceY);
             shapes.getPageText().addGlyph(glyphText, oCGs);

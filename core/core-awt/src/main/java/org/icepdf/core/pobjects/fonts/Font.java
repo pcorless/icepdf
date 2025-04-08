@@ -385,6 +385,10 @@ public abstract class Font extends Dictionary {
         return font;
     }
 
+    public int getCharacterCount() {
+        return lastchar - firstchar + 1;
+    }
+
     /**
      * <p>Returns true if the writing mode is vertical; false, otherwise</p>
      *

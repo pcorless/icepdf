@@ -13,10 +13,9 @@ import java.io.IOException;
 /**
  * ContentStreamTextEditorCallback is called when a pages content stream has been set for edited content.  The callback
  * is called as a content parsing starts, tokens are parsed and the content stream ends.   The callback writes
- * the original content stream to a new output stream using the current content parsers state to redact content as
- * the original content stream is digested.
+ * the original content stream to a new output, removes the text marked as edited and replaces it with the new text.
  *
- * @since 7.2.0
+ * @since 7.3.0
  */
 public class ContentStreamTextEditorCallback extends ContentStreamCallback {
 
@@ -53,7 +52,6 @@ public class ContentStreamTextEditorCallback extends ContentStreamCallback {
         glyphText.normalizeToUserSpace(transform, null);
         Rectangle2D glyphBounds = glyphText.getBounds();
         if (textBounds != null && textBounds.contains(glyphBounds)) {
-            logger.finer(() -> "Editing Text: " + glyphText.getCid() + " " + glyphText.getUnicode());
             glyphText.flagged();
         }
     }
