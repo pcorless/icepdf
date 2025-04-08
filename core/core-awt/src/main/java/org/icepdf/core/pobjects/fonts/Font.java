@@ -386,6 +386,15 @@ public abstract class Font extends Dictionary {
     }
 
     /**
+     * Gets an approximate count of the number of characters in the font.
+     *
+     * @return number of characters in the font.
+     */
+    public int getCharacterCount() {
+        return lastchar - firstchar + 1;
+    }
+
+    /**
      * <p>Returns true if the writing mode is vertical; false, otherwise</p>
      *
      * @return true if the writing mode is vertical; false, otherwise.

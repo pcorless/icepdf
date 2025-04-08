@@ -166,6 +166,12 @@ public abstract class AbstractPageViewComponent
 
     }
 
+    public void reinitialize() {
+        Page currentPage = getPage();
+        currentPage.resetInitializedState();
+        pageBufferStore.setDirty(true);
+    }
+
     public int getPageIndex() {
         return pageIndex;
     }
@@ -408,7 +414,7 @@ public abstract class AbstractPageViewComponent
             boolean isFirstProgressivePaint = false;
             try {
                 if (documentViewController != null) page.addPageProcessingListener(pageLoadingListener);
-                // page init, interruptable
+                // page init, interruptible
                 page.init();
                 pageInitializedCallback(page);
 

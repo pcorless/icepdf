@@ -2267,6 +2267,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
             }
             // show the dialog
             fileDialog.setTitle(messageBundle.getString("viewer.dialog.openFile.title"));
+            fileDialog.setLocation(viewer.getLocation());
             fileDialog.setVisible(true);
             final String filePath = fileDialog.getFile();
             final String dirPath = fileDialog.getDirectory();

@@ -20,7 +20,7 @@ import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.parser.content.ContentParser;
-import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorCallback;
+import org.icepdf.core.util.updater.callbacks.ContentStreamCallback;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
@@ -157,7 +157,7 @@ public class Form extends Stream {
     /**
      *
      */
-    public synchronized void init(ContentStreamRedactorCallback contentStreamRedactorCallback)
+    public synchronized void init(ContentStreamCallback contentStreamRedactorCallback)
             throws InterruptedException {
         if (inited) {
             return;

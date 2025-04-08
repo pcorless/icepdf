@@ -44,6 +44,7 @@ module org.icepdf.core {
     exports org.icepdf.core.pobjects.structure;
     exports org.icepdf.core.search;
     exports org.icepdf.core.util;
+    exports org.icepdf.core.util.edit.content;
     exports org.icepdf.core.util.loggers;
     exports org.icepdf.core.util.updater;
 

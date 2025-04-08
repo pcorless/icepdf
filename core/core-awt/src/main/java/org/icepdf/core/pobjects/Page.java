@@ -26,7 +26,7 @@ import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.*;
 import org.icepdf.core.util.parser.content.ContentParser;
-import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorCallback;
+import org.icepdf.core.util.updater.callbacks.ContentStreamCallback;
 import org.icepdf.core.util.updater.modifiers.AnnotationRemovalModifier;
 import org.icepdf.core.util.updater.modifiers.ModifierFactory;
 
@@ -34,8 +34,8 @@ import java.awt.*;
 import java.awt.geom.*;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -384,10 +384,13 @@ public class Page extends Dictionary {
     /**
      * Initialize the Page object.  This method triggers the parsing of a page's
      * child elements.  Once a page has been initialized, it can be painted.
-     * @param contentStreamRedactorCallback callback use to rewrite content stream
+     * @param contentStreamCallback callback use to rewrite content stream
      */
-    public synchronized void init(ContentStreamRedactorCallback contentStreamRedactorCallback) throws InterruptedException {
+    public synchronized void init(ContentStreamCallback contentStreamCallback) throws InterruptedException {
         try {
+            if (contentStreamCallback != null) {
+                inited = false;
+            }
             // make sure we are not revisiting this method
             if (inited) {
                 return;
@@ -421,7 +424,7 @@ public class Page extends Dictionary {
             notifyPageInitializationStarted();
             if (contents != null) {
                 try {
-                    ContentParser cp = new ContentParser(library, resources, contentStreamRedactorCallback);
+                    ContentParser cp = new ContentParser(library, resources, contentStreamCallback);
                     Stream[] streams = new Stream[contents.size()];
                     byte[] streamByte;
                     for (int i = 0, max = contents.size(); i < max; i++) {
