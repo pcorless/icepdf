@@ -649,7 +649,7 @@ public class Document {
      *                       There are two possible entries, SCREEN and PRINT each with configurable
      *                       rendering hints settings.
      * @param pageBoundary   Constant specifying the page boundary to use when
-     *                       painting the page content. Typically use Page.BOUNDARY_CROPBOX.
+     *                       painting the page content. Typically, use Page.BOUNDARY_CROPBOX.
      * @param userRotation   Rotation factor, in degrees, to be applied to the rendered page.
      *                       Arbitrary rotations are not currently supported for this method,
      *                       so only the following values are valid: 0.0f, 90.0f, 180.0f, 270.0f.

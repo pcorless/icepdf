@@ -15,24 +15,27 @@
  */
 package org.icepdf.ri.common;
 
-import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.PageTree;
+import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.actions.*;
+import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.ri.common.views.*;
-import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
-import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * This class represents a basic implementation of the AnnotationCallback
+ *
  * @since 2.6
  */
 public class MyAnnotationCallback implements AnnotationCallback {
@@ -232,6 +235,12 @@ public class MyAnnotationCallback implements AnnotationCallback {
                     ((PageViewComponentImpl) pageComponent).removeAnnotation(component);
                 }
             }
+        }
+        // corner case for acroform widget annotations,  todo creat a formal api for clean up.
+        if (annotationComponent.getAnnotation() instanceof AbstractWidgetAnnotation) {
+            InteractiveForm interactiveForm =
+                    documentViewController.getDocument().getCatalog().getOrCreateInteractiveForm();
+            interactiveForm.removeField((AbstractWidgetAnnotation) annotationComponent.getAnnotation());
         }
 
     }

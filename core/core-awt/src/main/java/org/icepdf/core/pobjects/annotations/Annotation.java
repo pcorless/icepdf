@@ -525,7 +525,7 @@ public abstract class Annotation extends Dictionary {
      * Debug flag to turn off appearance stream compression for easier
      * human file reading.
      */
-    protected static boolean compressAppearanceStream = true;
+    protected static boolean compressAppearanceStream = false;
     protected final HashMap<Name, Appearance> appearances = new HashMap<>(3);
     protected Name currentAppearance;
 
@@ -631,6 +631,10 @@ public abstract class Annotation extends Dictionary {
 
     public static void setCompressAppearanceStream(boolean compressAppearanceStream) {
         Annotation.compressAppearanceStream = compressAppearanceStream;
+    }
+
+    public static boolean isCompressAppearanceStream() {
+        return compressAppearanceStream;
     }
 
     public synchronized void init() throws InterruptedException {

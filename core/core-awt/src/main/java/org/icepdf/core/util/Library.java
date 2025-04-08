@@ -27,6 +27,7 @@ import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.graphics.ICCBased;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.graphics.images.references.ImagePool;
+import org.icepdf.core.pobjects.security.LoadJceProvider;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 import org.icepdf.core.pobjects.structure.Header;
@@ -88,6 +89,7 @@ public class Library {
         } catch (NumberFormatException e) {
             logger.warning("Error reading buffered scale factor");
         }
+        LoadJceProvider.loadProvider();
     }
 
     private final ConcurrentHashMap<Reference, java.lang.ref.Reference<Object>> objectStore =
@@ -111,6 +113,7 @@ public class Library {
 
     // handles signature validation and signing.
     private final SignatureHandler signatureHandler;
+    private final SignatureManager signatureManager;
 
     // signature permissions
     private Permissions permissions;
@@ -123,7 +126,6 @@ public class Library {
     private boolean isLinearTraversal;
     private final ImagePool imagePool;
 
-
     /**
      * Creates a new instance of a Library.
      */
@@ -132,6 +134,7 @@ public class Library {
         // set Catalog memory Manager and cache manager.
         imagePool = new ImagePool();
         signatureHandler = new SignatureHandler();
+        signatureManager = new SignatureManager();
     }
 
     /**
@@ -518,6 +521,10 @@ public class Library {
         return o != null && (!(o instanceof Reference) || isValidEntry((Reference) o));
     }
 
+    public int getOffset(Reference reference) throws CrossReferenceStateException, ObjectStateException, IOException {
+        return crossReferenceRoot.getObjectOffset(objectLoader, reference, null);
+    }
+
     /**
      * Tests if there exists a cross-reference entry for this reference.
      *
@@ -896,6 +903,10 @@ public class Library {
 
     public SignatureHandler getSignatureHandler() {
         return signatureHandler;
+    }
+
+    public SignatureManager getSignatureDictionaries() {
+        return signatureManager;
     }
 
     /**

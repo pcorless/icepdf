@@ -1,15 +1,17 @@
 package org.icepdf.core.pobjects.annotations;
 
-import org.icepdf.core.pobjects.DictionaryEntries;
-import org.icepdf.core.pobjects.acroform.FieldDictionary;
-import org.icepdf.core.pobjects.acroform.SignatureDictionary;
-import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
-import org.icepdf.core.pobjects.acroform.SignatureHandler;
+import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.acroform.*;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
+import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureAppearanceCallback;
 import org.icepdf.core.util.Library;
 
+import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.util.Date;
 import java.util.logging.Logger;
+
+import static org.icepdf.core.pobjects.acroform.SignatureDictionary.V_KEY;
 
 /**
  * A digital signature (PDF 1.3) may be used to authenticate the identity of a user and the document's contents. It
@@ -39,13 +41,18 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
 
     private SignatureValidator signatureValidator;
 
+    private SignatureAppearanceCallback signatureAppearanceCallback;
+
     public SignatureWidgetAnnotation(Library l, DictionaryEntries h) {
         super(l, h);
         fieldDictionary = new SignatureFieldDictionary(library, entries);
+    }
 
+    @Override
+    public void init() throws InterruptedException {
+        super.init();
         DictionaryEntries valueDict = library.getDictionary(entries, FieldDictionary.V_KEY);
         signatureDictionary = new SignatureDictionary(library, valueDict);
-
     }
 
     public SignatureValidator getSignatureValidator() {
@@ -56,6 +63,10 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
         return signatureValidator;
     }
 
+    public boolean hasSignatureDictionary() {
+        return signatureDictionary != null && !signatureDictionary.getEntries().isEmpty();
+    }
+
     public SignatureWidgetAnnotation(Annotation widgetAnnotation) {
         super(widgetAnnotation.getLibrary(), widgetAnnotation.getEntries());
         fieldDictionary = new SignatureFieldDictionary(library, entries);
@@ -63,8 +74,43 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
         setPObjectReference(widgetAnnotation.getPObjectReference());
     }
 
+    /**
+     * Gets an instance of a SignatureWidgetAnnotation that has valid Object Reference.
+     *
+     * @param library document library
+     * @param rect    bounding rectangle in user space
+     * @return new SignatureWidgetAnnotation Instance.
+     */
+    public static SignatureWidgetAnnotation getInstance(Library library, Rectangle rect) {
+        // state manager
+        StateManager stateManager = library.getStateManager();
+
+        // create a new entries to hold the annotation properties
+        DictionaryEntries entries = createCommonFieldDictionary(FieldDictionaryFactory.TYPE_SIGNATURE, rect);
+
+        SignatureWidgetAnnotation signatureAnnotation = null;
+        try {
+            signatureAnnotation = new SignatureWidgetAnnotation(library, entries);
+            signatureAnnotation.init();
+            entries.put(NM_KEY, new LiteralStringObject(String.valueOf(signatureAnnotation.hashCode())));
+            signatureAnnotation.setPObjectReference(stateManager.getNewReferenceNumber());
+            signatureAnnotation.setNew(true);
+            signatureAnnotation.setModifiedDate(PDate.formatDateTime(new Date()));
+            stateManager.addChange(new PObject(signatureAnnotation, signatureAnnotation.getPObjectReference()));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.fine("Signature markup annotation instance creation was interrupted");
+        }
+        return signatureAnnotation;
+    }
+
     public SignatureDictionary getSignatureDictionary() {
         return signatureDictionary;
+    }
+
+    public void setSignatureDictionary(SignatureDictionary signatureDictionary) {
+        entries.put(V_KEY, signatureDictionary.getPObjectReference());
+        this.signatureDictionary = signatureDictionary;
     }
 
     @Override
@@ -72,9 +118,15 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
 
     }
 
+    public void setAppearanceCallback(SignatureAppearanceCallback signatureAppearanceCallback) {
+        this.signatureAppearanceCallback = signatureAppearanceCallback;
+    }
+
     @Override
     public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew) {
-
+        if (signatureAppearanceCallback != null) {
+            signatureAppearanceCallback.createAppearanceStream(this, pageSpace, isNew);
+        }
     }
 
     @Override

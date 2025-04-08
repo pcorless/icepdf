@@ -82,6 +82,10 @@ public class ImageStream extends Stream {
                 return tmp;
             }
         }
+        // corner case when working with newly added images
+        if (decodedImage != null) {
+            return decodedImage;
+        }
         // decode the given image.
         ImageDecoder imageDecoder = ImageDecoderFactory.createDecoder(this, graphicsState);
         BufferedImage decodedImage = imageDecoder.decode();

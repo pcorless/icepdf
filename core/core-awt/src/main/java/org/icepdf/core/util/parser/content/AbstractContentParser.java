@@ -648,7 +648,7 @@ public abstract class AbstractContentParser {
 
                 // create an ImageReference for future decoding
                 ImageReference imageReference = ImageReferenceFactory.getImageReference(
-                        imageStream, resources, graphicState,
+                        imageStream, xobjectName, resources, graphicState,
                         imageIndex.get(), page);
                 imageIndex.incrementAndGet();
 
