@@ -45,6 +45,7 @@ public class ContentParser extends AbstractContentParser {
             throws InterruptedException, IOException {
         if (shapes == null) {
             shapes = new Shapes();
+            shapes.setRotation(page != null ? page.getPageRotation() : 0f);
             if (graphicState == null) {
                 graphicState = new GraphicsState(shapes);
             }
