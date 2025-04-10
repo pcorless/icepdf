@@ -6,6 +6,7 @@ import org.icepdf.core.pobjects.OutlineItem;
 import org.icepdf.core.pobjects.Outlines;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.actions.URIAction;
+import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.DocumentViewModelImpl;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
@@ -34,6 +35,9 @@ public class OutlinesController extends MouseAdapter implements TreeModelListene
 
     // match the document permissions for encryption permissions
     private boolean editable = true;
+
+    private static boolean outlineEditingEnabled = Defs.booleanProperty(
+            "org.icepdf.viewer.outlineEdit.enabled", false);
 
     public OutlinesController(final SwingController controller, final JTree outlinesTree) {
         this.controller = controller;
@@ -69,6 +73,16 @@ public class OutlinesController extends MouseAdapter implements TreeModelListene
             outlinesTree.removeTreeExpansionListener(this);
             outlinesTree.setEditable(false);
         }
+    }
+
+    /**
+     * Returns true if outline editing is enabled.  The returned value is controlled by the state of the system
+     * property org.icepdf.viewer.outlineEdit.enabled.
+     *
+     * @return true if enabled, false otherwise.
+     */
+    public static boolean isOutlineEditingEnabled() {
+        return outlineEditingEnabled;
     }
 
     // update the parent's child count, will be off if moving in the same node but will be corrected on the remove event
