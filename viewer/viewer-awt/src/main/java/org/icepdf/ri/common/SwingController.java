@@ -98,6 +98,7 @@ import java.util.stream.Collectors;
 
 import static org.icepdf.core.util.PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE;
 import static org.icepdf.ri.common.KeyEventConstants.*;
+import static org.icepdf.ri.common.utility.outline.OutlinesController.isOutlineEditingEnabled;
 import static org.icepdf.ri.util.ViewerPropertiesManager.*;
 
 
@@ -3785,7 +3786,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
     protected void initializeOutline() {
         OutlineItem item = null;
         Outlines outlines = document.getCatalog().getOutlines();
-        insertOutlineMenuItem.setEnabled(outlines == null && havePermissionToModifyDocument());
+        insertOutlineMenuItem.setEnabled(outlines == null && havePermissionToModifyDocument() && isOutlineEditingEnabled());
 
         if (outlines != null && outlinesTree != null) item = outlines.getRootOutlineItem();
 
@@ -3794,7 +3795,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
             outlinesTree.getModel().addTreeModelListener(outlinesController);
             outlinesTree.setRootVisible(!item.isEmpty());
             outlinesTree.setShowsRootHandles(true);
-            outlinesController.setEditable(havePermissionToModifyDocument());
+            outlinesController.setEditable(havePermissionToModifyDocument() && isOutlineEditingEnabled());
             if (utilityTabbedPane != null && outlinesScrollPane != null) {
                 if (utilityTabbedPane.indexOfComponent(outlinesScrollPane) > -1) {
                     utilityTabbedPane.setEnabledAt(utilityTabbedPane.indexOfComponent(outlinesScrollPane), true);
