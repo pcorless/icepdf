@@ -21,13 +21,13 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>11</maven.compiler.release>
-        <bouncy.version>1.79</bouncy.version>
+        <bouncy.version>1.80</bouncy.version>
         <twelve-monkey.version>3.12.0</twelve-monkey.version>
         <jai-imageio.version>1.4.0</jai-imageio.version>
         <jbig2.version>3.0.4</jbig2.version>
         <font-box.version>3.0.3</font-box.version>
-        <commons-logging.version>1.3.4</commons-logging.version>
-        <junit.bom.version>5.11.3</junit.bom.version>
+        <commons-logging.version>1.3.5</commons-logging.version>
+        <junit.bom.version>5.11.4</junit.bom.version>
     </properties>
 
     <licenses>
