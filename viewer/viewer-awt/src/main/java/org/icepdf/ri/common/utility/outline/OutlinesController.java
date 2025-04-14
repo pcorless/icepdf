@@ -62,16 +62,17 @@ public class OutlinesController extends MouseAdapter implements TreeModelListene
 
     public void setEditable(boolean editable) {
         this.editable = editable;
+        outlinesTree.removeMouseListener(this);
+        outlinesTree.removeTreeSelectionListener(this);
+        outlinesTree.removeTreeExpansionListener(this);
+        outlinesTree.setEditable(false);
+        outlinesTree.setTransferHandler(null);
         if (editable) {
             outlinesTree.addMouseListener(this);
             outlinesTree.addTreeSelectionListener(this);
             outlinesTree.addTreeExpansionListener(this);
             outlinesTree.setEditable(true);
-        } else {
-            outlinesTree.removeMouseListener(this);
-            outlinesTree.removeTreeSelectionListener(this);
-            outlinesTree.removeTreeExpansionListener(this);
-            outlinesTree.setEditable(false);
+            outlinesTree.setTransferHandler(new TreeTransferHandler());
         }
     }
 
