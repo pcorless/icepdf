@@ -240,7 +240,7 @@ public class TextSprite {
         Graphics2D g2d = (Graphics2D) g;
 
         // draw bounding box.
-        drawBoundBox(g2d);
+//        drawBoundBox(g2d);
 
         for (GlyphText glyphText : glyphTexts) {
 
