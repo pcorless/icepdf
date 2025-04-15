@@ -1560,7 +1560,7 @@ public abstract class AbstractContentParser {
                     currentChar, // cid
                     textState.fontName,
                     textState.currentfont.toUnicode(currentChar), // unicode value
-                    currentX, currentY, newAdvanceX, newAdvanceY);
+                    currentX, currentY, newAdvanceX, newAdvanceY, shapes.getRotation());
             shapes.getPageText().addGlyph(glyphText, oCGs);
 
             if (contentStreamCallback != null) {

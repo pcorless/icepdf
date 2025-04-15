@@ -58,6 +58,7 @@ public class PageText implements TextSelect {
 
     // pointer to current line during document parse, no other use.
     private LineText currentLine;
+    private float pageRotation;
 
     private final ArrayList<LineText> pageLines;
     private ArrayList<LineText> sortedPageLines;
@@ -68,7 +69,16 @@ public class PageText implements TextSelect {
     private LinkedHashMap<OptionalContents, PageText> optionalPageLines;
 
     public PageText() {
+        this(0f);
+    }
+
+    public PageText(float pageRotation) {
         pageLines = new ArrayList<>(64);
+        this.pageRotation = pageRotation;
+    }
+
+    public void setPageRotation(float pageRotation) {
+        this.pageRotation = pageRotation;
     }
 
     public void newLine(LinkedList<OptionalContents> oCGs) {
@@ -80,7 +90,7 @@ public class PageText implements TextSelect {
             PageText pageText = optionalPageLines.get(optionalContent);
             if (pageText == null) {
                 // create a text object add the glyph.
-                pageText = new PageText();
+                pageText = new PageText(pageRotation);
                 pageText.newLine();
                 optionalPageLines.put(optionalContent, pageText);
             } else {
@@ -95,7 +105,7 @@ public class PageText implements TextSelect {
                 currentLine.getWords().size() == 0) {
             return;
         }
-        currentLine = new LineText();
+        currentLine = new LineText(pageRotation);
         pageLines.add(currentLine);
     }
 
@@ -114,7 +124,7 @@ public class PageText implements TextSelect {
      * {@link #sortAndFormatText}.
      * <br>
      * During the extraction process extra space will automatically be added
-     * between words.  However depending on how the PDF is encoded can result
+     * between words.  However, depending on how the PDF is encoded can result
      * in too many extra spaces.  So as a result this feature can be turned off
      * with the system property org.icepdf.core.views.page.text.autoSpace which
      * is set to True by default.
@@ -145,7 +155,7 @@ public class PageText implements TextSelect {
             for (OptionalContents key : keys) {
                 if (key != null && key.isVisible()) {
                     ArrayList<LineText> pageLines = optionalPageLines.get(key).getVisiblePageLines(false);
-                    LineText currentLine = new LineText();
+                    LineText currentLine = new LineText(pageRotation);
                     visiblePageLines.add(currentLine);
                     for (LineText lineText : pageLines) {
                         currentLine.addAll(lineText.getWords());
@@ -165,7 +175,7 @@ public class PageText implements TextSelect {
         if (optionalPageLines != null) {
             // iterate over optional content keys and extract text from visible groups
             Set<OptionalContents> keys = optionalPageLines.keySet();
-            LineText currentLine = new LineText();
+            LineText currentLine = new LineText(pageRotation);
             visiblePageLines.add(currentLine);
             for (OptionalContents key : keys) {
                 if (key != null) {
@@ -226,7 +236,7 @@ public class PageText implements TextSelect {
         PageText pageText = optionalPageLines.get(optionalContent);
         if (pageText == null) {
             // create a text object add the glyph.
-            pageText = new PageText();
+            pageText = new PageText(pageRotation);
             pageText.addGlyph(sprite);
             optionalPageLines.put(optionalContent, pageText);
         } else {
@@ -454,7 +464,7 @@ public class PageText implements TextSelect {
                     // on table base text.
                     diff = Math.abs(currentY - lastY);
                     if (diff != 0 && diff > word.getTextExtractionBounds().getHeight() / 2) {
-                        LineText lineText = new LineText();
+                        LineText lineText = new LineText(pageRotation);
                         lineText.addAll(words.subList(start, end));
                         sortedPageLines.add(lineText);
                         start = end;
@@ -463,7 +473,7 @@ public class PageText implements TextSelect {
                     lastY = currentY;
                 }
                 if (start < end) {
-                    LineText lineText = new LineText();
+                    LineText lineText = new LineText(pageRotation);
                     lineText.addAll(words.subList(start, end));
                     sortedPageLines.add(lineText);
                 }

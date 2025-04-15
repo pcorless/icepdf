@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects.graphics.text;
 import org.icepdf.core.pobjects.Page;
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -38,10 +39,9 @@ public abstract class AbstractText implements Text {
     // Bounds of text converted to page space.
     protected Rectangle2D.Double bounds;
 
-    // original bounds as plotted by the PDF,  can be used for space and
-    // line break detection.  Once normalized to page space (bounds instance var)
-    // it may not be possible to make the formatting detection.  However, normalized
-    // bounds are used for text selection.
+    // original bounds as plotted by the PDF, this is used for painting selection as calculating mouse interactions
+    protected Rectangle2D.Double textSelectionBounds;
+    // Can be used for space and line break detection.
     protected Rectangle2D.Double textExtractionBounds;
 
     // selected states
@@ -57,6 +57,8 @@ public abstract class AbstractText implements Text {
     protected boolean hasHighlight;
     // highlight cursor hint for quicker painting
     protected boolean hasHighlightCursor;
+
+    protected float pageRotation;
 
     /**
      * Gets the bounds of the respective text object normalized to page
@@ -216,11 +218,34 @@ public abstract class AbstractText implements Text {
      * Gets the original bounds of the text unit, this value is not normalized
      * to page space and represents the raw layout coordinates of the text as
      * defined in the Post Script notation. This is primarily used for text
-     * extraction line and word break calculations.
+     * selection contains calculations.
+     *
+     * @return text bounds.
+     */
+    public Rectangle2D.Double getTextSelectionBounds() {
+        return textSelectionBounds;
+    }
+
+    /**
+     * Gets the bounds of the text unit, this value is normalized to page space and removes any page
+     * level rotations.  This is primarily used text coordinate sorting for extraction and searching.
+     * Where the getTextSelectionBounds represent the raw layout coordinates of the text as defined in the document
+     * which is good for text selection calculations but breaks down when trying to do text extraction sorting.
      *
      * @return text bounds.
      */
     public Rectangle2D.Double getTextExtractionBounds() {
+        if (textExtractionBounds == null) {
+            if (pageRotation != 0) {
+                AffineTransform transform = new AffineTransform();
+                // rotation without centering as we want the margin to be the same
+                transform.rotate(Math.toRadians(pageRotation));
+                textExtractionBounds =
+                        (Rectangle2D.Double) transform.createTransformedShape(textSelectionBounds).getBounds2D();
+            } else {
+                textExtractionBounds = textSelectionBounds;
+            }
+        }
         return textExtractionBounds;
     }
 }

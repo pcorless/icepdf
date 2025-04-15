@@ -1262,7 +1262,7 @@ public class Page extends Dictionary {
         return totalRotation;
     }
 
-    private float getPageRotation() {
+    public float getPageRotation() {
         // Get the pages default orientation if available, if not defined
         // then it is zero.
         Object tmpRotation = library.getObject(entries, ROTATE_KEY);

@@ -457,7 +457,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                         currentChar, // cid
                         EMBEDDED_FONT_NAME,
                         String.valueOf(currentChar), // unicode value
-                        currentX, currentY, newAdvanceX, 0);
+                        currentX, currentY, newAdvanceX, 0, 0);
             } else {
                 // move back to start of next line
                 currentY += lineHeight;
