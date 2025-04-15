@@ -1264,7 +1264,7 @@ public class SwingViewBuilder implements ViewBuilder {
     }
 
     public JToolBar buildUtilityToolBar(boolean embeddableComponent) {
-        return buildUtilityToolBar(embeddableComponent, null);
+        return buildUtilityToolBar(embeddableComponent, ViewerPropertiesManager.getInstance());
     }
 
     public JToolBar buildUtilityToolBar(boolean embeddableComponent, ViewerPropertiesManager propertiesManager) {

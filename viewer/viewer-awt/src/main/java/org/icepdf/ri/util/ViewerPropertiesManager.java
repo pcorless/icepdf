@@ -324,7 +324,7 @@ public final class ViewerPropertiesManager {
     }
 
     /**
-     * Gets singleton instance of the the Properties manager instance.
+     * Gets singleton instance of the Properties manager instance.
      *
      * @return singleton instance.
      */

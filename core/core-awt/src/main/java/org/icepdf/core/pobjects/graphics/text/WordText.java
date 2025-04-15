@@ -78,9 +78,10 @@ public class WordText extends AbstractText implements TextSelect {
     // reference to last added text.
     private int previousGlyphText;
 
-    public WordText() {
+    public WordText(float pageRotation) {
         text = new StringBuilder();
         glyphs = new ArrayList<>(4);
+        this.pageRotation = pageRotation;
     }
 
     public int size(){
@@ -97,14 +98,13 @@ public class WordText extends AbstractText implements TextSelect {
 
     protected boolean detectNewLine(GlyphText sprite) {
         if (currentGlyph != null && autoSpaceInsertion) {
-            // last added glyph
-            Rectangle2D.Double bounds1 = currentGlyph.getTextExtractionBounds();
-            double currentYCoord = sprite.getTextExtractionBounds().y;
-            double previousYCoord = currentGlyph.getTextExtractionBounds().y;
+            Rectangle2D previousBounds = currentGlyph.getTextExtractionBounds();
+            Rectangle2D currentBounds = sprite.getTextExtractionBounds();
+
             // half previous glyph width will be used to determine a space
-            double tolerance = bounds1.height / spaceFraction;
+            double tolerance = previousBounds.getHeight() / spaceFraction;
             // checking the y coordinate as well as any shift normall means a new work, this might need to get fuzzy later.
-            double ydiff = Math.abs(currentYCoord - previousYCoord);
+            double ydiff = Math.abs(currentBounds.getY() - previousBounds.getY());
             return ydiff > tolerance;
         } else {
             return false;
@@ -113,18 +113,15 @@ public class WordText extends AbstractText implements TextSelect {
 
     protected boolean detectSpace(GlyphText sprite) {
         if (currentGlyph != null && autoSpaceInsertion) {
-            // last added glyph
-            Rectangle2D.Double bounds1 = currentGlyph.getTextExtractionBounds();
-            double currentXCoord = sprite.getTextExtractionBounds().x;
-            double currentYCoord = sprite.getTextExtractionBounds().y;
-            double previousXCoord = currentGlyph.getTextExtractionBounds().x;
-            double previousYCoord = currentGlyph.getTextExtractionBounds().y;
+            Rectangle2D previousBounds = currentGlyph.getTextExtractionBounds();
+            Rectangle2D currentBounds = sprite.getTextExtractionBounds();
+
             // spaces can be negative if we have a LTR layout.
-            double space = Math.abs(currentXCoord - (previousXCoord + bounds1.width));
+            double space = Math.abs(currentBounds.getX() - (previousBounds.getX() + previousBounds.getWidth()));
             // half previous glyph width will be used to determine a space
-            double tolerance = bounds1.width / spaceFraction;
+            double tolerance = previousBounds.getWidth() / spaceFraction;
             // checking the y coordinate as well as any shift normall means a new work, this might need to get fuzzy later.
-            double ydiff = Math.abs(currentYCoord - previousYCoord);
+            double ydiff = Math.abs(currentBounds.getY() - previousBounds.getY());
             return space > tolerance || ydiff > tolerance;
         } else {
             return false;
@@ -191,7 +188,7 @@ public class WordText extends AbstractText implements TextSelect {
             spaces = 1;
         }
         // add extra spaces
-        WordText whiteSpace = new WordText();
+        WordText whiteSpace = new WordText(this.pageRotation);
         double offset;
         GlyphText spaceText = null;
         Rectangle2D.Double spaceBounds;
@@ -246,7 +243,9 @@ public class WordText extends AbstractText implements TextSelect {
                         spaceBounds.y,
                         spaceBounds.width,
                         spaceBounds.height),
-                (char) 32, String.valueOf((char) 32));
+                0,
+                (char) 32,
+                String.valueOf((char) 32));
         whiteSpace.addText(spaceText);
         whiteSpace.setWhiteSpace(true);
         return whiteSpace;
@@ -275,11 +274,11 @@ public class WordText extends AbstractText implements TextSelect {
             }
             bounds.add(sprite.getBounds());
         }
-        if (textExtractionBounds == null) {
-            rect = sprite.getTextExtractionBounds();
-            textExtractionBounds = new Rectangle2D.Double(rect.x, rect.y, rect.width, rect.height);
+        if (textSelectionBounds == null) {
+            rect = sprite.getTextSelectionBounds();
+            textSelectionBounds = new Rectangle2D.Double(rect.x, rect.y, rect.width, rect.height);
         } else {
-            textExtractionBounds.add(sprite.getTextExtractionBounds());
+            textSelectionBounds.add(sprite.getTextSelectionBounds());
         }
 
         // append the text that maps up the sprite
@@ -299,11 +298,11 @@ public class WordText extends AbstractText implements TextSelect {
                 } else {
                     bounds.add(glyph.getBounds());
                 }
-                if (textExtractionBounds == null) {
-                    Rectangle2D.Double rect = glyph.getTextExtractionBounds();
-                    textExtractionBounds = new Rectangle2D.Double(rect.x, rect.y, rect.width, rect.height);
+                if (textSelectionBounds == null) {
+                    Rectangle2D.Double rect = glyph.getTextSelectionBounds();
+                    textSelectionBounds = new Rectangle2D.Double(rect.x, rect.y, rect.width, rect.height);
                 } else {
-                    textExtractionBounds.add(glyph.getTextExtractionBounds());
+                    textSelectionBounds.add(glyph.getTextSelectionBounds());
                 }
             }
         }

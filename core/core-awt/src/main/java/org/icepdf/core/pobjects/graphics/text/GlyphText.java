@@ -50,13 +50,14 @@ public class GlyphText extends AbstractText {
     private int fontSubTypeFormat;
 
     public GlyphText(float x, float y, float advanceX, float advanceY, Rectangle2D.Double bounds,
-                     char cid, String unicode) {
+                     float pageRotation, char cid, String unicode) {
         this.x = x;
         this.y = y;
         this.advanceX = advanceX;
         this.advanceY = advanceY;
+        this.pageRotation = pageRotation;
         this.bounds = bounds;
-        this.textExtractionBounds = new Rectangle2D.Double(bounds.x, bounds.y, bounds.width, bounds.height);
+        this.textSelectionBounds = new Rectangle2D.Double(bounds.x, bounds.y, bounds.width, bounds.height);
         this.cid = cid;
         this.unicode = unicode;
     }
@@ -72,23 +73,7 @@ public class GlyphText extends AbstractText {
         // map the coordinates from glyph space to user space.
         Path2D.Double generalPath = new Path2D.Double(bounds, af);
         bounds = (Rectangle2D.Double) generalPath.getBounds2D();
-        // we have some portrait type layouts where the text is actually
-        // running on the y-axis.  The reason for this is Tm that specifies
-        // a -1 shear which is basically a 90 degree rotation.  Which breaks
-        // our left to right top down text extraction logic (PDF-854).
-        if (af1 != null && af1.getShearX() < -1) {
-            // adjust of the rotation, move the text back to a normal layout.
-            generalPath = new Path2D.Double(bounds, new AffineTransform(0, -1, 1, 0, 0, 0));
-            textExtractionBounds = (Rectangle2D.Double) generalPath.getBounds2D();
-        } else if (af1 != null && af1.getShearY() < -1) {
-            // adjust of the rotation, move the text back to a normal layout.
-            generalPath = new Path2D.Double(bounds, new AffineTransform(0, 1, -1, 0, 0, 0));
-            textExtractionBounds = (Rectangle2D.Double) generalPath.getBounds2D();
-        } else {
-            // 99% of the time we just use the bounds.
-            textExtractionBounds = bounds;
-        }
-
+        textSelectionBounds = bounds;
     }
 
     public boolean isRedacted() {

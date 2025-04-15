@@ -273,6 +273,9 @@ public class Lexer {
                             digit[j] = (byte) lookAhead;
                             offset++;
                         }
+                        else {
+                            break;
+                        }
                     }
                     // push i to match the octal offset
                     pos += offset + 1;
