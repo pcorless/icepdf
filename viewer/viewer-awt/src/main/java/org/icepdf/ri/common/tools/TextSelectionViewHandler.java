@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.tools;
 
+import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
@@ -49,6 +50,9 @@ public class TextSelectionViewHandler extends TextSelection
 
     protected final JComponent parentComponent;
 
+    private static boolean textEditingEnabled = Defs.booleanProperty(
+            "org.icepdf.viewer.textEdit.enabled", true);
+
     protected boolean isDragging;
     protected boolean isSelecting;
 
@@ -60,7 +64,7 @@ public class TextSelectionViewHandler extends TextSelection
 
     public void mouseClicked(MouseEvent e) {
 
-        if (e.getButton() == MouseEvent.BUTTON1) {
+        if (e.getButton() == MouseEvent.BUTTON1 || e.getButton() == MouseEvent.BUTTON3) {
             // clear all selected text.
             documentViewController.clearSelectedText();
             clearSelectionState();
@@ -101,10 +105,24 @@ public class TextSelectionViewHandler extends TextSelection
         } else if (e.getButton() == MouseEvent.BUTTON3) {
             // show context menu for adding selected text to the clipboard.
             boolean canExtract = documentViewController.getParentController().havePermissionToExtractContent();
+            SwingController controller = (SwingController) documentViewController.getParentController();
+            boolean modifyDocument = controller.havePermissionToModifyDocument();
             if (canExtract && documentViewController.getSelectedText() != null &&
                     !documentViewController.getSelectedText().isEmpty()) {
                 PageViewComponentImpl pageComponent = isOverPageComponent(parentComponent, e);
-                JPopupMenu contextMenu = buildContextMenu(pageComponent);
+                pageComponent.requestFocus();
+                JPopupMenu contextMenu = buildSelectedTextContextMenu(pageComponent);
+                contextMenu.show(parentComponent, e.getX(), e.getY());
+            }
+            // if nothing is selected show context menu for editing the line of text below the mouse.
+            else if (textEditingEnabled &&
+                    modifyDocument &&
+                    (documentViewController.getSelectedText() == null ||
+                            documentViewController.getSelectedText().isEmpty())) {
+                PageViewComponentImpl pageComponent = isOverPageComponent(parentComponent, e);
+                pageComponent.requestFocus();
+                MouseEvent modeEvent = SwingUtilities.convertMouseEvent(parentComponent, e, pageComponent);
+                JPopupMenu contextMenu = buildEditTextContextMenu(pageComponent, modeEvent.getPoint());
                 contextMenu.show(parentComponent, e.getX(), e.getY());
             }
         }
@@ -121,7 +139,7 @@ public class TextSelectionViewHandler extends TextSelection
         return highlightPath.getBounds();
     }
 
-    protected JPopupMenu buildContextMenu(PageViewComponentImpl pageComponent) {
+    protected JPopupMenu buildSelectedTextContextMenu(PageViewComponentImpl pageComponent) {
         SwingController controller = (SwingController) documentViewController.getParentController();
         boolean modifyDocument = controller.havePermissionToModifyDocument();
         ResourceBundle messageBundle = controller.getMessageBundle();
@@ -139,9 +157,8 @@ public class TextSelectionViewHandler extends TextSelection
         addDestinationMenuItem.addActionListener(e -> {
             // grab the start of the text selection
             Point point = getSelectionBounds(pageComponent).getLocation();
-            new DestinationHandler(controller.getDocumentViewController(),
-                    pageComponent).createNewDestination(
-                    controller.getDocumentViewController().getSelectedText(), point.x, point.y);
+            new DestinationHandler(documentViewController, pageComponent)
+                    .createNewDestination(documentViewController.getSelectedText(), point.x, point.y);
         });
         contextMenu.add(addDestinationMenuItem);
         contextMenu.addSeparator();
@@ -151,7 +168,7 @@ public class TextSelectionViewHandler extends TextSelection
         addHighlightMenuItem.setEnabled(modifyDocument);
         Images.applyIcon(addHighlightMenuItem, "highlight_annot", IconPack.Variant.NORMAL, Images.IconSize.MINI);
         addHighlightMenuItem.addActionListener(e ->
-                new HighLightAnnotationHandler(controller.getDocumentViewController(), pageComponent)
+                new HighLightAnnotationHandler(documentViewController, pageComponent)
                         .createMarkupAnnotation(null));
         contextMenu.add(addHighlightMenuItem);
         // underline
@@ -159,7 +176,8 @@ public class TextSelectionViewHandler extends TextSelection
                 messageBundle.getString("viewer.annotation.popup.addAnnotation.underline.label"));
         addUnderlineMenuItem.setEnabled(modifyDocument);
         Images.applyIcon(addUnderlineMenuItem, "underline", IconPack.Variant.NORMAL, Images.IconSize.MINI);
-        addUnderlineMenuItem.addActionListener(e -> new UnderLineAnnotationHandler(controller.getDocumentViewController(), pageComponent)
+        addUnderlineMenuItem.addActionListener(e -> new UnderLineAnnotationHandler(documentViewController,
+                pageComponent)
                 .createMarkupAnnotation(null));
         contextMenu.add(addUnderlineMenuItem);
         // strikeout.
@@ -167,9 +185,28 @@ public class TextSelectionViewHandler extends TextSelection
                 messageBundle.getString("viewer.annotation.popup.addAnnotation.strikeout.label"));
         addStrikeOutMenuItem.setEnabled(modifyDocument);
         Images.applyIcon(addStrikeOutMenuItem, "strikeout", IconPack.Variant.NORMAL, Images.IconSize.MINI);
-        addStrikeOutMenuItem.addActionListener(e -> new StrikeOutAnnotationHandler(controller.getDocumentViewController(), pageComponent)
+        addStrikeOutMenuItem.addActionListener(e -> new StrikeOutAnnotationHandler(documentViewController,
+                pageComponent)
                 .createMarkupAnnotation(null));
         contextMenu.add(addStrikeOutMenuItem);
+        return contextMenu;
+    }
+
+    protected JPopupMenu buildEditTextContextMenu(PageViewComponentImpl pageComponent, Point coords) {
+        SwingController controller = (SwingController) documentViewController.getParentController();
+        ResourceBundle messageBundle = controller.getMessageBundle();
+        EditTextHandler editTextHandler = new EditTextHandler(controller, pageComponent);
+        JPopupMenu contextMenu = new JPopupMenu();
+        // edit text commands
+        JMenuItem editWordMenuItem = new JMenuItem(messageBundle.getString(
+                "viewer.utilityPane.view.selectionTool.contextMenu.editWord.label"));
+        editWordMenuItem.addActionListener(e -> editTextHandler.editWord(coords));
+        contextMenu.add(editWordMenuItem);
+        JMenuItem editLineMenuItem = new JMenuItem(messageBundle.getString(
+                "viewer.utilityPane.view.selectionTool.contextMenu.editLine.label"));
+        editLineMenuItem.addActionListener(e -> editTextHandler.editLine(coords));
+        contextMenu.add(editLineMenuItem);
+        contextMenu.addSeparator();
         return contextMenu;
     }
 
@@ -191,7 +228,7 @@ public class TextSelectionViewHandler extends TextSelection
                     parentComponent, e, pageComponent);
 
             if (selectedPages != null &&
-                    selectedPages.size() > 0) {
+                    !selectedPages.isEmpty()) {
                 PageViewComponentImpl pageComp;
                 for (AbstractPageViewComponent selectedPage : selectedPages) {
                     pageComp = (PageViewComponentImpl) selectedPage;
@@ -202,7 +239,7 @@ public class TextSelectionViewHandler extends TextSelection
             }
         }
         // finally if we have selected any text then fire a property change event
-        if (selectedPages != null && selectedPages.size() > 0) {
+        if (selectedPages != null && !selectedPages.isEmpty()) {
             documentViewController.firePropertyChange(
                     PropertyConstants.TEXT_SELECTED,
                     null, null);

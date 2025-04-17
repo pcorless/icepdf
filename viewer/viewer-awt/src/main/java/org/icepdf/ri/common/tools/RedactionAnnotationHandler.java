@@ -18,7 +18,10 @@ import org.icepdf.ri.util.ViewerPropertiesManager;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
-import java.awt.geom.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.GeneralPath;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 
 /**
@@ -214,30 +217,9 @@ public class RedactionAnnotationHandler extends HighLightAnnotationHandler {
 
         if (redactionBounds != null && !redactionBounds.isEmpty()) {
 
-            // bound of the selected text
-            Rectangle2D shapeBounds;
-            double padding;
-            // padding out the bound, so we get a better hits when looking for redacted text. Since the redaction
-            // box is derived from the glyph bounds we can get rounding errors when a contains call is made and
-            // a glyph will be just slightly outside the redaction bounds and contains will return false
-            Area area = new Area();
-            for (Shape bounds : redactionBounds) {
-                shapeBounds = bounds.getBounds2D();
-                padding = shapeBounds.getHeight() * 0.025;
-                shapeBounds.setRect(
-                        shapeBounds.getX() - padding,
-                        shapeBounds.getY() - padding,
-                        shapeBounds.getWidth() + (padding * 2),
-                        shapeBounds.getHeight() + (padding * 2));
-                // area is important here as we want a union of the shapes, not multiple separate paths.
-                area.add(new Area(shapeBounds));
-            }
-            GeneralPath highlightPath = new GeneralPath();
-            highlightPath.append(area, false);
-            // get the bounds before convert to page space
-            Rectangle bounds = highlightPath.getBounds();
-
+            GeneralPath highlightPath = convertTextShapesToBounds(redactionBounds);
             Rectangle tBbox = convertToPageSpace(redactionBounds, highlightPath);
+            Rectangle bounds = highlightPath.getBounds();
 
             AffineTransform pageTransform = getToPageSpaceTransform();
 

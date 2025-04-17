@@ -65,6 +65,8 @@ public interface FontFile {
 
     String toUnicode(char displayChar);
 
+    char toSelector(char unicode);
+
     org.apache.fontbox.encoding.Encoding getEncoding();
 
     String getFamily();
