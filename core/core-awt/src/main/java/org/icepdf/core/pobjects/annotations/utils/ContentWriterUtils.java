@@ -124,6 +124,7 @@ public class ContentWriterUtils {
             if (!(currentChar == '\n' || currentChar == '\r')) {
                 textSprites.addText(
                         currentChar, // cid
+                        EMBEDDED_FONT_NAME,
                         String.valueOf(currentChar), // unicode value
                         currentX, currentY, newAdvanceX, 0, 0);
             } else {
