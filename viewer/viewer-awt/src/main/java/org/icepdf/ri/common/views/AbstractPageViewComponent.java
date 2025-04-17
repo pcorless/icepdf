@@ -255,12 +255,23 @@ public abstract class AbstractPageViewComponent
         }
     }
 
+    protected static double calculateScaleForDefaultScreen() {
+        double scale = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                .getDefaultScreenDevice()
+                .getDefaultConfiguration()
+                .getDefaultTransform()
+                .getScaleX();
+        System.out.printf("device scale: %f\n", scale);
+        return scale;
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         // create a copy, so we can set our own state without affecting the parent graphics content.
         Graphics2D g2d = (Graphics2D) g.create(0, 0, pageSize.width, pageSize.height);
         GraphicsRenderingHints grh = GraphicsRenderingHints.getDefault();
         g2d.setRenderingHints(grh.getRenderingHints(GraphicsRenderingHints.SCREEN));
+
         // page location in the entire view.
         calculateBufferLocation();
 
@@ -280,7 +291,21 @@ public abstract class AbstractPageViewComponent
                 // force one more paint to make sure we build a new buffer using the current zoom and rotation.
                 repaint();
             }
-            g2d.drawImage(pageImage, paintingClip.x, paintingClip.y, null);
+            // get scale which will be > 1.0 on high dpi monitors
+            double scale = calculateScaleForDefaultScreen();
+//            g2d.drawImage(pageImage,
+//                    // destination
+//                    paintingClip.x,
+//                    paintingClip.y,
+//                    paintingClip.x + paintingClip.width,
+//                    paintingClip.y + paintingClip.height,
+//                    // source
+//                    paintingClip.x,
+//                    paintingClip.y,
+//                    paintingClip.x + paintingClip.width,
+//                    paintingClip.y + paintingClip.height,
+//                    null);
+            g2d.drawImage(pageImage, paintingClip.x, paintingClip.y, paintingClip.width, paintingClip.height, null);
         }
         g2d.dispose();
     }
@@ -418,10 +443,17 @@ public abstract class AbstractPageViewComponent
                 page.init();
                 pageInitializedCallback(page);
 
+                double scale = AbstractPageViewComponent.calculateScaleForDefaultScreen();
                 BufferedImage pageBufferImage = graphicsConfiguration.createCompatibleImage(
-                        imageLocation.width, imageLocation.height,
+                        (int) (imageLocation.width * scale),
+                        (int) (imageLocation.height * scale),
                         BufferedImage.TYPE_INT_ARGB);
-                Graphics g2d = pageBufferImage.createGraphics();
+                Graphics2D g2d = pageBufferImage.createGraphics();
+                GraphicsConfiguration gc = g2d.getDeviceConfiguration();
+                double scaleFactor = gc.getDefaultTransform().getScaleX();
+                System.out.println("gc scaleFactor: " + scaleFactor);
+                g2d.scale(scale, scale);
+
 
                 // if we don't have a soft reference then we are likely on a first clean paint at which
                 // point we can kick off the animated paint.
