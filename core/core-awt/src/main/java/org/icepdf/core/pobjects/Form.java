@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.pobjects.graphics.ExtGState;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.Shapes;
+import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.parser.content.ContentParser;
 import org.icepdf.core.util.updater.callbacks.ContentStreamCallback;
@@ -27,6 +28,10 @@ import java.awt.geom.Rectangle2D;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.icepdf.core.pobjects.Resources.FONT_KEY;
+import static org.icepdf.core.pobjects.Resources.XOBJECT_KEY;
+import static org.icepdf.core.pobjects.annotations.FreeTextAnnotation.EMBEDDED_FONT_NAME;
 
 /**
  * Form XObject class. Not currently part of the public api.
@@ -140,7 +145,7 @@ public class Form extends Stream {
 
     /**
      * As of the PDF 1.2 specification, a resource entry is not required for
-     * a XObject and thus it needs to point to the parent resource to enable
+     * a XObject, thus it needs to point to the parent resource to enable
      * to correctly load the content stream.
      *
      * @param parentResource parent objects resourse when available.
@@ -212,6 +217,64 @@ public class Form extends Stream {
         entries.put(RESOURCES_KEY, resources.getEntries());
     }
 
+    /**
+     * Add a Font resource to this Form's resource dictionary.  This is intended for new object only, can't guarantee
+     * this method will work as expected on an existing object.
+     *
+     * @param fontDictionary font dictionary to add as a resource
+     */
+    public void addFontResource(DictionaryEntries fontDictionary) {
+        StateManager stateManager = library.getStateManager();
+        org.icepdf.core.pobjects.fonts.Font newFont;
+        Resources formResources = getResources();
+        DictionaryEntries fontsDictionary = formResources.getFonts();
+        if (fontsDictionary == null) {
+            fontsDictionary = new DictionaryEntries();
+            formResources.entries.put(FONT_KEY, fontsDictionary);
+        }
+        if (formResources.getFont(EMBEDDED_FONT_NAME) == null) {
+            // set up a new font resource
+            newFont = new org.icepdf.core.pobjects.fonts.zfont.SimpleFont(library, fontDictionary);
+            newFont.setPObjectReference(stateManager.getNewReferenceNumber());
+            // create font entry
+            fontsDictionary.put(EMBEDDED_FONT_NAME, newFont.getPObjectReference());
+            // sync font resources with form object.
+            entries.put(RESOURCES_KEY, formResources.entries);
+        } else {
+            // reuse previously defined 'common' annotation font
+            newFont = formResources.getFont(EMBEDDED_FONT_NAME);
+            Reference reference = newFont.getPObjectReference();
+            newFont = new org.icepdf.core.pobjects.fonts.zfont.SimpleFont(library, fontDictionary);
+            newFont.setPObjectReference(reference);
+        }
+
+        // update hard reference to state manager and weak library reference.
+        stateManager.addChange(new PObject(newFont, newFont.getPObjectReference()), isNew);
+        library.addObject(newFont, newFont.getPObjectReference());
+        // make sure the form changes get picked up as well
+        stateManager.addChange(new PObject(this, getPObjectReference()), isNew);
+    }
+
+    /**
+     * Add an ImageStream to this Form's resource dictionary.  This is intended for new object only, can't guarantee
+     * this method will work as expected on an existing object.
+     *
+     * @param imageName   named image
+     * @param imageStream corresponding ImageStream data
+     */
+    public void addImageResource(Name imageName, ImageStream imageStream) {
+        Resources formResources = getResources();
+        DictionaryEntries xObjectsDictionary = formResources.getXObjects();
+        if (xObjectsDictionary == null) {
+            xObjectsDictionary = new DictionaryEntries();
+            formResources.entries.put(XOBJECT_KEY, xObjectsDictionary);
+        }
+        // sync form resources with form object.
+        entries.put(RESOURCES_KEY, formResources.entries);
+        xObjectsDictionary.put(imageName, imageStream.getPObjectReference());
+        StateManager stateManager = library.getStateManager();
+        stateManager.addChange(new PObject(this, getPObjectReference()), isNew);
+    }
 
     /**
      * Gets the shapes that where parsed from the content stream.

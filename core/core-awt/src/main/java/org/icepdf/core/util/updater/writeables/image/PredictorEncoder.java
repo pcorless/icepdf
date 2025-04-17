@@ -77,6 +77,7 @@ class PredictorEncoder implements ImageEncoder {
     PredictorEncoder(ImageStream imageStream) {
         this.imageStream = imageStream;
         BufferedImage image = imageStream.getDecodedImage();
+
         // The raw count of components per pixel including optional alpha
         this.componentsPerPixel = image.getColorModel().getNumComponents();
         int transferType = image.getRaster().getTransferType();
@@ -123,7 +124,7 @@ class PredictorEncoder implements ImageEncoder {
     /**
      * Tries to compress the image using a predictor.
      *
-     * @return the image or null if it is not possible to encoded the image (e.g. not supported
+     * @return the image or null if it is not possible to encode the image (e.g. not supported
      * raster format etc.)
      */
     public ImageStream encode() throws IOException {

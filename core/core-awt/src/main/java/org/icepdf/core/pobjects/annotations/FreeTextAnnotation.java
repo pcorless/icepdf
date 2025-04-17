@@ -16,12 +16,9 @@
 package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils;
 import org.icepdf.core.pobjects.fonts.FontFile;
-import org.icepdf.core.pobjects.fonts.FontManager;
-import org.icepdf.core.pobjects.fonts.zfont.Encoding;
 import org.icepdf.core.pobjects.graphics.Shapes;
-import org.icepdf.core.pobjects.graphics.TextSprite;
-import org.icepdf.core.pobjects.graphics.TextState;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
@@ -36,8 +33,6 @@ import java.util.ArrayList;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static org.icepdf.core.pobjects.fonts.Font.SIMPLE_FORMAT;
 
 /**
  * A free text annotation (PDF 1.3) displays text directly on the page. Unlike
@@ -229,7 +224,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     protected String richText;
 
     // appearance properties not to be confused with annotation properties,
-    // this properties are updated by the UI components and used to regenerate
+    // these properties are updated by the UI components and used to regenerate
     // the annotations appearance stream and other needed properties on edits.
     private String fontName = "Helvetica";
     private int fontStyle = Font.PLAIN;
@@ -380,28 +375,9 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         Rectangle2D bbox = appearanceState.getBbox();
         bbox.setRect(0, 0, bbox.getWidth(), bbox.getHeight());
 
+        Shapes shapes = ContentWriterUtils.createAppearanceShapes(appearanceState, INSETS, INSETS);
+
         AffineTransform matrix = appearanceState.getMatrix();
-        Shapes shapes = appearanceState.getShapes();
-
-        if (shapes == null) {
-            shapes = new Shapes();
-            appearanceState.setShapes(shapes);
-        } else {
-            // remove any previous text
-            appearanceState.getShapes().getShapes().clear();
-        }
-
-        // remove any previous text
-        shapes.getShapes().clear();
-
-        // setup the space for the AP content stream.
-        AffineTransform af = new AffineTransform();
-        af.scale(1, -1);
-        af.translate(0, -bbox.getHeight());
-        // adjust of the border offset, offset is define in viewer,
-        // so we can't use the constant because of dependency issues.
-        af.translate(INSETS, INSETS);
-        shapes.add(new TransformDrawCmd(af));
 
         // iterate over each line of text painting the strings.
         if (content == null) {
@@ -410,61 +386,11 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
         // create the new font to draw with
         if (fontFile == null || fontPropertyChanged) {
-            fontFile = FontManager.getInstance().initialize().getInstance(fontName, 0);
-            fontFile = fontFile.deriveFont(Encoding.standardEncoding, null);
+            fontFile = ContentWriterUtils.createFont(fontName);
             fontPropertyChanged = false;
         }
         fontFile = fontFile.deriveFont(fontSize);
-        TextSprite textSprites =
-                new TextSprite(fontFile,
-                        SIMPLE_FORMAT,
-                        content.length(),
-                        new AffineTransform(), null);
-        textSprites.setRMode(TextState.MODE_FILL);
-        textSprites.setStrokeColor(fontColor);
-        textSprites.setFontName(EMBEDDED_FONT_NAME.toString());
-        textSprites.setFontSize(fontSize);
 
-        // iterate over each line of text painting the strings.
-        StringBuilder contents = new StringBuilder(content);
-
-        // todo temporary get working until I can get back to calculating max char bounds.
-        float lineHeight = fontSize;
-
-        float borderOffsetX = borderStyle.getStrokeWidth() / 2 + 1;  // 1 pixel padding
-        float borderOffsetY = borderStyle.getStrokeWidth() / 2;
-        // is generally going to be zero, and af takes care of the offset for inset.
-        float advanceX = (float) bbox.getMinX() + borderOffsetX;
-        float advanceY = (float) bbox.getMinY() + borderOffsetY;
-
-        float currentX;
-        // we don't want to shift the whole line width just the ascent
-        float currentY = advanceY + lineHeight;
-
-        float lastx = 0;
-        float newAdvanceX;
-        char currentChar;
-        for (int i = 0, max = contents.length(); i < max; i++) {
-
-            currentChar = contents.charAt(i);
-
-            newAdvanceX = (float) fontFile.getAdvance(currentChar).getX();
-            currentX = advanceX + lastx;
-            lastx += newAdvanceX;
-
-            if (!(currentChar == '\n' || currentChar == '\r')) {
-                textSprites.addText(
-                        currentChar, // cid
-                        EMBEDDED_FONT_NAME,
-                        String.valueOf(currentChar), // unicode value
-                        currentX, currentY, newAdvanceX, 0, 0);
-            } else {
-                // move back to start of next line
-                currentY += lineHeight;
-                advanceX = (float) bbox.getMinX() + borderOffsetX;
-                lastx = 0;
-            }
-        }
         BasicStroke stroke;
         if (strokeType && borderStyle.isStyleDashed()) {
             stroke = new BasicStroke(
@@ -493,11 +419,13 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             shapes.add(new DrawDrawCmd());
         }
         // actual font.
-        shapes.add(new ColorDrawCmd(fontColor));
-        shapes.add(new TextSpriteDrawCmd(textSprites));
-
-        shapes.add(new AlphaDrawCmd(
-                AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f)));
+        float borderOffsetX = borderStyle.getStrokeWidth() / 2 + 1;  // 1 pixel padding
+        float borderOffsetY = borderStyle.getStrokeWidth() / 2;
+        // is generally going to be zero, and af takes care of the offset for inset.
+        float advanceX = (float) bbox.getMinX() + borderOffsetX;
+        float advanceY = (float) bbox.getMinY() + borderOffsetY;
+        ContentWriterUtils.addTextSpritesToShapes(fontFile, advanceX, advanceY, shapes, fontSize, 0, fontColor,
+                content);
 
         // update the appearance stream
         // create/update the appearance stream of the xObject.
@@ -505,76 +433,8 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         Form form = updateAppearanceStream(shapes, bbox, matrix,
                 PostScriptEncoder.generatePostScript(shapes.getShapes()), isNew);
         generateExternalGraphicsState(form, opacity);
-
-        if (form != null) {
-            Rectangle2D formBbox = new Rectangle2D.Float(0, 0,
-                    (float) bbox.getWidth(), (float) bbox.getHeight());
-            form.setAppearance(shapes, matrix, formBbox);
-            stateManager.addChange(new PObject(form, form.getPObjectReference()), isNew);
-            // update the AP's stream bytes so contents can be written out
-            form.setRawBytes(
-                    PostScriptEncoder.generatePostScript(shapes.getShapes()));
-            DictionaryEntries appearanceRefs = new DictionaryEntries();
-            appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
-            entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
-
-            // compress the form object stream.
-            if (compressAppearanceStream) {
-                form.getEntries().put(Stream.FILTER_KEY, new Name("FlateDecode"));
-            } else {
-                form.getEntries().remove(Stream.FILTER_KEY);
-            }
-
-            // create the font
-            DictionaryEntries fontDictionary = new DictionaryEntries();
-            fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.TYPE_KEY,
-                    org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY);
-            fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY,
-                    new Name("Type1"));
-            fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.NAME_KEY,
-                    EMBEDDED_FONT_NAME);
-            fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.BASEFONT_KEY,
-                    new Name(fontName));
-            fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.ENCODING_KEY,
-                    new Name("WinAnsiEncoding"));
-            fontDictionary.put(new Name("FirstChar"), 32);
-            fontDictionary.put(new Name("LastChar"), 255);
-
-            org.icepdf.core.pobjects.fonts.Font newFont;
-            if (form.getResources() == null ||
-                    form.getResources().getFont(EMBEDDED_FONT_NAME) == null) {
-                newFont = new org.icepdf.core.pobjects.fonts.zfont.SimpleFont(
-                        library, fontDictionary);
-                newFont.setPObjectReference(stateManager.getNewReferenceNumber());
-                // create font entry
-                DictionaryEntries fontResources = new DictionaryEntries();
-                fontResources.put(EMBEDDED_FONT_NAME, newFont.getPObjectReference());
-                // add the font resource entry.
-                DictionaryEntries resources = new DictionaryEntries();
-                resources.put(new Name("Font"), fontResources);
-                // and finally add it to the form.
-                form.getEntries().put(new Name("Resources"), resources);
-                form.setRawBytes("".getBytes());
-                try {
-                    form.init();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            } else {
-                try {
-                    form.init();
-                } catch (InterruptedException e) {
-                    logger.log(Level.WARNING, "Could not initialized FreeTexttAnnotation", e);
-                }
-                newFont = form.getResources().getFont(EMBEDDED_FONT_NAME);
-                Reference reference = newFont.getPObjectReference();
-                newFont = new org.icepdf.core.pobjects.fonts.zfont.SimpleFont(library, fontDictionary);
-                newFont.setPObjectReference(reference);
-            }
-            // update hard reference to state manager and weak library reference.
-            stateManager.addChange(new PObject(newFont, newFont.getPObjectReference()), isNew);
-            library.addObject(newFont, newFont.getPObjectReference());
-        }
+        ContentWriterUtils.setAppearance(this, form, appearanceState, stateManager, isNew);
+        form.addFontResource(ContentWriterUtils.createDefaultFontDictionary(fontName));
 
         // build out a few backwards compatible strings.
         StringBuilder dsString = new StringBuilder("font-size:")
@@ -781,7 +641,8 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     }
 
     public static final String BODY_START =
-            "<?xml version=\"1.0\"?><body xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xfa=\"https://www.xfa.org/schema/xfa-data/1.0/\" xfa:APIVersion=\"Acrobat:11.0.0\" xfa:spec=\"2.0.2\"  " +
+            "<?xml version=\"1.0\"?><body xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xfa=\"https://www.xfa" +
+                    ".org/schema/xfa-data/1.0/\" xfa:APIVersion=\"Acrobat:11.0.0\" xfa:spec=\"2.0.2\"  " +
                     "style=\"{0}\">";
 
     public static final String BODY_END = "</body>";
