@@ -15,6 +15,8 @@
  */
 package org.icepdf.core.pobjects.graphics.text;
 
+import org.icepdf.core.pobjects.Name;
+
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
@@ -41,16 +43,17 @@ public class GlyphText extends AbstractText {
 
     // character code used to represent glyph, maybe ascii or CID value
     private final char cid;
+    private final Name fontName;
 
     // Unicode/ASCII value that is represented by glyph, a cid can be
     // represented by one or more characters.
     private final String unicode;
 
-    private boolean redacted;
+    private boolean flagged;
     private int fontSubTypeFormat;
 
     public GlyphText(float x, float y, float advanceX, float advanceY, Rectangle2D.Double bounds,
-                     float pageRotation, char cid, String unicode) {
+                     float pageRotation, char cid, String unicode, Name FontName) {
         this.x = x;
         this.y = y;
         this.advanceX = advanceX;
@@ -60,6 +63,7 @@ public class GlyphText extends AbstractText {
         this.textSelectionBounds = new Rectangle2D.Double(bounds.x, bounds.y, bounds.width, bounds.height);
         this.cid = cid;
         this.unicode = unicode;
+        this.fontName = FontName;
     }
 
     /**
@@ -76,8 +80,8 @@ public class GlyphText extends AbstractText {
         textSelectionBounds = bounds;
     }
 
-    public boolean isRedacted() {
-        return redacted;
+    public boolean isFlagged() {
+        return flagged;
     }
 
     public int getFontSubTypeFormat() {
@@ -88,8 +92,8 @@ public class GlyphText extends AbstractText {
         this.fontSubTypeFormat = fontSubTypeFormat;
     }
 
-    public void redact() {
-        this.redacted = true;
+    public void flagged() {
+        this.flagged = true;
     }
 
     public char getCid() {
@@ -114,5 +118,9 @@ public class GlyphText extends AbstractText {
 
     public Rectangle2D.Double getBounds() {
         return bounds;
+    }
+
+    public Name getFontName() {
+        return fontName;
     }
 }

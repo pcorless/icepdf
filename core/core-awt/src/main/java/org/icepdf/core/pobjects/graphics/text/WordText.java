@@ -245,7 +245,8 @@ public class WordText extends AbstractText implements TextSelect {
                         spaceBounds.height),
                 0,
                 (char) 32,
-                String.valueOf((char) 32));
+                String.valueOf((char) 32),
+                currentGlyph.getFontName());
         whiteSpace.addText(spaceText);
         whiteSpace.setWhiteSpace(true);
         return whiteSpace;

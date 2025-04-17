@@ -368,6 +368,18 @@ public class PageText implements TextSelect {
         return selectedText;
     }
 
+    public ArrayList<WordText> getSelectedWordText() {
+        ArrayList<WordText> selectedWordText = new ArrayList<>();
+        for (LineText lineText : getPageLines()) {
+            for (WordText word : lineText.getWords()) {
+                if (word.isSelected()) {
+                    selectedWordText.add(word);
+                }
+            }
+        }
+        return selectedWordText;
+    }
+
     public void selectAll() {
         ArrayList<LineText> pageLines = getPageLines();
         if (pageLines != null) {

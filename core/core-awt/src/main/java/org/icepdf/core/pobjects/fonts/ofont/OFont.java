@@ -20,8 +20,8 @@ import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.graphics.TextState;
 
-import java.awt.Font;
 import java.awt.*;
+import java.awt.Font;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphMetrics;
 import java.awt.font.GlyphVector;
@@ -393,6 +393,11 @@ public class OFont implements FontFile {
             }
         }
         return String.valueOf(c);
+    }
+
+    @Override
+    public char toSelector(char unicode) {
+        return unicode;
     }
 
     public ByteEncoding getByteEncoding() {

@@ -28,10 +28,7 @@ import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.PageViewComponentImpl;
 
 import java.awt.*;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.GeneralPath;
-import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
+import java.awt.geom.*;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -609,6 +606,67 @@ public class TextSelection extends SelectionBoxHandler {
     public void setBottomMargin(int bottomMargin) {
         this.bottomMargin = bottomMargin;
     }
+
+    public static GeneralPath convertTextShapesToBounds(ArrayList<Shape> textShapes) {
+        if (textShapes != null && !textShapes.isEmpty()) {
+
+            // bound of the selected text
+            Rectangle2D shapeBounds;
+            double padding;
+            // padding out the bound, so we get a better hits when looking for redacted text. Since the redaction
+            // box is derived from the glyph bounds we can get rounding errors when a contains call is made and
+            // a glyph will be just slightly outside the redaction bounds and contains will return false
+            Area area = new Area();
+            for (Shape bounds : textShapes) {
+                shapeBounds = bounds.getBounds2D();
+                padding = shapeBounds.getHeight() * 0.025;
+                shapeBounds.setRect(
+                        shapeBounds.getX() - padding,
+                        shapeBounds.getY() - padding,
+                        shapeBounds.getWidth() + (padding * 2),
+                        shapeBounds.getHeight() + (padding * 2));
+                // area is important here as we want a union of the shapes, not multiple separate paths.
+                area.add(new Area(shapeBounds));
+            }
+            GeneralPath textPath = new GeneralPath();
+            textPath.append(area, false);
+
+
+            return textPath;
+        }
+        return null;
+    }
+
+    /**
+     * Convert the shapes that make up the annotation to page space so that
+     * they will scale correctly at different zooms.
+     *
+     * @param bounds bounds to convert to page space
+     * @param path   path
+     * @return transformed bBox.
+     */
+    protected Rectangle convertToPageSpace(ArrayList<Shape> bounds,
+                                           GeneralPath path) {
+        Page currentPage = pageViewComponent.getPage();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
+        AffineTransform at = currentPage.getToPageSpaceTransform(
+                documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(),
+                documentViewModel.getViewZoom());
+        // convert the two points as well as the bbox.
+        Rectangle tBbox = at.createTransformedShape(path).getBounds();
+        // convert the points
+        Shape bound;
+        for (int i = 0; i < bounds.size(); i++) {
+            bound = bounds.get(i);
+            bound = at.createTransformedShape(bound);
+            bounds.set(i, bound);
+        }
+
+        path.transform(at);
+
+        return tBbox;
+    }
 }
 
 class GlyphLocation {
@@ -1035,5 +1093,7 @@ class GlyphLocation {
         }
         return selectedCount;
     }
+
+
 
 }

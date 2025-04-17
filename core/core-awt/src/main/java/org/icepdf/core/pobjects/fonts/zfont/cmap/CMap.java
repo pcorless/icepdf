@@ -542,48 +542,36 @@ public class CMap implements org.icepdf.core.pobjects.fonts.CMap {
 
     /**
      * The method is called when ever a character code is incounter that has a
-     * FontDescriptor that defines a ToUnicode CMap.  The <code>charMap</code>
+     * FontDescriptor that defines a ToUnicode CMap.  The <code>ch</code>
      * is mapped according to the CMap rules and a mapped character code is
      * returned.
      *
-     * @param charMap value to map against the ToUnicode CMap
+     * @param ch value to map against the ToUnicode CMap
      * @return mapped character value.
      */
-    public char toSelector(char charMap) {
-        // print out a mapping for a particular character
-//        if (charMap == 42){
-//            System.out.println("mapping " + (int)charMap + " " + bfChars);
-//            System.out.println(cIdSystemInfo);
-//            System.out.println(cMapType);
-//        }
-
-        // for ToUnicode we only need to look at bfChar and bfRange.
-        // bfChar values have a higher precedent then bfRange.
-
-        // check bfChar
+    public char toSelector(char ch) {
         if (bfChars != null) {
-            char[] tmp = bfChars.get((int) charMap);
-            if (tmp != null) {
-                return tmp[0];
+            for (Integer key : bfChars.keySet()) {
+                if (String.valueOf(bfChars.get(key)).equals(String.valueOf(ch))) {
+                    return (char) key.intValue();
+                }
             }
         }
         // check bfRange for matches, there may be many ranges to check
         if (bfRange != null) {
             for (CMapBfRange aBfRange : bfRange) {
-                if (aBfRange.inRange(charMap)) {
-                    return aBfRange.getCMapValue(charMap)[0];
+                int cid = ch - aBfRange.offsetValue + aBfRange.startRange;
+                return (char) cid;
+            }
+        }
+        if (codeSpaceRange != null && codeSpaceRange[0] != null && ch < codeSpaceRange[0].length - 1) {
+            for (int i = 0; i < codeSpaceRange[0].length; i++) {
+                if (codeSpaceRange[0][i] == ch) {
+                    return (char) i;
                 }
             }
         }
-        if (cIdRange != null) {
-            for (CMapCidRange range : cIdRange) {
-                if (range.inRange(charMap)) {
-                    return range.getCMapValue(charMap);
-                }
-            }
-        }
-
-        return charMap;
+        return ch;
     }
 
     // todo isCFF probably not needed anymore if we know encoding or can do reverse then toSelector?

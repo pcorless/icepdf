@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.util.Defs;
@@ -100,6 +101,7 @@ public class TextSprite {
      * the current CTM</p>
      *
      * @param cid     cid to paint.
+     * @param fontName name of associated font.
      * @param unicode unicode representation of cid.
      * @param x       x-coordinate to paint.
      * @param y       y-coordinate to paint.
@@ -107,7 +109,7 @@ public class TextSprite {
      * @param height  height of cid from font.
      * @return new GlyphText object containing the text data.
      */
-    public GlyphText addText(char cid, String unicode, float x, float y, float width, float height,
+    public GlyphText addText(char cid, Name fontName, String unicode, float x, float y, float width, float height,
                              float pageRotation) {
         // x,y must not change as it will affect painting of the glyph,
         // we can change the bounds of glyphBounds as this is what needs to be normalized
@@ -150,7 +152,7 @@ public class TextSprite {
 
         // create glyph and normalize bounds.
         GlyphText glyphText =
-                new GlyphText(x, y, width, height, glyphBounds, pageRotation, cid, unicode);
+                new GlyphText(x, y, width, height, glyphBounds, pageRotation, cid, unicode, fontName);
         glyphText.normalizeToUserSpace(graphicStateTransform, tmTransform);
         glyphText.setFontSubTypeFormat(subTypeFormat);
         glyphTexts.add(glyphText);
@@ -300,6 +302,10 @@ public class TextSprite {
         this.fontSize = fontSize;
     }
 
+    public byte getSubTypeFormat() {
+        return subTypeFormat;
+    }
+
     private void drawBoundBox(Graphics2D gg) {
 
         // draw the characters
@@ -313,8 +319,11 @@ public class TextSprite {
         if (scale <= 0) {
             scale = 1;
         }
-        gg.setStroke(new BasicStroke((float) (scale)));
-        gg.setColor(Color.blue);
+
+        float[] dashPattern = {(float) (10 * scale), (float) (5 * scale)}; // 10 pixels on, 10 pixels off
+        gg.setStroke(new BasicStroke((float) (scale), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10, dashPattern,
+                0));
+        gg.setColor(Color.LIGHT_GRAY);
 
         charOutline = new GeneralPath(bounds);
         gg.draw(charOutline);

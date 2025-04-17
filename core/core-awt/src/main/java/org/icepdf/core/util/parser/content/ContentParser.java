@@ -12,7 +12,7 @@ import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReferenceFactory;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.updater.callbacks.ContentStreamRedactorCallback;
+import org.icepdf.core.util.updater.callbacks.ContentStreamCallback;
 
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
@@ -37,8 +37,8 @@ public class ContentParser extends AbstractContentParser {
         super(l, r, null);
     }
 
-    public ContentParser(Library l, Resources r, ContentStreamRedactorCallback contentStreamRedactorCallback) {
-        super(l, r, contentStreamRedactorCallback);
+    public ContentParser(Library l, Resources r, ContentStreamCallback contentStreamCallback) {
+        super(l, r, contentStreamCallback);
     }
 
     public ContentParser parse(Stream[] streams, Page page)
@@ -82,7 +82,7 @@ public class ContentParser extends AbstractContentParser {
         int count = 0;
         Lexer lexer;
         lexer = new Lexer();
-        lexer.setContentStream(streams, contentStreamRedactorCallback);
+        lexer.setContentStream(streams, contentStreamCallback);
 
         // text block y offset.
         float yBTstart = 0;
@@ -251,7 +251,7 @@ public class ContentParser extends AbstractContentParser {
                         // the XObject's Subtype entry, which may be Image , Form, or PS
                         case Operands.Do:
                             graphicState = consume_Do(graphicState, stack, shapes,
-                                    resources, true, imageIndex, page, contentStreamRedactorCallback, false);
+                                    resources, true, imageIndex, page, contentStreamCallback, false);
                             break;
 
                         // Fill the path, using the even-odd rule to determine the
@@ -591,7 +591,7 @@ public class ContentParser extends AbstractContentParser {
 
         // great a parser to get tokens for stream
         Lexer parser = new Lexer();
-        parser.setContentStream(source, contentStreamRedactorCallback);
+        parser.setContentStream(source, contentStreamCallback);
         Shapes shapes = new Shapes();
 
         if (graphicState == null) {
@@ -635,7 +635,7 @@ public class ContentParser extends AbstractContentParser {
                             break;
                         case Operands.Do:
                             consume_Do(graphicState, stack, shapes, resources, false, imageIndex, null,
-                                    contentStreamRedactorCallback, true);
+                                    contentStreamCallback, true);
                             stack.clear();
                             break;
                         case Operands.BI:
@@ -708,7 +708,7 @@ public class ContentParser extends AbstractContentParser {
                     // Normal text token, string, hex
                     case Operands.Tj:
                         consume_Tj(graphicState, stack, shapes,
-                                textMetrics, glyphOutlineClip, oCGs, contentStreamRedactorCallback);
+                                textMetrics, glyphOutlineClip, oCGs, contentStreamCallback);
                         break;
 
                     // Character Spacing
@@ -747,7 +747,7 @@ public class ContentParser extends AbstractContentParser {
                     // TJ marks a vector, where.......
                     case Operands.TJ:
                         consume_TJ(graphicState, stack, shapes,
-                                textMetrics, glyphOutlineClip, oCGs, contentStreamRedactorCallback);
+                                textMetrics, glyphOutlineClip, oCGs, contentStreamCallback);
                         break;
 
                     // Move to the start of the next line, offset from the start of the
@@ -939,7 +939,7 @@ public class ContentParser extends AbstractContentParser {
                     // Move to the next line and show a text string.
                     case Operands.SINGLE_QUOTE:
                         consume_single_quote(graphicState, stack, shapes, textMetrics,
-                                glyphOutlineClip, oCGs, contentStreamRedactorCallback);
+                                glyphOutlineClip, oCGs, contentStreamCallback);
                         break;
                     /*
                      * Move to the next line and show a text string, using aw as the
@@ -949,12 +949,12 @@ public class ContentParser extends AbstractContentParser {
                      */
                     case Operands.DOUBLE_QUOTE:
                         consume_double_quote(graphicState, stack, shapes, textMetrics,
-                                glyphOutlineClip, oCGs, contentStreamRedactorCallback);
+                                glyphOutlineClip, oCGs, contentStreamCallback);
                         break;
                     // not supposed to have a Do in text block but hey so be it. .
                     case Operands.Do:
                         consume_Do(graphicState, stack, shapes, resources, true, imageIndex, null,
-                                contentStreamRedactorCallback, true);
+                                contentStreamCallback, true);
                         break;
                 }
             }
@@ -992,8 +992,8 @@ public class ContentParser extends AbstractContentParser {
     }
 
     private void markTokenPosition(int position, Integer token) throws IOException {
-        if (contentStreamRedactorCallback != null) {
-            contentStreamRedactorCallback.setLastTokenPosition(position, token);
+        if (contentStreamCallback != null) {
+            contentStreamCallback.setLastTokenPosition(position, token);
         }
     }
 
@@ -1068,8 +1068,8 @@ public class ContentParser extends AbstractContentParser {
             graphicState.translate(0, -1);
 
             imageStream.setGraphicsTransformMatrix(af);
-            if (contentStreamRedactorCallback != null) {
-                contentStreamRedactorCallback.checkAndRedactInlineImage(imageStreamReference, lexer.getPos());
+            if (contentStreamCallback != null) {
+                contentStreamCallback.checkAndModifyInlineImage(imageStreamReference, lexer.getPos());
             }
             shapes.add(new ImageDrawCmd(imageStreamReference));
             graphicState.set(af);
