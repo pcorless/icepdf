@@ -15,13 +15,14 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
-import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.security.SecurityManager;
+import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
@@ -30,8 +31,8 @@ import java.awt.*;
 import java.awt.geom.*;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import java.util.List;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -525,7 +526,12 @@ public abstract class Annotation extends Dictionary {
      * Debug flag to turn off appearance stream compression for easier
      * human file reading.
      */
-    protected static boolean compressAppearanceStream = false;
+    protected static boolean compressAppearanceStream;
+
+    static {
+        compressAppearanceStream = Defs.booleanProperty("org.icepdf.core.annotation.compressStream", true);
+    }
+
     protected final HashMap<Name, Appearance> appearances = new HashMap<>(3);
     protected Name currentAppearance;
 
