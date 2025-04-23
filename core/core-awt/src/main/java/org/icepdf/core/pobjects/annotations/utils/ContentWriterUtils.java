@@ -188,7 +188,7 @@ public class ContentWriterUtils {
 
         // create transform for centering image
         float scaledImageHeight = bufferedImage.getHeight() * scale;
-        float offset = bbox.getHeight() > scaledImageHeight ? (float) (bbox.getHeight() - scaledImageHeight) / 2 : 0;
+        float offset = (float) (bbox.getHeight() - scaledImageHeight) / 2;
         AffineTransform centeringTransform = new AffineTransform(
                 1, 0, 0,
                 1, 0,
