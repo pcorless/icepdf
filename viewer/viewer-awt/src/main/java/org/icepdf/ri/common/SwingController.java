@@ -1443,7 +1443,6 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         outlinesTree = tree;
         outlinesScrollPane = scroll;
         outlinesController = new OutlinesController(this, outlinesTree);
-        outlinesScrollPane.addMouseListener(outlinesController);
     }
 
     public JTree getOutlineTree() {
