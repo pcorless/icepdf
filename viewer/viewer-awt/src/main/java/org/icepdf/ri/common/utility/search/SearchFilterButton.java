@@ -70,6 +70,7 @@ public class SearchFilterButton extends DropDownButton {
             wholePageCheckbox.setSelected(isWholePage() || isRegex());
             component.notifySearchFiltersChanged();
             preferences.putBoolean(PROPERTY_SEARCH_PANEL_REGEX_ENABLED, isRegex());
+            preferences.putBoolean(PROPERTY_SEARCH_PANEL_WHOLE_PAGE_ENABLED, isWholePage());
         });
         caseSensitiveCheckbox = new PersistentJCheckBoxMenuItem(messageBundle.getString(
                 "viewer.utilityPane.search.caseSenstiveCheckbox.label"), isCaseSensitive);
@@ -79,6 +80,7 @@ public class SearchFilterButton extends DropDownButton {
         });
         if (isRegex || isWholeWord) {
             regexCheckbox.setEnabled(isRegex);
+            wholePageCheckbox.setEnabled(!isRegex);
             wholeWordCheckbox.setEnabled(isWholeWord);
         }
         cumulativeCheckbox = new PersistentJCheckBoxMenuItem(messageBundle.getString(
@@ -94,7 +96,7 @@ public class SearchFilterButton extends DropDownButton {
             preferences.putBoolean(PROPERTY_SEARCH_PANEL_SEARCH_TEXT_ENABLED, isText());
         });
         formsCheckbox = new PersistentJCheckBoxMenuItem(messageBundle.getString(
-                "viewer.utilityPane.search.forms.label"), isText);
+                "viewer.utilityPane.search.forms.label"), isForms);
         formsCheckbox.addActionListener(actionEvent -> {
             component.notifySearchFiltersChanged();
             preferences.putBoolean(PROPERTY_SEARCH_PANEL_SEARCH_FORMS_ENABLED, isForms());

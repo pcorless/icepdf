@@ -91,7 +91,6 @@ public class LineText extends AbstractText implements TextSelect {
             currentWord = null;
             // add as a new word, nothing special otherwise
             WordText newWord = new WordText(this.pageRotation);
-            newWord.setWhiteSpace(true);
             newWord.addText(sprite);
             addWord(newWord);
         }
