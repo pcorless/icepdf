@@ -37,7 +37,7 @@ public class OutlinesController extends MouseAdapter implements TreeModelListene
     private boolean editable = true;
 
     private static boolean outlineEditingEnabled = Defs.booleanProperty(
-            "org.icepdf.viewer.outlineEdit.enabled", true);
+            "org.icepdf.viewer.outlineEdit.enabled", false);
 
     public OutlinesController(final SwingController controller, final JTree outlinesTree) {
         this.controller = controller;
