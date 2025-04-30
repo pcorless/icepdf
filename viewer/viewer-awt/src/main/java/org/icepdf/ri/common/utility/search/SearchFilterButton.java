@@ -80,7 +80,7 @@ public class SearchFilterButton extends DropDownButton {
         });
         if (isRegex || isWholeWord) {
             regexCheckbox.setEnabled(isRegex);
-            wholePageCheckbox.setEnabled(isWholeWord());
+            wholePageCheckbox.setEnabled(!isRegex);
             wholeWordCheckbox.setEnabled(isWholeWord);
         }
         cumulativeCheckbox = new PersistentJCheckBoxMenuItem(messageBundle.getString(
