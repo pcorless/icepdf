@@ -37,12 +37,15 @@ public class OutlinesController extends MouseAdapter implements TreeModelListene
     private boolean editable = true;
 
     private static boolean outlineEditingEnabled = Defs.booleanProperty(
-            "org.icepdf.viewer.outlineEdit.enabled", false);
+            "org.icepdf.viewer.outlineEdit.enabled", true);
 
     public OutlinesController(final SwingController controller, final JTree outlinesTree) {
         this.controller = controller;
         this.outlinesTree = outlinesTree;
         this.messageBundle = this.controller.getMessageBundle();
+        outlinesTree.addMouseListener(this);
+        outlinesTree.addTreeSelectionListener(this);
+        outlinesTree.addTreeExpansionListener(this);
     }
 
     public void insertNewOutline() throws InterruptedException {
@@ -62,17 +65,11 @@ public class OutlinesController extends MouseAdapter implements TreeModelListene
 
     public void setEditable(boolean editable) {
         this.editable = editable;
-        outlinesTree.removeMouseListener(this);
-        outlinesTree.removeTreeSelectionListener(this);
-        outlinesTree.removeTreeExpansionListener(this);
-        outlinesTree.setEditable(false);
-        outlinesTree.setTransferHandler(null);
+        outlinesTree.setEditable(editable);
         if (editable) {
-            outlinesTree.addMouseListener(this);
-            outlinesTree.addTreeSelectionListener(this);
-            outlinesTree.addTreeExpansionListener(this);
-            outlinesTree.setEditable(true);
             outlinesTree.setTransferHandler(new TreeTransferHandler());
+        } else {
+            outlinesTree.setTransferHandler(null);
         }
     }
 
@@ -130,13 +127,13 @@ public class OutlinesController extends MouseAdapter implements TreeModelListene
 
     @Override
     public void mouseClicked(MouseEvent mouseEvent) {
-        int x = mouseEvent.getX();
-        int y = mouseEvent.getY();
-        int row = outlinesTree.getRowForLocation(x, y);
-        TreePath path = outlinesTree.getPathForRow(row);
-        if (path != null) {
-            OutlineItemTreeNode node = (OutlineItemTreeNode) path.getLastPathComponent();
-            if ((mouseEvent.getButton() == MouseEvent.BUTTON3 || mouseEvent.getButton() == MouseEvent.BUTTON2)) {
+        if (editable && (mouseEvent.getButton() == MouseEvent.BUTTON3 || mouseEvent.getButton() == MouseEvent.BUTTON2)) {
+            int x = mouseEvent.getX();
+            int y = mouseEvent.getY();
+            int row = outlinesTree.getRowForLocation(x, y);
+            TreePath path = outlinesTree.getPathForRow(row);
+            if (path != null) {
+                OutlineItemTreeNode node = (OutlineItemTreeNode) path.getLastPathComponent();
                 OutlinesPopupMenu contextMenu = new OutlinesPopupMenu(controller, outlinesTree, node);
                 contextMenu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
             }
