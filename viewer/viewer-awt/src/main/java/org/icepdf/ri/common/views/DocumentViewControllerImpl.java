@@ -311,6 +311,7 @@ public class DocumentViewControllerImpl
     }
 
     public String getSelectedText() {
+        if (documentViewModel == null) return null;
         StringBuilder selectedText = new StringBuilder();
         try {
             // regular page selected by user mouse, keyboard or api
