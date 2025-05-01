@@ -4441,6 +4441,16 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         }
     }
 
+    public void toggleShowSearchPanel() {
+        // if utility pane is shown then select the search tab and request focus
+        if (isUtilityPaneVisible() &&
+                utilityTabbedPane.getSelectedComponent() == searchPanel) {
+            setUtilityPaneVisible(false);
+        } else {
+            showSearchPanel();
+        }
+    }
+
     /**
      * Make the Search pane visible, and if necessary, the utility pane that encloses it
      *
@@ -4875,7 +4885,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                         showSearch();
                     } else if (source == advancedSearchMenuItem || source == searchButton) {
                         cancelSetFocus = true;
-                        showSearchPanel();
+                        toggleShowSearchPanel();
                     } else if (source == searchNextMenuItem) {
                         nextSearchResult();
                     } else if (source == searchPreviousMenuItem) {
