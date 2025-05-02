@@ -73,8 +73,10 @@ public class Type0Font extends SimpleFont {
                 Object descendantFontObject = descendantFonts.get(0);
                 if (descendantFontObject instanceof Reference) {
                     Reference descendantFontReference = (Reference) descendantFontObject;
-                    descendantFont = (CompositeFont) library.getObject(descendantFontReference);
-                } else if (descendantFontObject instanceof CompositeFont) {
+                    descendantFontObject = library.getObject(descendantFontReference);
+                }
+
+                if (descendantFontObject instanceof CompositeFont) {
                     descendantFont = (CompositeFont) descendantFontObject;
                 }
 
