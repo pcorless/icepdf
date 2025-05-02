@@ -56,10 +56,6 @@ public class OutlinesTree extends JTree {
 
         setDragEnabled(true);
         setDropMode(DropMode.ON_OR_INSERT);
-
-        // old font was Arial with is no go for linux.
-        setFont(new java.awt.Font("SansSerif", java.awt.Font.PLAIN, 13));
-        setRowHeight(18);
     }
 
     public TreePath getNextMatch(String prefix, int startingRow, Position.Bias bias) {
