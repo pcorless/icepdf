@@ -34,8 +34,5 @@ public class NameJTree extends JTree {
         setModel(null);
         setRootVisible(true);
         setScrollsOnExpand(true);
-        // old font was Arial with is no go for linux.
-        setFont(new java.awt.Font("SansSerif", java.awt.Font.PLAIN, 13));
-        setRowHeight(18);
     }
 }

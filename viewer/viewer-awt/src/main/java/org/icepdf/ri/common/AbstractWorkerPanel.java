@@ -136,8 +136,6 @@ public abstract class AbstractWorkerPanel extends JPanel implements MutableDocum
         tree.setScrollsOnExpand(true);
         // setup a custom cell render
         if (cellRenderer != null) tree.setCellRenderer(cellRenderer);
-        tree.setFont(new java.awt.Font("SansSerif", java.awt.Font.PLAIN, 13));
-        tree.setRowHeight(18);
         tree.setRootVisible(false);
         tree.setExpandsSelectedPaths(true);
         tree.setShowsRootHandles(true);
