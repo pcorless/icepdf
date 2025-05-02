@@ -39,9 +39,6 @@ public class LayersTree extends JTree {
                 TreeSelectionModel.SINGLE_TREE_SELECTION);
         setRootVisible(true);
         setScrollsOnExpand(true);
-        // old font was Arial with is no go for linux.
-        setFont(new java.awt.Font("SansSerif", java.awt.Font.PLAIN, 13));
-        setRowHeight(18);
     }
 }
 
