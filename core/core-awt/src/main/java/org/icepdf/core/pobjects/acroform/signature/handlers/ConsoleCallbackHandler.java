@@ -41,14 +41,13 @@ public class ConsoleCallbackHandler implements CallbackHandler {
                 logger.log(Level.INFO,
                         "TextOutputCallback type {0} message: {1}",
                         new Object[]{tc.getMessageType(), tc.getMessage()});
+                throw new UnsupportedCallbackException(callback);
             } else if (callback instanceof NameCallback) {
                 NameCallback nc = (NameCallback) callback;
                 String prompt = nc.getPrompt();
                 prompt = prompt != null && !prompt.isEmpty() ? prompt : "Name";
                 String defaultName = nc.getDefaultName();
-                if (defaultName != null && !defaultName.isEmpty()) {
-
-                }
+                throw new UnsupportedCallbackException(callback);
             } else {
                 logger.log(Level.WARNING,
                         "Unknown callback type {0}",
