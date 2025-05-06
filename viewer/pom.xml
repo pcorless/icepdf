@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.github.pcorless.icepdf</groupId>
         <artifactId>icepdf</artifactId>
-        <version>7.2.4_P01</version>
+        <version>7.2.5</version>
     </parent>
     <artifactId>viewer</artifactId>
     <packaging>pom</packaging>
