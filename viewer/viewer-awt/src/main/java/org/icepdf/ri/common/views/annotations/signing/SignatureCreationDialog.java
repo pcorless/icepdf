@@ -509,6 +509,9 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         add(certificateSelectionPanel, BorderLayout.NORTH);
 
         // keystore certificate table
+        if (signerHandler == null) {
+            throw new IllegalStateException("Signer handler is null");
+        }
         Enumeration<String> aliases = signerHandler.buildKeyStore().aliases();
         CertificateTableModel certificateTableModel = new CertificateTableModel(signerHandler, aliases, messageBundle);
         certificateTable = new JTable(certificateTableModel);

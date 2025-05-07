@@ -32,8 +32,8 @@ public class SigningPreferencesPanel extends JPanel {
     private final JComboBox<KeystoreTypeItem> keystoreTypeComboBox;
     private final JLabel pkcsPathLabel;
     private final JTextField pkcsPathTextField;
-    private final JButton pkcsPathBrowseButton;
 
+    private final ResourceBundle messageBundle;
     private final Preferences preferences;
 
     public SigningPreferencesPanel(SwingController controller, ViewerPropertiesManager propertiesManager,
@@ -43,6 +43,7 @@ public class SigningPreferencesPanel extends JPanel {
         setAlignmentY(JPanel.TOP_ALIGNMENT);
 
         preferences = propertiesManager.getPreferences();
+        this.messageBundle = messageBundle;
 
         KeystoreTypeItem[] pkcsTypeItems =
                 new KeystoreTypeItem[]{
@@ -61,18 +62,15 @@ public class SigningPreferencesPanel extends JPanel {
         // setup default state
         pkcsPathLabel = new JLabel();
         pkcsPathTextField = new JTextField();
-        updatePkcsPaths(messageBundle);
-        pkcsPathBrowseButton = new JButton(messageBundle.getString(
+        updatePkcsPaths();
+        JButton pkcsPathBrowseButton = new JButton(messageBundle.getString(
                 "viewer.dialog.viewerPreferences.section.signatures.pkcs.keystore.path.browse.label"));
-        pkcsPathBrowseButton.addActionListener(e -> showBrowseDialog(messageBundle));
+        pkcsPathBrowseButton.addActionListener(e -> showBrowseDialog());
 
         pkcsPathTextField.addActionListener(e -> savePkcsPaths(keystoreTypeComboBox));
 
         keystoreTypeComboBox.addActionListener(e -> {
-            JComboBox cb = (JComboBox) e.getSource();
-            KeystoreTypeItem selectedItem = (KeystoreTypeItem) cb.getSelectedItem();
-            preferences.put(ViewerPropertiesManager.PROPERTY_PKCS_KEYSTORE_TYPE, selectedItem.getValue());
-            updatePkcsPaths(messageBundle);
+            updatePkcsPaths();
         });
 
         JPanel imagingPreferencesPanel = new JPanel(new GridBagLayout());
@@ -112,7 +110,7 @@ public class SigningPreferencesPanel extends JPanel {
         addGB(this, new Label(" "), 0, 1, 1, 1);
     }
 
-    private void updatePkcsPaths(ResourceBundle messageBundle) {
+    private void updatePkcsPaths() {
         // update which config/keystore input to show.
         if (keystoreTypeComboBox.getSelectedIndex() == PKCS11) {
             pkcsPathLabel.setText(messageBundle.getString(
@@ -124,6 +122,10 @@ public class SigningPreferencesPanel extends JPanel {
                     "viewer.dialog.viewerPreferences.section.signatures.pkcs.12.keystore.path.label"));
             pkcsPathTextField.setText(preferences.get(ViewerPropertiesManager.PROPERTY_PKCS12_PROVIDER_KEYSTORE_PATH,
                     ""));
+        }
+        KeystoreTypeItem selectedItem = (KeystoreTypeItem) keystoreTypeComboBox.getSelectedItem();
+        if (selectedItem != null) {
+            preferences.put(ViewerPropertiesManager.PROPERTY_PKCS_KEYSTORE_TYPE, selectedItem.getValue());
         }
     }
 
@@ -137,7 +139,7 @@ public class SigningPreferencesPanel extends JPanel {
         }
     }
 
-    private void showBrowseDialog(ResourceBundle messageBundle) {
+    private void showBrowseDialog() {
         String pkcsPath = pkcsPathTextField.getText();
         JFileChooser fileChooser = new JFileChooser(pkcsPath);
         fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -149,6 +151,7 @@ public class SigningPreferencesPanel extends JPanel {
         if (responseValue == JFileChooser.APPROVE_OPTION) {
             pkcsPathTextField.setText(fileChooser.getSelectedFile().getAbsolutePath());
             savePkcsPaths(keystoreTypeComboBox);
+            updatePkcsPaths();
         }
 
     }

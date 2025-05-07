@@ -35,7 +35,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
-import java.security.KeyStoreException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -194,13 +193,21 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
         public void actionPerformed(ActionEvent actionEvent) {
             try {
                 new SignatureCreationDialog(controller, messageBundle, signatureComponent).setVisible(true);
-            } catch (KeyStoreException e) {
+            } catch (IllegalStateException e) {
+                logger.log(Level.WARNING, "Keystore has not been configured, set in signature preferences panel", e);
+                JOptionPane.showMessageDialog(this.signatureComponent,
+                        messageBundle.getString(
+                                "viewer.annotation.signature.keystore.failure.dialog.certify.error.msg"),
+                        messageBundle.getString(
+                                "viewer.annotation.signature.keystore.failure.dialog.certify.error.title"),
+                        JOptionPane.WARNING_MESSAGE);
+            } catch (Exception e) {
                 logger.log(Level.WARNING, "failed to authenticate keystore", e);
                 JOptionPane.showMessageDialog(this.signatureComponent,
-                        messageBundle.getString("viewer.annotation.signature.authentication.failure.dialog.certify" +
-                                ".error.msg"),
-                        messageBundle.getString("viewer.annotation.signature.authentication.failure.dialog.certify" +
-                                ".error.title"),
+                        messageBundle.getString(
+                                "viewer.annotation.signature.authentication.failure.dialog.certify.error.msg"),
+                        messageBundle.getString(
+                                "viewer.annotation.signature.authentication.failure.dialog.certify.error.title"),
                         JOptionPane.WARNING_MESSAGE);
             }
         }
