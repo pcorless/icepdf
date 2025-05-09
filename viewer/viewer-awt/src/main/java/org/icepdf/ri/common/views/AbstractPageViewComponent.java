@@ -250,13 +250,15 @@ public abstract class AbstractPageViewComponent
     }
 
     protected static double calculateScaleForDefaultScreen() {
-        double scale = GraphicsEnvironment.getLocalGraphicsEnvironment()
-                .getDefaultScreenDevice()
-                .getDefaultConfiguration()
-                .getDefaultTransform()
-                .getScaleX();
-        System.out.printf("device scale: %f\n", scale);
-        return scale;
+        try {
+            return GraphicsEnvironment.getLocalGraphicsEnvironment()
+                    .getDefaultScreenDevice() // could be an issue if multiple screens
+                    .getDefaultConfiguration()
+                    .getDefaultTransform()
+                    .getScaleX();
+        } catch (Exception e) {
+            return 1.0;
+        }
     }
 
     @Override
@@ -265,7 +267,6 @@ public abstract class AbstractPageViewComponent
         Graphics2D g2d = (Graphics2D) g.create(0, 0, pageSize.width, pageSize.height);
         GraphicsRenderingHints grh = GraphicsRenderingHints.getDefault();
         g2d.setRenderingHints(grh.getRenderingHints(GraphicsRenderingHints.SCREEN));
-
         // page location in the entire view.
         calculateBufferLocation();
 
@@ -285,20 +286,7 @@ public abstract class AbstractPageViewComponent
                 // force one more paint to make sure we build a new buffer using the current zoom and rotation.
                 repaint();
             }
-            // get scale which will be > 1.0 on high dpi monitors
-            double scale = calculateScaleForDefaultScreen();
-//            g2d.drawImage(pageImage,
-//                    // destination
-//                    paintingClip.x,
-//                    paintingClip.y,
-//                    paintingClip.x + paintingClip.width,
-//                    paintingClip.y + paintingClip.height,
-//                    // source
-//                    paintingClip.x,
-//                    paintingClip.y,
-//                    paintingClip.x + paintingClip.width,
-//                    paintingClip.y + paintingClip.height,
-//                    null);
+            // will scale buffer to fit the current clip with smooths out any artifacts from screen scale factor
             g2d.drawImage(pageImage, paintingClip.x, paintingClip.y, paintingClip.width, paintingClip.height, null);
         }
         g2d.dispose();
@@ -429,7 +417,8 @@ public abstract class AbstractPageViewComponent
             // paint page.
             Page page = pageTree.getPage(pageIndex);
             // page loading progress
-            PageViewLoadingListener pageLoadingListener = new DefaultPageViewLoadingListener(parent, documentViewController);
+            PageViewLoadingListener pageLoadingListener = new DefaultPageViewLoadingListener(parent,
+                    documentViewController);
             boolean isFirstProgressivePaint = false;
             try {
                 if (documentViewController != null) page.addPageProcessingListener(pageLoadingListener);
@@ -443,9 +432,6 @@ public abstract class AbstractPageViewComponent
                         (int) (imageLocation.height * scale),
                         BufferedImage.TYPE_INT_ARGB);
                 Graphics2D g2d = pageBufferImage.createGraphics();
-                GraphicsConfiguration gc = g2d.getDeviceConfiguration();
-                double scaleFactor = gc.getDefaultTransform().getScaleX();
-                System.out.println("gc scaleFactor: " + scaleFactor);
                 g2d.scale(scale, scale);
 
 
