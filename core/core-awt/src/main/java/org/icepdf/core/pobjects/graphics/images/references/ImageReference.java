@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects.graphics.images.references;
 import org.icepdf.core.events.PageImageEvent;
 import org.icepdf.core.events.PageLoadingEvent;
 import org.icepdf.core.events.PageLoadingListener;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Resources;
@@ -60,13 +61,15 @@ public abstract class ImageReference implements Callable<BufferedImage> {
     protected Resources resources;
     protected BufferedImage image;
     protected Reference reference;
+    protected Name xobjectName;
 
     protected int imageIndex;
     protected Page parentPage;
 
-    protected ImageReference(ImageStream imageStream, GraphicsState graphicsState,
+    protected ImageReference(ImageStream imageStream, Name xobjectName, GraphicsState graphicsState,
                              Resources resources, int imageIndex, Page parentPage) {
         this.imageStream = imageStream;
+        this.xobjectName = xobjectName;
         this.graphicsState = graphicsState;
         this.resources = resources;
         this.imageIndex = imageIndex;
@@ -147,6 +150,10 @@ public abstract class ImageReference implements Callable<BufferedImage> {
 
     public boolean isImage() {
         return image != null;
+    }
+
+    public Name getXobjectName() {
+        return xobjectName;
     }
 
     protected void notifyPageImageLoadedEvent(long duration, boolean interrupted) {

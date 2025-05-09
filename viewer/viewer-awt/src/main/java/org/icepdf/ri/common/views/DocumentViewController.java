@@ -18,13 +18,12 @@ package org.icepdf.ri.common.views;
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
-import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
+import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureAppearanceCallback;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyListener;
 import java.util.Collection;
-import java.util.Set;
 
 
 /**
@@ -186,6 +185,8 @@ public interface DocumentViewController {
 
     void setAnnotationCallback(AnnotationCallback annotationCallback);
 
+    void setSignatureAppearanceCallback(SignatureAppearanceCallback signatureAppearanceCallback);
+
     void setSecurityCallback(SecurityCallback securityCallback);
 
     void addNewAnnotation(AnnotationComponent annotationComponent);
@@ -209,6 +210,8 @@ public interface DocumentViewController {
     void redo();
 
     AnnotationCallback getAnnotationCallback();
+
+    SignatureAppearanceCallback getSignatureAppearanceCallback();
 
     SecurityCallback getSecurityCallback();
 

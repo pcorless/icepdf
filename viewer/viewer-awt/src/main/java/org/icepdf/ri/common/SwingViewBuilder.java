@@ -1667,6 +1667,10 @@ public class SwingViewBuilder implements ViewBuilder {
                 ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_REDACTION)) {
             addToToolBar(toolbar, buildRedactionAnnotationToolButton(iconSize));
         }
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_SIGNATURE)) {
+            addToToolBar(toolbar, buildSignatureAnnotationToolButton(iconSize));
+        }
         if (SystemProperties.PRIVATE_PROPERTY_ENABLED && propertiesManager.checkAndStoreBooleanProperty(
                 ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_PERMISSION)) {
             addToToolBar(toolbar, buildAnnotationPermissionCombBox());
@@ -1827,6 +1831,16 @@ public class SwingViewBuilder implements ViewBuilder {
                 "redaction_annot", imageSize, buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setRedactionAnnotationToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildSignatureAnnotationToolButton(final Images.IconSize imageSize) {
+        JToggleButton btn = makeToolbarToggleButton(
+                messageBundle.getString("viewer.toolbar.tool.signature.label"),
+                messageBundle.getString("viewer.toolbar.tool.signature.tooltip"),
+                "signature_annot", imageSize, buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setSignatureAnnotationToolButton(btn);
         return btn;
     }
 

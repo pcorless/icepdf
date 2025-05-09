@@ -132,43 +132,39 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                         this);
                 break;
             case DocumentViewModel.DISPLAY_TOOL_SELECTION:
-                // no handler is needed for selection as it is handle by
-                // each annotation.
+                // no handler is needed for selection as it is handled by each annotation.
                 currentToolHandler = new AnnotationSelectionHandler(
                         documentViewController, this);
                 documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION:
-                // handler is responsible for the initial creation of the annotation
                 currentToolHandler = new LinkAnnotationHandler(
                         documentViewController, this);
                 documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION:
-                // handler is responsible for the initial creation of the annotation
                 currentToolHandler = new HighLightAnnotationHandler(
                         documentViewController, this);
-                ((HighLightAnnotationHandler) currentToolHandler).createMarkupAnnotation(null);
                 documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_REDACTION_ANNOTATION:
-                // handler is responsible for the initial creation of the annotation
                 currentToolHandler = new RedactionAnnotationHandler(
                         documentViewController, this);
-                ((RedactionAnnotationHandler) currentToolHandler).createMarkupAnnotation(null);
                 documentViewController.clearSelectedText();
                 break;
-
+            case DocumentViewModel.DISPLAY_TOOL_SIGNATURE_ANNOTATION:
+                currentToolHandler = new SignatureAnnotationHandler(
+                        documentViewController, this);
+                documentViewController.clearSelectedText();
+                break;
             case DocumentViewModel.DISPLAY_TOOL_STRIKEOUT_ANNOTATION:
                 currentToolHandler = new StrikeOutAnnotationHandler(
                         documentViewController, this);
-                ((StrikeOutAnnotationHandler) currentToolHandler).createMarkupAnnotation(null);
                 documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_UNDERLINE_ANNOTATION:
                 currentToolHandler = new UnderLineAnnotationHandler(
                         documentViewController, this);
-                ((UnderLineAnnotationHandler) currentToolHandler).createMarkupAnnotation(null);
                 documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_LINE_ANNOTATION:

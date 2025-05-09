@@ -20,8 +20,8 @@ import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
+import org.icepdf.core.pobjects.acroform.signature.utils.SignatureUtilities;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
-import org.icepdf.ri.common.utility.signatures.SignatureUtilities;
 import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 
@@ -79,7 +79,7 @@ public class SignatureValidationStatus {
             documentModified = "viewer.annotation.signature.validation.common.doc.unmodified.label";
         } else if (!signatureValidator.isSignedDataModified() && signatureValidator.isDocumentDataModified() && signatureValidator.isSignaturesCoverDocumentLength()) {
             documentModified = "viewer.annotation.signature.validation.common.doc.modified.label";
-        } else if (!signatureValidator.isSignaturesCoverDocumentLength()) {
+        } else if (signatureValidator.isSignaturesCoverDocumentLength() && signatureValidator.isSignedDataModified()) {
             documentModified = "viewer.annotation.signature.validation.common.doc.major.label";
         }
         documentModified = messageBundle.getString(documentModified);

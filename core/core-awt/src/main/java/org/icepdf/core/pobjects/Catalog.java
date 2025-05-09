@@ -35,7 +35,7 @@ import java.util.logging.Logger;
  * class for convenience, but can also be accessed via the {@link PTrailer} class.
  * Useful information about the document can be extracted from the Catalog
  * Dictionary, such as PDF version information and Viewer Preferences.  All
- * Catalog dictionary properties can be accesed via the getEntries method.
+ * Catalog dictionary properties can be accessed via the getEntries method.
  * See section 3.6.1 of the PDF Reference version 1.6 for more information on
  * the properties available in the Catalog Object. </p>
  *
@@ -412,6 +412,23 @@ public class Catalog extends Dictionary {
      * @return interactive form object,  null if no forms are pressent.
      */
     public InteractiveForm getInteractiveForm() {
+        return interactiveForm;
+    }
+
+    /**
+     * Gets the interactive form object that contains the form widgets for the given PDF.  This method should be
+     * called before adding new widgets.
+     *
+     * @return The interactive form object if it exists, if null a new dictionary is inserted into the document.
+     */
+    public InteractiveForm getOrCreateInteractiveForm() {
+        if (interactiveForm == null) {
+            interactiveForm = new InteractiveForm(library, new DictionaryEntries());
+            StateManager stateManager = library.getStateManager();
+            this.entries.put(ACRO_FORM_KEY, interactiveForm);
+            stateManager.addChange(new PObject(this, this.getPObjectReference()));
+            return interactiveForm;
+        }
         return interactiveForm;
     }
 

@@ -110,6 +110,14 @@ public class CrossReferenceRoot {
         return null;
     }
 
+    public int getObjectOffset(ObjectLoader objectLoader, Reference reference, Name hint)
+            throws ObjectStateException, CrossReferenceStateException, IOException {
+        for (CrossReference crossReference : crossReferences) {
+            return crossReference.getObjectOffset(objectLoader, reference);
+        }
+        return -1;
+    }
+
     public void setInitializationFailed(boolean failed) {
         initializationFailed = failed;
     }

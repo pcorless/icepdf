@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.graphics.commands;
 
 import org.icepdf.core.pobjects.LiteralStringObject;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.util.PdfOps;
@@ -45,7 +46,7 @@ public class PostScriptEncoder {
     private static final String NEWLINE = "\r\n";
     private static final String TRUE = "true";
     private static final String FALSE = "false";
-    private static final String NAME = "/";
+    private static final char NAME = '/';
     private static final String BEGIN_ARRAY = "[";
     private static final String END_ARRAY = "]";
     private static final String BEGIN_STRING = "(";
@@ -80,21 +81,21 @@ public class PostScriptEncoder {
                 // setup an affine transform
                 if (drawCmd instanceof TransformDrawCmd) {
                     AffineTransform af = ((TransformDrawCmd) drawCmd).getAffineTransform();
-                    postScript.append(af.getScaleX()).append(SPACE)
-                            .append(af.getShearX()).append(SPACE)
-                            .append(af.getShearY()).append(SPACE)
-                            .append(af.getScaleY()).append(SPACE)
-                            .append(af.getTranslateX()).append(SPACE)
-                            .append(af.getTranslateY()).append(SPACE)
+                    postScript.append(roundCoordinate(af.getScaleX())).append(SPACE)
+                            .append(roundCoordinate(af.getShearX())).append(SPACE)
+                            .append(roundCoordinate(af.getShearY())).append(SPACE)
+                            .append(roundCoordinate(af.getScaleY())).append(SPACE)
+                            .append(roundCoordinate(af.getTranslateX())).append(SPACE)
+                            .append(roundCoordinate(af.getTranslateY())).append(SPACE)
                             .append(PdfOps.cm_TOKEN).append(NEWLINE);
                 } else if (drawCmd instanceof TextTransformDrawCmd) {
                     AffineTransform af = ((TransformDrawCmd) drawCmd).getAffineTransform();
-                    postScript.append(af.getScaleX()).append(SPACE)
-                            .append(af.getShearX()).append(SPACE)
-                            .append(af.getShearY()).append(SPACE)
-                            .append(af.getScaleY()).append(SPACE)
-                            .append(af.getTranslateX()).append(SPACE)
-                            .append(af.getTranslateY()).append(SPACE)
+                    postScript.append(roundCoordinate(af.getScaleX())).append(SPACE)
+                            .append(roundCoordinate(af.getShearX())).append(SPACE)
+                            .append(roundCoordinate(af.getShearY())).append(SPACE)
+                            .append(roundCoordinate(af.getScaleY())).append(SPACE)
+                            .append(roundCoordinate(af.getTranslateX())).append(SPACE)
+                            .append(roundCoordinate(af.getTranslateY())).append(SPACE)
                             .append(PdfOps.Tm_TOKEN).append(NEWLINE);
                 }
                 // reference the colour, we'll decide later if its fill or stroke.
@@ -139,8 +140,8 @@ public class PostScriptEncoder {
                 else if (drawCmd instanceof StrokeDrawCmd) {
                     BasicStroke stroke = (BasicStroke) ((StrokeDrawCmd) drawCmd).getStroke();
                     postScript.append(
-                            // line width
-                            stroke.getLineWidth()).append(SPACE)
+                                    // line width
+                                    stroke.getLineWidth()).append(SPACE)
                             .append(PdfOps.w_TOKEN).append(SPACE);
                     // dash phase
                     float[] dashes = stroke.getDashArray();
@@ -182,7 +183,7 @@ public class PostScriptEncoder {
                 }
                 // graphics state setup
                 else if (drawCmd instanceof GraphicsStateCmd) {
-                    postScript.append('/')
+                    postScript.append(NAME)
                             .append(((GraphicsStateCmd) drawCmd).getGraphicStateName()).append(SPACE)
                             .append(PdfOps.gs_TOKEN).append(SPACE);
                 }
@@ -194,13 +195,13 @@ public class PostScriptEncoder {
 
                     ArrayList<GlyphText> glyphTexts = textSprite.getGlyphSprites();
                     if (glyphTexts.size() > 0) {
-                        // write out stat of text paint
+                        // write out start of text paint
                         postScript.append("1 0 0 -1 ")
                                 .append(glyphTexts.get(0).getX()).append(SPACE)
                                 .append(glyphTexts.get(0).getY()).append(SPACE).append(PdfOps.Tm_TOKEN).append(NEWLINE);
 
                         // write out font
-                        postScript.append("/").append(textSprite.getFontName()).append(SPACE)
+                        postScript.append(NAME).append(textSprite.getFontName()).append(SPACE)
                                 .append(textSprite.getFontSize()).append(SPACE).append(PdfOps.Tf_TOKEN).append(NEWLINE);
 
                         // set the colour
@@ -239,6 +240,14 @@ public class PostScriptEncoder {
                         }
                         postScript.append(PdfOps.ET_TOKEN).append(NEWLINE);
                     }
+                } else if (drawCmd instanceof PopDrawCmd) {
+                    postScript.append(PdfOps.Q_TOKEN).append(SPACE);
+                } else if (drawCmd instanceof PushDrawCmd) {
+                    postScript.append(PdfOps.q_TOKEN).append(SPACE);
+                } else if (drawCmd instanceof ImageDrawCmd) {
+                    ImageDrawCmd imageDrawCmd = (ImageDrawCmd) drawCmd;
+                    Name imageName = imageDrawCmd.getImageName();
+                    postScript.append(NAME).append(imageName).append(SPACE).append(PdfOps.Do_TOKEN).append(NEWLINE);
                 }
             }
         } catch (Exception e) {
@@ -248,6 +257,10 @@ public class PostScriptEncoder {
             logger.finer("PostEncoding: " + postScript);
         }
         return postScript.toString().getBytes();
+    }
+
+    private static double roundCoordinate(double value) {
+        return Math.round(value * 10000.0) / 10000.0;
     }
 
     /**

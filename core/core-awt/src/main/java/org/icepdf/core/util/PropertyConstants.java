@@ -73,5 +73,4 @@ public class PropertyConstants {
 
     ANNOTATION_SUMMARY_BOX_FONT_SIZE_CHANGE = "annotationSummaryBoxFontSizeChange";
 
-
 }

@@ -19,6 +19,7 @@ import org.icepdf.core.CombinedMemento;
 import org.icepdf.core.Memento;
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureAppearanceCallback;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
@@ -116,6 +117,7 @@ public class DocumentViewControllerImpl
 
     protected final SwingController viewerController;
     protected AnnotationCallback annotationCallback;
+    protected SignatureAppearanceCallback signatureAppearanceCallback;
     protected SecurityCallback securityCallback;
 
     protected final PropertyChangeSupport changes = new PropertyChangeSupport(this);
@@ -226,7 +228,7 @@ public class DocumentViewControllerImpl
     }
 
     /**
-     * Set an annotation callback.
+     * Set a SignatureAppearanceCallback callback.  Allows setting up a custom signature appearance stream
      *
      * @param annotationCallback annotation callback associated with this document
      *                           view.
@@ -350,6 +352,25 @@ public class DocumentViewControllerImpl
      */
     public AnnotationCallback getAnnotationCallback() {
         return annotationCallback;
+    }
+
+
+    /**
+     * Gets the SignatureAppearanceCallback used to generate a signature annotation's appearance stream
+     *
+     * @return assigned callback
+     */
+    public SignatureAppearanceCallback getSignatureAppearanceCallback() {
+        return signatureAppearanceCallback;
+    }
+
+    /**
+     * Set a SignatureAppearanceCallback callback.  Allows setting up a custom signature appearance stream
+     *
+     * @return annotation callback associated with this document.
+     */
+    public void setSignatureAppearanceCallback(SignatureAppearanceCallback signatureAppearanceCallback) {
+        this.signatureAppearanceCallback = signatureAppearanceCallback;
     }
 
     /**
@@ -899,8 +920,7 @@ public class DocumentViewControllerImpl
                 if (documentView != null) documentView.setToolMode(viewToolMode);
 
                 // notify the page components of the tool change.
-                List<AbstractPageViewComponent> pageComponents =
-                        documentViewModel.getPageComponents();
+                List<AbstractPageViewComponent> pageComponents = documentViewModel.getPageComponents();
                 for (AbstractPageViewComponent page : pageComponents) {
                     ((PageViewComponentImpl) page).setToolMode(viewToolMode);
                 }

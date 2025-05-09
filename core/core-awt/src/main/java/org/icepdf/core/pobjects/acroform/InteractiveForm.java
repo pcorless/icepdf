@@ -16,11 +16,13 @@
 package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -206,6 +208,36 @@ public class InteractiveForm extends Dictionary {
         }
     }
 
+    public void addField(Object field) {
+        if (!(field instanceof AbstractWidgetAnnotation)) {
+            throw new IllegalStateException("Field must be an AbstractWidgetAnnotation");
+        }
+        if (fields == null) {
+            fields = new ArrayList<>();
+            fields.add(field);
+            entries.put(FIELDS_KEY,
+                    new ArrayList<>(Arrays.asList(((AbstractWidgetAnnotation) field).getPObjectReference())));
+        } else {
+            fields.add(field);
+            List<Reference> fieldReferences = (List<Reference>) library.getObject(entries, FIELDS_KEY);
+            fieldReferences.add(((AbstractWidgetAnnotation) field).getPObjectReference());
+        }
+        // mark the catalog as changed, this object is always contained in the catalog as a dictionary, it
+        // should never be an indirect reference.
+        Catalog catalog = library.getCatalog();
+        StateManager stateManager = library.getStateManager();
+        stateManager.addChange(new PObject(catalog, catalog.getPObjectReference()));
+    }
+
+    public void removeField(AbstractWidgetAnnotation field) {
+        if (fields != null) {
+            fields.remove(field);
+            List<Reference> fieldReferences = (List<Reference>) library.getObject(entries, FIELDS_KEY);
+            fieldReferences.remove((field).getPObjectReference());
+        }
+    }
+
+
     /**
      * Gets the fields associated with this form.
      *
@@ -216,7 +248,8 @@ public class InteractiveForm extends Dictionary {
     }
 
     /**
-     * Gets the signature fields associated with this form.  A new array that references the forms signature annotations.
+     * Gets the signature fields associated with this form.  A new array that references the forms signature
+     * annotations.
      * If no fields are found an empty list is returned.
      *
      * @return a list of form signature objects.
@@ -351,7 +384,8 @@ public class InteractiveForm extends Dictionary {
     /**
      * Ges the default variable text quadding rule.
      *
-     * @return integer represented by VariableTextFieldDictionary.QUADDING_LEFT_JUSTIFIED, VariableTextFieldDictionary.QUADDING_CENTERED or
+     * @return integer represented by VariableTextFieldDictionary.QUADDING_LEFT_JUSTIFIED,
+     * VariableTextFieldDictionary.QUADDING_CENTERED or
      * VariableTextFieldDictionary.QUADDING_RIGHT_JUSTIFIED.
      */
     public int getDefaultVariableTextQField() {

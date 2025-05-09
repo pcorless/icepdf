@@ -21,18 +21,21 @@ import org.icepdf.core.pobjects.acroform.SignatureHandler;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
+import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.signatures.CertificatePropertiesDialog;
 import org.icepdf.ri.common.views.annotations.signatures.SignaturePropertiesDialog;
+import org.icepdf.ri.common.views.annotations.signing.SignatureCreationDialog;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -46,7 +49,10 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
     private static final Logger logger =
             Logger.getLogger(SignatureComponent.class.toString());
 
-    protected final JPopupMenu contextMenu;
+    protected final JMenuItem validationMenu;
+    protected final JMenuItem signaturePropertiesMenu;
+    protected final JMenuItem addSignatureMenu;
+    protected final JMenuItem deleteSignatureMenu;
     protected final Controller controller;
 
     public SignatureComponent(SignatureWidgetAnnotation annotation, DocumentViewController documentViewController,
@@ -56,8 +62,8 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
         controller = documentViewController.getParentController();
 
         isShowInvisibleBorder = true;
-        isResizable = false;
-        isMovable = false;
+        isResizable = true;
+        isMovable = true;
 
         if (!annotation.allowScreenOrPrintRenderingOrInteraction()) {
             // border state flags.
@@ -70,15 +76,41 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
 
         // add context menu for quick access to validating and signature properties.
         contextMenu = new JPopupMenu();
-        JMenuItem validationMenu = new JMenuItem(messageBundle.getString(
+
+        validationMenu = new JMenuItem(messageBundle.getString(
                 "viewer.annotation.signature.menu.showCertificates.label"));
         validationMenu.addActionListener(new CertificatePropertiesActionListener());
-        contextMenu.add(validationMenu);
-        contextMenu.add(new JPopupMenu.Separator());
-        JMenuItem signaturePropertiesMenu = new JMenuItem(messageBundle.getString(
+
+        signaturePropertiesMenu = new JMenuItem(messageBundle.getString(
                 "viewer.annotation.signature.menu.signatureProperties.label"));
-        signaturePropertiesMenu.addActionListener(new signerPropertiesActionListener());
-        contextMenu.add(signaturePropertiesMenu);
+        signaturePropertiesMenu.addActionListener(new SignerPropertiesActionListener());
+
+        addSignatureMenu = new JMenuItem(messageBundle.getString(
+                "viewer.annotation.signature.menu.addSignature.label"));
+        addSignatureMenu.addActionListener(new NewSignatureActionListener(this));
+
+        deleteSignatureMenu = new JMenuItem(messageBundle.getString(
+                "viewer.annotation.signature.menu.deleteSignature.label"));
+        deleteSignatureMenu.addActionListener(new DeleteSignatureActionListener(this));
+
+        updateContextMenu();
+    }
+
+    protected void updateContextMenu() {
+        SignatureFieldDictionary fieldDictionary = annotation.getFieldDictionary();
+        if (fieldDictionary != null) {
+            SignatureValidator signatureValidator = annotation.getSignatureValidator();
+            contextMenu.removeAll();
+            if (signatureValidator != null) {
+                contextMenu.add(validationMenu);
+                contextMenu.add(signaturePropertiesMenu);
+            } else if (annotation.hasSignatureDictionary()) {
+                contextMenu.add(deleteSignatureMenu);
+            } else {
+                contextMenu.add(addSignatureMenu);
+                contextMenu.add(deleteSignatureMenu);
+            }
+        }
     }
 
     public boolean isActive() {
@@ -122,7 +154,8 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
             // validate the signature and show the summary dialog.
             SignatureFieldDictionary fieldDictionary = annotation.getFieldDictionary();
             if (fieldDictionary != null) {
-                SignatureHandler signatureHandler = fieldDictionary.getLibrary().getSignatureHandler();
+                Library library = annotation.getLibrary();
+                SignatureHandler signatureHandler = library.getSignatureHandler();
                 SignatureValidator signatureValidator = signatureHandler.validateSignature(fieldDictionary);
                 if (signatureValidator != null) {
                     try {
@@ -140,9 +173,55 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
     /**
      * Opens the SignaturePropertiesDialog from a context menu.
      */
-    class signerPropertiesActionListener implements ActionListener {
+    class SignerPropertiesActionListener implements ActionListener {
         public void actionPerformed(ActionEvent actionEvent) {
             showSignatureWidgetPropertiesDialog();
+        }
+    }
+
+    /**
+     * Opens the SignaturePropertiesDialog from a context menu.
+     */
+    class NewSignatureActionListener implements ActionListener {
+
+        private final SignatureComponent signatureComponent;
+
+        public NewSignatureActionListener(SignatureComponent signatureComponent) {
+            this.signatureComponent = signatureComponent;
+        }
+
+        public void actionPerformed(ActionEvent actionEvent) {
+            try {
+                new SignatureCreationDialog(controller, messageBundle, signatureComponent).setVisible(true);
+            } catch (IllegalStateException e) {
+                logger.log(Level.WARNING, "Keystore has not been configured, set in signature preferences panel", e);
+                JOptionPane.showMessageDialog(this.signatureComponent,
+                        messageBundle.getString(
+                                "viewer.annotation.signature.keystore.failure.dialog.certify.error.msg"),
+                        messageBundle.getString(
+                                "viewer.annotation.signature.keystore.failure.dialog.certify.error.title"),
+                        JOptionPane.WARNING_MESSAGE);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "failed to authenticate keystore", e);
+                JOptionPane.showMessageDialog(this.signatureComponent,
+                        messageBundle.getString(
+                                "viewer.annotation.signature.authentication.failure.dialog.certify.error.msg"),
+                        messageBundle.getString(
+                                "viewer.annotation.signature.authentication.failure.dialog.certify.error.title"),
+                        JOptionPane.WARNING_MESSAGE);
+            }
+        }
+    }
+
+    class DeleteSignatureActionListener implements ActionListener {
+        private final SignatureComponent signatureComponent;
+
+        public DeleteSignatureActionListener(SignatureComponent signatureComponent) {
+            this.signatureComponent = signatureComponent;
+        }
+
+        public void actionPerformed(ActionEvent actionEvent) {
+            controller.getDocumentViewController().deleteAnnotation(signatureComponent);
         }
     }
 
@@ -155,6 +234,7 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
         }
         // pick up on the context menu display
         else if (e.getButton() == MouseEvent.BUTTON3 || e.getButton() == MouseEvent.BUTTON2) {
+            updateContextMenu();
             contextMenu.show(e.getComponent(), e.getX(), e.getY());
         }
     }

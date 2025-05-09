@@ -49,13 +49,13 @@ public class Pkcs1Validator extends AbstractPkcsValidator {
     public void init() throws SignatureIntegrityException {
         SignatureDictionary signatureDictionary = signatureFieldDictionary.getSignatureDictionary();
         announceSignatureType(signatureDictionary);
-        // start the decode of the raw type.
+        // start decode of the raw type.
         StringObject stringObject = signatureDictionary.getContents();
-        // make sure we don't loose any bytes converting the string in the raw.
+        // make sure we don't lose any bytes converting the string in the raw.
         byte[] cmsData = Utils.convertByteCharSequenceToByteArray(stringObject.getLiteralString());
         // get the certificate
         stringObject = signatureDictionary.getCertString();
-        // make sure we don't loose any bytes converting the string in the raw.
+        // make sure we don't lose any bytes converting the string in the raw.
         byte[] certsKey = Utils.convertByteCharSequenceToByteArray(stringObject.getLiteralString());
 
         try {

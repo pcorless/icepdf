@@ -1,6 +1,7 @@
 package org.icepdf.core.util.updater.modifiers;
 
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.core.util.Library;
 
@@ -37,7 +38,7 @@ public class AnnotationRemovalModifier implements Modifier<Annotation> {
         Stream nAp = annot.getAppearanceStream();
         if (nAp != null) {
             nAp.setDeleted(true);
-            // find the xObjects font resources.
+            // clean up resources.
             Object tmp = library.getObject(nAp.getEntries(), RESOURCES_KEY);
             if (tmp instanceof Resources) {
                 Resources resources = (Resources) tmp;
@@ -48,7 +49,26 @@ public class AnnotationRemovalModifier implements Modifier<Annotation> {
                     font.setDeleted(true);
                     stateManager.addDeletion(font.getPObjectReference());
                 }
+                DictionaryEntries xObject = resources.getXObjects();
+                if (xObject != null) {
+                    for (Object key : xObject.keySet()) {
+                        Object obj = xObject.get(key);
+                        if (obj instanceof Reference) {
+                            stateManager.addDeletion((Reference) obj);
+                        }
+                    }
+                }
             }
+        }
+        // check for /V key which is a reference to a signature dictionary
+        // todo new annotation base method to encapsulate the cleanup
+        if (annot instanceof SignatureWidgetAnnotation) {
+            SignatureWidgetAnnotation signatureWidgetAnnotation = (SignatureWidgetAnnotation) annot;
+            Object v = signatureWidgetAnnotation.getEntries().get(SignatureDictionary.V_KEY);
+            if (v instanceof Reference) {
+                stateManager.addDeletion((Reference) v);
+            }
+            library.getSignatureDictionaries().clearSignatures();
         }
 
         // check to see if this is an existing annotations, if the annotations

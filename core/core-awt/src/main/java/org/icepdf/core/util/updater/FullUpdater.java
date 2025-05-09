@@ -3,20 +3,25 @@ package org.icepdf.core.util.updater;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.io.CountingOutputStream;
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.acroform.signature.DocumentSigner;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.SignatureManager;
 import org.icepdf.core.util.redaction.Redactor;
 import org.icepdf.core.util.updater.writeables.BaseWriter;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Writes a document stream in its entirety.  The document's root object is used ot traverse the page tree
@@ -26,6 +31,9 @@ import java.util.List;
  * @since 7.2.0
  */
 public class FullUpdater {
+
+    private static final Logger logger =
+            Logger.getLogger(FullUpdater.class.toString());
 
     /**
      * Write the xrefTable in a compressed format by default.  Can be disabled if to aid in debugging or to
@@ -49,9 +57,9 @@ public class FullUpdater {
      * Write a new document inserting and updating modified objects to the specified output stream.
      *
      * @param document     The Document that is being saved
-     * @param outputStream OutputStream to write the incremental update to
+     * @param outputStream OutputStream to write the full document to
      * @return The number of bytes written generating the new document
-     * @throws java.io.IOException error writing stream.
+     * @throws java.io.IOException  error writing stream.
      * @throws InterruptedException
      */
     public long writeDocument(
@@ -59,23 +67,53 @@ public class FullUpdater {
             throws IOException, InterruptedException {
 
         // create a tmp file and write the changed document
-        Path tmpFile = Files.createTempFile(null, null);
-        OutputStream tmpOutputStream = new FileOutputStream(tmpFile.toFile());
-        writeDocument(document, tmpOutputStream, false);
+        Path tmpFilePath = Files.createTempFile(null, null);
+        Path tmpRedactionFilePath = Files.createTempFile(null, null);
+        OutputStream tmpOutputStream = new FileOutputStream(tmpFilePath.toFile());
+        OutputStream tmpRedactionOutputStream = null;
+        long bytesWritten = writeDocument(document, tmpOutputStream, false);
         tmpOutputStream.close();
 
         // open the copy and burn the redactions to the specified outputStream
+        if (stateManager.hasRedactions()) {
+            Document tmpDocument = new Document();
+            tmpRedactionOutputStream = new FileOutputStream(tmpRedactionFilePath.toFile());
+            try {
+                tmpDocument.setFile(tmpFilePath.toString());
+                bytesWritten = writeDocument(tmpDocument, tmpRedactionOutputStream, true);
+            } catch (PDFSecurityException e) {
+                throw new RuntimeException(e);
+            } finally {
+                // clean up
+                tmpDocument.dispose();
+                tmpRedactionOutputStream.close();
+            }
+        }
+        Path currentPath;
+        if (tmpRedactionOutputStream != null) {
+            currentPath = tmpRedactionFilePath;
+        } else {
+            currentPath = tmpFilePath;
+        }
+        // apply any signatures
         Document tmpDocument = new Document();
-        long bytesWritten;
         try {
-            tmpDocument.setFile(tmpFile.toString());
-            bytesWritten = writeDocument(tmpDocument, outputStream, true);
-        } catch (PDFSecurityException e) {
+            SignatureManager signatureManager = library.getSignatureDictionaries();
+            if (signatureManager.hasSignatureDictionary()) {
+                tmpDocument.setFile(currentPath.toString());
+                File tempFile = currentPath.toFile();
+                DocumentSigner.signDocument(tmpDocument, tempFile,
+                        signatureManager.getCurrentSignatureDictionary());
+            }
+            Files.copy(currentPath, outputStream);
+        } catch (Exception e) {
+            logger.log(Level.FINE, "Failed to sign document.", e);
             throw new RuntimeException(e);
         } finally {
-            // clean up
+            // clean of the tmp files
             tmpDocument.dispose();
-            Files.delete(tmpFile);
+            Files.delete(tmpFilePath);
+            Files.delete(tmpRedactionFilePath);
         }
         return bytesWritten;
     }

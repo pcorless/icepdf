@@ -224,6 +224,8 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
     private JButton deleteAllAnnotationsButton;
     private AnnotationColorToggleButton highlightAnnotationToolButton;
     private JToggleButton redactionAnnotationToolButton;
+
+    private JToggleButton signatureAnnotationToolButton;
     private JToggleButton linkAnnotationToolButton;
     private AnnotationColorToggleButton strikeOutAnnotationToolButton;
     private AnnotationColorToggleButton underlineAnnotationToolButton;
@@ -1284,6 +1286,11 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         btn.addItemListener(this);
     }
 
+    public void setSignatureAnnotationToolButton(JToggleButton btn) {
+        signatureAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
      *
@@ -1729,6 +1736,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         setEnabled(deleteAllAnnotationsButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(highlightAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(redactionAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
+        setEnabled(signatureAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(strikeOutAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(underlineAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(lineAnnotationToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
@@ -1754,7 +1762,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         setEnabled(freeTextAnnotationPropertiesToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
         setEnabled(annotationPrivacyComboBox, opened && !pdfCollection && !IS_READONLY);
         setEnabled(textAnnotationPropertiesToolButton, opened && canModify && !pdfCollection && !IS_READONLY);
-        setEnabled(formHighlightButton, opened && !pdfCollection && hasForms());
+        setEnabled(formHighlightButton, opened && !pdfCollection);
         setEnabled(quickSearchToolBar, opened && !pdfCollection);
         setEnabled(facingPageViewContinuousButton, opened && !pdfCollection);
         setEnabled(singlePageViewContinuousButton, opened && !pdfCollection);
@@ -2006,6 +2014,11 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION);
                 documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
                 setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
+            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_SIGNATURE_ANNOTATION) {
+                actualToolMayHaveChanged =
+                        documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SIGNATURE_ANNOTATION);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
+                setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_REDACTION_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_REDACTION_ANNOTATION);
@@ -2109,7 +2122,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
     }
 
     /**
-     * Sets the state of the "Tools" buttons. This ensure that correct button
+     * Sets the state of the "Tools" buttons. This ensures that correct button
      * is depressed when the state of the Document class specifies it.
      */
     private void reflectToolInToolButtons() {
@@ -2123,6 +2136,8 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 documentViewController.isToolModeSelected(DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION));
         reflectSelectionInButton(redactionAnnotationToolButton,
                 documentViewController.isToolModeSelected(DocumentViewModelImpl.DISPLAY_TOOL_REDACTION_ANNOTATION));
+        reflectSelectionInButton(signatureAnnotationToolButton,
+                documentViewController.isToolModeSelected(DocumentViewModelImpl.DISPLAY_TOOL_SIGNATURE_ANNOTATION));
         reflectSelectionInButton(underlineAnnotationToolButton,
                 documentViewController.isToolModeSelected(DocumentViewModelImpl.DISPLAY_TOOL_UNDERLINE_ANNOTATION));
         reflectSelectionInButton(strikeOutAnnotationToolButton,
@@ -2131,6 +2146,8 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 documentViewController.isToolModeSelected(DocumentViewModelImpl.DISPLAY_TOOL_LINE_ANNOTATION));
         reflectSelectionInButton(linkAnnotationToolButton,
                 documentViewController.isToolModeSelected(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION));
+        reflectSelectionInButton(signatureAnnotationToolButton,
+                documentViewController.isToolModeSelected(DocumentViewModelImpl.DISPLAY_TOOL_SIGNATURE_ANNOTATION));
         reflectSelectionInButton(lineArrowAnnotationToolButton,
                 documentViewController.isToolModeSelected(DocumentViewModelImpl.DISPLAY_TOOL_LINE_ARROW_ANNOTATION));
         reflectSelectionInButton(squareAnnotationToolButton,
@@ -3237,6 +3254,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         selectToolButton = null;
         highlightAnnotationToolButton = null;
         redactionAnnotationToolButton = null;
+        signatureAnnotationToolButton = null;
         strikeOutAnnotationToolButton = null;
         underlineAnnotationToolButton = null;
         lineAnnotationToolButton = null;
@@ -3516,25 +3534,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                     //  but that could cause problems with slow network links too,
                     //  and would complicate the incremental update code, so we're
                     //  harmonising on this approach.
-                    try (final FileOutputStream fileOutputStream = new FileOutputStream(file);
-                         final BufferedOutputStream buf = new BufferedOutputStream(fileOutputStream, 8192)) {
-
-                        // We want 'save as' or 'save a copy to always occur
-                        if (saveMode == SaveMode.EXPORT) {
-                            // save as copy
-                            document.writeToOutputStream(buf, WriteMode.FULL_UPDATE);
-                        } else {
-                            // save as will append changes.
-                            document.saveToOutputStream(buf);
-                        }
-                        document.getStateManager().setChangesSnapshot();
-                    } catch (MalformedURLException e) {
-                        logger.log(Level.WARNING, "Malformed URL Exception ", e);
-                    } catch (IOException e) {
-                        logger.log(Level.WARNING, "IO Exception ", e);
-                    } catch (Exception e) {
-                        logger.log(Level.WARNING, "Failed to append document changes", e);
-                    }
+                    writeDocument(saveMode, file);
                     // save the default directory
                     ViewModel.setDefaultFile(file);
                 }
@@ -3548,6 +3548,26 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                         file.getParentFile().getName());
                 saveFileAs();
             }
+        }
+    }
+
+    private void writeDocument(SaveMode saveMode, File file) {
+        try (final FileOutputStream fileOutputStream = new FileOutputStream(file);
+             final BufferedOutputStream buf = new BufferedOutputStream(fileOutputStream, 8192)) {
+            if (saveMode == SaveMode.EXPORT) {
+                // save as copy
+                document.writeToOutputStream(buf, WriteMode.FULL_UPDATE);
+            } else {
+                // save as will append changes.
+                document.writeToOutputStream(buf, WriteMode.INCREMENT_UPDATE);
+            }
+            document.getStateManager().setChangesSnapshot();
+        } catch (MalformedURLException e) {
+            logger.log(Level.WARNING, "Malformed URL Exception ", e);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "IO Exception ", e);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Failed to append document changes", e);
         }
     }
 
@@ -5039,6 +5059,11 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_REDACTION_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_REDACTION_ANNOTATION);
+                }
+            } else if (source == signatureAnnotationToolButton) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    tool = DocumentViewModelImpl.DISPLAY_TOOL_SIGNATURE_ANNOTATION;
+                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SIGNATURE_ANNOTATION);
                 }
             } else if (checkAnnotationButton(source, strikeOutAnnotationToolButton,
                     strikeOutAnnotationPropertiesToolButton)) {

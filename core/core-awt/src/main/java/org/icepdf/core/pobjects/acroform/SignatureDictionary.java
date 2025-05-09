@@ -15,16 +15,36 @@
  */
 package org.icepdf.core.pobjects.acroform;
 
+import org.bouncycastle.cms.CMSException;
+import org.bouncycastle.operator.OperatorCreationException;
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.acroform.signature.DocumentSigner;
+import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureType;
+import org.icepdf.core.pobjects.acroform.signature.handlers.SignerHandler;
+import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
+import java.io.IOException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.icepdf.core.pobjects.Permissions.DOC_MDP_KEY;
+import static org.icepdf.core.pobjects.acroform.DocMDPTransferParam.PERMISSION_KEY;
+import static org.icepdf.core.pobjects.acroform.DocMDPTransferParam.PERMISSION_VALUE_NO_CHANGES;
+import static org.icepdf.core.pobjects.acroform.FieldDictionaryFactory.TYPE_SIGNATURE;
+import static org.icepdf.core.pobjects.acroform.SignatureReferenceDictionary.*;
+import static org.icepdf.core.pobjects.acroform.signature.DigitalSignatureFactory.DSS_SUB_FILTER_PKCS7_DETACHED;
+
 /**
- * A digital signature (PDF 1.3) may be used to authenticate the identity of a user and the document’s contents. It stores
- * information about the signer and the state of the document when it was signed. The signature may be purely mathematical,
+ * A digital signature (PDF 1.3) may be used to authenticate the identity of a user and the document’s contents. It
+ * stores
+ * information about the signer and the state of the document when it was signed. The signature may be purely
+ * mathematical,
  * such as a public/private-key encrypted document digest, or it may be a biometric form of identification, such as a
  * handwritten signature, fingerprint, or retinal scan. The specific form of authentication used shall be implemented by
  * a special software module called a signature handler.
@@ -45,7 +65,8 @@ public class SignatureDictionary extends Dictionary {
     public static final Name FILTER_KEY = new Name("Filter");
 
     /**
-     * (Optional) A name that describes the encoding of the signature value and key information in the signature dictionary.
+     * (Optional) A name that describes the encoding of the signature value and key information in the signature
+     * dictionary.
      * A conforming reader may use any handler that supports this format to validate the signature.
      * <br>
      * (PDF 1.6) The following values for public-key cryptographic signatures shall be used: adbe.x509.rsa_sha1,
@@ -152,7 +173,8 @@ public class SignatureDictionary extends Dictionary {
      * state of the computer environment used for signing, such as the name of the handler used to create the signature,
      * software build date, version, and operating system.
      * <br>
-     * The PDF Signature Build Dictionary Specification, provides implementation guidelines for the use of this dictionary.
+     * The PDF Signature Build Dictionary Specification, provides implementation guidelines for the use of this
+     * dictionary.
      */
     public static final Name PROP_BUILD_KEY = new Name("Prop_Build");
 
@@ -169,15 +191,73 @@ public class SignatureDictionary extends Dictionary {
     public static final Name PROP_AUTH_TIME_KEY = new Name("Prop_AuthTime");
 
     /**
-     * (Optional) Information provided by the signer to enable a recipient to contact the signer to verify the signature.
+     * (Optional) Information provided by the signer to enable a recipient to contact the signer to verify the
+     * signature.
      * <br>
      * EXAMPLE 3<br>
      * A phone number.
      */
     public static final Name CONTACT_INFO_KEY = new Name("ContactInfo");
 
+    private SignerHandler signerHandler;
+
     public SignatureDictionary(Library library, DictionaryEntries entries) {
         super(library, entries);
+    }
+
+    public static SignatureDictionary getInstance(SignatureWidgetAnnotation signatureWidgetAnnotation,
+                                                  SignatureType signatureType) {
+        Library library = signatureWidgetAnnotation.getLibrary();
+        DictionaryEntries signatureDictionaryEntries = new DictionaryEntries();
+
+        // reference dictionary
+        signatureDictionaryEntries.put(REFERENCE_KEY, List.of(buildReferenceDictionary(library, signatureType)));
+
+        signatureDictionaryEntries.put(TYPE_KEY, TYPE_SIGNATURE);
+        signatureDictionaryEntries.put(FILTER_KEY, new Name("Adobe.PPKLite"));
+        signatureDictionaryEntries.put(SUB_FILTER_KEY, DSS_SUB_FILTER_PKCS7_DETACHED);
+
+        // add placeholders for the signature, these values are updated when this object is written to disk
+        // and contents when the signature hash is calculated.
+        signatureDictionaryEntries.put(BYTE_RANGE_KEY, List.of(0, 0, 0, 0));
+        signatureDictionaryEntries.put(CONTENTS_KEY, new HexStringObject(DocumentSigner.generateContentsPlaceholder()));
+
+        // flag updater that signatureDictionary needs to be updated.
+        SignatureDictionary signatureDictionary = new SignatureDictionary(library, signatureDictionaryEntries);
+        StateManager stateManager = library.getStateManager();
+        signatureDictionary.setPObjectReference(stateManager.getNewReferenceNumber());
+        stateManager.addChange(new PObject(signatureDictionary, signatureDictionary.getPObjectReference()));
+
+        // attach the dictionary to the annotation
+        signatureWidgetAnnotation.setSignatureDictionary(signatureDictionary);
+
+        return signatureDictionary;
+    }
+
+    private static SignatureReferenceDictionary buildReferenceDictionary(Library library, SignatureType signatureType) {
+        DictionaryEntries referenceEntries = new DictionaryEntries();
+        referenceEntries.put(TYPE_KEY, SIG_REF_TYPE_VALUE);
+        referenceEntries.put(DIGEST_METHOD_KEY, new Name("SHA1"));
+        referenceEntries.put(TRANSFORM_METHOD_KEY, DOC_MDP_KEY);
+
+        DictionaryEntries transformParams = new DictionaryEntries();
+        transformParams.put(PERMISSION_KEY, PERMISSION_VALUE_NO_CHANGES);
+        transformParams.put(V_KEY, DocMDPTransferParam.getDocMDPVersion());
+        if (signatureType.equals(SignatureType.CERTIFIER)) {
+            referenceEntries.put(TRANSFORM_PARAMS_KEY, new DocMDPTransferParam(library, transformParams));
+        }
+
+        return new SignatureReferenceDictionary(library, referenceEntries);
+    }
+
+    public void setSignerHandler(SignerHandler signerHandler) {
+        this.signerHandler = signerHandler;
+    }
+
+    public byte[] getSignedData(byte[] data) throws IOException, CMSException, UnrecoverableKeyException,
+            CertificateException, KeyStoreException, NoSuchAlgorithmException, OperatorCreationException {
+        // move to signature
+        return signerHandler.signData(data);
     }
 
     public Name getFilter() {
@@ -252,17 +332,8 @@ public class SignatureDictionary extends Dictionary {
         entries.put(BYTE_RANGE_KEY, range);
     }
 
-    public ArrayList<SignatureReferenceDictionary> getReferences() {
-        List<DictionaryEntries> tmp = library.getArray(entries, REFERENCE_KEY);
-        if (tmp != null && tmp.size() > 0) {
-            ArrayList<SignatureReferenceDictionary> references = new ArrayList<>(tmp.size());
-            for (DictionaryEntries reference : tmp) {
-                references.add(new SignatureReferenceDictionary(library, reference));
-            }
-            return references;
-        } else {
-            return null;
-        }
+    public List<SignatureReferenceDictionary> getReferences() {
+        return library.getArray(entries, REFERENCE_KEY);
     }
 
     public ArrayList<Integer> getChanges() {
@@ -283,8 +354,16 @@ public class SignatureDictionary extends Dictionary {
         }
     }
 
+    public void setName(String name) {
+        entries.put(NAME_KEY, new LiteralStringObject(name));
+    }
+
     public String getDate() {
         return library.getString(entries, M_KEY);
+    }
+
+    public void setDate(String date) {
+        entries.put(M_KEY, new LiteralStringObject(date));
     }
 
     public String getLocation() {
@@ -296,6 +375,10 @@ public class SignatureDictionary extends Dictionary {
         }
     }
 
+    public void setLocation(String location) {
+        entries.put(LOCATION_KEY, new LiteralStringObject(location));
+    }
+
     public String getReason() {
         Object tmp = library.getObject(entries, REASON_KEY);
         if (tmp instanceof StringObject) {
@@ -305,6 +388,10 @@ public class SignatureDictionary extends Dictionary {
         }
     }
 
+    public void setReason(String reason) {
+        entries.put(REASON_KEY, new LiteralStringObject(reason));
+    }
+
     public String getContactInfo() {
         Object tmp = library.getObject(entries, CONTACT_INFO_KEY);
         if (tmp instanceof StringObject) {
@@ -312,6 +399,10 @@ public class SignatureDictionary extends Dictionary {
         } else {
             return null;
         }
+    }
+
+    public void setContactInfo(String contactInfo) {
+        entries.put(CONTACT_INFO_KEY, new LiteralStringObject(contactInfo));
     }
 
     public int getHandlerVersion() {
