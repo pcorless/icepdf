@@ -4,11 +4,14 @@ import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Stream;
+import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.fonts.zfont.cmap.CMap;
 import org.icepdf.core.util.Library;
 
 import java.util.List;
 import java.util.logging.Logger;
+
+import static org.icepdf.core.pobjects.fonts.FontDescriptor.*;
 
 public class Type0Font extends SimpleFont {
 
@@ -73,10 +76,21 @@ public class Type0Font extends SimpleFont {
                 Object descendantFontObject = descendantFonts.get(0);
                 if (descendantFontObject instanceof Reference) {
                     Reference descendantFontReference = (Reference) descendantFontObject;
-                    descendantFontObject = library.getObject(descendantFontReference);
-                }
-
-                if (descendantFontObject instanceof CompositeFont) {
+                    Object fnt = library.getObject(descendantFontReference);
+                    if (fnt instanceof FontDescriptor)
+                    {
+                        FontDescriptor fd = (FontDescriptor) fnt;
+                        Object subtype = fd.getEntries().get(SUBTYPE_KEY);
+                        if (FONT_FILE_3_CID_FONT_TYPE_0.equals(subtype)){
+                            descendantFont = new TypeCidType0Font(fd.getLibrary(), fd.getEntries());
+                        }
+                        else if (FONT_FILE_3_CID_FONT_TYPE_2.equals(subtype)){
+                            descendantFont = new TypeCidType2Font(fd.getLibrary(), fd.getEntries());
+                        }
+                    } else {
+                        descendantFont = (CompositeFont) fnt;
+                    }
+                } else if (descendantFontObject instanceof CompositeFont) {
                     descendantFont = (CompositeFont) descendantFontObject;
                 }
 
