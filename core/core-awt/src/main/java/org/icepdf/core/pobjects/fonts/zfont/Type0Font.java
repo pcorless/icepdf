@@ -4,6 +4,7 @@ import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Stream;
+import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.fonts.zfont.cmap.CMap;
 import org.icepdf.core.util.Library;
 
@@ -78,6 +79,11 @@ public class Type0Font extends SimpleFont {
 
                 if (descendantFontObject instanceof CompositeFont) {
                     descendantFont = (CompositeFont) descendantFontObject;
+                }
+                // strange malformed PDFe where the descendant font is a font descriptor,
+                else if (descendantFontObject instanceof FontDescriptor) {
+                    fontDescriptor = (FontDescriptor) descendantFontObject;
+                    parseFontDescriptor();
                 }
 
                 if (descendantFont != null) {
