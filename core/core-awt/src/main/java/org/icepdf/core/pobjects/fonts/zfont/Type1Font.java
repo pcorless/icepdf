@@ -2,7 +2,7 @@ package org.icepdf.core.pobjects.fonts.zfont;
 
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.fonts.AFM;
-import org.icepdf.core.pobjects.fonts.zfont.cmap.CMap;
+import org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory;
 import org.icepdf.core.util.Library;
 public class Type1Font extends SimpleFont {
 
@@ -38,7 +38,7 @@ public class Type1Font extends SimpleFont {
                 if (encoding != null) {
                     toUnicodeCMap = GlyphList.guessToUnicode(encoding);
                 } else {
-                    toUnicodeCMap = CMap.IDENTITY;
+                    toUnicodeCMap = CMapFactory.getPredefinedCMap(CMapFactory.IDENTITY_H_NAME);
                 }
             }
         }

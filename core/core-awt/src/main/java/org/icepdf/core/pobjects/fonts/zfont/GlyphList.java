@@ -1,7 +1,8 @@
 package org.icepdf.core.pobjects.fonts.zfont;
 
+import org.apache.fontbox.cmap.CMap;
 import org.icepdf.core.pobjects.fonts.Encoding;
-import org.icepdf.core.pobjects.fonts.zfont.cmap.CMap;
+import org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -62,7 +63,9 @@ public class GlyphList {
                 break;
             }
         }
-        return properMap ? new CMap(toUnicode) : CMap.IDENTITY;
+//        return properMap ? CMapFactory.getPredefinedCMap(toUnicode) : CMapFactory.getPredefinedCMap(CMapFactory
+//        .IDENTITY_NAME);
+        return CMapFactory.getPredefinedCMap(CMapFactory.IDENTITY_H_NAME);
     }
 
     private static void initializeAdobeGlyphList() {

@@ -1,8 +1,8 @@
 package org.icepdf.ri.common.tools;
 
+import org.apache.fontbox.cmap.CMap;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.edit.content.TextContentEditor;
 import org.icepdf.ri.common.EscapeJDialog;

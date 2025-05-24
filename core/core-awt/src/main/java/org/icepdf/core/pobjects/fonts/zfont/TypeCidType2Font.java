@@ -1,11 +1,8 @@
 package org.icepdf.core.pobjects.fonts.zfont;
 
 import org.icepdf.core.pobjects.DictionaryEntries;
-import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
-import org.icepdf.core.pobjects.fonts.CMap;
-import org.icepdf.core.pobjects.fonts.zfont.cmap.CMapIdentityH;
-import org.icepdf.core.pobjects.fonts.zfont.cmap.CMapReverse;
+import org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType2;
 import org.icepdf.core.util.Library;
@@ -47,26 +44,29 @@ public class TypeCidType2Font extends CompositeFont {
 
     protected void parseCidToGidMap() {
         Object gidMap = library.getObject(entries, CID_TO_GID_MAP_KEY);
-        if (gidMap == null && !isFontSubstitution) {
-            CMap subfontToUnicodeCMap = toUnicodeCMap != null ? toUnicodeCMap : org.icepdf.core.pobjects.fonts.zfont.cmap.CMap.IDENTITY;
-            font = ((ZFontType2) font).deriveFont(org.icepdf.core.pobjects.fonts.zfont.cmap.CMap.IDENTITY, subfontToUnicodeCMap);
-        }
-        if (gidMap instanceof Name) {
-            String mappingName;
-            mappingName = gidMap.toString();
-            if (toUnicodeCMap instanceof CMapIdentityH) {
-                mappingName = toUnicodeCMap.toString();
-            }
-            // mapping name will be null only in a few corner cases, but
-            // identity will be applied otherwise.
-            if (mappingName == null || mappingName.equals("Identity")) {
-                font = ((ZFontType2) font).deriveFont(org.icepdf.core.pobjects.fonts.zfont.cmap.CMap.IDENTITY, toUnicodeCMap);
-            }
-        } else if (gidMap instanceof Stream) {
-            int[] cidToGidMap = org.icepdf.core.pobjects.fonts.zfont.cmap.CMap.parseCidToGidMap((Stream) gidMap);
-            CMap cidGidMap = new CMapReverse(cidToGidMap);
+//        if (gidMap == null && !isFontSubstitution) {
+//            CMap subfontToUnicodeCMap = toUnicodeCMap != null ? toUnicodeCMap : CMapFactory.getPredefinedCMap
+//            (CMapFactory.IDENTITY_H_NAME);
+//            font = ((ZFontType2) font).deriveFont(CMapFactory.getPredefinedCMap(CMapFactory.IDENTITY_H_NAME),
+//            subfontToUnicodeCMap);
+//        }
+//        if (gidMap instanceof Name) {
+//            String mappingName;
+//            mappingName = gidMap.toString();
+//            if (toUnicodeCMap.getName().equalsIgnoreCase(CMapFactory.IDENTITY_H_NAME.getName())) {
+//                mappingName = toUnicodeCMap.toString();
+//            }
+//            // mapping name will be null only in a few corner cases, but
+//            // identity will be applied otherwise.
+//            if (mappingName == null || mappingName.equals("Identity")) {
+//                font = ((ZFontType2) font).deriveFont(CMapFactory.getPredefinedCMap(CMapFactory.IDENTITY_H_NAME),
+//                toUnicodeCMap);
+//            }
+//        } else
+        if (gidMap instanceof Stream) {
+            int[] cidToGidMap = CMapFactory.parseCidToGidMap((Stream) gidMap);
             if (font instanceof ZFontType2) {
-                font = ((ZFontType2) font).deriveFont(cidGidMap, toUnicodeCMap);
+                font = ((ZFontType2) font).deriveFont(cidToGidMap, toUnicodeCMap);
             }
         }
     }

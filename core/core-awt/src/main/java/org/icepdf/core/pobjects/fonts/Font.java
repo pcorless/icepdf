@@ -15,7 +15,7 @@
  */
 package org.icepdf.core.pobjects.fonts;
 
-
+import org.apache.fontbox.cmap.CMap;
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;

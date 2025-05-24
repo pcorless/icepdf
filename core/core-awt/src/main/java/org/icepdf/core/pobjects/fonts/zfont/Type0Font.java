@@ -1,11 +1,12 @@
 package org.icepdf.core.pobjects.fonts.zfont;
 
+import org.apache.fontbox.cmap.CMap;
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.FontDescriptor;
-import org.icepdf.core.pobjects.fonts.zfont.cmap.CMap;
+import org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory;
 import org.icepdf.core.util.Library;
 
 import java.util.List;
@@ -36,10 +37,10 @@ public class Type0Font extends SimpleFont {
             return;
         }
 
-        parseDescendantFont();
         findFontIfNotEmbedded();
         parseToUnicode();
         parseEncoding();
+        parseDescendantFont();
 
         inited = true;
     }
@@ -47,9 +48,9 @@ public class Type0Font extends SimpleFont {
     protected void parseEncoding() {
         Name name = library.getName(entries, ENCODING_KEY);
         if (name != null) {
-            cMap = CMap.getInstance(name);
+            cMap = CMapFactory.getPredefinedCMap(name);
             Encoding encoding = Encoding.getInstance((name).getName());
-            font = font.deriveFont(encoding, toUnicodeCMap);
+            font = font.deriveFont(encoding, toUnicodeCMap != null ? toUnicodeCMap : font.getToUnicode());
             return;
         }
         Object object = library.getObject(entries, ENCODING_KEY);
@@ -89,6 +90,7 @@ public class Type0Font extends SimpleFont {
                 if (descendantFont != null) {
                     descendantFont.init();
                     font = descendantFont.getFont();
+                    font = font.deriveFont(encoding, cMap);
                     isFontSubstitution = descendantFont.isFontSubstitution() && font != null;
                 }
             }

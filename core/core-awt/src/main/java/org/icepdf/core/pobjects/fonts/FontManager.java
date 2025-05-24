@@ -23,8 +23,8 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.List;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -107,27 +107,37 @@ public class FontManager {
             };
 
     private static final String[] JAPANESE_FONT_NAMES = {
+            // windows
             "Arial Unicode MS", "PMingLiU", "MingLiU",
             "MS PMincho", "MS Mincho", "Kochi Mincho", "Hiragino Mincho Pro",
-            "KozMinPro Regular Acro", "HeiseiMin W3 Acro", "Adobe Ming Std Acro"
+            "KozMinPro Regular Acro", "HeiseiMin W3 Acro", "Adobe Ming Std Acro",
+            // linux
+            "ipaexmincho", "Kochi Gothic", "Hiragino Kaku Gothic Pro",
+
     };
 
     private static final String[] CHINESE_SIMPLIFIED_FONT_NAMES = {
             "Arial Unicode MS", "PMingLiU", "MingLiU",
             "SimSun", "NSimSun", "Kochi Mincho", "STFangsong", "STSong Light Acro",
-            "Adobe Song Std Acro", "stsong"
+            "Adobe Song Std Acro", "stsong",
+            // linux
+            "ipaexmincho", "Kochi Gothic", "Hiragino Kaku Gothic Pro",
     };
 
     private static final String[] CHINESE_TRADITIONAL_FONT_NAMES = {
             "Arial Unicode MS", "PMingLiU", "MingLiU",
             "SimSun", "NSimSun", "Kochi Mincho", "BiauKai", "MSungStd Light Acro",
-            "Adobe Song Std Acro"
+            "Adobe Song Std Acro",
+            // linux
+            "umingcn", "ipaexmincho", "Kochi Gothic", "Hiragino Kaku Gothic Pro",
     };
 
     private static final String[] KOREAN_FONT_NAMES = {
             "Arial Unicode MS", "Dotum", "Gulim", "New Gulim", "GulimChe", "Batang",
             "BatangChe", "HYSMyeongJoStd Medium Acro", "Adobe Myungjo Std Acro",
-            "AppleGothic", "Malgun Gothic", "UnDotum", "UnShinmun", "Baekmuk Gulim"
+            "AppleGothic", "Malgun Gothic", "UnDotum", "UnShinmun", "Baekmuk Gulim",
+            // linux
+            "ipaexmincho", "Kochi Gothic", "Hiragino Kaku Gothic Pro",
     };
 
     /**

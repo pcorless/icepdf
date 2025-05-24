@@ -9,6 +9,7 @@ module org.icepdf.ri.viewer {
     requires org.bouncycastle.util;
 
     requires org.icepdf.core;
+    requires org.apache.fontbox;
 
     // viewer ri api
     exports org.icepdf.ri.common;

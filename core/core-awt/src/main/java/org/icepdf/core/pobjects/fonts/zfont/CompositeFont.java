@@ -1,16 +1,19 @@
 package org.icepdf.core.pobjects.fonts.zfont;
 
+import org.apache.fontbox.cmap.CMap;
 import org.apache.fontbox.util.BoundingBox;
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.pobjects.fonts.FontManager;
+import org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType2;
 import org.icepdf.core.util.Library;
 
 import java.awt.geom.Rectangle2D;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,6 +44,7 @@ public abstract class CompositeFont extends SimpleFont {
 
     @Override
     public void init() {
+        super.init();
         if (inited) {
             return;
         }
@@ -50,10 +54,10 @@ public abstract class CompositeFont extends SimpleFont {
         parseWidths();
     }
 
-    protected abstract void parseCidToGidMap();
+    protected abstract void parseCidToGidMap() throws IOException;
 
     protected void parseCidSystemInfo() {
-        if (font != null) {
+        if (font != null && !isFontSubstitution) {
             return;
         }
         // Get CIDSystemInfo dictionary so we can get ordering data
@@ -61,6 +65,7 @@ public abstract class CompositeFont extends SimpleFont {
         if (obj instanceof DictionaryEntries) {
             StringObject orderingObject = (StringObject) ((DictionaryEntries) obj).get(new Name("Ordering"));
             StringObject registryObject = (StringObject) ((DictionaryEntries) obj).get(new Name("Registry"));
+            Integer supplement = (Integer) ((DictionaryEntries) obj).get(new Name("Supplement"));
             if (orderingObject != null && registryObject != null) {
                 ordering = orderingObject.getDecryptedLiteralString(library.getSecurityManager());
                 String registry = registryObject.getDecryptedLiteralString(library.getSecurityManager());
@@ -95,29 +100,42 @@ public abstract class CompositeFont extends SimpleFont {
                 else {
                     font = fontManager.getChineseTraditionalInstance(basefont, fontFlags);
                 }
+                // substitution will almost be trueType font
                 if (font instanceof ZFontTrueType) {
-                    // Build a toUnicode table as defined in section 9.10.2.
-                    //
-                    // a)Map the character code to a character identifier (CID)
-                    // according to the font’s CMap.
-                    // this is the font encoding
-                    // b)Obtain the registry and ordering of the character collection
-                    // used by the font’s CMap (for example, Adobe and Japan1) from
-                    // its CIDSystemInfo dictionary.
-                    // c)Construct a second CMap name by concatenating the registry
-                    // and ordering obtained in step (b) in the format
-                    // registry–ordering–UCS2 (for example, Adobe–Japan1–UCS2).
-                    String ucs2CMapName = registry + '-' + ordering + "-UCS2";
-                    // d) Obtain the CMap with the name constructed in step (c)
-                    // (available from the ASN Web site; see the Bibliography).
-
-                    // todo complete font cid setup in future Non-roman font fix release
-                    //  finish implementation once 7.0 is released.
-//                    CMap ucs2CMap = CMap.getInstance(new Name(ucs2CMapName));
-                    // e) Map the CID obtained in step (a) according to the CMap
-                    // obtained in step (d), producing a Unicode value.
-//                    toUnicodeCMap = ucs2CMap;
-//                    font = ((ZFontTrueType) font).deriveFont(toUnicodeCMap);
+                    try {
+                        // Build a toUnicode table as defined in section 9.10.2.
+                        // b)Obtain the registry and ordering of the character collection
+                        // used by the font’s CMap (for example, Adobe and Japan1) from
+                        // its CIDSystemInfo dictionary.
+                        String cmapName = null;
+                        if (registry.equalsIgnoreCase("adobe") &&
+                                (ordering.equalsIgnoreCase("japan1") ||
+                                        ordering.equalsIgnoreCase("GB1") ||
+                                        ordering.equalsIgnoreCase("CNS1") ||
+                                        ordering.equalsIgnoreCase("Korea1"))) {
+                            cmapName = registry + '-' + ordering + '-' + supplement;
+                        } else if (encodingName != null) {
+                            cmapName = encodingName.getName();
+                        }
+                        if (cmapName != null) {
+                            CMap cidSystemCmap = CMapFactory.getPredefinedCMap(cmapName);
+                            // c)Construct a second CMap name by concatenating the registry
+                            // and ordering obtained in step (b) in the format
+                            // registry–ordering–UCS2 (for example, Adobe–Japan1–UCS2).
+                            String ucs2CMapName = registry + '-' + cidSystemCmap.getOrdering() + "-UCS2";
+                            // d) Obtain the CMap with the name constructed in step (c)
+                            CMap ucs2CMap = CMapFactory.getPredefinedCMap(ucs2CMapName);
+                            if (!(font instanceof ZFontType2)) {
+                                ZFontType2 zFontType2 = new ZFontType2((ZFontTrueType) font);
+                                zFontType2.setUcs2Cmap(ucs2CMap);
+                                zFontType2.setIsCidSubstituted();
+                                font = zFontType2;
+                                font = font.deriveFont(encoding, toUnicodeCMap);
+                            }
+                        }
+                    } catch (Exception e) {
+                        logger.warning("Error creating CMap for font: " + basefont);
+                    }
                 }
             }
         }

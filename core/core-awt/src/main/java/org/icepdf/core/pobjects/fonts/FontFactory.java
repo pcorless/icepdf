@@ -103,10 +103,6 @@ public class FontFactory {
         } else if (FONT_SUBTYPE_CID_FONT_TYPE_2.equals(subtype)) {
             font = new TypeCidType2Font(library, entries);
         }
-        if (font == null) {
-            // create OFont implementation.
-            font = new org.icepdf.core.pobjects.fonts.ofont.Font(library, entries);
-        }
         return font;
     }
 

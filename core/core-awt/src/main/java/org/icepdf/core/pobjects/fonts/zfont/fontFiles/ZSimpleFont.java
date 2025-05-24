@@ -1,10 +1,11 @@
 package org.icepdf.core.pobjects.fonts.zfont.fontFiles;
 
 import org.apache.fontbox.FontBoxFont;
-import org.icepdf.core.pobjects.fonts.CMap;
+import org.apache.fontbox.cmap.CMap;
 import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.zfont.GlyphList;
+import org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory;
 import org.icepdf.core.pobjects.graphics.TextState;
 
 import java.awt.*;
@@ -44,6 +45,8 @@ public abstract class ZSimpleFont implements FontFile {
 
     // cid specific, todo new subclass if we get a few more?
     protected float defaultWidth;
+    protected boolean isTypeCidSubstitution;
+    protected CMap ucs2Cmap;
 
     // Why have one encoding when you can three.
     protected Encoding encoding;
@@ -134,7 +137,7 @@ public abstract class ZSimpleFont implements FontFile {
         if (encoding != null) {
             return GlyphList.guessToUnicode(encoding);
         }
-        return org.icepdf.core.pobjects.fonts.zfont.cmap.CMap.IDENTITY;
+        return CMapFactory.getPredefinedCMap(CMapFactory.IDENTITY_H_NAME);
     }
 
     @Override
@@ -246,7 +249,7 @@ public abstract class ZSimpleFont implements FontFile {
         char c = toUnicode == null ? getReverseCharDiff(unicode) : unicode;
 
         if (toUnicode != null) {
-            return toUnicode.toSelector(c);
+            return (char) toUnicode.toCID(c);
         }
         return c;
     }
@@ -334,11 +337,6 @@ public abstract class ZSimpleFont implements FontFile {
     @Override
     public URL getSource() {
         return source;
-    }
-
-    @Override
-    public void setIsCid() {
-
     }
 
     @Override
