@@ -1,6 +1,5 @@
 package org.icepdf.ri.common.tools;
 
-import org.apache.fontbox.cmap.CMap;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.text.WordText;
@@ -110,8 +109,7 @@ public class EditTextHandler extends TextSelection
                 Name fontName = selectedLineText.get(0).getGlyphs().get(0).getFontName();
                 org.icepdf.core.pobjects.fonts.Font font = currentPage.getResources().getFont(fontName);
                 int glyphCount = font.getCharacterCount();
-                CMap toUnicode = font.getFont().getToUnicode();
-                return toUnicode != null || glyphCount > 94;
+                return font.hasUnicodeCMap() || glyphCount > 94;
             }
         }
         return false;

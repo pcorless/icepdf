@@ -395,6 +395,15 @@ public abstract class Font extends Dictionary {
     }
 
     /**
+     * <p>Returns the CMap used to map characters to glyphs.</p>
+     *
+     * @return CMap used to map characters to glyphs.
+     */
+    public boolean hasUnicodeCMap() {
+        return toUnicodeCMap != null;
+    }
+
+    /**
      * <p>Returns true if the writing mode is vertical; false, otherwise</p>
      *
      * @return true if the writing mode is vertical; false, otherwise.
