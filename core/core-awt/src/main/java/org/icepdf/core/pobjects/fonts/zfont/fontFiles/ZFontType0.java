@@ -175,15 +175,6 @@ public class ZFontType0 extends ZSimpleFont {
 
     @Override
     public boolean canDisplay(char ech) {
-//        try {
-//            if (cidFont != null) {
-//                return cidFont.hasGlyph("\\" + ech);
-//            } else {
-//                return t1Font.hasGlyph(String.valueOf(ech));
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
         return true;
     }
 

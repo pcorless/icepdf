@@ -186,31 +186,30 @@ public class LiteralStringObject extends AbstractStringObject {
             int length = getLength();
             int charValue;
             StringBuilder tmp = new StringBuilder(length);
-            if (font.getByteEncoding() == FontFile.ByteEncoding.MIXED_BYTE) {
-                int charOffset = 1;
-                for (int i = 0; i < length; i += charOffset) {
-                    // check range for possible 2 byte char.
-                    charValue = getUnsignedInt(i, 1);
-                    if (font.canDisplay((char) charValue)) {
-                        tmp.append((char) charValue);
-                    } else {
-                        int charValue2 = getUnsignedInt(i, 2);
-                        if (font.canDisplay((char) charValue2)) {
-                            tmp.append((char) charValue2);
-                            i += 1;
-                        }
-                    }
-                }
-            } else {
-                // we have default 2bytes.
-                int charOffset = 2;
-                for (int i = 0; i < length; i += charOffset) {
-                    int charValue2 = getUnsignedInt(i, 2);
-                    if (font.canDisplay((char) charValue2)) {
-                        tmp.append((char) charValue2);
-                    }
+            // we have default 2bytes.
+            int charOffset = 2;
+            for (int i = 0; i < length; i += charOffset) {
+                charValue = getUnsignedInt(i, 2);
+                if (font.canDisplay((char) charValue)) {
+                    tmp.append((char) charValue);
                 }
             }
+
+//            StringBuilder tmp = new StringBuilder(length);
+//            int charOffset = 1;
+//            for (int i = 0; i < length; i += charOffset) {
+//                // check range for possible 2 byte char.
+//                charValue = getUnsignedInt(i, 1);
+//                if (font.canDisplay((char) charValue)) {
+//                    tmp.append((char) charValue);
+//                } else {
+//                    int charValue2 = getUnsignedInt(i, 2);
+//                    if (font.canDisplay((char) charValue2)) {
+//                        tmp.append((char) charValue2);
+//                        i += 1;
+//                    }
+//                }
+//            }
             return tmp;
         }
         return null;

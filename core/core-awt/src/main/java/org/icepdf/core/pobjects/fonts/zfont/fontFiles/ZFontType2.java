@@ -75,6 +75,9 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     @Override
     public Point2D getAdvance(char ech) {
         float advance = defaultWidth;
+//        if (isTypeCidSubstitution){
+//            ech = (char)toUnicode.toCID(ech);
+//        }
         if (widths != null && ech < widths.length) {
             advance = widths[ech];
         }
@@ -195,15 +198,14 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
 
     @Override
     public boolean canDisplay(char ech) {
-//        try {
-//            return trueTypeFont.hasGlyph(String.valueOf(ech));
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        return false;
-        // todo directly effects parsing cid string,  need to look at cmap instead to derive byte lenght for char
-        //  first, well pretty sure anyways.
-        return true;
+        try {
+            int gid = getCharToGid(ech);
+            return gid != 0;
+        } catch (IOException e) {
+            logger.warning("Error checking if character can be displayed: " + ech + ", " + e.getMessage());
+        }
+        return false;
+//        return true;
     }
 
     @Override

@@ -49,7 +49,7 @@ public class Type0Font extends SimpleFont {
         Name name = library.getName(entries, ENCODING_KEY);
         if (name != null) {
             cMap = CMapFactory.getPredefinedCMap(name);
-            Encoding encoding = Encoding.getInstance((name).getName());
+            encoding = Encoding.getInstance((name).getName());
             font = font.deriveFont(encoding, toUnicodeCMap != null ? toUnicodeCMap : font.getToUnicode());
             return;
         }

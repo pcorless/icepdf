@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects;
 
+import org.apache.fontbox.cmap.CMap;
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontFile;
 
@@ -241,7 +242,12 @@ public class HexStringObject extends AbstractStringObject {
                 if (first.charAt(0) != '0') {
                     // check range for possible 2 byte char ie mixed mode.
                     charValue = getUnsignedInt(first);
-                    if (font.getByteEncoding() == FontFile.ByteEncoding.MIXED_BYTE &&
+                    CMap unicode = font.getToUnicode();
+                    String name = unicode.getName();
+                    int type = unicode.getType();
+                    boolean hasCidMappings = unicode.hasCIDMappings();
+                    boolean hasUnicodeMappings = unicode.hasUnicodeMappings();
+                    if (!font.getToUnicode().getName().contains("UCS2") &&
                             font.canDisplay((char) charValue) && font.getSource() != null) {
                         tmp.append((char) charValue);
                     } else {
@@ -261,6 +267,24 @@ public class HexStringObject extends AbstractStringObject {
                 }
             }
             return tmp;
+//            int length = getLength();
+//            int charValue;
+//            StringBuilder tmp = new StringBuilder(length);
+//            int charOffset = 2;
+//            for (int i = 0; i < length; i += charOffset) {
+//                // check range for possible 2 byte char.
+//                charValue = getUnsignedInt(i, 2);
+//                if (font.canDisplay((char) charValue)) {
+//                    tmp.append((char) charValue);
+//                } else {
+//                    int charValue2 = getUnsignedInt(i, 4);
+//                    if (font.canDisplay((char) charValue2)) {
+//                        tmp.append((char) charValue2);
+//                        i += 2;
+//                    }
+//                }
+//            }
+//            return tmp;
         }
         return null;
     }
