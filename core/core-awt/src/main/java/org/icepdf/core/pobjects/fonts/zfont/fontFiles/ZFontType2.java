@@ -75,11 +75,16 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     @Override
     public Point2D getAdvance(char ech) {
         float advance = defaultWidth;
-//        if (isTypeCidSubstitution){
-//            ech = (char)toUnicode.toCID(ech);
-//        }
-        if (widths != null && ech < widths.length) {
-            advance = widths[ech];
+        int gid = ech;
+        try {
+            if (isTypeCidSubstitution) {
+                gid = getCharToGid(ech);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        if (widths != null && gid < widths.length) {
+            advance = widths[gid];
         }
         if (advance == 0) {
             if (defaultWidth > 0.0f) {
@@ -198,14 +203,16 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
 
     @Override
     public boolean canDisplay(char ech) {
-        try {
-            int gid = getCharToGid(ech);
-            return gid != 0;
-        } catch (IOException e) {
-            logger.warning("Error checking if character can be displayed: " + ech + ", " + e.getMessage());
+        if (isTypeCidSubstitution) {
+            try {
+                int gid = getCharToGid(ech);
+                return gid != 0;
+            } catch (IOException e) {
+                logger.warning("Error checking if character can be displayed: " + ech + ", " + e.getMessage());
+            }
+            return false;
         }
-        return false;
-//        return true;
+        return true;
     }
 
     @Override

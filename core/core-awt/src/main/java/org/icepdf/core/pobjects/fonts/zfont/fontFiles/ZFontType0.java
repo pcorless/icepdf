@@ -175,7 +175,16 @@ public class ZFontType0 extends ZSimpleFont {
 
     @Override
     public boolean canDisplay(char ech) {
-        return true;
+        if (widths != null && ech < widths.length) {
+            float width = widths[ech];
+            return width >= 0.0f;
+        }
+        // probably invalid widths, but we can likely display the character
+        else if (widths != null && widths.length < 10) {
+            return true;
+        }
+        // if we have no widths then we can likely display the character
+        else return widths == null;
     }
 
     @Override

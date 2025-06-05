@@ -186,30 +186,19 @@ public class LiteralStringObject extends AbstractStringObject {
             int length = getLength();
             int charValue;
             StringBuilder tmp = new StringBuilder(length);
-            // we have default 2bytes.
-            int charOffset = 2;
-            for (int i = 0; i < length; i += charOffset) {
+            for (int i = 0; i < length; i += 1) {
+                // check range for possible 2 byte char.
                 charValue = getUnsignedInt(i, 2);
                 if (font.canDisplay((char) charValue)) {
                     tmp.append((char) charValue);
+                    i += 1;
+                } else {
+                    charValue = getUnsignedInt(i, 1);
+                    if (font.canDisplay((char) charValue)) {
+                        tmp.append((char) charValue);
+                    }
                 }
             }
-
-//            StringBuilder tmp = new StringBuilder(length);
-//            int charOffset = 1;
-//            for (int i = 0; i < length; i += charOffset) {
-//                // check range for possible 2 byte char.
-//                charValue = getUnsignedInt(i, 1);
-//                if (font.canDisplay((char) charValue)) {
-//                    tmp.append((char) charValue);
-//                } else {
-//                    int charValue2 = getUnsignedInt(i, 2);
-//                    if (font.canDisplay((char) charValue2)) {
-//                        tmp.append((char) charValue2);
-//                        i += 1;
-//                    }
-//                }
-//            }
             return tmp;
         }
         return null;
