@@ -26,6 +26,7 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     private final TrueTypeFont trueTypeFont;
 
     private CmapLookup cmapLookup;
+    private CMap cmapEncoding;
     private int[] cid2gid;
 
     public ZFontType2(Stream fontStream) throws Exception {
@@ -70,6 +71,8 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
         this.fontMatrix = convertFontMatrix(fontBoxFont);
         this.cid2gid = font.cid2gid;
         this.cmapLookup = font.cmapLookup;
+        this.toUnicode = font.toUnicode;
+        this.cmapEncoding = font.cmapEncoding;
     }
 
     @Override
@@ -166,6 +169,14 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
         return font;
     }
 
+    public FontFile deriveFont(Encoding encoding, CMap cmapEncoding, CMap toUnicode) {
+        ZFontType2 font = new ZFontType2(this);
+        font.encoding = encoding;
+        font.cmapEncoding = cmapEncoding != null ? cmapEncoding : this.toUnicode;
+        font.toUnicode = deriveToUnicode(encoding, toUnicode != null ? toUnicode : cmapEncoding);
+        return font;
+    }
+
     @Override
     public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent,
                                Rectangle2D bbox, char[] diff) {
@@ -251,7 +262,8 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     private int getCharToGid(char character) throws IOException {
         if (isTypeCidSubstitution) {
             // apply the typ0 encoding
-            int echar = toUnicode.toCID(character);
+            CMap cmapEncoding = this.cmapEncoding != null ? this.cmapEncoding : toUnicode;
+            int echar = cmapEncoding.toCID(character);
             // apply the UCS2 encoding
             String eString = ucs2Cmap.toUnicode(echar);
             // finally we can get a usable glyph;
@@ -259,7 +271,8 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
             echar = cmapLookup.getGlyphId(eString.codePointAt(0));
             return echar;
         } else {
-            int echar = toUnicode.toCID(character);
+            CMap cmapEncoding = this.cmapEncoding != null ? this.cmapEncoding : toUnicode;
+            int echar = cmapEncoding.toCID(character);
             if (cid2gid != null && echar < cid2gid.length) {
                 return cid2gid[echar];
             }

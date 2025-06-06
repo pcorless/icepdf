@@ -7,6 +7,7 @@ import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory;
+import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType2;
 import org.icepdf.core.util.Library;
 
 import java.util.List;
@@ -90,7 +91,11 @@ public class Type0Font extends SimpleFont {
                 if (descendantFont != null) {
                     descendantFont.init();
                     font = descendantFont.getFont();
-                    font = font.deriveFont(encoding, cMap);
+                    if (font instanceof ZFontType2) {
+                        font = ((ZFontType2) font).deriveFont(encoding, cMap, toUnicodeCMap);
+                    } else {
+                        font = font.deriveFont(encoding, toUnicodeCMap);
+                    }
                     isFontSubstitution = descendantFont.isFontSubstitution() && font != null;
                 }
             }
