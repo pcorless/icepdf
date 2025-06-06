@@ -236,6 +236,10 @@ public abstract class ZSimpleFont implements FontFile {
         char c = toUnicode == null ? getCharDiff(displayChar) : displayChar;
 
         if (toUnicode != null) {
+            if (toUnicode.getName() != null && toUnicode.getName().startsWith("Identity-")) {
+                // if the toUnicode is an identity map, we can just return the character
+                return String.valueOf(c);
+            }
             return toUnicode.toUnicode(c);
         }
         return String.valueOf(c);
