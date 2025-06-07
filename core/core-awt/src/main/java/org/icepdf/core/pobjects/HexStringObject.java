@@ -241,7 +241,7 @@ public class HexStringObject extends AbstractStringObject {
                 if (first.charAt(0) != '0') {
                     // check range for possible 2 byte char ie mixed mode.
                     charValue = getUnsignedInt(first);
-                    if (font.getByteEncoding() == FontFile.ByteEncoding.MIXED_BYTE &&
+                    if (!font.getToUnicode().getName().contains("UCS2") &&
                             font.canDisplay((char) charValue) && font.getSource() != null) {
                         tmp.append((char) charValue);
                     } else {

@@ -15,6 +15,8 @@
  */
 package org.icepdf.core.pobjects.fonts;
 
+import org.apache.fontbox.cmap.CMap;
+
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
@@ -56,8 +58,6 @@ public interface FontFile {
     FontFile deriveFont(float pointSize);
 
     boolean canDisplay(char ech);
-
-    void setIsCid();
 
     CMap getToUnicode();
 

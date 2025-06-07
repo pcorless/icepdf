@@ -1,10 +1,10 @@
 package org.icepdf.core.pobjects.fonts.zfont.fontFiles;
 
 import org.apache.fontbox.cff.Type2CharString;
+import org.apache.fontbox.cmap.CMap;
 import org.apache.fontbox.ttf.*;
 import org.apache.pdfbox.io.RandomAccessReadBuffer;
 import org.icepdf.core.pobjects.Stream;
-import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.zfont.GlyphList;

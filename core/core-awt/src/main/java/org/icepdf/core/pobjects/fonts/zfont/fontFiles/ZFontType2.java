@@ -1,12 +1,9 @@
 package org.icepdf.core.pobjects.fonts.zfont.fontFiles;
 
-import org.apache.fontbox.ttf.GlyphData;
-import org.apache.fontbox.ttf.OTFParser;
-import org.apache.fontbox.ttf.OpenTypeFont;
-import org.apache.fontbox.ttf.TrueTypeFont;
+import org.apache.fontbox.cmap.CMap;
+import org.apache.fontbox.ttf.*;
 import org.apache.pdfbox.io.RandomAccessReadBuffer;
 import org.icepdf.core.pobjects.Stream;
-import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.graphics.TextState;
@@ -28,7 +25,9 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
 
     private final TrueTypeFont trueTypeFont;
 
-    private CMap cid2gid;
+    private CmapLookup cmapLookup;
+    private CMap cmapEncoding;
+    private int[] cid2gid;
 
     public ZFontType2(Stream fontStream) throws Exception {
         try {
@@ -41,6 +40,7 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
                 isDamaged = true;
                 logger.warning("Found CFF/OTF but expected embedded TTF font " + trueTypeFont.getName());
             }
+            cmapLookup = trueTypeFont.getUnicodeCmapLookup(false);
         } catch (Exception e) {
             logger.log(Level.WARNING, "Could not initialize type2 font", e);
             throw e;
@@ -51,28 +51,48 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
         super(font);
         this.trueTypeFont = font.trueTypeFont;
         this.fontBoxFont = this.trueTypeFont;
+        this.isTypeCidSubstitution = font.isTypeCidSubstitution;
+        this.encoding = font.encoding;
         this.fontMatrix = convertFontMatrix(fontBoxFont);
+        try {
+            cmapLookup = trueTypeFont.getUnicodeCmapLookup(false);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Could not initialize type2 font unicode CMap lookup", e);
+        }
     }
 
     private ZFontType2(ZFontType2 font) {
         super(font);
         this.trueTypeFont = font.trueTypeFont;
         this.fontBoxFont = this.trueTypeFont;
+        this.encoding = font.encoding;
+        this.isTypeCidSubstitution = font.isTypeCidSubstitution;
+        this.ucs2Cmap = font.ucs2Cmap;
         this.fontMatrix = convertFontMatrix(fontBoxFont);
         this.cid2gid = font.cid2gid;
+        this.cmapLookup = font.cmapLookup;
+        this.toUnicode = font.toUnicode;
+        this.cmapEncoding = font.cmapEncoding;
     }
 
     @Override
     public Point2D getAdvance(char ech) {
         float advance = defaultWidth;
-        if (widths != null && ech < widths.length) {
-            advance = widths[ech];
+        int gid = ech;
+        try {
+            if (isTypeCidSubstitution) {
+                gid = getCharToGid(ech);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        if (widths != null && gid < widths.length) {
+            advance = widths[gid];
         }
         if (advance == 0) {
             if (defaultWidth > 0.0f) {
                 advance = defaultWidth;
-            }
-            else {
+            } else {
                 advance = 1.0f;
             }
         }
@@ -149,6 +169,14 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
         return font;
     }
 
+    public FontFile deriveFont(Encoding encoding, CMap cmapEncoding, CMap toUnicode) {
+        ZFontType2 font = new ZFontType2(this);
+        font.encoding = encoding;
+        font.cmapEncoding = cmapEncoding != null ? cmapEncoding : this.toUnicode;
+        font.toUnicode = deriveToUnicode(encoding, toUnicode != null ? toUnicode : cmapEncoding);
+        return font;
+    }
+
     @Override
     public FontFile deriveFont(float[] widths, int firstCh, float missingWidth, float ascent, float descent,
                                Rectangle2D bbox, char[] diff) {
@@ -178,7 +206,7 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
         return font;
     }
 
-    public ZFontType2 deriveFont(CMap cid2gid, CMap toUnicode) {    // used by PDF Type 0
+    public ZFontType2 deriveFont(int[] cid2gid, CMap toUnicode) {    // used by PDF Type 0
         ZFontType2 font = new ZFontType2(this);
         font.setCID(cid2gid, toUnicode);
         return font;
@@ -186,14 +214,15 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
 
     @Override
     public boolean canDisplay(char ech) {
-//        try {
-//            return trueTypeFont.hasGlyph(String.valueOf(ech));
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        return false;
-        // todo directly effects parsing cid string,  need to look at cmap instead to derive byte lenght for char
-        //  first, well pretty sure anyways.
+        if (isTypeCidSubstitution) {
+            try {
+                int gid = getCharToGid(ech);
+                return gid != 0;
+            } catch (IOException e) {
+                logger.warning("Error checking if character can be displayed: " + ech + ", " + e.getMessage());
+            }
+            return false;
+        }
         return true;
     }
 
@@ -217,29 +246,39 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
         return null;
     }
 
-    private void setCID(CMap cid, CMap uni) {
+    public void setIsCidSubstituted() {
+        this.isTypeCidSubstitution = true;
+    }
+
+    public void setUcs2Cmap(CMap cmap) {
+        this.ucs2Cmap = cmap;
+    }
+
+    private void setCID(int[] cid, CMap uni) {
         cid2gid = cid;
         toUnicode = uni;
     }
 
-    private int getCharToGid(char character) {
-//        if (isType0CidSub) {
-//            // apply the typ0 encoding
-//            ech = type0Encoding.toSelector(ech);
-//            // apply the UCS2 encoding
-//            ech = touni_.toUnicode(ech).charAt(0);
-//            // finally we can get a usable glyph;
-//            return c2g_.toSelector(ech);
-//        } else {
-        return codeToGID(character);
-//        }
+    private int getCharToGid(char character) throws IOException {
+        if (isTypeCidSubstitution) {
+            // apply the typ0 encoding
+            CMap cmapEncoding = this.cmapEncoding != null ? this.cmapEncoding : toUnicode;
+            int echar = cmapEncoding.toCID(character);
+            // apply the UCS2 encoding
+            String eString = ucs2Cmap.toUnicode(echar);
+            // finally we can get a usable glyph;
+            CmapLookup cmapLookup = trueTypeFont.getUnicodeCmapLookup(false);
+            echar = cmapLookup.getGlyphId(eString.codePointAt(0));
+            return echar;
+        } else {
+            CMap cmapEncoding = this.cmapEncoding != null ? this.cmapEncoding : toUnicode;
+            int echar = cmapEncoding.toCID(character);
+            if (cid2gid != null && echar < cid2gid.length) {
+                return cid2gid[echar];
+            }
+            return echar;
+        }
     }
 
-    public int codeToGID(int code) {
-        if (cid2gid != null) {
-            return cid2gid.toSelector((char) code);
-        }
-        return code;
-    }
 
 }
