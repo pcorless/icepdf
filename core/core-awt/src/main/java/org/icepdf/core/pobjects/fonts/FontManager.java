@@ -23,8 +23,8 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.List;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -185,7 +185,7 @@ public class FontManager {
             "arial-blackitalic",
             "new",
             // mapping issue with standard ascii, not sure why, TimesNewRomanPSMT is ok.
-            "timesnewromanps",
+//            "timesnewromanps",
             // doesn't seem to the correct cid mapping otf version anyways.
             "kozminpro-regular"
     );
