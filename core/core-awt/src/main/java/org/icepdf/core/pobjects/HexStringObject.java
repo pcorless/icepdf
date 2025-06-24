@@ -234,7 +234,9 @@ public class HexStringObject extends AbstractStringObject {
             int charOffset = 2;
             int length = getLength();
             int charValue;
-            boolean notUCS2 = font.getToUnicode() != null && !font.getToUnicode().getName().contains("UCS2");
+            boolean notUCS2 = font.getToUnicode() != null
+                    && font.getToUnicode().getName() != null
+                    && !font.getToUnicode().getName().contains("UCS2");
             StringBuilder tmp = new StringBuilder(length);
             // attempt to detect mulibyte encoded strings.
             for (int i = 0; i < length; i += charOffset) {
