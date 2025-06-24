@@ -234,6 +234,7 @@ public class HexStringObject extends AbstractStringObject {
             int charOffset = 2;
             int length = getLength();
             int charValue;
+            boolean notUCS2 = font.getToUnicode() != null && !font.getToUnicode().getName().contains("UCS2");
             StringBuilder tmp = new StringBuilder(length);
             // attempt to detect mulibyte encoded strings.
             for (int i = 0; i < length; i += charOffset) {
@@ -241,8 +242,7 @@ public class HexStringObject extends AbstractStringObject {
                 if (first.charAt(0) != '0') {
                     // check range for possible 2 byte char ie mixed mode.
                     charValue = getUnsignedInt(first);
-                    if (!font.getToUnicode().getName().contains("UCS2") &&
-                            font.canDisplay((char) charValue) && font.getSource() != null) {
+                    if (notUCS2 && font.canDisplay((char) charValue) && font.getSource() != null) {
                         tmp.append((char) charValue);
                     } else {
                         charValue = getUnsignedInt(i, 4);

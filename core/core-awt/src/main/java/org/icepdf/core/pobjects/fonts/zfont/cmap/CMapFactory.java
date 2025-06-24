@@ -66,7 +66,6 @@ public class CMapFactory {
         CMap targetCmap = null;
         try {
             targetCmap = new CMapParser().parsePredefined(cMapName);
-            // limit the cache to predefined CMaps
             CMAP_CACHE.put(targetCmap.getName(), targetCmap);
             return targetCmap;
         } catch (IOException e) {
@@ -92,9 +91,6 @@ public class CMapFactory {
             int i = 0;
             int length = cidStream.available() / 2;
             int[] cidToGid = new int[length];
-            // parse the cidToGid stream out, arranging the high bit,
-            // each character position that has a value > 0 is a valid
-            // entry in the CFF.
             while (i < length) {
                 character = cidStream.read();
                 character = (char) ((character << 8) | cidStream.read());

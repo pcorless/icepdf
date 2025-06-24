@@ -25,6 +25,10 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
 
     private final TrueTypeFont trueTypeFont;
 
+    private CmapSubtable cmapWinUnicode;
+    private CmapSubtable cmapWinSymbol;
+    private CmapSubtable cmapMacRoman;
+
     private CmapLookup cmapLookup;
     private CMap cmapEncoding;
     private int[] cid2gid;
@@ -41,6 +45,7 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
                 logger.warning("Found CFF/OTF but expected embedded TTF font " + trueTypeFont.getName());
             }
             cmapLookup = trueTypeFont.getUnicodeCmapLookup(false);
+            extractCmapTable();
         } catch (Exception e) {
             logger.log(Level.WARNING, "Could not initialize type2 font", e);
             throw e;
@@ -56,6 +61,7 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
         this.fontMatrix = convertFontMatrix(fontBoxFont);
         try {
             cmapLookup = trueTypeFont.getUnicodeCmapLookup(false);
+            extractCmapTable();
         } catch (IOException e) {
             logger.log(Level.WARNING, "Could not initialize type2 font unicode CMap lookup", e);
         }
@@ -73,6 +79,9 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
         this.cmapLookup = font.cmapLookup;
         this.toUnicode = font.toUnicode;
         this.cmapEncoding = font.cmapEncoding;
+        this.cmapWinUnicode = font.cmapWinUnicode;
+        this.cmapMacRoman = font.cmapMacRoman;
+        this.cmapWinSymbol = font.cmapWinSymbol;
     }
 
     @Override
@@ -80,7 +89,7 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
         float advance = defaultWidth;
         int gid = ech;
         try {
-            if (isTypeCidSubstitution) {
+            if (cid2gid == null) {
                 gid = getCharToGid(ech);
             }
         } catch (IOException e) {
@@ -259,11 +268,11 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
         toUnicode = uni;
     }
 
-    private int getCharToGid(char character) throws IOException {
+    private int getCharToGid(int code) throws IOException {
         if (isTypeCidSubstitution) {
             // apply the typ0 encoding
             CMap cmapEncoding = this.cmapEncoding != null ? this.cmapEncoding : toUnicode;
-            int echar = cmapEncoding.toCID(character);
+            int echar = cmapEncoding.toCID(code);
             // apply the UCS2 encoding
             String eString = ucs2Cmap.toUnicode(echar);
             // finally we can get a usable glyph;
@@ -272,11 +281,56 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
             return echar;
         } else {
             CMap cmapEncoding = this.cmapEncoding != null ? this.cmapEncoding : toUnicode;
-            int echar = cmapEncoding.toCID(character);
+            int echar = cmapEncoding.toCID(code);
             if (cid2gid != null && echar < cid2gid.length) {
                 return cid2gid[echar];
+            } else {
+                int gid = 0;
+                if (this.cmapEncoding != null) {
+                    gid = cmapEncoding.toCID((char) code);
+                }
+                if (gid == 0 && cmapWinUnicode != null) {
+                    gid = cmapWinUnicode.getGlyphId(code);
+                }
+                if (gid == 0 && cmapMacRoman != null) {
+                    String macCode = encoding.getName(code);
+                    if (macCode != null) {
+                        gid = cmapMacRoman.getGlyphId(macCode.codePointAt(0));
+                    }
+                }
+                if (gid != 0) {
+                    echar = gid;
+                } else {
+                    echar = code; // fallback to the code itself if no mapping found
+                }
             }
+
             return echar;
+        }
+    }
+
+    private void extractCmapTable() throws IOException {
+        CmapTable cmapTable = trueTypeFont.getCmap();
+        if (cmapTable != null) {
+            CmapSubtable[] cmaps = cmapTable.getCmaps();
+            for (CmapSubtable cmap : cmaps) {
+                if (CmapTable.PLATFORM_WINDOWS == cmap.getPlatformId()) {
+                    if (CmapTable.ENCODING_WIN_UNICODE_BMP == cmap.getPlatformEncodingId()) {
+                        cmapWinUnicode = cmap;
+                    } else if (CmapTable.ENCODING_WIN_SYMBOL == cmap.getPlatformEncodingId()) {
+                        cmapWinSymbol = cmap;
+                    }
+                } else if (CmapTable.PLATFORM_MACINTOSH == cmap.getPlatformId()
+                        && CmapTable.ENCODING_MAC_ROMAN == cmap.getPlatformEncodingId()) {
+                    cmapMacRoman = cmap;
+                } else if (CmapTable.PLATFORM_UNICODE == cmap.getPlatformId()
+                        && CmapTable.ENCODING_UNICODE_1_0 == cmap.getPlatformEncodingId()) {
+                    cmapWinUnicode = cmap;
+                } else if (CmapTable.PLATFORM_UNICODE == cmap.getPlatformId()
+                        && CmapTable.ENCODING_UNICODE_2_0_BMP == cmap.getPlatformEncodingId()) {
+                    cmapWinUnicode = cmap;
+                }
+            }
         }
     }
 

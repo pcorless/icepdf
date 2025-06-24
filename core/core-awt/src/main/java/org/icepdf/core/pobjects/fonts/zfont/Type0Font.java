@@ -10,6 +10,7 @@ import org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType2;
 import org.icepdf.core.util.Library;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -56,12 +57,19 @@ public class Type0Font extends SimpleFont {
         }
         Object object = library.getObject(entries, ENCODING_KEY);
         if (object instanceof Stream) {
-            Stream gidMap = (Stream) object;
-            Name cmapName = library.getName(gidMap.getEntries(), new Name("CMapName"));
-            // update font with oneByte information from the cmap, so far I've only
-            // scene this on a handful of CID font but fix encoding issue in each case.
-            if (cmapName.equals("OneByteIdentityH")) {
-                subTypeFormat = SIMPLE_FORMAT;
+            try {
+                Stream gidMap = (Stream) object;
+                Name cmapName = library.getName(gidMap.getEntries(), new Name("CMapName"));
+                // update font with oneByte information from the cmap, so far I've only
+                // scene this on a handful of CID font but fix encoding issue in each case.
+                if (cmapName.equals("OneByteIdentityH")) {
+                    subTypeFormat = SIMPLE_FORMAT;
+                }
+                // todo pull registry info CIDSystemInfo
+                cMap = CMapFactory.parseEmbeddedCMap(gidMap);
+                cMap.setName(cmapName.getName());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
             return;
         }

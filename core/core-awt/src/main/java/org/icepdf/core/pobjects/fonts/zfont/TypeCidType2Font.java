@@ -44,25 +44,6 @@ public class TypeCidType2Font extends CompositeFont {
 
     protected void parseCidToGidMap() {
         Object gidMap = library.getObject(entries, CID_TO_GID_MAP_KEY);
-//        if (gidMap == null && !isFontSubstitution) {
-//            CMap subfontToUnicodeCMap = toUnicodeCMap != null ? toUnicodeCMap : CMapFactory.getPredefinedCMap
-//            (CMapFactory.IDENTITY_H_NAME);
-//            font = ((ZFontType2) font).deriveFont(CMapFactory.getPredefinedCMap(CMapFactory.IDENTITY_H_NAME),
-//            subfontToUnicodeCMap);
-//        }
-//        if (gidMap instanceof Name) {
-//            String mappingName;
-//            mappingName = gidMap.toString();
-//            if (toUnicodeCMap.getName().equalsIgnoreCase(CMapFactory.IDENTITY_H_NAME.getName())) {
-//                mappingName = toUnicodeCMap.toString();
-//            }
-//            // mapping name will be null only in a few corner cases, but
-//            // identity will be applied otherwise.
-//            if (mappingName == null || mappingName.equals("Identity")) {
-//                font = ((ZFontType2) font).deriveFont(CMapFactory.getPredefinedCMap(CMapFactory.IDENTITY_H_NAME),
-//                toUnicodeCMap);
-//            }
-//        } else
         if (gidMap instanceof Stream) {
             int[] cidToGidMap = CMapFactory.parseCidToGidMap((Stream) gidMap);
             if (font instanceof ZFontType2) {
