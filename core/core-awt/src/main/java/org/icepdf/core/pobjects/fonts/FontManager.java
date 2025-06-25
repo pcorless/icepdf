@@ -68,23 +68,34 @@ public class FontManager {
                     {"Bookman-Light", "URWBookmanL-Ligh", "Arial"},
                     {"Bookman-LightItalic", "URWBookmanL-LighItal", "Arial"},
                     {"Courier", "NimbusMonL-Regu", "Nimbus Mono L", "CourierNew", "CourierNewPSMT"},
-                    {"Courier-Oblique", "NimbusMonL-ReguObli", "Nimbus Mono L", "Courier,Italic", "CourierNew-Italic", "CourierNew,Italic", "CourierNewPS-ItalicMT"},
-                    {"Courier-Bold", "NimbusMonL-Bold", "Nimbus Mono L", "Courier,Bold", "CourierNew,Bold", "CourierNew-Bold", "CourierNewPS-BoldMT"},
-                    {"Courier-BoldOblique", "NimbusMonL-BoldObli", "Nimbus Mono L", "Courier,BoldItalic", "CourierNew-BoldItalic", "CourierNew,BoldItalic", "CourierNewPS-BoldItalicMT"},
+                    {"Courier-Oblique", "NimbusMonL-ReguObli", "Nimbus Mono L", "Courier,Italic", "CourierNew-Italic"
+                            , "CourierNew,Italic", "CourierNewPS-ItalicMT"},
+                    {"Courier-Bold", "NimbusMonL-Bold", "Nimbus Mono L", "Courier,Bold", "CourierNew,Bold",
+                            "CourierNew-Bold", "CourierNewPS-BoldMT"},
+                    {"Courier-BoldOblique", "NimbusMonL-BoldObli", "Nimbus Mono L", "Courier,BoldItalic", "CourierNew" +
+                            "-BoldItalic", "CourierNew,BoldItalic", "CourierNewPS-BoldItalicMT"},
                     {"AvantGarde-Book", "URWGothicL-Book", "Arial"},
                     {"AvantGarde-BookOblique", "URWGothicL-BookObli", "Arial"},
                     {"AvantGarde-Demi", "URWGothicL-Demi", "Arial"},
                     {"AvantGarde-DemiOblique", "URWGothicL-DemiObli", "Arial"},
                     {"Helvetica", "Helvetica", "Arial", "ArialMT", "NimbusSanL-Regu", "Nimbus Sans L"},
-                    {"Helvetica-Oblique", "NimbusSanL-ReguItal", "Nimbus Sans L", "Helvetica,Italic", "Helvetica-Italic", "Arial,Italic", "Arial-Italic", "Arial-ItalicMT"},
-                    {"Helvetica-Bold", "Helvetica,Bold", "Arial,Bold", "Arial-Bold", "Arial-BoldMT", "NimbusSanL-Bold", "Nimbus Sans L"},
-                    {"Helvetica-BoldOblique", "NimbusSanL-BoldItal", "Helvetica-BlackOblique", "Nimbus Sans L", "Helvetica,BoldItalic", "Helvetica-BoldItalic", "Arial,BoldItalic", "Arial-BoldItalic", "Arial-BoldItalicMT"},
-                    {"Helvetica-Black", "Helvetica,Bold", "Arial,Bold", "Arial-Bold", "Arial-BoldMT", "NimbusSanL-Bold", "Nimbus Sans L"},
-                    {"Helvetica-BlackOblique", "NimbusSanL-BoldItal", "Helvetica-BlackOblique", "Nimbus Sans L", "Helvetica,BoldItalic", "Helvetica-BoldItalic", "Arial,BoldItalic", "Arial-BoldItalic", "Arial-BoldItalicMT"},
+                    {"Helvetica-Oblique", "NimbusSanL-ReguItal", "Nimbus Sans L", "Helvetica,Italic", "Helvetica" +
+                            "-Italic", "Arial,Italic", "Arial-Italic", "Arial-ItalicMT"},
+                    {"Helvetica-Bold", "Helvetica,Bold", "Arial,Bold", "Arial-Bold", "Arial-BoldMT", "NimbusSanL-Bold"
+                            , "Nimbus Sans L"},
+                    {"Helvetica-BoldOblique", "NimbusSanL-BoldItal", "Helvetica-BlackOblique", "Nimbus Sans L",
+                            "Helvetica,BoldItalic", "Helvetica-BoldItalic", "Arial,BoldItalic", "Arial-BoldItalic",
+                            "Arial-BoldItalicMT"},
+                    {"Helvetica-Black", "Helvetica,Bold", "Arial,Bold", "Arial-Bold", "Arial-BoldMT", "NimbusSanL" +
+                            "-Bold", "Nimbus Sans L"},
+                    {"Helvetica-BlackOblique", "NimbusSanL-BoldItal", "Helvetica-BlackOblique", "Nimbus Sans L",
+                            "Helvetica,BoldItalic", "Helvetica-BoldItalic", "Arial,BoldItalic", "Arial-BoldItalic",
+                            "Arial-BoldItalicMT"},
                     {"Helvetica-Narrow", "NimbusSanL-ReguCond", "Nimbus Sans L"},
                     {"Helvetica-Narrow-Oblique", "NimbusSanL-ReguCondItal", "Nimbus Sans L"},
                     {"Helvetica-Narrow-Bold", "NimbusSanL-BoldCond", "Nimbus Sans L"},
                     {"Helvetica-Narrow-BoldOblique", "NimbusSanL-BoldCondItal", "Nimbus Sans L"},
+                    {"Helvetica-Condensed", "NimbusSanL-ReguCond", "Nimbus Sans L"},
                     {"Helvetica-Condensed", "NimbusSanL-ReguCond", "Nimbus Sans L"},
                     {"Helvetica-Condensed-Oblique", "NimbusSanL-ReguCondItal", "Nimbus Sans L"},
                     {"Helvetica-Condensed-Bold", "NimbusSanL-BoldCond", "Nimbus Sans L"},
@@ -97,10 +108,14 @@ public class FontManager {
                     {"NewCenturySchlbk-Italic", "CenturySchL-Ital", "Arial"},
                     {"NewCenturySchlbk-Bold", "CenturySchL-Bold", "Arial"},
                     {"NewCenturySchlbk-BoldItalic", "CenturySchL-BoldItal", "Arial"},
-                    {"Times-Roman", "NimbusRomNo9L-Regu", "Nimbus Roman No9 L", "TimesNewRoman", "TimesNewRomanPSMT", "TimesNewRomanPS"},
-                    {"Times-Italic", "NimbusRomNo9L-ReguItal", "Nimbus Roman No9 L", "TimesNewRoman,Italic", "TimesNewRoman-Italic", "TimesNewRomanPS-Italic", "TimesNewRomanPS-ItalicMT"},
-                    {"Times-Bold", "NimbusRomNo9L-Medi", "Nimbus Roman No9 L", "TimesNewRoman,Bold", "TimesNewRoman-Bold", "TimesNewRomanPS-Bold", "TimesNewRomanPS-BoldMT"},
-                    {"Times-BoldItalic", "NimbusRomNo9L-MediItal", "Nimbus Roman No9 L", "TimesNewRoman,BoldItalic", "TimesNewRoman-BoldItalic", "TimesNewRomanPS-BoldItalic", "TimesNewRomanPS-BoldItalicMT"},
+                    {"Times-Roman", "NimbusRomNo9L-Regu", "Nimbus Roman No9 L", "TimesNewRoman", "TimesNewRomanPSMT",
+                            "TimesNewRomanPS"},
+                    {"Times-Italic", "NimbusRomNo9L-ReguItal", "Nimbus Roman No9 L", "TimesNewRoman,Italic",
+                            "TimesNewRoman-Italic", "TimesNewRomanPS-Italic", "TimesNewRomanPS-ItalicMT"},
+                    {"Times-Bold", "NimbusRomNo9L-Medi", "Nimbus Roman No9 L", "TimesNewRoman,Bold", "TimesNewRoman" +
+                            "-Bold", "TimesNewRomanPS-Bold", "TimesNewRomanPS-BoldMT"},
+                    {"Times-BoldItalic", "NimbusRomNo9L-MediItal", "Nimbus Roman No9 L", "TimesNewRoman,BoldItalic",
+                            "TimesNewRoman-BoldItalic", "TimesNewRomanPS-BoldItalic", "TimesNewRomanPS-BoldItalicMT"},
                     {"Symbol", "StandardSymL", "Standard Symbols L"},
                     {"ZapfChancery-MediumItalic", "URWChanceryL-MediItal", "Arial"},
                     {"ZapfDingbats", "Dingbats", "Zapf-Dingbats"}
@@ -185,7 +200,7 @@ public class FontManager {
     private static final int FONT_PATH = 3;
 
     /**
-     * Mutable list of font names that are excluded from font font substitution.
+     * Mutable list of font names that are excluded from font substitution.
      */
     public static final List<String> BASE_NAME_EXCLUSION_LIST = Arrays.asList(
             "opensymbol",
@@ -195,21 +210,21 @@ public class FontManager {
             "arial-blackitalic",
             "new",
             // mapping issue with standard ascii, not sure why, TimesNewRomanPSMT is ok.
-            "timesnewromanps",
+//            "timesnewromanps",
             // doesn't seem to the correct cid mapping otf version anyways.
             "kozminpro-regular"
     );
 
     //        "HEB____.TTF"
     /**
-     * Mutable list of font file names that are excluded from font font substitution. Font names must also
+     * Mutable list of font file names that are excluded from font substitution. Font names must also
      * include the file extension.
      */
     public static final List<String> FONT_FILE_NAME_EXCLUSION_LIST = List.of();
 
     /**
      * Change the base font name from lucidasans which is a Java Physical Font
-     * name.  The name should be change to one of Java's logical font names:
+     * name.  The name should be changed to one of Java's logical font names:
      * Dialog,  DialogInput, Monospaced, Serif, SansSerif.  The closest logical
      * name that match LucidaSans is SansSerif.
      */
@@ -217,6 +232,7 @@ public class FontManager {
 
     static {
         baseFontName = Defs.property("org.icepdf.core.font.basefont", "lucidasans");
+        System.out.println(JAVA_FONT_PATH);
     }
 
     // Singleton instance of class
@@ -244,7 +260,7 @@ public class FontManager {
      * @return instance of the singleton fontManager.
      */
     public FontManager initialize() {
-        if (fontList == null || fontList.size() == 0) {
+        if (fontList == null || fontList.isEmpty()) {
             readSystemFonts(null);
         }
         return fontManager;
@@ -319,7 +335,7 @@ public class FontManager {
                 if (name != null && family != null && path != null) {
                     // check exclusion list
                     fontProperty = new Object[]{name, family, decorations, path};
-                    if (!checkExclusionLists(fontProperty)) {
+                    if (notInExclusionLists(fontProperty)) {
                         fontList.add(new Object[]{name, family, decorations, path});
                     }
                 } else {
@@ -344,7 +360,8 @@ public class FontManager {
     }
 
     /**
-     * <p>Reads font from the specified array of file paths only, no .  This font data is used to substitute fonts which are not
+     * <p>Reads font from the specified array of file paths only, no .  This font data is used to substitute fonts
+     * which are not
      * embedded inside a PDF document.</p>
      *
      * @param extraFontPaths array String object where each entry represents
@@ -395,7 +412,7 @@ public class FontManager {
         }
 
         // check to make sure we have at least a few fonts.
-        if (fontDirectories.size() == 0) {
+        if (fontDirectories.isEmpty()) {
             // fall back to at least a few fonts.
             logger.finer("No fonts specified or detected falling back to JAVA font paths.");
             fontDirectories.add(JAVA_FONT_PATH);
@@ -466,7 +483,7 @@ public class FontManager {
                     FontUtil.normalizeString(font.getFamily()), // family name
                     guessFontStyle(fontName), // weight and decorations, mainly bold,italic
                     fontPath};
-            if (!checkExclusionLists(fontProperty)) {
+            if (notInExclusionLists(fontProperty)) {
                 fontList.add(fontProperty);  // path to font on OS
             }
             if (logger.isLoggable(Level.FINER)) {
@@ -585,7 +602,7 @@ public class FontManager {
             fontList = new ArrayList<>(150);
         }
 
-        FontFile font = null;
+        FontFile font;
         if (list != null) {
             // search for know list of fonts
             for (int i = list.length - 1; i >= 0; i--) {
@@ -651,7 +668,7 @@ public class FontManager {
                 fontJarList.add(new Object[]{font.getName().toLowerCase(), // original PS name
                         FontUtil.normalizeString(font.getFamily()), // family name
                         guessFontStyle(fontName), // weight and decorations, mainly bold,italic
-                        resourcePath.toString()});  // path to font on OS
+                        resourcePath != null ? resourcePath.getPath() : ""});  // path to font on OS
                 if (logger.isLoggable(Level.FINER)) {
                     logger.finer("Adding system font: " + font.getName() + " " + resourcePath);
                 }
@@ -727,7 +744,7 @@ public class FontManager {
 
         // if all else fails return first font in fontList with matching style,
         // this should never happen, but just in case.
-        if (fontList.size() > 0) {
+        if (!fontList.isEmpty()) {
             Object[] fontData;
             boolean found = false;
             int decorations = guessFontStyle(name);
@@ -754,12 +771,15 @@ public class FontManager {
                     break;
                 }
             }
+
+            // work case scenario, we can't find any logical match and we throw a dart ant grab the first font
             if (!found) {
                 fontData = fontList.get(0);
                 font = buildFont((String) fontData[3]);
             }
             if (logger.isLoggable(Level.FINE)) {
-                logger.fine("Font Substitution: Found failed " + name + " " + font.getName());
+                logger.fine("Font Substitution: Found failed " + name + " " + (font != null ? font.getName() :
+                        "null font"));
             }
         }
         if (font == null) {
@@ -803,30 +823,10 @@ public class FontManager {
                 }
                 if (fontName.toLowerCase().contains(baseName) || name.equals(familyName)) {
                     style = (Integer) fontData[2];
-                    boolean found = false;
-                    // ignore this font, as the cid mapping are not correct, or ther is
-                    // just look and feel issues with them.
-                    if (((decorations & BOLD_ITALIC) == BOLD_ITALIC) &&
-                            ((style & BOLD_ITALIC) == BOLD_ITALIC)) {
-                        found = true;
-                    } else if (((decorations & BOLD) == BOLD) &&
-                            ((style & BOLD) == BOLD)) {
-                        found = true;
-                    } else if (((decorations & ITALIC) == ITALIC) &&
-                            ((style & ITALIC) == ITALIC)) {
-                        found = true;
-                    } else if (((decorations & PLAIN) == PLAIN) &&
-                            ((style & PLAIN) == PLAIN)) {
-                        found = true;
-                    }
-                    // symbol type fonts don't have an associated style, so
-                    // no point trying to match  them based on style.
-                    else if (baseName.contains("wingdings") ||
+                    boolean found = isFound(decorations, style, baseName.contains("wingdings") ||
                             baseName.contains("zapfdingbats") ||
                             baseName.contains("dingbats") ||
-                            baseName.contains("symbol")) {
-                        found = true;
-                    }
+                            baseName.contains("symbol"));
 
                     if (found) {
                         if (logger.isLoggable(Level.FINER)) {
@@ -843,6 +843,31 @@ public class FontManager {
             }
         }
         return font;
+    }
+
+    private static boolean isFound(int decorations, int style, boolean baseName) {
+        boolean found = false;
+        // ignore this font, as the cid mapping are not correct, or ther is
+        // just look and feel issues with them.
+        if (((decorations & BOLD_ITALIC) == BOLD_ITALIC) &&
+                ((style & BOLD_ITALIC) == BOLD_ITALIC)) {
+            found = true;
+        } else if (((decorations & BOLD) == BOLD) &&
+                ((style & BOLD) == BOLD)) {
+            found = true;
+        } else if (((decorations & ITALIC) == ITALIC) &&
+                ((style & ITALIC) == ITALIC)) {
+            found = true;
+        } else if (((decorations & PLAIN) == PLAIN) &&
+                ((style & PLAIN) == PLAIN)) {
+            found = true;
+        }
+        // symbol type fonts don't have an associated style, so
+        // no point trying to match  them based on style.
+        else if (baseName) {
+            found = true;
+        }
+        return found;
     }
 
     /**
@@ -1111,29 +1136,9 @@ public class FontManager {
                 }
                 if (name.contains(familyName) ||
                         fontName.toLowerCase().contains(baseName)) {
-                    boolean found = false;
-                    // ignore this font, as the cid mapping are not correct, or ther is
-                    // just look and feel issues with them.
-                    if (((decorations & BOLD_ITALIC) == BOLD_ITALIC) &&
-                            ((style & BOLD_ITALIC) == BOLD_ITALIC)) {
-                        found = true;
-                    } else if (((decorations & BOLD) == BOLD) &&
-                            ((style & BOLD) == BOLD)) {
-                        found = true;
-                    } else if (((decorations & ITALIC) == ITALIC) &&
-                            ((style & ITALIC) == ITALIC)) {
-                        found = true;
-                    } else if (((decorations & PLAIN) == PLAIN) &&
-                            ((style & PLAIN) == PLAIN)) {
-                        found = true;
-                    }
-                    // symbol type fonts don't have an associated style, so
-                    // no point trying to match  them based on style.
-                    else if (baseName.contains("wingdings") ||
+                    boolean found = isFound(decorations, style, baseName.contains("wingdings") ||
                             baseName.contains("zapfdingbats") ||
-                            baseName.contains("symbol")) {
-                        found = true;
-                    }
+                            baseName.contains("symbol"));
 
                     if (found) {
                         if (logger.isLoggable(Level.FINER)) {
@@ -1221,26 +1226,26 @@ public class FontManager {
         return style;
     }
 
-    private static boolean checkExclusionLists(Object[] fontData) {
+    private static boolean notInExclusionLists(Object[] fontData) {
         // check against know font base names that cause problems
         String baseName = (String) fontData[FONT_NAME];
-        if (BASE_NAME_EXCLUSION_LIST != null && BASE_NAME_EXCLUSION_LIST.size() > 0) {
+        if (BASE_NAME_EXCLUSION_LIST != null && !BASE_NAME_EXCLUSION_LIST.isEmpty()) {
             for (String fontName : BASE_NAME_EXCLUSION_LIST) {
                 if (fontName != null && fontName.equals(baseName)) {
-                    return true;
+                    return false;
                 }
             }
         }
         // check against actual font names as a worst case scenario.
         String fontFileName = (String) fontData[FONT_PATH];
-        if (FONT_FILE_NAME_EXCLUSION_LIST != null && FONT_FILE_NAME_EXCLUSION_LIST.size() > 0) {
+        if (FONT_FILE_NAME_EXCLUSION_LIST != null && !FONT_FILE_NAME_EXCLUSION_LIST.isEmpty()) {
             for (String fontPath : FONT_FILE_NAME_EXCLUSION_LIST) {
                 if (fontFileName != null && fontFileName.endsWith(fontPath)) {
-                    return true;
+                    return false;
                 }
             }
         }
-        return false;
+        return true;
     }
 
     /**
