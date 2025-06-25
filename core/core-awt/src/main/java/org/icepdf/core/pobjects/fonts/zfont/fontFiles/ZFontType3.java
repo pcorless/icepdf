@@ -1,9 +1,10 @@
 package org.icepdf.core.pobjects.fonts.zfont.fontFiles;
 
+import org.apache.fontbox.cmap.CMap;
 import org.icepdf.core.pobjects.*;
-import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
+import org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.TextState;
@@ -76,7 +77,7 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
             fontMatrix = new AffineTransform(0.001f, 0.0f, 0.0f, 0.001f, 0.0f, 0.0f);
         }
 
-        toUnicode = org.icepdf.core.pobjects.fonts.zfont.cmap.CMap.IDENTITY;
+        toUnicode = CMapFactory.getPredefinedCMap(CMapFactory.IDENTITY_H_NAME);
 
         // CharProcs resources, contains glyph name/stream pairs.
         o = library.getObject(properties, CHAR_PROCS_KEY);

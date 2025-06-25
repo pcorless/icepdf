@@ -1,10 +1,10 @@
 package org.icepdf.core.pobjects.fonts.zfont.fontFiles;
 
+import org.apache.fontbox.cmap.CMap;
 import org.apache.fontbox.type1.Type1Font;
 import org.apache.fontbox.util.BoundingBox;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
-import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
 
