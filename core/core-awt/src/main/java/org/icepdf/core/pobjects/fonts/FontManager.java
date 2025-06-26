@@ -205,6 +205,7 @@ public class FontManager {
             "opensymbol",
             "starsymbol",
             "symbolmt",
+            "notosanssymbols",
             "arial-black",
             "arial-blackitalic",
             "new",
