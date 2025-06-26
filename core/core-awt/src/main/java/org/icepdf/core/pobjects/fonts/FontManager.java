@@ -96,7 +96,6 @@ public class FontManager {
                     {"Helvetica-Narrow-Bold", "NimbusSanL-BoldCond", "Nimbus Sans L"},
                     {"Helvetica-Narrow-BoldOblique", "NimbusSanL-BoldCondItal", "Nimbus Sans L"},
                     {"Helvetica-Condensed", "NimbusSanL-ReguCond", "Nimbus Sans L"},
-                    {"Helvetica-Condensed", "NimbusSanL-ReguCond", "Nimbus Sans L"},
                     {"Helvetica-Condensed-Oblique", "NimbusSanL-ReguCondItal", "Nimbus Sans L"},
                     {"Helvetica-Condensed-Bold", "NimbusSanL-BoldCond", "Nimbus Sans L"},
                     {"Helvetica-Condensed-BoldOblique", "NimbusSanL-BoldCondItal", "Nimbus Sans L"},
@@ -232,7 +231,6 @@ public class FontManager {
 
     static {
         baseFontName = Defs.property("org.icepdf.core.font.basefont", "lucidasans");
-        System.out.println(JAVA_FONT_PATH);
     }
 
     // Singleton instance of class
@@ -821,12 +819,32 @@ public class FontManager {
                 if (logger.isLoggable(Level.FINEST)) {
                     logger.finest(baseName + " : " + familyName + "  : " + name);
                 }
-                if (fontName.toLowerCase().contains(baseName) || name.equals(familyName)) {
+                if (fontName.toLowerCase().contains(baseName) ||
+                        name.contains(familyName) || familyName.contains(name)) {
                     style = (Integer) fontData[2];
-                    boolean found = isFound(decorations, style, baseName.contains("wingdings") ||
+                    boolean found = false;
+                    // just look and feel issues with them.
+                    if (((decorations & BOLD_ITALIC) == BOLD_ITALIC) &&
+                            ((style & BOLD_ITALIC) == BOLD_ITALIC)) {
+                        found = true;
+                    } else if (((decorations & BOLD) == BOLD) &&
+                            ((style & BOLD) == BOLD)) {
+                        found = true;
+                    } else if (((decorations & ITALIC) == ITALIC) &&
+                            ((style & ITALIC) == ITALIC)) {
+                        found = true;
+                    } else if (((decorations & PLAIN) == PLAIN) &&
+                            ((style & PLAIN) == PLAIN)) {
+                        found = true;
+                    }
+                    // symbol type fonts don't have an associated style, so
+                    // no point trying to match  them based on style.
+                    else if (baseName.contains("wingdings") ||
                             baseName.contains("zapfdingbats") ||
                             baseName.contains("dingbats") ||
-                            baseName.contains("symbol"));
+                            baseName.contains("symbol")) {
+                        found = true;
+                    }
 
                     if (found) {
                         if (logger.isLoggable(Level.FINER)) {
@@ -843,31 +861,6 @@ public class FontManager {
             }
         }
         return font;
-    }
-
-    private static boolean isFound(int decorations, int style, boolean baseName) {
-        boolean found = false;
-        // ignore this font, as the cid mapping are not correct, or ther is
-        // just look and feel issues with them.
-        if (((decorations & BOLD_ITALIC) == BOLD_ITALIC) &&
-                ((style & BOLD_ITALIC) == BOLD_ITALIC)) {
-            found = true;
-        } else if (((decorations & BOLD) == BOLD) &&
-                ((style & BOLD) == BOLD)) {
-            found = true;
-        } else if (((decorations & ITALIC) == ITALIC) &&
-                ((style & ITALIC) == ITALIC)) {
-            found = true;
-        } else if (((decorations & PLAIN) == PLAIN) &&
-                ((style & PLAIN) == PLAIN)) {
-            found = true;
-        }
-        // symbol type fonts don't have an associated style, so
-        // no point trying to match  them based on style.
-        else if (baseName) {
-            found = true;
-        }
-        return found;
     }
 
     /**
@@ -1136,9 +1129,29 @@ public class FontManager {
                 }
                 if (name.contains(familyName) ||
                         fontName.toLowerCase().contains(baseName)) {
-                    boolean found = isFound(decorations, style, baseName.contains("wingdings") ||
+                    boolean found = false;
+                    // ignore this font, as the cid mapping are not correct, or ther is
+                    // just look and feel issues with them.
+                    if (((decorations & BOLD_ITALIC) == BOLD_ITALIC) &&
+                            ((style & BOLD_ITALIC) == BOLD_ITALIC)) {
+                        found = true;
+                    } else if (((decorations & BOLD) == BOLD) &&
+                            ((style & BOLD) == BOLD)) {
+                        found = true;
+                    } else if (((decorations & ITALIC) == ITALIC) &&
+                            ((style & ITALIC) == ITALIC)) {
+                        found = true;
+                    } else if (((decorations & PLAIN) == PLAIN) &&
+                            ((style & PLAIN) == PLAIN)) {
+                        found = true;
+                    }
+                    // symbol type fonts don't have an associated style, so
+                    // no point trying to match  them based on style.
+                    else if (baseName.contains("wingdings") ||
                             baseName.contains("zapfdingbats") ||
-                            baseName.contains("symbol"));
+                            baseName.contains("symbol")) {
+                        found = true;
+                    }
 
                     if (found) {
                         if (logger.isLoggable(Level.FINER)) {
