@@ -813,7 +813,6 @@ public class FontManager {
                 fontData = fontList.get(i);
                 baseName = (String) fontData[FONT_NAME];
                 familyName = ((String) fontData[FONT_FAMILY]).replaceAll("(?i)(psmt|ps|mt)$", "");
-//                familyName = (String) fontData[FONT_FAMILY];
                 path = (String) fontData[FONT_PATH];
                 if (logger.isLoggable(Level.FINEST)) {
                     logger.finest(baseName + " : " + familyName + "  : " + name);
