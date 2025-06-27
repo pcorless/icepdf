@@ -37,7 +37,7 @@ import java.util.prefs.Preferences;
  * more fonts which is extremely important on Linux systems.</p>
  * <p>It is possible to specify other directories to search for fonts via the
  * readSystemFonts methods extraFontPaths parameter {@link #readSystemFonts}.
- * Reading all of an operating systems font's can be time consuming. To help
+ * Reading all of an operating systems font's can be time-consuming. To help
  * speed up this process the method getFontProperties exports font data via a
  * Properties object.  The font Properties object can then be saved to disk or
  * be read back into the FontManager via the setFontProperties method.  </p>
@@ -199,7 +199,7 @@ public class FontManager {
     private static final int FONT_PATH = 3;
 
     /**
-     * Mutable list of font names that are excluded from font substitution.
+     * Mutable list of font names that are excluded from font font substitution.
      */
     public static final List<String> BASE_NAME_EXCLUSION_LIST = Arrays.asList(
             "opensymbol",
@@ -217,14 +217,14 @@ public class FontManager {
 
     //        "HEB____.TTF"
     /**
-     * Mutable list of font file names that are excluded from font substitution. Font names must also
+     * Mutable list of font file names that are excluded from font font substitution. Font names must also
      * include the file extension.
      */
     public static final List<String> FONT_FILE_NAME_EXCLUSION_LIST = List.of();
 
     /**
      * Change the base font name from lucidasans which is a Java Physical Font
-     * name.  The name should be changed to one of Java's logical font names:
+     * name.  The name should be change to one of Java's logical font names:
      * Dialog,  DialogInput, Monospaced, Serif, SansSerif.  The closest logical
      * name that match LucidaSans is SansSerif.
      */
@@ -259,7 +259,7 @@ public class FontManager {
      * @return instance of the singleton fontManager.
      */
     public FontManager initialize() {
-        if (fontList == null || fontList.isEmpty()) {
+        if (fontList == null || fontList.size() == 0) {
             readSystemFonts(null);
         }
         return fontManager;
@@ -334,7 +334,7 @@ public class FontManager {
                 if (name != null && family != null && path != null) {
                     // check exclusion list
                     fontProperty = new Object[]{name, family, decorations, path};
-                    if (notInExclusionLists(fontProperty)) {
+                    if (!checkExclusionLists(fontProperty)) {
                         fontList.add(new Object[]{name, family, decorations, path});
                     }
                 } else {
@@ -411,7 +411,7 @@ public class FontManager {
         }
 
         // check to make sure we have at least a few fonts.
-        if (fontDirectories.isEmpty()) {
+        if (fontDirectories.size() == 0) {
             // fall back to at least a few fonts.
             logger.finer("No fonts specified or detected falling back to JAVA font paths.");
             fontDirectories.add(JAVA_FONT_PATH);
@@ -482,7 +482,7 @@ public class FontManager {
                     FontUtil.normalizeString(font.getFamily()), // family name
                     guessFontStyle(fontName), // weight and decorations, mainly bold,italic
                     fontPath};
-            if (notInExclusionLists(fontProperty)) {
+            if (!checkExclusionLists(fontProperty)) {
                 fontList.add(fontProperty);  // path to font on OS
             }
             if (logger.isLoggable(Level.FINER)) {
@@ -667,7 +667,7 @@ public class FontManager {
                 fontJarList.add(new Object[]{font.getName().toLowerCase(), // original PS name
                         FontUtil.normalizeString(font.getFamily()), // family name
                         guessFontStyle(fontName), // weight and decorations, mainly bold,italic
-                        resourcePath != null ? resourcePath.getPath() : ""});  // path to font on OS
+                        resourcePath.toString()});  // path to font on OS
                 if (logger.isLoggable(Level.FINER)) {
                     logger.finer("Adding system font: " + font.getName() + " " + resourcePath);
                 }
@@ -743,7 +743,7 @@ public class FontManager {
 
         // if all else fails return first font in fontList with matching style,
         // this should never happen, but just in case.
-        if (!fontList.isEmpty()) {
+        if (fontList.size() > 0) {
             Object[] fontData;
             boolean found = false;
             int decorations = guessFontStyle(name);
@@ -770,15 +770,12 @@ public class FontManager {
                     break;
                 }
             }
-
-            // work case scenario, we can't find any logical match and we throw a dart ant grab the first font
             if (!found) {
                 fontData = fontList.get(0);
                 font = buildFont((String) fontData[3]);
             }
             if (logger.isLoggable(Level.FINE)) {
-                logger.fine("Font Substitution: Found failed " + name + " " + (font != null ? font.getName() :
-                        "null font"));
+                logger.fine("Font Substitution: Found failed " + name + " " + font.getName());
             }
         }
         if (font == null) {
@@ -815,15 +812,16 @@ public class FontManager {
             for (int i = fontList.size() - 1; i >= 0; i--) {
                 fontData = fontList.get(i);
                 baseName = (String) fontData[FONT_NAME];
-                familyName = (String) fontData[FONT_FAMILY];
+                familyName = ((String) fontData[FONT_FAMILY]).replaceAll("(?i)(psmt|ps|mt)$", "");
+//                familyName = (String) fontData[FONT_FAMILY];
                 path = (String) fontData[FONT_PATH];
                 if (logger.isLoggable(Level.FINEST)) {
                     logger.finest(baseName + " : " + familyName + "  : " + name);
                 }
-                if (fontName.toLowerCase().contains(baseName) ||
-                        name.contains(familyName) || familyName.contains(name)) {
+                if (fontName.toLowerCase().contains(baseName) || name.equals(familyName)) {
                     style = (Integer) fontData[2];
                     boolean found = false;
+                    // ignore this font, as the cid mapping are not correct, or ther is
                     // just look and feel issues with them.
                     if (((decorations & BOLD_ITALIC) == BOLD_ITALIC) &&
                             ((style & BOLD_ITALIC) == BOLD_ITALIC)) {
@@ -1240,26 +1238,26 @@ public class FontManager {
         return style;
     }
 
-    private static boolean notInExclusionLists(Object[] fontData) {
+    private static boolean checkExclusionLists(Object[] fontData) {
         // check against know font base names that cause problems
         String baseName = (String) fontData[FONT_NAME];
-        if (BASE_NAME_EXCLUSION_LIST != null && !BASE_NAME_EXCLUSION_LIST.isEmpty()) {
+        if (BASE_NAME_EXCLUSION_LIST != null && BASE_NAME_EXCLUSION_LIST.size() > 0) {
             for (String fontName : BASE_NAME_EXCLUSION_LIST) {
                 if (fontName != null && fontName.equals(baseName)) {
-                    return false;
+                    return true;
                 }
             }
         }
         // check against actual font names as a worst case scenario.
         String fontFileName = (String) fontData[FONT_PATH];
-        if (FONT_FILE_NAME_EXCLUSION_LIST != null && !FONT_FILE_NAME_EXCLUSION_LIST.isEmpty()) {
+        if (FONT_FILE_NAME_EXCLUSION_LIST != null && FONT_FILE_NAME_EXCLUSION_LIST.size() > 0) {
             for (String fontPath : FONT_FILE_NAME_EXCLUSION_LIST) {
                 if (fontFileName != null && fontFileName.endsWith(fontPath)) {
-                    return false;
+                    return true;
                 }
             }
         }
-        return true;
+        return false;
     }
 
     /**
