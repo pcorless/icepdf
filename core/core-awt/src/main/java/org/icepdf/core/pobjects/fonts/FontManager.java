@@ -37,7 +37,7 @@ import java.util.prefs.Preferences;
  * more fonts which is extremely important on Linux systems.</p>
  * <p>It is possible to specify other directories to search for fonts via the
  * readSystemFonts methods extraFontPaths parameter {@link #readSystemFonts}.
- * Reading all of an operating systems font's can be time consuming. To help
+ * Reading all of an operating systems font's can be time-consuming. To help
  * speed up this process the method getFontProperties exports font data via a
  * Properties object.  The font Properties object can then be saved to disk or
  * be read back into the FontManager via the setFontProperties method.  </p>
@@ -68,19 +68,29 @@ public class FontManager {
                     {"Bookman-Light", "URWBookmanL-Ligh", "Arial"},
                     {"Bookman-LightItalic", "URWBookmanL-LighItal", "Arial"},
                     {"Courier", "NimbusMonL-Regu", "Nimbus Mono L", "CourierNew", "CourierNewPSMT"},
-                    {"Courier-Oblique", "NimbusMonL-ReguObli", "Nimbus Mono L", "Courier,Italic", "CourierNew-Italic", "CourierNew,Italic", "CourierNewPS-ItalicMT"},
-                    {"Courier-Bold", "NimbusMonL-Bold", "Nimbus Mono L", "Courier,Bold", "CourierNew,Bold", "CourierNew-Bold", "CourierNewPS-BoldMT"},
-                    {"Courier-BoldOblique", "NimbusMonL-BoldObli", "Nimbus Mono L", "Courier,BoldItalic", "CourierNew-BoldItalic", "CourierNew,BoldItalic", "CourierNewPS-BoldItalicMT"},
+                    {"Courier-Oblique", "NimbusMonL-ReguObli", "Nimbus Mono L", "Courier,Italic", "CourierNew-Italic"
+                            , "CourierNew,Italic", "CourierNewPS-ItalicMT"},
+                    {"Courier-Bold", "NimbusMonL-Bold", "Nimbus Mono L", "Courier,Bold", "CourierNew,Bold",
+                            "CourierNew-Bold", "CourierNewPS-BoldMT"},
+                    {"Courier-BoldOblique", "NimbusMonL-BoldObli", "Nimbus Mono L", "Courier,BoldItalic", "CourierNew" +
+                            "-BoldItalic", "CourierNew,BoldItalic", "CourierNewPS-BoldItalicMT"},
                     {"AvantGarde-Book", "URWGothicL-Book", "Arial"},
                     {"AvantGarde-BookOblique", "URWGothicL-BookObli", "Arial"},
                     {"AvantGarde-Demi", "URWGothicL-Demi", "Arial"},
                     {"AvantGarde-DemiOblique", "URWGothicL-DemiObli", "Arial"},
                     {"Helvetica", "Helvetica", "Arial", "ArialMT", "NimbusSanL-Regu", "Nimbus Sans L"},
-                    {"Helvetica-Oblique", "NimbusSanL-ReguItal", "Nimbus Sans L", "Helvetica,Italic", "Helvetica-Italic", "Arial,Italic", "Arial-Italic", "Arial-ItalicMT"},
-                    {"Helvetica-Bold", "Helvetica,Bold", "Arial,Bold", "Arial-Bold", "Arial-BoldMT", "NimbusSanL-Bold", "Nimbus Sans L"},
-                    {"Helvetica-BoldOblique", "NimbusSanL-BoldItal", "Helvetica-BlackOblique", "Nimbus Sans L", "Helvetica,BoldItalic", "Helvetica-BoldItalic", "Arial,BoldItalic", "Arial-BoldItalic", "Arial-BoldItalicMT"},
-                    {"Helvetica-Black", "Helvetica,Bold", "Arial,Bold", "Arial-Bold", "Arial-BoldMT", "NimbusSanL-Bold", "Nimbus Sans L"},
-                    {"Helvetica-BlackOblique", "NimbusSanL-BoldItal", "Helvetica-BlackOblique", "Nimbus Sans L", "Helvetica,BoldItalic", "Helvetica-BoldItalic", "Arial,BoldItalic", "Arial-BoldItalic", "Arial-BoldItalicMT"},
+                    {"Helvetica-Oblique", "NimbusSanL-ReguItal", "Nimbus Sans L", "Helvetica,Italic", "Helvetica" +
+                            "-Italic", "Arial,Italic", "Arial-Italic", "Arial-ItalicMT"},
+                    {"Helvetica-Bold", "Helvetica,Bold", "Arial,Bold", "Arial-Bold", "Arial-BoldMT", "NimbusSanL-Bold"
+                            , "Nimbus Sans L"},
+                    {"Helvetica-BoldOblique", "NimbusSanL-BoldItal", "Helvetica-BlackOblique", "Nimbus Sans L",
+                            "Helvetica,BoldItalic", "Helvetica-BoldItalic", "Arial,BoldItalic", "Arial-BoldItalic",
+                            "Arial-BoldItalicMT"},
+                    {"Helvetica-Black", "Helvetica,Bold", "Arial,Bold", "Arial-Bold", "Arial-BoldMT", "NimbusSanL" +
+                            "-Bold", "Nimbus Sans L"},
+                    {"Helvetica-BlackOblique", "NimbusSanL-BoldItal", "Helvetica-BlackOblique", "Nimbus Sans L",
+                            "Helvetica,BoldItalic", "Helvetica-BoldItalic", "Arial,BoldItalic", "Arial-BoldItalic",
+                            "Arial-BoldItalicMT"},
                     {"Helvetica-Narrow", "NimbusSanL-ReguCond", "Nimbus Sans L"},
                     {"Helvetica-Narrow-Oblique", "NimbusSanL-ReguCondItal", "Nimbus Sans L"},
                     {"Helvetica-Narrow-Bold", "NimbusSanL-BoldCond", "Nimbus Sans L"},
@@ -97,10 +107,14 @@ public class FontManager {
                     {"NewCenturySchlbk-Italic", "CenturySchL-Ital", "Arial"},
                     {"NewCenturySchlbk-Bold", "CenturySchL-Bold", "Arial"},
                     {"NewCenturySchlbk-BoldItalic", "CenturySchL-BoldItal", "Arial"},
-                    {"Times-Roman", "NimbusRomNo9L-Regu", "Nimbus Roman No9 L", "TimesNewRoman", "TimesNewRomanPSMT", "TimesNewRomanPS"},
-                    {"Times-Italic", "NimbusRomNo9L-ReguItal", "Nimbus Roman No9 L", "TimesNewRoman,Italic", "TimesNewRoman-Italic", "TimesNewRomanPS-Italic", "TimesNewRomanPS-ItalicMT"},
-                    {"Times-Bold", "NimbusRomNo9L-Medi", "Nimbus Roman No9 L", "TimesNewRoman,Bold", "TimesNewRoman-Bold", "TimesNewRomanPS-Bold", "TimesNewRomanPS-BoldMT"},
-                    {"Times-BoldItalic", "NimbusRomNo9L-MediItal", "Nimbus Roman No9 L", "TimesNewRoman,BoldItalic", "TimesNewRoman-BoldItalic", "TimesNewRomanPS-BoldItalic", "TimesNewRomanPS-BoldItalicMT"},
+                    {"Times-Roman", "NimbusRomNo9L-Regu", "Nimbus Roman No9 L", "TimesNewRoman", "TimesNewRomanPSMT",
+                            "TimesNewRomanPS"},
+                    {"Times-Italic", "NimbusRomNo9L-ReguItal", "Nimbus Roman No9 L", "TimesNewRoman,Italic",
+                            "TimesNewRoman-Italic", "TimesNewRomanPS-Italic", "TimesNewRomanPS-ItalicMT"},
+                    {"Times-Bold", "NimbusRomNo9L-Medi", "Nimbus Roman No9 L", "TimesNewRoman,Bold", "TimesNewRoman" +
+                            "-Bold", "TimesNewRomanPS-Bold", "TimesNewRomanPS-BoldMT"},
+                    {"Times-BoldItalic", "NimbusRomNo9L-MediItal", "Nimbus Roman No9 L", "TimesNewRoman,BoldItalic",
+                            "TimesNewRoman-BoldItalic", "TimesNewRomanPS-BoldItalic", "TimesNewRomanPS-BoldItalicMT"},
                     {"Symbol", "StandardSymL", "Standard Symbols L"},
                     {"ZapfChancery-MediumItalic", "URWChanceryL-MediItal", "Arial"},
                     {"ZapfDingbats", "Dingbats", "Zapf-Dingbats"}
@@ -191,11 +205,12 @@ public class FontManager {
             "opensymbol",
             "starsymbol",
             "symbolmt",
+            "notosanssymbols",
             "arial-black",
             "arial-blackitalic",
             "new",
             // mapping issue with standard ascii, not sure why, TimesNewRomanPSMT is ok.
-            "timesnewromanps",
+//            "timesnewromanps",
             // doesn't seem to the correct cid mapping otf version anyways.
             "kozminpro-regular"
     );
@@ -344,7 +359,8 @@ public class FontManager {
     }
 
     /**
-     * <p>Reads font from the specified array of file paths only, no .  This font data is used to substitute fonts which are not
+     * <p>Reads font from the specified array of file paths only, no .  This font data is used to substitute fonts
+     * which are not
      * embedded inside a PDF document.</p>
      *
      * @param extraFontPaths array String object where each entry represents
@@ -585,7 +601,7 @@ public class FontManager {
             fontList = new ArrayList<>(150);
         }
 
-        FontFile font = null;
+        FontFile font;
         if (list != null) {
             // search for know list of fonts
             for (int i = list.length - 1; i >= 0; i--) {
@@ -796,7 +812,7 @@ public class FontManager {
             for (int i = fontList.size() - 1; i >= 0; i--) {
                 fontData = fontList.get(i);
                 baseName = (String) fontData[FONT_NAME];
-                familyName = (String) fontData[FONT_FAMILY];
+                familyName = ((String) fontData[FONT_FAMILY]).replaceAll("(?i)(psmt|ps|mt)$", "");
                 path = (String) fontData[FONT_PATH];
                 if (logger.isLoggable(Level.FINEST)) {
                     logger.finest(baseName + " : " + familyName + "  : " + name);

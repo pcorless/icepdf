@@ -131,21 +131,14 @@ public class FontUtil {
     }
 
     /**
-     * Utility method for normailing strings, to lowercase and remove any spaces.
+     * Utility method for normalizing strings, to lowercase and remove any spaces.
      *
      * @param name base name of font
      * @return normalized copy of string.
      */
     public static String normalizeString(String name) {
         name = guessFamily(name);
-        StringBuilder normalized = new StringBuilder(name.toLowerCase());
-        for (int k = normalized.length() - 1; k >= 0; k--) {
-            if (normalized.charAt(k) == 32) {
-                normalized.deleteCharAt(k);
-                k--;
-            }
-        }
-        return normalized.toString();
+        return name.toLowerCase().replaceAll("\\s+", "");
     }
 
 }

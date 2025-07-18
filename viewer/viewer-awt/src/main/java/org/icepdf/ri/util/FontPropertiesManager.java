@@ -128,6 +128,7 @@ public class FontPropertiesManager {
     public void clearProperties() {
         try {
             prefs.clear();
+            fontManager.clearFontList();
         } catch (BackingStoreException e) {
             if (logger.isLoggable(Level.WARNING)) {
                 logger.log(Level.WARNING, "Error reading system paths:", e);
