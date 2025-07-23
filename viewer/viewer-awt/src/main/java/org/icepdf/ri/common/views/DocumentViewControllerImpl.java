@@ -27,6 +27,7 @@ import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.signing.BasicSignatureAppearanceCallback;
 import org.icepdf.ri.common.views.destinations.DestinationComponent;
 import org.icepdf.ri.images.Images;
 
@@ -361,7 +362,12 @@ public class DocumentViewControllerImpl
      * @return assigned callback
      */
     public SignatureAppearanceCallback getSignatureAppearanceCallback() {
-        return signatureAppearanceCallback;
+        if (signatureAppearanceCallback != null) {
+            return signatureAppearanceCallback;
+        } else {
+            // component will use the default implementation
+            return new BasicSignatureAppearanceCallback();
+        }
     }
 
     /**
