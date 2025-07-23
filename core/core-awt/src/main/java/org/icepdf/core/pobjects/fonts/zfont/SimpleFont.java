@@ -6,7 +6,7 @@ import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.AFM;
 import org.icepdf.core.pobjects.fonts.FontManager;
-import org.icepdf.core.pobjects.fonts.zfont.cmap.CMap;
+import org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory;
 import org.icepdf.core.util.FontUtil;
 import org.icepdf.core.util.Library;
 
@@ -18,7 +18,7 @@ import java.util.logging.Logger;
 
 public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
 
-    private static final Logger logger =
+    protected static final Logger logger =
             Logger.getLogger(SimpleFont.class.toString());
 
     // get list of all available fonts.
@@ -113,7 +113,7 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
             if (encoding != null) {
                 toUnicodeCMap = GlyphList.guessToUnicode(encoding);
             } else {
-                toUnicodeCMap = CMap.IDENTITY;
+                toUnicodeCMap = CMapFactory.getPredefinedCMap(CMapFactory.IDENTITY_H_NAME);
             }
         }
         font = font.deriveFont(encoding, toUnicodeCMap);
@@ -199,8 +199,7 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
         if (objectUnicode instanceof Stream) {
             Stream cMapStream = (Stream) objectUnicode;
             try {
-                toUnicodeCMap = new CMap(cMapStream);
-                toUnicodeCMap.init();
+                toUnicodeCMap = CMapFactory.parseEmbeddedCMap(cMapStream);
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Error reading CMap file.", e);
             }
@@ -208,12 +207,12 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
         else if (objectUnicode instanceof Name) {
             Name unicodeName = (Name) objectUnicode;
             logger.warning("found unicodeName " + unicodeName);
-            if (CMap.IDENTITY_NAME.equals(unicodeName)) {
-                toUnicodeCMap = CMap.IDENTITY;
-            } else if (CMap.IDENTITY_V_NAME.equals(unicodeName)) {
-                toUnicodeCMap = CMap.IDENTITY_V;
-            } else if (CMap.IDENTITY_H_NAME.equals(unicodeName)) {
-                toUnicodeCMap = CMap.IDENTITY_H;
+            if (CMapFactory.IDENTITY_NAME.equals(unicodeName)) {
+                toUnicodeCMap = CMapFactory.getPredefinedCMap(CMapFactory.IDENTITY_H_NAME);
+            } else if (CMapFactory.IDENTITY_V_NAME.equals(unicodeName)) {
+                toUnicodeCMap = CMapFactory.getPredefinedCMap(CMapFactory.IDENTITY_V_NAME);
+            } else if (CMapFactory.IDENTITY_H_NAME.equals(unicodeName)) {
+                toUnicodeCMap = CMapFactory.getPredefinedCMap(CMapFactory.IDENTITY_H_NAME);
             }
         }
     }

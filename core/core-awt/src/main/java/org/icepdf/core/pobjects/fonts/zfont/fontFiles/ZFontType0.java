@@ -2,8 +2,8 @@ package org.icepdf.core.pobjects.fonts.zfont.fontFiles;
 
 import org.apache.fontbox.FontBoxFont;
 import org.apache.fontbox.cff.*;
+import org.apache.fontbox.cmap.CMap;
 import org.icepdf.core.pobjects.Stream;
-import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
 
@@ -175,16 +175,16 @@ public class ZFontType0 extends ZSimpleFont {
 
     @Override
     public boolean canDisplay(char ech) {
-//        try {
-//            if (cidFont != null) {
-//                return cidFont.hasGlyph("\\" + ech);
-//            } else {
-//                return t1Font.hasGlyph(String.valueOf(ech));
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-        return true;
+        if (widths != null && ech < widths.length) {
+            float width = widths[ech];
+            return width >= 0.0f;
+        }
+        // probably invalid widths, but we can likely display the character
+        else if (widths != null && widths.length < 10) {
+            return true;
+        }
+        // if we have no widths then we can likely display the character
+        else return widths == null;
     }
 
     @Override

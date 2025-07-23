@@ -132,7 +132,9 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
                 annotation.getFontName(),
                 (int) (annotation.getFontSize() * documentViewModel.getViewZoom()));
 
-        freeTextPane.setFont(fontFile);
+        if (fontFile != null) {
+            freeTextPane.setFont(fontFile);
+        }
         freeTextPane.setForeground(annotation.getFontColor());
 
         if (annotation.isFillType()) {

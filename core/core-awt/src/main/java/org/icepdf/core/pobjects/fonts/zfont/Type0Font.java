@@ -1,12 +1,16 @@
 package org.icepdf.core.pobjects.fonts.zfont;
 
+import org.apache.fontbox.cmap.CMap;
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Stream;
-import org.icepdf.core.pobjects.fonts.zfont.cmap.CMap;
+import org.icepdf.core.pobjects.fonts.FontDescriptor;
+import org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory;
+import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType2;
 import org.icepdf.core.util.Library;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -35,10 +39,10 @@ public class Type0Font extends SimpleFont {
             return;
         }
 
-        parseDescendantFont();
         findFontIfNotEmbedded();
         parseToUnicode();
         parseEncoding();
+        parseDescendantFont();
 
         inited = true;
     }
@@ -46,19 +50,26 @@ public class Type0Font extends SimpleFont {
     protected void parseEncoding() {
         Name name = library.getName(entries, ENCODING_KEY);
         if (name != null) {
-            cMap = CMap.getInstance(name);
-            Encoding encoding = Encoding.getInstance((name).getName());
-            font = font.deriveFont(encoding, toUnicodeCMap);
+            cMap = CMapFactory.getPredefinedCMap(name);
+            encoding = Encoding.getInstance((name).getName());
+            font = font.deriveFont(encoding, toUnicodeCMap != null ? toUnicodeCMap : font.getToUnicode());
             return;
         }
         Object object = library.getObject(entries, ENCODING_KEY);
         if (object instanceof Stream) {
-            Stream gidMap = (Stream) object;
-            Name cmapName = library.getName(gidMap.getEntries(), new Name("CMapName"));
-            // update font with oneByte information from the cmap, so far I've only
-            // scene this on a handful of CID font but fix encoding issue in each case.
-            if (cmapName.equals("OneByteIdentityH")) {
-                subTypeFormat = SIMPLE_FORMAT;
+            try {
+                Stream gidMap = (Stream) object;
+                Name cmapName = library.getName(gidMap.getEntries(), new Name("CMapName"));
+                // update font with oneByte information from the cmap, so far I've only
+                // scene this on a handful of CID font but fix encoding issue in each case.
+                if (cmapName.equals("OneByteIdentityH")) {
+                    subTypeFormat = SIMPLE_FORMAT;
+                }
+                // todo pull registry info CIDSystemInfo
+                cMap = CMapFactory.parseEmbeddedCMap(gidMap);
+                cMap.setName(cmapName.getName());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
             return;
         }
@@ -73,14 +84,26 @@ public class Type0Font extends SimpleFont {
                 Object descendantFontObject = descendantFonts.get(0);
                 if (descendantFontObject instanceof Reference) {
                     Reference descendantFontReference = (Reference) descendantFontObject;
-                    descendantFont = (CompositeFont) library.getObject(descendantFontReference);
-                } else if (descendantFontObject instanceof CompositeFont) {
+                    descendantFontObject = library.getObject(descendantFontReference);
+                }
+
+                if (descendantFontObject instanceof CompositeFont) {
                     descendantFont = (CompositeFont) descendantFontObject;
+                }
+                // strange malformed PDFe where the descendant font is a font descriptor,
+                else if (descendantFontObject instanceof FontDescriptor) {
+                    fontDescriptor = (FontDescriptor) descendantFontObject;
+                    parseFontDescriptor();
                 }
 
                 if (descendantFont != null) {
                     descendantFont.init();
                     font = descendantFont.getFont();
+                    if (font instanceof ZFontType2) {
+                        font = ((ZFontType2) font).deriveFont(encoding, cMap, toUnicodeCMap);
+                    } else {
+                        font = font.deriveFont(encoding, toUnicodeCMap);
+                    }
                     isFontSubstitution = descendantFont.isFontSubstitution() && font != null;
                 }
             }
