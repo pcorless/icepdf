@@ -1,7 +1,10 @@
-package org.icepdf.core.pobjects.acroform;
+package org.icepdf.signing;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDate;
+import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
+import org.icepdf.core.pobjects.acroform.InteractiveForm;
+import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureType;
 import org.icepdf.core.pobjects.acroform.signature.handlers.Pkcs12SignerHandler;
 import org.icepdf.core.pobjects.acroform.signature.handlers.SimplePasswordCallbackHandler;
