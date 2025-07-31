@@ -3114,7 +3114,9 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         documentSearchController.dispose();
 
         // clear outlines controller
-        outlinesController.dispose();
+        if (outlinesController != null) {
+            outlinesController.dispose();
+        }
 
         // free the document
         if (document != null) {
