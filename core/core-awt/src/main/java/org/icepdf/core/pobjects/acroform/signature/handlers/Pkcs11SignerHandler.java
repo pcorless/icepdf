@@ -67,6 +67,17 @@ public class Pkcs11SignerHandler extends SignerHandler {
     }
 
     @Override
+    public X509Certificate getCertificate() throws KeyStoreException {
+        if (keystore == null) {
+            buildKeyStore();
+        }
+        if (certAlias == null) {
+            certAlias = getAliasByCertificateSerialNumber(keystore, certSerial);
+        }
+        return super.getCertificate();
+    }
+
+    @Override
     protected PrivateKey getPrivateKey() throws KeyStoreException, UnrecoverableKeyException,
             NoSuchAlgorithmException {
         logger.log(Level.INFO, "search for");
