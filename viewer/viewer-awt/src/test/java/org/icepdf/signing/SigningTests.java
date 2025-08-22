@@ -45,7 +45,7 @@ public class SigningTests {
     public void testXrefTableFullUpdate() {
 
         try {
-            String keystorePath = "/home/pcorless/dev/cert-test/openssl-keypair/certificate.pfx";
+            String keystorePath = "/signing/certificate.pfx";
             String password = "changeit";
             String certAlias = "senderKeyPair";
 
