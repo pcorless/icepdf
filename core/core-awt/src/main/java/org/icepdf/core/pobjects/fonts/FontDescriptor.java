@@ -311,7 +311,7 @@ public class FontDescriptor extends Dictionary {
         // catch everything, we can fall back to font substitution if a failure
         // occurs.
         catch (Exception e) {
-            logger.log(Level.WARNING, "Error Reading Embedded Font ", e);
+            logger.log(Level.WARNING, "Error Reading Embedded Font, falling back to substitution ", e);
             embeddedFontDamaged = true;
         }
 
