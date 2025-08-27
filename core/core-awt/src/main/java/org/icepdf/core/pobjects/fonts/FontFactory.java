@@ -25,6 +25,9 @@ import org.icepdf.core.util.Library;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Collections;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -51,6 +54,8 @@ public class FontFactory {
 
     // Singleton instance of class
     private static FontFactory fontFactory;
+
+    private static Map<String, FontFile> systemFontCache = Collections.synchronizedMap(new WeakHashMap<>(75));
 
     public static final Name FONT_SUBTYPE_TYPE_0 = new Name("Type0");
     public static final Name FONT_SUBTYPE_TYPE_1 = new Name("Type1");
@@ -140,16 +145,21 @@ public class FontFactory {
     }
 
     public FontFile createFontFile(URL url, int fontType, String fontSubType) {
-        FontFile fontFile = null;
-        try (InputStream inputStream = url.openStream()) {
-            byte[] fontBytes = inputStream.readAllBytes();
-            if (FONT_TRUE_TYPE == fontType || FONT_OPEN_TYPE == fontType) {
-                fontFile = new ZFontTrueType(fontBytes, url);
-            } else if (FONT_TYPE_1 == fontType) {
-                fontFile = new ZFontType1(fontBytes, url);
+        FontFile fontFile = systemFontCache.get(url.toString());
+        if (fontFile == null) {
+            try (InputStream inputStream = url.openStream()) {
+                byte[] fontBytes = inputStream.readAllBytes();
+                if (FONT_TRUE_TYPE == fontType || FONT_OPEN_TYPE == fontType) {
+                    fontFile = new ZFontTrueType(fontBytes, url);
+                } else if (FONT_TYPE_1 == fontType) {
+                    fontFile = new ZFontType1(fontBytes, url);
+                }
+                if (fontFile != null) {
+                    systemFontCache.put(url.toString(), fontFile);
+                }
+            } catch (Exception e) {
+                logger.log(Level.FINE, e, () -> "Could not create instance of font file " + fontType);
             }
-        } catch (Exception e) {
-            logger.log(Level.FINE, e, () -> "Could not create instance of font file " + fontType);
         }
         return fontFile;
     }
