@@ -20,8 +20,8 @@ import java.awt.*;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.geom.AffineTransform;
-import java.util.List;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -94,6 +94,9 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     }
 
     public void dispose() {
+        if (pageImageCaptureTask != null && !pageImageCaptureTask.isDone()) {
+            pageImageCaptureTask.cancel(true);
+        }
         // remove annotation listeners.
         removeMouseMotionListener(currentToolHandler);
         removeMouseListener(currentToolHandler);
@@ -546,6 +549,9 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     }
 
     private void initializeAnnotationsComponent(Page page) {
+        // check to make sure we have a page and document,  this method can be called from the page init callback
+        // which is called from a worker thread so we need to be careful that the document hasn't been closed.
+        if (documentViewController.getDocumentViewModel() == null) return;
         List<Annotation> annotations = page.getAnnotations();
         AbstractPageViewComponent parent = this;
         if (documentViewController.getAnnotationCallback() != null) {
@@ -563,7 +569,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                 for (int i = 0; i < annotations.size(); i++) {
                     annotation = annotations.get(i);
                     // parser can sometimes return an empty array depending on the PDF syntax being used.
-                    if (annotation != null) {
+                    if (annotation != null && documentViewModel != null) {
                         final AbstractAnnotationComponent comp =
                                 AnnotationComponentFactory.buildAnnotationComponent(
                                         annotation, documentViewController, parent);
@@ -656,6 +662,9 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     }
 
     private void initializeDestinationComponents(Page page) {
+        // check to make sure we have a page and document,  this method can be called from the page init callback
+        // which is called from a worker thread so we need to be careful that the document hasn't been closed.
+        if (documentViewController.getDocumentViewModel() == null) return;
         if (page != null) {
             // make sure we have a name tree to try and paint
             Catalog catalog = documentViewController.getDocument().getCatalog();
