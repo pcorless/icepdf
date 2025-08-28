@@ -167,7 +167,7 @@ public class ZFontType1 extends ZSimpleFont {
 
     @Override
     public String getName() {
-        return type1Font.getName();
+        return type1Font != null ? type1Font.getName() : null;
     }
 
     private void calculateFontBbox() throws IOException {
