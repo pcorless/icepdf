@@ -51,7 +51,7 @@ public class TextWidgetComponent extends AbstractAnnotationComponent<TextWidgetA
                                final AbstractPageViewComponent pageViewComponent) {
         super(annotation, documentViewController, pageViewComponent);
 
-        if (!annotation.allowScreenOrPrintRenderingOrInteraction()) {
+        if (!(INTERACTIVE_ANNOTATIONS || annotation.allowScreenOrPrintRenderingOrInteraction())) {
             return;
         }
         this.setFocusable(true);

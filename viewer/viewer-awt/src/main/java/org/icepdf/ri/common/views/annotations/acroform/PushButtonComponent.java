@@ -10,15 +10,20 @@ import java.awt.event.KeyEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
+import static org.icepdf.core.util.SystemProperties.INTERACTIVE_ANNOTATIONS;
+
 public class PushButtonComponent extends AbstractButtonComponent implements PropertyChangeListener {
 
     public PushButtonComponent(ButtonWidgetAnnotation annotation, DocumentViewController documentViewController,
                                AbstractPageViewComponent pageViewComponent) {
         super(annotation, documentViewController, pageViewComponent);
 
-        ActionListener actionListener = actionEvent -> buttonActuated();
-        KeyStroke stroke = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0);
-        registerKeyboardAction(actionListener, stroke, JComponent.WHEN_FOCUSED);
+        if (INTERACTIVE_ANNOTATIONS &&
+                annotation.allowScreenOrPrintRenderingOrInteraction()) {
+            ActionListener actionListener = actionEvent -> buttonActuated();
+            KeyStroke stroke = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0);
+            registerKeyboardAction(actionListener, stroke, JComponent.WHEN_FOCUSED);
+        }
     }
 
     @Override

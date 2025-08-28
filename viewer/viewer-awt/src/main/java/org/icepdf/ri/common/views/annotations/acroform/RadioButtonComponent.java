@@ -16,15 +16,20 @@ import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import static org.icepdf.core.util.SystemProperties.INTERACTIVE_ANNOTATIONS;
+
 public class RadioButtonComponent extends AbstractButtonComponent implements PropertyChangeListener {
 
     public RadioButtonComponent(ButtonWidgetAnnotation annotation, DocumentViewController documentViewController,
                                 AbstractPageViewComponent pageViewComponent) {
         super(annotation, documentViewController, pageViewComponent);
 
-        ActionListener actionListener = actionEvent -> buttonActuated();
-        KeyStroke stroke = KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0);
-        registerKeyboardAction(actionListener, stroke, JComponent.WHEN_FOCUSED);
+        if (INTERACTIVE_ANNOTATIONS &&
+                annotation.allowScreenOrPrintRenderingOrInteraction()) {
+            ActionListener actionListener = actionEvent -> buttonActuated();
+            KeyStroke stroke = KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0);
+            registerKeyboardAction(actionListener, stroke, JComponent.WHEN_FOCUSED);
+        }
     }
 
     @Override
