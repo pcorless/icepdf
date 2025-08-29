@@ -46,6 +46,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     protected Map<Reference, AnnotationComponent> annotationToComponent;
     protected ArrayList<DestinationComponent> destinationComponents;
     private Set<SearchHitComponent> searchHitComponents = new HashSet<>();
+    private boolean alreadyDisposing = false;
 
     public PageViewComponentImpl(DocumentViewModel documentViewModel, PageTree pageTree,
                                  final int pageIndex, int width, int height) {
@@ -94,6 +95,9 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     }
 
     public void dispose() {
+        synchronized (this) {
+            alreadyDisposing = true;
+        }
         if (pageImageCaptureTask != null && !pageImageCaptureTask.isDone()) {
             pageImageCaptureTask.cancel(true);
         }
@@ -549,6 +553,16 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     }
 
     private void initializeAnnotationsComponent(Page page) {
+        synchronized (this) {
+            if (alreadyDisposing) {
+                logger.finer("page is already in disposing state");
+                return;
+            }
+            initializeAnnotationsComponentInternal(page);
+        }
+    }
+    
+    private void initializeAnnotationsComponentInternal(Page page) {
         // check to make sure we have a page and document,  this method can be called from the page init callback
         // which is called from a worker thread so we need to be careful that the document hasn't been closed.
         if (documentViewController.getDocumentViewModel() == null) return;
