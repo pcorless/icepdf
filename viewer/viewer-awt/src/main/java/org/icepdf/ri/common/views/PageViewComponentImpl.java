@@ -555,13 +555,12 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     private void initializeAnnotationsComponent(Page page) {
         synchronized (this) {
             if (alreadyDisposing) {
-                logger.finer("page is already in disposing state");
                 return;
             }
             initializeAnnotationsComponentInternal(page);
         }
     }
-    
+
     private void initializeAnnotationsComponentInternal(Page page) {
         // check to make sure we have a page and document,  this method can be called from the page init callback
         // which is called from a worker thread so we need to be careful that the document hasn't been closed.
@@ -680,22 +679,27 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         // which is called from a worker thread so we need to be careful that the document hasn't been closed.
         if (documentViewController.getDocumentViewModel() == null) return;
         if (page != null) {
-            // make sure we have a name tree to try and paint
-            Catalog catalog = documentViewController.getDocument().getCatalog();
-            if (catalog.getNames() != null && catalog.getNames().getDestsNameTree() != null) {
-                NameTree nameTree = catalog.getNames().getDestsNameTree();
-                ArrayList<Destination> destinations = nameTree.findDestinations(page.getPObjectReference());
-                AbstractPageViewComponent parent = this;
-                if (destinations != null && destinations.size() > 0) {
-                    destinationComponents = new ArrayList<>(destinations.size());
-                    // create the destination
-                    for (Destination dest : destinations) {
-                        DestinationComponent comp = new DestinationComponent(dest, documentViewController, this);
-                        parent.setLayer(comp, JLayeredPane.PALETTE_LAYER);
-                        parent.add(comp);
-                        destinationComponents.add(comp);
-                        comp.revalidate();
-                        comp.repaint();
+            synchronized (this) {
+                if (alreadyDisposing) {
+                    return;
+                }
+                // make sure we have a name tree to try and paint
+                Catalog catalog = documentViewController.getDocument().getCatalog();
+                if (catalog.getNames() != null && catalog.getNames().getDestsNameTree() != null) {
+                    NameTree nameTree = catalog.getNames().getDestsNameTree();
+                    ArrayList<Destination> destinations = nameTree.findDestinations(page.getPObjectReference());
+                    AbstractPageViewComponent parent = this;
+                    if (destinations != null && !destinations.isEmpty()) {
+                        destinationComponents = new ArrayList<>(destinations.size());
+                        // create the destination
+                        for (Destination dest : destinations) {
+                            DestinationComponent comp = new DestinationComponent(dest, documentViewController, this);
+                            parent.setLayer(comp, JLayeredPane.PALETTE_LAYER);
+                            parent.add(comp);
+                            destinationComponents.add(comp);
+                            comp.revalidate();
+                            comp.repaint();
+                        }
                     }
                 }
             }
