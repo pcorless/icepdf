@@ -427,6 +427,9 @@ public abstract class AbstractPageViewComponent
                     documentViewController);
             boolean isFirstProgressivePaint = false;
             try {
+                // be careful that the document hasn't been closed on awt thread.
+                if (documentViewController != null && documentViewController.getDocumentViewModel() == null)
+                    return null;
                 if (documentViewController != null) page.addPageProcessingListener(pageLoadingListener);
                 // page init, interruptible
                 page.init();
