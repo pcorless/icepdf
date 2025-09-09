@@ -256,18 +256,17 @@ public class FontManager {
      */
     private static final String baseFontName;
 
-    private static final Pattern fontAllowListPattern;
+    private Pattern fontAllowListPattern;
 
     static {
         baseFontName = Defs.property("org.icepdf.core.font.basefont", "lucidasans");
-
-        fontAllowListPattern = getFontAllowListPattern();
     }
 
     // Singleton instance of class
     private static FontManager fontManager;
 
     private FontManager() {
+        fontAllowListPattern = getFontAllowListPattern();
     }
 
     /**
