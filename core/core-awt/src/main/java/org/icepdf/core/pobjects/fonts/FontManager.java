@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
+import java.util.regex.Pattern;
 
 /**
  * <p>The <code>FontManager</code> class is responsible for finding available
@@ -48,6 +49,31 @@ public class FontManager {
 
     private static final Logger logger =
             Logger.getLogger(FontManager.class.toString());
+
+    /**
+     * You can set an allowListPattern by Setting the System Property "org.icepdf.core.pobjects.fonts
+     * .fontFileAllowListPattern":
+     * <pre><code>
+     * System.getProperties().put(FONT_FILE_ALLOW_LIST_PATTERN_PROPERTY, MOST_COMMON_FONTS_PATTERN);
+     * </code></pre>
+     */
+    public static final String FONT_FILE_ALLOW_LIST_PATTERN_PROPERTY =
+            "org.icepdf.core.pobjects.fonts.fontFileAllowListPattern";
+
+    /**
+     * Target of this Pattern is to get some system fonts, but not too many if memory is a topic. This
+     * Pattern has a positive list in the beginning as well as a negative list with the Unicode, to exclude
+     * some "huge" Unicode-Fonts.
+     * But of course this is just an example to get started with an allowList.
+     */
+    public static final String MOST_COMMON_FONTS_PATTERN =
+            "(?i)^.*?(Times New Roman|arial|Courier New|Helvetica)(?!.*?Unicode).*?";
+
+    /**
+     * Allow list pattern for font file names.  If the pattern is empty no filtering takes place.  The default
+     * is an empty string which means all fonts are loaded.
+     */
+    public static final String DEFAULT_FONT_FILE_ALLOW_LIST_PATTERN = "";
 
     // stores all font data
     private static List<Object[]> fontList;
@@ -230,6 +256,8 @@ public class FontManager {
      */
     private static final String baseFontName;
 
+    private Pattern fontAllowListPattern;
+
     static {
         baseFontName = Defs.property("org.icepdf.core.font.basefont", "lucidasans");
     }
@@ -237,6 +265,12 @@ public class FontManager {
     // Singleton instance of class
     private static FontManager fontManager;
 
+    /**
+     * VisibilityForTesting
+     */
+    FontManager() {
+        fontAllowListPattern = getFontAllowListPattern();
+    }
 
     /**
      * <p>Returns a static instance of the FontManager class.</p>
@@ -447,7 +481,7 @@ public class FontManager {
                     if (files != null) {
                         List<String> dirPaths = new ArrayList<>();
                         for (File file : files) {
-                            if (file.isFile()) {
+                            if (isFontFileAllowed(file)) {
                                 // load the font.
                                 evaluateFontForInsertion(file.getAbsolutePath());
                             } else if (file.isDirectory()) {
@@ -1257,6 +1291,33 @@ public class FontManager {
             }
         }
         return false;
+    }
+
+    private static Pattern getFontAllowListPattern() {
+        final Pattern fileAllowListPattern;
+        String patternString =
+                Defs.sysProperty(FONT_FILE_ALLOW_LIST_PATTERN_PROPERTY, DEFAULT_FONT_FILE_ALLOW_LIST_PATTERN);
+        fileAllowListPattern = Pattern.compile(patternString);
+        return fileAllowListPattern;
+    }
+
+    /**
+     * Check to see if the given file is allowed based on the current
+     * fontAllowListPattern.  If the pattern is empty all files are allowed.
+     *
+     * VisibilityForTesting
+     *
+     * @param file file to check
+     * @return true if the file is allowed, false otherwise.
+     */
+    boolean isFontFileAllowed(File file) {
+        if (!file.isFile()) {
+            return false;
+        }
+        if (fontAllowListPattern.pattern().isEmpty()) {
+            return true;
+        }
+        return fontAllowListPattern.matcher(file.getName()).matches();
     }
 
     /**
