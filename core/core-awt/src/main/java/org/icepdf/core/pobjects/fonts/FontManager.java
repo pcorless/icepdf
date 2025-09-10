@@ -61,7 +61,7 @@ public class FontManager {
             "org.icepdf.core.pobjects.fonts.fontFileAllowListPattern";
 
     /**
-     * Target of this Pattern is to get some system fonts, but not too much, if memory is a topic. This
+     * Target of this Pattern is to get some system fonts, but not too many if memory is a topic. This
      * Pattern has a positive list in the beginning as well as a negative list with the Unicode, to exclude
      * some "huge" Unicode-Fonts.
      * But of course this is just an example to get started with an allowList.
@@ -265,7 +265,10 @@ public class FontManager {
     // Singleton instance of class
     private static FontManager fontManager;
 
-    private FontManager() {
+    /**
+     * VisibilityForTesting
+     */
+    FontManager() {
         fontAllowListPattern = getFontAllowListPattern();
     }
 
@@ -1302,10 +1305,12 @@ public class FontManager {
      * Check to see if the given file is allowed based on the current
      * fontAllowListPattern.  If the pattern is empty all files are allowed.
      *
+     * VisibilityForTesting
+     *
      * @param file file to check
      * @return true if the file is allowed, false otherwise.
      */
-    private boolean isFontFileAllowed(File file) {
+    boolean isFontFileAllowed(File file) {
         if (!file.isFile()) {
             return false;
         }
