@@ -86,11 +86,14 @@ public class SignatureManager {
             for (SignatureWidgetAnnotation signatureWidget : signatureWidgets) {
                 List<SignatureReferenceDictionary> signatureReferenceDictionary =
                         signatureWidget.getSignatureDictionary().getReferences();
-                for (SignatureReferenceDictionary reference : signatureReferenceDictionary) {
-                    if (reference.getTransformMethod() == SignatureReferenceDictionary.TransformMethods.DocMDP) {
-                        return true;
+                if (signatureReferenceDictionary != null) {
+                    for (SignatureReferenceDictionary reference : signatureReferenceDictionary) {
+                        if (reference.getTransformMethod() == SignatureReferenceDictionary.TransformMethods.DocMDP) {
+                            return true;
+                        }
                     }
                 }
+
             }
         }
         return false;
