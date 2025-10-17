@@ -83,7 +83,9 @@ public class Indexer {
                                 (CrossReferenceStream) parser.getCrossReference(byteBuffer, xRefPosition);
                         xRefDictionary = crossReferenceStream.getDictionaryEntries();
                     } catch (ObjectStateException e) {
-                        logger.finer("Failed to get cross reference for offset: " + xRefPosition);
+                        logger.finer("Failed to get cross reference for offset, likely not a PDF File: " + xRefPosition);
+                        throw new IllegalStateException("Failed to get cross reference for offset, likely not a PDF " +
+                                "File: " + xRefPosition, e);
                     }
                 }
 
@@ -111,7 +113,7 @@ public class Indexer {
                 pos = objectStart;
             }
         }
-        // add entries to the cross reference.
+        // add entries to the cross-reference.
         return crossReferenceRoot;
     }
 
