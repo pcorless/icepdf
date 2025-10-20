@@ -46,7 +46,7 @@ public class Pkcs11SignerHandler extends SignerHandler {
     private static final Logger logger = Logger.getLogger(SimplePasswordCallbackHandler.class.getName());
 
     private final String providerConfig;
-    private final BigInteger certSerial;
+    private BigInteger certSerial;
 
     public Pkcs11SignerHandler(String providerConfig, BigInteger certSerial, PasswordCallbackHandler callbackHandler) {
         super(null, callbackHandler);
@@ -87,6 +87,10 @@ public class Pkcs11SignerHandler extends SignerHandler {
         return (PrivateKey) keystore.getKey(certAlias, null); // pulls password from callbackHandler
     }
 
+    public void setCertSerial(final BigInteger certSerial) {
+        this.certSerial = certSerial;
+    }
+
     private String getAliasByCertificateSerialNumber(KeyStore keyStore, BigInteger certSerial) throws KeyStoreException {
         Enumeration<String> aliases = keyStore.aliases();
         while (aliases.hasMoreElements()) {
@@ -100,5 +104,4 @@ public class Pkcs11SignerHandler extends SignerHandler {
         }
         throw new IllegalStateException("No certificate number " + certSerial.toString(16) + " in KeyStore.");
     }
-
 }

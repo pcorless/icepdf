@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureAppearanceCallback;
 import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureType;
+import org.icepdf.core.pobjects.acroform.signature.handlers.Pkcs11SignerHandler;
 import org.icepdf.core.pobjects.acroform.signature.handlers.SignerHandler;
 import org.icepdf.core.pobjects.acroform.signature.utils.SignatureUtilities;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
@@ -232,8 +233,13 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         }
         int row = certificateTable.convertRowIndexToModel(certificateTable.getSelectedRow());
         CertificateTableModel model = (CertificateTableModel) certificateTable.getModel();
+        final X509Certificate certificate = model.getCertificateAt(row);
         signerHandler.setCertAlias(model.getAliasAt(row));
-        setSelectedCertificate(model.getCertificateAt(row));
+        if (signerHandler instanceof Pkcs11SignerHandler) {
+            final Pkcs11SignerHandler handler = (Pkcs11SignerHandler) signerHandler;
+            handler.setCertSerial(certificate == null ? null : certificate.getSerialNumber());
+        }
+        setSelectedCertificate(certificate);
         buildAppearanceStream();
     }
 
