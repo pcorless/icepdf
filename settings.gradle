@@ -1,4 +1,5 @@
 include 'core:core-awt',
+        'core:core-fonts',
         'viewer:viewer-awt',
         'qa:viewer-jfx',
         'examples:annotation:callback',
