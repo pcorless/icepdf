@@ -50,6 +50,7 @@ public class XRefTableWriter extends BaseTableWriter {
                 writeZeroPaddedLong(entry.getReference().getGenerationNumber(), 5, output);
                 output.write(USED);
             }
+            output.write(SPACE);
             output.write(NEWLINE);
         }
         return subSectionLength;
