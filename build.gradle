@@ -89,5 +89,4 @@ dependencies {
     implementation project(':core:core-awt')
     implementation project(':core:core-fonts')
     implementation project(':viewer:viewer-awt')
-    implementation project(':viewer:viewer-awt')
 }

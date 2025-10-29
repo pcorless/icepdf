@@ -19,6 +19,7 @@ import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.FontUtil;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.updater.EmbeddedFontCache;
+import org.icepdf.fonts.util.EmbeddedFontUtil;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -71,7 +72,7 @@ public class ContentWriterUtils {
         fontDictionary.put(new Name("LastChar"), 255);
         fontDictionary.put(TO_UNICODE_KEY, IDENTITY_NAME);
         // double check we have an embedded font available for the font name
-        if (isEmbedFonts && FontUtil.isFontResourceAvailable() && FontUtil.isOtfFontMapped(fontName)) {
+        if (isEmbedFonts && EmbeddedFontUtil.isFontResourceAvailable() && EmbeddedFontUtil.isOtfFontMapped(fontName)) {
             // new font descriptor object
             Reference fontDescriptorReference = creatFontDescriptorDictionary(library, fontName);
             fontDictionary.put(FONT_DESCRIPTOR_KEY, fontDescriptorReference);
@@ -81,8 +82,6 @@ public class ContentWriterUtils {
     }
 
     public static Reference creatFontDescriptorDictionary(Library library, String fontName) {
-
-
         // check library for existing embedded font reference
         EmbeddedFontCache embeddedFontCache = library.getEmbeddedFontCache();
         Reference embeddedFontReference = embeddedFontCache.getFontReference(fontName);
@@ -105,7 +104,7 @@ public class ContentWriterUtils {
 
             // create font file stream
             Reference fontFileReference = stateManager.getNewReferenceNumber();
-            Stream fontFileStream = FontUtil.createFontFileStream(fontName);
+            Stream fontFileStream = FontUtil.createFontFileStream(library, fontName);
             fontFileStream.setPObjectReference(fontFileReference);
             stateManager.addChange(new PObject(fontFileStream, fontFileReference), true);
             fontDescriptorDictionary.put(new Name("FontFile2"), fontFileReference);

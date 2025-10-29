@@ -27,11 +27,6 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.github.pcorless.icepdf</groupId>
-                <artifactId>icepdf-fonts</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.junit</groupId>
                 <artifactId>junit-bom</artifactId>
                 <version>${junit.bom.version}</version>
