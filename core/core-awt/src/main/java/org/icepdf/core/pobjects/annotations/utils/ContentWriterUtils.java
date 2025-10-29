@@ -3,6 +3,7 @@ package org.icepdf.core.pobjects.annotations.utils;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AppearanceState;
+import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.pobjects.fonts.zfont.Encoding;
@@ -14,7 +15,10 @@ import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.pobjects.graphics.images.references.ImageContentWriterReference;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
+import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.FontUtil;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.updater.EmbeddedFontCache;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -28,7 +32,10 @@ import static org.icepdf.core.pobjects.Dictionary.SUBTYPE_KEY;
 import static org.icepdf.core.pobjects.Dictionary.TYPE_KEY;
 import static org.icepdf.core.pobjects.Stream.FILTER_DCT_DECODE;
 import static org.icepdf.core.pobjects.Stream.FILTER_KEY;
+import static org.icepdf.core.pobjects.fonts.Font.FONT_DESCRIPTOR_KEY;
 import static org.icepdf.core.pobjects.fonts.Font.SIMPLE_FORMAT;
+import static org.icepdf.core.pobjects.fonts.zfont.SimpleFont.TO_UNICODE_KEY;
+import static org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory.IDENTITY_NAME;
 import static org.icepdf.core.pobjects.graphics.images.ImageParams.*;
 
 /**
@@ -41,18 +48,76 @@ public class ContentWriterUtils {
 
     protected static final Name EMBEDDED_FONT_NAME = new Name("ice1");
 
-    public static DictionaryEntries createDefaultFontDictionary(String fontName) {
+    public static final boolean isEmbedFonts;
+
+    static {
+        // sets if file caching is enabled or disabled.
+        isEmbedFonts =
+                Defs.sysPropertyBoolean("org.icepdf.core.pobjects.annotations.embedFonts.enabled",
+                        true);
+    }
+
+    public static DictionaryEntries createDefaultFontDictionary(Library library, String fontName) {
         // create the font dictionary
         DictionaryEntries fontDictionary = new DictionaryEntries();
         fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.TYPE_KEY,
                 org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY);
         fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY, new Name("Type1"));
+        // todo probably need to pass in a new font name rather than ice1, but for now this works.
         fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.NAME_KEY, EMBEDDED_FONT_NAME);
         fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.BASEFONT_KEY, new Name(fontName));
         fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.ENCODING_KEY, new Name("WinAnsiEncoding"));
         fontDictionary.put(new Name("FirstChar"), 32);
         fontDictionary.put(new Name("LastChar"), 255);
+        fontDictionary.put(TO_UNICODE_KEY, IDENTITY_NAME);
+        // double check we have an embedded font available for the font name
+        if (isEmbedFonts && FontUtil.isFontResourceAvailable() && FontUtil.isOtfFontMapped(fontName)) {
+            // new font descriptor object
+            Reference fontDescriptorReference = creatFontDescriptorDictionary(library, fontName);
+            fontDictionary.put(FONT_DESCRIPTOR_KEY, fontDescriptorReference);
+        }
+
         return fontDictionary;
+    }
+
+    public static Reference creatFontDescriptorDictionary(Library library, String fontName) {
+
+
+        // check library for existing embedded font reference
+        EmbeddedFontCache embeddedFontCache = library.getEmbeddedFontCache();
+        Reference embeddedFontReference = embeddedFontCache.getFontReference(fontName);
+        if (embeddedFontReference != null) {
+            return embeddedFontReference;
+        } else {
+            StateManager stateManager = library.getStateManager();
+            DictionaryEntries fontDescriptorDictionary = new DictionaryEntries();
+            fontDescriptorDictionary.put(org.icepdf.core.pobjects.fonts.Font.TYPE_KEY,
+                    new Name("FontDescriptor"));
+            fontDescriptorDictionary.put(new Name("FontName"),
+                    fontName + EmbeddedFontCache.ICEPDF_EMBEDDED_FONT_SUFFIX);
+            fontDescriptorDictionary.put(new Name("Flags"), 4); // todo this needs to by dynamic for different styles
+//        fontDescriptorDictionary.put(new Name("FontBBox"), Arrays.asList(0, -200, 1000, 900));
+//        fontDescriptorDictionary.put(new Name("ItalicAngle"), 0);
+//        fontDescriptorDictionary.put(new Name("Ascent"), 800);
+//        fontDescriptorDictionary.put(new Name("Descent"), -200);
+//        fontDescriptorDictionary.put(new Name("CapHeight"), 700);
+//        fontDescriptorDictionary.put(new Name("StemV"), 80);
+
+            // create font file stream
+            Reference fontFileReference = stateManager.getNewReferenceNumber();
+            Stream fontFileStream = FontUtil.createFontFileStream(fontName);
+            fontFileStream.setPObjectReference(fontFileReference);
+            stateManager.addChange(new PObject(fontFileStream, fontFileReference), true);
+            fontDescriptorDictionary.put(new Name("FontFile2"), fontFileReference);
+
+            Reference fontDescriptorReference = stateManager.getNewReferenceNumber();
+            FontDescriptor fontDescriptor = new FontDescriptor(library, fontDescriptorDictionary);
+            fontDescriptor.setPObjectReference(fontDescriptorReference);
+            stateManager.addChange(new PObject(fontDescriptor, fontDescriptorReference), true);
+            // cache embedded font reference for later use.
+            embeddedFontCache.putFontReference(fontName, fontDescriptorReference);
+            return fontDescriptorReference;
+        }
     }
 
     public static DictionaryEntries createImageDictionary() {

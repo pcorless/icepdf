@@ -15,12 +15,22 @@
  */
 package org.icepdf.core.util;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
+import org.icepdf.core.pobjects.Stream;
+
+import java.io.InputStream;
+import java.util.Map;
+import java.util.logging.Logger;
+
 /**
  * Font utility contains a bunch of commonly used font utility methods.
  *
  * @since 3.1
  */
 public class FontUtil {
+
+    private static final Logger logger =
+            Logger.getLogger(FontUtil.class.toString());
 
     // awt font style lookup style tokens
     private static final String AWT_STYLE_BOLD_ITAL = "boldital";
@@ -35,6 +45,26 @@ public class FontUtil {
     private static final String STYLE_DEMI = "demi";
     private static final String STYLE_ITALIC = "italic";
     private static final String STYLE_BLACK = "black";
+
+    private static final Map<String, String> otfFontMapper = new java.util.HashMap<>();
+    private static final String OTF_FONT_PATH = "/org/icepdf/core/fonts/";
+
+    static {
+        otfFontMapper.put("Times-Roman", "NotoSerif-Regular");
+        otfFontMapper.put("Times-Bold", "NotoSerif-Bold");
+        otfFontMapper.put("Times-Italic ", "NotoSerif-Italic");
+        otfFontMapper.put("Times-BoldItalic", "NotoSerif-BoldItalic");
+        otfFontMapper.put("Helvetica", "Roboto-Regular");
+        otfFontMapper.put("Helvetica-Bold", "Roboto-Bold");
+        otfFontMapper.put("Helvetica-Oblique", "Roboto-Italic");
+        otfFontMapper.put("Helvetica-BoldOblique", "Roboto-BoldItalic");
+        otfFontMapper.put("Courier", "RobotoMono-Regular");
+        otfFontMapper.put("Courier-Bold", "RobotoMono-Bold");
+        otfFontMapper.put(" Courier-Oblique", "RobotoMono-Italic");
+        otfFontMapper.put("Courier-BoldOblique", "RobotoMono-BoldItalic");
+        otfFontMapper.put("Symbol", "NotoSansSymbols-Regular");
+        otfFontMapper.put("ZapfDingbats", "NotoSansSymbols2-Regular");
+    }
 
     /**
      * Utility method which maps know style strings to an AWT font style constants.
@@ -139,6 +169,38 @@ public class FontUtil {
     public static String normalizeString(String name) {
         name = guessFamily(name);
         return name.toLowerCase().replaceAll("\\s+", "");
+    }
+
+    public static Stream createFontFileStream(String fontName) {
+        // load font resource from classpath
+        byte[] fontData = getOtfEmbeddedFontResource(fontName);
+        if (fontData != null) {
+            return new Stream(new DictionaryEntries(), fontData);
+        } else {
+            throw new IllegalStateException("Could not find embedded font resource for: " + fontName);
+        }
+    }
+
+    public static byte[] getOtfEmbeddedFontResource(String fontName) {
+        String otfFontName = otfFontMapper.get(fontName);
+        if (otfFontName != null) {
+            try (InputStream is = FontUtil.class.getResourceAsStream(OTF_FONT_PATH + otfFontName)) {
+                if (is != null) {
+                    return is.readAllBytes();
+                }
+            } catch (Exception e) {
+                logger.severe("Error loading embedded font resource: " + e.getMessage());
+            }
+        }
+        return null;
+    }
+
+    public static boolean isOtfFontMapped(String fontName) {
+        return otfFontMapper.containsKey(fontName);
+    }
+
+    public static boolean isFontResourceAvailable() {
+        return FontUtil.class.getResourceAsStream(OTF_FONT_PATH + "NotoSerif-Regular.ttf") != null;
     }
 
 }

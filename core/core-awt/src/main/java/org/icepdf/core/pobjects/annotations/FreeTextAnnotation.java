@@ -434,7 +434,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                 PostScriptEncoder.generatePostScript(shapes.getShapes()), isNew);
         generateExternalGraphicsState(form, opacity);
         ContentWriterUtils.setAppearance(this, form, appearanceState, stateManager, isNew);
-        form.addFontResource(ContentWriterUtils.createDefaultFontDictionary(fontName));
+        form.addFontResource(ContentWriterUtils.createDefaultFontDictionary(library, fontName));
 
         // build out a few backwards compatible strings.
         StringBuilder dsString = new StringBuilder("font-size:")
