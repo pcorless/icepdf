@@ -29,6 +29,7 @@ import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
 import static org.icepdf.core.pobjects.Form.RESOURCES_KEY;
+import static org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils.EMBEDDED_FONT_NAME;
 
 /**
  * Builds a basic appearance stream using the given signatureImage.  This is meant to be a reference implementation
@@ -91,7 +92,8 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         }
 
         // create the new font to draw with
-        FontFile fontFile = ContentWriterUtils.createFont(signatureAppearanceModel.getFontName());
+        FontFile fontFile = ContentWriterUtils.createFont(signatureWidgetAnnotation.getLibrary(),
+                signatureAppearanceModel.getFontName());
         fontFile = fontFile.deriveFont(signatureAppearanceModel.getFontSize());
 
         ResourceBundle messageBundle = signatureAppearanceModel.getMessageBundle();
@@ -167,8 +169,8 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
 
         byte[] postScript = PostScriptEncoder.generatePostScript(shapes.getShapes());
         Form xObject = signatureWidgetAnnotation.updateAppearanceStream(shapes, bbox, matrix, postScript, isNew);
-        xObject.addFontResource(ContentWriterUtils.createDefaultFontDictionary(library,
-                signatureAppearanceModel.getFontName()));
+        String fontName = signatureAppearanceModel.getFontName();
+        xObject.addFontResource(EMBEDDED_FONT_NAME, ContentWriterUtils.createSimpleFont(library, fontName));
         if (signatureAppearanceModel.isSignatureImageVisible() && imageStream != null) {
             xObject.addImageResource(imageName, imageStream);
         }

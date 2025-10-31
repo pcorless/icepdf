@@ -16,7 +16,9 @@
 package org.icepdf.core.util;
 
 import org.icepdf.core.pobjects.DictionaryEntries;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
+import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.fonts.util.EmbeddedFontUtil;
 
 /**
@@ -149,7 +151,14 @@ public class FontUtil {
         // load font resource from classpath
         byte[] fontData = EmbeddedFontUtil.getOtfEmbeddedFontResource(fontName);
         if (fontData != null) {
-            return new Stream(library, new DictionaryEntries(), fontData);
+            Stream stream = new Stream(library, new DictionaryEntries(), fontData);
+            // compress the form object stream.
+            if (Annotation.isCompressAppearanceStream()) {
+                stream.getEntries().put(Stream.FILTER_KEY, new Name("FlateDecode"));
+            } else {
+                stream.getEntries().remove(Stream.FILTER_KEY);
+            }
+            return stream;
         } else {
             throw new IllegalStateException("Could not find embedded font resource for: " + fontName);
         }

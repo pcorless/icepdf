@@ -3,6 +3,7 @@ package org.icepdf.core.util.updater;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.pobjects.fonts.zfont.SimpleFont;
 
 import java.util.HashMap;
 
@@ -21,6 +22,9 @@ import java.util.HashMap;
 public class EmbeddedFontCache extends HashMap<String, Reference> {
 
     public static final String ICEPDF_EMBEDDED_FONT_SUFFIX = "+iceEmbeddedFont";
+
+    public static final String ICEPDF_EMBEDDED_FONT_RESOURCE = "ice";
+
 
     public EmbeddedFontCache() {
         super(14);
@@ -47,15 +51,21 @@ public class EmbeddedFontCache extends HashMap<String, Reference> {
     public void checkAndPutAnyIceFonts(Resources resources) {
         if (resources != null && resources.getFonts() != null) {
             String baseFontName;
-            Object tmp;
-            int fontSuffixLength = ICEPDF_EMBEDDED_FONT_SUFFIX.length();
+            SimpleFont font;
             for (Name fontName : resources.getFonts().keySet()) {
                 baseFontName = fontName.getName();
-                tmp = resources.getFonts().get(fontName);
-                if (tmp instanceof Reference && baseFontName.endsWith(ICEPDF_EMBEDDED_FONT_SUFFIX)) {
-                    this.put(
-                            baseFontName.substring(0, baseFontName.length() - fontSuffixLength),
-                            (Reference) tmp);
+                if (baseFontName.startsWith(ICEPDF_EMBEDDED_FONT_RESOURCE)) {
+                    font = (SimpleFont) resources.getFont(fontName);
+                    if (font != null && !font.isFontSubstitution()) {
+                        String baseFont = font.getBaseFont();
+                        if (baseFont != null && baseFont.endsWith(ICEPDF_EMBEDDED_FONT_SUFFIX)) {
+                            int fontSuffixLength = ICEPDF_EMBEDDED_FONT_SUFFIX.length();
+                            baseFont = baseFontName.substring(0, baseFontName.length() - fontSuffixLength);
+                            this.put(
+                                    baseFont,
+                                    font.getPObjectReference());
+                        }
+                    }
                 }
             }
         }

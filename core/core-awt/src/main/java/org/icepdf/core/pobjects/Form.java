@@ -31,7 +31,6 @@ import java.util.logging.Logger;
 
 import static org.icepdf.core.pobjects.Resources.FONT_KEY;
 import static org.icepdf.core.pobjects.Resources.XOBJECT_KEY;
-import static org.icepdf.core.pobjects.annotations.FreeTextAnnotation.EMBEDDED_FONT_NAME;
 
 /**
  * Form XObject class. Not currently part of the public api.
@@ -220,39 +219,20 @@ public class Form extends Stream {
     /**
      * Add a Font resource to this Form's resource dictionary.  This is intended for new object only, can't guarantee
      * this method will work as expected on an existing object.
-     *
-     * @param fontDictionary font dictionary to add as a resource
      */
-    public void addFontResource(DictionaryEntries fontDictionary) {
+    public void addFontResource(Name fontName, Reference reference) {
         StateManager stateManager = library.getStateManager();
-        org.icepdf.core.pobjects.fonts.Font newFont;
         Resources formResources = getResources();
         DictionaryEntries fontsDictionary = formResources.getFonts();
         if (fontsDictionary == null) {
             fontsDictionary = new DictionaryEntries();
             formResources.entries.put(FONT_KEY, fontsDictionary);
         }
-        if (formResources.getFont(EMBEDDED_FONT_NAME) == null) {
-            // set up a new font resource
-            newFont = new org.icepdf.core.pobjects.fonts.zfont.SimpleFont(library, fontDictionary);
-            newFont.setPObjectReference(stateManager.getNewReferenceNumber());
-            // create font entry
-            fontsDictionary.put(EMBEDDED_FONT_NAME, newFont.getPObjectReference());
-            // sync font resources with form object.
-            entries.put(RESOURCES_KEY, formResources.entries);
-        } else {
-            // reuse previously defined 'common' annotation font
-            newFont = formResources.getFont(EMBEDDED_FONT_NAME);
-            Reference reference = newFont.getPObjectReference();
-            newFont = new org.icepdf.core.pobjects.fonts.zfont.SimpleFont(library, fontDictionary);
-            newFont.setPObjectReference(reference);
-        }
+        fontsDictionary.put(fontName, reference);
+        entries.put(RESOURCES_KEY, formResources.entries);
 
-        // update hard reference to state manager and weak library reference.
-        stateManager.addChange(new PObject(newFont, newFont.getPObjectReference()), isNew);
-        library.addObject(newFont, newFont.getPObjectReference());
         // make sure the form changes get picked up as well
-        stateManager.addChange(new PObject(this, getPObjectReference()), isNew);
+        stateManager.addTempChange(new PObject(this, getPObjectReference()));
     }
 
     /**

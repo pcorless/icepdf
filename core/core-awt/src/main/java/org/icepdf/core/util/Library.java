@@ -181,6 +181,10 @@ public class Library {
                 if (obj != null) {
                     return ((StateManager.Change) obj).getPObject();
                 }
+                obj = stateManager.getTempChange(reference);
+                if (obj != null) {
+                    return (PObject) obj;
+                }
                 return null;
             }
         }
