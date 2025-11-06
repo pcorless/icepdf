@@ -37,6 +37,7 @@ import static org.icepdf.core.pobjects.Stream.FILTER_DCT_DECODE;
 import static org.icepdf.core.pobjects.Stream.FILTER_KEY;
 import static org.icepdf.core.pobjects.fonts.Font.FONT_DESCRIPTOR_KEY;
 import static org.icepdf.core.pobjects.fonts.Font.SIMPLE_FORMAT;
+import static org.icepdf.core.pobjects.fonts.FontDescriptor.FONT_FILE_2;
 import static org.icepdf.core.pobjects.fonts.zfont.SimpleFont.TO_UNICODE_KEY;
 import static org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory.IDENTITY_NAME;
 import static org.icepdf.core.pobjects.graphics.images.ImageParams.*;
@@ -254,6 +255,27 @@ public class ContentWriterUtils {
         fontFile = FontManager.getInstance().initialize().getInstance(fontName, 0);
         fontFile = fontFile.deriveFont(Encoding.standardEncoding, null);
         return fontFile;
+    }
+
+    /**
+     * Saves the font descriptor and font file associated with the given font to the StateManager.
+     *
+     * @param font
+     */
+    public static void saveFont(org.icepdf.core.pobjects.fonts.Font font) {
+        FontDescriptor fontDescriptor = font.getFontDescriptor();
+        if (fontDescriptor != null) {
+            StateManager stateManager = font.getLibrary().getStateManager();
+            stateManager.addChange(new PObject(fontDescriptor, fontDescriptor.getPObjectReference()));
+            if (fontDescriptor.getEntries().containsKey(FONT_FILE_2)) {
+                Object obj = fontDescriptor.getEntries().get(FONT_FILE_2);
+                if (obj instanceof Reference) {
+                    Reference ref = (Reference) obj;
+                    PObject fontFile = stateManager.getTempChange(ref);
+                    stateManager.addChange(fontFile);
+                }
+            }
+        }
     }
 
     public static ImageStream addImageToShapes(Library library, Name imageName, Reference reference,

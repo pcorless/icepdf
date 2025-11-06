@@ -149,6 +149,9 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
                     SignatureType.CERTIFIER.toString().toLowerCase());
             buildAppearanceStream();
 
+            // pushing temp state to regular state manager, discarding any intermediary states.
+            signatureWidgetAnnotation.saveAppearanceStream();
+
             setVisible(false);
             dispose();
         } else if (source == closeButton) {

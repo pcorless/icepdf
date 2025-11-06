@@ -102,6 +102,11 @@ public class StateManager {
         addChange(pObject, true);
     }
 
+    /**
+     * Add a new PObject containing temporary changed data to the cache.
+     *
+     * @param pObject object to add to cache.
+     */
     public void addTempChange(PObject pObject) {
         tempChanges.put(pObject.getReference(), pObject);
     }
@@ -158,8 +163,29 @@ public class StateManager {
         }
     }
 
+    /**
+     * Returns an instance of the specified reference from the temporary changes
+     * @param reference reference to look for an existing usage
+     * @return PObject of corresponding reference if present
+     */
     public PObject getTempChange(Reference reference) {
         return tempChanges.get(reference);
+    }
+
+    /**
+     * Checks to see if there are any temporary changes
+     *
+     * @return true if there are temporary changes, false otherwise
+     */
+    public boolean isTempChanges() {
+        return !tempChanges.isEmpty();
+    }
+
+    /**
+     * Clears all temporary changes
+     */
+    public void clearTempChanges() {
+        tempChanges.clear();
     }
 
     /**
