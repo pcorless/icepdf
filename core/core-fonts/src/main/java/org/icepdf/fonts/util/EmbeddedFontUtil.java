@@ -23,7 +23,7 @@ public class EmbeddedFontUtil {
         otfFontMapper.put("Helvetica-BoldOblique", "Roboto-BoldItalic.ttf");
         otfFontMapper.put("Courier", "RobotoMono-Regular.ttf");
         otfFontMapper.put("Courier-Bold", "RobotoMono-Bold.ttf");
-        otfFontMapper.put(" Courier-Oblique", "RobotoMono-Italic.ttf");
+        otfFontMapper.put("Courier-Oblique", "RobotoMono-Italic.ttf");
         otfFontMapper.put("Courier-BoldOblique", "RobotoMono-BoldItalic.ttf");
         otfFontMapper.put("Symbol", "NotoSansSymbols-Regular.ttf");
         otfFontMapper.put("ZapfDingbats", "NotoSansSymbols2-Regular.ttf");

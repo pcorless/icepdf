@@ -235,6 +235,24 @@ public class Form extends Stream {
         stateManager.addTempChange(new PObject(this, getPObjectReference()));
     }
 
+    public boolean hasFontResource(Name fontName) {
+        Resources formResources = getResources();
+        DictionaryEntries fontsDictionary = formResources.getFonts();
+        if (fontsDictionary != null) {
+            return fontsDictionary.get(fontName) != null;
+        }
+        return false;
+    }
+
+    public Reference getFontResource(Name fontName) {
+        Resources formResources = getResources();
+        DictionaryEntries fontsDictionary = formResources.getFonts();
+        if (fontsDictionary != null) {
+            return (Reference) fontsDictionary.get(fontName);
+        }
+        return null;
+    }
+
     /**
      * Add an ImageStream to this Form's resource dictionary.  This is intended for new object only, can't guarantee
      * this method will work as expected on an existing object.

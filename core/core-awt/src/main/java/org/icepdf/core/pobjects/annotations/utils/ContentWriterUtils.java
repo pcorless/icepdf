@@ -85,9 +85,38 @@ public class ContentWriterUtils {
             }
             SimpleFont font = new SimpleFont(library, fontDictionary);
             font.setPObjectReference(library.getStateManager().getNewReferenceNumber());
-
             library.getStateManager().addTempChange(new PObject(font, font.getPObjectReference()));
+            embeddedFontCache.putFontReference(fontName, font.getPObjectReference());
             return font.getPObjectReference();
+        }
+    }
+
+    public static void removeSimpleFont(Library library, Reference fontReference) {
+        Object obj = library.getObject(fontReference);
+        if (obj instanceof SimpleFont) {
+            SimpleFont previousFont = (SimpleFont) obj;
+            String fontName = previousFont.getBaseFont();
+            StateManager stateManager = library.getStateManager();
+            EmbeddedFontCache embeddedFontCache = library.getEmbeddedFontCache();
+            // remove the reference from the cache
+            embeddedFontCache.removeReference(fontName, fontReference);
+            // if the font name has no more references remove from state manager
+            if (!embeddedFontCache.hasReference(fontName, fontReference)) {
+                obj = library.getObject(fontReference);
+                if (obj instanceof SimpleFont) {
+                    SimpleFont font = (SimpleFont) obj;
+                    stateManager.removeChange(new PObject(font, fontReference));
+                    FontDescriptor fontDescriptor = font.getFontDescriptor();
+                    if (fontDescriptor != null) {
+                        Reference fontFileRef = (Reference) fontDescriptor.getEntries().get(FONT_FILE_2);
+                        if (fontFileRef != null) {
+                            stateManager.removeChange(new PObject(library.getObject(fontFileRef), fontFileRef));
+                        }
+                        stateManager.removeChange(new PObject(fontDescriptor, fontDescriptor.getPObjectReference()));
+                    }
+                }
+
+            }
         }
     }
 
@@ -245,12 +274,13 @@ public class ContentWriterUtils {
         if (isEmbedFonts && EmbeddedFontUtil.isFontResourceAvailable() && EmbeddedFontUtil.isOtfFontMapped(fontName)) {
             try {
                 Stream fontFileStream = FontUtil.createFontFileStream(library, fontName);
-                return FontFactory.getInstance().createFontFile(fontFileStream, FontFactory.FONT_TRUE_TYPE, null);
+                fontFile = FontFactory.getInstance().createFontFile(fontFileStream, FontFactory.FONT_TRUE_TYPE, null);
+                fontFile = fontFile.deriveFont(Encoding.standardEncoding, null);
+                return fontFile;
             } catch (Exception e) {
                 logger.warning("Error loading embedded font resource for: " + fontName +
                         ", falling back to system font. " + e.getMessage());
             }
-
         }
         fontFile = FontManager.getInstance().initialize().getInstance(fontName, 0);
         fontFile = fontFile.deriveFont(Encoding.standardEncoding, null);

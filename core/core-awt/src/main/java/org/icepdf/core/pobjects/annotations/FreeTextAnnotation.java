@@ -435,7 +435,21 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                 PostScriptEncoder.generatePostScript(shapes.getShapes()), isNew);
         generateExternalGraphicsState(form, opacity);
         ContentWriterUtils.setAppearance(this, form, appearanceState, stateManager, isNew);
-        form.addFontResource(EMBEDDED_FONT_NAME, ContentWriterUtils.createSimpleFont(library, fontName));
+        Reference fontReference = ContentWriterUtils.createSimpleFont(library, fontName);
+        // check for previously embedded font and do any needed cleanup
+        if (form.hasFontResource(EMBEDDED_FONT_NAME)) {
+            Reference previousFontReference = form.getFontResource(EMBEDDED_FONT_NAME);
+            if (!fontReference.equals(previousFontReference)) {
+                ContentWriterUtils.removeSimpleFont(library, previousFontReference);
+            }
+        }
+        form.addFontResource(EMBEDDED_FONT_NAME, fontReference);
+
+        try {
+            form.init();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         // build out a few backwards compatible strings.
         StringBuilder dsString = new StringBuilder("font-size:")

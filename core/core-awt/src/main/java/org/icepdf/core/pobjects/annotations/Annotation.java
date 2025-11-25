@@ -2066,11 +2066,12 @@ public abstract class Annotation extends Dictionary {
             for (Name fontName : appearanceStream.getResources().getFonts().keySet()) {
                 Reference fontReference = (Reference) appearanceStream.getResources().getFonts().get(fontName);
                 PObject pObject = stateManager.getTempChange(fontReference);
-                stateManager.addChange(pObject);
-                ContentWriterUtils.saveFont((SimpleFont) pObject.getObject());
-                stateManager.clearTempChanges();
+                if (pObject != null) {
+                    stateManager.addChange(pObject);
+                    ContentWriterUtils.saveFont((SimpleFont) pObject.getObject());
+                    stateManager.clearTempChanges();
+                }
             }
-
         }
     }
 

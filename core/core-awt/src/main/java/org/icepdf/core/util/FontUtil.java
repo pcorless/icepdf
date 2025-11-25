@@ -151,7 +151,8 @@ public class FontUtil {
         // load font resource from classpath
         byte[] fontData = EmbeddedFontUtil.getOtfEmbeddedFontResource(fontName);
         if (fontData != null) {
-            Stream stream = new Stream(library, new DictionaryEntries(), fontData);
+            Stream stream = new Stream(library, new DictionaryEntries(), null);
+            stream.setRawBytes(fontData);
             // compress the form object stream.
             if (Annotation.isCompressAppearanceStream()) {
                 stream.getEntries().put(Stream.FILTER_KEY, new Name("FlateDecode"));

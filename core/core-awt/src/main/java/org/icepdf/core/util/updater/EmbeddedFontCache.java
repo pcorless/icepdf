@@ -5,6 +5,7 @@ import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.fonts.zfont.SimpleFont;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
@@ -19,7 +20,7 @@ import java.util.HashMap;
  *
  * @since 7.4.0
  */
-public class EmbeddedFontCache extends HashMap<String, Reference> {
+public class EmbeddedFontCache extends HashMap<String, ArrayList<Reference>> {
 
     public static final String ICEPDF_EMBEDDED_FONT_SUFFIX = "+iceEmbeddedFont";
 
@@ -35,11 +36,32 @@ public class EmbeddedFontCache extends HashMap<String, Reference> {
     }
 
     public Reference getFontReference(String key) {
-        return get(key);
+        ArrayList<Reference> references = get(key);
+        if (references != null && !references.isEmpty()) {
+            return references.get(0);
+        }
+        return null;
     }
 
     public void putFontReference(String key, Reference reference) {
-        put(key, reference);
+        ArrayList<Reference> references = get(key);
+        if (references == null) {
+            references = new ArrayList<>();
+        }
+        references.add(reference);
+        put(key, references);
+    }
+
+    public void removeReference(String key, Reference reference) {
+        ArrayList<Reference> references = get(key);
+        if (references != null && !references.isEmpty()) {
+            references.remove(reference);
+        }
+    }
+
+    public boolean hasReference(String key, Reference reference) {
+        ArrayList<Reference> references = get(key);
+        return references != null && !references.isEmpty();
     }
 
     /**
@@ -61,7 +83,7 @@ public class EmbeddedFontCache extends HashMap<String, Reference> {
                         if (baseFont != null && baseFont.endsWith(ICEPDF_EMBEDDED_FONT_SUFFIX)) {
                             int fontSuffixLength = ICEPDF_EMBEDDED_FONT_SUFFIX.length();
                             baseFont = baseFontName.substring(0, baseFontName.length() - fontSuffixLength);
-                            this.put(
+                            putFontReference(
                                     baseFont,
                                     font.getPObjectReference());
                         }
