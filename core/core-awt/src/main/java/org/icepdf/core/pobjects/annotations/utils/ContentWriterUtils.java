@@ -128,7 +128,7 @@ public class ContentWriterUtils {
         fontDescriptorDictionary.put(org.icepdf.core.pobjects.fonts.Font.TYPE_KEY,
                 new Name("FontDescriptor"));
         fontDescriptorDictionary.put(new Name("FontName"),
-                new Name(fontName + EmbeddedFontCache.ICEPDF_EMBEDDED_FONT_SUFFIX));
+                new Name(fontName));
 
         // create font file stream
         Reference fontFileReference = stateManager.getNewReferenceNumber();

@@ -22,8 +22,6 @@ import java.util.HashMap;
  */
 public class EmbeddedFontCache extends HashMap<String, ArrayList<Reference>> {
 
-    public static final String ICEPDF_EMBEDDED_FONT_SUFFIX = "+iceEmbeddedFont";
-
     public static final String ICEPDF_EMBEDDED_FONT_RESOURCE = "ice";
 
 
@@ -80,9 +78,7 @@ public class EmbeddedFontCache extends HashMap<String, ArrayList<Reference>> {
                     font = (SimpleFont) resources.getFont(fontName);
                     if (font != null && !font.isFontSubstitution()) {
                         String baseFont = font.getBaseFont();
-                        if (baseFont != null && baseFont.endsWith(ICEPDF_EMBEDDED_FONT_SUFFIX)) {
-                            int fontSuffixLength = ICEPDF_EMBEDDED_FONT_SUFFIX.length();
-                            baseFont = baseFontName.substring(0, baseFontName.length() - fontSuffixLength);
+                        if (baseFont != null) {
                             putFontReference(
                                     baseFont,
                                     font.getPObjectReference());
