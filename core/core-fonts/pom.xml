@@ -14,6 +14,14 @@
         The ICEpdf Common rendering core. Contains Adobe PDF Core 14 fonts equivalents.
     </description>
 
+    <licenses>
+        <license>
+            <name>SIL OPEN FONT LICENSE Version 1.1</name>
+            <url>https://openfontlicense.org</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
     <build>
         <plugins>
             <plugin>

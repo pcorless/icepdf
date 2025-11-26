@@ -4,11 +4,15 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.logging.Logger;
 
+/**
+ * Utility class for managing embedded OpenType font resources.
+ */
 public class EmbeddedFontUtil {
 
     private static final Logger logger =
             Logger.getLogger(EmbeddedFontUtil.class.toString());
 
+    // font available in the icepdf font resources jar
     private static final Map<String, String> otfFontMapper = new java.util.HashMap<>();
     private static final String OTF_FONT_PATH = "/org/icepdf/core/fonts/";
 
@@ -47,8 +51,5 @@ public class EmbeddedFontUtil {
         return otfFontMapper.containsKey(fontName);
     }
 
-    public static boolean isFontResourceAvailable() {
-        return EmbeddedFontUtil.class.getResourceAsStream(OTF_FONT_PATH + "NotoSerif-Regular.ttf") != null;
-    }
 
 }

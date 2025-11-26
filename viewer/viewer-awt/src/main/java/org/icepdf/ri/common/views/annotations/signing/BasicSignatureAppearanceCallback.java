@@ -170,7 +170,8 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         byte[] postScript = PostScriptEncoder.generatePostScript(shapes.getShapes());
         Form xObject = signatureWidgetAnnotation.updateAppearanceStream(shapes, bbox, matrix, postScript, isNew);
         String fontName = signatureAppearanceModel.getFontName();
-        xObject.addFontResource(EMBEDDED_FONT_NAME, ContentWriterUtils.createSimpleFont(library, fontName));
+        Reference ref = ContentWriterUtils.createSimpleFont(library, fontName);
+        xObject.addFontResource(EMBEDDED_FONT_NAME, ref);
         if (signatureAppearanceModel.isSignatureImageVisible() && imageStream != null) {
             xObject.addImageResource(imageName, imageStream);
         }

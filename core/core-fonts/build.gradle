@@ -29,8 +29,8 @@ publishing {
                             .appendNode('url', 'https://www.apache.org/licenses/LICENSE-2.0.txt').parent()
                             .appendNode('tag', 'icepdf-' + version + '-maven')
                     asNode().appendNode('licenses').appendNode('license').with {
-                        appendNode('name', 'Apache License, Version 2.0')
-                        appendNode('url', 'https://www.apache.org/licenses/LICENSE-2.0.html')
+                        appendNode('name', 'SIL OPEN FONT LICENSE Version 1.1')
+                        appendNode('url', 'https://openfontlicense.org')
                         appendNode('distribution', 'repo')
                     }
                     asNode().appendNode('issueManagement').with {
