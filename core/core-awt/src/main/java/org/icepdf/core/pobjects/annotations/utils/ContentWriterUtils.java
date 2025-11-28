@@ -77,14 +77,9 @@ public class ContentWriterUtils {
             // double check we have an embedded font available for the font name
             if (isEmbedFonts && FontUtil.isOtfFontMapped(fontName)) {
                 // write out the font as TrueType with embedded font file
-//                fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY, new Name("TrueType"));
                 FontDescriptor fontDescriptor = creatFontDescriptor(library, fontName);
                 fontDictionary.put(FONT_DESCRIPTOR_KEY, fontDescriptor.getPObjectReference());
-//                fontDictionary.put(WIDTHS_KEY, Arrays.asList(1, 2, 3, 4, 5));
             }
-//            else {
-//                fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY, new Name("Type1"));
-//            }
             SimpleFont font = new SimpleFont(library, fontDictionary);
             font.setPObjectReference(library.getStateManager().getNewReferenceNumber());
             library.getStateManager().addTempChange(new PObject(font, font.getPObjectReference()));
@@ -129,6 +124,14 @@ public class ContentWriterUtils {
                 new Name("FontDescriptor"));
         fontDescriptorDictionary.put(new Name("FontName"),
                 new Name(fontName));
+
+        // todo pull real values from the font file
+        fontDescriptorDictionary.put(new Name("Flags"), 4);
+        fontDescriptorDictionary.put(new Name("FontBBox"), Arrays.asList(-1022, -693, 2418, 1966));
+        fontDescriptorDictionary.put(new Name("ItalicAngle"), 0);
+        fontDescriptorDictionary.put(new Name("Ascent"), 1966);
+        fontDescriptorDictionary.put(new Name("Descent"), -693);
+        fontDescriptorDictionary.put(new Name("StemV"), 80);
 
         // create font file stream
         Reference fontFileReference = stateManager.getNewReferenceNumber();
