@@ -20,6 +20,9 @@ import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cms.SignerInformationVerifier;
+import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
 import org.bouncycastle.tsp.TimeStampToken;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
@@ -37,8 +40,8 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.*;
-import java.security.cert.Certificate;
 import java.security.cert.*;
+import java.security.cert.Certificate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -82,14 +85,17 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
     protected byte[] encapsulatedContentInfoData;
     protected byte[] messageDigest;
     protected byte[] signatureValue;
+    protected TimeStampToken timeStampToken;
 
     // validity checks.
+    // todo, push out to helper class.
     private boolean isSignedDataModified = true;
     private boolean isDocumentDataModified;
     private boolean isSignaturesCoverDocumentLength;
     private boolean isCertificateChainTrusted;
     private boolean isCertificateDateValid = true;
     private boolean isRevocation;
+    // todo why aren't we using this?
     private boolean isSelfSigned;
     // todo implement singer time check.
     private boolean isSignerTimeValid;
@@ -269,12 +275,13 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
                 ASN1Set attributeValues = timeStamp.getAttrValues();
                 ASN1Sequence tokenSequence = ASN1Sequence.getInstance(attributeValues.getObjectAt(0));
                 ContentInfo contentInfo = ContentInfo.getInstance(tokenSequence);
-                // if we can parse it we call it good, so cert has a embedded time but we don't do any validation on it
+                // if we can parse it we call it present, validation will happen later.
                 try {
-                    new TimeStampToken(contentInfo);
+                    timeStampToken = new TimeStampToken(contentInfo);
                     isEmbeddedTimeStamp = true;
                 } catch (Exception e1) {
-                    throw new SignatureIntegrityException("Valid TimeStamp could now be created");
+                    logger.log(Level.WARNING, "Timestamp could not be parsed ", e1);
+                    throw new SignatureIntegrityException("Timestamp could not be parsed");
                 }
             }
         }
@@ -308,6 +315,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
             CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509", "BC");
             certificateChain = certificateFactory.generateCertificates(new ByteArrayInputStream(cmsData));
             signerCertificate = (X509Certificate) certificateChain.iterator().next();
+
         } catch (Exception e) {
             logger.log(Level.WARNING, "Error parsing certificate data: ", e);
             throw new SignatureIntegrityException(e);
@@ -580,7 +588,8 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
                 // When the field is present, however, the result is the message digest of the complete DER encoding of
                 // the SignedAttrs value contained in the signedAttrs field
                 boolean isSignatureValid =
-                        verifySignedAttributes(signatureDictionary.getFilter().getName(), signerCertificate, signatureValue,
+                        verifySignedAttributes(signatureDictionary.getFilter().getName(), signerCertificate,
+                                signatureValue,
                                 signatureAlgorithmIdentifier,
                                 digestAlgorithmIdentifier,
                                 signedAttributesSequence.getEncoded(ASN1Encoding.DER));
@@ -639,6 +648,29 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         } catch (Exception e) {
             logger.log(Level.FINEST, "Error validation certificate chain.", e);
             isCertificateChainTrusted = false;
+        }
+    }
+
+    public void validateTimestamp() {
+        if (timeStampToken == null) return;
+        try {
+            // verify the timestamp was signed by a valid authority.
+            Collection<X509CertificateHolder> tstMatches =
+                    timeStampToken.getCertificates().getMatches(timeStampToken.getSID());
+            X509CertificateHolder certificateHolder = tstMatches.iterator().next();
+            SignerInformationVerifier signerInformationVerifier =
+                    new JcaSimpleSignerInfoVerifierBuilder().build(certificateHolder);
+            timeStampToken.validate(signerInformationVerifier);
+
+            // make sure the timestamp wasn't tampered with since it was signed.
+            byte[] tsMessageImprintDigest = timeStampToken.getTimeStampInfo().getMessageImprintDigest();
+            String hashAlgorithm = timeStampToken.getTimeStampInfo().getMessageImprintAlgOID().getId();
+            byte[] sigMessageImprintDigest = MessageDigest.getInstance(hashAlgorithm).digest(signatureValue);
+            if (Arrays.equals(tsMessageImprintDigest, sigMessageImprintDigest)) {
+                isSignerTimeValid = true;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -768,6 +800,6 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
      * @return false.
      */
     public boolean isSignerTimeValid() {
-        return false;
+        return isSignerTimeValid;
     }
 }

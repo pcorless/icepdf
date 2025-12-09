@@ -55,7 +55,7 @@ public class Pkcs7Validator extends AbstractPkcsValidator {
         // Signed-data content type -- start of parsing
         ASN1Sequence signedData = captureSignedData(cmsData);
 
-        // parse out the singer data.
+        // parse out the signer data.
         parseSignerData(signedData, cmsData);
 
         /*
@@ -67,6 +67,7 @@ public class Pkcs7Validator extends AbstractPkcsValidator {
 
     public void validate() throws SignatureIntegrityException {
         validateDocument();
+        validateTimestamp();
     }
 
 }
