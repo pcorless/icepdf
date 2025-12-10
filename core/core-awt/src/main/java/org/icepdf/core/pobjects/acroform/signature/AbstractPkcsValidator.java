@@ -23,6 +23,7 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cms.SignerInformationVerifier;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.tsp.TimeStampToken;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
@@ -57,9 +58,12 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
 
     private static String caCertLocation = "/lib/security/cacerts";
 
+    protected static Provider securityProvider;
+
     static {
         caCertLocation = Defs.sysProperty("org.icepdf.core.signatures.caCertPath",
                 SystemProperties.JAVA_HOME + caCertLocation);
+        securityProvider = new BouncyCastleProvider();
     }
 
     // data object descriptor codes.
@@ -88,16 +92,13 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
     protected TimeStampToken timeStampToken;
 
     // validity checks.
-    // todo, push out to helper class.
     private boolean isSignedDataModified = true;
     private boolean isDocumentDataModified;
     private boolean isSignaturesCoverDocumentLength;
     private boolean isCertificateChainTrusted;
     private boolean isCertificateDateValid = true;
     private boolean isRevocation;
-    // todo why aren't we using this?
     private boolean isSelfSigned;
-    // todo implement singer time check.
     private boolean isSignerTimeValid;
     private boolean isEmbeddedTimeStamp;
     // last time validate call was made.
@@ -546,6 +547,15 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
             logger.log(Level.WARNING, "Invalid key ", e1);
             return;
         }
+        // check if the certificate is self-signed.
+        try {
+            PublicKey key = signerCertificate.getPublicKey();
+            signerCertificate.verify(key, securityProvider);
+            isSelfSigned = true;
+        } catch (Exception e) {
+            logger.log(Level.FINE, "Public key could not be verified against the certificate. ", e);
+        }
+
         // let digest the data.
         ArrayList<Integer> byteRange = signatureFieldDictionary.getSignatureDictionary().getByteRange();
         Library library = signatureFieldDictionary.getLibrary();
