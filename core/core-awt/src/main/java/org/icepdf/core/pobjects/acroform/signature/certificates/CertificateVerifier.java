@@ -15,16 +15,24 @@
  */
 package org.icepdf.core.pobjects.acroform.signature.certificates;
 
+import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.CertificateVerificationException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SelfSignedVerificationException;
 
-import java.security.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.security.GeneralSecurityException;
 import java.security.cert.*;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Class for building a certification chain for given certificate and verifying
@@ -35,8 +43,14 @@ import java.util.Set;
  * certificates.
  *
  * @author Svetlin Nakov
+ * <p>
+ * Further updates from copied from
+ * <a href="https://svn.apache.org/repos/asf/cxf/tags/cxf-2.4.9/distribution/src/main/release/samples/sts_issue_operation/src/main/java/demo/sts/provider/cert/">Apache CXF 2.4.9</a>
  */
 public class CertificateVerifier {
+
+    private static final Logger logger =
+            Logger.getLogger(CertificateVerifier.class.toString());
 
     /**
      * Attempts to build a certification chain for given certificate and to verify
@@ -53,6 +67,7 @@ public class CertificateVerifier {
      *                        used as part of the certification chain. All self-signed certificates
      *                        are considered to be trusted root CA certificates. All the rest are
      *                        considered to be intermediate CA certificates.
+     * @param signatureDate   date from signature dictionary.
      * @return the certification chain (if verification is successful)
      * @throws CertificateVerificationException - if the certification is not
      *                                          successful (e.g. certification path cannot be built or some
@@ -60,35 +75,59 @@ public class CertificateVerifier {
      * @throws CertificateVerificationException could not verify cert.
      * @throws CertificateExpiredException      cert is expired
      */
-    public static PKIXCertPathBuilderResult verifyCertificate(X509Certificate signerCert, X509Certificate[] cert,
-                                                              Collection<X509Certificate> additionalCerts)
-            throws CertificateVerificationException, CertificateExpiredException {
+    public static PKIXCertPathBuilderResult verifyCertificate(X509Certificate signerCert,
+                                                              Collection<X509Certificate> additionalCerts,
+                                                              boolean verifySelfSignedCert,
+                                                              Date signatureDate)
+            throws CertificateVerificationException, CertificateExpiredException, SelfSignedVerificationException {
         try {
             // Check for self-signed root certificate
-            if (isSelfSigned(signerCert)) {
+            if (!verifySelfSignedCert && CertificateUtils.isSelfSigned(signerCert)) {
                 throw new SelfSignedVerificationException("The certificate is self-signed.");
             }
+
+            Set<X509Certificate> certSet = new HashSet<>(additionalCerts);
+
+            // download missing intermediate certificates
+            Set<X509Certificate> certsToTrySet = new HashSet<>();
+            certsToTrySet.add(signerCert);
+            certsToTrySet.addAll(additionalCerts);
+            while (!certsToTrySet.isEmpty()) {
+                Set<X509Certificate> nextCertsToTrySet = new HashSet<>();
+                for (X509Certificate tryCert : certsToTrySet) {
+                    Set<X509Certificate> downloadedExtraCertificatesSet =
+                            CertificateVerifier.downloadExtraCertificates(tryCert);
+                    for (X509Certificate downloadedCertificate : downloadedExtraCertificatesSet) {
+                        if (!certSet.contains(downloadedCertificate)) {
+                            nextCertsToTrySet.add(downloadedCertificate);
+                            certSet.add(downloadedCertificate);
+                        }
+                    }
+                }
+                certsToTrySet = nextCertsToTrySet;
+            }
+
             // Prepare a set of trusted root CA certificates
             // and a set of intermediate certificates
             Set<X509Certificate> trustedRootCerts = new HashSet<>();
             Set<X509Certificate> intermediateCerts = new HashSet<>();
-            for (X509Certificate additionalCert : additionalCerts) {
-                if (isSelfSigned(additionalCert)) {
+            for (X509Certificate additionalCert : certSet) {
+                if (CertificateUtils.isSelfSigned(additionalCert)) {
                     trustedRootCerts.add(additionalCert);
                 } else {
                     intermediateCerts.add(additionalCert);
                 }
             }
-            // add in any specified intermediate certificates
-            intermediateCerts.addAll(Arrays.asList(cert));
+            if (trustedRootCerts.isEmpty()) {
+                throw new CertificateVerificationException("No root certificate in the chain");
+            }
 
             // Attempt to build the certification chain and verify it, first element should always be the signer cert.
             PKIXCertPathBuilderResult verifiedCertChain =
-                    verifyCertificate(cert[0], trustedRootCerts, intermediateCerts);
+                    verifyCertificate(signerCert, trustedRootCerts, intermediateCerts);
 
-            // Check whether the certificate is revoked by the CRL
-            // given in its CRL distribution point extension
-            CRLVerifier.verifyCertificateCRLs(cert[0]);
+            // Check whether the certificate is revoked by the CRL given in its CRL distribution point extension
+            RevocationsVerifier.verifyRevocations(signerCert, certSet, signatureDate);
 
             // The chain is built and verified. Return it as a result
             return verifiedCertChain;
@@ -121,7 +160,8 @@ public class CertificateVerifier {
      *                                  (e.g. certification path cannot be built or some certificate in the
      *                                  chain is expired)
      */
-    private static PKIXCertPathBuilderResult verifyCertificate(X509Certificate cert, Set<X509Certificate> trustedRootCerts,
+    private static PKIXCertPathBuilderResult verifyCertificate(X509Certificate cert,
+                                                               Set<X509Certificate> trustedRootCerts,
                                                                Set<X509Certificate> intermediateCerts)
             throws GeneralSecurityException {
 
@@ -136,8 +176,7 @@ public class CertificateVerifier {
         }
 
         // Configure the PKIX certificate builder algorithm parameters
-        PKIXBuilderParameters pkixParams =
-                new PKIXBuilderParameters(trustAnchors, selector);
+        PKIXBuilderParameters pkixParams = new PKIXBuilderParameters(trustAnchors, selector);
 
         // Disable CRL checks (this is done manually as additional step)
         pkixParams.setRevocationEnabled(false);
@@ -152,26 +191,93 @@ public class CertificateVerifier {
         return (PKIXCertPathBuilderResult) builder.build(pkixParams);
     }
 
+
     /**
-     * Checks whether given X.509 certificate is self-signed.
+     * Download extra certificates from the URI mentioned in id-ad-caIssuers in the "authority
+     * information access" extension.
      *
-     * @param cert cert to test for self signing.
-     * @return true if self signed, otherwise false.
-     * @throws CertificateException     certificate exception.
-     * @throws NoSuchAlgorithmException not such algorithm exception.
-     * @throws NoSuchProviderException no such provider exception.
+     * @param x509Extension an X509 object that can have extensions.
+     * @return a certificate set, never null.
      */
-    public static boolean isSelfSigned(X509Certificate cert)
-            throws CertificateException, NoSuchAlgorithmException,
-            NoSuchProviderException {
-        try {
-            // Try to verify certificate signature with its own public key
-            PublicKey key = cert.getPublicKey();
-            cert.verify(key);
-            return true;
-        } catch (SignatureException | InvalidKeyException sigEx) {
-            // Invalid signature, not self-signed
-            return false;
+    public static Set<X509Certificate> downloadExtraCertificates(X509Extension x509Extension) {
+        Set<X509Certificate> resultSet = new HashSet<>();
+        byte[] authorityExtensionValue =
+                x509Extension.getExtensionValue(org.bouncycastle.asn1.x509.Extension.authorityInfoAccess.getId());
+        if (authorityExtensionValue == null) {
+            return resultSet;
         }
+        ASN1Primitive asn1Prim;
+        try {
+            asn1Prim = JcaX509ExtensionUtils.parseExtensionValue(authorityExtensionValue);
+        } catch (IOException ex) {
+            logger.log(Level.WARNING, ex.getMessage(), ex);
+            return resultSet;
+        }
+        if (!(asn1Prim instanceof ASN1Sequence)) {
+            logger.log(Level.WARNING, () -> "ASN1Sequence not found " + asn1Prim.getClass().getSimpleName());
+            return resultSet;
+        }
+        ASN1Sequence asn1Seq = (ASN1Sequence) asn1Prim;
+        Enumeration<?> objects = asn1Seq.getObjects();
+        while (objects.hasMoreElements()) {
+            // AccessDescription
+            ASN1Sequence obj = (ASN1Sequence) objects.nextElement();
+            ASN1Encodable oid = obj.getObjectAt(0);
+            if (!X509ObjectIdentifiers.id_ad_caIssuers.equals(oid)) {
+                continue;
+            }
+            ASN1TaggedObject location = (ASN1TaggedObject) obj.getObjectAt(1);
+            ASN1OctetString uri = (ASN1OctetString) location.getBaseObject();
+            String urlString = new String(uri.getOctets());
+            logger.log(Level.FINE, () -> "CA issuers URL: " + urlString);
+            try (InputStream in = openURL(urlString)) {
+                CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+                Collection<? extends Certificate> altCerts = certFactory.generateCertificates(in);
+                altCerts.forEach(altCert -> resultSet.add((X509Certificate) altCert));
+                logger.log(Level.FINE, () -> "CA issuers URL: " + altCerts.size() + "certificate(s) downloaded");
+            } catch (IOException | URISyntaxException ex) {
+                logger.log(Level.WARNING, urlString + " failure: " + ex.getMessage(), ex);
+            } catch (CertificateException ex) {
+                logger.log(Level.WARNING, ex.getMessage(), ex);
+            }
+        }
+        return resultSet;
+    }
+
+    /**
+     * Like {@link URL#openStream()} but will follow redirection from http to https.
+     *
+     * @param urlString
+     * @return
+     * @throws IOException
+     * @throws URISyntaxException
+     * @author Tilman Hausherr from PDFBox SigUtils
+     */
+    private static InputStream openURL(String urlString) throws IOException, URISyntaxException {
+        URL url = new URI(urlString).toURL();
+        if (!urlString.startsWith("http")) {
+            // so that ftp is still supported
+            return url.openStream();
+        }
+        HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        int responseCode = con.getResponseCode();
+        logger.log(Level.FINER, "URL response: " + responseCode + " " + con.getResponseMessage());
+        if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP ||
+                responseCode == HttpURLConnection.HTTP_MOVED_PERM ||
+                responseCode == HttpURLConnection.HTTP_SEE_OTHER) {
+            String location = con.getHeaderField("Location");
+            if (urlString.startsWith("http://") &&
+                    location.startsWith("https://") &&
+                    urlString.substring(7).equals(location.substring(8))) {
+                // redirection from http:// to https://
+                // change this code if you want to be more flexible (but think about security!)
+                logger.log(Level.FINER, () -> "redirection to " + location + " followed");
+                con.disconnect();
+                con = (HttpURLConnection) new URI(location).toURL().openConnection();
+            } else {
+                logger.log(Level.FINER, () -> "redirection to " + location + " ignored");
+            }
+        }
+        return con.getInputStream();
     }
 }

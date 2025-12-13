@@ -19,8 +19,8 @@ import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.asn1.x509.Extension;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.CertificateVerificationException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.RevocationVerificationException;
 
@@ -57,7 +57,7 @@ public class CRLVerifier {
      * @param cert the certificate to be checked for revocation
      * @throws CertificateVerificationException if the certificate is revoked
      */
-    public static void verifyCertificateCRLs(X509Certificate cert)
+    public static void verifyCRL(X509Certificate cert)
             throws CertificateVerificationException {
         try {
             List<String> crlDistPoints = getCrlDistributionPoints(cert);
@@ -85,7 +85,7 @@ public class CRLVerifier {
     private static X509CRL downloadCRL(String crlURL) throws IOException,
             CertificateException, CRLException,
             CertificateVerificationException, NamingException {
-        if (crlURL.startsWith("https://")) {
+        if (crlURL.startsWith("http")) {
             return downloadCRLFromWeb(crlURL);
         } else if (crlURL.startsWith("ldap://")) {
             return downloadCRLFromLDAP(crlURL);

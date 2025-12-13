@@ -23,13 +23,13 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cms.SignerInformationVerifier;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.tsp.TimeStampToken;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.pobjects.acroform.signature.certificates.CertificateVerifier;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.CertificateVerificationException;
+import org.icepdf.core.pobjects.acroform.signature.exceptions.SelfSignedVerificationException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
@@ -46,6 +46,7 @@ import java.security.cert.Certificate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * PKCS#1 and PKCS#7 are fairly close from a verification point of view, so we'll use this class for common
@@ -58,12 +59,9 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
 
     private static String caCertLocation = "/lib/security/cacerts";
 
-    protected static Provider securityProvider;
-
     static {
         caCertLocation = Defs.sysProperty("org.icepdf.core.signatures.caCertPath",
                 SystemProperties.JAVA_HOME + caCertLocation);
-        securityProvider = new BouncyCastleProvider();
     }
 
     // data object descriptor codes.
@@ -547,14 +545,6 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
             logger.log(Level.WARNING, "Invalid key ", e1);
             return;
         }
-        // check if the certificate is self-signed.
-        try {
-            PublicKey key = signerCertificate.getPublicKey();
-            signerCertificate.verify(key, securityProvider);
-            isSelfSigned = true;
-        } catch (Exception e) {
-            logger.log(Level.FINE, "Public key could not be verified against the certificate. ", e);
-        }
 
         // let digest the data.
         ArrayList<Integer> byteRange = signatureFieldDictionary.getSignatureDictionary().getByteRange();
@@ -633,13 +623,21 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
                 trustStore.load(fis, null);
             }
             // cert validation
-            X509Certificate[] cers = certificateChain.toArray(new X509Certificate[0]);
-            ArrayList<X509Certificate> trusted = new ArrayList<>(trustStore.size());
+            Set<X509Certificate> certSet = certificateChain.stream()
+                    .filter(X509Certificate.class::isInstance)
+                    .map(X509Certificate.class::cast)
+                    .collect(Collectors.toSet());
+
+            // add certs from keystore
             Enumeration<String> aliases = trustStore.aliases();
             while (aliases.hasMoreElements()) {
-                trusted.add((X509Certificate) trustStore.getCertificate(aliases.nextElement()));
+                certSet.add((X509Certificate) trustStore.getCertificate(aliases.nextElement()));
             }
-            CertificateVerifier.verifyCertificate(signerCertificate, cers, trusted);
+
+            Date signatureDate = signatureDictionary.getPDate() != null ?
+                    signatureDictionary.getPDate().asDateWithTimeZone() : null;
+            // CertificateVerifier.verifyCertificateChain
+            CertificateVerifier.verifyCertificate(signerCertificate, certSet, true, signatureDate);
             isCertificateChainTrusted = true;
             isCertificateDateValid = true;
             lastVerified = new Date();
@@ -647,8 +645,11 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
             logger.log(Level.FINEST, "Certificate chain could not be validated, certificate is expired", e);
             isCertificateDateValid = false;
         } catch (CertificateVerificationException e) {
-            logger.log(Level.FINEST, "Certificate chain could not be validated. ", e);
+            logger.log(Level.FINEST, "Certificate chain could not be validated.", e);
             isCertificateChainTrusted = false;
+        } catch (SelfSignedVerificationException e) {
+            logger.log(Level.FINEST, "Certificate is self signed.", e);
+            isSelfSigned = true;
         } catch (IOException e) {
             logger.log(Level.FINEST, "Error locating trusted keystore .", e);
             isCertificateChainTrusted = false;

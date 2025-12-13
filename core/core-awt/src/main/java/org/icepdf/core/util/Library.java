@@ -27,7 +27,7 @@ import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.graphics.ICCBased;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.graphics.images.references.ImagePool;
-import org.icepdf.core.pobjects.security.LoadJceProvider;
+import org.icepdf.core.pobjects.security.JceProvider;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 import org.icepdf.core.pobjects.structure.Header;
@@ -89,7 +89,7 @@ public class Library {
         } catch (NumberFormatException e) {
             logger.warning("Error reading buffered scale factor");
         }
-        LoadJceProvider.loadProvider();
+        JceProvider.loadProvider();
     }
 
     private final ConcurrentHashMap<Reference, java.lang.ref.Reference<Object>> objectStore =

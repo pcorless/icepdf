@@ -18,7 +18,10 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.pobjects.security.SecurityManager;
 
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.*;
 
 /**
@@ -415,6 +418,29 @@ public class PDate {
             timeZoneMinute = date.substring(totalOffset + 1, totalOffset + 3);
             //System.out.println(timeZoneMinute);
         }
+    }
+
+    public Date asDateWithTimeZone() {
+        LocalDateTime ldt = asLocalDateTime();
+
+        String tzSign = timeZoneOffset;
+        String tzHour = timeZoneHour;
+        String tzMinute = timeZoneMinute;
+
+        ZoneOffset offset = null;
+        if (tzSign != null && (tzSign.equals("+") || tzSign.equals("-")) &&
+                tzHour != null && !tzHour.isEmpty() &&
+                tzMinute != null && !tzMinute.isEmpty()) {
+            int hours = Integer.parseInt(tzHour);
+            int minutes = Integer.parseInt(tzMinute);
+            String offsetId = String.format("%s%02d:%02d", tzSign, hours, minutes);
+            offset = ZoneOffset.of(offsetId);
+        } else if ("Z".equalsIgnoreCase(tzSign)) {
+            offset = ZoneOffset.UTC;
+        }
+
+        Instant instant = (offset != null) ? ldt.toInstant(offset) : ldt.atZone(ZoneId.systemDefault()).toInstant();
+        return Date.from(instant);
     }
 
     /**
