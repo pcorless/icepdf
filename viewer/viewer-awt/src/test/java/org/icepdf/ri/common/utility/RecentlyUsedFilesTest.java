@@ -142,7 +142,7 @@ class RecentlyUsedFilesTest {
         recentlyUsedFiles.addRecentlyUsedFilePath(Paths.get("/path/to/newfile.txt"));
 
         verify(mockPreferences).put(eq(ViewerPropertiesManager.PROPERTY_RECENTLY_OPENED_FILES),
-                eq("newfile.txt|/path/to/newfile.txt|"));
+                eq("newfile.txt|/path/to/newfile.txt"));
     }
 
     @Test
@@ -154,7 +154,7 @@ class RecentlyUsedFilesTest {
         recentlyUsedFiles.addRecentlyUsedFilePath(Paths.get("/path/to/new|file.txt"));
 
         verify(mockPreferences).put(eq(ViewerPropertiesManager.PROPERTY_RECENTLY_OPENED_FILES),
-                eq("new\\|file.txt|/path/to/new\\|file.txt|file\\|1.txt|/path/to/file\\|1|file2.txt|/path/to/file2|"));
+                eq("new\\|file.txt|/path/to/new\\|file.txt|file\\|1.txt|/path/to/file\\|1|file2.txt|/path/to/file2"));
     }
 
     @Test
@@ -166,7 +166,7 @@ class RecentlyUsedFilesTest {
         recentlyUsedFiles.addRecentlyUsedFilePath(Paths.get("/path/to/file3.txt"));
 
         verify(mockPreferences).put(eq(ViewerPropertiesManager.PROPERTY_RECENTLY_OPENED_FILES),
-                eq("file3.txt|/path/to/file3.txt|file1.txt|/path/to/file1.txt|file2.txt|/path/to/file2.txt|"));
+                eq("file3.txt|/path/to/file3.txt|file1.txt|/path/to/file1.txt|file2.txt|/path/to/file2.txt"));
     }
 
     @Test
@@ -178,7 +178,7 @@ class RecentlyUsedFilesTest {
         recentlyUsedFiles.addRecentlyUsedFilePath(Paths.get("/path/to/newfile.txt"));
 
         verify(mockPreferences).put(eq(ViewerPropertiesManager.PROPERTY_RECENTLY_OPENED_FILES),
-                eq("newfile.txt|/path/to/newfile.txt|file1.txt|/path/to/file1.txt|"));
+                eq("newfile.txt|/path/to/newfile.txt|file1.txt|/path/to/file1.txt"));
     }
 }
 
