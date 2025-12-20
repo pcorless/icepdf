@@ -18,28 +18,28 @@ import static org.icepdf.ri.util.ViewerPropertiesManager.*;
  */
 public class RecentlyUsedFiles {
 
-    public static RecentlyUsedFile[] getRecentlyUsedFilePaths() {
+    public RecentlyUsedFile[] getRecentlyUsedFilePaths() {
         Preferences preferences = ViewerPropertiesManager.getInstance().getPreferences();
         String recentFilesString = preferences.get(PROPERTY_RECENTLY_OPENED_FILES, "");
         StringTokenizer toker = new StringTokenizer(recentFilesString, PROPERTY_TOKEN_SEPARATOR);
         String fileName;
-        RecentlyUsedFile[] filePaths = new RecentlyUsedFile[toker.countTokens() / 2];
-        int count = 0;
+        ArrayList<RecentlyUsedFile> filePaths = new ArrayList<>();
         try {
             while (toker.hasMoreTokens()) {
                 fileName = toker.nextToken();
                 final String filePath = toker.nextToken();
-                filePaths[count] = new RecentlyUsedFile(fileName, filePath);
-                count++;
+                if (doesPathExist(filePath)) {
+                    filePaths.add(new RecentlyUsedFile(fileName, filePath));
+                }
             }
         } catch (Exception e) {
             // clear the invalid previous values.
             preferences.put(PROPERTY_RECENTLY_OPENED_FILES, "");
         }
-        return filePaths;
+        return filePaths.toArray(RecentlyUsedFile[]::new);
     }
 
-    public static void addRecentlyUsedFilePath(Path path) {
+    public void addRecentlyUsedFilePath(Path path) {
         // get reference to the backing store.
         Preferences preferences = ViewerPropertiesManager.getInstance().getPreferences();
         int maxListSize = preferences.getInt(PROPERTY_RECENT_FILES_SIZE, 8);
@@ -48,12 +48,15 @@ public class RecentlyUsedFiles {
         ArrayList<String> recentPaths = new ArrayList<>(maxListSize);
         String fileName, filePath;
         while (toker.hasMoreTokens()) {
+            // escape any pipe characters in file names and paths.
             fileName = toker.nextToken().replaceAll("\\|", "\\\\|");
-            filePath = toker.nextToken();
+            filePath = toker.nextToken().replaceAll("\\|", "\\\\|");
             recentPaths.add(fileName + PROPERTY_TOKEN_SEPARATOR + Paths.get(filePath));
         }
         // add our new path the start of the list, remove any existing file names.
-        String newRecentFile = path.getFileName() + PROPERTY_TOKEN_SEPARATOR + path;
+        fileName = path.getFileName().toString().replaceAll("\\|", "\\\\|");
+        filePath = path.toString().replaceAll("\\|", "\\\\|");
+        String newRecentFile = fileName + PROPERTY_TOKEN_SEPARATOR + filePath;
         if (recentPaths.contains(newRecentFile)) {
             recentPaths.remove(newRecentFile);
         }
@@ -74,7 +77,7 @@ public class RecentlyUsedFiles {
 
     }
 
-    public static class RecentlyUsedFile {
+    public class RecentlyUsedFile {
         private String name;
         private String path;
 
@@ -90,5 +93,9 @@ public class RecentlyUsedFiles {
         public String getPath() {
             return path;
         }
+    }
+
+    public boolean doesPathExist(String filePath) {
+        return java.nio.file.Files.exists(java.nio.file.Paths.get(filePath));
     }
 }

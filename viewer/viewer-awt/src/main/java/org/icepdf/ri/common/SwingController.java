@@ -2373,7 +2373,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
      * @param path path to be added to recent files list.
      */
     protected void addRecentFileEntry(Path path) {
-        RecentlyUsedFiles.addRecentlyUsedFilePath(path);
+        new RecentlyUsedFiles().addRecentlyUsedFilePath(path);
         refreshRecentFileMenuItem();
     }
 
@@ -2384,7 +2384,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         if (recentFilesSubMenu != null) {
             recentFilesSubMenu.removeAll();
 
-            RecentlyUsedFiles.RecentlyUsedFile[] recentlyUsedFiles = RecentlyUsedFiles.getRecentlyUsedFilePaths();
+            RecentlyUsedFiles.RecentlyUsedFile[] recentlyUsedFiles = new RecentlyUsedFiles().getRecentlyUsedFilePaths();
             for (int i = 0; i < recentlyUsedFiles.length; i++) {
                 final RecentlyUsedFiles.RecentlyUsedFile recentlyUsedFile = recentlyUsedFiles[i];
                 JMenuItem mi = SwingViewBuilder.makeMenuItem(recentlyUsedFile.getName(),
