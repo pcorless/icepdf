@@ -37,6 +37,19 @@ class RecentlyUsedFilesTest {
     }
 
     @Test
+    void getRecentlyUsedFilePathsReturnsEmptyArrayWhenOddFileListLength() {
+        when(mockPreferences.get(anyString(), anyString()))
+                .thenReturn("file1.txt|/path/to/file1|file|2.txt|/path/to/file2|");
+        RecentlyUsedFiles recentlyUsedFilesSpy = spy(recentlyUsedFiles);
+        doReturn(true).when(recentlyUsedFilesSpy).doesPathExist(anyString());
+
+        RecentlyUsedFiles.RecentlyUsedFile[] files = recentlyUsedFilesSpy.getRecentlyUsedFilePaths();
+
+        assertNotNull(files);
+        assertEquals(0, files.length);
+    }
+
+    @Test
     void getRecentlyUsedFilePathsParsesValidRecentFiles() {
         when(mockPreferences.get(anyString(), anyString()))
                 .thenReturn("file1.txt|/path/to/file1|file2.txt|/path/to/file2|");
@@ -49,6 +62,23 @@ class RecentlyUsedFilesTest {
         assertEquals(2, files.length);
         assertEquals("file1.txt", files[0].getName());
         assertEquals("/path/to/file1", files[0].getPath());
+        assertEquals("file2.txt", files[1].getName());
+        assertEquals("/path/to/file2", files[1].getPath());
+    }
+
+    @Test
+    void getRecentlyUsedFilePathsParsesValidEscapedRecentFiles() {
+        when(mockPreferences.get(anyString(), anyString()))
+                .thenReturn("file\\|1.txt|/path/to/file\\|1|file2.txt|/path/to/file2|");
+        RecentlyUsedFiles recentlyUsedFilesSpy = spy(recentlyUsedFiles);
+        doReturn(true).when(recentlyUsedFilesSpy).doesPathExist(anyString());
+
+        RecentlyUsedFiles.RecentlyUsedFile[] files = recentlyUsedFilesSpy.getRecentlyUsedFilePaths();
+
+        assertNotNull(files);
+        assertEquals(2, files.length);
+        assertEquals("file|1.txt", files[0].getName());
+        assertEquals("/path/to/file|1", files[0].getPath());
         assertEquals("file2.txt", files[1].getName());
         assertEquals("/path/to/file2", files[1].getPath());
     }
@@ -113,6 +143,18 @@ class RecentlyUsedFilesTest {
 
         verify(mockPreferences).put(eq(ViewerPropertiesManager.PROPERTY_RECENTLY_OPENED_FILES),
                 eq("newfile.txt|/path/to/newfile.txt|"));
+    }
+
+    @Test
+    void addRecentlyUsedFilePathAddsFileWithEscaptedPipe() {
+        when(mockPreferences.get(anyString(), anyString()))
+                .thenReturn("file\\|1.txt|/path/to/file\\|1|file2.txt|/path/to/file2|");
+        when(mockPreferences.getInt(anyString(), anyInt())).thenReturn(8);
+
+        recentlyUsedFiles.addRecentlyUsedFilePath(Paths.get("/path/to/new|file.txt"));
+
+        verify(mockPreferences).put(eq(ViewerPropertiesManager.PROPERTY_RECENTLY_OPENED_FILES),
+                eq("new\\|file.txt|/path/to/new\\|file.txt|file\\|1.txt|/path/to/file\\|1|file2.txt|/path/to/file2|"));
     }
 
     @Test

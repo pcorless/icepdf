@@ -8,7 +8,6 @@ import org.icepdf.ri.util.ViewerPropertiesManager;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.StringTokenizer;
 import java.util.prefs.Preferences;
 
 import static org.icepdf.ri.util.ViewerPropertiesManager.*;
@@ -21,13 +20,17 @@ public class RecentlyUsedFiles {
     public RecentlyUsedFile[] getRecentlyUsedFilePaths() {
         Preferences preferences = ViewerPropertiesManager.getInstance().getPreferences();
         String recentFilesString = preferences.get(PROPERTY_RECENTLY_OPENED_FILES, "");
-        StringTokenizer toker = new StringTokenizer(recentFilesString, PROPERTY_TOKEN_SEPARATOR);
-        String fileName;
+        // split on unescaped pipe characters
+        String[] tokens = recentFilesString.split("(?<!\\\\)\\|");
         ArrayList<RecentlyUsedFile> filePaths = new ArrayList<>();
         try {
-            while (toker.hasMoreTokens()) {
-                fileName = toker.nextToken();
-                final String filePath = toker.nextToken();
+            if (tokens.length % 2 != 0) {
+                throw new Exception("Invalid recently used files format.");
+            }
+            for (int i = 0; i < tokens.length; i += 2) {
+                // unescape any escaped pipe characters
+                final String fileName = tokens[i].replaceAll("\\\\([|])", "$1");
+                final String filePath = tokens[i + 1].replaceAll("\\\\([|])", "$1");
                 if (doesPathExist(filePath)) {
                     filePaths.add(new RecentlyUsedFile(fileName, filePath));
                 }
@@ -44,29 +47,25 @@ public class RecentlyUsedFiles {
         Preferences preferences = ViewerPropertiesManager.getInstance().getPreferences();
         int maxListSize = preferences.getInt(PROPERTY_RECENT_FILES_SIZE, 8);
         String recentFilesString = preferences.get(PROPERTY_RECENTLY_OPENED_FILES, "");
-        StringTokenizer toker = new StringTokenizer(recentFilesString, PROPERTY_TOKEN_SEPARATOR);
+        String[] tokens = recentFilesString.split("(?<!\\\\)\\|");
         ArrayList<String> recentPaths = new ArrayList<>(maxListSize);
         String fileName, filePath;
-        while (toker.hasMoreTokens()) {
+        for (int i = 0; i < tokens.length - 1; i += 2) {
             // escape any pipe characters in file names and paths.
-            fileName = toker.nextToken().replaceAll("\\|", "\\\\|");
-            filePath = toker.nextToken().replaceAll("\\|", "\\\\|");
+            fileName = tokens[i];
+            filePath = tokens[i + 1];
             recentPaths.add(fileName + PROPERTY_TOKEN_SEPARATOR + Paths.get(filePath));
         }
         // add our new path the start of the list, remove any existing file names.
         fileName = path.getFileName().toString().replaceAll("\\|", "\\\\|");
         filePath = path.toString().replaceAll("\\|", "\\\\|");
         String newRecentFile = fileName + PROPERTY_TOKEN_SEPARATOR + filePath;
-        if (recentPaths.contains(newRecentFile)) {
-            recentPaths.remove(newRecentFile);
-        }
+        recentPaths.remove(newRecentFile);
         recentPaths.add(0, newRecentFile);
         // trim the list
         if (recentPaths.size() > maxListSize) {
             int size = recentPaths.size();
-            if (size > maxListSize) {
-                recentPaths.subList(maxListSize, size).clear();
-            }
+            recentPaths.subList(maxListSize, size).clear();
         }
         // put the list back in teh properties.
         StringBuilder stringBuilder = new StringBuilder();
@@ -77,9 +76,9 @@ public class RecentlyUsedFiles {
 
     }
 
-    public class RecentlyUsedFile {
-        private String name;
-        private String path;
+    public static class RecentlyUsedFile {
+        private final String name;
+        private final String path;
 
         public RecentlyUsedFile(String name, String path) {
             this.name = name;
