@@ -36,6 +36,7 @@ import org.icepdf.ri.common.properties.InformationDialog;
 import org.icepdf.ri.common.properties.PermissionsDialog;
 import org.icepdf.ri.common.properties.PropertiesDialog;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
+import org.icepdf.ri.common.utility.RecentlyUsedFiles;
 import org.icepdf.ri.common.utility.annotation.AnnotationFilter;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.annotation.properties.AnnotationPropertiesDialog;
@@ -2372,38 +2373,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
      * @param path path to be added to recent files list.
      */
     protected void addRecentFileEntry(Path path) {
-        // get reference to the backing store.
-        Preferences preferences = ViewerPropertiesManager.getInstance().getPreferences();
-        int maxListSize = preferences.getInt(PROPERTY_RECENT_FILES_SIZE, 8);
-        String recentFilesString = preferences.get(PROPERTY_RECENTLY_OPENED_FILES, "");
-        StringTokenizer toker = new StringTokenizer(recentFilesString, PROPERTY_TOKEN_SEPARATOR);
-        ArrayList<String> recentPaths = new ArrayList<>(maxListSize);
-        String fileName, filePath;
-        while (toker.hasMoreTokens()) {
-            fileName = toker.nextToken();
-            filePath = toker.nextToken();
-            recentPaths.add(fileName + PROPERTY_TOKEN_SEPARATOR + Paths.get(filePath));
-        }
-        // add our new path the start of the list, remove any existing file names.
-        String newRecentFile = path.getFileName() + PROPERTY_TOKEN_SEPARATOR + path;
-        if (recentPaths.contains(newRecentFile)) {
-            recentPaths.remove(newRecentFile);
-        }
-        recentPaths.add(0, newRecentFile);
-        // trim the list
-        if (recentPaths.size() > maxListSize) {
-            int size = recentPaths.size();
-            for (int i = size - maxListSize; i > 0; i--) {
-                recentPaths.remove(size - i);
-            }
-        }
-        // put the list back in teh properties.
-        StringBuilder stringBuilder = new StringBuilder();
-        for (String recentPath : recentPaths) {
-            stringBuilder.append(recentPath).append(PROPERTY_TOKEN_SEPARATOR);
-        }
-        preferences.put(PROPERTY_RECENTLY_OPENED_FILES, stringBuilder.toString());
-
+        new RecentlyUsedFiles().addRecentlyUsedFilePath(path);
         refreshRecentFileMenuItem();
     }
 
@@ -2414,25 +2384,14 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         if (recentFilesSubMenu != null) {
             recentFilesSubMenu.removeAll();
 
-            Preferences preferences = propertiesManager.getPreferences();
-            String recentFilesString = preferences.get(PROPERTY_RECENTLY_OPENED_FILES, "");
-            StringTokenizer toker = new StringTokenizer(recentFilesString, PROPERTY_TOKEN_SEPARATOR);
-            String fileName;
-            int count = 0;
-            try {
-                while (toker.hasMoreTokens()) {
-                    fileName = toker.nextToken();
-                    final String filePath = toker.nextToken();
-                    JMenuItem mi = SwingViewBuilder.makeMenuItem(fileName,
-                            SwingViewBuilder.buildKeyStroke(KeyEvent.VK_1 + count,
-                                    KeyEventConstants.MODIFIER_OPEN_FILE));
-                    mi.addActionListener(e -> openFileInSomeViewer(filePath));
-                    recentFilesSubMenu.add(mi);
-                    count++;
-                }
-            } catch (Exception e) {
-                // clear the invalid previous values.
-                preferences.put(PROPERTY_RECENTLY_OPENED_FILES, "");
+            RecentlyUsedFiles.RecentlyUsedFile[] recentlyUsedFiles = new RecentlyUsedFiles().getRecentlyUsedFilePaths();
+            for (int i = 0; i < recentlyUsedFiles.length; i++) {
+                final RecentlyUsedFiles.RecentlyUsedFile recentlyUsedFile = recentlyUsedFiles[i];
+                JMenuItem mi = SwingViewBuilder.makeMenuItem(recentlyUsedFile.getName(),
+                        SwingViewBuilder.buildKeyStroke(KeyEvent.VK_1 + i,
+                                KeyEventConstants.MODIFIER_OPEN_FILE));
+                mi.addActionListener(e -> openFileInSomeViewer(recentlyUsedFile.getPath()));
+                recentFilesSubMenu.add(mi);
             }
         }
     }
