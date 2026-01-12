@@ -159,7 +159,7 @@ class RecentlyUsedFilesTest {
     }
 
     @Test
-    void addRecentlyUsedFilePathAddsFileWithEscaptedPipe() {
+    void addRecentlyUsedFilePathAddsFileWithEscapedPipe() {
         when(mockPreferences.get(anyString(), anyString()))
                 .thenReturn("file\\|1.txt|/path/to/file\\|1|file2.txt|/path/to/file2|");
         when(mockPreferences.getInt(anyString(), anyInt())).thenReturn(8);

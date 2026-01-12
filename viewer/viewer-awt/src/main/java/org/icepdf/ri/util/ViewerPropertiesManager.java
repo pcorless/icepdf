@@ -350,7 +350,7 @@ public final class ViewerPropertiesManager {
     /**
      * Set static instance of properties manager to allow for mocking in tests.
      *
-     * @param instance mock instsance.
+     * @param instance mock instance.
      */
     public static void setInstance(ViewerPropertiesManager instance) {
         propertiesManager = instance;
