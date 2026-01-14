@@ -250,8 +250,7 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
                     "viewer.utilityPane.signatures.tab.certTree.signature.lastChecked.label"));
             SigPropertyTreeNode lastChecked =
                     new SigPropertyTreeNode(messageFormat.format(new Object[]{
-                            new PDate(signatureWidgetAnnotation.getLibrary().getSecurityManager(),
-                                    PDate.formatDateTime(signatureValidator.getLastValidated())).toString()}));
+                            new PDate(PDate.formatDateTime(signatureValidator.getLastValidated())).toString()}));
             lastChecked.setAllowsChildren(false);
             root.add(lastChecked);
         }

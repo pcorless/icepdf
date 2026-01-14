@@ -85,7 +85,7 @@ public class CRLVerifier {
     private static X509CRL downloadCRL(String crlURL) throws IOException,
             CertificateException, CRLException,
             CertificateVerificationException, NamingException {
-        if (crlURL.startsWith("http")) {
+        if (crlURL.startsWith("http://") || crlURL.startsWith("https://")) {
             return downloadCRLFromWeb(crlURL);
         } else if (crlURL.startsWith("ldap://")) {
             return downloadCRLFromLDAP(crlURL);
@@ -124,7 +124,7 @@ public class CRLVerifier {
 
     /**
      * Downloads a CRL from given HTTP/HTTPS/FTP URL, e.g.
-     * http://crl.infonotary.com/crl/identity-ca.crl
+     * <a href="http://crl.infonotary.com/crl/identity-ca.crl">...</a>
      */
     private static X509CRL downloadCRLFromWeb(String crlURL)
             throws IOException, CertificateException,
@@ -138,7 +138,7 @@ public class CRLVerifier {
 
     /**
      * Extracts all CRL distribution point URLs from the "CRL Distribution Point"
-     * extension in a X.509 certificate. If CRL distribution point extension is
+     * extension in an X.509 certificate. If CRL distribution point extension is
      * unavailable, returns an empty list.
      *
      * @param cert cert to extract CRL from.
@@ -168,7 +168,7 @@ public class CRLVerifier {
                 if (dpn.getType() == DistributionPointName.FULL_NAME) {
                     GeneralName[] genNames = GeneralNames.getInstance(
                             dpn.getName()).getNames();
-                    // Look for an URI
+                    // Look for a URI
                     for (GeneralName genName : genNames) {
                         if (genName.getTagNo() == GeneralName.uniformResourceIdentifier) {
                             String url = ASN1IA5String.getInstance(

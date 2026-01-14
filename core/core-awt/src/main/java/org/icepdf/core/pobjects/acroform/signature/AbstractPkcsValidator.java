@@ -29,6 +29,7 @@ import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.pobjects.acroform.signature.certificates.CertificateVerifier;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.CertificateVerificationException;
+import org.icepdf.core.pobjects.acroform.signature.exceptions.RevokedCertificateException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SelfSignedVerificationException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.util.Defs;
@@ -656,14 +657,20 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         } catch (CertificateException e) {
             logger.log(Level.FINEST, "Certificate exception.", e);
             isCertificateChainTrusted = false;
+        } catch (RevokedCertificateException e) {
+            logger.log(Level.FINEST, "Certificate has been revoked.", e);
+            isRevocation = true;
         } catch (Exception e) {
             logger.log(Level.FINEST, "Error validation certificate chain.", e);
             isCertificateChainTrusted = false;
         }
     }
 
-    public void validateTimestamp() {
-        if (timeStampToken == null) return;
+    public void validateTimestamp() throws SignatureIntegrityException {
+        if (timeStampToken == null) {
+            logger.log(Level.FINE, "Timestamp validation skipped: timeStampToken is null.");
+            return;
+        }
         try {
             // verify the timestamp was signed by a valid authority.
             Collection<X509CertificateHolder> tstMatches =
@@ -681,7 +688,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
                 isSignerTimeValid = true;
             }
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new SignatureIntegrityException("Failed to validate timestamp.", e);
         }
     }
 

@@ -89,7 +89,7 @@ public class SignatureVerification {
 
     private static void printSignatureSummary(SignatureWidgetAnnotation signatureWidgetAnnotation) {
         SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
-        String signingTime = new PDate(signatureWidgetAnnotation.getLibrary().getSecurityManager(),
+        String signingTime = new PDate(
                 signatureDictionary.getDate()).toString();
         System.out.println("General Info:");
         System.out.println("  Signing time: " + signingTime);

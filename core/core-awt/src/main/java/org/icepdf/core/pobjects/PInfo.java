@@ -240,7 +240,7 @@ public class PInfo extends Dictionary {
         final Object value = library.getObject(entries, CREATIONDATE_KEY);
         if (value instanceof StringObject) {
             final StringObject text = (StringObject) value;
-            return new PDate(securityManager, text.getDecryptedLiteralString(securityManager));
+            return new PDate(text.getDecryptedLiteralString(securityManager));
         }
         return null;
     }
@@ -263,7 +263,7 @@ public class PInfo extends Dictionary {
         final Object value = library.getObject(entries, MODDATE_KEY);
         if (value instanceof StringObject) {
             final StringObject text = (StringObject) value;
-            return new PDate(securityManager, text.getDecryptedLiteralString(securityManager));
+            return new PDate(text.getDecryptedLiteralString(securityManager));
         }
         return null;
     }

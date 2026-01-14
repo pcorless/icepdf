@@ -143,7 +143,7 @@ public class EmbeddedFileStream extends Dictionary {
         Object value = library.getObject(getParams(), PARAMS_CREATION_DATE_KEY);
         if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
-            return new PDate(securityManager, text.getDecryptedLiteralString(securityManager));
+            return new PDate(text.getDecryptedLiteralString(securityManager));
         }
         return null;
     }
@@ -157,7 +157,7 @@ public class EmbeddedFileStream extends Dictionary {
         Object value = library.getObject(getParams(), PARAMS_MOD_DATE_KEY);
         if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
-            return new PDate(securityManager, text.getDecryptedLiteralString(securityManager));
+            return new PDate(text.getDecryptedLiteralString(securityManager));
         }
         return null;
     }

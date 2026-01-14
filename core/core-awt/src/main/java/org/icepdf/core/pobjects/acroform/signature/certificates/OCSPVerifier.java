@@ -30,8 +30,8 @@ import org.icepdf.core.pobjects.acroform.signature.exceptions.SelfSignedVerifica
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateExpiredException;
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.Date;
@@ -41,10 +41,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * OCSP verifier class.
  * Main logic copied from Apache CXF 2.4.9, initial version:
- * https://svn.apache.org/repos/asf/cxf/tags/cxf-2.4
- * .9/distribution/src/main/release/samples/sts_issue_operation/src/main/java/demo/sts/provider/cert/
- *
+ * <a href="https://svn.apache.org/repos/asf/cxf/tags/cxf-2.4.9/distribution/src/main/release/samples/sts_issue_operation/src/main/java/demo/sts/provider/cert/">Apache CXF 2.4.9</a>
  */
 public class OCSPVerifier {
 
@@ -55,16 +54,11 @@ public class OCSPVerifier {
      * the certificate of the responder has been revoked now.
      *
      * @param ocspHelper      the OCSP helper.
-     * @param additionalCerts
-     * @throws RevokedCertificateException
-     * @throws IOException
-     * @throws URISyntaxException
-     * @throws OCSPException
-     * @throws CertificateVerificationException
+     * @param additionalCerts additional certificates for building the chain.
      */
     public static void verifyOCSP(OcspHelper ocspHelper, Set<X509Certificate> additionalCerts)
             throws RevokedCertificateException, IOException, OCSPException,
-            CertificateVerificationException, URISyntaxException, CertificateExpiredException,
+            CertificateVerificationException, URISyntaxException, GeneralSecurityException,
             SelfSignedVerificationException {
         Date now = Calendar.getInstance().getTime();
         OCSPResp ocspResponse;

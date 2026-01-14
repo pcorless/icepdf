@@ -109,10 +109,6 @@ public class OcspHelper {
      *
      * @return the OCSPResp, when the request was successful, else a corresponding exception will be
      * thrown. Never returns null.
-     * @throws IOException
-     * @throws OCSPException
-     * @throws RevokedCertificateException
-     * @throws URISyntaxException
      */
     public OCSPResp getResponseOcsp()
             throws IOException, OCSPException, RevokedCertificateException, URISyntaxException {
@@ -135,8 +131,6 @@ public class OcspHelper {
      * Verifies the status and the response itself (including nonce), but not the signature.
      *
      * @param ocspResponse to be verified
-     * @throws OCSPException
-     * @throws RevokedCertificateException
      * @throws IOException                 if the default security provider can't be instantiated
      */
     private void verifyOcspResponse(OCSPResp ocspResponse)
@@ -215,8 +209,8 @@ public class OcspHelper {
     /**
      * Log if the certificate is not valid for responding.
      *
-     * @param x509Certificate
-     * @throws java.security.cert.CertificateParsingException
+     * @param x509Certificate the certificate to be checked
+     * @throws java.security.cert.CertificateParsingException if the certificate can't be parsed
      */
     public static void checkResponderCertificateUsage(X509Certificate x509Certificate)
             throws CertificateParsingException {
@@ -346,7 +340,6 @@ public class OcspHelper {
      * @param certificate   the certificate to check the signature
      * @param basicResponse OCSP response containing the signature
      * @throws OCSPException when the signature is invalid or could not be checked
-     * @throws IOException   if the default security provider can't be instantiated
      */
     private void checkOcspSignature(X509Certificate certificate, BasicOCSPResp basicResponse)
             throws OCSPException {
@@ -390,9 +383,6 @@ public class OcspHelper {
      *
      * @param urlString URL of OCSP service.
      * @return the OCSPResp, that has been fetched from the ocspUrl
-     * @throws IOException
-     * @throws OCSPException
-     * @throws URISyntaxException
      */
     private OCSPResp performRequest(String urlString)
             throws IOException, OCSPException, URISyntaxException {
@@ -487,8 +477,6 @@ public class OcspHelper {
      * Generates an OCSP request and generates the <code>CertificateID</code>.
      *
      * @return OCSP request, ready to fetch data
-     * @throws OCSPException
-     * @throws IOException
      */
     private OCSPReq generateOCSPRequest() throws OCSPException, IOException {
 

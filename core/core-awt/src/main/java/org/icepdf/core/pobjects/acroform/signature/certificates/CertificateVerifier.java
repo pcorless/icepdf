@@ -18,8 +18,10 @@ package org.icepdf.core.pobjects.acroform.signature.certificates;
 import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
+import org.bouncycastle.cert.ocsp.OCSPException;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.CertificateVerificationException;
+import org.icepdf.core.pobjects.acroform.signature.exceptions.RevokedCertificateException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SelfSignedVerificationException;
 
 import java.io.IOException;
@@ -61,7 +63,6 @@ public class CertificateVerifier {
      * certificates.
      *
      * @param signerCert      signer certificate
-     * @param cert            - certificate for validation
      * @param additionalCerts - set of trusted root CA certificates that will be
      *                        used as "trust anchors" and intermediate CA certificates that will be
      *                        used as part of the certification chain. All self-signed certificates
@@ -79,7 +80,8 @@ public class CertificateVerifier {
                                                               Collection<X509Certificate> additionalCerts,
                                                               boolean verifySelfSignedCert,
                                                               Date signatureDate)
-            throws CertificateVerificationException, CertificateExpiredException, SelfSignedVerificationException {
+            throws CertificateVerificationException, GeneralSecurityException, SelfSignedVerificationException,
+            RevokedCertificateException, OCSPException, IOException, URISyntaxException {
         try {
             // Check for self-signed root certificate
             if (!verifySelfSignedCert && CertificateUtils.isSelfSigned(signerCert)) {
@@ -139,11 +141,6 @@ public class CertificateVerifier {
             }
             throw new CertificateVerificationException(
                     "Error building certification path: " + signerCert.getSubjectX500Principal(), certPathEx);
-        } catch (CertificateVerificationException cvex) {
-            throw cvex;
-        } catch (Exception ex) {
-            throw new CertificateVerificationException(
-                    "Error verifying the certificate: " + signerCert.getSubjectX500Principal(), ex);
         }
     }
 
@@ -245,12 +242,9 @@ public class CertificateVerifier {
     }
 
     /**
-     * Like {@link URL#openStream()} but will follow redirection from http to https.
+     * Open a URL connection, following redirections from http to https
      *
-     * @param urlString
-     * @return
-     * @throws IOException
-     * @throws URISyntaxException
+     * @param urlString url string
      * @author Tilman Hausherr from PDFBox SigUtils
      */
     private static InputStream openURL(String urlString) throws IOException, URISyntaxException {

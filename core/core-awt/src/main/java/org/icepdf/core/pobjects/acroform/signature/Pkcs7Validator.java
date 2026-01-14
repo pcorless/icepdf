@@ -65,6 +65,11 @@ public class Pkcs7Validator extends AbstractPkcsValidator {
         initialized = true;
     }
 
+    /**
+     * Validates both the document integrity and the timestamp integrity of the signature.
+     *
+     * @throws SignatureIntegrityException thrown if the signature fails either validation.
+     */
     public void validate() throws SignatureIntegrityException {
         validateDocument();
         validateTimestamp();

@@ -1,6 +1,4 @@
 /*
- * Copyright 2025 Patrick Corless
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -31,6 +29,9 @@ import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 import java.util.logging.Logger;
 
+/**
+ * Utility class for X.509 certificate operations.
+ */
 public class CertificateUtils {
 
     private static final Logger logger =
@@ -69,8 +70,6 @@ public class CertificateUtils {
     public static String extractOCSPURL(X509Certificate cert) throws IOException {
         byte[] authorityExtensionValue = cert.getExtensionValue(Extension.authorityInfoAccess.getId());
         if (authorityExtensionValue != null) {
-            // copied from CertInformationHelper.getAuthorityInfoExtensionValue()
-            // DRY refactor should be done some day
             ASN1Sequence asn1Seq = (ASN1Sequence) JcaX509ExtensionUtils.parseExtensionValue(authorityExtensionValue);
             Enumeration<?> objects = asn1Seq.getObjects();
             while (objects.hasMoreElements()) {

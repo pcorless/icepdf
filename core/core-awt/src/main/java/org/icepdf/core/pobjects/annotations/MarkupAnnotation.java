@@ -231,7 +231,7 @@ public abstract class MarkupAnnotation extends Annotation {
         // creation date
         Object value = library.getObject(entries, CREATION_DATE_KEY);
         if (value instanceof StringObject) {
-            creationDate = new PDate(securityManager, getString(CREATION_DATE_KEY));
+            creationDate = new PDate(getString(CREATION_DATE_KEY));
         }
 
         // popup child
@@ -447,7 +447,7 @@ public abstract class MarkupAnnotation extends Annotation {
     }
 
     public void setCreationDate(String creationDate) {
-        this.creationDate = new PDate(securityManager, creationDate);
+        this.creationDate = new PDate(creationDate);
         setString(CREATION_DATE_KEY, creationDate);
     }
 

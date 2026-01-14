@@ -365,7 +365,7 @@ public class SignatureDictionary extends Dictionary {
     public PDate getPDate() {
         String date = getDate();
         if (date != null) {
-            return new PDate(library.getSecurityManager(), date);
+            return new PDate(date);
         } else {
             return null;
         }

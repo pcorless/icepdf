@@ -37,9 +37,9 @@ import java.util.logging.Logger;
 
 
 /**
+ * Revocations verifier class.
  * Main logic copied from Apache CXF 2.4.9, initial version:
- * https://svn.apache.org/repos/asf/cxf/tags/cxf-2.4
- * .9/distribution/src/main/release/samples/sts_issue_operation/src/main/java/demo/sts/provider/cert/
+ * <a href="https://svn.apache.org/repos/asf/cxf/tags/cxf-2.4.9/distribution/src/main/release/samples/sts_issue_operation/src/main/java/demo/sts/provider/cert/">Apache CXF 2.4.9</a>
  *
  */
 public class RevocationsVerifier {
