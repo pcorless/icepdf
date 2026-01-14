@@ -702,8 +702,7 @@ public abstract class Annotation extends Dictionary {
         Object value = library.getObject(entries, M_KEY);
         if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
-            modifiedDate = new PDate(securityManager,
-                    text.getDecryptedLiteralString(securityManager));
+            modifiedDate = new PDate(text.getDecryptedLiteralString(securityManager));
         }
 
         // process the streams if available.
@@ -1789,7 +1788,7 @@ public abstract class Annotation extends Dictionary {
             Object value = library.getObject(entries, M_KEY);
             if (value instanceof StringObject) {
                 StringObject text = (StringObject) value;
-                modifiedDate = new PDate(securityManager,
+                modifiedDate = new PDate(
                         text.getDecryptedLiteralString(securityManager));
             }
         }
@@ -1798,7 +1797,7 @@ public abstract class Annotation extends Dictionary {
 
     public void setModifiedDate(String modifiedDate) {
         setString(M_KEY, modifiedDate);
-        this.modifiedDate = new PDate(securityManager, modifiedDate);
+        this.modifiedDate = new PDate(modifiedDate);
     }
 
     public boolean hasAppearanceStream() {

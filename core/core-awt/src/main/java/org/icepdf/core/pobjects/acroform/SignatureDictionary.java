@@ -362,6 +362,15 @@ public class SignatureDictionary extends Dictionary {
         return library.getString(entries, M_KEY);
     }
 
+    public PDate getPDate() {
+        String date = getDate();
+        if (date != null) {
+            return new PDate(date);
+        } else {
+            return null;
+        }
+    }
+
     public void setDate(String date) {
         entries.put(M_KEY, new LiteralStringObject(date));
     }
