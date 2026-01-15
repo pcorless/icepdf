@@ -49,15 +49,19 @@ public class Pkcs12SignatureCreation {
         String alias = args[2];
         // keystore password
         String password = args[3];
+        // timestamp authority url
+        String timeStampAuthorityUrl = args[4];
         Path path = Path.of(filePath);
         // start the capture
-        new Pkcs12SignatureCreation().signDocument(path, keyStorePath, alias, password);
+        new Pkcs12SignatureCreation().signDocument(timeStampAuthorityUrl, path, keyStorePath, alias, password);
     }
 
-    public void signDocument(Path filePath, String keyStorePath, String certAlias, String password) {
+    public void signDocument(String timeStampAuthorityUrl, Path filePath, String keyStorePath, String certAlias,
+                             String password) {
         try {
 
             Pkcs12SignerHandler pkcs12SignerHandler = new Pkcs12SignerHandler(
+                    timeStampAuthorityUrl,
                     new File(keyStorePath),
                     certAlias,
                     new SimplePasswordCallbackHandler(password));

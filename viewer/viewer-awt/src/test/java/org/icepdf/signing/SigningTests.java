@@ -48,8 +48,12 @@ public class SigningTests {
             String keystorePath = "/signing/certificate.pfx";
             String password = "changeit";
             String certAlias = "senderKeyPair";
+            String timeStampAuthorityUrl = "http://time.certum.pl";
 
-            Pkcs12SignerHandler pkcs12SignerHandler = new Pkcs12SignerHandler(new File(keystorePath), certAlias,
+            Pkcs12SignerHandler pkcs12SignerHandler = new Pkcs12SignerHandler(
+                    timeStampAuthorityUrl,
+                    new File(keystorePath),
+                    certAlias,
                     new SimplePasswordCallbackHandler(password));
 
             Document document = new Document();

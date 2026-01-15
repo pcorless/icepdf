@@ -49,8 +49,10 @@ public class Pkcs11SignatureCreation {
         BigInteger certSerial = convertHexStringToBigInteger(args[2]);
         String password = args[3];
         Path path = Path.of(filePath);
+        // timestamp authority url
+        String timeStampAuthorityUrl = args[4];
         // start the capture
-        new Pkcs11SignatureCreation().signDocument(path, providerConfig, certSerial, password);
+        new Pkcs11SignatureCreation().signDocument(timeStampAuthorityUrl, path, providerConfig, certSerial, password);
     }
 
     private static BigInteger convertHexStringToBigInteger(String hexStr) {
@@ -58,10 +60,12 @@ public class Pkcs11SignatureCreation {
         return new BigInteger(hexStr, 16);
     }
 
-    public void signDocument(Path filePath, String providerConfig, BigInteger certSerial, String password) {
+    public void signDocument(String timeStampAuthorityUrl, Path filePath, String providerConfig,
+                             BigInteger certSerial, String password) {
         try {
 
             Pkcs11SignerHandler pkcs11SignerHandler = new Pkcs11SignerHandler(
+                    timeStampAuthorityUrl,
                     providerConfig,
                     certSerial,
                     new SimplePasswordCallbackHandler(password));

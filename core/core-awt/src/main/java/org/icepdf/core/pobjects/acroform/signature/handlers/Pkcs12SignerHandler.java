@@ -17,8 +17,9 @@ public class Pkcs12SignerHandler extends SignerHandler {
      * @param certAlias       the alias of the certificate in the keystore
      * @param callbackHandler the callback handler to retrieve the password for the keystore
      */
-    public Pkcs12SignerHandler(File keyStore, String certAlias, PasswordCallbackHandler callbackHandler) {
-        super(certAlias, callbackHandler);
+    public Pkcs12SignerHandler(String timeStampAuthorityUrl, File keyStore, String certAlias,
+                               PasswordCallbackHandler callbackHandler) {
+        super(timeStampAuthorityUrl, certAlias, callbackHandler);
         this.keystoreFile = keyStore;
     }
 
