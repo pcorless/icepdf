@@ -5,6 +5,8 @@ module org.icepdf.core {
     requires java.net.http;
     requires java.naming;
 
+    requires org.icepdf.fonts;
+
     requires org.bouncycastle.pkix;
     requires org.bouncycastle.provider;
     requires org.bouncycastle.util;

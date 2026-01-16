@@ -34,6 +34,7 @@ import org.icepdf.core.pobjects.structure.Indexer;
 import org.icepdf.core.pobjects.structure.exceptions.CrossReferenceStateException;
 import org.icepdf.core.pobjects.structure.exceptions.ObjectStateException;
 import org.icepdf.core.util.parser.object.ObjectLoader;
+import org.icepdf.core.util.updater.EmbeddedFontCache;
 
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
@@ -123,6 +124,8 @@ public class Library {
     // changes and new object creation
     public StateManager stateManager;
 
+    public EmbeddedFontCache embeddedFontCache;
+
     private boolean isEncrypted;
     private boolean isLinearTraversal;
     private final ImagePool imagePool;
@@ -136,6 +139,7 @@ public class Library {
         imagePool = new ImagePool();
         signatureHandler = new SignatureHandler();
         signatureManager = new SignatureManager();
+        embeddedFontCache = new EmbeddedFontCache();
     }
 
     /**
@@ -177,6 +181,10 @@ public class Library {
                 obj = stateManager.getChange(reference);
                 if (obj != null) {
                     return ((StateManager.Change) obj).getPObject();
+                }
+                obj = stateManager.getTempChange(reference);
+                if (obj != null) {
+                    return (PObject) obj;
                 }
                 return null;
             }
@@ -953,6 +961,16 @@ public class Library {
      */
     public void setCatalog(Catalog c) {
         catalog = c;
+    }
+
+    /**
+     * Gets are reference to any ice font that have been embedded in the document which can be reused by reference
+     * as needed by new annotation stream.
+     *
+     * @return embedded font cache
+     */
+    public EmbeddedFontCache getEmbeddedFontCache() {
+        return embeddedFontCache;
     }
 
     /**

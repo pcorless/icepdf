@@ -17,7 +17,8 @@ public class PObjectWriter extends BaseWriter {
         output.write(SPACE);
         output.write(BEGIN_OBJECT);
         writeValue(writeable, output);
-        output.write(SPACE);
+        output.write(NEWLINE);
         output.write(END_OBJECT);
+
     }
 }

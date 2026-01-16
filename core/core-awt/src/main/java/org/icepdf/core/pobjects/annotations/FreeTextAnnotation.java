@@ -34,6 +34,8 @@ import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils.EMBEDDED_FONT_NAME;
+
 /**
  * A free text annotation (PDF 1.3) displays text directly on the page. Unlike
  * an ordinary text annotation (see 12.5.6.4, "Text Annotations"), a free text
@@ -154,7 +156,6 @@ public class FreeTextAnnotation extends MarkupAnnotation {
      * Center-justified quadding
      */
     public static final int QUADDING_RIGHT_JUSTIFIED = 2;
-    public static final Name EMBEDDED_FONT_NAME = new Name("ice1");
 
     public static Color defaultFontColor;
     public static Color defaultFillColor;
@@ -386,7 +387,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
         // create the new font to draw with
         if (fontFile == null || fontPropertyChanged) {
-            fontFile = ContentWriterUtils.createFont(fontName);
+            fontFile = ContentWriterUtils.createFont(library, fontName);
             fontPropertyChanged = false;
         }
         fontFile = fontFile.deriveFont(fontSize);
@@ -434,7 +435,21 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                 PostScriptEncoder.generatePostScript(shapes.getShapes()), isNew);
         generateExternalGraphicsState(form, opacity);
         ContentWriterUtils.setAppearance(this, form, appearanceState, stateManager, isNew);
-        form.addFontResource(ContentWriterUtils.createDefaultFontDictionary(fontName));
+        Reference fontReference = ContentWriterUtils.createSimpleFont(library, fontName);
+        // check for previously embedded font and do any needed cleanup
+        if (form.hasFontResource(EMBEDDED_FONT_NAME)) {
+            Reference previousFontReference = form.getFontResource(EMBEDDED_FONT_NAME);
+            if (!fontReference.equals(previousFontReference)) {
+                ContentWriterUtils.removeSimpleFont(library, previousFontReference);
+            }
+        }
+        form.addFontResource(EMBEDDED_FONT_NAME, fontReference);
+        try {
+            // init the form so we have all the resources ready to go for rendering
+            form.init();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         // build out a few backwards compatible strings.
         StringBuilder dsString = new StringBuilder("font-size:")
@@ -451,7 +466,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         if (fontStyle == Font.PLAIN) {
             dsString.append("font-style:normal;");
         }
-        setString(DS_KEY, dsString.toString());
+//        setString(DS_KEY, dsString.toString());
 
         // write out the  color
         if (fillType) {
@@ -484,7 +499,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             rcString.append("<p>").append(line).append("</p>");
         }
         rcString.append(BODY_END);
-        setString(RC_KEY, rcString.toString());
+//        setString(RC_KEY, rcString.toString());
     }
 
     public String getDefaultStylingString() {
