@@ -25,7 +25,7 @@ public class PkcsSignerFactory {
      * Factory method for creating a SignerHandler instance based on the keystore type. Two instance types are supported
      * PKCS12 and PKCS11.
      *
-     * @param passwordDialogCallbackHandler callback handler for password requests
+     * @param passwordDialogCallbackHandler callback handler for password requests for cert
      * @return SignerHandler instance based on the keystore type.  Null if the keystore type is not supported.
      */
     public static SignerHandler getInstance(PasswordDialogCallbackHandler passwordDialogCallbackHandler) {

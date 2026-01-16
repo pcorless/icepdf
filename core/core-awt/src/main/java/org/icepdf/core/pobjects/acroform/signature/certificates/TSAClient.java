@@ -80,9 +80,10 @@ public class TSAClient {
      */
     public TimeStampToken getTimeStampToken(InputStream content) throws IOException {
         digest.reset();
-        DigestInputStream dis = new DigestInputStream(content, digest);
-        while (dis.read() != -1) {
-            // do nothing
+        try (DigestInputStream dis = new DigestInputStream(content, digest)) {
+            while (dis.read() != -1) {
+                // Reading the stream to compute the digest
+            }
         }
         byte[] hash = digest.digest();
 
