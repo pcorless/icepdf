@@ -15,12 +15,16 @@ import java.net.URISyntaxException;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Signer handles the setup and signing work to generate a PKCS7 signed hash for the given data. Implementing
  * classes must implement the abstract methods to create a keystore with access to a private key used for signing.
  */
 public abstract class SignerHandler {
+
+    private static final Logger logger = Logger.getLogger(SignerHandler.class.toString());
 
     protected static final String algorithm = "SHA256WithRSA";
 
@@ -82,6 +86,8 @@ public abstract class SignerHandler {
             } catch (URISyntaxException e) {
                 throw new RuntimeException(e);
             }
+        } else {
+            logger.log(Level.WARNING, "No TSA URL provided, skipping timestamping.");
         }
         return signedData.getEncoded();
     }
