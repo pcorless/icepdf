@@ -126,7 +126,8 @@ public class SigningTest {
                     SignatureValidator signatureValidator = signatureWidgetAnnotation.getSignatureValidator();
                     signatureValidator.validate();
                     assertTrue(signatureValidator.isSignaturesCoverDocumentLength());
-                    assertTrue(signatureValidator.isCertificateChainTrusted());
+                    assertTrue(signatureValidator.isSelfSigned());
+                    assertFalse(signatureValidator.isCertificateChainTrusted());
                     assertFalse(signatureValidator.isDocumentDataModified());
 
                     assertTrue(signatureValidator.isSignerTimeValid());
