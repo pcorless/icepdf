@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class RedactionTests {
+public class RedactionTest {
 
     @BeforeAll
     public static void init() {
@@ -173,7 +173,7 @@ public class RedactionTests {
     private Document searchAndRedact(String path, String[] terms, int startIndex, int endIndex) throws InterruptedException,
             InvocationTargetException {
 
-        InputStream fileUrl = RedactionTests.class.getResourceAsStream(path);
+        InputStream fileUrl = RedactionTest.class.getResourceAsStream(path);
 
         final SwingController controller = new SwingController();
 

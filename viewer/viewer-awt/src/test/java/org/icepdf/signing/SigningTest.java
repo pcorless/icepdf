@@ -5,12 +5,14 @@ import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureType;
 import org.icepdf.core.pobjects.acroform.signature.handlers.Pkcs12SignerHandler;
 import org.icepdf.core.pobjects.acroform.signature.handlers.SimplePasswordCallbackHandler;
 import org.icepdf.core.pobjects.acroform.signature.utils.SignatureUtilities;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
+import org.icepdf.core.pobjects.security.JceProvider;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.SignatureManager;
 import org.icepdf.core.util.updater.WriteMode;
@@ -28,12 +30,13 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class SigningTests {
+public class SigningTest {
 
     @BeforeAll
     public static void init() {
@@ -42,10 +45,14 @@ public class SigningTests {
 
     @DisplayName("signatures - should create signed document")
     @Test
-    public void testXrefTableFullUpdate() {
+    public void testCreateAndValidateSignature() {
 
         try {
-            String keystorePath = "/signing/certificate.pfx";
+            JceProvider.loadProvider();
+
+            String keystorePath = "src/test/resources/signing/certificate.pfx";
+            PfxGenerator.createPfx(keystorePath, "changeit", "senderKeyPair");
+
             String password = "changeit";
             String certAlias = "senderKeyPair";
             String timeStampAuthorityUrl = "http://time.certum.pl";
@@ -57,7 +64,7 @@ public class SigningTests {
                     new SimplePasswordCallbackHandler(password));
 
             Document document = new Document();
-            InputStream fileUrl = SigningTests.class.getResourceAsStream("/signing/test_print.pdf");
+            InputStream fileUrl = SigningTest.class.getResourceAsStream("/signing/test_print.pdf");
             document.setInputStream(fileUrl, "test_print.pdf");
             Library library = document.getCatalog().getLibrary();
             SignatureManager signatureManager = library.getSignatureDictionaries();
@@ -108,6 +115,25 @@ public class SigningTests {
             // open the signed document
             Document modifiedDocument = new Document();
             modifiedDocument.setFile(out.getAbsolutePath());
+
+            // signatures can be found off the Catalog as InteractiveForms.
+            interactiveForm = modifiedDocument.getCatalog().getInteractiveForm();
+            if (interactiveForm != null) {
+                ArrayList<SignatureWidgetAnnotation> signatureFields = interactiveForm.getSignatureFields();
+                interactiveForm.isSignaturesCoverDocumentLength();
+                // validate each signature.
+                for (SignatureWidgetAnnotation signatureWidgetAnnotation : signatureFields) {
+                    SignatureValidator signatureValidator = signatureWidgetAnnotation.getSignatureValidator();
+                    signatureValidator.validate();
+                    assertTrue(signatureValidator.isSignaturesCoverDocumentLength());
+                    assertTrue(signatureValidator.isCertificateChainTrusted());
+                    assertFalse(signatureValidator.isDocumentDataModified());
+
+                    assertTrue(signatureValidator.isSignerTimeValid());
+                    assertTrue(signatureValidator.isEmbeddedTimeStamp());
+                    assertFalse(signatureValidator.isSignedDataModified());
+                }
+            }
 
         } catch (Exception e) {
             // make sure we have no io errors.
