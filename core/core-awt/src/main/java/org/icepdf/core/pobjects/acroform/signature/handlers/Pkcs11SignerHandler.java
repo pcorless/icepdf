@@ -48,8 +48,9 @@ public class Pkcs11SignerHandler extends SignerHandler {
     private final String providerConfig;
     private BigInteger certSerial;
 
-    public Pkcs11SignerHandler(String providerConfig, BigInteger certSerial, PasswordCallbackHandler callbackHandler) {
-        super(null, callbackHandler);
+    public Pkcs11SignerHandler(String timeStampAuthorityUrl, String providerConfig, BigInteger certSerial,
+                               PasswordCallbackHandler callbackHandler) {
+        super(timeStampAuthorityUrl, null, callbackHandler);
         this.providerConfig = providerConfig;
         this.certSerial = certSerial;
     }

@@ -84,7 +84,7 @@ public class CertificateVerifier {
             RevokedCertificateException, OCSPException, IOException, URISyntaxException {
         try {
             // Check for self-signed root certificate
-            if (!verifySelfSignedCert && CertificateUtils.isSelfSigned(signerCert)) {
+            if (verifySelfSignedCert && CertificateUtils.isSelfSigned(signerCert)) {
                 throw new SelfSignedVerificationException("The certificate is self-signed.");
             }
 

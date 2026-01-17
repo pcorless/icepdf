@@ -8,11 +8,15 @@ import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSSignedDataGenerator;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.icepdf.core.pobjects.acroform.signature.Pkcs7Generator;
+import org.icepdf.core.pobjects.acroform.signature.certificates.TimeStampVerifier;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Signer handles the setup and signing work to generate a PKCS7 signed hash for the given data. Implementing
@@ -20,14 +24,19 @@ import java.security.cert.X509Certificate;
  */
 public abstract class SignerHandler {
 
+    private static final Logger logger = Logger.getLogger(SignerHandler.class.toString());
+
     protected static final String algorithm = "SHA256WithRSA";
 
     protected String certAlias;
+    protected String tsaUrl;
     protected KeyStore keystore;
     protected PasswordCallbackHandler callbackHandler;
 
-    public SignerHandler(String certAlias, PasswordCallbackHandler callbackHandler) {
+    public SignerHandler(String timeStampAuthorityUrl, String certAlias, PasswordCallbackHandler callbackHandler) {
         this.certAlias = certAlias;
+        this.tsaUrl = timeStampAuthorityUrl;
+        // todo username and password support, not sure it's needed yet.
         this.callbackHandler = callbackHandler;
     }
 
@@ -70,6 +79,16 @@ public abstract class SignerHandler {
         CMSProcessableByteArray message =
                 new CMSProcessableByteArray(new ASN1ObjectIdentifier(CMSObjectIdentifiers.data.getId()), data);
         CMSSignedData signedData = signedDataGenerator.generate(message, false);
+        if (tsaUrl != null && !tsaUrl.isEmpty()) {
+            try {
+                TimeStampVerifier timeStampHandler = new TimeStampVerifier(tsaUrl);
+                signedData = timeStampHandler.addSignedTimeStamp(signedData);
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            logger.log(Level.WARNING, "No TSA URL provided, skipping timestamping.");
+        }
         return signedData.getEncoded();
     }
 }

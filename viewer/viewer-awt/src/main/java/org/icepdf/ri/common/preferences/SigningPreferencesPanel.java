@@ -32,6 +32,7 @@ public class SigningPreferencesPanel extends JPanel {
     private final JComboBox<KeystoreTypeItem> keystoreTypeComboBox;
     private final JLabel pkcsPathLabel;
     private final JTextField pkcsPathTextField;
+    private final JTextField tsaUrlTextField;
 
     private final ResourceBundle messageBundle;
     private final Preferences preferences;
@@ -62,23 +63,25 @@ public class SigningPreferencesPanel extends JPanel {
         // setup default state
         pkcsPathLabel = new JLabel();
         pkcsPathTextField = new JTextField();
+        tsaUrlTextField = new JTextField(preferences.get(ViewerPropertiesManager.PROPERTY_SIGNATURE_TSA_URL, ""));
         updatePkcsPaths();
         JButton pkcsPathBrowseButton = new JButton(messageBundle.getString(
                 "viewer.dialog.viewerPreferences.section.signatures.pkcs.keystore.path.browse.label"));
         pkcsPathBrowseButton.addActionListener(e -> showBrowseDialog());
 
         pkcsPathTextField.addActionListener(e -> savePkcsPaths(keystoreTypeComboBox));
+        tsaUrlTextField.addActionListener(e -> {
+            preferences.put(ViewerPropertiesManager.PROPERTY_SIGNATURE_TSA_URL, tsaUrlTextField.getText());
+        });
+        tsaUrlTextField.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent e) {
+                preferences.put(ViewerPropertiesManager.PROPERTY_SIGNATURE_TSA_URL, tsaUrlTextField.getText());
+            }
+        });
 
         keystoreTypeComboBox.addActionListener(e -> {
             updatePkcsPaths();
         });
-
-        JPanel imagingPreferencesPanel = new JPanel(new GridBagLayout());
-        imagingPreferencesPanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
-        imagingPreferencesPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
-                messageBundle.getString("viewer.dialog.viewerPreferences.section.signatures.pkcs.border.label"),
-                TitledBorder.LEFT,
-                TitledBorder.DEFAULT_POSITION));
 
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.NONE;
@@ -87,27 +90,53 @@ public class SigningPreferencesPanel extends JPanel {
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(5, 5, 5, 5);
 
-        addGB(imagingPreferencesPanel, new JLabel(messageBundle.getString(
+        // signature preferences panel
+        JPanel signaturePreferencesPanel = new JPanel(new GridBagLayout());
+        signaturePreferencesPanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
+        signaturePreferencesPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
+                messageBundle.getString("viewer.dialog.viewerPreferences.section.signatures.pkcs.border.label"),
+                TitledBorder.LEFT,
+                TitledBorder.DEFAULT_POSITION));
+
+        addGB(signaturePreferencesPanel, new JLabel(messageBundle.getString(
                         "viewer.dialog.viewerPreferences.section.signatures.pkcs.label")),
                 0, 0, 1, 1);
 
         constraints.anchor = GridBagConstraints.EAST;
-        addGB(imagingPreferencesPanel, keystoreTypeComboBox, 1, 0, 2, 1);
+        addGB(signaturePreferencesPanel, keystoreTypeComboBox, 1, 0, 2, 1);
 
         constraints.anchor = GridBagConstraints.WEST;
-        addGB(imagingPreferencesPanel, pkcsPathLabel, 0, 1, 1, 1);
+        addGB(signaturePreferencesPanel, pkcsPathLabel, 0, 1, 1, 1);
+        constraints.anchor = GridBagConstraints.EAST;
+        constraints.fill = GridBagConstraints.BOTH;
+        addGB(signaturePreferencesPanel, pkcsPathTextField, 1, 1, 1, 1);
+        addGB(signaturePreferencesPanel, pkcsPathBrowseButton, 2, 1, 1, 1);
+
+        // TSA URL
+        JPanel tsaPreferencesPanel = new JPanel(new GridBagLayout());
+        tsaPreferencesPanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
+        tsaPreferencesPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
+                messageBundle.getString("viewer.dialog.viewerPreferences.section.signatures.tsa.border.label"),
+                TitledBorder.LEFT,
+                TitledBorder.DEFAULT_POSITION));
+        constraints.anchor = GridBagConstraints.NORTHWEST;
+        constraints.weightx = 0;
+        addGB(tsaPreferencesPanel, new JLabel(messageBundle.getString(
+                        "viewer.dialog.viewerPreferences.section.signatures.tsa.label.label")),
+                0, 0, 1, 1);
         constraints.anchor = GridBagConstraints.EAST;
         constraints.weightx = 1.0;
-        constraints.fill = GridBagConstraints.BOTH;
-        addGB(imagingPreferencesPanel, pkcsPathTextField, 1, 1, 1, 1);
-        addGB(imagingPreferencesPanel, pkcsPathBrowseButton, 2, 1, 1, 1);
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        addGB(tsaPreferencesPanel, tsaUrlTextField, 1, 0, 1, 1);
 
         constraints.anchor = GridBagConstraints.NORTHWEST;
         constraints.fill = GridBagConstraints.BOTH;
-        addGB(this, imagingPreferencesPanel, 0, 0, 1, 1);
+        addGB(this, signaturePreferencesPanel, 0, 0, 1, 1);
+        addGB(this, tsaPreferencesPanel, 0, 1, 1, 1);
+
         // little spacer
         constraints.weighty = 1.0;
-        addGB(this, new Label(" "), 0, 1, 1, 1);
+        addGB(this, new Label(" "), 0, 2, 1, 1);
     }
 
     private void updatePkcsPaths() {
