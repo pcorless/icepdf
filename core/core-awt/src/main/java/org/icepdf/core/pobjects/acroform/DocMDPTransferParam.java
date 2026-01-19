@@ -57,7 +57,7 @@ public class DocMDPTransferParam extends Dictionary implements TransformParams {
     public static final int PERMISSION_VALUE_NO_CHANGES = 1;
 
     /**
-     * 2Permitted changes shall be filling in forms, instantiating page templates, and signing; other changes shall
+     * Permitted changes shall be filling in forms, instantiating page templates, and signing; other changes shall
      * invalidate the signature.
      */
     public static final int PERMISSION_VALUE_FORMS_SIGNING = 2;

@@ -75,6 +75,12 @@ public class Pkcs11SignatureCreation {
             Library library = document.getCatalog().getLibrary();
             SignatureManager signatureManager = library.getSignatureDictionaries();
 
+            // make sure we have permission
+            if (!signatureManager.hasPermissionToSignDocument()) {
+                System.err.println("Signature certifier permissions do not allow modifications to the document.");
+                return;
+            }
+
             // Creat signature annotation
             SignatureWidgetAnnotation signatureAnnotation = (SignatureWidgetAnnotation)
                     AnnotationFactory.buildWidgetAnnotation(

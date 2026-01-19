@@ -122,6 +122,15 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
             Library library = signatureWidgetAnnotation.getLibrary();
             SignatureManager signatureManager = library.getSignatureDictionaries();
 
+            if (signatureManager.hasPermissionToSignDocument()) {
+                logger.warning("No signing permissions for this document.");
+                JOptionPane.showMessageDialog(this,
+                        messageBundle.getString("viewer.annotation.signature.creation.dialog.permission.error.msg"),
+                        messageBundle.getString("viewer.annotation.signature.creation.dialog.permission.error.title"),
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             // set up signer dictionary as the primary certification signer.
             SignatureDictionary signatureDictionary;
             if (signerRadioButton.isSelected()) {
