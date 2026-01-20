@@ -35,7 +35,7 @@ import java.util.List;
 
 import static org.icepdf.core.pobjects.Permissions.DOC_MDP_KEY;
 import static org.icepdf.core.pobjects.acroform.DocMDPTransferParam.PERMISSION_KEY;
-import static org.icepdf.core.pobjects.acroform.DocMDPTransferParam.PERMISSION_VALUE_NO_CHANGES;
+import static org.icepdf.core.pobjects.acroform.DocMDPTransferParam.PERMISSION_VALUE_FORMS_SIGNING;
 import static org.icepdf.core.pobjects.acroform.FieldDictionaryFactory.TYPE_SIGNATURE;
 import static org.icepdf.core.pobjects.acroform.SignatureReferenceDictionary.*;
 import static org.icepdf.core.pobjects.acroform.signature.DigitalSignatureFactory.DSS_SUB_FILTER_PKCS7_DETACHED;
@@ -205,13 +205,40 @@ public class SignatureDictionary extends Dictionary {
         super(library, entries);
     }
 
+    /**
+     * Creates a new SignatureDictionary instance and attaches it to the provided SignatureWidgetAnnotation. The
+     * default permission value of PERMISSION_VALUE_FORMS_SIGNING is used when creating a certifier signature
+     * dictionary.
+     *
+     * @param signatureWidgetAnnotation signature widget annotation to attach the signature dictionary to.
+     * @param signatureType             type of signature dictionary to create.
+     * @return new SignatureDictionary instance.
+     */
     public static SignatureDictionary getInstance(SignatureWidgetAnnotation signatureWidgetAnnotation,
                                                   SignatureType signatureType) {
+        return getInstance(signatureWidgetAnnotation, signatureType, PERMISSION_VALUE_FORMS_SIGNING);
+    }
+
+    /**
+     * Creates a new SignatureDictionary instance and attaches it to the provided SignatureWidgetAnnotation.
+     *
+     * @param signatureWidgetAnnotation signature widget annotation to attach the signature dictionary to.
+     * @param signatureType             type of signature dictionary to create.
+     * @param permissionValue           permission value to use when creating a certifier signature dictionary,
+     *                                  ignored for signer
+     *                                  signature dictionaries. Value should be one of the PERMISSION_VALUE_XXX
+     *                                  constants
+     *                                  defined in DocMDPTransferParam.
+     * @return new SignatureDictionary instance.
+     */
+    public static SignatureDictionary getInstance(SignatureWidgetAnnotation signatureWidgetAnnotation,
+                                                  SignatureType signatureType, int permissionValue) {
         Library library = signatureWidgetAnnotation.getLibrary();
         DictionaryEntries signatureDictionaryEntries = new DictionaryEntries();
 
         // reference dictionary
-        signatureDictionaryEntries.put(REFERENCE_KEY, List.of(buildReferenceDictionary(library, signatureType)));
+        signatureDictionaryEntries.put(REFERENCE_KEY,
+                List.of(buildReferenceDictionary(library, signatureType, permissionValue)));
 
         signatureDictionaryEntries.put(TYPE_KEY, TYPE_SIGNATURE);
         signatureDictionaryEntries.put(FILTER_KEY, new Name("Adobe.PPKLite"));
@@ -234,16 +261,17 @@ public class SignatureDictionary extends Dictionary {
         return signatureDictionary;
     }
 
-    private static SignatureReferenceDictionary buildReferenceDictionary(Library library, SignatureType signatureType) {
+    private static SignatureReferenceDictionary buildReferenceDictionary(Library library, SignatureType signatureType,
+                                                                         int permissionValue) {
         DictionaryEntries referenceEntries = new DictionaryEntries();
         referenceEntries.put(TYPE_KEY, SIG_REF_TYPE_VALUE);
         referenceEntries.put(DIGEST_METHOD_KEY, new Name("SHA1"));
         referenceEntries.put(TRANSFORM_METHOD_KEY, DOC_MDP_KEY);
 
-        DictionaryEntries transformParams = new DictionaryEntries();
-        transformParams.put(PERMISSION_KEY, PERMISSION_VALUE_NO_CHANGES);
-        transformParams.put(V_KEY, DocMDPTransferParam.getDocMDPVersion());
         if (signatureType.equals(SignatureType.CERTIFIER)) {
+            DictionaryEntries transformParams = new DictionaryEntries();
+            transformParams.put(PERMISSION_KEY, permissionValue);
+            transformParams.put(V_KEY, DocMDPTransferParam.getDocMDPVersion());
             referenceEntries.put(TRANSFORM_PARAMS_KEY, new DocMDPTransferParam(library, transformParams));
         }
 
@@ -360,6 +388,15 @@ public class SignatureDictionary extends Dictionary {
 
     public String getDate() {
         return library.getString(entries, M_KEY);
+    }
+
+    public PDate getPDate() {
+        String date = getDate();
+        if (date != null) {
+            return new PDate(date);
+        } else {
+            return null;
+        }
     }
 
     public void setDate(String date) {

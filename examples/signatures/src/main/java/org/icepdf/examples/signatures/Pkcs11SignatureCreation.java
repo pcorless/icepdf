@@ -1,3 +1,18 @@
+/*
+ * Copyright 2026 Patrick Corless
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.icepdf.examples.signatures;
 
 import org.icepdf.core.pobjects.Document;
@@ -49,8 +64,10 @@ public class Pkcs11SignatureCreation {
         BigInteger certSerial = convertHexStringToBigInteger(args[2]);
         String password = args[3];
         Path path = Path.of(filePath);
+        // timestamp authority url
+        String timeStampAuthorityUrl = args[4];
         // start the capture
-        new Pkcs11SignatureCreation().signDocument(path, providerConfig, certSerial, password);
+        new Pkcs11SignatureCreation().signDocument(timeStampAuthorityUrl, path, providerConfig, certSerial, password);
     }
 
     private static BigInteger convertHexStringToBigInteger(String hexStr) {
@@ -58,10 +75,12 @@ public class Pkcs11SignatureCreation {
         return new BigInteger(hexStr, 16);
     }
 
-    public void signDocument(Path filePath, String providerConfig, BigInteger certSerial, String password) {
+    public void signDocument(String timeStampAuthorityUrl, Path filePath, String providerConfig,
+                             BigInteger certSerial, String password) {
         try {
 
             Pkcs11SignerHandler pkcs11SignerHandler = new Pkcs11SignerHandler(
+                    timeStampAuthorityUrl,
                     providerConfig,
                     certSerial,
                     new SimplePasswordCallbackHandler(password));
@@ -71,7 +90,13 @@ public class Pkcs11SignatureCreation {
             Library library = document.getCatalog().getLibrary();
             SignatureManager signatureManager = library.getSignatureDictionaries();
 
-            // Creat signature annotation
+            // make sure we have permission
+            if (!signatureManager.hasPermissionToSignDocument()) {
+                System.err.println("Signature certifier permissions do not allow modifications to the document.");
+                return;
+            }
+
+            // Create signature annotation
             SignatureWidgetAnnotation signatureAnnotation = (SignatureWidgetAnnotation)
                     AnnotationFactory.buildWidgetAnnotation(
                             document.getPageTree().getLibrary(),
@@ -131,7 +156,7 @@ public class Pkcs11SignatureCreation {
 
     private static void printSignatureSummary(SignatureWidgetAnnotation signatureWidgetAnnotation) {
         SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
-        String signingTime = new PDate(signatureWidgetAnnotation.getLibrary().getSecurityManager(),
+        String signingTime = new PDate(
                 signatureDictionary.getDate()).toString();
         System.out.println("General Info:");
         System.out.println("  Signing time: " + signingTime);

@@ -95,6 +95,7 @@ public final class ViewerPropertiesManager {
             ".config.path";
     public static final String PROPERTY_PKCS12_PROVIDER_KEYSTORE_PATH = "org.icepdf.core.signatures.keystore.pkcs12" +
             ".config.path";
+    public static final String PROPERTY_SIGNATURE_TSA_URL = "org.icepdf.core.signatures.tsa.url";
     public static final String PROPERTY_SIGNATURE_IMAGE_PATH = "org.icepdf.core.signatures.image.path";
     public static final String PROPERTY_SIGNATURE_SHOW_TEXT = "org.icepdf.core.signatures.show.txt";
     public static final String PROPERTY_SIGNATURE_SHOW_IMAGE = "org.icepdf.core.signatures.show.image";
@@ -345,6 +346,15 @@ public final class ViewerPropertiesManager {
             }
         }
         return propertiesManager;
+    }
+
+    /**
+     * Set static instance of properties manager to allow for mocking in tests.
+     *
+     * @param instance mock instance.
+     */
+    public static void setInstance(ViewerPropertiesManager instance) {
+        propertiesManager = instance;
     }
 
     /**

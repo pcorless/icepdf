@@ -13,10 +13,10 @@ import java.util.logging.Logger;
  * -Dorg.icepdf.core.security.jceProvider=myProviderOfChoice.  Bouncy Castle is required for loading
  * some encrypted documents as well as adding digital signatures.
  */
-public class LoadJceProvider {
+public class JceProvider {
 
     private static final Logger logger =
-            Logger.getLogger(LoadJceProvider.class.toString());
+            Logger.getLogger(JceProvider.class.toString());
 
     /**
      * Try and load a JCE provider specified by org.icepdf.core.security.jceProvider system property.  If not set
