@@ -51,7 +51,6 @@ public abstract class SignerHandler {
     public SignerHandler(String timeStampAuthorityUrl, String certAlias, PasswordCallbackHandler callbackHandler) {
         this.certAlias = certAlias;
         this.tsaUrl = timeStampAuthorityUrl;
-        // todo username and password support, not sure it's needed yet.
         this.callbackHandler = callbackHandler;
     }
 
