@@ -1,3 +1,18 @@
+/*
+ * Copyright 2026 Patrick Corless
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.icepdf.examples.signatures;
 
 import org.icepdf.core.pobjects.Document;
@@ -49,15 +64,19 @@ public class Pkcs12SignatureCreation {
         String alias = args[2];
         // keystore password
         String password = args[3];
+        // timestamp authority url
+        String timeStampAuthorityUrl = args[4];
         Path path = Path.of(filePath);
         // start the capture
-        new Pkcs12SignatureCreation().signDocument(path, keyStorePath, alias, password);
+        new Pkcs12SignatureCreation().signDocument(timeStampAuthorityUrl, path, keyStorePath, alias, password);
     }
 
-    public void signDocument(Path filePath, String keyStorePath, String certAlias, String password) {
+    public void signDocument(String timeStampAuthorityUrl, Path filePath, String keyStorePath, String certAlias,
+                             String password) {
         try {
 
             Pkcs12SignerHandler pkcs12SignerHandler = new Pkcs12SignerHandler(
+                    timeStampAuthorityUrl,
                     new File(keyStorePath),
                     certAlias,
                     new SimplePasswordCallbackHandler(password));
@@ -67,7 +86,13 @@ public class Pkcs12SignatureCreation {
             Library library = document.getCatalog().getLibrary();
             SignatureManager signatureManager = library.getSignatureDictionaries();
 
-            // Creat signature annotation
+            // make sure we have permission
+            if (!signatureManager.hasPermissionToSignDocument()) {
+                System.err.println("Signature certifier permissions do not allow modifications to the document.");
+                return;
+            }
+
+            // Create signature annotation
             SignatureWidgetAnnotation signatureAnnotation = (SignatureWidgetAnnotation)
                     AnnotationFactory.buildWidgetAnnotation(
                             document.getPageTree().getLibrary(),

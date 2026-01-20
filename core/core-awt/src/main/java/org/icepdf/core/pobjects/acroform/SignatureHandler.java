@@ -18,11 +18,7 @@ package org.icepdf.core.pobjects.acroform;
 import org.icepdf.core.pobjects.acroform.signature.DigitalSignatureFactory;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
-import org.icepdf.core.util.Defs;
 
-import java.lang.reflect.InvocationTargetException;
-import java.security.Provider;
-import java.security.Security;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
