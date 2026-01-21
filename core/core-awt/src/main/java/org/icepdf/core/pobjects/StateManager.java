@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 
 /**
  * This class is responsible for keeping track of which object in the document
- * have change.  When a file is written to disk this class is used to find
+ * have changed.  When a file is written to disk this class is used to find
  * the object that should be written in the body section of the file as part of
  * an incremental update.
  * <br>
@@ -38,6 +38,9 @@ public class StateManager {
 
     // a list is all we might need.
     private final Map<Reference, Change> changes;
+
+    // temp changes, don't want to serialize these, but need to keep the objects around.
+    private final Map<Reference, PObject> tempChanges;
 
     // access to xref size and next revision number.
     private final CrossReferenceRoot crossReferenceRoot;
@@ -57,6 +60,7 @@ public class StateManager {
         this.crossReferenceRoot = crossReferenceRoot;
         // cache of objects that have changed.
         changes = new HashMap<>();
+        tempChanges = new HashMap<>();
 
         // number of objects is always one more than the current size and
         // thus the next available number.
@@ -99,6 +103,15 @@ public class StateManager {
     }
 
     /**
+     * Add a new PObject containing temporary changed data to the cache.
+     *
+     * @param pObject object to add to cache.
+     */
+    public void addTempChange(PObject pObject) {
+        tempChanges.put(pObject.getReference(), pObject);
+    }
+
+    /**
      * Add a new PObject containing changed data to the cache.
      *
      * @param pObject object to add to cache.
@@ -132,7 +145,7 @@ public class StateManager {
      * @return true if reference is already a key in the cache; otherwise, false.
      */
     public boolean contains(Reference reference) {
-        return changes.containsKey(reference);
+        return changes.containsKey(reference) || tempChanges.containsKey(reference);
     }
 
     /**
@@ -148,6 +161,31 @@ public class StateManager {
         } else {
             return null;
         }
+    }
+
+    /**
+     * Returns an instance of the specified reference from the temporary changes
+     * @param reference reference to look for an existing usage
+     * @return PObject of corresponding reference if present
+     */
+    public PObject getTempChange(Reference reference) {
+        return tempChanges.get(reference);
+    }
+
+    /**
+     * Checks to see if there are any temporary changes
+     *
+     * @return true if there are temporary changes, false otherwise
+     */
+    public boolean isTempChanges() {
+        return !tempChanges.isEmpty();
+    }
+
+    /**
+     * Clears all temporary changes
+     */
+    public void clearTempChanges() {
+        tempChanges.clear();
     }
 
     /**

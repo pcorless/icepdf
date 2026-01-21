@@ -16,6 +16,7 @@
 
     <modules>
         <module>core-awt</module>
+        <module>core-fonts</module>
     </modules>
 
     <dependencyManagement>
