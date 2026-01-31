@@ -9,6 +9,7 @@ import org.icepdf.core.pobjects.annotations.AppearanceState;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils;
 import org.icepdf.core.pobjects.fonts.FontFile;
+import org.icepdf.core.pobjects.fonts.builders.TrueTypeFontEmbedder;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.commands.PostScriptEncoder;
 import org.icepdf.core.pobjects.graphics.commands.TransformDrawCmd;
@@ -149,11 +150,12 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
             float groupSpacing = calculateTextSpacing(bbox, signatureText, fontSize, padding);
             AffineTransform centeringTransform = calculatePaddingTransform(leftMargin, padding);
 
+            TrueTypeFontEmbedder trueTypeeFontSubSetter = new TrueTypeFontEmbedder(fontFile);
             Point2D.Float lastOffset;
             float advanceY = (float) bbox.getMinY() + offsetY;
             shapes.add(new TransformDrawCmd(centeringTransform));
             for (String text : signatureText) {
-                lastOffset = ContentWriterUtils.addTextSpritesToShapes(fontFile, 0, advanceY,
+                lastOffset = ContentWriterUtils.addTextSpritesToShapes(trueTypeeFontSubSetter, 0, advanceY,
                         shapes,
                         fontSize,
                         lineSpacing,

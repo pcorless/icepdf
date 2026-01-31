@@ -53,5 +53,6 @@ module org.icepdf.core {
     exports org.icepdf.core.util.edit.content;
     exports org.icepdf.core.util.loggers;
     exports org.icepdf.core.util.updater;
+    exports org.icepdf.core.pobjects.fonts.builders;
 
 }

@@ -7,6 +7,7 @@ import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.FontManager;
+import org.icepdf.core.pobjects.fonts.builders.TrueTypeFontEmbedder;
 import org.icepdf.core.pobjects.fonts.zfont.Encoding;
 import org.icepdf.core.pobjects.fonts.zfont.SimpleFont;
 import org.icepdf.core.pobjects.graphics.Shapes;
@@ -53,6 +54,7 @@ public class ContentWriterUtils {
 
     public static final boolean isEmbedFonts;
 
+    // todo remove now in  FontFactory after signature refactor
     static {
         // sets if file caching is enabled or disabled.
         isEmbedFonts =
@@ -60,6 +62,7 @@ public class ContentWriterUtils {
                         true);
     }
 
+    // todo remove now in  FontFactory after signature refactor
     public static Reference createSimpleFont(Library library, String fontName) {
         EmbeddedFontCache embeddedFontCache = library.getEmbeddedFontCache();
         Reference embeddedFontReference = embeddedFontCache.getFontReference(fontName);
@@ -147,6 +150,7 @@ public class ContentWriterUtils {
         return fontDescriptor;
     }
 
+    // todo not used, remove it
     public static DictionaryEntries createImageDictionary() {
         DictionaryEntries imageDictionary = new DictionaryEntries();
         imageDictionary.put(org.icepdf.core.pobjects.fonts.Font.TYPE_KEY,
@@ -176,7 +180,7 @@ public class ContentWriterUtils {
         }
     }
 
-    public static Point2D.Float addTextSpritesToShapes(FontFile fontFile,
+    public static Point2D.Float addTextSpritesToShapes(TrueTypeFontEmbedder trueTypeeFontSubSetter,
                                                        final float advanceX,
                                                        final float advanceY,
                                                        Shapes shapes,
@@ -184,6 +188,7 @@ public class ContentWriterUtils {
                                                        float lineSpacing,
                                                        Color fontColor,
                                                        String content) {
+        FontFile fontFile = trueTypeeFontSubSetter.getFontFile();
         TextSprite textSprites =
                 new TextSprite(fontFile,
                         SIMPLE_FORMAT,
@@ -212,7 +217,7 @@ public class ContentWriterUtils {
             newAdvanceX = (float) fontFile.getAdvance(currentChar).getX();
             currentX = advanceX + lastx;
             lastx += newAdvanceX;
-
+            trueTypeeFontSubSetter.addToSubset(currentChar);
             if (!(currentChar == '\n' || currentChar == '\r')) {
                 textSprites.addText(
                         currentChar, // cid
@@ -267,8 +272,11 @@ public class ContentWriterUtils {
         return shapes;
     }
 
+    // todo this should be in FontManager or FontFactory,  likely the first,
+    // as in any intance we can load from our embedded resources for core 14 fonts more reliably
     public static FontFile createFont(Library library, String fontName) {
         FontFile fontFile;
+        // todo load font from embedded resource if available
         if (isEmbedFonts && FontUtil.isOtfFontMapped(fontName)) {
             try {
                 Stream fontFileStream = FontUtil.createFontFileStream(library, fontName);
@@ -339,6 +347,7 @@ public class ContentWriterUtils {
         return imageStream;
     }
 
+    // todo move to ImageStream class as getInstance method
     public static ImageStream createImageStream(Library library, Reference reference, BufferedImage bufferedImage,
                                                 boolean useMask) {
         DictionaryEntries imageDictionary = new DictionaryEntries();

@@ -17,7 +17,11 @@ package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils;
+import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.fonts.FontFile;
+import org.icepdf.core.pobjects.fonts.builders.SimpleFontFactory;
+import org.icepdf.core.pobjects.fonts.builders.TrueTypeFontEmbedder;
+import org.icepdf.core.pobjects.fonts.zfont.SimpleFont;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.util.ColorUtil;
@@ -385,13 +389,6 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             setContents("");
         }
 
-        // create the new font to draw with
-        if (fontFile == null || fontPropertyChanged) {
-            fontFile = ContentWriterUtils.createFont(library, fontName);
-            fontPropertyChanged = false;
-        }
-        fontFile = fontFile.deriveFont(fontSize);
-
         BasicStroke stroke;
         if (strokeType && borderStyle.isStyleDashed()) {
             stroke = new BasicStroke(
@@ -425,25 +422,40 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         // is generally going to be zero, and af takes care of the offset for inset.
         float advanceX = (float) bbox.getMinX() + borderOffsetX;
         float advanceY = (float) bbox.getMinY() + borderOffsetY;
-        ContentWriterUtils.addTextSpritesToShapes(fontFile, advanceX, advanceY, shapes, fontSize, 0, fontColor,
+
+        // create the new font to draw with
+        if (fontFile == null || fontPropertyChanged) {
+            fontFile = FontFactory.getInstance().createFontFile(library, fontName);
+            fontPropertyChanged = false;
+        }
+        fontFile = fontFile.deriveFont(fontSize);
+        TrueTypeFontEmbedder trueTypeeFontSubSetter = new TrueTypeFontEmbedder(fontFile);
+        ContentWriterUtils.addTextSpritesToShapes(trueTypeeFontSubSetter, advanceX, advanceY, shapes, fontSize, 0,
+                fontColor,
                 content);
 
-        // update the appearance stream
         // create/update the appearance stream of the xObject.
         StateManager stateManager = library.getStateManager();
         Form form = updateAppearanceStream(shapes, bbox, matrix,
                 PostScriptEncoder.generatePostScript(shapes.getShapes()), isNew);
         generateExternalGraphicsState(form, opacity);
         ContentWriterUtils.setAppearance(this, form, appearanceState, stateManager, isNew);
-        Reference fontReference = ContentWriterUtils.createSimpleFont(library, fontName);
-        // check for previously embedded font and do any needed cleanup
-        if (form.hasFontResource(EMBEDDED_FONT_NAME)) {
-            Reference previousFontReference = form.getFontResource(EMBEDDED_FONT_NAME);
-            if (!fontReference.equals(previousFontReference)) {
-                ContentWriterUtils.removeSimpleFont(library, previousFontReference);
-            }
-        }
+
+        // form is fresh
+        SimpleFont pdfFont = SimpleFontFactory.createFont(library, fontName, trueTypeeFontSubSetter);
+        Reference fontReference = pdfFont.getPObjectReference();
+        // todo cache clean up when font changes.
         form.addFontResource(EMBEDDED_FONT_NAME, fontReference);
+//        Reference fontReference = ContentWriterUtils.createSimpleFont(library, fontName);
+//        form.addFontResource(EMBEDDED_FONT_NAME, fontReference);
+        // check for previously embedded font and do any needed cleanup
+//        if (form.hasFontResource(EMBEDDED_FONT_NAME)) {
+//            Reference previousFontReference = form.getFontResource(EMBEDDED_FONT_NAME);
+//            if (!fontReference.equals(previousFontReference)) {
+//                ContentWriterUtils.removeSimpleFont(library, previousFontReference);
+//            }
+//        }
+//        form.addFontResource(EMBEDDED_FONT_NAME, fontReference);
         try {
             // init the form so we have all the resources ready to go for rendering
             form.init();

@@ -151,6 +151,7 @@ public class FontUtil {
         return name.toLowerCase().replaceAll("\\s+", "");
     }
 
+    // todo maybe should be somewhere else.
     public static Stream createFontFileStream(Library library, String fontName) {
         // load font resource from classpath
         byte[] fontData = getFontFileData(fontName);
