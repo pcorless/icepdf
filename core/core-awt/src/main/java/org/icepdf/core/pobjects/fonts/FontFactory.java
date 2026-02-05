@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects.fonts;
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
+import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.fonts.zfont.*;
 import org.icepdf.core.pobjects.fonts.zfont.Encoding;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.*;
@@ -125,6 +126,20 @@ public class FontFactory {
 
     public Font getFont(Library library, FontFile fontFile, String Content) {
         return null;
+    }
+
+    public static Stream createStream(Library library, byte[] streamData) {
+        // load font resource from classpath
+        Stream stream = new Stream(library, new DictionaryEntries(), null);
+        stream.setRawBytes(streamData);
+        // compress the form object stream.
+        // todo, not sure this should be annotation specific
+        if (Annotation.isCompressAppearanceStream()) {
+            stream.getEntries().put(Stream.FILTER_KEY, new Name("FlateDecode"));
+        } else {
+            stream.getEntries().remove(Stream.FILTER_KEY);
+        }
+        return stream;
     }
 
     public FontFile createFontFile(Library library, String fontName) {

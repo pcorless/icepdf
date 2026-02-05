@@ -42,7 +42,7 @@ public class TrueTypeFontEmbedder {
         }
     }
 
-    public FontFile getFontFile() {
+    public ZFontTrueType getFontFile() {
         return fontFile;
     }
 
@@ -52,7 +52,9 @@ public class TrueTypeFontEmbedder {
 
     public boolean isFontEmbeddable() {
         try {
-            return this.fontFile != null && isEmbeddingPermitted(this.fontFile.getTrueTypeFont());
+            return this.fontFile != null &&
+                    isEmbeddingPermitted(this.fontFile.getTrueTypeFont()) &&
+                    isSubsettingPermitted(this.fontFile.getTrueTypeFont());
         } catch (IOException e) {
             return false;
         }
@@ -122,6 +124,17 @@ public class TrueTypeFontEmbedder {
                 return false;
             } else
                 return (fsType & OS2WindowsMetricsTable.FSTYPE_BITMAP_ONLY) != OS2WindowsMetricsTable.FSTYPE_BITMAP_ONLY;
+        }
+        return true;
+    }
+
+    private boolean isSubsettingPermitted(TrueTypeFont ttf) throws IOException {
+        if (ttf.getOS2Windows() != null) {
+            int fsType = ttf.getOS2Windows().getFsType();
+            if ((fsType & OS2WindowsMetricsTable.FSTYPE_NO_SUBSETTING) ==
+                    OS2WindowsMetricsTable.FSTYPE_NO_SUBSETTING) {
+                return false;
+            }
         }
         return true;
     }
