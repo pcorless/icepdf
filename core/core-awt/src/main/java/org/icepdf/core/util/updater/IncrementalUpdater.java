@@ -49,6 +49,16 @@ public class IncrementalUpdater {
         StateManager stateManager = document.getStateManager();
         CrossReferenceRoot crossReferenceRoot = stateManager.getCrossReferenceRoot();
         if (stateManager.isNoChange() && !signatureManager.hasSignatureDictionary()) {
+            // write the document to the output stream, as we still need a copy of the document, even if there are no
+            // change.
+            try {
+                // copy original file data
+                WritableByteChannel channel = Channels.newChannel(outputStream);
+                channel.write(documentByteBuffer);
+            } catch (IOException e) {
+                logger.log(Level.FINE, "Error writing PDF output stream during incremental write.", e);
+                throw e;
+            }
             return 0L;
         }
 
