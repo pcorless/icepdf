@@ -38,6 +38,11 @@
     </build>
 
     <dependencies>
+        <dependency>
+            <groupId>com.github.pcorless.icepdf</groupId>
+            <artifactId>icepdf-fonts</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- Bouncy castle is need for building the core bundles as well as digital signature support -->
         <dependency>
             <groupId>org.bouncycastle</groupId>

@@ -23,6 +23,10 @@ public abstract class CompositeFont extends SimpleFont {
     public static final Name CID_SYSTEM_INFO_KEY = new Name("CIDSystemInfo");
     public static final Name CID_TO_GID_MAP_KEY = new Name("CIDToGIDMap");
 
+    public static final Name CID_SYSTEM_INFO_ORDERING_KEY = new Name("Ordering");
+    public static final Name CID_SYSTEM_INFO_REGISTRY_KEY = new Name("Registry");
+    public static final Name CID_SYSTEM_INFO_SUPPLEMENT_KEY = new Name("Supplement");
+
     public static final Name DW_KEY = new Name("DW");
     public static final Name W_KEY = new Name("W");
 
@@ -63,9 +67,9 @@ public abstract class CompositeFont extends SimpleFont {
         // Get CIDSystemInfo dictionary so we can get ordering data
         Object obj = library.getObject(entries, CID_SYSTEM_INFO_KEY);
         if (obj instanceof DictionaryEntries) {
-            StringObject orderingObject = (StringObject) ((DictionaryEntries) obj).get(new Name("Ordering"));
-            StringObject registryObject = (StringObject) ((DictionaryEntries) obj).get(new Name("Registry"));
-            Integer supplement = (Integer) ((DictionaryEntries) obj).get(new Name("Supplement"));
+            StringObject orderingObject = (StringObject) ((DictionaryEntries) obj).get(CID_SYSTEM_INFO_ORDERING_KEY);
+            StringObject registryObject = (StringObject) ((DictionaryEntries) obj).get(CID_SYSTEM_INFO_REGISTRY_KEY);
+            Integer supplement = (Integer) ((DictionaryEntries) obj).get(CID_SYSTEM_INFO_SUPPLEMENT_KEY);
             if (orderingObject != null && registryObject != null) {
                 ordering = orderingObject.getDecryptedLiteralString(library.getSecurityManager());
                 String registry = registryObject.getDecryptedLiteralString(library.getSecurityManager());

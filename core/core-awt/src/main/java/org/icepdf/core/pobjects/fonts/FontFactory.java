@@ -18,8 +18,12 @@ package org.icepdf.core.pobjects.fonts;
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
+import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.fonts.zfont.*;
+import org.icepdf.core.pobjects.fonts.zfont.Encoding;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.*;
+import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.FontUtil;
 import org.icepdf.core.util.Library;
 
 import java.io.File;
@@ -40,6 +44,15 @@ public class FontFactory {
 
     private static final Logger logger =
             Logger.getLogger(FontFactory.class.toString());
+
+    public static final boolean useEmbeddedFonts;
+
+    static {
+        // sets if file caching is enabled or disabled.
+        useEmbeddedFonts =
+                Defs.sysPropertyBoolean("org.icepdf.core.pobjects.annotations.embedFonts.enabled",
+                        true);
+    }
 
     public static final int FONT_OPEN_TYPE = 5;
     public static final int FONT_TRUE_TYPE = java.awt.Font.TRUETYPE_FONT;
@@ -109,6 +122,43 @@ public class FontFactory {
             font = new TypeCidType2Font(library, entries);
         }
         return font;
+    }
+
+    public Font getFont(Library library, FontFile fontFile, String Content) {
+        return null;
+    }
+
+    public static Stream createStream(Library library, byte[] streamData) {
+        // load font resource from classpath
+        Stream stream = new Stream(library, new DictionaryEntries(), null);
+        stream.setRawBytes(streamData);
+        // compress the form object stream.
+        // todo, not sure this should be annotation specific
+        if (Annotation.isCompressAppearanceStream()) {
+            stream.getEntries().put(Stream.FILTER_KEY, new Name("FlateDecode"));
+        } else {
+            stream.getEntries().remove(Stream.FILTER_KEY);
+        }
+        return stream;
+    }
+
+    public FontFile createFontFile(Library library, String fontName) {
+        FontFile fontFile;
+        // load font from embedded resource if available
+        if (FontUtil.isOtfFontMapped(fontName)) {
+            try {
+                Stream fontFileStream = FontUtil.createFontFileStream(library, fontName);
+                fontFile = FontFactory.getInstance().createFontFile(fontFileStream, FontFactory.FONT_TRUE_TYPE, null);
+                fontFile = fontFile.deriveFont(org.icepdf.core.pobjects.fonts.zfont.Encoding.standardEncoding, null);
+                return fontFile;
+            } catch (Exception e) {
+                logger.warning("Error loading embedded font resource for: " + fontName +
+                        ", falling back to system font. " + e.getMessage());
+            }
+        }
+        fontFile = FontManager.getInstance().initialize().getInstance(fontName, 0);
+        fontFile = fontFile.deriveFont(Encoding.standardEncoding, null);
+        return fontFile;
     }
 
     public FontFile createFontFile(Stream fontStream, int fontType, Name fontSubType) throws Exception {

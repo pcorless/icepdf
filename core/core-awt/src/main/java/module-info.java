@@ -5,6 +5,8 @@ module org.icepdf.core {
     requires java.net.http;
     requires java.naming;
 
+    requires org.icepdf.fonts;
+
     requires org.bouncycastle.pkix;
     requires org.bouncycastle.provider;
     requires org.bouncycastle.util;
@@ -51,5 +53,6 @@ module org.icepdf.core {
     exports org.icepdf.core.util.edit.content;
     exports org.icepdf.core.util.loggers;
     exports org.icepdf.core.util.updater;
+    exports org.icepdf.core.pobjects.fonts.builders;
 
 }
