@@ -2067,6 +2067,8 @@ public abstract class Annotation extends Dictionary {
                 PObject pObject = stateManager.getTempChange(fontReference);
                 if (pObject != null) {
                     stateManager.addChange(pObject);
+                    // todo be nice to have a more generic way to save resources, but for now we only have fonts that
+                    //  need this.
                     ContentWriterUtils.saveFont((SimpleFont) pObject.getObject());
                     stateManager.clearTempChanges();
                 }

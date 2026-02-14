@@ -8,7 +8,9 @@ import org.icepdf.core.pobjects.annotations.Appearance;
 import org.icepdf.core.pobjects.annotations.AppearanceState;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils;
+import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.fonts.FontFile;
+import org.icepdf.core.pobjects.fonts.builders.SimpleFontFactory;
 import org.icepdf.core.pobjects.fonts.builders.TrueTypeFontEmbedder;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.commands.PostScriptEncoder;
@@ -92,11 +94,6 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
             return;
         }
 
-        // create the new font to draw with
-        FontFile fontFile = ContentWriterUtils.createFont(signatureWidgetAnnotation.getLibrary(),
-                signatureAppearanceModel.getFontName());
-        fontFile = fontFile.deriveFont(signatureAppearanceModel.getFontSize());
-
         ResourceBundle messageBundle = signatureAppearanceModel.getMessageBundle();
 
         Library library = signatureDictionary.getLibrary();
@@ -139,6 +136,7 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
             signatureAppearanceModel.setImageXObjectReference(imageStream.getPObjectReference());
         }
 
+        TrueTypeFontEmbedder trueTypeeFontSubSetter = null;
         if (signatureAppearanceModel.isSignatureTextVisible()) {
             float offsetY = 0;
             int lineSpacing = signatureAppearanceModel.getFontSize();
@@ -150,7 +148,12 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
             float groupSpacing = calculateTextSpacing(bbox, signatureText, fontSize, padding);
             AffineTransform centeringTransform = calculatePaddingTransform(leftMargin, padding);
 
-            TrueTypeFontEmbedder trueTypeeFontSubSetter = new TrueTypeFontEmbedder(fontFile);
+            // create the new font to draw with
+            FontFile fontFile = FontFactory.getInstance().createFontFile(library,
+                    signatureAppearanceModel.getFontName());
+            fontFile = fontFile.deriveFont(signatureAppearanceModel.getFontSize());
+            trueTypeeFontSubSetter = new TrueTypeFontEmbedder(fontFile);
+
             Point2D.Float lastOffset;
             float advanceY = (float) bbox.getMinY() + offsetY;
             shapes.add(new TransformDrawCmd(centeringTransform));
@@ -171,9 +174,14 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
 
         byte[] postScript = PostScriptEncoder.generatePostScript(shapes.getShapes());
         Form xObject = signatureWidgetAnnotation.updateAppearanceStream(shapes, bbox, matrix, postScript, isNew);
-        String fontName = signatureAppearanceModel.getFontName();
-        Reference ref = ContentWriterUtils.createSimpleFont(library, fontName);
-        xObject.addFontResource(EMBEDDED_FONT_NAME, ref);
+
+        if (signatureAppearanceModel.isSignatureTextVisible() && trueTypeeFontSubSetter != null) {
+            Dictionary pdfFont = SimpleFontFactory.createFont(
+                    library, signatureAppearanceModel.getFontName(), trueTypeeFontSubSetter);
+            Reference fontReference = pdfFont.getPObjectReference();
+            xObject.addFontResource(EMBEDDED_FONT_NAME, fontReference);
+        }
+
         if (signatureAppearanceModel.isSignatureImageVisible() && imageStream != null) {
             xObject.addImageResource(imageName, imageStream);
         }

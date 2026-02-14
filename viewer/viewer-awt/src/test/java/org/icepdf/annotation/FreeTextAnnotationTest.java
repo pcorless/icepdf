@@ -27,6 +27,7 @@ import org.icepdf.core.util.SystemProperties;
 import org.icepdf.core.util.updater.WriteMode;
 import org.icepdf.ri.util.FontPropertiesManager;
 import org.icepdf.signing.SigningTest;
+import org.icepdf.utils.PDFValidator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -80,18 +81,20 @@ public class FreeTextAnnotationTest {
             page.addAnnotation(annotation, true);
             annotation.saveAppearanceStream();
 
-            File out = new File("./src/test/out/FreeText_annotation_write.pdf");
-            try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 64 * 1024)) {
+            File outputFile = new File("./src/test/out/FreeText_annotation_write.pdf");
+            try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(outputFile), 64 * 1024)) {
                 document.saveToOutputStream(stream, WriteMode.INCREMENT_UPDATE);
             }
             Document modifiedDocument = new Document();
-            modifiedDocument.setFile(out.getAbsolutePath());
+            modifiedDocument.setFile(outputFile.getAbsolutePath());
 
             // make sure page still has an annotation
             page = modifiedDocument.getPageTree().getPage(0);
             assertEquals(1, page.getAnnotations().size());
+            modifiedDocument.dispose();
 
-            // todo validate PDF/A-1b compliance of the output file.
+            // validate PDF/A-1b compliance of the output file.
+            PDFValidator.validatePDFA(new FileInputStream(outputFile));
 
         } catch (PDFSecurityException | IOException | InterruptedException e) {
             // make sure we have no io errors.

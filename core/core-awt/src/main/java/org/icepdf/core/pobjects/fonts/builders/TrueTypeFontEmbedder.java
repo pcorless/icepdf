@@ -102,8 +102,7 @@ public class TrueTypeFontEmbedder {
         tables.add("glyf");
         tables.add("hmtx");
         tables.add("fpgm");
-        // Windows ClearType
-        tables.add("gasp");
+        tables.add("cmap");
 
         // set the GIDs to subset
         TrueTypeFont trueTypeFont = fontFile.getTrueTypeFont();
