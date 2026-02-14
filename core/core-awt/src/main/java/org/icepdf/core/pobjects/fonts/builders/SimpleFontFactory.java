@@ -21,6 +21,10 @@ import org.icepdf.core.pobjects.fonts.zfont.SimpleFont;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
 import org.icepdf.core.util.Library;
 
+/**
+ * Factory for creating SimpleFont instances, which may be either TrueType or Type1 fonts depending on the availability
+ * of embedded font files and the configuration of the FontFactory.
+ */
 public class SimpleFontFactory {
 
     public static SimpleFont createFont(Library library, String fontName, TrueTypeFontEmbedder fontFileSubSetter) {

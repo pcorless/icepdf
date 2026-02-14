@@ -23,6 +23,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * Helper class to create a subset of a TrueType font for embedding in a PDF.  This class is based on
+ * <a href="https://github.com/apache/pdfbox/blob/trunk/pdfbox/src/main/java/org/apache/pdfbox/pdmodel/font/TrueTypeEmbedder.java"></a>
+ *
+ * @author Keiji Suzuki
+ * @author John Hewson
+ */
 public class TrueTypeFontEmbedder {
 
     private static final String BASE25 = "BCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -64,6 +71,10 @@ public class TrueTypeFontEmbedder {
         return gidToCid;
     }
 
+    public Set<Integer> getSubsetCodePoints() {
+        return subsetCodePoints;
+    }
+
     public String getSubsetTag() {
         return subsetTag;
     }
@@ -99,10 +110,6 @@ public class TrueTypeFontEmbedder {
         TTFSubsetter subsetter = new TTFSubsetter(trueTypeFont, tables);
         subsetter.addAll(subsetCodePoints);
 
-        if (!subsetCodePoints.isEmpty()) {
-            subsetter.addGlyphIds(subsetCodePoints);
-        }
-
         // calculate deterministic tag based on the chosen subset
         gidToCid = subsetter.getGIDMap();
         subsetTag = getTag(gidToCid);
@@ -131,10 +138,7 @@ public class TrueTypeFontEmbedder {
     private boolean isSubsettingPermitted(TrueTypeFont ttf) throws IOException {
         if (ttf.getOS2Windows() != null) {
             int fsType = ttf.getOS2Windows().getFsType();
-            if ((fsType & OS2WindowsMetricsTable.FSTYPE_NO_SUBSETTING) ==
-                    OS2WindowsMetricsTable.FSTYPE_NO_SUBSETTING) {
-                return false;
-            }
+            return (fsType & OS2WindowsMetricsTable.FSTYPE_NO_SUBSETTING) != OS2WindowsMetricsTable.FSTYPE_NO_SUBSETTING;
         }
         return true;
     }

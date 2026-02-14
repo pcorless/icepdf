@@ -1,3 +1,18 @@
+/*
+ * Copyright 2026 Patrick Corless
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.icepdf.core.pobjects.fonts.builders;
 
 import org.apache.fontbox.ttf.HeaderTable;
@@ -17,8 +32,9 @@ import java.util.List;
 import static org.icepdf.core.pobjects.fonts.Font.*;
 import static org.icepdf.core.pobjects.fonts.Font.TYPE;
 import static org.icepdf.core.pobjects.fonts.FontDescriptor.*;
-import static org.icepdf.core.pobjects.fonts.FontFactory.FONT_SUBTYPE_TYPE_0;
-import static org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory.IDENTITY_V_NAME;
+import static org.icepdf.core.pobjects.fonts.FontFactory.FONT_SUBTYPE_TRUE_TYPE;
+import static org.icepdf.core.pobjects.fonts.zfont.SimpleFont.TO_UNICODE_KEY;
+import static org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory.IDENTITY_NAME;
 
 public class FontBuilder {
 
@@ -36,12 +52,13 @@ public class FontBuilder {
         this.fontFileSubSetter = fontFileSubSetter;
     }
 
-    protected void createFontFile(String fontName) {
+    protected void createSimpleFontFile(String fontName) {
         DictionaryEntries fontDictionary = new DictionaryEntries();
         fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.TYPE_KEY, TYPE);
-        // move assignment out of base class, as it's builder specific
-        fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY, FONT_SUBTYPE_TYPE_0);
-        fontDictionary.put(ENCODING_KEY, IDENTITY_V_NAME);
+
+        fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY, FONT_SUBTYPE_TRUE_TYPE);
+        fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.ENCODING_KEY, new Name("WinAnsiEncoding"));
+        fontDictionary.put(TO_UNICODE_KEY, IDENTITY_NAME);
         fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.BASEFONT_KEY, new Name(fontName));
 
         // build font descriptor
@@ -92,7 +109,7 @@ public class FontBuilder {
             default:
                 break;
         }
-        flags = setFlagBit(flags, FONT_FLAG_SYMBOLIC, true);
+//        flags = setFlagBit(flags, FONT_FLAG_SYMBOLIC, true);
         flags = setFlagBit(flags, FONT_FLAG_NON_SYMBOLIC, false);
         fontDescriptorDictionary.put(FLAGS, flags);
 
