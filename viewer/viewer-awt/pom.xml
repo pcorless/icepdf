@@ -43,12 +43,6 @@
             <version>1.28.1</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.verapdf</groupId>
-            <artifactId>validation-model</artifactId>
-            <version>1.29.0-SNAPSHOT</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <profiles>

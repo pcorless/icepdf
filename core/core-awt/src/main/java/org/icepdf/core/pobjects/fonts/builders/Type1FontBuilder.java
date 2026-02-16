@@ -31,9 +31,9 @@ public class Type1FontBuilder {
     private Library library;
     private String fontName;
 
-    public Type1FontBuilder(Library library, String FontName) {
+    public Type1FontBuilder(Library library, String fontName) {
         this.library = library;
-        this.fontName = FontName;
+        this.fontName = fontName;
     }
 
     public Type1Font Build() {
