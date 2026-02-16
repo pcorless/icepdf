@@ -175,7 +175,7 @@ public class ContentWriterUtils {
      */
     public static void saveFont(org.icepdf.core.pobjects.fonts.Font font) {
         FontDescriptor fontDescriptor = font.getFontDescriptor();
-        if (fontDescriptor != null) {
+        if (fontDescriptor != null && fontDescriptor.getPObjectReference() != null) {
             StateManager stateManager = font.getLibrary().getStateManager();
             stateManager.addChange(new PObject(fontDescriptor, fontDescriptor.getPObjectReference()));
             if (fontDescriptor.getEntries().containsKey(FONT_FILE_2)) {

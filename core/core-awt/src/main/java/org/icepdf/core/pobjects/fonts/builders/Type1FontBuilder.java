@@ -21,7 +21,6 @@ import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.fonts.zfont.Type1Font;
 import org.icepdf.core.util.Library;
 
-import static org.icepdf.core.pobjects.fonts.Font.TYPE;
 import static org.icepdf.core.pobjects.fonts.FontFactory.FONT_SUBTYPE_TYPE_1;
 import static org.icepdf.core.pobjects.fonts.zfont.SimpleFont.TO_UNICODE_KEY;
 import static org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory.IDENTITY_NAME;
@@ -39,15 +38,17 @@ public class Type1FontBuilder {
     public Type1Font Build() {
 
         DictionaryEntries fontDictionary = new DictionaryEntries();
-        fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.TYPE_KEY, TYPE);
+        fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.TYPE_KEY,
+                org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY);
         fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY, FONT_SUBTYPE_TYPE_1);
-
+        fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.NAME_KEY, new Name(fontName));
         fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.BASEFONT_KEY, new Name(fontName));
         fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.ENCODING_KEY, new Name("WinAnsiEncoding"));
+        fontDictionary.put(new Name("FirstChar"), 32);
+        fontDictionary.put(new Name("LastChar"), 255);
         fontDictionary.put(TO_UNICODE_KEY, IDENTITY_NAME);
 
-        // build out minima core14 properties.
-
+        // build out min core14 properties.
         Type1Font font = new Type1Font(library, fontDictionary);
         font.setPObjectReference(library.getStateManager().getNewReferenceNumber());
         library.getStateManager().addTempChange(new PObject(font, font.getPObjectReference()));
