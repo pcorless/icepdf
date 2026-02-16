@@ -1,8 +1,8 @@
 package org.icepdf.core.pobjects;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 
-public class DictionaryEntries extends HashMap<Name, Object> {
+public class DictionaryEntries extends LinkedHashMap<Name, Object> {
     public DictionaryEntries(int initialCapacity) {
         super(initialCapacity);
     }
