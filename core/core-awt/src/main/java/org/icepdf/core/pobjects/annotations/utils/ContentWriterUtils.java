@@ -6,6 +6,7 @@ import org.icepdf.core.pobjects.annotations.AppearanceState;
 import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.builders.TrueTypeFontEmbedder;
+import org.icepdf.core.pobjects.fonts.zfont.SimpleFont;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.TextState;
@@ -51,6 +52,23 @@ public class ContentWriterUtils {
         isEmbedFonts =
                 Defs.sysPropertyBoolean("org.icepdf.core.pobjects.annotations.embedFonts.enabled",
                         true);
+    }
+
+    public static void removeSimpleFont(Library library, Reference fontReference) {
+        Object obj = library.getObject(fontReference);
+        if (obj instanceof SimpleFont) {
+            StateManager stateManager = library.getStateManager();
+            SimpleFont font = (SimpleFont) obj;
+            stateManager.removeChange(new PObject(font, fontReference));
+            FontDescriptor fontDescriptor = font.getFontDescriptor();
+            if (fontDescriptor != null) {
+                Reference fontFileRef = (Reference) fontDescriptor.getEntries().get(FONT_FILE_2);
+                if (fontFileRef != null) {
+                    stateManager.removeChange(new PObject(library.getObject(fontFileRef), fontFileRef));
+                }
+                stateManager.removeChange(new PObject(fontDescriptor, fontDescriptor.getPObjectReference()));
+            }
+        }
     }
 
     // todo not used, remove it

@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects;
 
+import org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils;
 import org.icepdf.core.pobjects.graphics.ExtGState;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.Shapes;
@@ -31,6 +32,7 @@ import java.util.logging.Logger;
 
 import static org.icepdf.core.pobjects.Resources.FONT_KEY;
 import static org.icepdf.core.pobjects.Resources.XOBJECT_KEY;
+import static org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils.EMBEDDED_FONT_NAME;
 
 /**
  * Form XObject class. Not currently part of the public api.
@@ -217,8 +219,10 @@ public class Form extends Stream {
     }
 
     /**
-     * Add a Font resource to this Form's resource dictionary.  This is intended for new object only, can't guarantee
-     * this method will work as expected on an existing object.
+     * Add a Font resource to this Form's resource dictionary.  If there is already a font resource of the same
+     * name, it will be removed and replaced with the new font resource.  This is to ensure that we don't orphan font
+     * resources in the document if the font was changed.
+     * This is intended for new object only, can't guarantee this method will work as expected on an existing object.
      */
     public void addFontResource(Name fontName, Reference reference) {
         StateManager stateManager = library.getStateManager();
@@ -227,6 +231,10 @@ public class Form extends Stream {
         if (fontsDictionary == null) {
             fontsDictionary = new DictionaryEntries();
             formResources.entries.put(FONT_KEY, fontsDictionary);
+        }
+        if (fontsDictionary.containsKey(EMBEDDED_FONT_NAME)) {
+            Reference oldFontReference = (Reference) fontsDictionary.get(EMBEDDED_FONT_NAME);
+            ContentWriterUtils.removeSimpleFont(library, oldFontReference);
         }
         fontsDictionary.put(fontName, reference);
         entries.put(RESOURCES_KEY, formResources.entries);

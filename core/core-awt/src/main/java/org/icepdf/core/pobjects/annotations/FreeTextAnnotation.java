@@ -444,18 +444,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         // form is fresh
         SimpleFont pdfFont = SimpleFontFactory.createFont(library, fontName, trueTypeeFontSubSetter);
         Reference fontReference = pdfFont.getPObjectReference();
-        // todo cache clean up when font changes.
         form.addFontResource(EMBEDDED_FONT_NAME, fontReference);
-//        Reference fontReference = ContentWriterUtils.createSimpleFont(library, fontName);
-//        form.addFontResource(EMBEDDED_FONT_NAME, fontReference);
-        // check for previously embedded font and do any needed cleanup
-//        if (form.hasFontResource(EMBEDDED_FONT_NAME)) {
-//            Reference previousFontReference = form.getFontResource(EMBEDDED_FONT_NAME);
-//            if (!fontReference.equals(previousFontReference)) {
-//                ContentWriterUtils.removeSimpleFont(library, previousFontReference);
-//            }
-//        }
-//        form.addFontResource(EMBEDDED_FONT_NAME, fontReference);
         try {
             // init the form so we have all the resources ready to go for rendering
             form.init();

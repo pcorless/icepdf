@@ -20,7 +20,6 @@ import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.parser.content.ContentParser;
-import org.icepdf.core.util.updater.EmbeddedFontCache;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
@@ -84,12 +83,6 @@ public class AppearanceState extends Dictionary {
                 shapes = new Shapes();
                 logger.log(Level.WARNING, "Error initializing AppearanceState.", e);
             }
-        }
-        // When editing document we don't want to recreate any more font resource than necessary.  So we
-        // will sniff out any font we might have already added to the document and reuse it.
-        if (resources != null && resources.getFonts() != null) {
-            EmbeddedFontCache embeddedFontCache = library.getEmbeddedFontCache();
-            embeddedFontCache.checkAndPutAnyIceFonts(resources);
         }
     }
 
