@@ -147,6 +147,7 @@ public class FontFactory {
                         ", falling back to system font. " + e.getMessage());
             }
         }
+        // fallback on system font if embedded resource is not available
         fontFile = FontManager.getInstance().initialize().getInstance(fontName, 0);
         fontFile = fontFile.deriveFont(Encoding.standardEncoding, null);
         return fontFile;
