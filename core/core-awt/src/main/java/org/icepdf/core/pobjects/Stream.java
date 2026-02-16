@@ -366,7 +366,6 @@ public class Stream extends Dictionary {
         Stream stream = new Stream(library, new DictionaryEntries(), null);
         stream.setRawBytes(streamData);
         // compress the form object stream.
-        // todo, not sure this should be annotation specific
         if (Annotation.isCompressAppearanceStream()) {
             stream.getEntries().put(Stream.FILTER_KEY, new Name("FlateDecode"));
         } else {

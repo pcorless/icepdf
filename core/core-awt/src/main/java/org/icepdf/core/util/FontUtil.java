@@ -15,11 +15,6 @@
  */
 package org.icepdf.core.util;
 
-import org.icepdf.core.pobjects.DictionaryEntries;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.Stream;
-import org.icepdf.core.pobjects.annotations.Annotation;
-
 import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Logger;
 
@@ -149,25 +144,6 @@ public class FontUtil {
     public static String normalizeString(String name) {
         name = guessFamily(name);
         return name.toLowerCase().replaceAll("\\s+", "");
-    }
-
-    // todo maybe should be somewhere else.
-    public static Stream createFontFileStream(Library library, String fontName) {
-        // load font resource from classpath
-        byte[] fontData = getFontFileData(fontName);
-        if (fontData != null) {
-            Stream stream = new Stream(library, new DictionaryEntries(), null);
-            stream.setRawBytes(fontData);
-            // compress the form object stream.
-            if (Annotation.isCompressAppearanceStream()) {
-                stream.getEntries().put(Stream.FILTER_KEY, new Name("FlateDecode"));
-            } else {
-                stream.getEntries().remove(Stream.FILTER_KEY);
-            }
-            return stream;
-        } else {
-            throw new IllegalStateException("Could not find embedded font resource for: " + fontName);
-        }
     }
 
     public static byte[] getFontFileData(String fontName) {

@@ -100,9 +100,6 @@ public class DocumentSigner {
 
             // write the altered signature dictionary
             fc.position(signatureDictionaryOffset);
-            // byteRange addition is overwritting next object, so we need to adjust the second offset to account for
-            // the increase in byte length of the byteRange entry in the signature dictionary plus the remaining
-            // bytes of rawSignatureDiciontary
             fc.write(ByteBuffer.wrap(rawSignatureDiciontary.getBytes()));
 
             // digest the file creating the content signature

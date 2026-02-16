@@ -12,10 +12,8 @@ import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.TextState;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
-import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.pobjects.graphics.images.references.ImageContentWriterReference;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
-import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -23,16 +21,11 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
 import java.util.logging.Logger;
 
-import static org.icepdf.core.pobjects.Dictionary.SUBTYPE_KEY;
-import static org.icepdf.core.pobjects.Dictionary.TYPE_KEY;
-import static org.icepdf.core.pobjects.Stream.FILTER_DCT_DECODE;
 import static org.icepdf.core.pobjects.Stream.FILTER_KEY;
 import static org.icepdf.core.pobjects.fonts.Font.SIMPLE_FORMAT;
 import static org.icepdf.core.pobjects.fonts.FontDescriptor.FONT_FILE_2;
-import static org.icepdf.core.pobjects.graphics.images.ImageParams.*;
 
 /**
  * Utility for common rendering methods used when generating annotation content stream and supporting resources.
@@ -43,16 +36,6 @@ public class ContentWriterUtils {
             Logger.getLogger(ContentWriterUtils.class.toString());
 
     public static final Name EMBEDDED_FONT_NAME = new Name("ice1");
-
-    public static final boolean isEmbedFonts;
-
-    // todo remove now in  FontFactory after signature refactor
-    static {
-        // sets if file caching is enabled or disabled.
-        isEmbedFonts =
-                Defs.sysPropertyBoolean("org.icepdf.core.pobjects.annotations.embedFonts.enabled",
-                        true);
-    }
 
     public static void removeSimpleFont(Library library, Reference fontReference) {
         Object obj = library.getObject(fontReference);
@@ -69,15 +52,6 @@ public class ContentWriterUtils {
                 stateManager.removeChange(new PObject(fontDescriptor, fontDescriptor.getPObjectReference()));
             }
         }
-    }
-
-    // todo not used, remove it
-    public static DictionaryEntries createImageDictionary() {
-        DictionaryEntries imageDictionary = new DictionaryEntries();
-        imageDictionary.put(org.icepdf.core.pobjects.fonts.Font.TYPE_KEY,
-                org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY);
-        imageDictionary.put(org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY, new Name("Type1"));
-        return imageDictionary;
     }
 
     public static void setAppearance(Annotation annotation, Form form, AppearanceState appearanceState,
@@ -236,7 +210,7 @@ public class ContentWriterUtils {
                 0,
                 bbox.getHeight());
         // add image xObject
-        ImageStream imageStream = ContentWriterUtils.createImageStream(library, reference, bufferedImage, true);
+        ImageStream imageStream = ImageStream.getInstance(library, reference, bufferedImage, true);
         ImageReference imageReference = new ImageContentWriterReference(imageStream, imageName);
         // stack em up
         shapes.add(new PushDrawCmd());
@@ -246,37 +220,4 @@ public class ContentWriterUtils {
         shapes.add(new PopDrawCmd());
         return imageStream;
     }
-
-    // todo move to ImageStream class as getInstance method
-    public static ImageStream createImageStream(Library library, Reference reference, BufferedImage bufferedImage,
-                                                boolean useMask) {
-        DictionaryEntries imageDictionary = new DictionaryEntries();
-        // build base dictionary and image params, use jpeg so that we get a png when encoding the stream
-        imageDictionary.put(FILTER_KEY, FILTER_DCT_DECODE);
-        imageDictionary.put(TYPE_KEY, Form.TYPE_VALUE);
-        imageDictionary.put(BITS_PER_COMPONENT_KEY, 8);
-        imageDictionary.put(SUBTYPE_KEY, ImageStream.TYPE_VALUE);
-        imageDictionary.put(WIDTH_KEY, bufferedImage.getWidth());
-        imageDictionary.put(HEIGHT_KEY, bufferedImage.getHeight());
-        // mask out white background if alpha is specified in colour model, this is man
-        if (useMask && bufferedImage.getColorModel().hasAlpha()) {
-            imageDictionary.put(MASK_KEY, Arrays.asList(255, 255, 255, 255, 255, 255));
-        }
-        ImageStream imageStream = new ImageStream(library, imageDictionary, null);
-        imageStream.setDecodedImage(bufferedImage);
-        // this is pretty rough, will maks any alpha value,  should build a proper maask
-        if (useMask && bufferedImage.getColorModel().hasAlpha()) {
-            // we need s softer mask for the image.
-            ImageUtility.encodeColorKeyMask(imageStream);
-        }
-        // setup object reference and put in state manager
-        StateManager stateManager = library.getStateManager();
-        if (reference == null) {
-            reference = stateManager.getNewReferenceNumber();
-        }
-        imageStream.setPObjectReference(reference);
-        stateManager.addChange(new PObject(imageStream, reference), true);
-        return imageStream;
-    }
-
 }
