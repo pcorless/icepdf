@@ -1,4 +1,4 @@
-package org.icepdf.fonts.util;
+package org.icepdf.core.fonts.util;
 
 import java.io.InputStream;
 import java.util.Map;

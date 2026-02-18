@@ -1,9 +1,5 @@
-module org.icepdf.fonts {
+module org.icepdf.core.fonts {
     requires java.logging;
-//    requires java.desktop;
-//    requires java.net.http;
-//    requires java.naming;
-
-    exports org.icepdf.fonts.util;
+    exports org.icepdf.core.fonts.util;
 
 }

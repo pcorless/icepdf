@@ -148,7 +148,7 @@ public class FontUtil {
 
     public static byte[] getFontFileData(String fontName) {
         try {
-            Class<?> embeddedFontUtil = Class.forName("org.icepdf.fonts.util.EmbeddedFontUtil");
+            Class<?> embeddedFontUtil = Class.forName("org.icepdf.core.fonts.util.EmbeddedFontUtil");
             java.lang.reflect.Method method = embeddedFontUtil.getDeclaredMethod("getOtfEmbeddedFontResource",
                     String.class);
             return (byte[]) method.invoke(null, fontName);
@@ -161,7 +161,7 @@ public class FontUtil {
 
     public static boolean isOtfFontMapped(String fontName) {
         try {
-            Class<?> embeddedFontUtil = Class.forName("org.icepdf.fonts.util.EmbeddedFontUtil");
+            Class<?> embeddedFontUtil = Class.forName("org.icepdf.core.fonts.util.EmbeddedFontUtil");
             java.lang.reflect.Method method = embeddedFontUtil.getDeclaredMethod("isOtfFontMapped",
                     String.class);
             return (boolean) method.invoke(null, fontName);
