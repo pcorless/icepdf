@@ -109,6 +109,9 @@ public class FontBuilder {
             default:
                 break;
         }
+        // PDF/A-2.0 requires that the symbolic and non-symbolic bits be mutually exclusive, so we set the non-symbolic
+        // bit if the font has a Unicode cmap, otherwise we set the symbolic bit.  Can build out later for CID fonts
+        // if needed.
 //        flags = setFlagBit(flags, FONT_FLAG_SYMBOLIC, true);
         flags = setFlagBit(flags, FONT_FLAG_NON_SYMBOLIC, false);
         fontDescriptorDictionary.put(FLAGS, flags);

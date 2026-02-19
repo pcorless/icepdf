@@ -88,8 +88,8 @@ public class TrueTypeFontEmbedder {
      * and the set of code points to include in the subset.  This work is based on
      * <a href="https://github.com/apache/pdfbox/blob/trunk/pdfbox/src/main/java/org/apache/pdfbox/pdmodel/font/TrueTypeEmbedder.java">
      * TrueTypeEmbedder</a> by Ben Litchfield and John Hewson.
-     *
-     * @return byte array of the subset font file
+     * <br>
+     * @throws IOException if there is an error creating the subset
      */
     public void createSubsetFont() throws IOException {
         List<String> tables = new ArrayList<>();

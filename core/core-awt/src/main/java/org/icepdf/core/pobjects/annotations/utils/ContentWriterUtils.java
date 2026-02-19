@@ -169,7 +169,7 @@ public class ContentWriterUtils {
 
     /**
      * Saves the font descriptor and font file associated with the given font to the StateManager which were
-     * previously saved in the tmp cache. .
+     * previously saved in the tmp cache.
      *
      * @param font font object to persist to main state manager.
      */

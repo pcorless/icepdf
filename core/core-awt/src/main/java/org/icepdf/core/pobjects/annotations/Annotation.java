@@ -2054,8 +2054,8 @@ public abstract class Annotation extends Dictionary {
 
     /**
      * Saves all resources associated with the appearance stream.  This mainly moves any tmp objects saved to the
-     * state manager to the main object store.  The reason for this to avoid writing out unneeded objects if they
-     * are no longer used, for example if the user changes the font manny times while editing a signature.
+     * StateManager to the main object store.  The reason for this is to avoid writing out unneeded objects if they
+     * are no longer used, for example if the user changes the font many times while editing a signature.
      */
     public void saveAppearanceStream() {
         StateManager stateManager = library.getStateManager();

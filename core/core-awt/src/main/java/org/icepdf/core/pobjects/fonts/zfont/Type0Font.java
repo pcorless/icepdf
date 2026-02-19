@@ -47,7 +47,9 @@ public class Type0Font extends SimpleFont {
             logger.warning("Type0Font: " + library.getName(entries, NAME_KEY) +
                     " could not find descendant font.");
             findFontIfNotEmbedded();
-            font = font.deriveFont(encoding, toUnicodeCMap != null ? toUnicodeCMap : font.getToUnicode());
+            if (font != null) {
+                font = font.deriveFont(encoding, toUnicodeCMap != null ? toUnicodeCMap : font.getToUnicode());
+            }
         }
         inited = true;
     }

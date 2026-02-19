@@ -75,12 +75,11 @@ public class DocumentSigner {
             // write out the securityDictionary, so we can make the necessary edits for setting up signing
             String rawSignatureDiciontary = writeSignatureDictionary(crossReferenceRoot, securityManager,
                     signatureDictionary);
-            int signatureDictionaryLength = rawSignatureDiciontary.length();
 
             // figure out byte offset around the content hex string
             final FileChannel fc = raf.getChannel();
             fc.position(0);
-            long fileLength = fc.size();// + signatureDictionaryLength;
+            long fileLength = fc.size();
 
             // find byte offset of the start of content hex string
             int firstStart = 0;
@@ -96,7 +95,7 @@ public class DocumentSigner {
             rawSignatureDiciontary = rawSignatureDiciontary.replaceAll("/ByteRange \\[[ 0]*]",
                     "/ByteRange " + byteRangeDump + " ".repeat(Math.max(0, padding)));
 
-            signatureDictionaryLength = rawSignatureDiciontary.length();
+            int signatureDictionaryLength = rawSignatureDiciontary.length();
 
             // write the altered signature dictionary
             fc.position(signatureDictionaryOffset);
@@ -148,7 +147,7 @@ public class DocumentSigner {
                                                   SignatureDictionary signatureDictionary) throws IOException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         CountingOutputStream objectOutput = new CountingOutputStream(byteArrayOutputStream);
-        BaseWriter writer = new BaseWriter(crossReferenceRoot, securityManager, objectOutput, 0l);
+        BaseWriter writer = new BaseWriter(crossReferenceRoot, securityManager, objectOutput, 0L);
         writer.initializeWriters();
         writer.writePObject(new PObject(signatureDictionary, signatureDictionary.getPObjectReference()));
         String objectDump = byteArrayOutputStream.toString(StandardCharsets.UTF_8);
@@ -157,10 +156,10 @@ public class DocumentSigner {
     }
 
     public static String writeByteOffsets(CrossReferenceRoot crossReferenceRoot, SecurityManager securityManager,
-                                          List offsets) throws IOException {
+                                          List<Integer> offsets) throws IOException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         CountingOutputStream objectOutput = new CountingOutputStream(byteArrayOutputStream);
-        BaseWriter writer = new BaseWriter(crossReferenceRoot, securityManager, objectOutput, 0l);
+        BaseWriter writer = new BaseWriter(crossReferenceRoot, securityManager, objectOutput, 0L);
         writer.initializeWriters();
         writer.writeValue(new PObject(offsets, new Reference(1, 0)), objectOutput);
         String objectDump = byteArrayOutputStream.toString(StandardCharsets.UTF_8);
@@ -174,9 +173,7 @@ public class DocumentSigner {
 
     public static String generateContentsPlaceholder(int reductionAdjustment) {
         int capacity = PLACEHOLDER_PADDING_LENGTH - reductionAdjustment;
-        StringBuilder paddedZeros = new StringBuilder(capacity);
-        paddedZeros.append("0".repeat(Math.max(0, capacity)));
-        return paddedZeros.toString();
+        return "0".repeat(Math.max(0, capacity));
     }
 
 

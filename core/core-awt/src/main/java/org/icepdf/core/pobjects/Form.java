@@ -232,6 +232,8 @@ public class Form extends Stream {
             fontsDictionary = new DictionaryEntries();
             formResources.entries.put(FONT_KEY, fontsDictionary);
         }
+        // remove previous font resource if it exists, this is to ensure that we don't orphan font resources in the
+        // document if the font was changed.
         if (fontsDictionary.containsKey(EMBEDDED_FONT_NAME)) {
             Reference oldFontReference = (Reference) fontsDictionary.get(EMBEDDED_FONT_NAME);
             ContentWriterUtils.removeSimpleFont(library, oldFontReference);

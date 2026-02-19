@@ -57,7 +57,7 @@ public class TrueTypeCIDFontBuilder extends FontBuilder {
         super(library, fontFileSubSetter);
     }
 
-    public SimpleFont Build() {
+    public SimpleFont build() {
         // double check we have an embedded font available for the font name
         if (!(FontFactory.useEmbeddedFonts || fontFileSubSetter.isFontEmbeddable())) {
             throw new IllegalStateException("Font embedding not supported or font is not embeddable.");

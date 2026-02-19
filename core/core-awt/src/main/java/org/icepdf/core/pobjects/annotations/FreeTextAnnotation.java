@@ -467,7 +467,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         if (fontStyle == Font.PLAIN) {
             dsString.append("font-style:normal;");
         }
-//        setString(DS_KEY, dsString.toString());
+        setString(DS_KEY, dsString.toString());
 
         // write out the  color
         if (fillType) {
@@ -500,7 +500,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             rcString.append("<p>").append(line).append("</p>");
         }
         rcString.append(BODY_END);
-//        setString(RC_KEY, rcString.toString());
+        setString(RC_KEY, rcString.toString());
     }
 
     public String getDefaultStylingString() {

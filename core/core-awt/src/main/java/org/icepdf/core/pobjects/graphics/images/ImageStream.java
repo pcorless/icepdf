@@ -65,13 +65,14 @@ public class ImageStream extends Stream {
         imageDictionary.put(SUBTYPE_KEY, ImageStream.TYPE_VALUE);
         imageDictionary.put(WIDTH_KEY, bufferedImage.getWidth());
         imageDictionary.put(HEIGHT_KEY, bufferedImage.getHeight());
-        // mask out white background if alpha is specified in colour model, this is man
+        // mask out white background if alpha is specified in the colour model; this is a manual mask
         if (useMask && bufferedImage.getColorModel().hasAlpha()) {
             imageDictionary.put(MASK_KEY, Arrays.asList(255, 255, 255, 255, 255, 255));
         }
         ImageStream imageStream = new ImageStream(library, imageDictionary, null);
         imageStream.setDecodedImage(bufferedImage);
-        // this is pretty rough, will maks any alpha value,  should build a proper maask
+        // This is pretty rough, will mask any alpha value, but it is a start for now.
+        // We can add more complex mask processing later if needed.
         if (useMask && bufferedImage.getColorModel().hasAlpha()) {
             // we need s softer mask for the image.
             ImageUtility.encodeColorKeyMask(imageStream);

@@ -123,10 +123,6 @@ public class FontFactory {
         return font;
     }
 
-    public Font getFont(Library library, FontFile fontFile, String Content) {
-        return null;
-    }
-
     public FontFile createFontFile(Library library, String fontName) {
         FontFile fontFile;
         // load font from embedded resource if available

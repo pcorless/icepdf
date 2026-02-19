@@ -32,7 +32,7 @@ public class SimpleFontFactory {
         FontFile fontFile = fontFileSubSetter.getFontFile();
         // if embedding is support use TrueType font
         if (fontFile instanceof ZFontTrueType && FontFactory.useEmbeddedFonts && fontFileSubSetter.isFontEmbeddable()) {
-            return new TrueTypeFontBuilder(library, fontFileSubSetter).Build();
+            return new TrueTypeFontBuilder(library, fontFileSubSetter).build();
         }
         // fall back on simple Type1 font, if embedding is not available
         else {

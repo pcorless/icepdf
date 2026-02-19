@@ -19,7 +19,7 @@ public class EmbeddedFontUtil {
     static {
         otfFontMapper.put("Times-Roman", "NotoSerif-Regular.ttf");
         otfFontMapper.put("Times-Bold", "NotoSerif-Bold.ttf");
-        otfFontMapper.put("Times-Italic ", "NotoSerif-Italic.ttf");
+        otfFontMapper.put("Times-Italic", "NotoSerif-Italic.ttf");
         otfFontMapper.put("Times-BoldItalic", "NotoSerif-BoldItalic.ttf");
         otfFontMapper.put("Helvetica", "Roboto-Regular.ttf");
         otfFontMapper.put("Helvetica-Bold", "Roboto-Bold.ttf");

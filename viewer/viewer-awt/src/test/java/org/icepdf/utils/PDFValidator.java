@@ -28,10 +28,10 @@ public class PDFValidator {
             ValidationResult result = validator.validate(parser);
             if (result.isCompliant()) {
                 // File is a valid PDF/A 1b
-                System.out.println("The document is a valid PDF/b-" + flavour.getLevel());
+                System.out.println("The document is a valid PDF/A-1b" + flavour.getLevel());
             } else {
                 // it isn't
-                System.out.println("The document is NOT a valid PDF/b-" + flavour.getLevel());
+                System.out.println("The document is NOT a valid PDF/A-1b" + flavour.getLevel());
                 result.getFailedChecks().forEach((check, line) -> {
                     System.out.printf("Failed check: %s, details: %s %s \n",
                             check.getClause(),
@@ -39,7 +39,7 @@ public class PDFValidator {
                             check.getSpecification().getPdfSpecification().toString());
                 });
             }
-            assertTrue(result.isCompliant(), "The document is NOT a valid PDF/b-" + flavour.getLevel());
+            assertTrue(result.isCompliant(), "The document is NOT a valid PDF/A-1b" + flavour.getLevel());
         } catch (IOException | ValidationException | ModelParsingException | EncryptedPdfException exception) {
             // Exception during validation
             System.out.printf("Exception during validation: %s%n", exception.getMessage());
