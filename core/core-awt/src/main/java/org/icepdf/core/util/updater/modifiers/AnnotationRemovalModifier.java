@@ -9,6 +9,7 @@ import java.util.List;
 
 import static org.icepdf.core.pobjects.Page.ANNOTS_KEY;
 import static org.icepdf.core.pobjects.Page.RESOURCES_KEY;
+import static org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils.EMBEDDED_FONT_NAME;
 
 /**
  * Takes care of removing all traces of an annotation and its dependencies.
@@ -44,7 +45,7 @@ public class AnnotationRemovalModifier implements Modifier<Annotation> {
                 Resources resources = (Resources) tmp;
                 // only remove our font instance, if we remove another font we would have
                 // to check the document to see if it was used anywhere else.
-                Dictionary font = resources.getFont(FreeTextAnnotation.EMBEDDED_FONT_NAME);
+                Dictionary font = resources.getFont(EMBEDDED_FONT_NAME);
                 if (font != null) {
                     font.setDeleted(true);
                     stateManager.addDeletion(font.getPObjectReference());

@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.io.BitStream;
 import org.icepdf.core.io.ConservativeSizingByteArrayOutputStream;
+import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.filters.*;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.Library;
@@ -350,6 +351,27 @@ public class Stream extends Dictionary {
         stream.setRawBytes(contentBytes);
         stream.setPObjectReference(dictionary.getPObjectReference());
         return new Stream[]{stream};
+    }
+
+    /**
+     * Create a stream object from the given byte array.  Stream dictionary is created with FlateDecode filter
+     * if the Annotation.compressAppearanceStream flag is set to true.
+     *
+     * @param library    document library
+     * @param streamData data to embed in stream
+     * @return stream object
+     */
+    public static Stream createStream(Library library, byte[] streamData) {
+        // load font resource from classpath
+        Stream stream = new Stream(library, new DictionaryEntries(), null);
+        stream.setRawBytes(streamData);
+        // compress the form object stream.
+        if (Annotation.isCompressAppearanceStream()) {
+            stream.getEntries().put(Stream.FILTER_KEY, new Name("FlateDecode"));
+        } else {
+            stream.getEntries().remove(Stream.FILTER_KEY);
+        }
+        return stream;
     }
 
     /**

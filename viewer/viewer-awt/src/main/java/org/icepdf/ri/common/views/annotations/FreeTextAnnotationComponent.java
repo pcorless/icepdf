@@ -301,6 +301,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
         super.resetAppearanceShapes();
         applyFreeTextPanelContents();
         annotation.resetAppearanceStream(getToPageSpaceTransform());
+        annotation.saveAppearanceStream();
     }
 
     public boolean isActive() {

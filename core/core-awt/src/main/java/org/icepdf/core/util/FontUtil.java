@@ -15,12 +15,17 @@
  */
 package org.icepdf.core.util;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Logger;
+
 /**
  * Font utility contains a bunch of commonly used font utility methods.
  *
  * @since 3.1
  */
 public class FontUtil {
+
+    private static final Logger logger = Logger.getLogger(FontUtil.class.toString());
 
     // awt font style lookup style tokens
     private static final String AWT_STYLE_BOLD_ITAL = "boldital";
@@ -139,6 +144,32 @@ public class FontUtil {
     public static String normalizeString(String name) {
         name = guessFamily(name);
         return name.toLowerCase().replaceAll("\\s+", "");
+    }
+
+    public static byte[] getFontFileData(String fontName) {
+        try {
+            Class<?> embeddedFontUtil = Class.forName("org.icepdf.core.fonts.util.EmbeddedFontUtil");
+            java.lang.reflect.Method method = embeddedFontUtil.getDeclaredMethod("getOtfEmbeddedFontResource",
+                    String.class);
+            return (byte[]) method.invoke(null, fontName);
+        } catch (ClassNotFoundException | InvocationTargetException | NoSuchMethodException |
+                 IllegalAccessException e) {
+            logger.warning("org.icepdf.fonts.util.EmbeddedFontUtil not found, embedded font resources unavailable: " + e.getMessage());
+        }
+        return null;
+    }
+
+    public static boolean isOtfFontMapped(String fontName) {
+        try {
+            Class<?> embeddedFontUtil = Class.forName("org.icepdf.core.fonts.util.EmbeddedFontUtil");
+            java.lang.reflect.Method method = embeddedFontUtil.getDeclaredMethod("isOtfFontMapped",
+                    String.class);
+            return (boolean) method.invoke(null, fontName);
+        } catch (ClassNotFoundException | InvocationTargetException | NoSuchMethodException |
+                 IllegalAccessException e) {
+            logger.warning("org.icepdf.fonts.util.EmbeddedFontUtil not found, embedded font resources unavailable: " + e.getMessage());
+        }
+        return false;
     }
 
 }

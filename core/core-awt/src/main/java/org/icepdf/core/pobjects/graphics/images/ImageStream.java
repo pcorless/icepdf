@@ -16,10 +16,7 @@
 package org.icepdf.core.pobjects.graphics.images;
 
 
-import org.icepdf.core.pobjects.DictionaryEntries;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.Resources;
-import org.icepdf.core.pobjects.Stream;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.PColorSpace;
 import org.icepdf.core.util.Library;
@@ -28,7 +25,10 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 import java.util.logging.Logger;
+
+import static org.icepdf.core.pobjects.graphics.images.ImageParams.*;
 
 /**
  * ImageStream contains image data that is contains in an XObject of subtype
@@ -53,6 +53,39 @@ public class ImageStream extends Stream {
     public ImageStream(Library l, DictionaryEntries h, byte[] rawBytes) {
         super(l, h, rawBytes);
         imageParams = new ImageParams(library, entries, null);
+    }
+
+    public static ImageStream getInstance(Library library, Reference reference, BufferedImage bufferedImage,
+                                          boolean useMask) {
+        DictionaryEntries imageDictionary = new DictionaryEntries();
+        // build base dictionary and image params, use jpeg so that we get a png when encoding the stream
+        imageDictionary.put(FILTER_KEY, FILTER_DCT_DECODE);
+        imageDictionary.put(TYPE_KEY, Form.TYPE_VALUE);
+        imageDictionary.put(BITS_PER_COMPONENT_KEY, 8);
+        imageDictionary.put(SUBTYPE_KEY, ImageStream.TYPE_VALUE);
+        imageDictionary.put(WIDTH_KEY, bufferedImage.getWidth());
+        imageDictionary.put(HEIGHT_KEY, bufferedImage.getHeight());
+        // mask out white background if alpha is specified in the colour model; this is a manual mask
+        if (useMask && bufferedImage.getColorModel().hasAlpha()) {
+            imageDictionary.put(MASK_KEY, Arrays.asList(255, 255, 255, 255, 255, 255));
+        }
+        ImageStream imageStream = new ImageStream(library, imageDictionary, null);
+        imageStream.setDecodedImage(bufferedImage);
+        // This is pretty rough, will mask any alpha value, but it is a start for now.
+        // We can add more complex mask processing later if needed.
+        if (useMask && bufferedImage.getColorModel().hasAlpha()) {
+            // we need s softer mask for the image.
+            ImageUtility.encodeColorKeyMask(imageStream);
+        }
+        // setup object reference and put in state manager
+        StateManager stateManager = library.getStateManager();
+        if (reference == null) {
+            reference = stateManager.getNewReferenceNumber();
+        }
+        imageStream.setPObjectReference(reference);
+        stateManager.addChange(new PObject(imageStream, reference), true);
+        return imageStream;
+
     }
 
     /**

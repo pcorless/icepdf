@@ -17,7 +17,11 @@ package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils;
+import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.fonts.FontFile;
+import org.icepdf.core.pobjects.fonts.builders.SimpleFontFactory;
+import org.icepdf.core.pobjects.fonts.builders.TrueTypeFontEmbedder;
+import org.icepdf.core.pobjects.fonts.zfont.SimpleFont;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.util.ColorUtil;
@@ -33,6 +37,8 @@ import java.util.ArrayList;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils.EMBEDDED_FONT_NAME;
 
 /**
  * A free text annotation (PDF 1.3) displays text directly on the page. Unlike
@@ -154,7 +160,6 @@ public class FreeTextAnnotation extends MarkupAnnotation {
      * Center-justified quadding
      */
     public static final int QUADDING_RIGHT_JUSTIFIED = 2;
-    public static final Name EMBEDDED_FONT_NAME = new Name("ice1");
 
     public static Color defaultFontColor;
     public static Color defaultFillColor;
@@ -384,13 +389,6 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             setContents("");
         }
 
-        // create the new font to draw with
-        if (fontFile == null || fontPropertyChanged) {
-            fontFile = ContentWriterUtils.createFont(fontName);
-            fontPropertyChanged = false;
-        }
-        fontFile = fontFile.deriveFont(fontSize);
-
         BasicStroke stroke;
         if (strokeType && borderStyle.isStyleDashed()) {
             stroke = new BasicStroke(
@@ -424,17 +422,35 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         // is generally going to be zero, and af takes care of the offset for inset.
         float advanceX = (float) bbox.getMinX() + borderOffsetX;
         float advanceY = (float) bbox.getMinY() + borderOffsetY;
-        ContentWriterUtils.addTextSpritesToShapes(fontFile, advanceX, advanceY, shapes, fontSize, 0, fontColor,
+
+        // create the new font to draw with
+        if (fontFile == null || fontPropertyChanged) {
+            fontFile = FontFactory.getInstance().createFontFile(library, fontName);
+            fontPropertyChanged = false;
+        }
+        fontFile = fontFile.deriveFont(fontSize);
+        TrueTypeFontEmbedder trueTypeeFontSubSetter = new TrueTypeFontEmbedder(fontFile);
+        ContentWriterUtils.addTextSpritesToShapes(trueTypeeFontSubSetter, advanceX, advanceY, shapes, fontSize, 0,
+                fontColor,
                 content);
 
-        // update the appearance stream
         // create/update the appearance stream of the xObject.
         StateManager stateManager = library.getStateManager();
         Form form = updateAppearanceStream(shapes, bbox, matrix,
                 PostScriptEncoder.generatePostScript(shapes.getShapes()), isNew);
         generateExternalGraphicsState(form, opacity);
         ContentWriterUtils.setAppearance(this, form, appearanceState, stateManager, isNew);
-        form.addFontResource(ContentWriterUtils.createDefaultFontDictionary(fontName));
+
+        // form is fresh
+        SimpleFont pdfFont = SimpleFontFactory.createFont(library, fontName, trueTypeeFontSubSetter);
+        Reference fontReference = pdfFont.getPObjectReference();
+        form.addFontResource(EMBEDDED_FONT_NAME, fontReference);
+        try {
+            // init the form so we have all the resources ready to go for rendering
+            form.init();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         // build out a few backwards compatible strings.
         StringBuilder dsString = new StringBuilder("font-size:")

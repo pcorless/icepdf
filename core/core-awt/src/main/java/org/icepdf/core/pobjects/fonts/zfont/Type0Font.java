@@ -39,11 +39,18 @@ public class Type0Font extends SimpleFont {
             return;
         }
 
-        findFontIfNotEmbedded();
         parseToUnicode();
         parseEncoding();
         parseDescendantFont();
 
+        if (font == null) {
+            logger.warning("Type0Font: " + library.getName(entries, NAME_KEY) +
+                    " could not find descendant font.");
+            findFontIfNotEmbedded();
+            if (font != null) {
+                font = font.deriveFont(encoding, toUnicodeCMap != null ? toUnicodeCMap : font.getToUnicode());
+            }
+        }
         inited = true;
     }
 
@@ -52,7 +59,6 @@ public class Type0Font extends SimpleFont {
         if (name != null) {
             cMap = CMapFactory.getPredefinedCMap(name);
             encoding = Encoding.getInstance((name).getName());
-            font = font.deriveFont(encoding, toUnicodeCMap != null ? toUnicodeCMap : font.getToUnicode());
             return;
         }
         Object object = library.getObject(entries, ENCODING_KEY);

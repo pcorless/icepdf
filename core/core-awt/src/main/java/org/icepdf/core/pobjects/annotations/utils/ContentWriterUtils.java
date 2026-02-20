@@ -3,15 +3,15 @@ package org.icepdf.core.pobjects.annotations.utils;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AppearanceState;
+import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.fonts.FontFile;
-import org.icepdf.core.pobjects.fonts.FontManager;
-import org.icepdf.core.pobjects.fonts.zfont.Encoding;
+import org.icepdf.core.pobjects.fonts.builders.TrueTypeFontEmbedder;
+import org.icepdf.core.pobjects.fonts.zfont.SimpleFont;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.TextState;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
-import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.pobjects.graphics.images.references.ImageContentWriterReference;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.util.Library;
@@ -21,15 +21,11 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
 import java.util.logging.Logger;
 
-import static org.icepdf.core.pobjects.Dictionary.SUBTYPE_KEY;
-import static org.icepdf.core.pobjects.Dictionary.TYPE_KEY;
-import static org.icepdf.core.pobjects.Stream.FILTER_DCT_DECODE;
 import static org.icepdf.core.pobjects.Stream.FILTER_KEY;
 import static org.icepdf.core.pobjects.fonts.Font.SIMPLE_FORMAT;
-import static org.icepdf.core.pobjects.graphics.images.ImageParams.*;
+import static org.icepdf.core.pobjects.fonts.FontDescriptor.FONT_FILE_2;
 
 /**
  * Utility for common rendering methods used when generating annotation content stream and supporting resources.
@@ -39,28 +35,23 @@ public class ContentWriterUtils {
     private static final Logger logger =
             Logger.getLogger(ContentWriterUtils.class.toString());
 
-    protected static final Name EMBEDDED_FONT_NAME = new Name("ice1");
+    public static final Name EMBEDDED_FONT_NAME = new Name("ice1");
 
-    public static DictionaryEntries createDefaultFontDictionary(String fontName) {
-        // create the font dictionary
-        DictionaryEntries fontDictionary = new DictionaryEntries();
-        fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.TYPE_KEY,
-                org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY);
-        fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY, new Name("Type1"));
-        fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.NAME_KEY, EMBEDDED_FONT_NAME);
-        fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.BASEFONT_KEY, new Name(fontName));
-        fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.ENCODING_KEY, new Name("WinAnsiEncoding"));
-        fontDictionary.put(new Name("FirstChar"), 32);
-        fontDictionary.put(new Name("LastChar"), 255);
-        return fontDictionary;
-    }
-
-    public static DictionaryEntries createImageDictionary() {
-        DictionaryEntries imageDictionary = new DictionaryEntries();
-        imageDictionary.put(org.icepdf.core.pobjects.fonts.Font.TYPE_KEY,
-                org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY);
-        imageDictionary.put(org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY, new Name("Type1"));
-        return imageDictionary;
+    public static void removeSimpleFont(Library library, Reference fontReference) {
+        Object obj = library.getObject(fontReference);
+        if (obj instanceof SimpleFont) {
+            StateManager stateManager = library.getStateManager();
+            SimpleFont font = (SimpleFont) obj;
+            stateManager.removeChange(new PObject(font, fontReference));
+            FontDescriptor fontDescriptor = font.getFontDescriptor();
+            if (fontDescriptor != null) {
+                Reference fontFileRef = (Reference) fontDescriptor.getEntries().get(FONT_FILE_2);
+                if (fontFileRef != null) {
+                    stateManager.removeChange(new PObject(library.getObject(fontFileRef), fontFileRef));
+                }
+                stateManager.removeChange(new PObject(fontDescriptor, fontDescriptor.getPObjectReference()));
+            }
+        }
     }
 
     public static void setAppearance(Annotation annotation, Form form, AppearanceState appearanceState,
@@ -84,7 +75,7 @@ public class ContentWriterUtils {
         }
     }
 
-    public static Point2D.Float addTextSpritesToShapes(FontFile fontFile,
+    public static Point2D.Float addTextSpritesToShapes(TrueTypeFontEmbedder trueTypeeFontSubSetter,
                                                        final float advanceX,
                                                        final float advanceY,
                                                        Shapes shapes,
@@ -92,6 +83,7 @@ public class ContentWriterUtils {
                                                        float lineSpacing,
                                                        Color fontColor,
                                                        String content) {
+        FontFile fontFile = trueTypeeFontSubSetter.getFontFile();
         TextSprite textSprites =
                 new TextSprite(fontFile,
                         SIMPLE_FORMAT,
@@ -120,7 +112,7 @@ public class ContentWriterUtils {
             newAdvanceX = (float) fontFile.getAdvance(currentChar).getX();
             currentX = advanceX + lastx;
             lastx += newAdvanceX;
-
+            trueTypeeFontSubSetter.addToSubset(currentChar);
             if (!(currentChar == '\n' || currentChar == '\r')) {
                 textSprites.addText(
                         currentChar, // cid
@@ -175,10 +167,26 @@ public class ContentWriterUtils {
         return shapes;
     }
 
-    public static FontFile createFont(String fontName) {
-        FontFile fontFile = FontManager.getInstance().initialize().getInstance(fontName, 0);
-        fontFile = fontFile.deriveFont(Encoding.standardEncoding, null);
-        return fontFile;
+    /**
+     * Saves the font descriptor and font file associated with the given font to the StateManager which were
+     * previously saved in the tmp cache.
+     *
+     * @param font font object to persist to main state manager.
+     */
+    public static void saveFont(org.icepdf.core.pobjects.fonts.Font font) {
+        FontDescriptor fontDescriptor = font.getFontDescriptor();
+        if (fontDescriptor != null && fontDescriptor.getPObjectReference() != null) {
+            StateManager stateManager = font.getLibrary().getStateManager();
+            stateManager.addChange(new PObject(fontDescriptor, fontDescriptor.getPObjectReference()));
+            if (fontDescriptor.getEntries().containsKey(FONT_FILE_2)) {
+                Object obj = fontDescriptor.getEntries().get(FONT_FILE_2);
+                if (obj instanceof Reference) {
+                    Reference ref = (Reference) obj;
+                    PObject fontFile = stateManager.getTempChange(ref);
+                    stateManager.addChange(fontFile);
+                }
+            }
+        }
     }
 
     public static ImageStream addImageToShapes(Library library, Name imageName, Reference reference,
@@ -202,7 +210,7 @@ public class ContentWriterUtils {
                 0,
                 bbox.getHeight());
         // add image xObject
-        ImageStream imageStream = ContentWriterUtils.createImageStream(library, reference, bufferedImage, true);
+        ImageStream imageStream = ImageStream.getInstance(library, reference, bufferedImage, true);
         ImageReference imageReference = new ImageContentWriterReference(imageStream, imageName);
         // stack em up
         shapes.add(new PushDrawCmd());
@@ -212,36 +220,4 @@ public class ContentWriterUtils {
         shapes.add(new PopDrawCmd());
         return imageStream;
     }
-
-    public static ImageStream createImageStream(Library library, Reference reference, BufferedImage bufferedImage,
-                                                boolean useMask) {
-        DictionaryEntries imageDictionary = new DictionaryEntries();
-        // build base dictionary and image params, use jpeg so that we get a png when encoding the stream
-        imageDictionary.put(FILTER_KEY, FILTER_DCT_DECODE);
-        imageDictionary.put(TYPE_KEY, Form.TYPE_VALUE);
-        imageDictionary.put(BITS_PER_COMPONENT_KEY, 8);
-        imageDictionary.put(SUBTYPE_KEY, ImageStream.TYPE_VALUE);
-        imageDictionary.put(WIDTH_KEY, bufferedImage.getWidth());
-        imageDictionary.put(HEIGHT_KEY, bufferedImage.getHeight());
-        // mask out white background if alpha is specified in colour model, this is man
-        if (useMask && bufferedImage.getColorModel().hasAlpha()) {
-            imageDictionary.put(MASK_KEY, Arrays.asList(255, 255, 255, 255, 255, 255));
-        }
-        ImageStream imageStream = new ImageStream(library, imageDictionary, null);
-        imageStream.setDecodedImage(bufferedImage);
-        // this is pretty rough, will maks any alpha value,  should build a proper maask
-        if (useMask && bufferedImage.getColorModel().hasAlpha()) {
-            // we need s softer mask for the image.
-            ImageUtility.encodeColorKeyMask(imageStream);
-        }
-        // setup object reference and put in state manager
-        StateManager stateManager = library.getStateManager();
-        if (reference == null) {
-            reference = stateManager.getNewReferenceNumber();
-        }
-        imageStream.setPObjectReference(reference);
-        stateManager.addChange(new PObject(imageStream, reference), true);
-        return imageStream;
-    }
-
 }
