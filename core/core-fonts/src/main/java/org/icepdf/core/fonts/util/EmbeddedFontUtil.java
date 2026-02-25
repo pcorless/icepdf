@@ -48,6 +48,14 @@ public class EmbeddedFontUtil {
         otfFontMapper.put("ZapfDingbats", "NotoSansSymbols2-Regular.ttf");
     }
 
+    /**
+     * Loads the embedded OpenType font resource corresponding to the given font name.
+     *
+     * @param fontName the name of the font for which to load the embedded resource (e.g., "Times-Roman",
+     *                 "Helvetica-Bold", etc.)
+     * @return a byte array containing the font data if the font name is mapped to an embedded resource, or null if
+     * the font name is not mapped or if an error occurs while loading the resource
+     */
     public static byte[] getOtfEmbeddedFontResource(String fontName) {
         String otfFontName = otfFontMapper.get(fontName);
         if (otfFontName != null) {
@@ -62,6 +70,12 @@ public class EmbeddedFontUtil {
         return null;
     }
 
+    /**
+     * Checks if the given font name is mapped to an embedded OpenType font resource.
+     *
+     * @param fontName the name of the font to check (e.g., "Times-Roman", "Helvetica-Bold", etc.)
+     * @return true if the font name is mapped to an embedded OpenType font resource, false otherwise
+     */
     public static boolean isOtfFontMapped(String fontName) {
         return otfFontMapper.containsKey(fontName);
     }

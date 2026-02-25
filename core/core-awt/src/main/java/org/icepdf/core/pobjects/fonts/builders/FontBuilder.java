@@ -50,6 +50,16 @@ public class FontBuilder {
         this.fontFileSubSetter = fontFileSubSetter;
     }
 
+    /**
+     * Creates a simple font dictionary for the given font name, and sets up the necessary entries for a TrueType
+     * font with embedded font file.  The simple font dictionary includes a reference to the font descriptor, which
+     * in turn includes a reference to the embedded font file stream.  This method is responsible for creating the
+     * simple font dictionary and linking it to the font descriptor, but does not handle the creation of the font
+     * descriptor or the font file stream itself, which are handled in separate methods.
+     *
+     * @param fontName the name of the font to be used in the simple font dictionary.  This should match the font name
+     *                 used in the font descriptor and the embedded font file.
+     */
     protected void createSimpleFontFile(String fontName) {
         DictionaryEntries fontDictionary = new DictionaryEntries();
         fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.TYPE_KEY, TYPE);

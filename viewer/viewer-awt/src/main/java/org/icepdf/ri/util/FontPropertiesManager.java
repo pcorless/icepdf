@@ -28,9 +28,9 @@ import java.util.prefs.Preferences;
 
 /**
  * <p>This class provides a basic Font Properties Management system.  In order for font substitution to work more
- * reliable it is beneficial that it has read and cached all system fonts.  The scanning of system fonts can be time
- * consuming and negatively effect the startup time of the library.  To speed up subsequent launches of the PDF library
- * the fonts are stored using the Preferences API using a backing store determined by the JVM.</p>
+ * reliable it is beneficial that it has read and cached all system fonts.  The scanning of system fonts can be
+ * time-consuming and negatively effect the startup time of the library.  To speed up subsequent launches of the PDF
+ * library the fonts are stored using the Preferences API using a backing store determined by the JVM.</p>
  *
  * // read/store the font cache.
  * FontPropertiesManager.getInstance().loadOrReadSystemFonts();
