@@ -25,7 +25,6 @@
         <module>search</module>
         <module>redaction</module>
         <module>signatures</module>
-        <module>verification</module>
     </modules>
 
     <build>

@@ -136,7 +136,7 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
             signatureAppearanceModel.setImageXObjectReference(imageStream.getPObjectReference());
         }
 
-        TrueTypeFontEmbedder trueTypeeFontSubSetter = null;
+        TrueTypeFontEmbedder trueTypeFontSubSetter = null;
         if (signatureAppearanceModel.isSignatureTextVisible()) {
             float offsetY = 0;
             int lineSpacing = signatureAppearanceModel.getFontSize();
@@ -152,13 +152,13 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
             FontFile fontFile = FontFactory.getInstance().createFontFile(library,
                     signatureAppearanceModel.getFontName());
             fontFile = fontFile.deriveFont(signatureAppearanceModel.getFontSize());
-            trueTypeeFontSubSetter = new TrueTypeFontEmbedder(fontFile);
+            trueTypeFontSubSetter = new TrueTypeFontEmbedder(fontFile);
 
             Point2D.Float lastOffset;
             float advanceY = (float) bbox.getMinY() + offsetY;
             shapes.add(new TransformDrawCmd(centeringTransform));
             for (String text : signatureText) {
-                lastOffset = ContentWriterUtils.addTextSpritesToShapes(trueTypeeFontSubSetter, 0, advanceY,
+                lastOffset = ContentWriterUtils.addTextSpritesToShapes(trueTypeFontSubSetter, 0, advanceY,
                         shapes,
                         fontSize,
                         lineSpacing,
@@ -175,9 +175,9 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         byte[] postScript = PostScriptEncoder.generatePostScript(shapes.getShapes());
         Form xObject = signatureWidgetAnnotation.updateAppearanceStream(shapes, bbox, matrix, postScript, isNew);
 
-        if (signatureAppearanceModel.isSignatureTextVisible() && trueTypeeFontSubSetter != null) {
+        if (signatureAppearanceModel.isSignatureTextVisible() && trueTypeFontSubSetter != null) {
             Dictionary pdfFont = SimpleFontFactory.createFont(
-                    library, signatureAppearanceModel.getFontName(), trueTypeeFontSubSetter);
+                    library, signatureAppearanceModel.getFontName(), trueTypeFontSubSetter);
             Reference fontReference = pdfFont.getPObjectReference();
             xObject.addFontResource(EMBEDDED_FONT_NAME, fontReference);
         }

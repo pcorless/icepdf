@@ -1,6 +1,4 @@
 /*
- * Copyright 2026 Patrick Corless
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -70,6 +68,17 @@ public class FontBuilder {
         library.getStateManager().addTempChange(new PObject(simpleFont, simpleFont.getPObjectReference()));
     }
 
+    /**
+     * Creates a font descriptor for the given font name and the TTF font file.  The font descriptor is created
+     * based on the font metrics and properties of the TTF font file, and includes a reference to the
+     * embedded font file stream.  This work was inspired by the PDFBox PDTrueTypeFontEmbedder.createFontDescriptor()
+     * method,
+     * but has been adapted to work with the ZFontTrueType font file and the icePDF font objects.
+     *
+     * @author Ben Litchfield
+     * @author John Hewson
+     * @author Patrick Corless
+     */
     protected void createFontDescriptor(String fontName) throws IOException {
         org.apache.fontbox.ttf.TrueTypeFont trueTypeFontFile = fontFileSubSetter.getFontFile().getTrueTypeFont();
         String ttfName = trueTypeFontFile.getName();

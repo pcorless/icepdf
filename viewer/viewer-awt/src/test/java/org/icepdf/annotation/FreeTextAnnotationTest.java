@@ -55,7 +55,7 @@ public class FreeTextAnnotationTest {
 
             Document document = new Document();
             InputStream fileUrl = SigningTest.class.getResourceAsStream("/annotation/hello_pdfa1.pdf");
-            document.setInputStream(fileUrl, "test_print.pdf");
+            document.setInputStream(fileUrl, "hello_pdfa1.pdf");
             Library library = document.getCatalog().getLibrary();
 
             Page page = document.getPageTree().getPage(0);
