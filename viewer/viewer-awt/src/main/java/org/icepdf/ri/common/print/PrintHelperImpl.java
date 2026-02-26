@@ -342,24 +342,42 @@ public class PrintHelperImpl extends PrintHelper {
         }
     }
 
+    protected static Point calculateDialogPosition(Window window, Container container,
+                                                   GraphicsConfiguration graphicsConfiguration) {
+        final int offset = 50;
+
+        int parentX = window != null ? window.getX() : container.getX();
+        int parentY = window != null ? window.getY() : container.getY();
+
+        Rectangle bounds = graphicsConfiguration != null ?
+                graphicsConfiguration.getBounds() : new Rectangle(0, 0, 800, 600);
+
+        // Calculate dialog position with offset
+        int dialogX = parentX + offset;
+        int dialogY = parentY + offset;
+
+        // Clamp dialog position to monitor bounds
+        dialogX = Math.max(bounds.x, Math.min(dialogX, bounds.x + bounds.width));
+        dialogY = Math.max(bounds.y, Math.min(dialogY, bounds.y + bounds.height));
+        return new Point(dialogX, dialogY);
+    }
+
     @Override
     protected PrintService getSetupDialog() {
-        final int offset = 50;
-        // find graphic configuration for the window the viewer is in.
-        Window window = SwingUtilities.getWindowAncestor(
-                container);
+        Window window = SwingUtilities.getWindowAncestor(container);
         GraphicsConfiguration graphicsConfiguration =
                 window == null ? null : window.getGraphicsConfiguration();
-        // try and trim the getServices() list.
-        int baseX = window != null ? window.getX() : container.getX();
-        int baseY = window != null ? window.getY() : container.getY();
 
+        Point dialogPosition = calculateDialogPosition(window, container, graphicsConfiguration);
 
-        return ServiceUI.printDialog(graphicsConfiguration,
-                baseX + offset,
-                baseY + offset,
-                getServices(), getPrintServiceOrDefault(),
+        return ServiceUI.printDialog(
+                graphicsConfiguration,
+                dialogPosition.x,
+                dialogPosition.y,
+                getServices(),
+                getPrintServiceOrDefault(),
                 DocFlavor.SERVICE_FORMATTED.PRINTABLE,
-                getPrintRequestAttributeSet());
+                getPrintRequestAttributeSet()
+        );
     }
 }
