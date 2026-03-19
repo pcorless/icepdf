@@ -113,7 +113,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
         Rectangle tBbox = convertToPageSpace(rectToDraw).getBounds();
         tBbox.setLocation(tBbox.x - INSETS, tBbox.y - tBbox.height - INSETS);
 
-        // create annotations types that that are rectangle based;
+        // create annotations types that are rectangle based;
         // which is actually just link annotations
         annotation = (FreeTextAnnotation)
                 AnnotationFactory.buildAnnotation(

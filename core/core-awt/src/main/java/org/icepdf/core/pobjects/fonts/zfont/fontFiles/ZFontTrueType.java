@@ -355,6 +355,10 @@ public class ZFontTrueType extends ZSimpleFont {
         return gid;
     }
 
+    public TrueTypeFont getTrueTypeFont() {
+        return trueTypeFont;
+    }
+
     protected void extractMetricsTable() throws IOException {
         horizontalMetricsTable = trueTypeFont.getHorizontalMetrics();
     }

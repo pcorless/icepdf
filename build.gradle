@@ -48,6 +48,7 @@ distributions {
                 from libs
                 from project(':core:core-awt').jar
                 from project(':viewer:viewer-awt').jar
+                from project(':core:core-fonts').jar
             }
             // dependencies information
             into('dependencies') {
@@ -86,5 +87,6 @@ distributions {
 
 dependencies {
     implementation project(':core:core-awt')
+    implementation project(':core:core-fonts')
     implementation project(':viewer:viewer-awt')
 }

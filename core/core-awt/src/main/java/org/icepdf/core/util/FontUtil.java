@@ -15,12 +15,20 @@
  */
 package org.icepdf.core.util;
 
+import org.icepdf.core.pobjects.fonts.FontFile;
+import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Logger;
+
 /**
  * Font utility contains a bunch of commonly used font utility methods.
  *
  * @since 3.1
  */
 public class FontUtil {
+
+    private static final Logger logger = Logger.getLogger(FontUtil.class.toString());
 
     // awt font style lookup style tokens
     private static final String AWT_STYLE_BOLD_ITAL = "boldital";
@@ -52,15 +60,11 @@ public class FontUtil {
     public static int guessAWTFontStyle(String name) {
         name = name.toLowerCase();
         int decorations = 0;
-        if (name.indexOf(AWT_STYLE_BOLD_ITAL) > 0 ||
-                name.indexOf(AWT_STYLE_DEMI_ITAL) > 0) {
+        if (name.indexOf(AWT_STYLE_BOLD_ITAL) > 0 || name.indexOf(AWT_STYLE_DEMI_ITAL) > 0) {
             decorations |= java.awt.Font.BOLD | java.awt.Font.ITALIC;
-        } else if (name.indexOf(STYLE_BOLD) > 0 ||
-                name.indexOf(STYLE_BLACK) > 0 ||
-                name.indexOf(STYLE_DEMI) > 0) {
+        } else if (name.indexOf(STYLE_BOLD) > 0 || name.indexOf(STYLE_BLACK) > 0 || name.indexOf(STYLE_DEMI) > 0) {
             decorations |= java.awt.Font.BOLD;
-        } else if (name.indexOf(AWT_STYLE_ITAL) > 0 ||
-                name.indexOf(AWT_STYLE_OBLI) > 0) {
+        } else if (name.indexOf(AWT_STYLE_ITAL) > 0 || name.indexOf(AWT_STYLE_OBLI) > 0) {
             decorations |= java.awt.Font.ITALIC;
         } else {
             decorations |= java.awt.Font.PLAIN;
@@ -87,11 +91,9 @@ public class FontUtil {
         String fam = name;
         int inx;
         // Family name usually precedes a common, ie. "Arial,BoldItalic"
-        if ((inx = fam.indexOf(',')) > 0)
-            fam = fam.substring(0, inx);
+        if ((inx = fam.indexOf(',')) > 0) fam = fam.substring(0, inx);
         // Family name usually precedes a dash, example "Times-Bold",
-        if ((inx = fam.lastIndexOf('-')) > 0)
-            fam = fam.substring(0, inx);
+        if ((inx = fam.lastIndexOf('-')) > 0) fam = fam.substring(0, inx);
         // Family name with no dash or commas, example "TimesNewRomansBold" or
         // "CalibriBoldItalic"
         if ((inx = fam.toLowerCase().lastIndexOf(STYLE_BOLD_ITALIC)) > 0) {
@@ -139,6 +141,79 @@ public class FontUtil {
     public static String normalizeString(String name) {
         name = guessFamily(name);
         return name.toLowerCase().replaceAll("\\s+", "");
+    }
+
+    /**
+     * Utility method for retrieving embedded font resources from the classpath. This method uses reflection to
+     * avoid a hard dependency on the org.icepdf.core.fonts.util.EmbeddedFontUtil class, which is only available in
+     * the core-fonts module. If the EmbeddedFontUtil class is present, it will attempt to retrieve the embedded font
+     * resource as a byte array. If the class is not found or an error occurs, it will log a warning and return null.
+     *
+     * @param fontName the name of the font to retrieve, typically the base name of the font without any style or
+     *                 subset information.
+     * @return a byte array containing the font file data if the EmbeddedFontUtil class is available and the font
+     * resource is found, or null if the class is not found or an error occurs.
+     */
+    public static byte[] getFontFileData(String fontName) {
+        try {
+            Class<?> embeddedFontUtil = Class.forName("org.icepdf.core.fonts.util.EmbeddedFontUtil");
+            java.lang.reflect.Method method = embeddedFontUtil.getDeclaredMethod("getOtfEmbeddedFontResource",
+                    String.class);
+            return (byte[]) method.invoke(null, fontName);
+        } catch (ClassNotFoundException | InvocationTargetException | NoSuchMethodException |
+                 IllegalAccessException e) {
+            logger.warning("org.icepdf.fonts.util.EmbeddedFontUtil not found, embedded font resources unavailable: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Utility method for retrieving embedded font resources from the classpath and creating a FontFile instance. This
+     * method uses reflection to avoid a hard dependency on the org.icepdf.core.fonts.util.EmbeddedFontUtil class,
+     * which is only available in the core-fonts module. If the EmbeddedFontUtil class is present, it will attempt to
+     * retrieve the embedded font resource as a byte array and create a ZFontTrueType instance from it. If the class
+     * is not found or an error occurs, it will log a warning and return null.
+     *
+     * @param fontName the name of the font to retrieve, typically the base name of the font without any style or
+     *                 subset information.
+     * @return a FontFile instance containing the font data if the EmbeddedFontUtil class is available and the font
+     * resource is found, or null if the class is not found or an error occurs.
+     */
+    public static FontFile getFontFile(String fontName) {
+        try {
+            Class<?> embeddedFontUtil = Class.forName("org.icepdf.core.fonts.util.EmbeddedFontUtil");
+            java.lang.reflect.Method method = embeddedFontUtil.getDeclaredMethod("getOtfEmbeddedFontResource",
+                    String.class);
+            byte[] fontDate = (byte[]) method.invoke(null, fontName);
+            return fontDate != null ? new ZFontTrueType(fontDate) : null;
+        } catch (Exception e) {
+            logger.warning("org.icepdf.fonts.util.EmbeddedFontUtil not found, embedded font resources unavailable: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Utility method for checking if an embedded font resource is available for a given font name. This method uses
+     * reflection to avoid a hard dependency on the org.icepdf.core.fonts.util.EmbeddedFontUtil class, which is only
+     * available in the core-fonts module. If the EmbeddedFontUtil class is present, it will attempt to check if an
+     * embedded font resource is mapped for the given font name. If the class is not found or an error occurs, it
+     * will log a warning and return false.
+     *
+     * @param fontName the name of the font to check, typically the base name of the font without any style or subset
+     *                 information.
+     * @return true if an embedded font resource is mapped for the given font name and the EmbeddedFontUtil class is
+     * available, or false if the class is not found, an error occurs, or no mapping exists for the font name.
+     */
+    public static boolean isOtfFontMapped(String fontName) {
+        try {
+            Class<?> embeddedFontUtil = Class.forName("org.icepdf.core.fonts.util.EmbeddedFontUtil");
+            java.lang.reflect.Method method = embeddedFontUtil.getDeclaredMethod("isOtfFontMapped", String.class);
+            return (boolean) method.invoke(null, fontName);
+        } catch (ClassNotFoundException | InvocationTargetException | NoSuchMethodException |
+                 IllegalAccessException e) {
+            logger.warning("org.icepdf.fonts.util.EmbeddedFontUtil not found, embedded font resources unavailable: " + e.getMessage());
+        }
+        return false;
     }
 
 }

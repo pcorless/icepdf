@@ -27,7 +27,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * An appearance dictionary dictionary entry for N, R or D can be associated
+ * An appearance dictionary entry for N, R or D can be associated
  * with one or more appearance streams.  For example a Widget btn annotation
  * can have an /ON and /Off state.  This class represents one of the named states.
  * The class Appearance stores these named Appearance states.

@@ -31,6 +31,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.icepdf.core.pobjects.Permissions.DOC_MDP_KEY;
@@ -52,6 +53,8 @@ import static org.icepdf.core.pobjects.acroform.signature.DigitalSignatureFactor
  * The SignatureDictionary store root data for signing and verifying signature in a document.
  */
 public class SignatureDictionary extends Dictionary {
+
+    public static final int BYTE_RANGE_PADDING_LENGTH = 49;
 
     /**
      * (Required; inheritable) The name of the preferred signature handler to use when validating this signature.
@@ -236,18 +239,20 @@ public class SignatureDictionary extends Dictionary {
         Library library = signatureWidgetAnnotation.getLibrary();
         DictionaryEntries signatureDictionaryEntries = new DictionaryEntries();
 
-        // reference dictionary
-        signatureDictionaryEntries.put(REFERENCE_KEY,
-                List.of(buildReferenceDictionary(library, signatureType, permissionValue)));
-
         signatureDictionaryEntries.put(TYPE_KEY, TYPE_SIGNATURE);
         signatureDictionaryEntries.put(FILTER_KEY, new Name("Adobe.PPKLite"));
         signatureDictionaryEntries.put(SUB_FILTER_KEY, DSS_SUB_FILTER_PKCS7_DETACHED);
 
         // add placeholders for the signature, these values are updated when this object is written to disk
         // and contents when the signature hash is calculated.
-        signatureDictionaryEntries.put(BYTE_RANGE_KEY, List.of(0, 0, 0, 0));
         signatureDictionaryEntries.put(CONTENTS_KEY, new HexStringObject(DocumentSigner.generateContentsPlaceholder()));
+
+        List<Integer> byteRangePlaceholder = new ArrayList<>(Collections.nCopies(25, 0));
+        signatureDictionaryEntries.put(BYTE_RANGE_KEY, byteRangePlaceholder);
+
+        // reference dictionary
+        signatureDictionaryEntries.put(REFERENCE_KEY,
+                List.of(buildReferenceDictionary(library, signatureType, permissionValue)));
 
         // flag updater that signatureDictionary needs to be updated.
         SignatureDictionary signatureDictionary = new SignatureDictionary(library, signatureDictionaryEntries);

@@ -34,6 +34,7 @@ import org.icepdf.core.util.updater.WriteMode;
 import org.icepdf.ri.common.views.annotations.signing.BasicSignatureAppearanceCallback;
 import org.icepdf.ri.common.views.annotations.signing.SignatureAppearanceModelImpl;
 import org.icepdf.ri.util.FontPropertiesManager;
+import org.icepdf.utils.PDFValidator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,10 +42,7 @@ import org.junit.jupiter.api.Test;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
@@ -79,7 +77,7 @@ public class SigningTest {
                     new SimplePasswordCallbackHandler(password));
 
             Document document = new Document();
-            InputStream fileUrl = SigningTest.class.getResourceAsStream("/signing/test_print.pdf");
+            InputStream fileUrl = SigningTest.class.getResourceAsStream("/annotation/hello_pdfa1.pdf");
             document.setInputStream(fileUrl, "test_print.pdf");
             Library library = document.getCatalog().getLibrary();
             SignatureManager signatureManager = library.getSignatureDictionaries();
@@ -121,15 +119,16 @@ public class SigningTest {
             signatureAppearance.setSignatureAppearanceModel(signatureAppearanceModel);
             signatureAnnotation.setAppearanceCallback(signatureAppearance);
             signatureAnnotation.resetAppearanceStream(new AffineTransform());
+            signatureAnnotation.saveAppearanceStream();
 
             // Most common workflow is to add just one signature as we do here
-            File out = new File("./src/test/out/SigningTest_signed_document.pdf");
-            try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 8192)) {
+            File outputFile = new File("./src/test/out/SigningTest_signed_document.pdf");
+            try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(outputFile), 8192)) {
                 document.saveToOutputStream(stream, WriteMode.INCREMENT_UPDATE);
             }
             // open the signed document
             Document modifiedDocument = new Document();
-            modifiedDocument.setFile(out.getAbsolutePath());
+            modifiedDocument.setFile(outputFile.getAbsolutePath());
 
             // signatures can be found off the Catalog as InteractiveForms.
             interactiveForm = modifiedDocument.getCatalog().getInteractiveForm();
@@ -150,6 +149,10 @@ public class SigningTest {
                     assertFalse(signatureValidator.isSignedDataModified());
                 }
             }
+            modifiedDocument.dispose();
+
+            // validate PDF/A-1b compliance of the output file.
+            PDFValidator.validatePDFA(new FileInputStream(outputFile));
 
         } catch (Exception e) {
             // make sure we have no io errors.

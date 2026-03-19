@@ -330,6 +330,10 @@ public abstract class Font extends Dictionary {
         return null;
     }
 
+    public FontDescriptor getFontDescriptor() {
+        return fontDescriptor;
+    }
+
     /**
      * Gets the fonts base name.
      *

@@ -20,6 +20,8 @@ import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
 import org.icepdf.core.pobjects.actions.Action;
+import org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils;
+import org.icepdf.core.pobjects.fonts.zfont.SimpleFont;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.Defs;
@@ -2048,6 +2050,30 @@ public abstract class Annotation extends Dictionary {
 
     public void resetAppearanceStream(AffineTransform pageSpace) {
         resetAppearanceStream(0, 0, pageSpace, false);
+    }
+
+    /**
+     * Saves all resources associated with the appearance stream.  This mainly moves any tmp objects saved to the
+     * StateManager to the main object store.  The reason for this is to avoid writing out unneeded objects if they
+     * are no longer used, for example if the user changes the font many times while editing a signature.
+     */
+    public void saveAppearanceStream() {
+        StateManager stateManager = library.getStateManager();
+        Object tmp = getAppearanceStream();
+        if (stateManager.isTempChanges() && tmp instanceof Form) {
+            Form appearanceStream = (Form) tmp;
+            for (Name fontName : appearanceStream.getResources().getFonts().keySet()) {
+                Reference fontReference = (Reference) appearanceStream.getResources().getFonts().get(fontName);
+                PObject pObject = stateManager.getTempChange(fontReference);
+                if (pObject != null) {
+                    stateManager.addChange(pObject);
+                    // save any refenced font objects to the main object store, as they are needed for the appearance
+                    // stream to be written out.
+                    ContentWriterUtils.saveFont((SimpleFont) pObject.getObject());
+                    stateManager.clearTempChanges();
+                }
+            }
+        }
     }
 
     public Shapes getShapes() {

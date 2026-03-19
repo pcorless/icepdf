@@ -56,6 +56,8 @@ public class FontDescriptor extends Dictionary {
     public static final Name AVG_WIDTH = new Name("AvgWidth");
     public static final Name MAX_WIDTH = new Name("MaxWidth");
     public static final Name MISSING_WIDTH = new Name("MissingWidth");
+    // specific to cid fonts
+    public static final Name CID_SET = new Name("CIDSet");
 
     public static final Name FONT_FILE = new Name("FontFile");
     public static final Name FONT_FILE_2 = new Name("FontFile2");
