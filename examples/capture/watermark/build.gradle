@@ -7,7 +7,9 @@ dependencies {
     implementation project(':core:core-awt'), project(':viewer:viewer-awt')
 }
 
-description 'pdf to png image with watermark example'
+description = 'watermark page capture example'
 
-mainClassName = "org.icepdf.examples.capture.WatermarkPageCapture"
-applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+application {
+    mainClass = "org.icepdf.examples.capture.WatermarkPageCapture"
+    applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+}

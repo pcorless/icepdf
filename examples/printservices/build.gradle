@@ -7,7 +7,9 @@ dependencies {
     implementation project(':core:core-awt'), project(':viewer:viewer-awt')
 }
 
-description 'java print services example'
+description = 'java print services example'
 
-mainClassName = "org.icepdf.examples.print.PrintServices"
-applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+application {
+    mainClass = "org.icepdf.examples.print.PrintServices"
+    applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+}

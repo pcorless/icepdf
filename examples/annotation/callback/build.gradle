@@ -6,4 +6,5 @@ plugins {
 dependencies {
     implementation project(':core:core-awt'), project(':viewer:viewer-awt')
 }
-description 'annotation callback example'
+
+description = 'annotation callback example'

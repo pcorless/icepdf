@@ -7,7 +7,9 @@ dependencies {
     implementation project(':core:core-awt'), project(':viewer:viewer-awt')
 }
 
-description 'signature validation example'
+description = 'signature validation example'
 
-mainClassName = "org.icepdf.examples.signatures.SignatureVerification"
-applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+application {
+    mainClass = "org.icepdf.examples.signatures.SignatureVerification"
+    applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+}

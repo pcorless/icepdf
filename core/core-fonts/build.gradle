@@ -1,4 +1,4 @@
-description 'ICEpdf core font resources jar project'
+description = 'ICEpdf core font resources jar project'
 
 def sectionName = 'org/icepdf/core/fonts'
 def baseJarName = 'icepdf'
@@ -18,9 +18,9 @@ publishing {
         coreJar(MavenPublication) {
             from components.java
             afterEvaluate {
-                groupId 'org.icepdf.os'
-                artifactId 'icepdf-fonts'
-                version "${VERSION + (RELEASE_TYPE?.trim() ? '-' + RELEASE_TYPE : '')}"
+                groupId = 'org.icepdf.os'
+                artifactId = 'icepdf-fonts'
+                version = "${VERSION + (RELEASE_TYPE?.trim() ? '-' + RELEASE_TYPE : '')}"
                 pom.withXml {
                     asNode().appendNode('description', 'ICEpdf core font resources.')
                     asNode().appendNode('url', 'https://github.com/pcorless/icepdf')

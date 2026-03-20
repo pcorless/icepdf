@@ -20,10 +20,11 @@ include 'core:core-awt',
         'examples:printservices',
         'examples:search:component',
             'examples:search:headless',
+        'examples:redaction',
         'examples:signatures'
 
 
 rootProject.name = 'icepdf'
-include 'examples:redaction'
-findProject(':examples:redaction')?.name = 'redaction'
+//include 'examples:redaction'
+//findProject(':examples:redaction')?.name = 'redaction'
 

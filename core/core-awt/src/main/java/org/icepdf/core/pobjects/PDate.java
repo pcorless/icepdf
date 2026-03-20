@@ -15,8 +15,6 @@
  */
 package org.icepdf.core.pobjects;
 
-import org.icepdf.core.pobjects.security.SecurityManager;
-
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -118,21 +116,6 @@ public class PDate {
 
     // set to true when a none standard data is encountered
     private boolean notStandardFormat = false;
-
-
-    /**
-     * Create a new Date object.
-     *
-     * @param date            date ASCII data.
-     * @param securityManager document security manager.
-     * @deprecated use {@link #PDate(String)} instead.
-     */
-    public PDate(SecurityManager securityManager, String date) {
-        // parse the date string
-        if (date != null) {
-            parseDate(date);
-        }
-    }
 
     /**
      * Create a new Date object.

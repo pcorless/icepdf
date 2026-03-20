@@ -7,7 +7,9 @@ dependencies {
     implementation project(':core:core-awt'), project(':viewer:viewer-awt')
 }
 
-description 'java redaction example'
+description = 'java redaction example'
 
-mainClassName = "org.icepdf.examples.redaction.RedactionHeadless"
-applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+application {
+    mainClass = "org.icepdf.examples.redaction.RedactionHeadless"
+    applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+}
