@@ -15,16 +15,12 @@
  */
 package org.icepdf.ri.common.tools;
 
-import org.icepdf.core.pobjects.Page;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.common.views.DocumentViewModel;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.GeneralPath;
-import java.util.ArrayList;
 
 /**
  * Handles Paint and mouse/keyboard logic around text selection and search
@@ -171,33 +167,5 @@ public class TextSelectionPageHandler extends TextSelection
         }
     }
 
-    /**
-     * Convert the shapes that make up the annotation to page space so that
-     * they will scale correctly at different zooms.
-     * @param bounds bounds to convert to page space
-     * @param path path
-     * @return transformed bBox.
-     */
-    protected Rectangle convertToPageSpace(ArrayList<Shape> bounds,
-                                           GeneralPath path) {
-        Page currentPage = pageViewComponent.getPage();
-        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-        AffineTransform at = currentPage.getToPageSpaceTransform(
-                documentViewModel.getPageBoundary(),
-                documentViewModel.getViewRotation(),
-                documentViewModel.getViewZoom());
-        // convert the two points as well as the bbox.
-        Rectangle tBbox = at.createTransformedShape(path).getBounds();
-        // convert the points
-        Shape bound;
-        for (int i = 0; i < bounds.size(); i++) {
-            bound = bounds.get(i);
-            bound = at.createTransformedShape(bound);
-            bounds.set(i, bound);
-        }
 
-        path.transform(at);
-
-        return tBbox;
-    }
 }

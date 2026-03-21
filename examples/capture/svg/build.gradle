@@ -17,7 +17,10 @@ dependencies {
     implementation 'batik:batik-util:1.6'
     implementation 'batik:batik-xml:1.6'
 }
-description 'pdf to svg example'
 
-mainClassName = "org.icepdf.examples.capture.SvgCapture"
-applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+description = 'page capture to SVG example'
+
+application {
+    mainClass = "org.icepdf.examples.capture.SvgCapture"
+    applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+}

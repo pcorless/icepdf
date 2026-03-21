@@ -35,7 +35,7 @@ import java.util.logging.Logger;
  * class for convenience, but can also be accessed via the {@link PTrailer} class.
  * Useful information about the document can be extracted from the Catalog
  * Dictionary, such as PDF version information and Viewer Preferences.  All
- * Catalog dictionary properties can be accesed via the getEntries method.
+ * Catalog dictionary properties can be accessed via the getEntries method.
  * See section 3.6.1 of the PDF Reference version 1.6 for more information on
  * the properties available in the Catalog Object. </p>
  *
@@ -161,14 +161,44 @@ public class Catalog extends Dictionary {
     public Outlines getOutlines() {
         synchronized (this) {
             if (!outlinesInited) {
-                Object o = library.getObject(entries, OUTLINES_KEY);
-                if (o != null) {
-                    outlines = new Outlines(library, (DictionaryEntries) o);
+                Reference ref = library.getReference(entries, OUTLINES_KEY);
+                if (ref != null) {
+                    PObject o = library.getPObject(ref);
+                    if (o != null) {
+                        outlines = new Outlines(library, (DictionaryEntries) o.getObject());
+                        outlines.setPObjectReference(o.getReference());
+                    }
                 }
                 outlinesInited = true;
             }
         }
         return outlines;
+    }
+
+    /**
+     * Creates a new Outlines object and sets the root outline item.
+     *
+     * @param outline root outline item.
+     * @throws InterruptedException
+     */
+    public void createOutlines(OutlineItem outline) throws InterruptedException {
+        if (outlines != null) {
+            throw new IllegalStateException("Outlines already exist");
+        }
+        DictionaryEntries outlinesDictionary = new DictionaryEntries();
+        outlinesDictionary.put(Outlines.TYPE_KEY, OUTLINES_KEY);
+        outlinesDictionary.put(Outlines.COUNT_KEY, 1);
+        outlinesDictionary.put(OutlineItem.FIRST_KEY, outline.getPObjectReference());
+        outlinesDictionary.put(OutlineItem.LAST_KEY, outline.getPObjectReference());
+        outlines = new Outlines(library, outlinesDictionary);
+        outlines.init();
+        outlines.setPObjectReference(library.getStateManager().getNewReferenceNumber());
+        entries.put(OUTLINES_KEY, outlines.getPObjectReference());
+        outline.setParent(outlines.getPObjectReference());
+
+        library.getStateManager().addChange(new PObject(this, getPObjectReference()));
+        library.getStateManager().addChange(new PObject(outlines, outlines.getPObjectReference()));
+        outlinesInited = true;
     }
 
     /**
@@ -382,6 +412,23 @@ public class Catalog extends Dictionary {
      * @return interactive form object,  null if no forms are pressent.
      */
     public InteractiveForm getInteractiveForm() {
+        return interactiveForm;
+    }
+
+    /**
+     * Gets the interactive form object that contains the form widgets for the given PDF.  This method should be
+     * called before adding new widgets.
+     *
+     * @return The interactive form object if it exists, if null a new dictionary is inserted into the document.
+     */
+    public InteractiveForm getOrCreateInteractiveForm() {
+        if (interactiveForm == null) {
+            interactiveForm = new InteractiveForm(library, new DictionaryEntries());
+            StateManager stateManager = library.getStateManager();
+            this.entries.put(ACRO_FORM_KEY, interactiveForm);
+            stateManager.addChange(new PObject(this, this.getPObjectReference()));
+            return interactiveForm;
+        }
         return interactiveForm;
     }
 

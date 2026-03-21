@@ -34,8 +34,8 @@ import org.icepdf.ri.common.views.PageViewComponentImpl;
 
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
-import java.util.List;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -160,7 +160,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * <br>
      * This class differences from {@link #searchHighlightPage(int)} in that
      * is returns a list of lineText fragments for each hit but the LinText
-     * is padded by pre and post words that surround the hit in the page
+     * is padded by pre- and post-words that surround the hit in the page
      * context.
      * <br>
      * This method represent the org.icepdf.core search algorithm for this
@@ -267,8 +267,8 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                                     // add word to potentials
                                     searchPhraseHitCount++;
                                 }
-                                // reset the counters.
                                 else {
+                                    // reset the counters.
                                     searchPhraseHitCount = 0;
                                 }
                             } else {
@@ -962,9 +962,11 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         try {
             if (viewerController != null) {
                 // get access to currently open document instance.
-                pageText = viewerController.getDocument().getPageText(pageIndex);
+                // this has been getPageText in the past when the search cursor was introduced, but I can't see
+                // a good reason for not using the view text in this circumatstance
+                pageText = viewerController.getDocument().getPageViewText(pageIndex);
             } else if (document != null) {
-                pageText = document.getPageText(pageIndex);
+                pageText = document.getPageViewText(pageIndex);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

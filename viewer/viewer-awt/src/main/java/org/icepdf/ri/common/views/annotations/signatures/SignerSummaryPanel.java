@@ -40,8 +40,7 @@ public class SignerSummaryPanel extends JPanel {
         MessageFormat formatter = new MessageFormat(messageBundle.getString(
                 "viewer.annotation.signature.properties.dialog.signingTime.label"));
         String signingDate = signatureValidationStatus.getDictionaryDate();
-        signingDate = formatter.format(new Object[]{
-                new PDate(signatureWidgetAnnotation.getLibrary().getSecurityManager(), signingDate).toString()});
+        signingDate = formatter.format(new Object[]{new PDate(signingDate).toString()});
         formatter.applyPattern(messageBundle.getString("viewer.annotation.signature.properties.dialog.reason.label"));
         String reason = formatter.format(new Object[]{signatureValidationStatus.getDictionaryReason()});
         formatter.applyPattern(messageBundle.getString("viewer.annotation.signature.properties.dialog.location.label"));

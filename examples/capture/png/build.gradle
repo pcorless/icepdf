@@ -7,7 +7,9 @@ dependencies {
     implementation project(':core:core-awt'), project(':viewer:viewer-awt')
 }
 
-description 'pdf to png image example'
+description = 'page capture to PNG example'
 
-mainClassName = "org.icepdf.examples.capture.PageCapture"
-applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+application {
+    mainClass = "org.icepdf.examples.capture.PageCapture"
+    applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+}

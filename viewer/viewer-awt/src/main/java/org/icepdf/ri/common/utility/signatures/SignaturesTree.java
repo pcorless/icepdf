@@ -42,9 +42,5 @@ public class SignaturesTree extends JTree {
 
         // setup a custom cell render
         setCellRenderer(new SignatureCellRender());
-
-        // old font was Arial with is no go for linux.
-        setFont(new java.awt.Font("SansSerif", java.awt.Font.PLAIN, 13));
-        setRowHeight(18);
     }
 }

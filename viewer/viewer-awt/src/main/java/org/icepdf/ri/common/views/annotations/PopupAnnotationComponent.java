@@ -472,9 +472,9 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     public void setBoundsRelativeToParent(int x, int y, AffineTransform pageInverseTransform) {
         Rectangle pageBounds = pageViewComponent.getParent().getBounds();
         // position the new popup on the icon center.
-        Rectangle bBox2 = new Rectangle(x, y,
-                (int) Math.abs(DEFAULT_WIDTH * pageInverseTransform.getScaleX()),
-                (int) Math.abs(DEFAULT_HEIGHT * pageInverseTransform.getScaleY()));
+        Rectangle rect = pageInverseTransform.createTransformedShape(new Rectangle(0, 0, DEFAULT_WIDTH,
+                DEFAULT_HEIGHT)).getBounds();
+        Rectangle bBox2 = new Rectangle(x, y, rect.width, rect.height);
 
         // add page offset
         bBox2.x += pageBounds.x;
@@ -494,13 +494,15 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     }
 
     public void buildContextMenu() {
-        //Create the popup menu.
+        // Create the popup menu.
         MarkupAnnotationComponent comp = (MarkupAnnotationComponent) getAnnotationParentComponent();
-        contextMenu = new MarkupAnnotationPopupMenu(comp, documentViewController.getParentController(),
-                getPageViewComponent(), false);
-        // Add listener to components that can bring up popup menus.
-        popupListener = new PopupListener(contextMenu);
-        commentPanel.addMouseListener(popupListener);
+        if (comp != null) {
+            contextMenu = new MarkupAnnotationPopupMenu(comp, documentViewController.getParentController(),
+                    getPageViewComponent(), false);
+            // Add listener to components that can bring up popup menus.
+            popupListener = new PopupListener(contextMenu);
+            commentPanel.addMouseListener(popupListener);
+        }
     }
 
     public void replyToSelectedMarkupExecute() {
@@ -1079,6 +1081,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     }
 
     protected AnnotationComponent findAnnotationComponent(Annotation annotation) {
+        if (annotation == null) return null;
         return pageViewComponent.getComponentFor(annotation);
     }
 

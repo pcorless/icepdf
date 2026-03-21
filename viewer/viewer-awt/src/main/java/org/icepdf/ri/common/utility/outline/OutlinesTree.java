@@ -20,6 +20,7 @@ import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
 import javax.swing.text.Position;
+import javax.swing.tree.DefaultTreeCellEditor;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
@@ -46,12 +47,15 @@ public class OutlinesTree extends JTree {
         renderer.setLeafIcon(icon);
         setCellRenderer(renderer);
 
+        DefaultTreeCellEditor editor = new DefaultTreeCellEditor(this, renderer);
+        setCellEditor(editor);
+
         setModel(null);
         setRootVisible(true);
         setScrollsOnExpand(true);
-        // old font was Arial with is no go for linux.
-        setFont(new java.awt.Font("SansSerif", java.awt.Font.PLAIN, 13));
-        setRowHeight(18);
+
+        setDragEnabled(true);
+        setDropMode(DropMode.ON_OR_INSERT);
     }
 
     public TreePath getNextMatch(String prefix, int startingRow, Position.Bias bias) {

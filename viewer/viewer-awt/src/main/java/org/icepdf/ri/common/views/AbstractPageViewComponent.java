@@ -166,6 +166,12 @@ public abstract class AbstractPageViewComponent
 
     }
 
+    public void reinitialize() {
+        Page currentPage = getPage();
+        currentPage.resetInitializedState();
+        pageBufferStore.setDirty(true);
+    }
+
     public int getPageIndex() {
         return pageIndex;
     }
@@ -249,6 +255,18 @@ public abstract class AbstractPageViewComponent
         }
     }
 
+    protected static double calculateScaleForDefaultScreen() {
+        try {
+            return GraphicsEnvironment.getLocalGraphicsEnvironment()
+                    .getDefaultScreenDevice() // could be an issue if multiple screens
+                    .getDefaultConfiguration()
+                    .getDefaultTransform()
+                    .getScaleX();
+        } catch (Exception e) {
+            return 1.0;
+        }
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         // create a copy, so we can set our own state without affecting the parent graphics content.
@@ -274,7 +292,8 @@ public abstract class AbstractPageViewComponent
                 // force one more paint to make sure we build a new buffer using the current zoom and rotation.
                 repaint();
             }
-            g2d.drawImage(pageImage, paintingClip.x, paintingClip.y, null);
+            // will scale buffer to fit the current clip with smooths out any artifacts from screen scale factor
+            g2d.drawImage(pageImage, paintingClip.x, paintingClip.y, paintingClip.width, paintingClip.height, null);
         }
         g2d.dispose();
     }
@@ -404,18 +423,26 @@ public abstract class AbstractPageViewComponent
             // paint page.
             Page page = pageTree.getPage(pageIndex);
             // page loading progress
-            PageViewLoadingListener pageLoadingListener = new DefaultPageViewLoadingListener(parent, documentViewController);
+            PageViewLoadingListener pageLoadingListener = new DefaultPageViewLoadingListener(parent,
+                    documentViewController);
             boolean isFirstProgressivePaint = false;
             try {
+                // be careful that the document hasn't been closed on awt thread.
+                if (documentViewController != null && documentViewController.getDocumentViewModel() == null)
+                    return null;
                 if (documentViewController != null) page.addPageProcessingListener(pageLoadingListener);
-                // page init, interruptable
+                // page init, interruptible
                 page.init();
                 pageInitializedCallback(page);
 
+                double scale = AbstractPageViewComponent.calculateScaleForDefaultScreen();
                 BufferedImage pageBufferImage = graphicsConfiguration.createCompatibleImage(
-                        imageLocation.width, imageLocation.height,
+                        (int) (imageLocation.width * scale),
+                        (int) (imageLocation.height * scale),
                         BufferedImage.TYPE_INT_ARGB);
-                Graphics g2d = pageBufferImage.createGraphics();
+                Graphics2D g2d = pageBufferImage.createGraphics();
+                g2d.scale(scale, scale);
+
 
                 // if we don't have a soft reference then we are likely on a first clean paint at which
                 // point we can kick off the animated paint.

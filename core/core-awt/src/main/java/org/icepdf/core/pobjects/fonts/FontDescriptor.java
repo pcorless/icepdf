@@ -56,6 +56,8 @@ public class FontDescriptor extends Dictionary {
     public static final Name AVG_WIDTH = new Name("AvgWidth");
     public static final Name MAX_WIDTH = new Name("MaxWidth");
     public static final Name MISSING_WIDTH = new Name("MissingWidth");
+    // specific to cid fonts
+    public static final Name CID_SET = new Name("CIDSet");
 
     public static final Name FONT_FILE = new Name("FontFile");
     public static final Name FONT_FILE_2 = new Name("FontFile2");
@@ -311,7 +313,7 @@ public class FontDescriptor extends Dictionary {
         // catch everything, we can fall back to font substitution if a failure
         // occurs.
         catch (Exception e) {
-            logger.log(Level.WARNING, "Error Reading Embedded Font ", e);
+            logger.log(Level.WARNING, "Error Reading Embedded Font, falling back to substitution ", e);
             embeddedFontDamaged = true;
         }
 

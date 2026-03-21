@@ -35,7 +35,7 @@ public class PObject {
     /**
      * Create a new PObject.
      *
-     * @param object           a PDF object that is associated by the objectNumber and
+     * @param object           a PDF object that is associated by the objectNumber
      *                         and objectGeneration data
      * @param objectNumber     the object number of the PDF object
      * @param objectGeneration the generation number of the PDF object

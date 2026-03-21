@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics.images.references;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
@@ -43,9 +44,9 @@ public class ScaledImageReference extends CachedImageReference {
     private final int width;
     private final int height;
 
-    protected ScaledImageReference(ImageStream imageStream, GraphicsState graphicsState,
+    protected ScaledImageReference(ImageStream imageStream, Name xobjectName, GraphicsState graphicsState,
                                    Resources resources, int imageIndex, Page page) {
-        super(imageStream, graphicsState, resources, imageIndex, page);
+        super(imageStream, xobjectName, graphicsState, resources, imageIndex, page);
 
         // get eh original image width.
         width = imageStream.getWidth();
@@ -61,14 +62,15 @@ public class ScaledImageReference extends CachedImageReference {
         }
     }
 
-    public ScaledImageReference(ImageReference imageReference, GraphicsState graphicsState, Resources resources,
+    public ScaledImageReference(ImageReference imageReference, Name xobjectName, GraphicsState graphicsState,
+                                Resources resources,
                                 int width, int height, int imageIndex, Page page) throws InterruptedException {
-        super(imageReference.getImageStream(), graphicsState, resources, imageIndex, page);
+        super(imageReference.getImageStream(), xobjectName, graphicsState, resources, imageIndex, page);
 
         this.width = width;
         this.height = height;
 
-        // check for an repeated scale via a call from MipMap
+        // check for a repeated scale via a call from MipMap
         if (imageReference.isImage()) {
             image = imageReference.getImage();
         }

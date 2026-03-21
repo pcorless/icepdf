@@ -1,3 +1,18 @@
+/*
+ * Copyright 2026 Patrick Corless
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.icepdf.ri.common.views.annotations.acroform;
 
 import org.icepdf.core.pobjects.Name;
@@ -13,15 +28,20 @@ import java.awt.event.KeyEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
+import static org.icepdf.core.util.SystemProperties.INTERACTIVE_ANNOTATIONS;
+
 public class CheckButtonComponent extends AbstractButtonComponent implements PropertyChangeListener {
 
     public CheckButtonComponent(ButtonWidgetAnnotation annotation, DocumentViewController documentViewController,
                                 AbstractPageViewComponent pageViewComponent) {
         super(annotation, documentViewController, pageViewComponent);
 
-        ActionListener actionListener = actionEvent -> buttonActuated();
-        KeyStroke stroke = KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0);
-        registerKeyboardAction(actionListener, stroke, JComponent.WHEN_FOCUSED);
+        if (INTERACTIVE_ANNOTATIONS &&
+                annotation.allowScreenOrPrintRenderingOrInteraction()) {
+            ActionListener actionListener = actionEvent -> buttonActuated();
+            KeyStroke stroke = KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0);
+            registerKeyboardAction(actionListener, stroke, JComponent.WHEN_FOCUSED);
+        }
     }
 
     @Override

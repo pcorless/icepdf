@@ -57,6 +57,8 @@ public class Shapes {
     private int rule;
     private float alpha;
 
+    private float pageRotation;
+
     // Graphics stack for a page's content.
     protected final ArrayList<DrawCmd> shapes = new ArrayList<>(shapesInitialCapacity);
 
@@ -203,5 +205,14 @@ public class Shapes {
 
     public void setAlpha(float alpha) {
         this.alpha = alpha;
+    }
+
+    public float getRotation() {
+        return pageRotation;
+    }
+
+    public void setRotation(float pageRotation) {
+        pageText.setPageRotation(pageRotation);
+        this.pageRotation = pageRotation;
     }
 }

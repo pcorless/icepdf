@@ -15,13 +15,16 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
-import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
 import org.icepdf.core.pobjects.actions.Action;
+import org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils;
+import org.icepdf.core.pobjects.fonts.zfont.SimpleFont;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.security.SecurityManager;
+import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
@@ -30,8 +33,8 @@ import java.awt.*;
 import java.awt.geom.*;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import java.util.List;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -525,7 +528,12 @@ public abstract class Annotation extends Dictionary {
      * Debug flag to turn off appearance stream compression for easier
      * human file reading.
      */
-    protected static boolean compressAppearanceStream = true;
+    protected static boolean compressAppearanceStream;
+
+    static {
+        compressAppearanceStream = Defs.booleanProperty("org.icepdf.core.annotation.compressStream", true);
+    }
+
     protected final HashMap<Name, Appearance> appearances = new HashMap<>(3);
     protected Name currentAppearance;
 
@@ -633,6 +641,10 @@ public abstract class Annotation extends Dictionary {
         Annotation.compressAppearanceStream = compressAppearanceStream;
     }
 
+    public static boolean isCompressAppearanceStream() {
+        return compressAppearanceStream;
+    }
+
     public synchronized void init() throws InterruptedException {
         super.init();
         // type of Annotation
@@ -692,8 +704,7 @@ public abstract class Annotation extends Dictionary {
         Object value = library.getObject(entries, M_KEY);
         if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
-            modifiedDate = new PDate(securityManager,
-                    text.getDecryptedLiteralString(securityManager));
+            modifiedDate = new PDate(text.getDecryptedLiteralString(securityManager));
         }
 
         // process the streams if available.
@@ -1779,7 +1790,7 @@ public abstract class Annotation extends Dictionary {
             Object value = library.getObject(entries, M_KEY);
             if (value instanceof StringObject) {
                 StringObject text = (StringObject) value;
-                modifiedDate = new PDate(securityManager,
+                modifiedDate = new PDate(
                         text.getDecryptedLiteralString(securityManager));
             }
         }
@@ -1788,7 +1799,7 @@ public abstract class Annotation extends Dictionary {
 
     public void setModifiedDate(String modifiedDate) {
         setString(M_KEY, modifiedDate);
-        this.modifiedDate = new PDate(securityManager, modifiedDate);
+        this.modifiedDate = new PDate(modifiedDate);
     }
 
     public boolean hasAppearanceStream() {
@@ -2039,6 +2050,30 @@ public abstract class Annotation extends Dictionary {
 
     public void resetAppearanceStream(AffineTransform pageSpace) {
         resetAppearanceStream(0, 0, pageSpace, false);
+    }
+
+    /**
+     * Saves all resources associated with the appearance stream.  This mainly moves any tmp objects saved to the
+     * StateManager to the main object store.  The reason for this is to avoid writing out unneeded objects if they
+     * are no longer used, for example if the user changes the font many times while editing a signature.
+     */
+    public void saveAppearanceStream() {
+        StateManager stateManager = library.getStateManager();
+        Object tmp = getAppearanceStream();
+        if (stateManager.isTempChanges() && tmp instanceof Form) {
+            Form appearanceStream = (Form) tmp;
+            for (Name fontName : appearanceStream.getResources().getFonts().keySet()) {
+                Reference fontReference = (Reference) appearanceStream.getResources().getFonts().get(fontName);
+                PObject pObject = stateManager.getTempChange(fontReference);
+                if (pObject != null) {
+                    stateManager.addChange(pObject);
+                    // save any refenced font objects to the main object store, as they are needed for the appearance
+                    // stream to be written out.
+                    ContentWriterUtils.saveFont((SimpleFont) pObject.getObject());
+                    stateManager.clearTempChanges();
+                }
+            }
+        }
     }
 
     public Shapes getShapes() {

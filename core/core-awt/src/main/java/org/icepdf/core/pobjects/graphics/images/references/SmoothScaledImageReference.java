@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics.images.references;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.graphics.DeviceGray;
@@ -65,10 +66,10 @@ public class SmoothScaledImageReference extends CachedImageReference {
     private final int width;
     private final int height;
 
-    protected SmoothScaledImageReference(ImageStream imageStream, GraphicsState graphicsState,
+    protected SmoothScaledImageReference(ImageStream imageStream, Name xobjectName, GraphicsState graphicsState,
                                          Resources resources, int imageIndex,
                                          Page page) {
-        super(imageStream, graphicsState, resources, imageIndex, page);
+        super(imageStream, xobjectName, graphicsState, resources, imageIndex, page);
 
         // get eh original image width.
         width = imageStream.getWidth();

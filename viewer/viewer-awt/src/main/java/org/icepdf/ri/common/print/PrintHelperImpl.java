@@ -342,24 +342,56 @@ public class PrintHelperImpl extends PrintHelper {
         }
     }
 
+    /**
+     * Calculate the position for the print dialog based on the parent window or container and the graphics
+     * configuration.
+     *
+     * @param window                the parent window of the print dialog, can be null if not available.
+     * @param container             the parent container of the print dialog, used if window is null.
+     * @param graphicsConfiguration the graphics configuration of the parent window, used to get monitor bounds for
+     *                              clamping the dialog position.
+     * @return a Point representing the calculated position for the print dialog, ensuring it is offset from the
+     * parent and within monitor bounds.
+     */
+    protected static Point calculateDialogPosition(Window window, Container container,
+                                                   GraphicsConfiguration graphicsConfiguration) {
+        final int offset = 50;
+
+        // we generally want the window coords and not the container coords as they are most likely 0,0
+        int parentX = window != null ? window.getX() : container.getX();
+        int parentY = window != null ? window.getY() : container.getY();
+
+        Rectangle bounds = graphicsConfiguration != null ?
+                graphicsConfiguration.getBounds() :
+                // this is unlikely as a null graphicsConfiguration will likely cause an exception at startup
+                new Rectangle(0, 0, 800, 600);
+
+        // Calculate dialog position with offset
+        int dialogX = parentX + offset;
+        int dialogY = parentY + offset;
+
+        // Clamp dialog position to monitor bounds
+        dialogX = Math.max(bounds.x, Math.min(dialogX, bounds.x + bounds.width));
+        dialogY = Math.max(bounds.y, Math.min(dialogY, bounds.y + bounds.height));
+        return new Point(dialogX, dialogY);
+    }
+
     @Override
     protected PrintService getSetupDialog() {
-        final int offset = 50;
-        // find graphic configuration for the window the viewer is in.
-        Window window = SwingUtilities.getWindowAncestor(
-                container);
+        Window window = SwingUtilities.getWindowAncestor(container);
         GraphicsConfiguration graphicsConfiguration =
                 window == null ? null : window.getGraphicsConfiguration();
-        // try and trim the getServices() list.
-        int baseX = window != null ? window.getX() : container.getX();
-        int baseY = window != null ? window.getY() : container.getY();
 
+        Point dialogPosition = calculateDialogPosition(window, container, graphicsConfiguration);
 
-        return ServiceUI.printDialog(graphicsConfiguration,
-                baseX + offset,
-                baseY + offset,
-                getServices(), getPrintServiceOrDefault(),
+        return ServiceUI.printDialog(
+                graphicsConfiguration,
+                dialogPosition.x,
+                dialogPosition.y,
+                getServices(),
+                getPrintServiceOrDefault(),
                 DocFlavor.SERVICE_FORMATTED.PRINTABLE,
-                getPrintRequestAttributeSet());
+                getPrintRequestAttributeSet()
+        );
     }
 }

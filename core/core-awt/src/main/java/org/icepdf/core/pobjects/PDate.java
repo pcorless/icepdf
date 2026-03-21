@@ -15,10 +15,11 @@
  */
 package org.icepdf.core.pobjects;
 
-import org.icepdf.core.pobjects.security.SecurityManager;
-
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.*;
 
 /**
@@ -113,18 +114,16 @@ public class PDate {
     private String timeZoneHour = "";
     private String timeZoneMinute = "";
 
-    // set to true when an non standard data is encountered
+    // set to true when a none standard data is encountered
     private boolean notStandardFormat = false;
-
 
     /**
      * Create a new Date object.
      *
-     * @param date            date ASCII data.
-     * @param securityManager document security manager.
+     * @param date date ASCII data.
      */
-    public PDate(SecurityManager securityManager, String date) {
-        // parse the the date string
+    public PDate(String date) {
+        // parse the date string
         if (date != null) {
             parseDate(date);
         }
@@ -227,7 +226,7 @@ public class PDate {
     }
 
     /**
-     * Gets the time zone offset fromm GMT.  If the offset is negative
+     * Gets the time zone offset from GMT.  If the offset is negative
      * true is returned, false otherwise.
      * <br><b>Note</b><br>
      * If the original date value cannot be parsed, this method returns
@@ -241,7 +240,7 @@ public class PDate {
 
     /**
      * Returns a decoded string representation of the date object.
-     * If the date object could not be parsed, the orginal date value is
+     * If the date object could not be parsed, the original date value is
      * returned.
      *
      * @return date value.
@@ -288,7 +287,7 @@ public class PDate {
      * @param date string representing a PDF date object.
      */
     private void parseDate(String date) {
-        // get ride of "D:" prefix
+        // get rid of "D:" prefix
         if (date.contains(DATE_PREFIX)) {
             date = date.substring(2);
             parseAdobeDate(date);
@@ -297,7 +296,7 @@ public class PDate {
         else if (date.contains("/")) {
             parseGhostScriptDate(date);
         }
-        //try adobe format but with out D:
+        //try adobe format but without D:
         else {
             year = date;
             month = date;
@@ -314,7 +313,7 @@ public class PDate {
     }
 
     /**
-     * Utility method for parsing a ghostscript date formate, 5/26/2004 13:25:11.
+     * Utility method for parsing a Ghostscript date formate, 5/26/2004 13:25:11.
      *
      * @param date string representing a PDF date object.
      */
@@ -357,7 +356,7 @@ public class PDate {
     }
 
     /**
-     * Utility mehtod for parsing Adobe standard date format,
+     * Utility method for parsing Adobe standard date format,
      * (D:YYYYMMDDHHmmSSOHH'mm').
      *
      * @param date string representing a PDF date object.
@@ -415,6 +414,29 @@ public class PDate {
             timeZoneMinute = date.substring(totalOffset + 1, totalOffset + 3);
             //System.out.println(timeZoneMinute);
         }
+    }
+
+    public Date asDateWithTimeZone() {
+        LocalDateTime ldt = asLocalDateTime();
+
+        String tzSign = timeZoneOffset;
+        String tzHour = timeZoneHour;
+        String tzMinute = timeZoneMinute;
+
+        ZoneOffset offset = null;
+        if (tzSign != null && (tzSign.equals("+") || tzSign.equals("-")) &&
+                tzHour != null && !tzHour.isEmpty() &&
+                tzMinute != null && !tzMinute.isEmpty()) {
+            int hours = Integer.parseInt(tzHour);
+            int minutes = Integer.parseInt(tzMinute);
+            String offsetId = String.format("%s%02d:%02d", tzSign, hours, minutes);
+            offset = ZoneOffset.of(offsetId);
+        } else if ("Z".equalsIgnoreCase(tzSign)) {
+            offset = ZoneOffset.UTC;
+        }
+
+        Instant instant = (offset != null) ? ldt.toInstant(offset) : ldt.atZone(ZoneId.systemDefault()).toInstant();
+        return Date.from(instant);
     }
 
     /**
@@ -502,7 +524,7 @@ public class PDate {
 
 
     public static PDate createDate(Date date) {
-        return new PDate(null, formatDateTime(date));
+        return new PDate(formatDateTime(date));
     }
 
 }

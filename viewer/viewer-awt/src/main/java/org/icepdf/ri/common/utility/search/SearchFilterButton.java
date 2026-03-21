@@ -1,3 +1,16 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.icepdf.ri.common.utility.search;
 
 import org.icepdf.ri.common.DropDownButton;
@@ -70,6 +83,7 @@ public class SearchFilterButton extends DropDownButton {
             wholePageCheckbox.setSelected(isWholePage() || isRegex());
             component.notifySearchFiltersChanged();
             preferences.putBoolean(PROPERTY_SEARCH_PANEL_REGEX_ENABLED, isRegex());
+            preferences.putBoolean(PROPERTY_SEARCH_PANEL_WHOLE_PAGE_ENABLED, isWholePage());
         });
         caseSensitiveCheckbox = new PersistentJCheckBoxMenuItem(messageBundle.getString(
                 "viewer.utilityPane.search.caseSenstiveCheckbox.label"), isCaseSensitive);
@@ -79,6 +93,7 @@ public class SearchFilterButton extends DropDownButton {
         });
         if (isRegex || isWholeWord) {
             regexCheckbox.setEnabled(isRegex);
+            wholePageCheckbox.setEnabled(!isRegex);
             wholeWordCheckbox.setEnabled(isWholeWord);
         }
         cumulativeCheckbox = new PersistentJCheckBoxMenuItem(messageBundle.getString(
@@ -94,7 +109,7 @@ public class SearchFilterButton extends DropDownButton {
             preferences.putBoolean(PROPERTY_SEARCH_PANEL_SEARCH_TEXT_ENABLED, isText());
         });
         formsCheckbox = new PersistentJCheckBoxMenuItem(messageBundle.getString(
-                "viewer.utilityPane.search.forms.label"), isText);
+                "viewer.utilityPane.search.forms.label"), isForms);
         formsCheckbox.addActionListener(actionEvent -> {
             component.notifySearchFiltersChanged();
             preferences.putBoolean(PROPERTY_SEARCH_PANEL_SEARCH_FORMS_ENABLED, isForms());

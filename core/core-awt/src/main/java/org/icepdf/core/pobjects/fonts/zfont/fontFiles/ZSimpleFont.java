@@ -1,10 +1,26 @@
+/*
+ * Copyright 2026 Patrick Corless
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.icepdf.core.pobjects.fonts.zfont.fontFiles;
 
 import org.apache.fontbox.FontBoxFont;
-import org.icepdf.core.pobjects.fonts.CMap;
+import org.apache.fontbox.cmap.CMap;
 import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.zfont.GlyphList;
+import org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory;
 import org.icepdf.core.pobjects.graphics.TextState;
 
 import java.awt.*;
@@ -44,6 +60,8 @@ public abstract class ZSimpleFont implements FontFile {
 
     // cid specific, todo new subclass if we get a few more?
     protected float defaultWidth;
+    protected boolean isTypeCidSubstitution;
+    protected CMap ucs2Cmap;
 
     // Why have one encoding when you can three.
     protected Encoding encoding;
@@ -134,23 +152,28 @@ public abstract class ZSimpleFont implements FontFile {
         if (encoding != null) {
             return GlyphList.guessToUnicode(encoding);
         }
-        return org.icepdf.core.pobjects.fonts.zfont.cmap.CMap.IDENTITY;
+        return CMapFactory.getPredefinedCMap(CMapFactory.IDENTITY_H_NAME);
+    }
+
+    @Override
+    public Shape getGlphyShape(char estr) throws IOException {
+        String name = codeToName(estr);
+        Shape outline = fontBoxFont.getPath(name);
+        if (encoding != null && !fontBoxFont.hasGlyph(name)) {
+            name = encoding.getName(estr);
+            if (name != null) {
+                outline = fontBoxFont.getPath(name);
+            }
+        }
+        return outline;
     }
 
     @Override
     public void paint(Graphics2D g, char estr, float x, float y, long layout, int mode, Color strokeColor) {
         try {
             AffineTransform af = g.getTransform();
-            String name = codeToName(estr);
-            Shape outline = fontBoxFont.getPath(name);
-            if (encoding != null && !fontBoxFont.hasGlyph(name)) {
-                name = encoding.getName(estr);
-                if (name != null) {
-                    outline = fontBoxFont.getPath(name);
-                }
-            }
+            Shape outline = getGlphyShape(estr);
 
-            // clean up,  not very efficient
             g.translate(x, y);
             g.transform(this.fontTransform);
 
@@ -171,15 +194,7 @@ public abstract class ZSimpleFont implements FontFile {
     @Override
     public Shape getOutline(char estr, float x, float y) {
         try {
-            String name = codeToName(estr);
-            Shape glyph = fontBoxFont.getPath(name);
-            if (encoding != null && !fontBoxFont.hasGlyph(name)) {
-                name = encoding.getName(estr);
-                if (name != null) {
-                    glyph = fontBoxFont.getPath(name);
-                }
-            }
-
+            Shape glyph = getGlphyShape(estr);
             Area outline = new Area(glyph);
             AffineTransform transform = new AffineTransform();
             transform.translate(x, y);
@@ -236,9 +251,26 @@ public abstract class ZSimpleFont implements FontFile {
         char c = toUnicode == null ? getCharDiff(displayChar) : displayChar;
 
         if (toUnicode != null) {
+            if (toUnicode.getName() != null && toUnicode.getName().startsWith("Identity-")) {
+                // if the toUnicode is an identity map, we can just return the character
+                return String.valueOf(c);
+            }
             return toUnicode.toUnicode(c);
         }
         return String.valueOf(c);
+    }
+
+    @Override
+    public char toSelector(char unicode) {
+        // the toUnicode map is used for font substitution and especially for CID fonts.  If toUnicode is available
+        // we use it as is, if not then we can use the charDiff mapping, which takes care of font encoding
+        // differences.
+        char c = toUnicode == null ? getReverseCharDiff(unicode) : unicode;
+
+        if (toUnicode != null) {
+            return (char) toUnicode.toCID(c);
+        }
+        return c;
     }
 
     @Override
@@ -327,11 +359,6 @@ public abstract class ZSimpleFont implements FontFile {
     }
 
     @Override
-    public void setIsCid() {
-
-    }
-
-    @Override
     public AffineTransform getFontTransform() {
         return fontTransform;
     }
@@ -362,6 +389,17 @@ public abstract class ZSimpleFont implements FontFile {
         } else {
             return character;
         }
+    }
+
+    protected char getReverseCharDiff(char character) {
+        if (cMap != null) {
+            for (int i = 0; i < cMap.length; i++) {
+                if (cMap[i] == character) {
+                    return (char) i;
+                }
+            }
+        }
+        return character;
     }
 
     protected AffineTransform convertFontMatrix(FontBoxFont fontBoxFont) {

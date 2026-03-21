@@ -3,17 +3,19 @@ plugins {
     id 'application'
 }
 
-description 'pdf to tiff image example'
+description = 'multiple page capture to TIFF example'
 
-mainClassName = "org.icepdf.examples.capture.MultipleCapture"
-applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+application {
+    mainClass = "org.icepdf.examples.capture.MultipleCapture"
+    applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+}
 
 repositories {
     mavenCentral()
-    maven { url "https://repository.jboss.org/nexus/content/repositories/thirdparty-releases/" }
+    maven { url = "https://repository.jboss.org/nexus/content/repositories/thirdparty-releases/" }
 }
 
 dependencies {
     implementation project(':core:core-awt'), project(':viewer:viewer-awt')
-    implementation group: 'javax.media', name: 'jai-core', version: '1.1.3'
+    implementation 'javax.media:jai-core:1.1.3'
 }

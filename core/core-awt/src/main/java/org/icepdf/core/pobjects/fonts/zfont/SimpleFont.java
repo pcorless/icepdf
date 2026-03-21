@@ -1,11 +1,27 @@
+/*
+ * Copyright 2026 Patrick Corless
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.icepdf.core.pobjects.fonts.zfont;
 
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.AFM;
 import org.icepdf.core.pobjects.fonts.FontManager;
-import org.icepdf.core.pobjects.fonts.zfont.cmap.CMap;
+import org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory;
 import org.icepdf.core.util.FontUtil;
 import org.icepdf.core.util.Library;
 
@@ -17,7 +33,7 @@ import java.util.logging.Logger;
 
 public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
 
-    private static final Logger logger =
+    protected static final Logger logger =
             Logger.getLogger(SimpleFont.class.toString());
 
     // get list of all available fonts.
@@ -112,7 +128,7 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
             if (encoding != null) {
                 toUnicodeCMap = GlyphList.guessToUnicode(encoding);
             } else {
-                toUnicodeCMap = CMap.IDENTITY;
+                toUnicodeCMap = CMapFactory.getPredefinedCMap(CMapFactory.IDENTITY_H_NAME);
             }
         }
         font = font.deriveFont(encoding, toUnicodeCMap);
@@ -132,9 +148,25 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
         widths = (List) library.getObject(entries, WIDTHS_KEY);
         if (widths != null) {
             float[] newWidth = new float[256 - firstchar];
+            float widthValue = 0;
             for (int i = 0, max = widths.size(), max2 = newWidth.length; i < max && i < max2; i++) {
                 if (widths.get(i) != null) {
-                    newWidth[i] = ((Number) widths.get(i)).floatValue() / 1000f;
+                    Object tmp = widths.get(i);
+                    if (tmp instanceof Number) {
+                        widthValue = ((Number) tmp).floatValue();
+                    }
+                    // unusual case where the width is a reference to a number, technically not allowed by spec.
+                    // sometimes I wonder if encoders do this on purpose.
+                    else if (tmp instanceof Reference) {
+                        tmp = library.getObject((Reference) tmp);
+                        if (tmp instanceof Number) {
+                            newWidth[i] = ((Number) tmp).floatValue();
+                        } else {
+                            logger.warning("Error reading width value, expected number but found: " + tmp);
+                            throw new IllegalStateException("Error reading width value, expected number but found: " + tmp);
+                        }
+                    }
+                    newWidth[i] = widthValue / 1000f;
                 }
             }
             font = font.deriveFont(newWidth, firstchar, missingWidth, ascent, descent, bbox, null);
@@ -182,8 +214,7 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
         if (objectUnicode instanceof Stream) {
             Stream cMapStream = (Stream) objectUnicode;
             try {
-                toUnicodeCMap = new CMap(cMapStream);
-                toUnicodeCMap.init();
+                toUnicodeCMap = CMapFactory.parseEmbeddedCMap(cMapStream);
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Error reading CMap file.", e);
             }
@@ -191,12 +222,12 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
         else if (objectUnicode instanceof Name) {
             Name unicodeName = (Name) objectUnicode;
             logger.warning("found unicodeName " + unicodeName);
-            if (CMap.IDENTITY_NAME.equals(unicodeName)) {
-                toUnicodeCMap = CMap.IDENTITY;
-            } else if (CMap.IDENTITY_V_NAME.equals(unicodeName)) {
-                toUnicodeCMap = CMap.IDENTITY_V;
-            } else if (CMap.IDENTITY_H_NAME.equals(unicodeName)) {
-                toUnicodeCMap = CMap.IDENTITY_H;
+            if (CMapFactory.IDENTITY_NAME.equals(unicodeName)) {
+                toUnicodeCMap = CMapFactory.getPredefinedCMap(CMapFactory.IDENTITY_H_NAME);
+            } else if (CMapFactory.IDENTITY_V_NAME.equals(unicodeName)) {
+                toUnicodeCMap = CMapFactory.getPredefinedCMap(CMapFactory.IDENTITY_V_NAME);
+            } else if (CMapFactory.IDENTITY_H_NAME.equals(unicodeName)) {
+                toUnicodeCMap = CMapFactory.getPredefinedCMap(CMapFactory.IDENTITY_H_NAME);
             }
         }
     }

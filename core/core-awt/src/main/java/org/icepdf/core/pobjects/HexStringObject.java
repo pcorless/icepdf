@@ -67,6 +67,21 @@ public class HexStringObject extends AbstractStringObject {
         return new HexStringObject(hexString.toString());
     }
 
+    public static String encodeHexString(byte[] byteArray) {
+        StringBuffer hexStringBuffer = new StringBuffer();
+        for (int i = 0; i < byteArray.length; i++) {
+            hexStringBuffer.append(byteToHex(byteArray[i]));
+        }
+        return hexStringBuffer.toString();
+    }
+
+    private static String byteToHex(byte num) {
+        char[] hexDigits = new char[2];
+        hexDigits[0] = Character.forDigit((num >> 4) & 0xF, 16);
+        hexDigits[1] = Character.forDigit((num & 0xF), 16);
+        return new String(hexDigits);
+    }
+
     /**
      * Encodes the given contents string into a 4 byte hex string.  This allows us to easily account for
      * mixed encoding of 2-byte and 4 byte string content.
@@ -143,7 +158,7 @@ public class HexStringObject extends AbstractStringObject {
      * @return a String representation of the object's data in hexadecimal notation.
      */
     public String getHexString() {
-        return stringData.toString();
+        return stringData.toString().toUpperCase();
     }
 
     /**
@@ -219,6 +234,9 @@ public class HexStringObject extends AbstractStringObject {
             int charOffset = 2;
             int length = getLength();
             int charValue;
+            boolean notUCS2 = font.getToUnicode() != null
+                    && font.getToUnicode().getName() != null
+                    && !font.getToUnicode().getName().contains("UCS2");
             StringBuilder tmp = new StringBuilder(length);
             // attempt to detect mulibyte encoded strings.
             for (int i = 0; i < length; i += charOffset) {
@@ -226,8 +244,7 @@ public class HexStringObject extends AbstractStringObject {
                 if (first.charAt(0) != '0') {
                     // check range for possible 2 byte char ie mixed mode.
                     charValue = getUnsignedInt(first);
-                    if (font.getByteEncoding() == FontFile.ByteEncoding.MIXED_BYTE &&
-                            font.canDisplay((char) charValue) && font.getSource() != null) {
+                    if (notUCS2 && font.canDisplay((char) charValue) && font.getSource() != null) {
                         tmp.append((char) charValue);
                     } else {
                         charValue = getUnsignedInt(i, 4);
@@ -281,7 +298,8 @@ public class HexStringObject extends AbstractStringObject {
         if (step == 2) {
             // pre append 0's to uneven length, be careful as the 0020 isn't the same as 2000
             if (length % 2 != 0) {
-                hex = new StringBuilder("0").append(hex);
+                // this was done for variable byte font encoding,  this seems risky to preappend, pulling
+                hex = hex.append("0");//new StringBuilder("0").append(hex);
             }
         }
         if (step == 4) {
@@ -337,7 +355,7 @@ public class HexStringObject extends AbstractStringObject {
             sb = new StringBuilder(length / 4);
             String subStr;
             // make sure to skip the marker
-            for (int i = 4, max = length - 4; i < max; i = i + 4) {
+            for (int i = 4; i < length; i = i + 4) {
                 subStr = hh.substring(i, i + 4);
                 sb.append((char) Integer.parseInt(subStr, 16));
             }

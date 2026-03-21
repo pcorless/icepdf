@@ -1,12 +1,26 @@
+/*
+ * Copyright 2026 Patrick Corless
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.icepdf.core.pobjects.fonts.zfont.fontFiles;
 
 import org.apache.fontbox.FontBoxFont;
 import org.apache.fontbox.cff.*;
+import org.apache.fontbox.cmap.CMap;
 import org.icepdf.core.pobjects.Stream;
-import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
-import org.icepdf.core.pobjects.graphics.TextState;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -75,7 +89,12 @@ public class ZFontType0 extends ZSimpleFont {
             advance = widths[ech];
         }
         if (advance == 0) {
-            advance = 1.0f;
+            if (defaultWidth > 0.0f) {
+                advance = defaultWidth;
+            }
+            else {
+                advance = 1.0f;
+            }
         }
         float x = advance * size;//* (float) gsTransform.getScaleX();
         float y = advance * size;//* (float) gsTransform.getShearY();
@@ -83,34 +102,16 @@ public class ZFontType0 extends ZSimpleFont {
     }
 
     @Override
-    public void paint(Graphics2D g, char estr, float x, float y, long layout, int mode, Color strokeColor) {
-        try {
-            AffineTransform af = g.getTransform();
-            Shape outline = null;
+    public Shape getGlphyShape(char estr) throws IOException {
+        Shape outline = null;
 
-            Type2CharString charstring = getType2CharString(estr);
-            if (charstring != null) {
-                outline = charstring.getPath();
-            } else if (t1Font instanceof CFFType1Font) {
-                outline = ((CFFType1Font) t1Font).getType2CharString(estr).getPath();
-            }
-
-            // clean up,  not very efficient
-            g.translate(x, y);
-            g.transform(this.fontTransform);
-
-            if (TextState.MODE_FILL == mode || TextState.MODE_FILL_STROKE == mode ||
-                    TextState.MODE_FILL_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
-                g.fill(outline);
-            }
-            if (TextState.MODE_STROKE == mode || TextState.MODE_FILL_STROKE == mode ||
-                    TextState.MODE_STROKE_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
-                g.draw(outline);
-            }
-            g.setTransform(af);
-        } catch (IOException e) {
-            logger.log(Level.FINE, "Error painting FontType0 font", e);
+        Type2CharString charString = getType2CharString(estr);
+        if (charString != null) {
+            outline = charString.getPath();
+        } else if (t1Font instanceof CFFType1Font) {
+            outline = ((CFFType1Font) t1Font).getType2CharString(estr).getPath();
         }
+        return outline;
     }
 
     public FontFile deriveFont(float defaultWidth, float[] widths) {
@@ -189,16 +190,16 @@ public class ZFontType0 extends ZSimpleFont {
 
     @Override
     public boolean canDisplay(char ech) {
-//        try {
-//            if (cidFont != null) {
-//                return cidFont.hasGlyph("\\" + ech);
-//            } else {
-//                return t1Font.hasGlyph(String.valueOf(ech));
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-        return true;
+        if (widths != null && ech < widths.length) {
+            float width = widths[ech];
+            return width >= 0.0f;
+        }
+        // probably invalid widths, but we can likely display the character
+        else if (widths != null && widths.length < 10) {
+            return true;
+        }
+        // if we have no widths then we can likely display the character
+        else return widths == null;
     }
 
     @Override

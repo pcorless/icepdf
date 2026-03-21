@@ -504,6 +504,7 @@ public class SwingViewBuilder implements ViewBuilder {
         JMenuBar menuBar = new JMenuBar();
         addToMenuBar(menuBar, buildFileMenu());
         addToMenuBar(menuBar, buildEditMenu());
+        addToMenuBar(menuBar, buildInsertMenu());
         addToMenuBar(menuBar, buildViewMenu());
         addToMenuBar(menuBar, buildDocumentMenu());
         addToMenuBar(menuBar, buildWindowMenu());
@@ -867,6 +868,13 @@ public class SwingViewBuilder implements ViewBuilder {
         return viewMenu;
     }
 
+    public JMenu buildInsertMenu() {
+        JMenu viewMenu = new JMenu(messageBundle.getString("viewer.menu.insert.label"));
+        viewMenu.setMnemonic(buildMnemonic(messageBundle.getString("viewer.menu.insert.mnemonic").charAt(0)));
+        addToMenu(viewMenu, buildInsertOutlineMenuItem());
+        return viewMenu;
+    }
+
     public JMenuItem buildFitActualSizeMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.view.actualSize.label"),
@@ -874,6 +882,15 @@ public class SwingViewBuilder implements ViewBuilder {
                 buildKeyStroke(KeyEventConstants.KEY_CODE_FIT_ACTUAL, KeyEventConstants.MODIFIER_FIT_ACTUAL));
         if (viewerController != null && mi != null)
             viewerController.setFitActualSizeMenuItem(mi);
+        return mi;
+    }
+
+    public JMenuItem buildInsertOutlineMenuItem() {
+        JMenuItem mi = makeMenuItem(
+                messageBundle.getString("viewer.menu.insert.outline.label"), null);
+        mi.setMnemonic(buildMnemonic(messageBundle.getString("viewer.menu.insert.outline.label").charAt(0)));
+        if (viewerController != null && mi != null)
+            viewerController.setInsertOutlineMenuItem(mi);
         return mi;
     }
 
@@ -1247,7 +1264,7 @@ public class SwingViewBuilder implements ViewBuilder {
     }
 
     public JToolBar buildUtilityToolBar(boolean embeddableComponent) {
-        return buildUtilityToolBar(embeddableComponent, null);
+        return buildUtilityToolBar(embeddableComponent, ViewerPropertiesManager.getInstance());
     }
 
     public JToolBar buildUtilityToolBar(boolean embeddableComponent, ViewerPropertiesManager propertiesManager) {
@@ -1650,6 +1667,10 @@ public class SwingViewBuilder implements ViewBuilder {
                 ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_REDACTION)) {
             addToToolBar(toolbar, buildRedactionAnnotationToolButton(iconSize));
         }
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_SIGNATURE)) {
+            addToToolBar(toolbar, buildSignatureAnnotationToolButton(iconSize));
+        }
         if (SystemProperties.PRIVATE_PROPERTY_ENABLED && propertiesManager.checkAndStoreBooleanProperty(
                 ViewerPropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_PERMISSION)) {
             addToToolBar(toolbar, buildAnnotationPermissionCombBox());
@@ -1810,6 +1831,16 @@ public class SwingViewBuilder implements ViewBuilder {
                 "redaction_annot", imageSize, buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setRedactionAnnotationToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildSignatureAnnotationToolButton(final Images.IconSize imageSize) {
+        JToggleButton btn = makeToolbarToggleButton(
+                messageBundle.getString("viewer.toolbar.tool.signature.label"),
+                messageBundle.getString("viewer.toolbar.tool.signature.tooltip"),
+                "signature_annot", imageSize, buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setSignatureAnnotationToolButton(btn);
         return btn;
     }
 

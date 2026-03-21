@@ -1,5 +1,4 @@
 /*
-/*
  * Copyright 2006-2019 ICEsoft Technologies Canada Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,6 +26,7 @@ import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.graphics.ICCBased;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.graphics.images.references.ImagePool;
+import org.icepdf.core.pobjects.security.JceProvider;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 import org.icepdf.core.pobjects.structure.Header;
@@ -36,12 +36,14 @@ import org.icepdf.core.pobjects.structure.exceptions.ObjectStateException;
 import org.icepdf.core.util.parser.object.ObjectLoader;
 
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.*;
 import java.util.logging.Level;
@@ -88,6 +90,7 @@ public class Library {
         } catch (NumberFormatException e) {
             logger.warning("Error reading buffered scale factor");
         }
+        JceProvider.loadProvider();
     }
 
     private final ConcurrentHashMap<Reference, java.lang.ref.Reference<Object>> objectStore =
@@ -111,6 +114,7 @@ public class Library {
 
     // handles signature validation and signing.
     private final SignatureHandler signatureHandler;
+    private final SignatureManager signatureManager;
 
     // signature permissions
     private Permissions permissions;
@@ -123,7 +127,6 @@ public class Library {
     private boolean isLinearTraversal;
     private final ImagePool imagePool;
 
-
     /**
      * Creates a new instance of a Library.
      */
@@ -132,6 +135,7 @@ public class Library {
         // set Catalog memory Manager and cache manager.
         imagePool = new ImagePool();
         signatureHandler = new SignatureHandler();
+        signatureManager = new SignatureManager();
     }
 
     /**
@@ -144,7 +148,7 @@ public class Library {
     public Object getObject(Reference reference) {
         Object obj = getObject(reference, null, true);
         if (obj != null) {
-            return getObject(reference, null, true).getObject();
+            return Objects.requireNonNull(getObject(reference, null, true)).getObject();
         }
         return null;
     }
@@ -173,6 +177,10 @@ public class Library {
                 obj = stateManager.getChange(reference);
                 if (obj != null) {
                     return ((StateManager.Change) obj).getPObject();
+                }
+                obj = stateManager.getTempChange(reference);
+                if (obj != null) {
+                    return (PObject) obj;
                 }
                 return null;
             }
@@ -323,7 +331,7 @@ public class Library {
      * @throws PDFSecurityException error during authorization manager setup
      */
     public void attemptAuthorizeSecurityManager(Document document, SecurityCallback securityCallback) throws PDFSecurityException {
-        // check if pdf is password protected, by passing in black
+        // check if PDF is password protected, by passing in black
         // password
         if (!securityManager.isAuthorized("")) {
             // count password tries
@@ -435,7 +443,7 @@ public class Library {
     }
 
     /**
-     * Test to see if the given key is a reference and not an inline dictinary
+     * Test to see if the given key is a reference and not an inline dictionary
      *
      * @param dictionaryEntries dictionary to test
      * @param key               dictionary key
@@ -492,7 +500,7 @@ public class Library {
      * @param referenceObject reference object.
      * @return PDF object that <code>referenceObject</code> references.  If
      * <code>referenceObject</code> is not an instance of a Reference, the
-     * origional <code>referenceObject</code> is returned.
+     * original <code>referenceObject</code> is returned.
      */
     public Object getObject(Object referenceObject) {
         if (referenceObject instanceof Reference) {
@@ -516,6 +524,10 @@ public class Library {
         }
         Object o = dictionaryEntries.get(key);
         return o != null && (!(o instanceof Reference) || isValidEntry((Reference) o));
+    }
+
+    public int getOffset(Reference reference) throws CrossReferenceStateException, ObjectStateException, IOException {
+        return crossReferenceRoot.getObjectOffset(objectLoader, reference, null);
     }
 
     /**
@@ -818,7 +830,7 @@ public class Library {
     }
 
     /**
-     * Removes an object from from the library.
+     * Removes an object from the library.
      *
      * @param objetReference object reference to remove to library
      */
@@ -827,24 +839,6 @@ public class Library {
             objectStore.remove(objetReference);
         }
     }
-
-    /*
-      Sets a pointer to the orginal document input stream
-
-      @param documentInput seekable inputstream.
-     */
-//    public void setDocumentInput(SeekableInput documentInput) {
-//        this.documentInput = documentInput;
-//    }
-
-    /*
-      Gets the SeekableInput of the document underlying bytes.
-
-      @return document bytes.
-     */
-//    public SeekableInput getDocumentInput() {
-//        return documentInput;
-//    }
 
     /**
      * Gets the PDF object specified by the <code>key</code> in the dictionary
@@ -898,6 +892,10 @@ public class Library {
         return signatureHandler;
     }
 
+    public SignatureManager getSignatureDictionaries() {
+        return signatureManager;
+    }
+
     /**
      * Set a documents permissions for a given certificate of signature, optional.
      * The permission should also be used with the encryption permissions if present
@@ -916,7 +914,7 @@ public class Library {
     /**
      * Set the document is encrypted flag.
      *
-     * @param flag true, if the document is encrypted; false, otherwize.
+     * @param flag true, if the document is encrypted; false, otherwise.
      */
     public void setEncrypted(boolean flag) {
         isEncrypted = flag;
@@ -925,7 +923,7 @@ public class Library {
     /**
      * When we fail to load the required xref tables or streams that are
      * needed to access the objects in the PDF, then we simply go to the
-     * beginning of the file and read in all of the objects into memory,
+     * beginning of the file and read in all the objects into memory,
      * which we call linear traversal.
      */
     public void setLinearTraversal() {
@@ -966,7 +964,7 @@ public class Library {
      * is used for a font lookup.
      *
      * @param fontName font name to look for.
-     * @return font font,  null otherwise.
+     * @return font, null otherwise.
      */
     public Font getInteractiveFormFont(String fontName) {
         InteractiveForm form = getCatalog().getInteractiveForm();
@@ -1032,7 +1030,7 @@ public class Library {
     }
 
     public static void shutdownThreadPool() {
-        // do a little clean up.
+        // do a little cleanup.
         commonThreadPool.purge();
         commonThreadPool.shutdownNow();
         imageThreadPool.purge();
@@ -1050,7 +1048,7 @@ public class Library {
         }
     }
 
-    public static void executeImage(FutureTask callable) {
+    public static void executeImage(FutureTask<BufferedImage> callable) {
         try {
             if (imageThreadPool == null || imageThreadPool.isShutdown()) {
                 initializeThreadPool();

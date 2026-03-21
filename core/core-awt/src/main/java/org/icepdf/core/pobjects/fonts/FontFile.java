@@ -15,10 +15,13 @@
  */
 package org.icepdf.core.pobjects.fonts;
 
+import org.apache.fontbox.cmap.CMap;
+
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Map;
 
@@ -56,13 +59,13 @@ public interface FontFile {
 
     boolean canDisplay(char ech);
 
-    void setIsCid();
-
     CMap getToUnicode();
 
     String toUnicode(String displayText);
 
     String toUnicode(char displayChar);
+
+    char toSelector(char unicode);
 
     org.apache.fontbox.encoding.Encoding getEncoding();
 
@@ -139,6 +142,14 @@ public interface FontFile {
     void paint(Graphics2D g, char estr, float x,
                float y, long layout, int mode,
                Color strokeColor);
+
+    /**
+     * Get the glyph shape for the specified char
+     *
+     * @param estr char to get glyph shape for
+     * @return shape of the glyph
+     */
+    Shape getGlphyShape(char estr) throws IOException;
 
     /**
      * Get the glyph outline shape for the given estr translated to x,y.

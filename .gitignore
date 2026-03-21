@@ -1,8 +1,14 @@
-/gradlew
-/gradlew.bat
+# Gradle build output (exclude)
 /.gradle/
-/.idea/
-/gradle/
-**/target/
 /build/
+**/target/
+
+# IDE files (exclude)
+/.idea/
 *.iml
+
+# Gradle wrapper files (COMMIT THESE!)
+# gradlew - executable script (commit)
+# gradlew.bat - Windows script (commit)
+# gradle/wrapper/ - wrapper JAR and properties (commit)
+

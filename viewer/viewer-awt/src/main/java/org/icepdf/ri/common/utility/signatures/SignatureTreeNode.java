@@ -22,6 +22,7 @@ import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
+import org.icepdf.core.pobjects.acroform.signature.utils.SignatureUtilities;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
@@ -249,8 +250,7 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
                     "viewer.utilityPane.signatures.tab.certTree.signature.lastChecked.label"));
             SigPropertyTreeNode lastChecked =
                     new SigPropertyTreeNode(messageFormat.format(new Object[]{
-                            new PDate(signatureWidgetAnnotation.getLibrary().getSecurityManager(),
-                                    PDate.formatDateTime(signatureValidator.getLastValidated())).toString()}));
+                            new PDate(PDate.formatDateTime(signatureValidator.getLastValidated())).toString()}));
             lastChecked.setAllowsChildren(false);
             root.add(lastChecked);
         }

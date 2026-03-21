@@ -3,10 +3,12 @@ plugins {
     id 'application'
 }
 
-description 'ICEpdf AWT viewer reference implementation project'
+description = 'ICEpdf AWT viewer reference implementation project'
 
-mainClassName = "org.icepdf.ri.viewer.Launcher"
-applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+application {
+    mainClass = "org.icepdf.ri.viewer.Launcher"
+    applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+}
 
 def sectionName = 'org/icepdf/ri/'
 def baseJarName = 'icepdf'
@@ -18,12 +20,18 @@ repositories {
 
 dependencies {
     implementation project(':core:core-awt')
+    implementation project(':core:core-fonts')
     // signature validation.
     implementation 'org.bouncycastle:bcprov-jdk18on:' + "${BOUNCY_VERSION}"
     implementation 'org.bouncycastle:bcpkix-jdk18on:' + "${BOUNCY_VERSION}"
     // tests
     testImplementation(platform("org.junit:junit-bom:${JUNIT_BOM_VERSION}"))
     testImplementation('org.junit.jupiter:junit-jupiter')
+    testRuntimeOnly('org.junit.platform:junit-platform-launcher')
+    testImplementation('org.mockito:mockito-core:5.14.2')
+    testImplementation('org.mockito:mockito-junit-jupiter:5.14.2')
+    // VeraPDF for PDF/A validation
+    testImplementation('org.verapdf:validation-model:1.28.1')
 }
 
 // generatePomFileForViewerJarPublication
@@ -32,9 +40,9 @@ publishing {
         viewerJar(MavenPublication) {
             from components.java
             afterEvaluate {
-                groupId 'org.icepdf.os'
-                artifactId 'icepdf-viewer'
-                version "${VERSION + (RELEASE_TYPE?.trim() ? '-' + RELEASE_TYPE : '')}"
+                groupId = 'org.icepdf.os'
+                artifactId = 'icepdf-viewer'
+                version = "${VERSION + (RELEASE_TYPE?.trim() ? '-' + RELEASE_TYPE : '')}"
                 pom.withXml {
                     asNode().appendNode('description', 'ICEpdf AWT viewer reference implementation.')
                     asNode().appendNode('url', 'https://github.com/pcorless/icepdf')
@@ -87,7 +95,8 @@ jar {
     }
 }
 
-task sourcesJar(type: Jar, dependsOn: classes) {
+tasks.register('sourcesJar', Jar) {
+    dependsOn classes
     description = 'Assembles a jar archive containing the main classes source code.'
     group = 'Documentation'
     archiveBaseName.set("${baseJarName}")
@@ -102,12 +111,11 @@ task sourcesJar(type: Jar, dependsOn: classes) {
     from sourceSets.main.allSource
 }
 
-task javadocJar(type: Jar, dependsOn: 'javadoc') {
+tasks.register('javadocJar', Jar) {
+    dependsOn javadoc
     from javadoc
     archiveClassifier.set("javadoc")
 }
 
-artifacts {
-    archives sourcesJar
-    archives javadocJar
-}
+// Archives are now automatically included via publishing plugin
+

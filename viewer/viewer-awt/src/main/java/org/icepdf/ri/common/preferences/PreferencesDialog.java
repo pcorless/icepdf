@@ -68,7 +68,7 @@ public class PreferencesDialog extends EscapeJDialog {
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.BOTH;
         constraints.weightx = 1.0;
-        constraints.weighty = 0;
+        constraints.weighty = 1.0;
         constraints.insets = new Insets(5, 5, 5, 5);
         constraints.anchor = GridBagConstraints.NORTH;
         addGB(layoutPanel, propertiesTabbedPane, 0, 0, 1, 1);
@@ -98,6 +98,13 @@ public class PreferencesDialog extends EscapeJDialog {
                                                                     ViewerPropertiesManager propertiesManager,
                                                                     ResourceBundle messageBundle) {
         return new ImagingPreferencesPanel(controller, propertiesManager, messageBundle);
+
+    }
+
+    protected SigningPreferencesPanel createSigningPreferencesPanel(SwingController controller,
+                                                                    ViewerPropertiesManager propertiesManager,
+                                                                    ResourceBundle messageBundle) {
+        return new SigningPreferencesPanel(controller, propertiesManager, messageBundle);
 
     }
 
@@ -146,6 +153,13 @@ public class PreferencesDialog extends EscapeJDialog {
             propertiesTabbedPane.addTab(
                     messageBundle.getString("viewer.dialog.viewerPreferences.section.imaging.title"),
                     createImagingPreferencesPanel(controller, propertiesManager, messageBundle));
+        }
+        // build the signing preferences tab
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                ViewerPropertiesManager.PROPERTY_SHOW_PREFERENCES_SIGNING)) {
+            propertiesTabbedPane.addTab(
+                    messageBundle.getString("viewer.dialog.viewerPreferences.section.signatures.title"),
+                    createSigningPreferencesPanel(controller, propertiesManager, messageBundle));
         }
         // build the fonts preferences tab
         if (propertiesManager.checkAndStoreBooleanProperty(

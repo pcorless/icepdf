@@ -1,3 +1,17 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 module org.icepdf.core {
     requires java.logging;
     requires java.prefs;
@@ -30,10 +44,14 @@ module org.icepdf.core {
     exports org.icepdf.core.pobjects;
     exports org.icepdf.core.pobjects.acroform;
     exports org.icepdf.core.pobjects.acroform.signature;
+    exports org.icepdf.core.pobjects.acroform.signature.appearance;
     exports org.icepdf.core.pobjects.acroform.signature.certificates;
     exports org.icepdf.core.pobjects.acroform.signature.exceptions;
+    exports org.icepdf.core.pobjects.acroform.signature.handlers;
+    exports org.icepdf.core.pobjects.acroform.signature.utils;
     exports org.icepdf.core.pobjects.actions;
     exports org.icepdf.core.pobjects.annotations;
+    exports org.icepdf.core.pobjects.annotations.utils;
     exports org.icepdf.core.pobjects.fonts;
     exports org.icepdf.core.pobjects.graphics;
     exports org.icepdf.core.pobjects.graphics.commands;
@@ -42,9 +60,12 @@ module org.icepdf.core {
     exports org.icepdf.core.pobjects.graphics.text;
     exports org.icepdf.core.pobjects.security;
     exports org.icepdf.core.pobjects.structure;
+    exports org.icepdf.core.pobjects.structure.exceptions;
     exports org.icepdf.core.search;
     exports org.icepdf.core.util;
+    exports org.icepdf.core.util.edit.content;
     exports org.icepdf.core.util.loggers;
     exports org.icepdf.core.util.updater;
+    exports org.icepdf.core.pobjects.fonts.builders;
 
 }

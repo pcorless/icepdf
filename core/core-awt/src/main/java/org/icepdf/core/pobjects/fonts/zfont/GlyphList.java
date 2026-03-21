@@ -1,7 +1,23 @@
+/*
+ * Copyright 2026 Patrick Corless
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.icepdf.core.pobjects.fonts.zfont;
 
+import org.apache.fontbox.cmap.CMap;
 import org.icepdf.core.pobjects.fonts.Encoding;
-import org.icepdf.core.pobjects.fonts.zfont.cmap.CMap;
+import org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -62,7 +78,9 @@ public class GlyphList {
                 break;
             }
         }
-        return properMap ? new CMap(toUnicode) : CMap.IDENTITY;
+//        return properMap ? CMapFactory.getPredefinedCMap(toUnicode) : CMapFactory.getPredefinedCMap(CMapFactory
+//        .IDENTITY_NAME);
+        return CMapFactory.getPredefinedCMap(CMapFactory.IDENTITY_H_NAME);
     }
 
     private static void initializeAdobeGlyphList() {

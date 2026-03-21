@@ -181,12 +181,11 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
 
         AffineTransform toPageSpaceTransform = getToPageSpaceTransform();
         AffineTransform pageTransform = getPageTransform();
-        Dimension scaledSize = new Dimension(
-                (int) Math.abs(ICON_SIZE.width * pageTransform.getScaleX()),
-                (int) Math.abs(ICON_SIZE.height * pageTransform.getScaleY()));
+        Rectangle rect = pageTransform.createTransformedShape(
+                new Rectangle(0, 0, ICON_SIZE.width, ICON_SIZE.height)).getBounds();
 
         // convert bbox and start and end line points.
-        Rectangle bBox = new Rectangle(e.getX(), e.getY(), scaledSize.width, scaledSize.height);
+        Rectangle bBox = new Rectangle(e.getX(), e.getY(), rect.width, rect.height);
         Rectangle tBbox = convertToPageSpace(bBox).getBounds();
 
         // text annotation are special as the annotation has fixed size.
@@ -222,7 +221,8 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
 
     protected void checkAndApplyPreferences() {
         if (preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_COLOR, -1) != -1) {
-            defaultFillColor = new Color(preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_COLOR, -1));
+            defaultFillColor = new Color(preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_COLOR,
+                    -1));
         }
         defaultIcon = preferences.get(
                 ViewerPropertiesManager.PROPERTY_ANNOTATION_TEXT_ICON, TextAnnotation.COMMENT_ICON.toString());

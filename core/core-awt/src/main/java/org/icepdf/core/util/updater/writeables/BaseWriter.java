@@ -1,3 +1,18 @@
+/*
+ * Copyright 2026 Patrick Corless
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.icepdf.core.util.updater.writeables;
 
 import org.icepdf.core.io.CountingOutputStream;
@@ -63,8 +78,7 @@ public class BaseWriter {
     }
 
     public BaseWriter(CrossReferenceRoot crossReferenceRoot, SecurityManager securityManager,
-                      CountingOutputStream output,
-                      long startingPosition) {
+                      CountingOutputStream output, long startingPosition) {
         this.output = output;
         this.crossReferenceRoot = crossReferenceRoot;
         this.securityManager = securityManager;
@@ -153,7 +167,7 @@ public class BaseWriter {
         headerWriter.write(header, output);
     }
 
-    protected void writeValue(PObject pObject, CountingOutputStream output) throws IOException {
+    public void writeValue(PObject pObject, CountingOutputStream output) throws IOException {
         Object val = pObject.getObject();
         if (val == null) {
             output.write(NULL);
@@ -255,16 +269,12 @@ public class BaseWriter {
             Library library = stream.getLibrary();
             if (stream.getEntries().get(Stream.DECODEPARAM_KEY) != null) {
                 // needed to check for a custom crypt filter
-                decodeParams = library.getDictionary(stream.getEntries(),
-                        Stream.DECODEPARAM_KEY);
+                decodeParams = library.getDictionary(stream.getEntries(), Stream.DECODEPARAM_KEY);
             } else {
                 decodeParams = new DictionaryEntries();
             }
-            InputStream decryptedStream = securityManager.encryptInputStream(
-                    stream.getPObjectReference(),
-                    securityManager.getDecryptionKey(),
-                    decodeParams,
-                    new ByteArrayInputStream(outputData), true);
+            InputStream decryptedStream = securityManager.encryptInputStream(stream.getPObjectReference(),
+                    securityManager.getDecryptionKey(), decodeParams, new ByteArrayInputStream(outputData), true);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             int nRead;
             byte[] data = new byte[16384];

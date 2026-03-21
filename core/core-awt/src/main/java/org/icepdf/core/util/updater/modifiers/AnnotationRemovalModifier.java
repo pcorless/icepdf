@@ -1,6 +1,23 @@
+/*
+ * Copyright 2026 Patrick Corless
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.icepdf.core.util.updater.modifiers;
 
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.core.util.Library;
 
@@ -8,6 +25,7 @@ import java.util.List;
 
 import static org.icepdf.core.pobjects.Page.ANNOTS_KEY;
 import static org.icepdf.core.pobjects.Page.RESOURCES_KEY;
+import static org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils.EMBEDDED_FONT_NAME;
 
 /**
  * Takes care of removing all traces of an annotation and its dependencies.
@@ -37,18 +55,37 @@ public class AnnotationRemovalModifier implements Modifier<Annotation> {
         Stream nAp = annot.getAppearanceStream();
         if (nAp != null) {
             nAp.setDeleted(true);
-            // find the xObjects font resources.
+            // clean up resources.
             Object tmp = library.getObject(nAp.getEntries(), RESOURCES_KEY);
             if (tmp instanceof Resources) {
                 Resources resources = (Resources) tmp;
                 // only remove our font instance, if we remove another font we would have
                 // to check the document to see if it was used anywhere else.
-                Dictionary font = resources.getFont(FreeTextAnnotation.EMBEDDED_FONT_NAME);
+                Dictionary font = resources.getFont(EMBEDDED_FONT_NAME);
                 if (font != null) {
                     font.setDeleted(true);
                     stateManager.addDeletion(font.getPObjectReference());
                 }
+                DictionaryEntries xObject = resources.getXObjects();
+                if (xObject != null) {
+                    for (Object key : xObject.keySet()) {
+                        Object obj = xObject.get(key);
+                        if (obj instanceof Reference) {
+                            stateManager.addDeletion((Reference) obj);
+                        }
+                    }
+                }
             }
+        }
+        // check for /V key which is a reference to a signature dictionary
+        // todo new annotation base method to encapsulate the cleanup
+        if (annot instanceof SignatureWidgetAnnotation) {
+            SignatureWidgetAnnotation signatureWidgetAnnotation = (SignatureWidgetAnnotation) annot;
+            Object v = signatureWidgetAnnotation.getEntries().get(SignatureDictionary.V_KEY);
+            if (v instanceof Reference) {
+                stateManager.addDeletion((Reference) v);
+            }
+            library.getSignatureDictionaries().clearSignatures();
         }
 
         // check to see if this is an existing annotations, if the annotations

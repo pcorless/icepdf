@@ -64,6 +64,7 @@ public class VerifyAllSignaturesTask extends AbstractTask<Void, Object> {
                     taskStatusMessage = messageFormat.format(new Object[]{i + 1, signatures.size()});
 
                     SignatureWidgetAnnotation signatureWidgetAnnotation = signatures.get(i);
+                    signatureWidgetAnnotation.init();
                     SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
                     if (signatureDictionary.getEntries().size() > 0) {
                         try {

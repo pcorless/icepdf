@@ -24,6 +24,10 @@ public class SignatureIntegrityException extends Exception {
         super(message);
     }
 
+    public SignatureIntegrityException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
     public SignatureIntegrityException(Throwable cause) {
         super(cause);
     }

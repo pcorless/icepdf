@@ -16,6 +16,7 @@
 package org.icepdf.ri.util;
 
 import org.icepdf.core.pobjects.fonts.FontManager;
+import org.icepdf.core.util.Defs;
 import org.icepdf.ri.util.font.FontCache;
 
 import java.util.Properties;
@@ -27,9 +28,9 @@ import java.util.prefs.Preferences;
 
 /**
  * <p>This class provides a basic Font Properties Management system.  In order for font substitution to work more
- * reliable it is beneficial that it has read and cached all system fonts.  The scanning of system fonts can be time
- * consuming and negatively effect the startup time of the library.  To speed up subsequent launches of the PDF library
- * the fonts are stored using the Preferences API using a backing store determined by the JVM.</p>
+ * reliable it is beneficial that it has read and cached all system fonts.  The scanning of system fonts can be
+ * time-consuming and negatively effect the startup time of the library.  To speed up subsequent launches of the PDF
+ * library the fonts are stored using the Preferences API using a backing store determined by the JVM.</p>
  *
  * // read/store the font cache.
  * FontPropertiesManager.getInstance().loadOrReadSystemFonts();
@@ -44,7 +45,21 @@ public class FontPropertiesManager {
     private static final Logger logger = Logger.getLogger(FontPropertiesManager.class.toString());
 
     // can't use system level cache on window as of JDK 1.8_14, but should work in 9.
-    private static final Preferences prefs = Preferences.userNodeForPackage(FontCache.class);
+    private static final Preferences prefs = Preferences.userNodeForPackage(getPreferencesClass());
+
+    public static final String PREFERENCES_KEY_CLASS = "org.icepdf.ri.util.FontPreferencesKey";
+
+    private static Class<?> getPreferencesClass() {
+        String fontPreferencesKey = Defs.sysProperty(PREFERENCES_KEY_CLASS);
+        if (fontPreferencesKey != null) {
+            try {
+                return Class.forName(fontPreferencesKey);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return FontCache.class;
+    }
 
     private static FontPropertiesManager fontPropertiesManager;
 
@@ -128,6 +143,7 @@ public class FontPropertiesManager {
     public void clearProperties() {
         try {
             prefs.clear();
+            fontManager.clearFontList();
         } catch (BackingStoreException e) {
             if (logger.isLoggable(Level.WARNING)) {
                 logger.log(Level.WARNING, "Error reading system paths:", e);

@@ -9,10 +9,12 @@ repositories {
 
 dependencies {
     implementation project(':core:core-awt'), project(':viewer:viewer-awt')
-    implementation group: 'com.google.zxing', name: 'core', version: '3.3.0'
+    implementation 'com.google.zxing:core:3.3.0'
 }
 
-description 'pdf barcode data extraction example'
+description = 'pdf barcode data extraction example'
 
-mainClassName = "org.icepdf.examples.barcode.BarcodeStamper"
-applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+application {
+    mainClass = "org.icepdf.examples.barcode.BarcodeStamper"
+    applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+}

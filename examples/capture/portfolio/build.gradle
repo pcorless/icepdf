@@ -7,7 +7,9 @@ dependencies {
     implementation project(':core:core-awt'), project(':viewer:viewer-awt')
 }
 
-description 'portfolio pdf to png image example'
+description = 'portfolio extraction example'
 
-mainClassName = "org.icepdf.examples.capture.PortfolioCapture"
-applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+application {
+    mainClass = "org.icepdf.examples.capture.PortfolioCapture"
+    applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+}

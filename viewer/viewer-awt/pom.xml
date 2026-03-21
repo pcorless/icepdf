@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.github.pcorless.icepdf</groupId>
         <artifactId>viewer</artifactId>
-        <version>7.3.0-SNAPSHOT</version>
+        <version>7.4.0-SNAPSHOT</version>
     </parent>
     <artifactId>icepdf-viewer</artifactId>
     <packaging>jar</packaging>
@@ -22,6 +22,25 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>5.9.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.2.0</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- verapdf library dependencies -->
+        <dependency>
+            <groupId>org.verapdf</groupId>
+            <artifactId>validation-model</artifactId>
+            <version>1.28.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.verapdf</groupId>
+            <artifactId>pdfbox-validation-model</artifactId>
+            <version>1.28.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -1,4 +1,5 @@
 include 'core:core-awt',
+        'core:core-fonts',
         'viewer:viewer-awt',
         'viewer:viewer-fx',
         'qa:viewer-jfx',
@@ -20,10 +21,11 @@ include 'core:core-awt',
         'examples:printservices',
         'examples:search:component',
             'examples:search:headless',
+        'examples:redaction',
         'examples:signatures'
 
 
 rootProject.name = 'icepdf'
-include 'examples:redaction'
-findProject(':examples:redaction')?.name = 'redaction'
+//include 'examples:redaction'
+//findProject(':examples:redaction')?.name = 'redaction'
 

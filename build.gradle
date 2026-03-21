@@ -4,6 +4,12 @@ apply plugin: 'project-report'
 allprojects {
     apply plugin: 'java'
 
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(11)
+        }
+    }
+
     tasks.withType(Javadoc) {
         options.addStringOption('Xdoclint:none', '-quiet')
     }
@@ -26,13 +32,13 @@ subprojects{
 
 evaluationDependsOn(':core:core-awt')
 
-defaultTasks 'taskReport', 'dependencyReport', 'sourcesJar', 'genPomFileForCoreJarPub', 'genPomFileForViewerJarPub','osDistZip', 'osDistTar'
+defaultTasks 'osDistZip', 'osDistTar'
 
 // Main distribution for os bundle
 distributions {
     os {
         distributionBaseName.set("icepdf")
-        version "${VERSION + (RELEASE_TYPE?.trim()? '-' + RELEASE_TYPE:'')}"
+        version = "${VERSION + (RELEASE_TYPE?.trim() ? '-' + RELEASE_TYPE : '')}"
         contents {
             duplicatesStrategy = 'exclude'
             into('libs-source') {
@@ -48,6 +54,7 @@ distributions {
                 from libs
                 from project(':core:core-awt').jar
                 from project(':viewer:viewer-awt').jar
+                from project(':core:core-fonts').jar
             }
             // dependencies information
             into('dependencies') {
@@ -84,7 +91,25 @@ distributions {
     }
 }
 
+// Fix Gradle 9 task dependency validation
+tasks.named('osDistZip') {
+    dependsOn ':core:core-awt:sourcesJar'
+    dependsOn ':core:core-awt:jar'
+    dependsOn ':viewer:viewer-awt:sourcesJar'
+    dependsOn ':viewer:viewer-awt:jar'
+    dependsOn ':core:core-fonts:jar'
+}
+
+tasks.named('osDistTar') {
+    dependsOn ':core:core-awt:sourcesJar'
+    dependsOn ':core:core-awt:jar'
+    dependsOn ':viewer:viewer-awt:sourcesJar'
+    dependsOn ':viewer:viewer-awt:jar'
+    dependsOn ':core:core-fonts:jar'
+}
+
 dependencies {
     implementation project(':core:core-awt')
+    implementation project(':core:core-fonts')
     implementation project(':viewer:viewer-awt')
 }
