@@ -7,7 +7,9 @@ dependencies {
     implementation project(':core:core-awt'), project(':viewer:viewer-awt')
 }
 
-description 'document text extraction example'
+description = 'document text extraction example'
 
-mainClassName = "org.icepdf.examples.extraction.PageTextExtraction"
-applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+application {
+    mainClass = "org.icepdf.examples.extraction.PageTextExtraction"
+    applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+}

@@ -1,12 +1,14 @@
 plugins {
     id 'application'
-    id 'org.openjfx.javafxplugin' version '0.0.8'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
 }
 
-description 'javafx SwingNode example'
+description = 'javafx SwingNode example'
 
-mainClassName = "org.icepdf.examples.javafx.PdfFXViewer"
-applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+application {
+    mainClass = "org.icepdf.examples.javafx.PdfFXViewer"
+    applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+}
 
 javafx {
     version = "11.0.2"

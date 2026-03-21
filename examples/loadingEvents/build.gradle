@@ -1,9 +1,11 @@
 apply plugin: 'application'
 
-description 'page loading event example'
+description = 'page loading event example'
 
-mainClassName = "org.icepdf.examples.loadingEvents.PageLoadingEvents"
-applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+application {
+    mainClass = "org.icepdf.examples.loadingEvents.PageLoadingEvents"
+    applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+}
 
 dependencies {
     implementation project(':core:core-awt'), project(':viewer:viewer-awt')
