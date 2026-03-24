@@ -3,24 +3,29 @@ plugins {
     id 'org.openjfx.javafxplugin' version '0.1.0'
 }
 
+// JavaFX 21 requires Java 17+, override parent toolchain for this module
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
 repositories {
     mavenCentral()
 }
 
-description 'ICEpdf FX viewer reference implementation project'
+description = 'ICEpdf FX viewer reference implementation project'
 
-mainClassName = "org.icepdf.fx.ri.viewer.Launcher"
-applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+application {
+    mainClass = "org.icepdf.fx.ri.viewer.Launcher"
+    applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+}
 
 def sectionName = 'org/icepdf/fx/ri/viewer'
 def baseJarName = 'icepdf'
 def baseAppendixName  = 'viewer-fx'
 def commandlineArgs = '-loadfile "/home/pcorless/dev/pdf-qa/PDF32000_2008.pdf"'
 
-repositories {
-    mavenCentral()
-    jcenter()
-}
 
 javafx {
     version = "21.0.5"
@@ -46,9 +51,9 @@ publishing {
         viewerJar(MavenPublication) {
             from components.java
             afterEvaluate {
-                groupId 'org.icepdf.os'
-                artifactId 'icepdf-viewer-fx'
-                version "${VERSION + (RELEASE_TYPE?.trim() ? '-' + RELEASE_TYPE : '')}"
+                groupId = 'org.icepdf.os'
+                artifactId = 'icepdf-viewer-fx'
+                version = "${VERSION + (RELEASE_TYPE?.trim() ? '-' + RELEASE_TYPE : '')}"
                 pom.withXml {
                     asNode().appendNode('description', 'ICEpdf JX Viewer reference implementation.')
                     asNode().appendNode('url', 'https://github.com/pcorless/icepdf')
@@ -120,7 +125,4 @@ task javadocJar(type: Jar, dependsOn: 'javadoc') {
     archiveClassifier.set("javadoc")
 }
 
-artifacts {
-    archives sourcesJar
-    archives javadocJar
-}
+// Archives are now automatically included via publishing plugin

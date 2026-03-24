@@ -160,7 +160,7 @@ public class PageViewWidget extends Region {
 //                fxg2.setClip(0, 0, (int) width.get(), (int) height.get());
 //                fxg2.scale(1, -1);
 //                fxg2.translate(0, -height.get());
-
+//
 //                long start = System.currentTimeMillis();
 //                page.paintPageContent(fxg2, GraphicsRenderingHints.PRINT, rotation.get(), scale.get(), true, true);
 //                long end = System.currentTimeMillis();

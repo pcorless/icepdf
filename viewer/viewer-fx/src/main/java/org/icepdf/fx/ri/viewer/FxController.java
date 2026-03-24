@@ -1,6 +1,7 @@
 package org.icepdf.fx.ri.viewer;
 
 import javafx.scene.layout.Region;
+import javafx.stage.Window;
 import org.icepdf.fx.ri.viewer.listeners.DocumentChangeListener;
 
 /**
@@ -10,12 +11,12 @@ public class FxController {
 
     private final ViewerModel model;
     private final Interactor interactor;
-    private final ViewBuilder viewBuilder;
+    private ViewBuilder viewBuilder;
+    private Window window;
 
     public FxController() {
         this.model = new ViewerModel();
-        this.interactor = new Interactor(model); // is this really a mediator?
-        this.viewBuilder = new ViewBuilder(model);
+        this.interactor = new Interactor(model);
 
         // auto clean up this viewer if the document changes
         this.model.document.addListener(new DocumentChangeListener(model));
@@ -25,7 +26,16 @@ public class FxController {
         return model;
     }
 
+    public Region getView(Window window) {
+        this.window = window;
+        this.viewBuilder = new ViewBuilder(model, interactor, window);
+        return viewBuilder.build();
+    }
+
     public Region getView() {
+        if (viewBuilder == null) {
+            throw new IllegalStateException("Must call getView(Window) first");
+        }
         return viewBuilder.build();
     }
 }

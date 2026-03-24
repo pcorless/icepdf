@@ -1,4 +1,4 @@
-package org.icepdf.fx.ri.viewer.commands;
+package org.icepdf.fx.ri.viewer.commands.document;
 
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -7,6 +7,7 @@ import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.fx.ri.viewer.ViewerModel;
 import org.icepdf.fx.ri.viewer.ViewerStageManager;
+import org.icepdf.fx.ri.viewer.commands.Command;
 
 import java.io.File;
 import java.io.IOException;
