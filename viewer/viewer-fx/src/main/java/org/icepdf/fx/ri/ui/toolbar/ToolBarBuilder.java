@@ -5,6 +5,7 @@ import javafx.scene.layout.Region;
 import javafx.stage.Window;
 import javafx.util.Builder;
 import org.icepdf.fx.ri.ui.common.NavigationCommands;
+import org.icepdf.fx.ri.ui.icons.IconManager;
 import org.icepdf.fx.ri.viewer.Interactor;
 import org.icepdf.fx.ri.viewer.ViewerModel;
 import org.icepdf.fx.ri.viewer.commands.document.OpenFileCommand;
@@ -15,6 +16,7 @@ import org.icepdf.fx.ri.views.DocumentViewPane;
 /**
  * Builder for the main toolbar.
  * Creates toolbar with file operations, navigation, zoom, rotation, and view mode controls.
+ * Now enhanced with icons from IconManager.
  */
 public class ToolBarBuilder implements Builder<ToolBar> {
 
@@ -22,12 +24,14 @@ public class ToolBarBuilder implements Builder<ToolBar> {
     private final Interactor interactor;
     private final Window window;
     private final DocumentViewPane documentViewPane;
+    private final IconManager iconManager;
 
     public ToolBarBuilder(ViewerModel model, Interactor interactor, Window window, DocumentViewPane documentViewPane) {
         this.model = model;
         this.interactor = interactor;
         this.window = window;
         this.documentViewPane = documentViewPane;
+        this.iconManager = IconManager.getInstance();
     }
 
     @Override
@@ -58,10 +62,10 @@ public class ToolBarBuilder implements Builder<ToolBar> {
     }
 
     private Button[] createFileTools() {
-        Button open = createButton("Open", "Open Document");
+        Button open = createButtonWithIcon("Open", "Open Document", iconManager.getOpenIcon());
         open.setOnAction(e -> new OpenFileCommand(window, model).execute());
 
-        Button print = createButton("Print", "Print Document");
+        Button print = createButtonWithIcon("Print", "Print Document", iconManager.getPrintIcon());
         print.disableProperty().bind(model.document.isNull());
         print.setOnAction(e -> model.statusMessage.set("Print not yet implemented"));
 
@@ -69,12 +73,12 @@ public class ToolBarBuilder implements Builder<ToolBar> {
     }
 
     private Region[] createNavigationTools() {
-        Button first = createButton("|◀", "First Page");
+        Button first = createButtonWithIcon("|◀", "First Page", iconManager.getFirstPageIcon());
         first.disableProperty().bind(model.document.isNull()
                 .or(model.currentPage.isEqualTo(1)));
         first.setOnAction(e -> NavigationCommands.firstPage(model));
 
-        Button previous = createButton("◀", "Previous Page");
+        Button previous = createButtonWithIcon("◀", "Previous Page", iconManager.getPreviousPageIcon());
         previous.disableProperty().bind(model.document.isNull()
                 .or(model.currentPage.isEqualTo(1)));
         previous.setOnAction(e -> NavigationCommands.previousPage(model));
@@ -91,12 +95,12 @@ public class ToolBarBuilder implements Builder<ToolBar> {
         Label totalLabel = new Label();
         totalLabel.textProperty().bind(javafx.beans.binding.Bindings.concat(" / ", model.totalPages.asString()));
 
-        Button next = createButton("▶", "Next Page");
+        Button next = createButtonWithIcon("▶", "Next Page", iconManager.getNextPageIcon());
         next.disableProperty().bind(model.document.isNull()
                 .or(model.currentPage.greaterThanOrEqualTo(model.totalPages)));
         next.setOnAction(e -> NavigationCommands.nextPage(model));
 
-        Button last = createButton("▶|", "Last Page");
+        Button last = createButtonWithIcon("▶|", "Last Page", iconManager.getLastPageIcon());
         last.disableProperty().bind(model.document.isNull()
                 .or(model.currentPage.greaterThanOrEqualTo(model.totalPages)));
         last.setOnAction(e -> NavigationCommands.lastPage(model));
@@ -105,11 +109,11 @@ public class ToolBarBuilder implements Builder<ToolBar> {
     }
 
     private Region[] createZoomTools() {
-        Button zoomOut = createButton("−", "Zoom Out");
+        Button zoomOut = createButtonWithIcon("−", "Zoom Out", iconManager.getZoomOutIcon());
         zoomOut.disableProperty().bind(model.document.isNull());
         zoomOut.setOnAction(e -> new ZoomOutCommand(documentViewPane, model).execute());
 
-        Button zoomIn = createButton("+", "Zoom In");
+        Button zoomIn = createButtonWithIcon("+", "Zoom In", iconManager.getZoomInIcon());
         zoomIn.disableProperty().bind(model.document.isNull());
         zoomIn.setOnAction(e -> new ZoomInCommand(documentViewPane, model).execute());
 
@@ -143,7 +147,7 @@ public class ToolBarBuilder implements Builder<ToolBar> {
     }
 
     private Button[] createRotationTools() {
-        Button rotateLeft = createButton("↶", "Rotate Left (90°)");
+        Button rotateLeft = createButtonWithIcon("↶", "Rotate Left (90°)", iconManager.getRotateLeftIcon());
         rotateLeft.disableProperty().bind(model.document.isNull());
         rotateLeft.setOnAction(e -> {
             double current = model.rotationAngle.get();
@@ -151,7 +155,7 @@ public class ToolBarBuilder implements Builder<ToolBar> {
             model.statusMessage.set("Rotated left");
         });
 
-        Button rotateRight = createButton("↷", "Rotate Right (90°)");
+        Button rotateRight = createButtonWithIcon("↷", "Rotate Right (90°)", iconManager.getRotateRightIcon());
         rotateRight.disableProperty().bind(model.document.isNull());
         rotateRight.setOnAction(e -> {
             double current = model.rotationAngle.get();
@@ -194,6 +198,16 @@ public class ToolBarBuilder implements Builder<ToolBar> {
 
     private Button createButton(String text, String tooltip) {
         Button button = new Button(text);
+        button.setTooltip(new Tooltip(tooltip));
+        return button;
+    }
+
+    private Button createButtonWithIcon(String text, String tooltip, javafx.scene.image.ImageView icon) {
+        Button button = new Button(text);
+        if (icon != null) {
+            button.setGraphic(icon);
+            button.setText(""); // Hide text when icon is present
+        }
         button.setTooltip(new Tooltip(tooltip));
         return button;
     }

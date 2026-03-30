@@ -1,0 +1,282 @@
+/*
+ * ICEpdf Viewer - Light Theme (Default)
+ * Modern, clean appearance with light colors
+ */
+
+/* Root colors */
+.root {
+    -fx-base: #f4f4f4;
+    -fx-background: #ffffff;
+    -fx-control-inner-background: #ffffff;
+    -fx-accent: #0096c9;
+    -fx-focus-color: #0096c9;
+    -fx-faint-focus-color: #0096c922;
+    -fx-selection-bar: #0096c9;
+    -fx-selection-bar-non-focused: #d0d0d0;
+    -fx-text-base-color: #333333;
+}
+
+/* Application background */
+.application {
+    -fx-background-color: #e8e8e8;
+}
+
+/* Menu bar */
+.menu-bar {
+    -fx-background-color: #f8f8f8;
+    -fx-border-color: #d0d0d0;
+    -fx-border-width: 0 0 1 0;
+}
+
+.menu-bar .label {
+    -fx-text-fill: #333333;
+}
+
+.menu-bar .menu-item:hover {
+    -fx-background-color: #e0e0e0;
+}
+
+/* Tool bar */
+.tool-bar {
+    -fx-background-color: #f4f4f4;
+    -fx-border-color: #d0d0d0;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 5;
+    -fx-spacing: 5;
+}
+
+.tool-bar .button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 3;
+    -fx-padding: 5 8;
+}
+
+.tool-bar .button:hover {
+    -fx-background-color: #e0e0e0;
+}
+
+.tool-bar .button:pressed {
+    -fx-background-color: #d0d0d0;
+}
+
+.tool-bar .button:disabled {
+    -fx-opacity: 0.4;
+}
+
+.tool-bar .separator {
+    -fx-padding: 0 3;
+}
+
+/* Status bar */
+.status-bar {
+    -fx-background-color: #f8f8f8;
+    -fx-border-color: #d0d0d0;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 5 10;
+    -fx-spacing: 10;
+}
+
+.status-bar .label {
+    -fx-text-fill: #666666;
+    -fx-font-size: 11px;
+}
+
+/* Side panels */
+.side-panel {
+    -fx-background-color: #f8f8f8;
+    -fx-border-color: #d0d0d0;
+}
+
+.side-panel .tab-pane {
+    -fx-background-color: #f8f8f8;
+}
+
+.side-panel .tab-pane .tab-header-area {
+    -fx-background-color: #f0f0f0;
+}
+
+.side-panel .tab {
+    -fx-background-color: #e8e8e8;
+}
+
+.side-panel .tab:selected {
+    -fx-background-color: #f8f8f8;
+}
+
+/* Document view area */
+.document-view {
+    -fx-background-color: #808080;
+}
+
+.page-view {
+    -fx-background-color: white;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 10, 0, 0, 2);
+}
+
+/* Buttons */
+.button {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #c0c0c0;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+    -fx-text-fill: #333333;
+    -fx-padding: 5 15;
+}
+
+.button:hover {
+    -fx-background-color: #f0f0f0;
+    -fx-border-color: #a0a0a0;
+}
+
+.button:pressed {
+    -fx-background-color: #e0e0e0;
+}
+
+.button:disabled {
+    -fx-opacity: 0.5;
+}
+
+.button:default {
+    -fx-background-color: #0096c9;
+    -fx-text-fill: white;
+    -fx-border-color: #0086b9;
+}
+
+.button:default:hover {
+    -fx-background-color: #00a0d0;
+}
+
+/* Text fields */
+.text-field {
+    -fx-background-color: white;
+    -fx-border-color: #c0c0c0;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+    -fx-text-fill: #333333;
+    -fx-prompt-text-fill: #999999;
+}
+
+.text-field:focused {
+    -fx-border-color: #0096c9;
+    -fx-border-width: 2;
+}
+
+/* Combo boxes */
+.combo-box {
+    -fx-background-color: white;
+    -fx-border-color: #c0c0c0;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+}
+
+.combo-box:focused {
+    -fx-border-color: #0096c9;
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: white;
+    -fx-border-color: #c0c0c0;
+}
+
+.combo-box-popup .list-cell:hover {
+    -fx-background-color: #e0e0e0;
+}
+
+/* Scroll bars */
+.scroll-bar {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #c0c0c0;
+    -fx-background-radius: 5;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: #a0a0a0;
+}
+
+.scroll-bar .track {
+    -fx-background-color: #f0f0f0;
+}
+
+/* Dialogs */
+.dialog-pane {
+    -fx-background-color: #ffffff;
+}
+
+.dialog-pane .header-panel {
+    -fx-background-color: #f8f8f8;
+}
+
+/* Tab panes */
+.tab-pane .tab {
+    -fx-background-color: #e8e8e8;
+    -fx-border-color: #c0c0c0;
+}
+
+.tab-pane .tab:selected {
+    -fx-background-color: #ffffff;
+}
+
+.tab-pane .tab-label {
+    -fx-text-fill: #333333;
+}
+
+/* Toggle buttons */
+.toggle-button {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #c0c0c0;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+}
+
+.toggle-button:selected {
+    -fx-background-color: #0096c9;
+    -fx-text-fill: white;
+    -fx-border-color: #0086b9;
+}
+
+.toggle-button:hover {
+    -fx-background-color: #f0f0f0;
+}
+
+.toggle-button:selected:hover {
+    -fx-background-color: #00a0d0;
+}
+
+/* Context menus */
+.context-menu {
+    -fx-background-color: white;
+    -fx-border-color: #c0c0c0;
+}
+
+.context-menu .menu-item {
+    -fx-background-color: transparent;
+}
+
+.context-menu .menu-item:focused {
+    -fx-background-color: #e0e0e0;
+}
+
+/* Progress bars */
+.progress-bar {
+    -fx-accent: #0096c9;
+}
+
+.progress-bar .track {
+    -fx-background-color: #e0e0e0;
+}
+
+.progress-bar .bar {
+    -fx-background-color: #0096c9;
+}
+
+/* Tooltips */
+.tooltip {
+    -fx-background-color: #333333;
+    -fx-text-fill: white;
+    -fx-font-size: 11px;
+    -fx-background-radius: 3;
+}
+
