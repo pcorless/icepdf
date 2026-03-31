@@ -294,7 +294,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
             double y = rectangle.getY() - origRect.getY();
             af.translate(-origRect.getX(), -origRect.getY());
             g.setTransform(af);
-            g.setColor(color != null ? color : highlightColor);
+            g.setColor(color);
             AffineTransform af2 = new AffineTransform();
             af2.translate(-x, -y);
             for (Shape shape : quadrilaterals) {
