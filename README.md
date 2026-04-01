@@ -22,14 +22,20 @@ ICEpdf is an open source project and is always looking for more contributors.  T
  ### Getting the jars, javadoc and source from maven central 
  ```xml
  <dependency>
-     <groupId>com.github.pcorless.icepdf</groupId>
-     <artifactId>icepdf-core</artifactId>
-    <version>7.3.2</version>
+ <groupId>com.github.pcorless.icepdf</groupId>
+ <artifactId>icepdf-core</artifactId>
+ <version>7.4.0</version>
 </dependency>
 <dependency>
-     <groupId>com.github.pcorless.icepdf</groupId>
-     <artifactId>icepdf-viewer</artifactId>
-     <version>7.3.2</version>
+<groupId>com.github.pcorless.icepdf</groupId>
+<artifactId>icepdf-viewer</artifactId>
+<version>7.4.0</version>
+</dependency>
+<dependency>
+<!-- optional dependency for embedding fonts -->
+<groupId>com.github.pcorless.icepdf</groupId>
+<artifactId>icepdf-fonts</artifactId>
+<version>7.4.0</version>
 </dependency>
  ```
  
