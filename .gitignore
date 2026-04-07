@@ -6,9 +6,3 @@
 # IDE files (exclude)
 /.idea/
 *.iml
-
-# Gradle wrapper files (COMMIT THESE!)
-# gradlew - executable script (commit)
-# gradlew.bat - Windows script (commit)
-# gradle/wrapper/ - wrapper JAR and properties (commit)
-
