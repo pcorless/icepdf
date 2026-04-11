@@ -273,6 +273,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
     private int utilityAndDocumentSplitPaneLastDividerLocation;
     private JLabel statusLabel;
     private Frame viewer;
+    private Container viewerContainer;
     protected WindowManagementCallback windowManagementCallback;
     // simple model for swing controller, mainly printer and  file loading state.
     protected ViewModel viewModel;
@@ -1254,7 +1255,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 if (comps != null) {
                     final Collection<AnnotationComponent> toDelete =
                             comps.stream().filter(comp -> comp instanceof MarkupAnnotationComponent
-                            && ((MarkupAnnotation) comp.getAnnotation()).isCurrentUserOwner()).collect(Collectors.toSet());
+                                    && ((MarkupAnnotation) comp.getAnnotation()).isCurrentUserOwner()).collect(Collectors.toSet());
                     documentViewController.deleteAnnotations(toDelete);
                     reflectUndoCommands();
                 }
@@ -1571,12 +1572,23 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         reflectStateInComponents();
     }
 
+    public void setViewerContainer(Container container) {
+        viewerContainer = container;
+    }
+
     /**
      * Not all uses of Controller would result in there existing a Viewer Frame,
      * so this may well return null.
      */
     public Frame getViewerFrame() {
-        return viewer;
+        return viewer != null ? viewer : getParentFrame(SwingUtilities.getWindowAncestor(viewerContainer));
+    }
+
+    private static Frame getParentFrame(Window window) {
+        while (window != null && !(window instanceof Frame)) {
+            window = window.getOwner();
+        }
+        return (Frame) window;
     }
 
     /**
@@ -2119,7 +2131,8 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
 //        if( documentViewController != null ) {
 //            documentViewController.setViewCursor( cursorType );
 //        }
-        if (viewer != null) viewer.setCursor(cursor);
+        final Frame viewerFrame = getViewerFrame();
+        if (viewerFrame != null) viewerFrame.setCursor(cursor);
     }
 
     /**
@@ -2271,9 +2284,10 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
      */
     public void openFile(String initialDirPath) {
         final File file;
+        final Frame viewerFrame = getViewerFrame();
         if (!USE_JFILECHOOSER) {
             // Create and display a file open dialog
-            final FileDialog fileDialog = new FileDialog(getViewerFrame());
+            final FileDialog fileDialog = new FileDialog(viewerFrame);
             fileDialog.setMultipleMode(false);
             fileDialog.setMode(FileDialog.LOAD);
             fileDialog.setFilenameFilter((f, s) -> s.endsWith(FileExtensionUtils.pdf));
@@ -2285,7 +2299,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
             }
             // show the dialog
             fileDialog.setTitle(messageBundle.getString("viewer.dialog.openFile.title"));
-            fileDialog.setLocation(viewer.getLocation());
+            fileDialog.setLocation(viewerFrame.getLocation());
             fileDialog.setVisible(true);
             final String filePath = fileDialog.getFile();
             final String dirPath = fileDialog.getDirectory();
@@ -2308,7 +2322,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
             }
             // show the dialog
             fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.openFile.title"));
-            final int returnVal = fileChooser.showOpenDialog(viewer);
+            final int returnVal = fileChooser.showOpenDialog(viewerFrame);
 
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 file = fileChooser.getSelectedFile();
@@ -2322,13 +2336,13 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
             final String extension = FileExtensionUtils.getExtension(file);
             if (extension != null) {
                 if (extension.equals(FileExtensionUtils.pdf)) {
-                    if (viewer != null) {
-                        viewer.toFront();
-                        viewer.requestFocus();
+                    if (viewerFrame != null) {
+                        viewerFrame.toFront();
+                        viewerFrame.requestFocus();
                     }
                     openFileInSomeViewer(file);
                 } else {
-                    org.icepdf.ri.util.Resources.showMessageDialog(viewer,
+                    org.icepdf.ri.util.Resources.showMessageDialog(viewerFrame,
                             JOptionPane.INFORMATION_MESSAGE,
                             messageBundle,
                             "viewer.dialog.openFile.error.title",
@@ -2405,7 +2419,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
     protected void setupSecurityHandler(Document document, SecurityCallback securityCallback) {
         // create default security callback is user has not created one
         if (securityCallback == null) {
-            document.setSecurityCallback(new MyGUISecurityCallback(viewer, messageBundle));
+            document.setSecurityCallback(new MyGUISecurityCallback(getViewerFrame(), messageBundle));
         } else {
             document.setSecurityCallback(documentViewController.getSecurityCallback());
         }
@@ -2417,7 +2431,8 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
      * @param pathname String representing a valid file path
      */
     public void openDocument(String pathname) {
-        if (pathname != null && pathname.length() > 0) {
+        final Frame viewerFrame = getViewerFrame();
+        if (pathname != null && !pathname.isEmpty()) {
             try {
                 // dispose a currently open document, if one.
                 if (document != null) {
@@ -2433,7 +2448,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 if (tmpFile.exists() && new File(pathname).exists()) {
                     String[] options = {messageBundle.getString("viewer.button.yes.label"), messageBundle.getString(
                             "viewer.button.no.label")};
-                    int ret = JOptionPane.showOptionDialog(viewer, MessageFormat.format(messageBundle.getString(
+                    int ret = JOptionPane.showOptionDialog(viewerFrame, MessageFormat.format(messageBundle.getString(
                                             "viewer.dialog.restore.label"),
                                     new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(tmpFile.lastModified())),
                             messageBundle.getString("viewer.dialog.restore.title"), JOptionPane.YES_NO_OPTION,
@@ -2444,7 +2459,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                                     StandardCopyOption.REPLACE_EXISTING);
                         } catch (IOException e) {
                             org.icepdf.ri.util.Resources.showMessageDialog(
-                                    viewer,
+                                    viewerFrame,
                                     JOptionPane.INFORMATION_MESSAGE,
                                     messageBundle,
                                     "viewer.dialog.restore.exception.title",
@@ -2467,7 +2482,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 commonNewDocumentHandling(pathname);
             } catch (PDFSecurityException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
+                        viewerFrame,
                         JOptionPane.INFORMATION_MESSAGE,
                         messageBundle,
                         "viewer.dialog.openDocument.pdfSecurityException.title",
@@ -2477,7 +2492,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 logger.log(Level.FINE, "Error opening document.", e);
             } catch (Exception e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
+                        viewerFrame,
                         JOptionPane.INFORMATION_MESSAGE,
                         messageBundle,
                         "viewer.dialog.openDocument.exception.title",
@@ -2516,14 +2531,16 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
     public void openURL() {
         String urlLocation = ((ViewModel.getDefaultURL() != null) ? ViewModel.getDefaultURL() : "");
         // display url input dialog
-        Object o = JOptionPane.showInputDialog(viewer, "URL:", "Open URL", JOptionPane.QUESTION_MESSAGE, null, null,
+        final Frame viewerFrame = getViewerFrame();
+        Object o = JOptionPane.showInputDialog(viewerFrame, "URL:", "Open URL", JOptionPane.QUESTION_MESSAGE, null,
+                null,
                 urlLocation);
         if (o != null) {
             URLAccess urlAccess = URLAccess.doURLAccess(o.toString());
             urlAccess.closeConnection();
             if (urlAccess.errorMessage != null) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
+                        viewerFrame,
                         JOptionPane.INFORMATION_MESSAGE,
                         messageBundle,
                         "viewer.dialog.openURL.exception.title",
@@ -2532,9 +2549,9 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                         urlAccess.urlLocation
                 );
             } else {
-                if (viewer != null) {
-                    viewer.toFront();
-                    viewer.requestFocus();
+                if (viewerFrame != null) {
+                    viewerFrame.toFront();
+                    viewerFrame.requestFocus();
                 }
                 openURLInSomeViewer(urlAccess.url);
             }
@@ -2574,10 +2591,12 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
 
             // load the document
             document = new Document();
+            final Frame viewerFrame = getViewerFrame();
             try {
                 // make a connection
                 final URLConnection urlConnection = location.openConnection();
                 final int size = urlConnection.getContentLength();
+
                 SwingWorker worker = new SwingWorker() {
                     InputStream in = null;
 
@@ -2590,7 +2609,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                             MessageFormat formatter = new MessageFormat(
                                     messageBundle.getString("viewer.dialog.openURL.downloading.msg"));
                             ProgressMonitorInputStream progressMonitorInputStream =
-                                    new ProgressMonitorInputStream(viewer, formatter.format(messageArguments),
+                                    new ProgressMonitorInputStream(viewerFrame, formatter.format(messageArguments),
                                             new SizeInputStream(urlConnection.getInputStream(), size));
                             // Create a stream on the URL connection
                             in = new BufferedInputStream(progressMonitorInputStream);
@@ -2611,7 +2630,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                             document = null;
                         } catch (PDFSecurityException e) {
                             org.icepdf.ri.util.Resources.showMessageDialog(
-                                    viewer,
+                                    viewerFrame,
                                     JOptionPane.INFORMATION_MESSAGE,
                                     messageBundle,
                                     "viewer.dialog.openDocument.pdfSecurityException.title",
@@ -2621,7 +2640,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                             logger.log(Level.FINE, "Error opening document.", e);
                         } catch (Exception e) {
                             org.icepdf.ri.util.Resources.showMessageDialog(
-                                    viewer,
+                                    viewerFrame,
                                     JOptionPane.INFORMATION_MESSAGE,
                                     messageBundle,
                                     "viewer.dialog.openDocument.exception.title",
@@ -2641,7 +2660,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                                 messageBundle.getString("viewer.dialog.openURL.downloading.msg"));
                         ProgressMonitorInputStream progressMonitorInputStream =
                                 new ProgressMonitorInputStream(
-                                        viewer,
+                                        viewerFrame,
                                         formatter.format(messageArguments),
                                         new SizeInputStream(urlConnection.getInputStream(), size));
                         // Create a stream on the URL connection
@@ -2653,7 +2672,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
 
             } catch (Exception e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
+                        viewerFrame,
                         JOptionPane.INFORMATION_MESSAGE,
                         messageBundle,
                         "viewer.dialog.openDocument.exception.title",
@@ -2682,6 +2701,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
      */
     public void openDocument(InputStream inputStream, String description, String pathOrURL) {
         if (inputStream != null) {
+            final Frame viewerFrame = getViewerFrame();
             try {
                 // dispose a currently open document, if one.
                 if (document != null) {
@@ -2699,7 +2719,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 commonNewDocumentHandling(description);
             } catch (PDFSecurityException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
+                        viewerFrame,
                         JOptionPane.INFORMATION_MESSAGE,
                         messageBundle,
                         "viewer.dialog.openDocument.pdfSecurityException.title",
@@ -2709,7 +2729,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 logger.log(Level.FINE, "Error opening document.", e);
             } catch (Exception e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
+                        viewerFrame,
                         JOptionPane.INFORMATION_MESSAGE,
                         messageBundle,
                         "viewer.dialog.openDocument.exception.title",
@@ -2746,7 +2766,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 commonNewDocumentHandling(fileName);
             } catch (Exception e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
+                        getViewerFrame(),
                         JOptionPane.INFORMATION_MESSAGE,
                         messageBundle,
                         "viewer.dialog.openDocument.exception.title",
@@ -2774,6 +2794,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
      */
     public void openDocument(byte[] data, int offset, int length, String description, String pathOrURL) {
         if (data != null) {
+            final Frame viewerFrame = getViewerFrame();
             try {
                 // dispose a currently open document, if one.
                 if (document != null) {
@@ -2791,7 +2812,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 commonNewDocumentHandling(description);
             } catch (PDFSecurityException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
+                        viewerFrame,
                         JOptionPane.INFORMATION_MESSAGE,
                         messageBundle,
                         "viewer.dialog.openDocument.pdfSecurityException.title",
@@ -2801,7 +2822,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 logger.log(Level.FINE, "Error opening document.", e);
             } catch (Exception e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
+                        viewerFrame,
                         JOptionPane.INFORMATION_MESSAGE,
                         messageBundle,
                         "viewer.dialog.openDocument.exception.title",
@@ -3395,10 +3416,10 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         String originalFileName = getOriginalFileName();
         String newFileName = originalFileName == null || originalFileName.isEmpty() ? null :
                 generateNewSaveName(originalFileName);
-
+        final Frame viewerFrame = getViewerFrame();
         // Create and display a file saving dialog
         if (!USE_JFILECHOOSER) {
-            final FileDialog fileDialog = new FileDialog(getViewerFrame());
+            final FileDialog fileDialog = new FileDialog(viewerFrame);
             fileDialog.setTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
             fileDialog.setMultipleMode(false);
             fileDialog.setMode(FileDialog.SAVE);
@@ -3428,7 +3449,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 fileChooser.setSelectedFile(new File(newFileName));
             }
             // show the dialog
-            if (fileChooser.showSaveDialog(viewer) == JFileChooser.APPROVE_OPTION) {
+            if (fileChooser.showSaveDialog(viewerFrame) == JFileChooser.APPROVE_OPTION) {
                 saveFileChecks(saveMode, originalFileName, fileChooser.getSelectedFile());
             }
         }
@@ -3452,12 +3473,13 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
 
     protected void saveFileChecks(SaveMode saveMode, String originalFileName, File file) {
         if (file != null) {
+            final Frame viewerFrame = getViewerFrame();
             if (Files.isWritable(file.getParentFile().toPath())) {
                 // make sure file path being saved to is valid
                 String extension = FileExtensionUtils.getExtension(file);
                 if (extension == null) {
                     org.icepdf.ri.util.Resources.showMessageDialog(
-                            viewer,
+                            viewerFrame,
                             JOptionPane.INFORMATION_MESSAGE,
                             messageBundle,
                             "viewer.dialog.saveAs.noExtensionError.title",
@@ -3465,7 +3487,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                     saveFileAs(saveMode);
                 } else if (!extension.equals(FileExtensionUtils.pdf)) {
                     org.icepdf.ri.util.Resources.showMessageDialog(
-                            viewer,
+                            viewerFrame,
                             JOptionPane.INFORMATION_MESSAGE,
                             messageBundle,
                             "viewer.dialog.saveAs.extensionError.title",
@@ -3476,7 +3498,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                         originalFileName.equalsIgnoreCase(file.getName())) {
                     // Ensure a unique filename
                     org.icepdf.ri.util.Resources.showMessageDialog(
-                            viewer,
+                            viewerFrame,
                             JOptionPane.INFORMATION_MESSAGE,
                             messageBundle,
                             "viewer.dialog.saveAs.noneUniqueName.title",
@@ -3501,7 +3523,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 }
             } else {
                 org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
+                        viewerFrame,
                         JOptionPane.INFORMATION_MESSAGE,
                         messageBundle,
                         "viewer.dialog.saveAs.cantwrite.title",
@@ -3570,13 +3592,14 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
      */
     public void exportText() {
         final File file;
+        final Frame viewerFrame = getViewerFrame();
         if (USE_JFILECHOOSER) {
             final JFileChooser fileChooser = new JFileChooser();
             fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
             if (ViewModel.getDefaultFile() != null) {
                 fileChooser.setCurrentDirectory(ViewModel.getDefaultFile());
             }
-            if (fileChooser.showSaveDialog(getViewerFrame()) == JFileChooser.APPROVE_OPTION) {
+            if (fileChooser.showSaveDialog(viewerFrame) == JFileChooser.APPROVE_OPTION) {
                 file = fileChooser.getSelectedFile();
             } else {
                 file = null;
@@ -3584,7 +3607,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
             fileChooser.setVisible(false);
         } else {
             // Create and display a file saving dialog
-            final FileDialog fileChooser = new FileDialog(getViewerFrame());
+            final FileDialog fileChooser = new FileDialog(viewerFrame);
             fileChooser.setTitle(messageBundle.getString("viewer.dialog.exportText.title"));
             fileChooser.setMultipleMode(false);
             fileChooser.setMode(FileDialog.SAVE);
@@ -3609,13 +3632,13 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
             if (extension != null) {
                 int lengthOfTask = document.getNumberOfPages();
                 ProgressMonitor progressMonitor = new ProgressMonitor(
-                        viewer, messageBundle.getString("viewer.dialog.exportText.progress.msg"),
+                        viewerFrame, messageBundle.getString("viewer.dialog.exportText.progress.msg"),
                         "", 0, lengthOfTask);
 
                 new TextExtractionTask(document, file, progressMonitor, messageBundle).execute();
             } else {
                 org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
+                        viewerFrame,
                         JOptionPane.INFORMATION_MESSAGE,
                         messageBundle,
                         "viewer.dialog.exportText.noExtensionError.title",
@@ -3642,7 +3665,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                         messageBundle.getString("viewer.dialog.saveOnClose.noUpdates.msg"));
                 String dialogMessage = formatter.format(new Object[]{document.getDocumentOrigin()});
 
-                int res = JOptionPane.showConfirmDialog(viewer,
+                int res = JOptionPane.showConfirmDialog(getViewerFrame(),
                         dialogMessage,
                         messageBundle.getString("viewer.dialog.saveOnClose.noUpdates.title"),
                         JOptionPane.YES_NO_CANCEL_OPTION);
@@ -3688,7 +3711,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         // Added to swing thread to ensure it shows up on top of main
         // browser window
         Runnable doSwingWork = () -> {
-            AboutDialog ad = new AboutDialog(viewer, messageBundle, true, AboutDialog.NO_TIMER);
+            AboutDialog ad = new AboutDialog(getViewerFrame(), messageBundle, true, AboutDialog.NO_TIMER);
             ad.setVisible(true);
         };
         SwingUtilities.invokeLater(doSwingWork);
@@ -3699,7 +3722,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
      * altering, or extracting information from, the Document
      */
     public void showDocumentPermissionsDialog() {
-        PermissionsDialog pd = new PermissionsDialog(viewer, document, messageBundle);
+        PermissionsDialog pd = new PermissionsDialog(getViewerFrame(), document, messageBundle);
         pd.setVisible(true);
     }
 
@@ -3709,7 +3732,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
      * last modification date
      */
     public void showDocumentInformationDialog() {
-        InformationDialog did = new InformationDialog(viewer, document, messageBundle);
+        InformationDialog did = new InformationDialog(getViewerFrame(), document, messageBundle);
         did.setVisible(true);
     }
 
@@ -3717,28 +3740,28 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
      * Show document font information.
      */
     public void showDocumentFontDialog() {
-        new FontDialog(viewer, this, document, messageBundle).setVisible(true);
+        new FontDialog(getViewerFrame(), this, document, messageBundle).setVisible(true);
     }
 
     /**
      * Show tabbed pane interface for document properties,  info, security and fonts.
      */
     public void showDocumentProperties() {
-        new PropertiesDialog(viewer, this, messageBundle).setVisible(true);
+        new PropertiesDialog(getViewerFrame(), this, messageBundle).setVisible(true);
     }
 
     /**
      * Show tabbed pane interface for viewer preferences,  info, security and fonts.
      */
     public void showViewerPreferences() {
-        new PreferencesDialog(viewer, this, messageBundle).setVisible(true);
+        new PreferencesDialog(getViewerFrame(), this, messageBundle).setVisible(true);
     }
 
     /**
      * Show tabbed pane interface for viewer preferences,  info, security and fonts.
      */
     public void showViewerPreferences(final String selectedPreference) {
-        PreferencesDialog preferencesDialog = new PreferencesDialog(viewer, this, messageBundle);
+        PreferencesDialog preferencesDialog = new PreferencesDialog(getViewerFrame(), this, messageBundle);
         preferencesDialog.setSelectedPreference(selectedPreference);
         preferencesDialog.setVisible(true);
     }
@@ -3751,7 +3774,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         // dialog get referenced. At least I think that's what might be happening.
         PageTree pageTree = getPageTree();
         Page page = pageTree.getPage(documentViewController.getCurrentPageIndex());
-        showAnnotationProperties(annotationComponent, viewer);
+        showAnnotationProperties(annotationComponent, getViewerFrame());
     }
 
     /**
@@ -3940,7 +3963,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         // Create the ProgressMonitor in the Swing thread
         SwingUtilities.invokeLater(() -> {
             // launch progress dialog
-            printProgressMonitor = new ProgressMonitor(viewer,
+            printProgressMonitor = new ProgressMonitor(getViewerFrame(),
                     messageBundle.getString("viewer.dialog.printing.status.start.msg"),
                     "", 1, printHelper.getNumberOfPages());
         });
@@ -4576,7 +4599,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         }
         Object initialSelection = s[documentViewController.getCurrentPageIndex()];
         Object ob = JOptionPane.showInputDialog(
-                viewer,
+                getViewerFrame(),
                 messageBundle.getString("viewer.dialog.goToPage.description.label"),
                 messageBundle.getString("viewer.dialog.goToPage.title"),
                 JOptionPane.QUESTION_MESSAGE,
@@ -4739,7 +4762,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
             } else if (source == exitMenuItem) {
                 boolean isCanceled = saveChangesDialog();
                 if (!isCanceled && windowManagementCallback != null) {
-                    windowManagementCallback.disposeWindow(this, viewer, propertiesManager.getPreferences());
+                    windowManagementCallback.disposeWindow(this, getViewerFrame(), propertiesManager.getPreferences());
                 }
             } else if (source == showHideToolBarMenuItem) {
                 toggleToolBarVisibility();
@@ -4805,7 +4828,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                                     .setContents(stringSelection, stringSelection);
                         } else {
                             Runnable doSwingWork = () -> org.icepdf.ri.util.Resources.showMessageDialog(
-                                    viewer,
+                                    getViewerFrame(),
                                     JOptionPane.INFORMATION_MESSAGE,
                                     messageBundle,
                                     "viewer.dialog.information.copyAll.title",
@@ -4895,7 +4918,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         } catch (Exception e) {
             String message = e.getMessage() == null || e.getMessage().isEmpty() ? e.toString() : e.getMessage();
             Runnable doSwingWork = () -> org.icepdf.ri.util.Resources.showMessageDialog(
-                    viewer,
+                    getViewerFrame(),
                     JOptionPane.INFORMATION_MESSAGE,
                     messageBundle,
                     "viewer.dialog.error.exception.title",
@@ -5581,7 +5604,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         return new HashSet<>(Arrays.asList(highlightAnnotationToolButton, strikeOutAnnotationToolButton,
                 underlineAnnotationToolButton, lineAnnotationToolButton, lineArrowAnnotationToolButton,
                 squareAnnotationToolButton, circleAnnotationToolButton, inkAnnotationToolButton,
-                 textAnnotationToolButton));
+                textAnnotationToolButton));
     }
 
     public void changeAnnotationsVisibility(final AnnotationFilter filter, final boolean visible,
@@ -5605,9 +5628,10 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         if (execInvert) {
             changeAnnotationsVisibility(filter.invertFilter(), !visible, false);
         }
-        if (viewer != null) {
-            viewer.validate();
-            viewer.repaint();
+        Component viewerComp = viewer != null ? viewer : viewerContainer;
+        if (viewerComp != null) {
+            viewerComp.validate();
+            viewerComp.repaint();
         }
     }
 

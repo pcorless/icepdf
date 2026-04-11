@@ -496,6 +496,7 @@ public class SwingViewBuilder implements ViewBuilder {
         JPanel statusPanel = buildStatusPanel();
         if (statusPanel != null)
             cp.add(statusPanel, BorderLayout.SOUTH);
+        viewerController.setViewerContainer(cp);
     }
 
 
