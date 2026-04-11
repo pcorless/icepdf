@@ -412,7 +412,7 @@ public class SwingViewBuilder implements ViewBuilder {
         viewerController.setPropertiesManager(propertiesManager);
 
         // Apply viewer preferences settings to various core system properties.
-        overrideHighlightColor(propertiesManager);
+        applyPropertyManagerSettings(propertiesManager);
 
         // update View Controller with previewer document page fit and view type info
         DocumentViewControllerImpl documentViewController =
@@ -2540,7 +2540,7 @@ public class SwingViewBuilder implements ViewBuilder {
      *
      * @param propertiesManager current properties manager.
      */
-    protected void overrideHighlightColor(ViewerPropertiesManager propertiesManager) {
+    protected void applyPropertyManagerSettings(ViewerPropertiesManager propertiesManager) {
 
         Preferences preferences = propertiesManager.getPreferences();
 
