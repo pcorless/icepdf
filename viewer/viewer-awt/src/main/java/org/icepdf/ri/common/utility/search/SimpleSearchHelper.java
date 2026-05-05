@@ -108,7 +108,7 @@ public class SimpleSearchHelper implements PropertyChangeListener {
     public void previousResult() {
         if (isStartOfPage()) {
             currentPage--;
-            if (currentPage >= 0) {
+            if (currentPage < 0) {
                 currentPage = pageCount - 1;
             }
             searchBackwards(currentPage);
