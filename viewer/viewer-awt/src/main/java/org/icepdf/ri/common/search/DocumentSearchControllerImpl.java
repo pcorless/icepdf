@@ -901,14 +901,12 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * @param pageIndex page index to clear
      */
     public void clearSearchHighlight(int pageIndex) {
-        List<AbstractPageViewComponent> pageComponents = viewerController.getDocumentViewController()
-                .getDocumentViewModel().getPageComponents();
-        if (pageIndex < 0 || pageIndex >= pageComponents.size()) {
+        PageViewComponentImpl pvc = getPageViewComponent(pageIndex);
+        if (pvc == null) {
             return;
         }
         // clear cache and terms list
         searchModel.clearSearchResults(pageIndex);
-        PageViewComponentImpl pvc = (PageViewComponentImpl) pageComponents.get(pageIndex);
         pvc.clearSearchHighlights();
     }
 
@@ -920,11 +918,21 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     public void clearAllSearchHighlight() {
         searchModel.clearSearchResults();
         pageToComponents.forEach((key, shc) -> {
-            PageViewComponentImpl pvc = (PageViewComponentImpl) viewerController.getDocumentViewController().getDocumentViewModel()
-                    .getPageComponents().get(key);
-            pvc.clearSearchHighlights();
+            PageViewComponentImpl pvc = getPageViewComponent(key);
+            if (pvc != null) {
+                pvc.clearSearchHighlights();
+            }
         });
         pageToComponents.clear();
+    }
+
+    private PageViewComponentImpl getPageViewComponent(int pageIndex) {
+        List<AbstractPageViewComponent> pageComponents = viewerController.getDocumentViewController()
+                .getDocumentViewModel().getPageComponents();
+        if (pageIndex < 0 || pageIndex >= pageComponents.size()) {
+            return null;
+        }
+        return (PageViewComponentImpl) pageComponents.get(pageIndex);
     }
 
     /**
