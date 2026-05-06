@@ -30,6 +30,7 @@ import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.utility.search.SearchHitComponent;
 import org.icepdf.ri.common.utility.search.SearchHitComponentFactory;
 import org.icepdf.ri.common.utility.search.SearchHitComponentFactoryImpl;
+import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.PageViewComponentImpl;
 
 import java.awt.*;
@@ -44,7 +45,7 @@ import java.util.stream.Collectors;
 
 /**
  * Document search controller used to manage document searches.  This class
- * class takes care of many of the performance issues of doing searches on
+ * takes care of many of the performance issues of doing searches on
  * larges documents and is also used by PageViewComponentImpl to highlight
  * search results.
  * <br>
@@ -116,7 +117,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * added or after all have been added.
      *
      * @param pageIndex     page to search
-     * @param caseSensitive if true use case sensitive searches
+     * @param caseSensitive if true use case-sensitive searches
      * @param wholeWord     if true use whole word searches
      * @param term          term to search for
      * @return number for hits for this page.
@@ -137,7 +138,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * hits where detected then the Page's PageText is added to the cache.
      * <br>
      * This method represent the org.icepdf.core search algorithm for this
-     * DocumentSearchController implementation. This method can be overriden
+     * DocumentSearchController implementation. This method can be overridden
      * if a different search algorithm or functionality is needed.
      *
      * @param pageIndex page index to search
@@ -164,7 +165,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * context.
      * <br>
      * This method represent the org.icepdf.core search algorithm for this
-     * DocumentSearchController implementation. This method can be overriden
+     * DocumentSearchController implementation. This method can be overridden
      * if a different search algorithm or functionality is needed.
      *
      * @param pageIndex   page index to search
@@ -323,7 +324,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         }
 
         // if we have a hit we'll add it to the model cache
-        if (searchHits.size() > 0) {
+        if (!searchHits.isEmpty()) {
             searchModel.addPageSearchHit(pageIndex, pageText, searchHits.size());
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine("Found search hits on page " + pageIndex + " hit count " + searchHits.size());
@@ -346,7 +347,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         // search hit list
         final List<LineText> searchHits = new ArrayList<>();
 
-        // get our our page text reference
+        // get our page text reference
         final PageText pageText = getPageText(pageIndex);
 
         // some pages just don't have any text.
@@ -595,28 +596,22 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         if (document == null) document = viewerController.getDocument();
         ArrayList<DestinationResult> foundNames = new ArrayList<>();
         Names names = document.getCatalog().getNames();
-        if (searchModel.getSearchTerms().size() > 0 &&
-                names != null && names.getDestsNameTree() != null) {
+        if (!searchModel.getSearchTerms().isEmpty() && names != null && names.getDestsNameTree() != null) {
             NameTree nameTree = names.getDestsNameTree();
             if (nameTree != null) {
-                ArrayList<SearchTerm> terms = searchModel.getSearchTerms();
-                SearchTerm term = terms.get(0);
-                Pattern searchPattern = term.getRegexPattern();
-                String searchTerm = term.getTerm();
-                if (searchPattern == null) {
-                    searchPattern = Pattern.compile(term.isCaseSensitive() ? searchTerm : searchTerm.toLowerCase());
-                }
-                recursiveNameSearch(searchPattern, term.isCaseSensitive(), foundNames, nameTree.getRoot());
+                SearchTerm term = searchModel.getSearchTerms().get(0);
+                recursiveNameSearch(resolveSearchPattern(term), term.isCaseSensitive(), foundNames, nameTree.getRoot());
             }
         }
         return foundNames;
     }
 
+    @SuppressWarnings("unchecked")
     private void recursiveNameSearch(Pattern searchPattern, boolean isCaseSensitive,
                                      ArrayList<DestinationResult> foundNameNodes, NameNode nameNode) {
-        List kids = nameNode.getKidsReferences();
+        List<Object> kids = (List<Object>) nameNode.getKidsReferences();
         if (kids != null) {
-            int count = nameNode.getKidsReferences().size();
+            int count = kids.size();
             for (int i = 0; i < count; i++) {
                 NameNode child = nameNode.getNode(i);
                 if (child.hasLimits()) {
@@ -624,9 +619,9 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                 }
             }
         } else {
-            // interate over the names.
+            // iterate over the names.
             if (nameNode.getNamesAndValues() != null) {
-                List namesAndValues = nameNode.getNamesAndValues();
+                List<Object> namesAndValues = (List<Object>) nameNode.getNamesAndValues();
                 for (int i = 0, max = namesAndValues.size() - 1; i < max; i += 2) {
                     String name = ((StringObject) namesAndValues.get(i)).getLiteralString();
                     if (name != null && !name.isEmpty()) {
@@ -650,16 +645,20 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         ArrayList<OutlineItem> foundOutlines = new ArrayList<>();
         Outlines outlines = document.getCatalog().getOutlines();
         if (outlines != null && !searchModel.getSearchTerms().isEmpty()) {
-            ArrayList<SearchTerm> terms = searchModel.getSearchTerms();
-            SearchTerm term = terms.get(0);
-            Pattern searchPattern = term.getRegexPattern();
-            String searchTerm = term.getTerm();
-            if (searchPattern == null) {
-                searchPattern = Pattern.compile(term.isCaseSensitive() ? searchTerm : searchTerm.toLowerCase());
-            }
-            recursiveOutlineSearch(searchPattern, term.isCaseSensitive(), foundOutlines, outlines.getRootOutlineItem());
+            SearchTerm term = searchModel.getSearchTerms().get(0);
+            recursiveOutlineSearch(resolveSearchPattern(term), term.isCaseSensitive(), foundOutlines,
+                    outlines.getRootOutlineItem());
         }
         return foundOutlines;
+    }
+
+    private Pattern resolveSearchPattern(SearchTerm term) {
+        Pattern searchPattern = term.getRegexPattern();
+        if (searchPattern == null) {
+            String searchTerm = term.getTerm();
+            searchPattern = Pattern.compile(term.isCaseSensitive() ? searchTerm : searchTerm.toLowerCase());
+        }
+        return searchPattern;
     }
 
     private void recursiveOutlineSearch(Pattern searchPattern, boolean isCaseSensitive,
@@ -689,10 +688,10 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         if (pageText != null) {
             WordText word;
             ArrayList<LineText> pageLines = pageText.getPageLines();
-            for (int k = 0, maxk = pageLines.size(); k < maxk; k++) {
+            for (int k = 0, maxK = pageLines.size(); k < maxK; k++) {
                 LineText lineText = pageLines.get(k);
                 List<WordText> words = lineText.getWords();
-                for (int j = 0, maxj = words.size(); j < maxj; j++) {
+                for (int j = 0, maxJ = words.size(); j < maxJ; j++) {
                     word = words.get(j);
                     if (word.equals(wordText)) {
                         word.setHighlightCursor(true);
@@ -726,14 +725,14 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                     if (pageText != null) {
                         pageText.clearHighlightedCursor();
                         ArrayList<LineText> pageLines = pageText.getPageLines();
-                        for (int k = searchLineCursor, maxk = pageLines.size(); k < maxk; k++) {
+                        for (int k = searchLineCursor, maxK = pageLines.size(); k < maxK; k++) {
                             LineText lineText = pageLines.get(k);
                             List<WordText> words = lineText.getWords();
-                            for (int j = searchWordCursor, maxj = words.size(); j < maxj; j++) {
+                            for (int j = searchWordCursor, maxJ = words.size(); j < maxJ; j++) {
                                 word = words.get(j);
                                 if (word.isHighlighted()) {
                                     // highlight the rest of the words
-                                    for (; j < maxj; j++) {
+                                    for (; j < maxJ; j++) {
                                         if (!words.get(j).isHighlighted()) {
                                             break;
                                         }
@@ -762,7 +761,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     }
 
     /**
-     * Navigate tot he page that the current word is on.
+     * Navigate to the page that the current word is on.
      *
      * @param pageIndex page number to navigate to
      * @param word      word that has been marked as a cursor.
@@ -853,7 +852,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * A new search needs to be executed for this change to take place.
      *
      * @param term          single word or phrase to search for.
-     * @param caseSensitive is search case sensitive.
+     * @param caseSensitive is search case-sensitive.
      * @param wholeWord     is search whole word sensitive.
      * @return searchTerm newly create search term.
      */
@@ -899,13 +898,15 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     /**
      * Clear all searched items for specified page.
      *
-     * @param pageIndex page indext to clear
+     * @param pageIndex page index to clear
      */
     public void clearSearchHighlight(int pageIndex) {
+        PageViewComponentImpl pvc = getPageViewComponent(pageIndex);
+        if (pvc == null) {
+            return;
+        }
         // clear cache and terms list
         searchModel.clearSearchResults(pageIndex);
-        PageViewComponentImpl pvc = (PageViewComponentImpl) viewerController.getDocumentViewController().getDocumentViewModel()
-                .getPageComponents().get(pageIndex);
         pvc.clearSearchHighlights();
     }
 
@@ -917,11 +918,21 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     public void clearAllSearchHighlight() {
         searchModel.clearSearchResults();
         pageToComponents.forEach((key, shc) -> {
-            PageViewComponentImpl pvc = (PageViewComponentImpl) viewerController.getDocumentViewController().getDocumentViewModel()
-                    .getPageComponents().get(key);
-            pvc.clearSearchHighlights();
+            PageViewComponentImpl pvc = getPageViewComponent(key);
+            if (pvc != null) {
+                pvc.clearSearchHighlights();
+            }
         });
         pageToComponents.clear();
+    }
+
+    private PageViewComponentImpl getPageViewComponent(int pageIndex) {
+        List<AbstractPageViewComponent> pageComponents = viewerController.getDocumentViewController()
+                .getDocumentViewModel().getPageComponents();
+        if (pageIndex < 0 || pageIndex >= pageComponents.size()) {
+            return null;
+        }
+        return (PageViewComponentImpl) pageComponents.get(pageIndex);
     }
 
     /**
@@ -937,7 +948,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      */
     public boolean isSearchHighlightRefreshNeeded(int pageIndex, PageText pageText) {
 
-        // check model to see if pages pagTex still has reference
+        // check model to see if pages pageText still has a reference
         return searchModel.isPageTextMatch(pageIndex, pageText);
     }
 
@@ -963,7 +974,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             if (viewerController != null) {
                 // get access to currently open document instance.
                 // this has been getPageText in the past when the search cursor was introduced, but I can't see
-                // a good reason for not using the view text in this circumatstance
+                // a good reason for not using the view text in this circumstance
                 pageText = viewerController.getDocument().getPageViewText(pageIndex);
             } else if (document != null) {
                 pageText = document.getPageViewText(pageIndex);

@@ -108,7 +108,7 @@ public class SimpleSearchHelper implements PropertyChangeListener {
     public void previousResult() {
         if (isStartOfPage()) {
             currentPage--;
-            if (currentPage >= 0) {
+            if (currentPage < 0) {
                 currentPage = pageCount - 1;
             }
             searchBackwards(currentPage);
@@ -125,45 +125,43 @@ public class SimpleSearchHelper implements PropertyChangeListener {
     }
 
     private void searchForward(int pageIndex) {
-        if (commentsEnabled) {
-            // search comments and update indexes
-        }
-        // search text and update indexes
-        wordIndex = 0;
-        currentPage = pageIndex;
-        wordHits = searchController.searchHighlightPage(pageIndex, pattern, caseSensitive, wholeWord);
-        if (wordHits == 0) {
-            int nextPage = currentPage + 1;
+        int nextPage = pageIndex;
+        do {
+            if (commentsEnabled) {
+                // search comments and update indexes
+            }
+            wordIndex = 0;
+            currentPage = nextPage;
+            wordHits = searchController.searchHighlightPage(currentPage, pattern, caseSensitive, wholeWord);
+            if (wordHits > 0) {
+                controller.getDocumentViewController().getViewContainer().repaint();
+                return;
+            }
+            nextPage = currentPage + 1;
             if (nextPage >= pageCount) {
                 nextPage = 0;
             }
-            if (nextPage != startPage) {
-                searchForward(nextPage);
-            }
-        } else {
-            controller.getDocumentViewController().getViewContainer().repaint();
-        }
+        } while (nextPage != startPage);
     }
 
     private void searchBackwards(int pageIndex) {
-        if (commentsEnabled) {
-            // search comments and update indexes
-        }
-        // search text and update indexes
-        currentPage = pageIndex;
-        wordHits = searchController.searchHighlightPage(pageIndex, pattern, caseSensitive, wholeWord);
-        wordIndex = wordHits;
-        if (wordHits == 0) {
-            int nextPage = currentPage - 1;
+        int nextPage = pageIndex;
+        do {
+            if (commentsEnabled) {
+                // search comments and update indexes
+            }
+            currentPage = nextPage;
+            wordHits = searchController.searchHighlightPage(currentPage, pattern, caseSensitive, wholeWord);
+            wordIndex = wordHits;
+            if (wordHits > 0) {
+                controller.getDocumentViewController().getViewContainer().repaint();
+                return;
+            }
+            nextPage = currentPage - 1;
             if (nextPage < 0) {
                 nextPage = pageCount - 1;
             }
-            if (nextPage != startPage) {
-                searchBackwards(nextPage);
-            }
-        } else {
-            controller.getDocumentViewController().getViewContainer().repaint();
-        }
+        } while (nextPage != startPage);
     }
 
     private boolean isEndOfPage() {
@@ -175,7 +173,7 @@ public class SimpleSearchHelper implements PropertyChangeListener {
     }
 
     private boolean isLastWord() {
-        return wordIndex >= wordHits - 1;
+        return wordHits == 0 || wordIndex >= wordHits - 1;
     }
 
     private boolean isFirstWord() {
