@@ -16,8 +16,8 @@
 package org.icepdf.core.util;
 
 import org.icepdf.core.io.*;
-import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Font;
@@ -37,7 +37,7 @@ import java.util.logging.Logger;
 public class Parser {
 
     private static final Logger logger =
-            Logger.getLogger(Parser.class.toString());
+            Logger.getLogger(Parser.class.getName());
 
     public static final int PARSE_MODE_NORMAL = 0;
     public static final int PARSE_MODE_OBJECT_STREAM = 1;

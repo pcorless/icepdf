@@ -58,7 +58,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         ItemListener, FocusListener, ChangeListener {
 
     private static final Logger logger =
-            Logger.getLogger(SignatureCreationDialog.class.toString());
+            Logger.getLogger(SignatureCreationDialog.class.getName());
 
     private static final Locale[] supportedLocales = {
             new Locale("da"),

@@ -112,7 +112,7 @@ public class InteractiveForm extends Dictionary {
     public static final int SIG_FLAGS_APPEND_ONLY = 2;
 
     private static final Logger logger =
-            Logger.getLogger(InteractiveForm.class.toString());
+            Logger.getLogger(InteractiveForm.class.getName());
 
     // field list, we keep reference as we don't want these garbage collected.
     private ArrayList<Object> fields;

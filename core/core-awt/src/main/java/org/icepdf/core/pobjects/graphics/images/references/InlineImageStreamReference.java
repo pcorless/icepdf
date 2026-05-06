@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 public class InlineImageStreamReference extends ImageReference {
 
     private static final Logger logger =
-            Logger.getLogger(InlineImageStreamReference.class.toString());
+            Logger.getLogger(InlineImageStreamReference.class.getName());
 
     public InlineImageStreamReference(ImageStream imageStream, Name xobjectName, GraphicsState graphicsState,
                                       Resources resources, int iamgeIndex,

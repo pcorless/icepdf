@@ -32,7 +32,7 @@ import java.util.logging.Logger;
 public class Names extends Dictionary {
 
     private static final Logger logger =
-            Logger.getLogger(Names.class.toString());
+            Logger.getLogger(Names.class.getName());
 
     /**
      * A name tree mapping name strings to destinations.

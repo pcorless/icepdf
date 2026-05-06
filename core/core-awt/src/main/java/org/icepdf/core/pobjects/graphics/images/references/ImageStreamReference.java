@@ -41,7 +41,7 @@ import java.util.logging.Logger;
 public class ImageStreamReference extends CachedImageReference {
 
     private static final Logger logger =
-            Logger.getLogger(ImageStreamReference.class.toString());
+            Logger.getLogger(ImageStreamReference.class.getName());
 
     protected ImageStreamReference(ImageStream imageStream, Name xobjectName, GraphicsState graphicsState,
                                    Resources resources, int imageIndex,

@@ -42,7 +42,7 @@ import static org.icepdf.core.util.parser.content.Operands.*;
  */
 public abstract class ContentStreamCallback {
 
-    protected static final Logger logger = Logger.getLogger(ContentStreamCallback.class.toString());
+    protected static final Logger logger = Logger.getLogger(ContentStreamCallback.class.getName());
 
     protected Stream currentStream;
     protected ByteArrayOutputStream burnedContentOutputStream;

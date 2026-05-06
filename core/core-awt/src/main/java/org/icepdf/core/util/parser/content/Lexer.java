@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 public class Lexer {
 
     private static final Logger logger =
-            Logger.getLogger(Lexer.class.toString());
+            Logger.getLogger(Lexer.class.getName());
 
     private static final int
             NO_MORE = 1,

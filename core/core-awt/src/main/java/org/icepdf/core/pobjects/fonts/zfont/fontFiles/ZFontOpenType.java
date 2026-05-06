@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 public class ZFontOpenType extends ZFontTrueType {
 
     private static final Logger logger =
-            Logger.getLogger(ZFontOpenType.class.toString());
+            Logger.getLogger(ZFontOpenType.class.getName());
 
     public ZFontOpenType(Stream fontStream) throws Exception {
         this(fontStream.getDecodedStreamBytes());

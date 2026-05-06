@@ -38,7 +38,7 @@ import static org.icepdf.core.pobjects.acroform.InteractiveForm.DR_KEY;
  */
 public class VariableTextFieldDictionary extends FieldDictionary {
 
-    private static final Logger logger = Logger.getLogger(VariableTextFieldDictionary.class.toString());
+    private static final Logger logger = Logger.getLogger(VariableTextFieldDictionary.class.getName());
 
     public enum Quadding {
         LEFT_JUSTIFIED, CENTERED, RIGHT_JUSTIFIED

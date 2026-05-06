@@ -45,7 +45,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
         implements ListSelectionListener, ActionListener {
 
     private static final Logger logger =
-            Logger.getLogger(ActionsPanel.class.toString());
+            Logger.getLogger(ActionsPanel.class.getName());
 
     // actionList of action actions
     private DefaultListModel<ActionEntry> actionListModel;

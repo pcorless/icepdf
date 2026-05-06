@@ -56,7 +56,7 @@ import java.util.stream.Collectors;
 public abstract class AbstractPkcsValidator implements SignatureValidator {
 
     private static final Logger logger =
-            Logger.getLogger(AbstractPkcsValidator.class.toString());
+            Logger.getLogger(AbstractPkcsValidator.class.getName());
 
     private static String caCertLocation = "/lib/security/cacerts";
 

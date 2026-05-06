@@ -38,7 +38,7 @@ import java.util.logging.Logger;
 public abstract class ShadingPattern extends Dictionary implements Pattern {
 
     private static final Logger logger =
-            Logger.getLogger(ShadingPattern.class.toString());
+            Logger.getLogger(ShadingPattern.class.getName());
 
     public static final Name PATTERN_TYPE_KEY = new Name("PatternType");
     public static final Name EXTGSTATE_KEY = new Name("ExtGState");

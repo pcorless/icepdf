@@ -54,7 +54,7 @@ import java.util.logging.Logger;
 public class SoftMask extends Dictionary {
 
     private static final Logger logger =
-            Logger.getLogger(SoftMask.class.toString());
+            Logger.getLogger(SoftMask.class.getName());
 
     public static final Name S_KEY = new Name("S");
     public static final Name G_KEY = new Name("G");

@@ -45,7 +45,7 @@ import java.util.logging.Logger;
 public class CircleAnnotation extends MarkupAnnotation {
 
     private static final Logger logger =
-            Logger.getLogger(CircleAnnotation.class.toString());
+            Logger.getLogger(CircleAnnotation.class.getName());
 
     // state properties for generate the content stream and shapes representation.
     // of the annnotation state.

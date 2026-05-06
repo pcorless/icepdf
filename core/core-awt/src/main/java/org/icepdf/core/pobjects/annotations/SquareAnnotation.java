@@ -44,7 +44,7 @@ import java.util.logging.Logger;
 public class SquareAnnotation extends MarkupAnnotation {
 
     private static final Logger logger =
-            Logger.getLogger(SquareAnnotation.class.toString());
+            Logger.getLogger(SquareAnnotation.class.getName());
 
     private Color fillColor;
     private boolean isFillColor;

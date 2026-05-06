@@ -49,7 +49,7 @@ public class Resources extends Dictionary {
     }
 
     private static final Logger logger =
-            Logger.getLogger(Resources.class.toString());
+            Logger.getLogger(Resources.class.getName());
 
     DictionaryEntries fonts;
     DictionaryEntries xobjects;

@@ -43,7 +43,7 @@ import java.util.logging.Logger;
 public class TextExtractionTask extends SwingWorker<Void, StringBuilder> {
 
     private static final Logger logger =
-            Logger.getLogger(TextExtractionTask.class.toString());
+            Logger.getLogger(TextExtractionTask.class.getName());
 
     // total length of task (total page count), used for progress bar
     private final int lengthOfTask;

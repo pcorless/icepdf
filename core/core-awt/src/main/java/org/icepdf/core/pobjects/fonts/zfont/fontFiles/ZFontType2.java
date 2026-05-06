@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
 
     private static final Logger logger =
-            Logger.getLogger(ZFontType2.class.toString());
+            Logger.getLogger(ZFontType2.class.getName());
 
     private final TrueTypeFont trueTypeFont;
 

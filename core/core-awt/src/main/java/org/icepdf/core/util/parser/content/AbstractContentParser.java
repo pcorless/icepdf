@@ -48,7 +48,7 @@ import java.util.logging.Logger;
  */
 public abstract class AbstractContentParser {
     private static final Logger logger =
-            Logger.getLogger(AbstractContentParser.class.toString());
+            Logger.getLogger(AbstractContentParser.class.getName());
 
     private static final boolean disableTransparencyGroups;
     private static final boolean enabledOverPrint;

@@ -37,7 +37,7 @@ import java.util.logging.Logger;
 public class AppearanceState extends Dictionary {
 
     private static final Logger logger =
-            Logger.getLogger(AppearanceState.class.toString());
+            Logger.getLogger(AppearanceState.class.getName());
 
     // shapes form appearance stream
     protected Shapes shapes;

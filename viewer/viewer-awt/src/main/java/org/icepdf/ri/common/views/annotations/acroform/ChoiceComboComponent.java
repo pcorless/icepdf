@@ -38,7 +38,7 @@ import static org.icepdf.core.util.SystemProperties.INTERACTIVE_ANNOTATIONS;
 
 public class ChoiceComboComponent extends AbstractChoiceComponent implements FocusListener, PropertyChangeListener {
 
-    private static final Logger logger = Logger.getLogger(ChoiceComboComponent.class.toString());
+    private static final Logger logger = Logger.getLogger(ChoiceComboComponent.class.getName());
 
     private ScalableJComboBox comboBoxList;
 

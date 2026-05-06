@@ -41,7 +41,7 @@ import java.util.logging.Logger;
 
 public class ZFontType3 extends ZSimpleFont implements Cloneable {
     private static final Logger logger =
-            Logger.getLogger(ZFontType3.class.toString());
+            Logger.getLogger(ZFontType3.class.getName());
 
     public static final Name FONT_BBOX_KEY = new Name("FontBBox");
     public static final Name FONT_MATRIX_KEY = new Name("FontMatrix");

@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 public class GlyphList {
 
     protected static final Logger logger =
-            Logger.getLogger(GlyphList.class.toString());
+            Logger.getLogger(GlyphList.class.getName());
 
     public static GlyphList adobeGlyphList;
     public static GlyphList zapfDingBatsGlyphList;

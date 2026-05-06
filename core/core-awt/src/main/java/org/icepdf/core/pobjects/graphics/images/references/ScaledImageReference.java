@@ -38,7 +38,7 @@ import java.util.logging.Logger;
 public class ScaledImageReference extends CachedImageReference {
 
     private static final Logger logger =
-            Logger.getLogger(ScaledImageReference.class.toString());
+            Logger.getLogger(ScaledImageReference.class.getName());
 
     // scaled image size.
     private final int width;

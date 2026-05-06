@@ -38,7 +38,7 @@ import java.util.logging.Logger;
 public class ZFontTrueType extends ZSimpleFont {
 
     private static final Logger logger =
-            Logger.getLogger(ZFontTrueType.class.toString());
+            Logger.getLogger(ZFontTrueType.class.getName());
 
     private static final int START_RANGE_F000 = 0xF000;
     private static final int START_RANGE_F100 = 0xF100;

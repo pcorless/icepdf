@@ -36,7 +36,7 @@ import java.util.prefs.Preferences;
 public abstract class CommonToolHandler {
 
     private static final Logger logger =
-            Logger.getLogger(CommonToolHandler.class.toString());
+            Logger.getLogger(CommonToolHandler.class.getName());
 
     // parent page component
     protected final AbstractPageViewComponent pageViewComponent;

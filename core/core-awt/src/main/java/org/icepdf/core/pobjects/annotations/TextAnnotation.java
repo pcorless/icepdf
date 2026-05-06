@@ -42,7 +42,7 @@ import java.util.logging.Logger;
 public class TextAnnotation extends MarkupAnnotation {
 
     private static final Logger logger =
-            Logger.getLogger(TextAnnotation.class.toString());
+            Logger.getLogger(TextAnnotation.class.getName());
 
     /**
      * (Optional) A flag specifying whether the annotation shall initially be

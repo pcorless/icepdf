@@ -42,7 +42,7 @@ import java.util.logging.Logger;
 public class IncrementalUpdater {
 
     private static final Logger logger =
-            Logger.getLogger(IncrementalUpdater.class.toString());
+            Logger.getLogger(IncrementalUpdater.class.getName());
 
     /**
      * Appends modified objects to the specified output stream.

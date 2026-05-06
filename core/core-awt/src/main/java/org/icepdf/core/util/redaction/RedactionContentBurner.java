@@ -33,7 +33,7 @@ import java.util.logging.Logger;
  */
 public class RedactionContentBurner {
     private static final Logger logger =
-            Logger.getLogger(RedactionContentBurner.class.toString());
+            Logger.getLogger(RedactionContentBurner.class.getName());
 
     public static void burn(Page page,
                             List<RedactionAnnotation> redactionAnnotations) throws InterruptedException, IOException {

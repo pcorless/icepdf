@@ -55,7 +55,7 @@ import java.util.logging.Logger;
 public final class BlendComposite implements Composite {
 
     private static final Logger logger =
-            Logger.getLogger(BlendComposite.class.toString());
+            Logger.getLogger(BlendComposite.class.getName());
 
     public enum BlendingMode {
         NORMAL,

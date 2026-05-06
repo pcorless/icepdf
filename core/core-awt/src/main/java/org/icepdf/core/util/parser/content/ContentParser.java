@@ -40,7 +40,7 @@ import java.util.logging.Logger;
 public class ContentParser extends AbstractContentParser {
 
     private static final Logger logger =
-            Logger.getLogger(ContentParser.class.toString());
+            Logger.getLogger(ContentParser.class.getName());
 
     /**
      * Inline image cache,  for heavily tiled background images.  Can be cleared

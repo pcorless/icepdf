@@ -55,7 +55,7 @@ import java.util.logging.Logger;
 public class TextAnnotationHandler extends CommonToolHandler implements ToolHandler {
 
     private static final Logger logger =
-            Logger.getLogger(TextAnnotationHandler.class.toString());
+            Logger.getLogger(TextAnnotationHandler.class.getName());
 
     protected static Color defaultFillColor;
     protected static String defaultIcon;

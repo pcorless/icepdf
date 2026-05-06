@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 public class SignatureValidationDialog extends EscapeJDialog {
 
     private static final Logger logger =
-            Logger.getLogger(SignatureValidationDialog.class.toString());
+            Logger.getLogger(SignatureValidationDialog.class.getName());
 
     private final SignatureValidator signatureValidator;
     protected static ResourceBundle messageBundle;

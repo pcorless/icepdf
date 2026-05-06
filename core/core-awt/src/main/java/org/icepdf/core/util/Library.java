@@ -60,7 +60,7 @@ import java.util.logging.Logger;
  */
 public class Library {
 
-    private static final Logger logger = Logger.getLogger(Library.class.toString());
+    private static final Logger logger = Logger.getLogger(Library.class.getName());
 
     protected static ThreadPoolExecutor commonThreadPool;
     protected static ThreadPoolExecutor imageThreadPool;

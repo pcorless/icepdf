@@ -54,7 +54,7 @@ import static org.icepdf.ri.common.utility.attachment.FileTableModel.*;
 public class AttachmentPanel extends JPanel implements MouseListener, ActionListener, MutableDocument {
 
     private static final Logger logger =
-            Logger.getLogger(AttachmentPanel.class.toString());
+            Logger.getLogger(AttachmentPanel.class.getName());
 
     private static final String PDF_EXTENSION = ".pdf";
 

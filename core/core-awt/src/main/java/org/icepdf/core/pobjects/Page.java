@@ -67,7 +67,7 @@ import java.util.stream.Collectors;
  */
 public class Page extends Dictionary {
 
-    private static final Logger logger = Logger.getLogger(Page.class.toString());
+    private static final Logger logger = Logger.getLogger(Page.class.getName());
 
     /**
      * Transparency value used to simulate text highlighting.

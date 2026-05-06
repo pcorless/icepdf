@@ -32,7 +32,7 @@ import java.util.logging.Logger;
 public class ObjectStream extends Stream {
 
     private static final Logger logger =
-            Logger.getLogger(ObjectStream.class.toString());
+            Logger.getLogger(ObjectStream.class.getName());
 
     public static final Name TYPE = new Name("ObjStm");
     public static final Name N_KEY = new Name("N");

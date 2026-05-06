@@ -45,7 +45,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
     public static final Name HIGHLIGHT_NONE = new Name("N");
 
     protected static final Logger logger =
-            Logger.getLogger(AbstractWidgetAnnotation.class.toString());
+            Logger.getLogger(AbstractWidgetAnnotation.class.getName());
 
     /**
      * Transparency value used to simulate text highlighting.

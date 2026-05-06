@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 public class ShadingType7Pattern extends ShadingMeshPattern {
 
     private static final Logger logger =
-            Logger.getLogger(ShadingType7Pattern.class.toString());
+            Logger.getLogger(ShadingType7Pattern.class.getName());
 
     private ArrayList<Color> colorComponents = new ArrayList<>();
 

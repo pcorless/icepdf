@@ -46,7 +46,7 @@ import java.util.logging.Logger;
 public class PageViewComponentImpl extends AbstractPageViewComponent implements FocusListener {
 
     private static final Logger logger =
-            Logger.getLogger(PageViewComponentImpl.class.toString());
+            Logger.getLogger(PageViewComponentImpl.class.getName());
 
     // currently selected tool
     protected ToolHandler currentToolHandler;

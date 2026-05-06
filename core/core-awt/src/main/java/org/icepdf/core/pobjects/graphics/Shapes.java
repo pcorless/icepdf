@@ -40,7 +40,7 @@ import java.util.logging.Logger;
 public class Shapes {
 
     private static final Logger logger =
-            Logger.getLogger(Shapes.class.toString());
+            Logger.getLogger(Shapes.class.getName());
 
     private static int shapesInitialCapacity = 5000;
     // disables alpha painting.

@@ -62,7 +62,7 @@ import java.util.logging.Logger;
 public abstract class Function {
 
     private static final Logger logger =
-            Logger.getLogger(Function.class.toString());
+            Logger.getLogger(Function.class.getName());
 
     public static final Name FUNCTIONTYPE_NAME = new Name("FunctionType");
     public static final Name DOMAIN_NAME = new Name("Domain");

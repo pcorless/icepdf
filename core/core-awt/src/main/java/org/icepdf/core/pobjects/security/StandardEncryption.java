@@ -45,7 +45,7 @@ import java.util.logging.Logger;
 class StandardEncryption {
 
     private static final Logger logger =
-            Logger.getLogger(StandardEncryption.class.toString());
+            Logger.getLogger(StandardEncryption.class.getName());
 
     /**
      * The application shall not decrypt data but shall direct the input stream

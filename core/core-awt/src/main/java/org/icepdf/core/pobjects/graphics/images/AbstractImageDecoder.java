@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 public abstract class AbstractImageDecoder implements ImageDecoder {
 
     private static final Logger logger =
-            Logger.getLogger(AbstractImageDecoder.class.toString());
+            Logger.getLogger(AbstractImageDecoder.class.getName());
 
     public static int maxImageWidth = 10000;
     public static int maxImageHeight = 10000;

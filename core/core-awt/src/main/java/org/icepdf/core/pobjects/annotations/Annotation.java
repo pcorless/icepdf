@@ -335,7 +335,7 @@ import java.util.logging.Logger;
 public abstract class Annotation extends Dictionary {
 
     private static final Logger logger =
-            Logger.getLogger(Annotation.class.toString());
+            Logger.getLogger(Annotation.class.getName());
 
     public static final Name TYPE = new Name("Annot");
     public static final Name RESOURCES_VALUE = new Name("Resources");

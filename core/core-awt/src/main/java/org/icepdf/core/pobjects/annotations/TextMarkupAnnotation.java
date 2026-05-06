@@ -48,7 +48,7 @@ import static org.icepdf.core.pobjects.annotations.utils.QuadPoints.parseQuadPoi
 public class TextMarkupAnnotation extends MarkupAnnotation {
 
     private static final Logger logger =
-            Logger.getLogger(TextMarkupAnnotation.class.toString());
+            Logger.getLogger(TextMarkupAnnotation.class.getName());
 
     public static final Name SUBTYPE_HIGHLIGHT = new Name("Highlight");
     public static final Name SUBTYPE_UNDERLINE = new Name("Underline");

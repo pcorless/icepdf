@@ -40,7 +40,7 @@ import java.util.logging.Logger;
  * @since 5.1.0
  */
 public class DocumentViewComponent extends JComponent implements MouseListener, Runnable {
-    private static final Logger logger = Logger.getLogger(DocumentViewComponent.class.toString());
+    private static final Logger logger = Logger.getLogger(DocumentViewComponent.class.getName());
 
     private static final long serialVersionUID = -8881023489246309889L;
 

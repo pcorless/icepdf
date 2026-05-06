@@ -49,7 +49,7 @@ import java.util.logging.Logger;
 public class PrintHelperImpl extends PrintHelper {
 
     private static final Logger logger =
-            Logger.getLogger(PrintHelperImpl.class.toString());
+            Logger.getLogger(PrintHelperImpl.class.getName());
 
     private final PageTree pageTree;
     private final Container container;

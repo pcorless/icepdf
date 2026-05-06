@@ -33,7 +33,7 @@ import java.util.logging.Logger;
  */
 public abstract class AnnotationColorButton extends AbstractColorButton {
 
-    private static final Logger logger = Logger.getLogger(AnnotationColorToggleButton.class.toString());
+    private static final Logger logger = Logger.getLogger(AnnotationColorToggleButton.class.getName());
 
     protected AnnotationColorButton(Controller controller,
                                     ResourceBundle messageBundle,

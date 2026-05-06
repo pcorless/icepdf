@@ -43,7 +43,7 @@ import java.util.logging.Logger;
 public class Function_4 extends Function {
 
     private static final Logger logger =
-            Logger.getLogger(Function_4.class.toString());
+            Logger.getLogger(Function_4.class.getName());
 
     // decoded content that makes up the type 4 functions.
     private byte[] functionContent;

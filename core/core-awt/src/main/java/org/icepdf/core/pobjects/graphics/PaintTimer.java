@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 public class PaintTimer {
 
     protected static final Logger logger =
-            Logger.getLogger(PaintTimer.class.toString());
+            Logger.getLogger(PaintTimer.class.getName());
 
     protected static int paintDelay;
 

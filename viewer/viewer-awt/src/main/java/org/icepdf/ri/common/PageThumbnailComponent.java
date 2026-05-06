@@ -44,7 +44,7 @@ import java.util.logging.Logger;
 public class PageThumbnailComponent extends AbstractPageViewComponent implements MouseListener {
 
     private static final Logger logger =
-            Logger.getLogger(PageThumbnailComponent.class.toString());
+            Logger.getLogger(PageThumbnailComponent.class.getName());
 
     public PageThumbnailComponent(DocumentViewController documentViewController,
                                   DocumentViewModel documentViewModel, PageTree pageTree,

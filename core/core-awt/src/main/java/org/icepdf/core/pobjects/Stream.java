@@ -43,7 +43,7 @@ import java.util.logging.Logger;
  */
 public class Stream extends Dictionary {
 
-    private static final Logger logger = Logger.getLogger(Stream.class.toString());
+    private static final Logger logger = Logger.getLogger(Stream.class.getName());
 
     public static final Name FILTER_KEY = new Name("Filter");
     public static final Name DECODEPARAM_KEY = new Name("DecodeParms");

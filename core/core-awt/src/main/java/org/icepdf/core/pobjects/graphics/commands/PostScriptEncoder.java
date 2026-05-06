@@ -40,7 +40,7 @@ import java.util.logging.Logger;
 public class PostScriptEncoder {
 
     private static final Logger logger =
-            Logger.getLogger(PostScriptEncoder.class.toString());
+            Logger.getLogger(PostScriptEncoder.class.getName());
 
     private static final String SPACE = " ";
     private static final String NEWLINE = "\r\n";

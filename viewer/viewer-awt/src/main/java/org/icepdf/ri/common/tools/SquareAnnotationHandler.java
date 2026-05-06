@@ -52,7 +52,7 @@ import java.util.logging.Logger;
 public class SquareAnnotationHandler extends SelectionBoxHandler implements ToolHandler {
 
     private static final Logger logger =
-            Logger.getLogger(SquareAnnotationHandler.class.toString());
+            Logger.getLogger(SquareAnnotationHandler.class.getName());
 
     protected final static float DEFAULT_STROKE_WIDTH = 3.0f;
 

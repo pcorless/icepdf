@@ -18,15 +18,10 @@ package org.icepdf.core.pobjects.security;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Reference;
-import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.security.Provider;
-import java.security.Security;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -53,7 +48,7 @@ import java.util.logging.Logger;
 public class SecurityManager {
 
     private static final Logger logger =
-            Logger.getLogger(SecurityManager.class.toString());
+            Logger.getLogger(SecurityManager.class.getName());
 
     // Default Encryption dictionary, which also contians keys need for
     // standard, crypt and public security handlers.

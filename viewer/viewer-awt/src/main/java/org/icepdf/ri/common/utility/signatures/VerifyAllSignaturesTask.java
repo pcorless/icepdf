@@ -36,7 +36,7 @@ import java.util.logging.Logger;
  */
 public class VerifyAllSignaturesTask extends AbstractTask<Void, Object> {
 
-    private static final Logger logger = Logger.getLogger(VerifyAllSignaturesTask.class.toString());
+    private static final Logger logger = Logger.getLogger(VerifyAllSignaturesTask.class.getName());
 
     public VerifyAllSignaturesTask(Controller controller, AbstractWorkerPanel workerPanel, ResourceBundle messageBundle) {
         super(controller, workerPanel, messageBundle);

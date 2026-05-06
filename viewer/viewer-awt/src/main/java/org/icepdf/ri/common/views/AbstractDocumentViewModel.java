@@ -22,16 +22,12 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.ri.common.UndoCaretaker;
-import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
-import org.icepdf.ri.common.views.annotations.AnnotationState;
-import org.icepdf.ri.common.views.annotations.MarkupGlueComponent;
-import org.icepdf.ri.common.views.annotations.PageViewAnnotationComponent;
-import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.*;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.List;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -48,7 +44,7 @@ import java.util.stream.Collectors;
 public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     private static final Logger log =
-            Logger.getLogger(AbstractDocumentViewModel.class.toString());
+            Logger.getLogger(AbstractDocumentViewModel.class.getName());
 
     // document that model is associated.
     protected final Document currentDocument;

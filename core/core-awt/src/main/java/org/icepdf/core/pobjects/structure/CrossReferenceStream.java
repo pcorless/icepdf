@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 public class CrossReferenceStream extends CrossReferenceBase<Stream> implements CrossReference{
 
     private static final Logger logger =
-            Logger.getLogger(CrossReferenceStream.class.toString());
+            Logger.getLogger(CrossReferenceStream.class.getName());
 
     public static final Name TYPE = new Name("XRef");
     public static final Name SIZE_KEY = new Name("Size");

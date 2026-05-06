@@ -57,7 +57,7 @@ public class DocumentViewControllerImpl
         implements DocumentViewController, ComponentListener, PropertyChangeListener {
 
     private static final Logger logger =
-            Logger.getLogger(DocumentViewControllerImpl.class.toString());
+            Logger.getLogger(DocumentViewControllerImpl.class.getName());
 
     private static final Pattern MULTI_SPACE_PATTERN = Pattern.compile(" +");
     private static final Pattern DASH_NEWLINE_PATTERN = Pattern.compile("- *\n");

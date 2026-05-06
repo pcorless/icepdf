@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 public class DeviceCMYK extends PColorSpace {
 
     private static final Logger logger =
-            Logger.getLogger(DeviceCMYK.class.toString());
+            Logger.getLogger(DeviceCMYK.class.getName());
 
     public static final Name DEVICECMYK_KEY = new Name("DeviceCMYK");
     public static final Name CMYK_KEY = new Name("CMYK");

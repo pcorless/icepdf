@@ -48,7 +48,7 @@ import java.util.regex.Pattern;
 public class FontManager {
 
     private static final Logger logger =
-            Logger.getLogger(FontManager.class.toString());
+            Logger.getLogger(FontManager.class.getName());
 
     /**
      * You can set an allowListPattern by Setting the System Property "org.icepdf.core.pobjects.fonts

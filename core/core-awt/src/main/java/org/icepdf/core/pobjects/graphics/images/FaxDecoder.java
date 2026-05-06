@@ -37,7 +37,7 @@ import java.util.logging.Logger;
 public class FaxDecoder extends AbstractImageDecoder {
 
     private static final Logger logger =
-            Logger.getLogger(FaxDecoder.class.toString());
+            Logger.getLogger(FaxDecoder.class.getName());
 
     public static final Name K_KEY = new Name("K");
     public static final Name ENCODED_BYTE_ALIGN_KEY = new Name("EncodedByteAlign");

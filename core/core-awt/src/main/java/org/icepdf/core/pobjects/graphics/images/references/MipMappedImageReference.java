@@ -40,7 +40,7 @@ import java.util.logging.Logger;
 class MipMappedImageReference extends ImageReference {
 
     private static final Logger logger =
-            Logger.getLogger(MipMappedImageReference.class.toString());
+            Logger.getLogger(MipMappedImageReference.class.getName());
 
     private final ArrayList<ImageReference> images;
 

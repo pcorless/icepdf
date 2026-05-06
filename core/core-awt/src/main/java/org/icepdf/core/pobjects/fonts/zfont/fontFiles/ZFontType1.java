@@ -37,7 +37,7 @@ import java.util.logging.Logger;
 public class ZFontType1 extends ZSimpleFont {
 
     private static final Logger logger =
-            Logger.getLogger(ZFontType1.class.toString());
+            Logger.getLogger(ZFontType1.class.getName());
 
     private static final int PFB_START_MARKER = 0x80;
 

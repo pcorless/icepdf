@@ -43,7 +43,7 @@ import java.util.logging.Logger;
 public class SmoothScaledImageReference extends CachedImageReference {
 
     private static final Logger logger =
-            Logger.getLogger(SmoothScaledImageReference.class.toString());
+            Logger.getLogger(SmoothScaledImageReference.class.getName());
 
     private static int maxImageWidth = 7000;
     private static int maxImageHeight = 7000;

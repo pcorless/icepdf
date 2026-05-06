@@ -73,7 +73,7 @@ import java.util.logging.Logger;
 public class Document {
 
     private static final Logger logger =
-            Logger.getLogger(Document.class.toString());
+            Logger.getLogger(Document.class.getName());
 
     /**
      * Gets the version number of ICEpdf rendering core.  This is not the version

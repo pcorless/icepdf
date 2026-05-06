@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 public class RandomAccessFileInputStream extends InputStream implements SeekableInput {
 
     private static final Logger logger =
-            Logger.getLogger(RandomAccessFileInputStream.class.toString());
+            Logger.getLogger(RandomAccessFileInputStream.class.getName());
 
     private long m_lMarkPosition;
     private final RandomAccessFile m_RandomAccessFile;

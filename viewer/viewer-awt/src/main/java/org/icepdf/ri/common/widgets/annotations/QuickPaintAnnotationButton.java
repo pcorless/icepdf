@@ -36,7 +36,7 @@ import java.util.prefs.Preferences;
  */
 public class QuickPaintAnnotationButton extends AnnotationColorButton {
 
-    private static final Logger logger = Logger.getLogger(QuickPaintAnnotationButton.class.toString());
+    private static final Logger logger = Logger.getLogger(QuickPaintAnnotationButton.class.getName());
 
     // define the bounded shape used to colourise the icon with the current colour
     private static final GeneralPath textIconPathSmall;

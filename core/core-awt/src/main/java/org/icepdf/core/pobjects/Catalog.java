@@ -44,7 +44,7 @@ import java.util.logging.Logger;
 public class Catalog extends Dictionary {
 
     private static final Logger logger =
-            Logger.getLogger(Catalog.class.toString());
+            Logger.getLogger(Catalog.class.getName());
 
     public static final Name TYPE = new Name("Catalog");
     public static final Name DESTS_KEY = new Name("Dests");

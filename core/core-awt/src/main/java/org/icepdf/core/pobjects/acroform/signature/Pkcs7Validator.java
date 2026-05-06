@@ -37,7 +37,7 @@ import java.util.logging.Logger;
 public class Pkcs7Validator extends AbstractPkcsValidator {
 
     private static final Logger logger =
-            Logger.getLogger(Pkcs7Validator.class.toString());
+            Logger.getLogger(Pkcs7Validator.class.getName());
 
     public Pkcs7Validator(SignatureFieldDictionary signatureFieldDictionary) throws SignatureIntegrityException {
         super(signatureFieldDictionary);

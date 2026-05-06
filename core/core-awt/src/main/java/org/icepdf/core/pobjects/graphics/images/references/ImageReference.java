@@ -45,7 +45,7 @@ import java.util.logging.Logger;
 public abstract class ImageReference implements Callable<BufferedImage> {
 
     private static final Logger logger =
-            Logger.getLogger(ImageReference.class.toString());
+            Logger.getLogger(ImageReference.class.getName());
 
     public static boolean useProxy;
 

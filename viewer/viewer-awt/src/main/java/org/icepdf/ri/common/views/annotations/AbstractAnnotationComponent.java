@@ -56,7 +56,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
         MouseInputListener, AnnotationComponent, ResizeableComponent {
 
     protected static final Logger logger =
-            Logger.getLogger(AbstractAnnotationComponent.class.toString());
+            Logger.getLogger(AbstractAnnotationComponent.class.getName());
     protected static Color annotationHighlightColor;
     protected static float annotationHighlightAlpha;
 

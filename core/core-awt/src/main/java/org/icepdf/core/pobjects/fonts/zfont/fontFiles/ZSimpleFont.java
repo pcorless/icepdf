@@ -42,7 +42,7 @@ import static java.awt.Font.PLAIN;
 public abstract class ZSimpleFont implements FontFile {
 
     private static final Logger logger =
-            Logger.getLogger(ZSimpleFont.class.toString());
+            Logger.getLogger(ZSimpleFont.class.getName());
 
     // text layout map, very expensive to create, so we'll cache them.
     private HashMap<String, Point2D.Float> echarAdvanceCache;

@@ -46,7 +46,7 @@ public class TextSelectionViewHandler extends TextSelection
         implements ToolHandler, MouseWheelListener {
 
     protected static final Logger logger =
-            Logger.getLogger(TextSelectionViewHandler.class.toString());
+            Logger.getLogger(TextSelectionViewHandler.class.getName());
 
     protected final JComponent parentComponent;
 

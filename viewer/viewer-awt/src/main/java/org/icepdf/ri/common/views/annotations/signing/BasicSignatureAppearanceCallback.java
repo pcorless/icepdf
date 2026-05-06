@@ -56,7 +56,7 @@ import static org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils.EMBE
 public class BasicSignatureAppearanceCallback implements SignatureAppearanceCallback<SignatureAppearanceModelImpl> {
 
     protected static final Logger logger =
-            Logger.getLogger(BasicSignatureAppearanceCallback.class.toString());
+            Logger.getLogger(BasicSignatureAppearanceCallback.class.getName());
 
     protected SignatureAppearanceModelImpl signatureAppearanceModel;
 

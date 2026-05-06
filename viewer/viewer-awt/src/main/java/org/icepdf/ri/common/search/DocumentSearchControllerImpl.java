@@ -64,7 +64,7 @@ import java.util.stream.Collectors;
 public class DocumentSearchControllerImpl implements DocumentSearchController {
 
     private static final Logger logger =
-            Logger.getLogger(DocumentSearchControllerImpl.class.toString());
+            Logger.getLogger(DocumentSearchControllerImpl.class.getName());
 
     // search model contains caching and memory optimizations.
     private final DocumentSearchModelImpl searchModel;

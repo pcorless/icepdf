@@ -38,7 +38,7 @@ import static org.icepdf.core.pobjects.graphics.images.ImageParams.*;
  */
 public class ImageStream extends Stream {
 
-    private static final Logger logger = Logger.getLogger(ImageStream.class.toString());
+    private static final Logger logger = Logger.getLogger(ImageStream.class.getName());
 
     public static final Name TYPE_VALUE = new Name("Image");
 

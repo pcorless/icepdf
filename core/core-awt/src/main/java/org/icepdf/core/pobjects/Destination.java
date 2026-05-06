@@ -58,7 +58,7 @@ import java.util.logging.Logger;
 public class Destination extends Dictionary {
 
     private static final Logger logger =
-            Logger.getLogger(Destination.class.toString());
+            Logger.getLogger(Destination.class.getName());
 
     public static final Name D_KEY = new Name("D");
     // Vector destination type formats.

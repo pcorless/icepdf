@@ -70,7 +70,7 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         TreeSelectionListener, DocumentListener, BaseSearchModel, BaseRedactModel {
 
     private static final Logger logger =
-            Logger.getLogger(SearchPanel.class.toString());
+            Logger.getLogger(SearchPanel.class.getName());
 
     private static final int maxPagesForLiveSearch;
 

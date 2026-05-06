@@ -54,7 +54,7 @@ import static org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils.EMBE
 public class FreeTextAnnotation extends MarkupAnnotation {
 
     private static final Logger logger =
-            Logger.getLogger(FreeTextAnnotation.class.toString());
+            Logger.getLogger(FreeTextAnnotation.class.getName());
 
     public static final int INSETS = 5;
 

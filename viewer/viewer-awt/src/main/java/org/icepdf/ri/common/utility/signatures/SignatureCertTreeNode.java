@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 public class SignatureCertTreeNode extends DefaultMutableTreeNode {
 
     private static final Logger logger =
-            Logger.getLogger(SignatureTreeNode.class.toString());
+            Logger.getLogger(SignatureTreeNode.class.getName());
 
     private final Collection<? extends Certificate> certificateChain;
     private final Icon icon;

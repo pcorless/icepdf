@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 public class SignatureHandler {
 
     private static final Logger logger =
-            Logger.getLogger(SignatureHandler.class.toString());
+            Logger.getLogger(SignatureHandler.class.getName());
 
     public SignatureHandler() {
     }

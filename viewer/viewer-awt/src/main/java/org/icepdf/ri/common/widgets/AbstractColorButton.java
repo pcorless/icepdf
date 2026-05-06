@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 public abstract class AbstractColorButton extends AbstractButton
         implements ActionListener, AncestorListener {
 
-    private static final Logger logger = Logger.getLogger(AbstractColorButton.class.toString());
+    private static final Logger logger = Logger.getLogger(AbstractColorButton.class.getName());
 
     protected final AnnotationColorPropertyPanel annotationColorPropertyPanel;
     protected AbstractButton colorButton;
