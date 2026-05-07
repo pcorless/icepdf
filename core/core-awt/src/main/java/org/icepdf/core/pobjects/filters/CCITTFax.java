@@ -57,7 +57,7 @@ import static org.icepdf.core.pobjects.graphics.images.FaxDecoder.K_KEY;
 public class CCITTFax {
 
     private static final Logger logger =
-            Logger.getLogger(CCITTFax.class.toString());
+            Logger.getLogger(CCITTFax.class.getName());
 
     // white codes
     static final String[] _twcodes = {

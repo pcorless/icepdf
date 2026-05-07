@@ -67,7 +67,7 @@ import static org.icepdf.ri.common.preferences.SigningPreferencesPanel.PKCS_12_T
 public class Launcher {
 
     private static final Logger logger =
-            Logger.getLogger(Launcher.class.toString());
+            Logger.getLogger(Launcher.class.getName());
 
     public static final String APPLICATION_LOOK_AND_FEEL = "application.lookandfeel";
 

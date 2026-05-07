@@ -32,7 +32,7 @@ import java.util.logging.Logger;
 public class GlyphText extends AbstractText {
 
     private static final Logger logger =
-            Logger.getLogger(GlyphText.class.toString());
+            Logger.getLogger(GlyphText.class.getName());
 
     // x and y coordinates used for painting glyph
     private final float x;

@@ -41,7 +41,7 @@ import static org.icepdf.ri.common.tools.TextSelection.enableMarginExclusion;
 public class TextSelection extends SelectionBoxHandler {
 
     protected static final Logger logger =
-            Logger.getLogger(TextSelection.class.toString());
+            Logger.getLogger(TextSelection.class.getName());
 
     public int selectedCount;
 

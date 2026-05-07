@@ -208,7 +208,7 @@ import java.util.logging.Logger;
 public class GraphicsState {
 
     private static final Logger logger =
-            Logger.getLogger(GraphicsState.class.toString());
+            Logger.getLogger(GraphicsState.class.getName());
 
     public static final Name CA_STROKING_KEY = new Name("CA");
     public static final Name CA_NON_STROKING_KEY = new Name("ca");

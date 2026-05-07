@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 public class TypeCidType0Font extends CompositeFont {
 
     private static final Logger logger =
-            Logger.getLogger(TypeCidType0Font.class.toString());
+            Logger.getLogger(TypeCidType0Font.class.getName());
 
     public TypeCidType0Font(Library library, DictionaryEntries entries) {
         super(library, entries);

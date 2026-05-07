@@ -37,7 +37,7 @@ import java.util.logging.Logger;
 public abstract class ShadingMeshPattern extends ShadingPattern implements Pattern {
 
     private static final Logger logger =
-            Logger.getLogger(ShadingMeshPattern.class.toString());
+            Logger.getLogger(ShadingMeshPattern.class.getName());
 
     public static final Name BITS_PER_FLAG_KEY = new Name("BitsPerFlag");
     public static final Name BITS_PER_COORDINATE_KEY = new Name("BitsPerCoordinate");

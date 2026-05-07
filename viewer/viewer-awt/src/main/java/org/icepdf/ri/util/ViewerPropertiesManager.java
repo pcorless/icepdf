@@ -53,7 +53,7 @@ import java.util.prefs.Preferences;
 public final class ViewerPropertiesManager {
 
     private static final Logger logger =
-            Logger.getLogger(ViewerPropertiesManager.class.toString());
+            Logger.getLogger(ViewerPropertiesManager.class.getName());
 
     // use ascii '27' or ESC as the delimiting character when storing multiple values in one property name.
     public static final String PROPERTY_TOKEN_SEPARATOR = "|";

@@ -287,7 +287,7 @@ import java.util.prefs.Preferences;
 public class SwingViewBuilder implements ViewBuilder {
 
     private static final Logger logger =
-            Logger.getLogger(SwingViewBuilder.class.toString());
+            Logger.getLogger(SwingViewBuilder.class.getName());
 
     public static final int TOOL_BAR_STYLE_FIXED = 2;
     protected static final float[] DEFAULT_ZOOM_LEVELS = {

@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 public class AFM {
 
     private static final Logger logger =
-            Logger.getLogger(AFM.class.toString());
+            Logger.getLogger(AFM.class.getName());
 
     public static final int COURIER = 0;
     public static final int COURIER_BOLD = 1;

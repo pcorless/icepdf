@@ -39,7 +39,7 @@ import java.util.logging.Logger;
 public class ShadingType2Pattern extends ShadingPattern {
 
     private static final Logger logger =
-            Logger.getLogger(ShadingType2Pattern.class.toString());
+            Logger.getLogger(ShadingType2Pattern.class.getName());
 
     // An array of two numbers [t0, t1] specifying the limiting values of a
     // parametric variable t. The variable is considered to vary linearly between

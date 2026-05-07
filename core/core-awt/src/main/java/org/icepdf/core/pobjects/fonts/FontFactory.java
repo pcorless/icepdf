@@ -42,7 +42,7 @@ import static org.icepdf.core.pobjects.Dictionary.SUBTYPE_KEY;
 public class FontFactory {
 
     private static final Logger logger =
-            Logger.getLogger(FontFactory.class.toString());
+            Logger.getLogger(FontFactory.class.getName());
 
     public static final boolean useEmbeddedFonts;
 

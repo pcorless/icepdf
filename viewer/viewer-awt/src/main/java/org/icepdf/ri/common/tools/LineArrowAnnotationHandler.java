@@ -38,7 +38,7 @@ import java.util.logging.Logger;
 public class LineArrowAnnotationHandler extends LineAnnotationHandler {
 
     private static final Logger logger =
-            Logger.getLogger(LineAnnotationHandler.class.toString());
+            Logger.getLogger(LineAnnotationHandler.class.getName());
 
 
     public LineArrowAnnotationHandler(DocumentViewController documentViewController,

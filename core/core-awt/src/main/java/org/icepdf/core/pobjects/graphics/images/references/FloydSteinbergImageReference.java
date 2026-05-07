@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 public class FloydSteinbergImageReference{// extends CachedImageReference {
    /*
     private static final Logger logger =
-            Logger.getLogger(ScaledImageReference.class.toString());
+            Logger.getLogger(ScaledImageReference.class.getName());
 
     // scaled image size.
     private int width;
@@ -180,13 +180,17 @@ public class FloydSteinbergImageReference{// extends CachedImageReference {
                     // pixel[x  ][y+1] := pixel[x  ][y+1] + 5/16 * quant_error
                     // pixel[x+1][y+1] := pixel[x+1][y+1] + 1/16 * quant_error
                     if (x < w - 1)
-                        img.setRGB(x + 1, y, encode((int) ((float) decode(img.getRGB(x + 1, y)) + (7.0 / 16.0 * quant_error))));
+                        img.setRGB(x + 1, y, encode((int) ((float) decode(img.getRGB(x + 1, y)) + (7.0 / 16.0 *
+                        quant_error))));
                     if (y < h - 1) {
                         if (x > 0)
-                            img.setRGB(x - 1, y + 1, encode((int) ((float) decode(img.getRGB(x - 1, y + 1)) + (3.0 / 16.0 * quant_error))));
-                        img.setRGB(x, y + 1, encode((int) ((float) decode(img.getRGB(x, y + 1)) + (5.0 / 16.0 * quant_error))));
+                            img.setRGB(x - 1, y + 1, encode((int) ((float) decode(img.getRGB(x - 1, y + 1)) + (3.0 /
+                            16.0 * quant_error))));
+                        img.setRGB(x, y + 1, encode((int) ((float) decode(img.getRGB(x, y + 1)) + (5.0 / 16.0 *
+                        quant_error))));
                         if (x < w - 1)
-                            img.setRGB(x + 1, y + 1, encode((int) ((float) decode(img.getRGB(x + 1, y + 1)) + (1.0 / 16.0 * quant_error))));
+                            img.setRGB(x + 1, y + 1, encode((int) ((float) decode(img.getRGB(x + 1, y + 1)) + (1.0 /
+                            16.0 * quant_error))));
                     }
                 }
             }

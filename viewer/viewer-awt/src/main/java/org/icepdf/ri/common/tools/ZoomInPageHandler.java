@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 public class ZoomInPageHandler extends SelectionBoxHandler implements ToolHandler {
 
     private static final Logger logger =
-            Logger.getLogger(ZoomInPageHandler.class.toString());
+            Logger.getLogger(ZoomInPageHandler.class.getName());
 
     private final Point initialPoint = new Point();
 

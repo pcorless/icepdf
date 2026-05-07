@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 public class ZFontType0 extends ZSimpleFont {
 
     private static final Logger logger =
-            Logger.getLogger(ZFontType0.class.toString());
+            Logger.getLogger(ZFontType0.class.getName());
 
     private CFFCIDFont cidFont;  // Top DICT that uses CIDFont operators
     private FontBoxFont t1Font; // Top DICT that does not use CIDFont operators

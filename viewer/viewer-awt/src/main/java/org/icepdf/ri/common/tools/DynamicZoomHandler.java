@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 public class DynamicZoomHandler implements ToolHandler, MouseWheelListener {
 
     private static final Logger logger =
-            Logger.getLogger(ZoomOutPageHandler.class.toString());
+            Logger.getLogger(ZoomOutPageHandler.class.getName());
 
     private final DocumentViewController documentViewController;
     protected final JScrollPane documentScrollPane;

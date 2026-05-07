@@ -31,7 +31,7 @@ import java.util.logging.Logger;
  */
 public class ListItemTransferHandler extends TransferHandler {
 
-    private static final Logger logger = Logger.getLogger(ListItemTransferHandler.class.toString());
+    private static final Logger logger = Logger.getLogger(ListItemTransferHandler.class.getName());
 
     private static DataFlavor dataFlavor;
 

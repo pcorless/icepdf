@@ -53,7 +53,7 @@ import java.util.logging.Logger;
 public class BlurredImageReference extends CachedImageReference {
 
     private static final Logger logger =
-            Logger.getLogger(ImageStreamReference.class.toString());
+            Logger.getLogger(ImageStreamReference.class.getName());
 
     private static final int dimension;
     private static final int minWidth;

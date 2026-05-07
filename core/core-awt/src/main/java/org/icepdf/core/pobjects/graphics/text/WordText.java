@@ -39,7 +39,7 @@ import java.util.logging.Logger;
 public class WordText extends AbstractText implements TextSelect {
 
     private static final Logger logger =
-            Logger.getLogger(WordText.class.toString());
+            Logger.getLogger(WordText.class.getName());
 
     // Space Glyph width fraction, the default is 1/x of the character width,
     // constitutes a potential space between glyphs.

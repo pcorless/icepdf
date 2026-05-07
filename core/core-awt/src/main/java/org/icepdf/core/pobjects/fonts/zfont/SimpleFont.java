@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
 
     protected static final Logger logger =
-            Logger.getLogger(SimpleFont.class.toString());
+            Logger.getLogger(SimpleFont.class.getName());
 
     // get list of all available fonts.
     private static final java.awt.Font[] fonts =

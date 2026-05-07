@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 public class ZFontType1C extends ZSimpleFont {
 
     private static final Logger logger =
-            Logger.getLogger(ZFontType1C.class.toString());
+            Logger.getLogger(ZFontType1C.class.getName());
 
     private CFFType1Font cffType1Font;
 

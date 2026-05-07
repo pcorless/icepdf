@@ -44,7 +44,7 @@ import static org.icepdf.core.pobjects.annotations.utils.QuadPoints.parseQuadPoi
 public class RedactionAnnotation extends MarkupAnnotation {
 
     private static final Logger logger =
-            Logger.getLogger(RedactionAnnotation.class.toString());
+            Logger.getLogger(RedactionAnnotation.class.getName());
 
     private static Color redactionColor;
 

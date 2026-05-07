@@ -47,7 +47,7 @@ import java.util.logging.Logger;
  */
 public class ImagePool {
     private static final Logger log =
-            Logger.getLogger(ImagePool.class.toString());
+            Logger.getLogger(ImagePool.class.getName());
 
     // Image pool
     private final Map<Reference, BufferedImage> fCache;

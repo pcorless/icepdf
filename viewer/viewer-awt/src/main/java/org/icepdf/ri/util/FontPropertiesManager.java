@@ -42,7 +42,7 @@ import java.util.prefs.Preferences;
  */
 public class FontPropertiesManager {
 
-    private static final Logger logger = Logger.getLogger(FontPropertiesManager.class.toString());
+    private static final Logger logger = Logger.getLogger(FontPropertiesManager.class.getName());
 
     // can't use system level cache on window as of JDK 1.8_14, but should work in 9.
     private static final Preferences prefs = Preferences.userNodeForPackage(getPreferencesClass());

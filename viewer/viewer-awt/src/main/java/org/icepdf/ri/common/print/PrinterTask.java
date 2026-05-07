@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 public class PrinterTask implements Runnable {
 
     private static final Logger logger =
-            Logger.getLogger(PrinterTask.class.toString());
+            Logger.getLogger(PrinterTask.class.getName());
 
     // PrinterJob to print
     private final PrintHelper printHelper;

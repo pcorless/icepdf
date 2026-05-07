@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 public class RasterDecoder extends AbstractImageDecoder {
 
     private static final Logger logger =
-            Logger.getLogger(RasterDecoder.class.toString());
+            Logger.getLogger(RasterDecoder.class.getName());
 
     public RasterDecoder(ImageStream imageStream, GraphicsState graphicsState) {
         super(imageStream, graphicsState);

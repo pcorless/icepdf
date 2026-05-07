@@ -54,7 +54,7 @@ import java.util.logging.Logger;
 public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> extends AbstractAnnotationComponent<T> {
 
     protected static final Logger logger =
-            Logger.getLogger(MarkupAnnotationComponent.class.toString());
+            Logger.getLogger(MarkupAnnotationComponent.class.getName());
 
     protected static final boolean isInteractivePopupAnnotationsEnabled;
 

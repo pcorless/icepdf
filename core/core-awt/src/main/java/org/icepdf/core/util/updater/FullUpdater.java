@@ -48,7 +48,7 @@ import java.util.logging.Logger;
 public class FullUpdater {
 
     private static final Logger logger =
-            Logger.getLogger(FullUpdater.class.toString());
+            Logger.getLogger(FullUpdater.class.getName());
 
     /**
      * Write the xrefTable in a compressed format by default.  Can be disabled if to aid in debugging or to

@@ -44,7 +44,7 @@ import java.util.logging.Logger;
 public class ImageUtility {
 
     static final Logger logger =
-            Logger.getLogger(ImageUtility.class.toString());
+            Logger.getLogger(ImageUtility.class.getName());
 
     static final int[] GRAY_1_BIT_INDEX_TO_RGB_REVERSED = new int[]{
             0xFFFFFFFF,

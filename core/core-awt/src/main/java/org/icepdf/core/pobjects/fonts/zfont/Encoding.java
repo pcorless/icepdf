@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
 
     protected static final Logger logger =
-            Logger.getLogger(Encoding.class.toString());
+            Logger.getLogger(Encoding.class.getName());
 
     // Latin-text encoding names
     public static final String STANDARD_ENCODING_NAME = "StandardEncoding";

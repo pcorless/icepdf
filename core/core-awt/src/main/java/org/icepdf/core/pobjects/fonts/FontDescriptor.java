@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 public class FontDescriptor extends Dictionary {
 
     private static final Logger logger =
-            Logger.getLogger(FontDescriptor.class.toString());
+            Logger.getLogger(FontDescriptor.class.getName());
 
     private FontFile font;
 

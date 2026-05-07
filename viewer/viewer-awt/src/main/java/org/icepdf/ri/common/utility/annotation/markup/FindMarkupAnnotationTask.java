@@ -32,8 +32,8 @@ import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
-import java.util.List;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -44,7 +44,7 @@ import static org.icepdf.core.util.SystemProperties.PRIVATE_PROPERTY_ENABLED;
 public class FindMarkupAnnotationTask extends AbstractTask<Void, Object> {
 
     private static final Logger logger =
-            Logger.getLogger(FindMarkupAnnotationTask.class.toString());
+            Logger.getLogger(FindMarkupAnnotationTask.class.getName());
 
     private static ArrayList<DragDropColorList.ColorLabel> colorLabels;
 

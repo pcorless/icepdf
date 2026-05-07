@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 public class DctDecoder extends AbstractImageDecoder {
 
     private static final Logger logger =
-            Logger.getLogger(DctDecoder.class.toString());
+            Logger.getLogger(DctDecoder.class.getName());
 
     private static final int JPEG_ENC_UNKNOWN_PROBABLY_YCbCr = 0;
     private static final int JPEG_ENC_RGB = 1;

@@ -56,7 +56,7 @@ import static org.icepdf.core.util.SystemProperties.PRIVATE_PROPERTY_ENABLED;
 public class MarkupAnnotationPopupMenu extends AnnotationPopup<MarkupAnnotationComponent> {
 
     private static final Logger logger =
-            Logger.getLogger(MarkupAnnotationPopupMenu.class.toString());
+            Logger.getLogger(MarkupAnnotationPopupMenu.class.getName());
 
     // reply commands
     protected JMenuItem replyMenuItem;

@@ -64,7 +64,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
         implements PropertyChangeListener, DocumentListener {
 
     private static final Logger logger =
-            Logger.getLogger(FreeTextAnnotation.class.toString());
+            Logger.getLogger(FreeTextAnnotation.class.getName());
     private final ScalableTextArea freeTextPane;
     // font file cache.
     protected Font fontFile;

@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 public class Utils {
 
     private static final Logger logger =
-            Logger.getLogger(Utils.class.toString());
+            Logger.getLogger(Utils.class.getName());
 
     /**
      * Sets the value into the buffer, at the designated offset, using big-endian rules

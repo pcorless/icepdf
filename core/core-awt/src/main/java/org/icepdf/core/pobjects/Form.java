@@ -44,7 +44,7 @@ import static org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils.EMBE
  */
 public class Form extends Stream {
 
-    private static final Logger logger = Logger.getLogger(Form.class.toString());
+    private static final Logger logger = Logger.getLogger(Form.class.getName());
 
     public static final Name TYPE_VALUE = new Name("XObject");
     public static final Name SUB_TYPE_VALUE = new Name("Form");

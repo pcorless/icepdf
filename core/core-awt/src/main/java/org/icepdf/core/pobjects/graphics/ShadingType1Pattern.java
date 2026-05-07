@@ -43,7 +43,7 @@ import java.util.logging.Logger;
 public class ShadingType1Pattern extends ShadingType2Pattern {
 
     private static final Logger logger =
-            Logger.getLogger(ShadingType1Pattern.class.toString());
+            Logger.getLogger(ShadingType1Pattern.class.getName());
 
     /*
       (Optional) An array of four numbers [xmin xmax ymin ymax] specifying the

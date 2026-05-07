@@ -47,7 +47,7 @@ import java.util.logging.Logger;
 public class PageViewDecorator extends JComponent {
 
     private static final Logger log =
-            Logger.getLogger(PageViewDecorator.class.toString());
+            Logger.getLogger(PageViewDecorator.class.getName());
 
     protected JComponent pageViewComponent;
 

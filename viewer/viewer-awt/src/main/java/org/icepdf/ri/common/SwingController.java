@@ -120,7 +120,7 @@ import static org.icepdf.ri.util.ViewerPropertiesManager.*;
 public class SwingController extends ComponentAdapter implements org.icepdf.ri.common.views.Controller,
         ActionListener, FocusListener, ItemListener, WindowListener, DropTargetListener, PropertyChangeListener {
 
-    protected static final Logger logger = Logger.getLogger(SwingController.class.toString());
+    protected static final Logger logger = Logger.getLogger(SwingController.class.getName());
 
     private static final boolean USE_JFILECHOOSER;
 

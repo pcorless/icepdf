@@ -48,7 +48,7 @@ import static org.icepdf.core.pobjects.fonts.FontDescriptor.FONT_FILE_2;
 public class ContentWriterUtils {
 
     private static final Logger logger =
-            Logger.getLogger(ContentWriterUtils.class.toString());
+            Logger.getLogger(ContentWriterUtils.class.getName());
 
     public static final Name EMBEDDED_FONT_NAME = new Name("ice1");
 

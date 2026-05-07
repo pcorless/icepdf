@@ -32,7 +32,7 @@ import java.util.logging.Logger;
 public class DropDownButton extends JButton
         implements MouseListener {
 
-    private static final Logger logger = Logger.getLogger(DropDownButton.class.toString());
+    private static final Logger logger = Logger.getLogger(DropDownButton.class.getName());
 
     protected final Controller controller;
 

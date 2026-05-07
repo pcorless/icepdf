@@ -46,7 +46,7 @@ import static org.icepdf.core.pobjects.acroform.SignatureDictionary.V_KEY;
 public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<SignatureFieldDictionary> {
 
     private static final Logger logger =
-            Logger.getLogger(SignatureWidgetAnnotation.class.toString());
+            Logger.getLogger(SignatureWidgetAnnotation.class.getName());
 
     // signature field dictionary,
     private final SignatureFieldDictionary fieldDictionary;

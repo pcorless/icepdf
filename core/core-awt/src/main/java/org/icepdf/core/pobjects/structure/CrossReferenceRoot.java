@@ -36,7 +36,7 @@ import static org.icepdf.core.pobjects.PTrailer.ROOT_KEY;
  */
 public class CrossReferenceRoot {
 
-    private static final Logger log = Logger.getLogger(CrossReferenceRoot.class.toString());
+    private static final Logger log = Logger.getLogger(CrossReferenceRoot.class.getName());
 
     private final Library library;
     private Trailer trailer;

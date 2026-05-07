@@ -53,7 +53,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
         implements ToolHandler {
 
     private static final Logger logger =
-            Logger.getLogger(LineAnnotationHandler.class.toString());
+            Logger.getLogger(LineAnnotationHandler.class.getName());
 
     public static final int DEFAULT_WIDTH = 30;
     public static final int DEFAULT_HEIGHT = 20;

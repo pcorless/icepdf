@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 public class Indexer {
 
     private static final Logger logger =
-            Logger.getLogger(Indexer.class.toString());
+            Logger.getLogger(Indexer.class.getName());
 
     private final Library library;
 

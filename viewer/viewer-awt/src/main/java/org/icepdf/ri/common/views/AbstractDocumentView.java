@@ -46,7 +46,7 @@ public abstract class AbstractDocumentView
         implements DocumentView, PropertyChangeListener, MouseListener, MouseMotionListener, ActionListener {
 
     private static final Logger logger =
-            Logger.getLogger(AbstractDocumentView.class.toString());
+            Logger.getLogger(AbstractDocumentView.class.getName());
 
     // background colour
     public static Color backgroundColour;

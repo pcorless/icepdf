@@ -31,7 +31,7 @@ import java.util.logging.Logger;
 public abstract class AbstractChoiceComponent extends AbstractAnnotationComponent<ChoiceWidgetAnnotation> implements
         FocusListener, PropertyChangeListener {
 
-    private static final Logger logger = Logger.getLogger(AbstractChoiceComponent.class.toString());
+    private static final Logger logger = Logger.getLogger(AbstractChoiceComponent.class.getName());
 
     public AbstractChoiceComponent(ChoiceWidgetAnnotation annotation, DocumentViewController documentViewController,
                                    AbstractPageViewComponent pageViewComponent) {

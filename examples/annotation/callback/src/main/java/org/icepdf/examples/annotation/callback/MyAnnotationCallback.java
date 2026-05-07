@@ -46,7 +46,7 @@ import java.util.logging.Logger;
 public class MyAnnotationCallback implements AnnotationCallback {
 
     private static final Logger logger =
-            Logger.getLogger(MyAnnotationCallback.class.toString());
+            Logger.getLogger(MyAnnotationCallback.class.getName());
 
     private final DocumentViewController documentViewController;
 

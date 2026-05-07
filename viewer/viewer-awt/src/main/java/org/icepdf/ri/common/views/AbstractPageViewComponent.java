@@ -44,7 +44,7 @@ public abstract class AbstractPageViewComponent
         implements PageViewComponent {
 
     private static final Logger logger =
-            Logger.getLogger(AbstractPageViewComponent.class.toString());
+            Logger.getLogger(AbstractPageViewComponent.class.getName());
 
     protected static final int PAGE_BOUNDARY_BOX = Page.BOUNDARY_CROPBOX;
 

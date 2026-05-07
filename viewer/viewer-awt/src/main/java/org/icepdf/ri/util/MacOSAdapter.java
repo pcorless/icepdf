@@ -28,7 +28,7 @@ import java.util.logging.Logger;
  */
 public class MacOSAdapter implements InvocationHandler {
     private static final Logger logger =
-            Logger.getLogger(MacOSAdapter.class.toString());
+            Logger.getLogger(MacOSAdapter.class.getName());
 
     protected final Object targetObject;
     protected final Method targetMethod;

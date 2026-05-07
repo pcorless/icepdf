@@ -31,7 +31,7 @@ import java.util.logging.Logger;
 public class HexStringObject extends AbstractStringObject {
 
     private static final Logger logger =
-            Logger.getLogger(HexStringObject.class.toString());
+            Logger.getLogger(HexStringObject.class.getName());
 
     /**
      * <p>Creates a new hexadecimal string object so that it represents the same

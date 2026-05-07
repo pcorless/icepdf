@@ -40,7 +40,7 @@ import java.util.logging.Logger;
 public class CMapFactory {
 
     private static final Logger logger =
-            Logger.getLogger(CMapFactory.class.toString());
+            Logger.getLogger(CMapFactory.class.getName());
 
     public static final Name TYPE = new Name("CMap");
 

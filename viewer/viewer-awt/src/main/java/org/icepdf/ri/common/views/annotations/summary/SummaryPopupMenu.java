@@ -38,7 +38,7 @@ import java.util.logging.Logger;
 public class SummaryPopupMenu extends AnnotationPopup<MarkupAnnotationComponent> implements ItemListener {
 
     private static final Logger logger =
-            Logger.getLogger(SummaryPopupMenu.class.toString());
+            Logger.getLogger(SummaryPopupMenu.class.getName());
 
     protected final AnnotationSummaryBox annotationSummaryBox;
     protected final MarkupAnnotation markupAnnotation;

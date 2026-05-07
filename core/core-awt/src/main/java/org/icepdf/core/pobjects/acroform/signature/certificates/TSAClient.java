@@ -44,7 +44,7 @@ import java.util.logging.Logger;
  * @author John Hewson
  */
 public class TSAClient {
-    private static final Logger logger = Logger.getLogger(TSAClient.class.toString());
+    private static final Logger logger = Logger.getLogger(TSAClient.class.getName());
 
     private static final DigestAlgorithmIdentifierFinder ALGORITHM_OID_FINDER =
             new DefaultDigestAlgorithmIdentifierFinder();

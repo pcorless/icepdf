@@ -46,7 +46,7 @@ import java.util.logging.Logger;
 public class TilingPattern extends Stream implements Pattern {
 
     private static final Logger logger =
-            Logger.getLogger(TilingPattern.class.toString());
+            Logger.getLogger(TilingPattern.class.getName());
 
     // max x or y dimension of an image tile.
     public static final int MAX_BUFFER_SIZE = 9000;

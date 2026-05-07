@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 public class JpxDecoder extends AbstractImageDecoder {
 
     private static final Logger logger =
-            Logger.getLogger(JpxDecoder.class.toString());
+            Logger.getLogger(JpxDecoder.class.getName());
 
     public JpxDecoder(ImageStream imageStream, GraphicsState graphicsState) {
         super(imageStream, graphicsState);

@@ -41,7 +41,7 @@ import java.util.logging.Logger;
 public class Function_0 extends Function {
 
     private static final Logger logger =
-            Logger.getLogger(Function_0.class.toString());
+            Logger.getLogger(Function_0.class.getName());
 
     public static final Name SIZE_KEY = new Name("Size");
     public static final Name BITSPERSAMPLE_KEY = new Name("BitsPerSample");

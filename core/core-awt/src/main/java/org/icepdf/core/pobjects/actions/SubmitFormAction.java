@@ -49,7 +49,7 @@ import java.util.logging.Logger;
 public class SubmitFormAction extends FormAction {
 
     private static final Logger logger =
-            Logger.getLogger(SubmitFormAction.class.toString());
+            Logger.getLogger(SubmitFormAction.class.getName());
 
     private static final String USER_AGENT = "Mozilla/5.0";
 

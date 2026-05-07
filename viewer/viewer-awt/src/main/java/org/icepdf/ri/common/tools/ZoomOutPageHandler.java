@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 public class ZoomOutPageHandler implements ToolHandler {
 
     private static final Logger logger =
-            Logger.getLogger(ZoomOutPageHandler.class.toString());
+            Logger.getLogger(ZoomOutPageHandler.class.getName());
 
     private final AbstractPageViewComponent pageViewComponent;
     private final DocumentViewController documentViewController;

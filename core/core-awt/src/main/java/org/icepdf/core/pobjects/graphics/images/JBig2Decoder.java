@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 public class JBig2Decoder extends AbstractImageDecoder {
 
     private static final Logger logger =
-            Logger.getLogger(JBig2Decoder.class.toString());
+            Logger.getLogger(JBig2Decoder.class.getName());
 
     private static final String[] JBIG2_PDF_BOX = new String[]{
             "org.apache.pdfbox.jbig2.JBIG2ImageReader",
