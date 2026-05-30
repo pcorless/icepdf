@@ -645,7 +645,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                     }
                 } else if (cssProperty != null && cssProperty.contains("font-size")) {
                     String fontSize = cssProperty.substring(cssProperty.indexOf(":") + 1).trim();
-                    fontSize = fontSize.substring(0, fontSize.indexOf('p'));
+                    fontSize = fontSize.replaceFirst(".*?(\\d+).*", "$1");
                     try {
                         this.fontSize = (int) Float.parseFloat(fontSize);
                     } catch (NumberFormatException e) {
