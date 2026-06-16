@@ -120,6 +120,26 @@ test {
     }
 }
 
+// Phase 0 parsing performance baseline harness.  Not part of the test task.
+//   ./gradlew :core:core-awt:parsingBenchmark -Picepdf.benchmark.dir=/path/to/corpus
+// Any -Picepdf.benchmark.* project property is forwarded as a -D system property to the runner.
+tasks.register('parsingBenchmark', JavaExec) {
+    group = 'verification'
+    description = 'Runs the object/content parser baseline benchmark (see ParsingBenchmark).'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'org.icepdf.core.benchmark.ParsingBenchmark'
+    // resolve relative -Picepdf.benchmark.dir paths from the repo root, not the module dir
+    workingDir = rootProject.projectDir
+    // large PDFs are loaded whole into a heap ByteBuffer; override with -Picepdf.benchmark.heap=8g
+    maxHeapSize = project.findProperty('icepdf.benchmark.heap') ?: '6g'
+    // forward -Picepdf.benchmark.* to the JVM as -Dicepdf.benchmark.*
+    project.properties.each { k, v ->
+        if (k.startsWith('icepdf.benchmark.')) {
+            systemProperty(k, v)
+        }
+    }
+}
+
 clean {
     doLast {
         file("src/main/java/org/icepdf/core/application/ProductInfo.java").delete()
