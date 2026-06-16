@@ -21,7 +21,6 @@ import org.apache.pdfbox.io.RandomAccessReadBuffer;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
-import org.icepdf.core.pobjects.graphics.TextState;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -126,35 +125,38 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     }
 
     @Override
-    public void paint(Graphics2D g, char estr, float x, float y, long layout, int mode, Color strokeColor) {
-        try {
-            AffineTransform af = g.getTransform();
-            int gid = getCharToGid(estr);
-            GlyphData glyphData = trueTypeFont.getGlyph().getGlyph(gid);
-            Shape outline;
-            if (glyphData == null) {
-                outline = new GeneralPath();
-            } else {
-                // must be scaled by caller using FontMatrix
-                outline = glyphData.getPath();
-            }
-
-            // clean up,  not very efficient
-            g.translate(x, y);
-            g.transform(this.fontTransform);
-
-            if (TextState.MODE_FILL == mode || TextState.MODE_FILL_STROKE == mode ||
-                    TextState.MODE_FILL_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
-                g.fill(outline);
-            }
-            if (TextState.MODE_STROKE == mode || TextState.MODE_FILL_STROKE == mode ||
-                    TextState.MODE_STROKE_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
-                g.draw(outline);
-            }
-            g.setTransform(af);
-        } catch (IOException e) {
-            logger.log(Level.FINE, "Error painting FontType2 font", e);
+    public Shape getGlphyShape(char estr) throws IOException {
+        // CID glyphs are addressed directly by glyph id; the outline is in raw font units and is
+        // scaled by the 1/unitsPerEm fontMatrix at paint time
+        int gid = getCharToGid(estr);
+        GlyphData glyphData = trueTypeFont.getGlyph().getGlyph(gid);
+        if (glyphData == null) {
+            return new GeneralPath();
         }
+        return glyphData.getPath();
+    }
+
+    @Override
+    protected int getUnitsPerEm() {
+        try {
+            return trueTypeFont != null ? trueTypeFont.getUnitsPerEm() : 0;
+        } catch (IOException e) {
+            return 0;
+        }
+    }
+
+    @Override
+    protected Shape getHintedGlphyShape(char estr, int ppem) throws IOException {
+        // only embedded glyf outlines carry executable hinting; CFF/OTF PostScript outlines don't
+        if (trueTypeFont instanceof OpenTypeFont && ((OpenTypeFont) trueTypeFont).isPostScript()) {
+            return null;
+        }
+        int gid = getCharToGid(estr);
+        if (gid == 0) {
+            return null;
+        }
+        // getHintedPath returns the grid-fit outline already in font units (null when not hintable)
+        return trueTypeFont.getHintedPath(gid, ppem);
     }
 
     @Override

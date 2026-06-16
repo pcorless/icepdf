@@ -142,6 +142,30 @@ public class ZFontTrueType extends ZSimpleFont {
     }
 
     @Override
+    protected int getUnitsPerEm() {
+        try {
+            return trueTypeFont != null ? trueTypeFont.getUnitsPerEm() : 0;
+        } catch (IOException e) {
+            return 0;
+        }
+    }
+
+    @Override
+    protected Shape getHintedGlphyShape(char estr, int ppem) throws IOException {
+        // only embedded glyf outlines carry executable hinting; CFF/OTF PostScript outlines don't
+        if (trueTypeFont instanceof OpenTypeFont && ((OpenTypeFont) trueTypeFont).isPostScript()) {
+            return null;
+        }
+        int gid = getCharToGid(estr);
+        if (gid == 0) {
+            return null;
+        }
+        // getHintedPath returns the grid-fit outline already in font units (null when not hintable);
+        // ICEpdf applies the 1/unitsPerEm fontMatrix at paint time, so no 1000-normalization is needed
+        return trueTypeFont.getHintedPath(gid, ppem);
+    }
+
+    @Override
     public org.apache.fontbox.encoding.Encoding getEncoding() {
         return null;
     }
