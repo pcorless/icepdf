@@ -134,12 +134,10 @@ public class Stream extends Dictionary {
                 long rawStreamLength = rawBytes.length;
                 InputStream input = getDecodedInputStream(streamInput, rawStreamLength);
                 if (input == null) return null;
-                int outLength;
-                if (presize > 0) {
-                    outLength = presize;
-                } else {
-                    outLength = Math.max(8192, (int) rawStreamLength);
-                }
+                // Size the output buffer to at least the raw (still-compressed) length: the decoded result is
+                // almost always larger, so this floor skips the early grow-and-copy reallocations that otherwise
+                // dominate decode allocation/GC (the default presize of 8192 would start tiny for large streams).
+                int outLength = Math.max(Math.max(presize, 8192), (int) rawStreamLength);
                 ConservativeSizingByteArrayOutputStream out = new ConservativeSizingByteArrayOutputStream(outLength);
                 byte[] buffer = new byte[Math.min(outLength, 32 * 1024)];
                 while (true) {
