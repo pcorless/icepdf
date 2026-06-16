@@ -87,17 +87,28 @@ public class ParsingBenchmark {
     private static final int MAX_PAGES = intProp("icepdf.benchmark.maxPages", 0);
     private static final String MODE = System.getProperty("icepdf.benchmark.mode", "all");
     private static final boolean PAINT = Boolean.getBoolean("icepdf.benchmark.paint");
+    private static final boolean CHILD = Boolean.getBoolean("icepdf.benchmark.child");
     private static final float PAINT_ZOOM = 1.0f;
 
     public static void main(String[] args) throws Exception {
+        quietLogging();
         List<Path> corpus = resolveCorpus(args);
         if (corpus.isEmpty()) {
             System.err.println("No PDFs found. Pass a file/dir as an argument or set -Dicepdf.benchmark.dir=...");
             System.exit(2);
         }
+        // To keep numbers trustworthy, each file runs in its own JVM by default: running several large files in one
+        // JVM lets heap garbage from earlier files distort the timing of later ones (observed swings of 0.4x-2.7x on
+        // the same file). The parent forks one child per file; disable with -Dicepdf.benchmark.fork=false.
+        boolean fork = !Boolean.FALSE.toString().equals(System.getProperty("icepdf.benchmark.fork"));
+        if (fork && corpus.size() > 1) {
+            runForked(corpus);
+            return;
+        }
+
         System.out.printf("ICEpdf parsing benchmark | files=%d warmup=%d iters=%d threads=%d mode=%s paint=%b%n",
                 corpus.size(), WARMUP, ITERS, THREADS, MODE, PAINT);
-        System.out.println(header());
+        if (!CHILD) System.out.println(header());
 
         JfrRecorder jfr = JfrRecorder.startIfRequested();
         List<Result> results = new ArrayList<>();
@@ -114,7 +125,59 @@ public class ParsingBenchmark {
         } finally {
             if (jfr != null) jfr.stopAndDump();
         }
-        printSummary(results);
+        if (!CHILD) printSummary(results);
+    }
+
+    /**
+     * Run each file in a fresh child JVM so heap state never leaks between files. The parent prints the header and
+     * launches a child per file (inheriting IO so each child prints its own row); per-file rows are the trustworthy
+     * output, so no cross-file aggregate is printed here.
+     */
+    private static void runForked(List<Path> corpus) throws Exception {
+        System.out.printf("ICEpdf parsing benchmark | files=%d warmup=%d iters=%d threads=%d mode=%s paint=%b"
+                        + " | forked one JVM per file%n",
+                corpus.size(), WARMUP, ITERS, THREADS, MODE, PAINT);
+        System.out.println(header());
+
+        String javaBin = System.getProperty("java.home") + java.io.File.separator + "bin"
+                + java.io.File.separator + "java";
+        String classpath = System.getProperty("java.class.path");
+        String heap = System.getProperty("icepdf.benchmark.heap");
+        String jfrBase = System.getProperty("icepdf.benchmark.jfr");
+
+        for (Path pdf : corpus) {
+            List<String> cmd = new ArrayList<>();
+            cmd.add(javaBin);
+            if (heap != null && !heap.isEmpty()) cmd.add("-Xmx" + heap);
+            cmd.add("-cp");
+            cmd.add(classpath);
+            // forward the knobs that shape a single-file run
+            forwardProp(cmd, "icepdf.benchmark.warmup");
+            forwardProp(cmd, "icepdf.benchmark.iters");
+            forwardProp(cmd, "icepdf.benchmark.threads");
+            forwardProp(cmd, "icepdf.benchmark.mode");
+            forwardProp(cmd, "icepdf.benchmark.paint");
+            forwardProp(cmd, "icepdf.benchmark.maxPages");
+            forwardProp(cmd, "icepdf.benchmark.verboseLogging");
+            if (jfrBase != null && !jfrBase.isEmpty()) {
+                cmd.add("-Dicepdf.benchmark.jfr=" + jfrBase + "." + pdf.getFileName());
+            }
+            cmd.add("-Dicepdf.benchmark.fork=false");
+            cmd.add("-Dicepdf.benchmark.child=true");
+            cmd.add(ParsingBenchmark.class.getName());
+            cmd.add(pdf.toString());
+
+            Process p = new ProcessBuilder(cmd).inheritIO().start();
+            int exit = p.waitFor();
+            if (exit != 0) {
+                System.out.printf("%-40s  child JVM exited %d%n", trim(pdf.getFileName().toString(), 40), exit);
+            }
+        }
+    }
+
+    private static void forwardProp(List<String> cmd, String key) {
+        String v = System.getProperty(key);
+        if (v != null && !v.isEmpty()) cmd.add("-D" + key + "=" + v);
     }
 
     private static Result benchmark(Path pdf) throws Exception {
@@ -279,6 +342,18 @@ public class ParsingBenchmark {
 
     // ---- small helpers -----------------------------------------------------
 
+    /**
+     * Parsing malformed/unsupported font tables logs a flood of WARNINGs.  java.util.logging handlers are
+     * synchronized, so under the parallel sweep those log calls serialize the worker threads and pollute the
+     * timing (and the report).  Silence the noisy loggers unless the caller wants them.
+     */
+    private static void quietLogging() {
+        if (Boolean.getBoolean("icepdf.benchmark.verboseLogging")) return;
+        java.util.logging.Logger.getLogger("org.icepdf").setLevel(java.util.logging.Level.SEVERE);
+        java.util.logging.Logger.getLogger("org.apache.fontbox").setLevel(java.util.logging.Level.SEVERE);
+        java.util.logging.Logger.getLogger("org.apache.pdfbox").setLevel(java.util.logging.Level.SEVERE);
+    }
+
     private static int intProp(String key, int def) {
         String v = System.getProperty(key);
         if (v == null || v.isEmpty()) return def;
@@ -342,10 +417,10 @@ public class ParsingBenchmark {
     }
 
     /**
-     * Thin wrapper over jdk.jfr so a single run can emit a recording with the two monitor events we care about
-     * ({@code jdk.JavaMonitorEnter} = time blocked acquiring a lock, {@code jdk.JavaMonitorWait}).  Open the
-     * resulting .jfr in JDK Mission Control or {@code jfr print --events jdk.JavaMonitorEnter parse.jfr} and the
-     * hot monitor will be {@code Library.mappedFileByteBufferLock} / the {@code ObjectLoader} instance.
+     * Wrapper over jdk.jfr that records CPU, allocation, GC and lock contention together so we can find the real
+     * bottleneck without a preconception.  Built on the JDK's "profile" configuration, with the monitor/park events
+     * forced on at a low threshold.  Inspect with JDK Mission Control or e.g.
+     * {@code jfr print --events jdk.JavaMonitorEnter,jdk.ObjectAllocationSample,jdk.GCPhasePause parse.jfr}.
      */
     private static final class JfrRecorder {
         private final jdk.jfr.Recording recording;
@@ -358,13 +433,19 @@ public class ParsingBenchmark {
             String path = System.getProperty("icepdf.benchmark.jfr");
             if (path == null || path.isEmpty()) return null;
             try {
-                jdk.jfr.Recording r = new jdk.jfr.Recording();
+                jdk.jfr.Recording r;
+                try {
+                    r = new jdk.jfr.Recording(jdk.jfr.Configuration.getConfiguration("profile"));
+                } catch (Exception noConfig) {
+                    r = new jdk.jfr.Recording();
+                }
+                // make sure lock contention is captured regardless of the base config thresholds
                 r.enable("jdk.JavaMonitorEnter").withThreshold(Duration.ofMillis(1)).withStackTrace();
                 r.enable("jdk.JavaMonitorWait").withThreshold(Duration.ofMillis(1)).withStackTrace();
                 r.enable("jdk.ThreadPark").withThreshold(Duration.ofMillis(1)).withStackTrace();
                 r.setDestination(Paths.get(path));
                 r.start();
-                System.out.println("JFR lock recording -> " + path);
+                System.out.println("JFR recording (cpu+alloc+gc+locks) -> " + path);
                 return new JfrRecorder(r);
             } catch (Exception e) {
                 System.err.println("Could not start JFR recording: " + e);
