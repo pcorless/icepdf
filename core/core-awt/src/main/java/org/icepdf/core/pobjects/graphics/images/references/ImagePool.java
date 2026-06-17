@@ -22,6 +22,8 @@ import java.awt.image.BufferedImage;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.FutureTask;
 import java.util.logging.Logger;
 
 /**
@@ -51,6 +53,11 @@ public class ImagePool {
 
     // Image pool
     private final Map<Reference, BufferedImage> fCache;
+
+    // Decodes currently in flight, keyed by image object reference, so that two references to the same image
+    // (e.g. the same XObject drawn on multiple pages, or an eager pre-decode racing the content parser) share a
+    // single decode instead of each starting their own.
+    private final Map<Reference, FutureTask<BufferedImage>> inProgress = new ConcurrentHashMap<>();
 
 
     private static final boolean enabled;
@@ -84,5 +91,29 @@ public class ImagePool {
 
     public boolean containsKey(Reference ref) {
         return enabled && fCache.containsKey(ref);
+    }
+
+    /**
+     * Registers an in-flight decode for the given image reference if none is already running.
+     *
+     * @param ref  image object reference; a null reference (e.g. inline image) is never de-duplicated.
+     * @param task the decode task the caller is about to run.
+     * @return an existing in-flight decode for this reference to wait on instead, or null if the caller should
+     * run its own {@code task} (which it has now registered).
+     */
+    public FutureTask<BufferedImage> registerInProgress(Reference ref, FutureTask<BufferedImage> task) {
+        if (!enabled || ref == null) {
+            return null;
+        }
+        return inProgress.putIfAbsent(ref, task);
+    }
+
+    /**
+     * Removes the in-flight marker for a reference once its decode has completed (success, failure or cancel).
+     */
+    public void removeInProgress(Reference ref) {
+        if (ref != null) {
+            inProgress.remove(ref);
+        }
     }
 }
