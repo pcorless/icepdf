@@ -123,9 +123,12 @@ public class Page extends Dictionary {
     }
 
     // When enabled, a page's image XObjects start decoding in parallel at init time rather than each waiting for
-    // the content parser to reach its Do operator.
+    // the content parser to reach its Do operator.  Off by default: it adds a small upfront cost (resolving every
+    // image XObject and queueing decodes) that text/vector documents - the common case - don't recoup, while the
+    // upside is marginal and only materializes for single pages with several large, non-reused images rendered
+    // with spare CPU.  Opt in for image-heavy workloads.
     private static final boolean EAGER_IMAGE_DECODE =
-            Defs.booleanProperty("org.icepdf.core.imageReference.eagerDecode", true);
+            Defs.booleanProperty("org.icepdf.core.imageReference.eagerDecode", false);
 
     public static final Name TYPE = new Name("Page");
     public static final Name ANNOTS_KEY = new Name("Annots");
