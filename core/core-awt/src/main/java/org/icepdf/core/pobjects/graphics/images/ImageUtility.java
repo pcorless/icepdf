@@ -1272,31 +1272,17 @@ public class ImageUtility {
     }
 
     private static void copyDecodedStreamBytesIntoGray(byte[] data, int[] pixels, float[] decode) {
-        byte[] rgb = new byte[1];
+        // data holds one gray byte per pixel; index it directly rather than reading a byte at a time through a
+        // (synchronized) ByteArrayInputStream, which was a per-pixel hotspot when rendering large gray images.
+        // If data is shorter than pixels the trailing pixels reuse the last byte, matching the prior behaviour.
         boolean defaultDecode = 0.0f == decode[0];
-        int Y;
-        try {
-            InputStream input = new ByteArrayInputStream(data);
-            for (int pixelIndex = 0; pixelIndex < pixels.length; pixelIndex++) {
-                int argb = 0xFF000000;
-                final int toRead = 1;
-                int haveRead = 0;
-                while (haveRead < toRead) {
-                    int currRead = input.read(rgb, haveRead, toRead - haveRead);
-                    if (currRead < 0)
-                        break;
-                    haveRead += currRead;
-                }
-                Y = (int) rgb[0] & 0xff;
-                Y = defaultDecode ? Y : 255 - Y;
-                argb |= (Y << 16) & 0x00FF0000;
-                argb |= (Y << 8) & 0x0000FF00;
-                argb |= (Y & 0x000000FF);
-                pixels[pixelIndex] = argb;
+        int rawY = 0;
+        for (int pixelIndex = 0; pixelIndex < pixels.length; pixelIndex++) {
+            if (pixelIndex < data.length) {
+                rawY = data[pixelIndex] & 0xff;
             }
-            input.close();
-        } catch (IOException e) {
-            logger.log(Level.FINE, "Problem copying decoding stream bytes: ", e);
+            int Y = defaultDecode ? rawY : 255 - rawY;
+            pixels[pixelIndex] = 0xFF000000 | (Y << 16) | (Y << 8) | Y;
         }
     }
 
