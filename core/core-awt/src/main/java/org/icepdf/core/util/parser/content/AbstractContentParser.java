@@ -539,7 +539,7 @@ public abstract class AbstractContentParser {
             if (graphicState.getClip() != null) {
                 AffineTransform matrix = formXObject.getMatrix();
                 Area bbox = new Area(formXObject.getBBox());
-                Area clip = graphicState.getClip();
+                Shape clip = graphicState.getClip();
                 // create inverse of matrix, so we can transform
                 // the clip to form space.
                 try {
