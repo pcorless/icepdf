@@ -122,6 +122,11 @@ public class Page extends Dictionary {
         }
     }
 
+    // When enabled, a page's image XObjects start decoding in parallel at init time rather than each waiting for
+    // the content parser to reach its Do operator.
+    private static final boolean EAGER_IMAGE_DECODE =
+            Defs.booleanProperty("org.icepdf.core.imageReference.eagerDecode", true);
+
     public static final Name TYPE = new Name("Page");
     public static final Name ANNOTS_KEY = new Name("Annots");
     public static final Name CONTENTS_KEY = new Name("Contents");
@@ -399,6 +404,11 @@ public class Page extends Dictionary {
 
             // get pages resources
             initPageResources();
+
+            // start decoding the page's images in parallel while the rest of init and content parsing run.
+            if (EAGER_IMAGE_DECODE && resources != null) {
+                resources.preLoadImages();
+            }
 
             // annotations
             initPageAnnotations();
