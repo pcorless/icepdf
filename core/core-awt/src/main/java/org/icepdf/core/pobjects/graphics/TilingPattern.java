@@ -175,8 +175,6 @@ public class TilingPattern extends Stream implements Pattern {
     // Fill colour
     public Color fillColour;
 
-    //  initiated flag
-    private boolean inited;
 
     private GraphicsState parentGraphicState;
 

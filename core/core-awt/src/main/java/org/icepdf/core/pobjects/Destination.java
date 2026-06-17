@@ -90,8 +90,6 @@ public class Destination extends Dictionary {
     // named Destination name, can be a name or String
     private String namedDestination;
 
-    // initiated flag
-    private boolean inited;
 
     /**
      * Creates a new instance of a Destination.

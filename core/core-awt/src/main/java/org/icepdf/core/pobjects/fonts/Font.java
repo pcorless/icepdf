@@ -162,9 +162,6 @@ public abstract class Font extends Dictionary {
     // Font Descriptor used
     protected FontDescriptor fontDescriptor;
 
-    // initiated flag
-    protected boolean inited;
-
     // AFM flag
     protected boolean isAFMFont;
 

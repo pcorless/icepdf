@@ -34,7 +34,6 @@ public class Indexed extends PColorSpace {
     byte[] colors = {
             -1, -1, -1, 0, 0, 0
     };
-    private boolean inited = false;
     private Color[] cols;
 
     /**

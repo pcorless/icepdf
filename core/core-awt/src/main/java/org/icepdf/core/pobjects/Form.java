@@ -67,7 +67,6 @@ public class Form extends Stream {
     private boolean isolated;
     private boolean knockOut;
     private boolean shading;
-    private boolean inited = false;
 
     public Form(Library l, DictionaryEntries h, byte[] rawBytes) {
         super(l, h, rawBytes);
