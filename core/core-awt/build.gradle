@@ -132,9 +132,9 @@ tasks.register('parsingBenchmark', JavaExec) {
     workingDir = rootProject.projectDir
     // large PDFs are loaded whole into a heap ByteBuffer; override with -Picepdf.benchmark.heap=8g
     maxHeapSize = project.findProperty('icepdf.benchmark.heap') ?: '6g'
-    // forward -Picepdf.benchmark.* to the JVM as -Dicepdf.benchmark.*
+    // forward -Picepdf.benchmark.* and -Porg.icepdf.* to the JVM as system properties
     project.properties.each { k, v ->
-        if (k.startsWith('icepdf.benchmark.')) {
+        if (k.startsWith('icepdf.benchmark.') || k.startsWith('org.icepdf.')) {
             systemProperty(k, v)
         }
     }
