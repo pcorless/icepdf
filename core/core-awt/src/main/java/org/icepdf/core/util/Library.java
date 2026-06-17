@@ -43,7 +43,6 @@ import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.*;
 import java.util.logging.Level;
@@ -146,11 +145,8 @@ public class Library {
      * object reference can not be found.
      */
     public Object getObject(Reference reference) {
-        Object obj = getObject(reference, null, true);
-        if (obj != null) {
-            return Objects.requireNonNull(getObject(reference, null, true)).getObject();
-        }
-        return null;
+        PObject pObject = getObject(reference, null, true);
+        return pObject != null ? pObject.getObject() : null;
     }
 
     public PObject getPObject(Reference reference) {
