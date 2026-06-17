@@ -851,8 +851,8 @@ public abstract class AbstractContentParser {
             }
         }
         if (graphicState.getTextState().font != null) {
-            FontFile font = graphicState.getTextState().font.getFont();
-            font.deriveFont(size);
+            // deriveFont allocates a new sized font instance; only derive once (an earlier discarded
+            // deriveFont call here was pure allocation churn on every Tf operator) (GH-495).
             graphicState.getTextState().currentfont =
                     graphicState.getTextState().font.getFont().deriveFont(size);
         } else {
@@ -1967,20 +1967,21 @@ public abstract class AbstractContentParser {
      * @return new text scaling AffineTransform.
      */
     private static AffineTransform applyTextScaling(GraphicsState graphicState) {
-        // get the current CTM
-        AffineTransform af = new AffineTransform(graphicState.getCTM());
+        // the current CTM; read its components directly rather than allocating an extra copy to read from.
+        AffineTransform ctm = graphicState.getCTM();
         // the mystery continues,  it appears that only the negative or positive
         // value of tz is actually used.  If the original non 1 number is used the
         // layout will be messed up.
-        AffineTransform oldHScaling = new AffineTransform(graphicState.getCTM());
+        // snapshot of the CTM to restore after the text block is drawn.
+        AffineTransform oldHScaling = new AffineTransform(ctm);
         float hScaling = graphicState.getTextState().hScalling;
         AffineTransform horizontalScalingTransform =
                 new AffineTransform(
-                        af.getScaleX() * hScaling,
-                        af.getShearY() * hScaling,
-                        af.getShearX(),
-                        af.getScaleY(),
-                        af.getTranslateX(), af.getTranslateY());
+                        ctm.getScaleX() * hScaling,
+                        ctm.getShearY() * hScaling,
+                        ctm.getShearX(),
+                        ctm.getScaleY(),
+                        ctm.getTranslateX(), ctm.getTranslateY());
         // add the transformation to the graphics state
         graphicState.set(horizontalScalingTransform);
 
