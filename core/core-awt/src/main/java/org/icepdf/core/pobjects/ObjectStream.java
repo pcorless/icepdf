@@ -47,28 +47,35 @@ public class ObjectStream extends Stream {
     }
 
     public void initialize() throws IOException {
+        // double-checked locking on the (volatile) inited flag: object streams are cached and shared, so many
+        // threads call decompressObject (and thus initialize) concurrently; only the first does the work.
         if (inited) {
             return;
         }
-        int numObjects = library.getInt(entries, N_KEY);
-        long firstObjectsOffset = library.getLong(entries, FIRST_KEY);
-        // get the stream data
-        decodedByteBufer = getDecodedStreamByteBuffer(0);
-        objectNumbers = new int[numObjects];
-        objectOffset = new float[numObjects];
-        try {
-            Lexer lexer = new Lexer(library);
-            lexer.setByteBuffer(decodedByteBufer);
-            for (int i = 0; i < numObjects; i++) {
-                objectNumbers[i] = (Integer) lexer.nextToken();
-                objectOffset[i] = ((Integer) lexer.nextToken()) + firstObjectsOffset;
+        synchronized (this) {
+            if (inited) {
+                return;
             }
-        } catch (IOException e) {
-            logger.log(Level.WARNING, e, () ->
-                    "Error loading object stream instance: " + this);
-            throw e;
+            int numObjects = library.getInt(entries, N_KEY);
+            long firstObjectsOffset = library.getLong(entries, FIRST_KEY);
+            // get the stream data
+            decodedByteBufer = getDecodedStreamByteBuffer(0);
+            objectNumbers = new int[numObjects];
+            objectOffset = new float[numObjects];
+            try {
+                Lexer lexer = new Lexer(library);
+                lexer.setByteBuffer(decodedByteBufer);
+                for (int i = 0; i < numObjects; i++) {
+                    objectNumbers[i] = (Integer) lexer.nextToken();
+                    objectOffset[i] = ((Integer) lexer.nextToken()) + firstObjectsOffset;
+                }
+            } catch (IOException e) {
+                logger.log(Level.WARNING, e, () ->
+                        "Error loading object stream instance: " + this);
+                throw e;
+            }
+            inited = true;
         }
-        inited = true;
     }
 
     public PObject decompressObject(Parser parser, int objectIndex) throws IOException {
@@ -81,8 +88,11 @@ public class ObjectStream extends Stream {
         int objectNumber = objectNumbers[objectIndex];
         int position = (int) objectOffset[objectIndex];
 
-        decodedByteBufer.position(position);
+        // decodedByteBufer is shared across all decompress calls for this (cached) object stream; work on a
+        // duplicate so concurrent callers don't fight over its position (GH-495).
+        ByteBuffer localBuffer = decodedByteBufer.duplicate();
+        localBuffer.position(position);
 
-        return parser.getCompressedObject(decodedByteBufer, objectNumber, position);
+        return parser.getCompressedObject(localBuffer, objectNumber, position);
     }
 }
