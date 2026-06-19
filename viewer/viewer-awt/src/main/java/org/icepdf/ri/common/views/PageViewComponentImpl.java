@@ -64,6 +64,9 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     protected ArrayList<AbstractAnnotationComponent> annotationComponents;
     protected Map<Reference, AnnotationComponent> annotationToComponent;
     protected ArrayList<DestinationComponent> destinationComponents;
+    // popup -> glue lookup, mirrors the MarkupGlueComponents tracked in the documentViewModel so
+    // getGlue() is O(1) instead of a linear scan (avoids O(n^2) during page init).
+    protected final Map<PopupAnnotationComponent, MarkupGlueComponent> popupToGlue = new HashMap<>();
     private Set<SearchHitComponent> searchHitComponents = new HashSet<>();
     private boolean alreadyDisposing = false;
 
@@ -550,6 +553,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
             synchronized (annotationComponentsLock) {
                 annotationComponents = null;
                 annotationToComponent = null;
+                popupToGlue.clear();
             }
         });
     }
@@ -679,6 +683,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
             documentViewModel.addDocumentViewAnnotationComponent(this, markupGlueComponent);
             ((JLayeredPane) parentDocumentView).setLayer(markupGlueComponent, JLayeredPane.MODAL_LAYER);
             parentDocumentView.add(markupGlueComponent);
+            popupToGlue.put(popupAnnotationComponent, markupGlueComponent);
         }
     }
 
@@ -686,7 +691,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         parentDocumentView.remove(popupAnnotationComponent);
         documentViewModel.removeDocumentViewAnnotationComponent(parentDocumentView, this, popupAnnotationComponent);
         //Don't forget to remove the glue
-        final MarkupGlueComponent glue = getGlue(popupAnnotationComponent);
+        final MarkupGlueComponent glue = popupToGlue.remove(popupAnnotationComponent);
         if (glue != null) {
             parentDocumentView.remove(glue);
             documentViewModel.removeDocumentViewAnnotationComponent(parentDocumentView, this, glue);
@@ -694,16 +699,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     }
 
     private MarkupGlueComponent getGlue(final PopupAnnotationComponent popupAnnotationComponent) {
-        ArrayList<PageViewAnnotationComponent> components = documentViewModel.getDocumentViewAnnotationComponents(this);
-        if (components != null) {
-            for (PageViewAnnotationComponent component : components) {
-                if (component instanceof MarkupGlueComponent &&
-                        ((MarkupGlueComponent) component).getPopupAnnotationComponent().equals(popupAnnotationComponent)) {
-                    return (MarkupGlueComponent) component;
-                }
-            }
-        }
-        return null;
+        return popupToGlue.get(popupAnnotationComponent);
     }
 
     private void initializeDestinationComponents(Page page) {
