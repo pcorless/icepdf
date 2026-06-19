@@ -20,6 +20,7 @@ import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.ChoiceWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
 import org.icepdf.core.pobjects.annotations.TextWidgetAnnotation;
+import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.GraphicsRenderingHints;
@@ -314,7 +315,12 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                         documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_REDACTION_ANNOTATION))
         ) {
             try {
-                PageText pageText = currentPage.getViewText();
+                // Use the non-initializing accessor. The isInitiated() guard above means the page
+                // text is normally already built, but the page can be flushed between that check and
+                // here; getViewText() would then run a synchronous init() parse on the EDT, whereas
+                // getShapes() never triggers init(). If shapes are gone we simply skip this paint.
+                Shapes shapes = currentPage.getShapes();
+                PageText pageText = shapes != null ? shapes.getPageText() : null;
                 if (pageText != null) {
                     // paint any highlighted words
                     if (searchController.isSearchHighlightRefreshNeeded(pageIndex, pageText)) {
