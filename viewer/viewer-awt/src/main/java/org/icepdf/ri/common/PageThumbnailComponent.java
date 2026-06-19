@@ -96,6 +96,11 @@ public class PageThumbnailComponent extends AbstractPageViewComponent implements
     }
 
     public void dispose() {
+        // cancel any in-flight capture task so a disposed thumbnail doesn't keep an
+        // expensive page init/paint running (mirrors PageViewComponentImpl.dispose()).
+        if (pageImageCaptureTask != null && !pageImageCaptureTask.isDone()) {
+            pageImageCaptureTask.cancel(true);
+        }
         removeMouseListener(this);
     }
 

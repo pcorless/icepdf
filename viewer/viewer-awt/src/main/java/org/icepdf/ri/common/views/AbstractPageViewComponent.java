@@ -280,14 +280,17 @@ public abstract class AbstractPageViewComponent
         g2d.setColor(pageColor);
         g2d.fillRect(0, 0, pageSize.width, pageSize.height);
 
-        // paint the pageBufferPadding, but get the latest copy encase it was returned extra quick
-        BufferedImage pageImage = pageBufferStore.getImageReference();
+        // paint the pageBufferPadding, but get the latest copy in case it was returned extra quick.
+        // read the buffer reference, location, zoom and rotation as one consistent snapshot so a
+        // concurrent worker swap can't pair a new buffer with a stale location/zoom.
+        PageBufferStore.Snapshot snapshot = pageBufferStore.getSnapshot();
+        BufferedImage pageImage = snapshot.image;
         if (pageImage != null) {
-            Rectangle paintingClip = pageBufferStore.getImageLocation();
+            Rectangle paintingClip = snapshot.imageLocation;
             // check if we should scale and rotate the current capture
-            if (pageZoom != pageBufferStore.getPageZoom() ||
-                    pageRotation != pageBufferStore.getPageRotation()) {
-                g2d.transform(calculateBufferAffineTransform());
+            if (pageZoom != snapshot.pageZoom ||
+                    pageRotation != snapshot.pageRotation) {
+                g2d.transform(calculateBufferAffineTransform(snapshot));
                 pageBufferStore.setDirty(true);
                 // force one more paint to make sure we build a new buffer using the current zoom and rotation.
                 repaint();
@@ -364,20 +367,20 @@ public abstract class AbstractPageViewComponent
      *
      * @return transform needed to paint the previous out of sync buffer in the correct place.
      */
-    private AffineTransform calculateBufferAffineTransform() {
+    private AffineTransform calculateBufferAffineTransform(PageBufferStore.Snapshot snapshot) {
         AffineTransform at = new AffineTransform();
-        if (pageZoom != pageBufferStore.getPageZoom()) {
-            double pageScale = pageZoom / (double) pageBufferStore.getPageZoom();
+        if (pageZoom != snapshot.pageZoom) {
+            double pageScale = pageZoom / (double) snapshot.pageZoom;
             at.scale(pageScale, pageScale);
         }
         // get the page size of the currently painted image we are trying to scale or rotate.
-        if (pageRotation != pageBufferStore.getPageRotation()) {
+        if (pageRotation != snapshot.pageRotation) {
             double rotation;
-            rotation = pageBufferStore.getPageRotation() - pageRotation;
+            rotation = snapshot.pageRotation - pageRotation;
             if (rotation < 0) {
                 rotation += 360;
             }
-            Rectangle imageLocation = pageBufferStore.getPageSize();
+            Rectangle imageLocation = snapshot.pageSize;
             if (rotation == 90) {
                 at.translate(imageLocation.height, 0);
             } else if (rotation == 180) {
@@ -403,6 +406,9 @@ public abstract class AbstractPageViewComponent
         private final float rotation;
         private final Rectangle imageLocation;
         private final Rectangle imageClipLocation;
+        // defensive copy of the page size; the outer pageSize field is mutated in place on the EDT
+        // by calculatePageSize(), so capture it here to avoid a torn read on the worker thread.
+        private final Rectangle pageSize;
         private final JComponent parent;
 
         public PageImageCaptureTask(JComponent parent, Rectangle imageLocation, Rectangle imageClipLocation,
@@ -412,6 +418,7 @@ public abstract class AbstractPageViewComponent
             this.parent = parent;
             this.imageLocation = imageLocation;
             this.imageClipLocation = imageClipLocation;
+            this.pageSize = new Rectangle(AbstractPageViewComponent.this.pageSize);
         }
 
         public Object call() {
@@ -476,7 +483,6 @@ public abstract class AbstractPageViewComponent
             // queue a repaint, regardless of outcome
             SwingUtilities.invokeLater(AbstractPageViewComponent.this::repaint);
 
-            notifyAll();
             return null;
         }
 
@@ -506,6 +512,36 @@ public abstract class AbstractPageViewComponent
 
         PageBufferStore() {
             imageReference = new SoftReference<>(null);
+        }
+
+        /**
+         * Immutable, consistent view of the buffer state captured under a single lock.  Painting reads
+         * the image reference, its location, zoom and rotation together so a concurrent worker
+         * {@link #setState} can't pair a new buffer with a stale location/zoom mid-paint.  Note this
+         * snapshots the image <em>reference</em>, not the pixels, so progressive painting into the
+         * shared buffer still shows through.
+         */
+        protected static final class Snapshot {
+            final BufferedImage image;
+            final Rectangle imageLocation;
+            final Rectangle pageSize;
+            final float pageZoom;
+            final float pageRotation;
+
+            Snapshot(BufferedImage image, Rectangle imageLocation, Rectangle pageSize,
+                     float pageZoom, float pageRotation) {
+                this.image = image;
+                this.imageLocation = imageLocation;
+                this.pageSize = pageSize;
+                this.pageZoom = pageZoom;
+                this.pageRotation = pageRotation;
+            }
+        }
+
+        Snapshot getSnapshot() {
+            synchronized (objectLock) {
+                return new Snapshot(imageReference.get(), imageLocation, pageSize, pageZoom, pageRotation);
+            }
         }
 
         void setState(BufferedImage pageBufferImage, Rectangle imageLocation, Rectangle imageClipLocation,
