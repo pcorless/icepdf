@@ -130,7 +130,8 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
         try {
             AffineTransform af = g.getTransform();
             int gid = getCharToGid(estr);
-            GlyphData glyphData = trueTypeFont.getGlyph().getGlyph(gid);
+            GlyphData glyphData = trueTypeFont.getGlyph() != null
+                    ? trueTypeFont.getGlyph().getGlyph(gid) : null;
             Shape outline;
             if (glyphData == null) {
                 outline = new GeneralPath();

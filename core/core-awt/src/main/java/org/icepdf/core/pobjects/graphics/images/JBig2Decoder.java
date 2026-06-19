@@ -84,8 +84,9 @@ public class JBig2Decoder extends AbstractImageDecoder {
             }
         }
 
-        // apply decode
-        if (imageStream.getColourSpace() instanceof DeviceGray) {
+        // apply decode (tmpImage is null when the optional JBIG2 library is
+        // absent or decoding failed, in which case there is nothing to decode)
+        if (tmpImage != null && imageStream.getColourSpace() instanceof DeviceGray) {
             tmpImage = ImageUtility.applyGrayDecode(tmpImage, imageParams);
         }
 

@@ -812,8 +812,16 @@ public abstract class AbstractContentParser {
     }
 
     protected static void consume_Tf(GraphicsState graphicState, Stack<Object> stack, Resources resources) {
-        float size = ((Number) stack.pop()).floatValue();
-        Name name2 = (Name) stack.pop();
+        // Tf expects "/FontName size Tf" with the size on top of the stack.
+        // Malformed streams can supply non-numeric operands or too few of them;
+        // guard so a single bad Tf doesn't abort the whole text block.
+        Object sizeObj = stack.isEmpty() ? null : stack.pop();
+        Object nameObj = stack.isEmpty() ? null : stack.pop();
+        if (!(sizeObj instanceof Number) || !(nameObj instanceof Name)) {
+            return;
+        }
+        float size = ((Number) sizeObj).floatValue();
+        Name name2 = (Name) nameObj;
         // build the new font and initialize it.
         graphicState.getTextState().tsize = size;
         graphicState.getTextState().fontName = name2;
@@ -852,9 +860,9 @@ public abstract class AbstractContentParser {
         }
         if (graphicState.getTextState().font != null) {
             FontFile font = graphicState.getTextState().font.getFont();
-            font.deriveFont(size);
-            graphicState.getTextState().currentfont =
-                    graphicState.getTextState().font.getFont().deriveFont(size);
+            if (font != null) {
+                graphicState.getTextState().currentfont = font.deriveFont(size);
+            }
         } else {
             // not font found which is a problem,  so we need to check for interactive form dictionary
             graphicState.getTextState().font = resources.getLibrary().getInteractiveFormFont(name2.getName());
@@ -1088,15 +1096,30 @@ public abstract class AbstractContentParser {
         return null;
     }
 
+    /**
+     * Pops the top operand as a float, returning 0 when the stack is empty or
+     * the operand is not numeric. Malformed content streams can leave Name or
+     * String operands where a number is expected.
+     */
+    private static float popFloat(Stack<Object> stack) {
+        Object o = stack.isEmpty() ? null : stack.pop();
+        return o instanceof Number ? ((Number) o).floatValue() : 0f;
+    }
+
     protected static GeneralPath consume_re(Stack<Object> stack,
                                             GeneralPath geometricPath) {
         if (geometricPath == null) {
             geometricPath = new GeneralPath();
         }
-        float h = ((Number) stack.pop()).floatValue();
-        float w = ((Number) stack.pop()).floatValue();
-        float y = ((Number) stack.pop()).floatValue();
-        float x = ((Number) stack.pop()).floatValue();
+        // re expects four numbers; malformed streams can supply too few or
+        // non-numeric operands, so pop defensively rather than abort the stream.
+        if (stack.size() < 4) {
+            return geometricPath;
+        }
+        float h = popFloat(stack);
+        float w = popFloat(stack);
+        float y = popFloat(stack);
+        float x = popFloat(stack);
         geometricPath.moveTo(x, y);
         geometricPath.lineTo(x + w, y);
         geometricPath.lineTo(x + w, y + h);
