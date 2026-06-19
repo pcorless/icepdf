@@ -255,14 +255,20 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     }
 
     /**
-     * Returns the annotation component linked to the given annotation
+     * Returns the annotation component linked to the given annotation.
+     * <p>
+     * If this page's annotation components have not been built yet, the first call lazily builds
+     * them all (an O(n) construction of Swing components) so the lookup can succeed; subsequent
+     * calls are a plain map lookup. Because that build creates Swing components it only runs on the
+     * EDT &mdash; if this is called off the EDT before the components exist it performs a pure lookup
+     * and may return null rather than building Swing components on a worker thread.
      *
      * @param annot The annotation
      * @return The annotation component, or null if there is no match
      */
     public AnnotationComponent getComponentFor(Annotation annot) {
         synchronized (annotationComponentsLock) {
-            if (annotationToComponent == null) {
+            if (annotationToComponent == null && SwingUtilities.isEventDispatchThread()) {
                 // initializeAnnotationsComponent re-acquires annotationComponentsLock (reentrant).
                 initializeAnnotationsComponent(getPage());
             }
