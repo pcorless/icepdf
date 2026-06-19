@@ -90,8 +90,9 @@ public abstract class AbstractPageViewComponent
     // systems graphics configuration for creating a pages back buffer.
     protected GraphicsConfiguration graphicsConfiguration;
 
-    // Main worker task.
-    protected FutureTask<Object> pageImageCaptureTask;
+    // Main worker task. Assigned/read on the EDT (paint and property-change paths) but cancelled in
+    // dispose(), which may run from arbitrary teardown threads, so volatile for reference visibility.
+    protected volatile FutureTask<Object> pageImageCaptureTask;
 
     public AbstractPageViewComponent(DocumentViewModel documentViewModel, PageTree pageTree,
                                      final int pageIndex, int width, int height) {
