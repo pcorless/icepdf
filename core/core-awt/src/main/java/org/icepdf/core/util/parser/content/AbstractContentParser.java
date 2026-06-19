@@ -1455,7 +1455,10 @@ public abstract class AbstractContentParser {
                 // apply transparency
                 setAlpha(shapes, graphicState, AlphaPaintType.ALPHA_FILL);
                 // draw string will take care of text pageText construction
-                if (stringObject.getLength() > 0) {
+                // (skip when no usable font is in the text state, e.g. a Tj
+                // before a valid Tf or an unresolved font resource).
+                if (stringObject.getLength() > 0 && textState.font != null
+                        && textState.font.getFont() != null) {
                     TextSprite textSprite = drawString(stringObject.getLiteralStringBuffer(
                                     textState.font.getSubTypeFormat(),
                                     textState.font.getFont()),

@@ -153,7 +153,10 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
                 g.draw(outline);
             }
             g.setTransform(af);
-        } catch (IOException e) {
+        } catch (IOException | RuntimeException e) {
+            // RuntimeException covers fontbox throwing for unsupported tables
+            // (e.g. "OTF fonts do not have a glyf table"); skip the glyph rather
+            // than abort the whole text run / page.
             logger.log(Level.FINE, "Error painting FontType2 font", e);
         }
     }

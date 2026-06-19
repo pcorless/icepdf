@@ -51,6 +51,11 @@ public class Function_4 extends Function {
     // cache for calculated colour values
     private final ConcurrentHashMap<Integer, float[]> resultCache;
 
+    // a malformed type 4 program fails deterministically on every sample of a
+    // shading; only log the parse failure once per function rather than once
+    // per colour lookup.
+    private volatile boolean evaluationFailureLogged = false;
+
     public Function_4(Dictionary d) {
         super(d);
         // decode the stream for parsing.
@@ -92,7 +97,10 @@ public class Function_4 extends Function {
         try {
             lex.parse(x);
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error Processing Type 4 definition", e);
+            if (!evaluationFailureLogged) {
+                evaluationFailureLogged = true;
+                logger.log(Level.WARNING, "Error Processing Type 4 definition", e);
+            }
         }
 
         // get the remaining numbers on the stack which are the return values.
