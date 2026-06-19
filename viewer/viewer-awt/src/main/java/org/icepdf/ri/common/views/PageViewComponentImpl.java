@@ -38,6 +38,7 @@ import java.awt.event.FocusListener;
 import java.awt.geom.AffineTransform;
 import java.util.*;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.logging.Logger;
 
 /**
@@ -51,6 +52,32 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
 
     // currently selected tool
     protected ToolHandler currentToolHandler;
+
+    // maps a DocumentViewModel.DISPLAY_TOOL_* mode to the constructor of the handler that services it.
+    private static final Map<Integer, BiFunction<DocumentViewController, AbstractPageViewComponent, ToolHandler>>
+            TOOL_HANDLER_FACTORIES = createToolHandlerFactories();
+
+    private static Map<Integer, BiFunction<DocumentViewController, AbstractPageViewComponent, ToolHandler>>
+    createToolHandlerFactories() {
+        Map<Integer, BiFunction<DocumentViewController, AbstractPageViewComponent, ToolHandler>> factories =
+                new HashMap<>();
+        factories.put(DocumentViewModel.DISPLAY_TOOL_ZOOM_IN, ZoomInPageHandler::new);
+        factories.put(DocumentViewModel.DISPLAY_TOOL_SELECTION, AnnotationSelectionHandler::new);
+        factories.put(DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION, LinkAnnotationHandler::new);
+        factories.put(DocumentViewModel.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION, HighLightAnnotationHandler::new);
+        factories.put(DocumentViewModel.DISPLAY_TOOL_REDACTION_ANNOTATION, RedactionAnnotationHandler::new);
+        factories.put(DocumentViewModel.DISPLAY_TOOL_SIGNATURE_ANNOTATION, SignatureAnnotationHandler::new);
+        factories.put(DocumentViewModel.DISPLAY_TOOL_STRIKEOUT_ANNOTATION, StrikeOutAnnotationHandler::new);
+        factories.put(DocumentViewModel.DISPLAY_TOOL_UNDERLINE_ANNOTATION, UnderLineAnnotationHandler::new);
+        factories.put(DocumentViewModel.DISPLAY_TOOL_LINE_ANNOTATION, LineAnnotationHandler::new);
+        factories.put(DocumentViewModel.DISPLAY_TOOL_LINE_ARROW_ANNOTATION, LineArrowAnnotationHandler::new);
+        factories.put(DocumentViewModel.DISPLAY_TOOL_SQUARE_ANNOTATION, SquareAnnotationHandler::new);
+        factories.put(DocumentViewModel.DISPLAY_TOOL_CIRCLE_ANNOTATION, CircleAnnotationHandler::new);
+        factories.put(DocumentViewModel.DISPLAY_TOOL_INK_ANNOTATION, InkAnnotationHandler::new);
+        factories.put(DocumentViewModel.DISPLAY_TOOL_FREE_TEXT_ANNOTATION, FreeTextAnnotationHandler::new);
+        factories.put(DocumentViewModel.DISPLAY_TOOL_TEXT_ANNOTATION, TextAnnotationHandler::new);
+        return Collections.unmodifiableMap(factories);
+    }
 
     // we always keep around a page selection tool, it's only called from the parent view
     // component, this allows for multiple page selection.
@@ -154,87 +181,17 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
             removeMouseMotionListener(currentToolHandler);
             currentToolHandler = null;
         }
-        // assign the correct tool handler
-        switch (viewToolMode) {
-            case DocumentViewModel.DISPLAY_TOOL_ZOOM_IN:
-                currentToolHandler = new ZoomInPageHandler(
-                        documentViewController,
-                        this);
-                break;
-            case DocumentViewModel.DISPLAY_TOOL_SELECTION:
-                // no handler is needed for selection as it is handled by each annotation.
-                currentToolHandler = new AnnotationSelectionHandler(
-                        documentViewController, this);
+        // assign the correct tool handler from the factory table
+        BiFunction<DocumentViewController, AbstractPageViewComponent, ToolHandler> toolHandlerFactory =
+                TOOL_HANDLER_FACTORIES.get(viewToolMode);
+        if (toolHandlerFactory != null) {
+            currentToolHandler = toolHandlerFactory.apply(documentViewController, this);
+            // zoom-in keeps any active text selection; every other tool clears it.
+            if (viewToolMode != DocumentViewModel.DISPLAY_TOOL_ZOOM_IN) {
                 documentViewController.clearSelectedText();
-                break;
-            case DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION:
-                currentToolHandler = new LinkAnnotationHandler(
-                        documentViewController, this);
-                documentViewController.clearSelectedText();
-                break;
-            case DocumentViewModel.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION:
-                currentToolHandler = new HighLightAnnotationHandler(
-                        documentViewController, this);
-                documentViewController.clearSelectedText();
-                break;
-            case DocumentViewModel.DISPLAY_TOOL_REDACTION_ANNOTATION:
-                currentToolHandler = new RedactionAnnotationHandler(
-                        documentViewController, this);
-                documentViewController.clearSelectedText();
-                break;
-            case DocumentViewModel.DISPLAY_TOOL_SIGNATURE_ANNOTATION:
-                currentToolHandler = new SignatureAnnotationHandler(
-                        documentViewController, this);
-                documentViewController.clearSelectedText();
-                break;
-            case DocumentViewModel.DISPLAY_TOOL_STRIKEOUT_ANNOTATION:
-                currentToolHandler = new StrikeOutAnnotationHandler(
-                        documentViewController, this);
-                documentViewController.clearSelectedText();
-                break;
-            case DocumentViewModel.DISPLAY_TOOL_UNDERLINE_ANNOTATION:
-                currentToolHandler = new UnderLineAnnotationHandler(
-                        documentViewController, this);
-                documentViewController.clearSelectedText();
-                break;
-            case DocumentViewModel.DISPLAY_TOOL_LINE_ANNOTATION:
-                currentToolHandler = new LineAnnotationHandler(
-                        documentViewController, this);
-                documentViewController.clearSelectedText();
-                break;
-            case DocumentViewModel.DISPLAY_TOOL_LINE_ARROW_ANNOTATION:
-                currentToolHandler = new LineArrowAnnotationHandler(
-                        documentViewController, this);
-                documentViewController.clearSelectedText();
-                break;
-            case DocumentViewModel.DISPLAY_TOOL_SQUARE_ANNOTATION:
-                currentToolHandler = new SquareAnnotationHandler(
-                        documentViewController, this);
-                documentViewController.clearSelectedText();
-                break;
-            case DocumentViewModel.DISPLAY_TOOL_CIRCLE_ANNOTATION:
-                currentToolHandler = new CircleAnnotationHandler(
-                        documentViewController, this);
-                documentViewController.clearSelectedText();
-                break;
-            case DocumentViewModel.DISPLAY_TOOL_INK_ANNOTATION:
-                currentToolHandler = new InkAnnotationHandler(
-                        documentViewController,
-                        this);
-                documentViewController.clearSelectedText();
-                break;
-            case DocumentViewModel.DISPLAY_TOOL_FREE_TEXT_ANNOTATION:
-                currentToolHandler = new FreeTextAnnotationHandler(
-                        documentViewController, this);
-                documentViewController.clearSelectedText();
-                break;
-            case DocumentViewModel.DISPLAY_TOOL_TEXT_ANNOTATION:
-                currentToolHandler = new TextAnnotationHandler(
-                        documentViewController, this);
-                documentViewController.clearSelectedText();
-                break;
-            default:
-                currentToolHandler = null;
+            }
+        } else {
+            currentToolHandler = null;
         }
         if (currentToolHandler != null) {
             currentToolHandler.installTool();
