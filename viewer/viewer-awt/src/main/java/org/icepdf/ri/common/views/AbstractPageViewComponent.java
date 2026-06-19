@@ -69,8 +69,12 @@ public abstract class AbstractPageViewComponent
         progressivePaint = Defs.booleanProperty("org.icepdf.core.views.page.progressivePaint", true);
     }
 
-    // flags for painting annotations and text highlights.
+    // Whether the worker bakes annotations into the page back buffer. True for plain page views
+    // (e.g. thumbnails); PageViewComponentImpl sets it false because it renders annotations as
+    // separate live Swing components on top of the buffer instead.
     protected boolean paintAnnotations = true;
+    // Always false: search highlights are painted on the EDT in paintTextSelection() so they can
+    // track live search state, rather than being baked into the worker's buffer.
     protected final boolean paintSearchHighlight = false;
 
     // view mvc parents
@@ -112,7 +116,7 @@ public abstract class AbstractPageViewComponent
             pageBoundaryBox = PAGE_BOUNDARY_BOX;
         }
 
-        // set up the store for the pageBufferPadding and current clip
+        // set up the store for the back buffer and current clip
         pageBufferStore = new PageBufferStore();
 
         // initialize page size
@@ -128,6 +132,8 @@ public abstract class AbstractPageViewComponent
         return pageSize.getSize();
     }
 
+    // Intentionally reports the logical page size (zoom/rotation applied) rather than the
+    // component's allocated bounds, so callers that query getSize() get page dimensions.
     public Dimension getSize() {
         return pageSize.getSize();
     }
@@ -226,16 +232,20 @@ public abstract class AbstractPageViewComponent
     }
 
     /**
-     * Checks if this page intersects the viewport
+     * Checks if this page intersects the viewport. Called from the worker thread, where the view
+     * may be tearing down, so a missing model or scroll pane is treated as "not visible".
      *
-     * @return true if page is visible in viewport,  false otherwise.
-     * @throws NullPointerException if the parent scrollPane is null.
+     * @return true if page is visible in viewport, false otherwise (including when the model or
+     * scroll pane is unavailable).
      */
     private boolean isPageIntersectViewport() {
-        Rectangle pageBounds = (documentViewModel != null && documentViewModel.getPageComponents() != null) ?
+        if (documentViewModel == null) {
+            return false;
+        }
+        Rectangle pageBounds = documentViewModel.getPageComponents() != null ?
                 documentViewModel.getPageBounds(pageIndex) : getBounds();
         JScrollPane parentScrollPane = documentViewModel.getDocumentViewScrollPane();
-        return pageBounds != null && this.isShowing() &&
+        return pageBounds != null && parentScrollPane != null && this.isShowing() &&
                 pageBounds.intersects(parentScrollPane.getViewport().getViewRect());
     }
 
@@ -281,7 +291,7 @@ public abstract class AbstractPageViewComponent
         g2d.setColor(pageColor);
         g2d.fillRect(0, 0, pageSize.width, pageSize.height);
 
-        // paint the pageBufferPadding, but get the latest copy in case it was returned extra quick.
+        // paint the back buffer, but get the latest copy in case it was returned extra quick.
         // read the buffer reference, location, zoom and rotation as one consistent snapshot so a
         // concurrent worker swap can't pair a new buffer with a stale location/zoom.
         PageBufferStore.Snapshot snapshot = pageBufferStore.getSnapshot();
@@ -327,7 +337,7 @@ public abstract class AbstractPageViewComponent
             imageLocation = new Rectangle(0, 0, pageLocation.width, pageLocation.height);
             imageClipLocation = new Rectangle(imageLocation);
         } else {
-            // otherwise we create a pageBufferPadding based on the viewport size plus some padding
+            // otherwise we create a buffer based on the viewport size plus some padding
             imageClipLocation = viewPort.intersection(pageLocation);
             // move the clip relative to page coordinates
             imageClipLocation.setLocation(
@@ -348,9 +358,9 @@ public abstract class AbstractPageViewComponent
             }
         }
 
-        // check if we need create or refresh the back pageBufferPadding.
+        // check if we need to create or refresh the back buffer.
         if (pageBufferStore.isDirty() || pageBufferStore.getImageReference() == null) {
-            // start future task to paint back pageBufferPadding
+            // start future task to paint the back buffer
             if (pageImageCaptureTask == null || pageImageCaptureTask.isDone() || pageImageCaptureTask.isCancelled()) {
                 pageImageCaptureTask = new FutureTask<>(
                         new PageImageCaptureTask(this, imageLocation, imageClipLocation,
@@ -466,7 +476,7 @@ public abstract class AbstractPageViewComponent
                 page.paint(g2d, GraphicsRenderingHints.SCREEN, pageBoundaryBox, rotation, zoom,
                         paintAnnotations, paintSearchHighlight);
                 g2d.dispose();
-                // init and paint thread went under interrupted, we can move the back pageBufferPadding to the front.
+                // init and paint thread were not interrupted, we can move the back buffer to the front.
                 pageBufferStore.setState(pageBufferImage, imageLocation, imageClipLocation, pageSize,
                         zoom, rotation, false);
             } catch (InterruptedException e) {
