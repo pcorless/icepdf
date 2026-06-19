@@ -56,6 +56,10 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     protected final TextSelectionPageHandler textSelectionPageHandler;
 
     // annotations component for this pageViewComp.
+    // All access to annotationComponents, annotationToComponent, destinationComponents and the
+    // alreadyDisposing flag is guarded by annotationComponentsLock. This is a dedicated lock,
+    // intentionally NOT the component monitor (synchronized(this)) — locking on a Swing component
+    // contends with AWT internals (add/remove/layout) and risks deadlock with the EDT.
     protected final Object annotationComponentsLock = new Object();
     protected ArrayList<AbstractAnnotationComponent> annotationComponents;
     protected Map<Reference, AnnotationComponent> annotationToComponent;
@@ -110,7 +114,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     }
 
     public void dispose() {
-        synchronized (this) {
+        synchronized (annotationComponentsLock) {
             alreadyDisposing = true;
         }
         if (pageImageCaptureTask != null && !pageImageCaptureTask.isDone()) {
@@ -253,13 +257,16 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
      * @return The annotation component, or null if there is no match
      */
     public AnnotationComponent getComponentFor(Annotation annot) {
-        if (annotationToComponent == null) {
-            initializeAnnotationsComponent(getPage());
+        synchronized (annotationComponentsLock) {
+            if (annotationToComponent == null) {
+                // initializeAnnotationsComponent re-acquires annotationComponentsLock (reentrant).
+                initializeAnnotationsComponent(getPage());
+            }
+            if (annotationToComponent != null) {
+                return annotationToComponent.get(annot.getPObjectReference());
+            }
+            return null;
         }
-        if (annotationToComponent != null) {
-            return annotationToComponent.get(annot.getPObjectReference());
-        }
-        return null;
     }
 
     /**
@@ -268,7 +275,9 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
      * @return list of annotation components, can be null.
      */
     public ArrayList<DestinationComponent> getDestinationComponents() {
-        return destinationComponents;
+        synchronized (annotationComponentsLock) {
+            return destinationComponents;
+        }
     }
 
     /**
@@ -465,25 +474,27 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
      */
     public void addAnnotation(AnnotationComponent annotation) {
         // delegate to handler.
-        if (annotationComponents == null) {
-            annotationComponents = new ArrayList<>();
-            annotationToComponent = new HashMap<>();
-        }
-        annotationComponents.add((AbstractAnnotationComponent) annotation);
-        annotationToComponent.put(annotation.getAnnotation().getPObjectReference(), annotation);
-        if (annotation instanceof PopupAnnotationComponent) {
-            final PopupAnnotationComponent popupAnnotationComponent = (PopupAnnotationComponent) annotation;
-            addPopupAnnotationComponent(popupAnnotationComponent);
-            addPopupAnnotationComponentGlue(popupAnnotationComponent.getMarkupAnnotationComponent(), popupAnnotationComponent);
-        } else if (annotation instanceof MarkupAnnotationComponent) {
-            MarkupAnnotationComponent markupAnnotationComponent = (MarkupAnnotationComponent) annotation;
-            PopupAnnotationComponent popupAnnotationComponent = markupAnnotationComponent.getPopupAnnotationComponent();
-            addPopupAnnotationComponentGlue(markupAnnotationComponent, popupAnnotationComponent);
-            this.setLayer((AbstractAnnotationComponent) annotation, JLayeredPane.PALETTE_LAYER);
-            this.add((AbstractAnnotationComponent) annotation);
-        } else {
-            this.setLayer((AbstractAnnotationComponent) annotation, JLayeredPane.PALETTE_LAYER);
-            this.add((AbstractAnnotationComponent) annotation);
+        synchronized (annotationComponentsLock) {
+            if (annotationComponents == null) {
+                annotationComponents = new ArrayList<>();
+                annotationToComponent = new HashMap<>();
+            }
+            annotationComponents.add((AbstractAnnotationComponent) annotation);
+            annotationToComponent.put(annotation.getAnnotation().getPObjectReference(), annotation);
+            if (annotation instanceof PopupAnnotationComponent) {
+                final PopupAnnotationComponent popupAnnotationComponent = (PopupAnnotationComponent) annotation;
+                addPopupAnnotationComponent(popupAnnotationComponent);
+                addPopupAnnotationComponentGlue(popupAnnotationComponent.getMarkupAnnotationComponent(), popupAnnotationComponent);
+            } else if (annotation instanceof MarkupAnnotationComponent) {
+                MarkupAnnotationComponent markupAnnotationComponent = (MarkupAnnotationComponent) annotation;
+                PopupAnnotationComponent popupAnnotationComponent = markupAnnotationComponent.getPopupAnnotationComponent();
+                addPopupAnnotationComponentGlue(markupAnnotationComponent, popupAnnotationComponent);
+                this.setLayer((AbstractAnnotationComponent) annotation, JLayeredPane.PALETTE_LAYER);
+                this.add((AbstractAnnotationComponent) annotation);
+            } else {
+                this.setLayer((AbstractAnnotationComponent) annotation, JLayeredPane.PALETTE_LAYER);
+                this.add((AbstractAnnotationComponent) annotation);
+            }
         }
     }
 
@@ -493,23 +504,27 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
      * @param annotationComp annotation to be removed.
      */
     public void removeAnnotation(AnnotationComponent annotationComp) {
-        annotationComponents.remove(annotationComp);
-        if (annotationComp.getAnnotation() != null) {
-            annotationToComponent.remove(annotationComp.getAnnotation().getPObjectReference());
-        } else {
-            annotationToComponent.entrySet().stream().filter(e -> e.getValue().equals(annotationComp)).findFirst()
-                    .ifPresent(e -> annotationToComponent.remove(e.getKey()));
-        }
-        if (annotationComp instanceof PopupAnnotationComponent) {
-            removePopupAnnotationComponent((PopupAnnotationComponent) annotationComp);
-        } else {
-            this.remove((AbstractAnnotationComponent) annotationComp);
+        synchronized (annotationComponentsLock) {
+            annotationComponents.remove(annotationComp);
+            if (annotationComp.getAnnotation() != null) {
+                annotationToComponent.remove(annotationComp.getAnnotation().getPObjectReference());
+            } else {
+                annotationToComponent.entrySet().stream().filter(e -> e.getValue().equals(annotationComp)).findFirst()
+                        .ifPresent(e -> annotationToComponent.remove(e.getKey()));
+            }
+            if (annotationComp instanceof PopupAnnotationComponent) {
+                removePopupAnnotationComponent((PopupAnnotationComponent) annotationComp);
+            } else {
+                this.remove((AbstractAnnotationComponent) annotationComp);
+            }
         }
     }
 
     public void removeDestination(DestinationComponent destinationComponent) {
-        destinationComponents.remove(destinationComponent);
-        this.remove(destinationComponent);
+        synchronized (annotationComponentsLock) {
+            destinationComponents.remove(destinationComponent);
+            this.remove(destinationComponent);
+        }
     }
 
 
@@ -532,8 +547,10 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
             }
             documentViewModel.removeAllFloatingAnnotationComponent(this);
 
-            annotationComponents = null;
-            annotationToComponent = null;
+            synchronized (annotationComponentsLock) {
+                annotationComponents = null;
+                annotationToComponent = null;
+            }
         });
     }
 
@@ -568,7 +585,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     }
 
     private void initializeAnnotationsComponent(Page page) {
-        synchronized (this) {
+        synchronized (annotationComponentsLock) {
             if (alreadyDisposing) {
                 return;
             }
@@ -694,7 +711,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         // which is called from a worker thread so we need to be careful that the document hasn't been closed.
         if (documentViewController.getDocumentViewModel() == null) return;
         if (page != null) {
-            synchronized (this) {
+            synchronized (annotationComponentsLock) {
                 if (alreadyDisposing) {
                     return;
                 }
