@@ -16,11 +16,11 @@
 package org.icepdf.qa.tests;
 
 import javafx.application.Platform;
-import javafx.scene.image.PixelFormat;
-import javafx.scene.image.PixelReader;
 import org.icepdf.qa.config.*;
 import org.icepdf.qa.tests.exceptions.ConfigurationException;
 import org.icepdf.qa.tests.exceptions.ValidationException;
+import org.icepdf.qa.utilities.CompareMetrics;
+import org.icepdf.qa.utilities.ImageCompare;
 import org.icepdf.qa.utilities.TimeTestWatcher;
 import org.icepdf.qa.viewer.common.Mediator;
 import org.icepdf.qa.viewer.common.PreferencesController;
@@ -51,7 +51,7 @@ import java.util.concurrent.Executors;
  */
 public class ImageCompareTask extends AbstractTestTask {
 
-    private static final int THREAD_EXECUTOR_SIZE = 8;
+    private static final int THREAD_EXECUTOR_SIZE = 4;
 
     // page capture test
     public static final String PAGE_CAPTURE_CLASS = "org.icepdf.ri.util.qa.PageCapture";
@@ -462,21 +462,31 @@ public class ImageCompareTask extends AbstractTestTask {
                         captureSets[1].getCaptureSetPath().getFileName().toString(),
                         fileName.getFileName() + "_" + pageNumber + ".png");
 
-                FileInputStream imageCaptureAFileStream = new FileInputStream(imageCaptureA.toFile());
-                FileInputStream imageCaptureBFileStream = new FileInputStream(imageCaptureB.toFile());
+                // A document may have fewer pages than commonPageCount, in which
+                // case the capture for this page was never written. Skip quietly,
+                // matching the original FileInputStream behaviour.
+                if (!Files.exists(imageCaptureA) || !Files.exists(imageCaptureB)) {
+                    return null;
+                }
 
-                javafx.scene.image.Image imageA = new javafx.scene.image.Image(imageCaptureAFileStream);
-                javafx.scene.image.Image imageB = new javafx.scene.image.Image(imageCaptureBFileStream);
+                BufferedImage imageA = ImageIO.read(imageCaptureA.toFile());
+                BufferedImage imageB = ImageIO.read(imageCaptureB.toFile());
+                if (imageA == null || imageB == null) {
+                    return null;
+                }
 
-                double diff = percentageCompare(imageA, imageB);
-
-                imageCaptureAFileStream.close();
-                imageCaptureBFileStream.close();
+                CompareMetrics metrics = ImageCompare.compare(imageA, imageB,
+                        PreferencesController.getImageCompareFuzz());
+                imageA.flush();
+                imageB.flush();
 
                 return new Result(
                         fileName.toString(),
                         imageCaptureA.toString(),
-                        imageCaptureB.toString(), diff);
+                        imageCaptureB.toString(),
+                        metrics.getInkSimilarity(),
+                        metrics.getAeSimilarity(),
+                        metrics.getStructuralSimilarity());
 
             } catch (FileNotFoundException e) {
                 // silently move on if the page wasn't created.
@@ -527,36 +537,5 @@ public class ImageCompareTask extends AbstractTestTask {
             return null;
         }
     }
-
-    private static double percentageCompare(javafx.scene.image.Image image1, javafx.scene.image.Image image2) {
-
-        assert (image1.getWidth() == image2.getWidth() && image2.getHeight() == image2.getHeight());
-
-        PixelReader pixelReader1 = image1.getPixelReader();
-        PixelReader pixelReader2 = image2.getPixelReader();
-
-        int width = (int) image1.getWidth();
-        int height = (int) image1.getHeight();
-
-        int[] buffer1 = new int[width];
-        int[] buffer2 = new int[width];
-
-        int badPixels = 0;
-        for (int y = 0; y < height; y++) {
-            pixelReader1.getPixels(0, y, width, 1, PixelFormat.getIntArgbInstance(), buffer1, 0, 1);
-            pixelReader2.getPixels(0, y, width, 1, PixelFormat.getIntArgbInstance(), buffer2, 0, 1);
-            for (int x = 0; x < width; x++) {
-                if (buffer1[x] != buffer2[x]) {
-                    badPixels++;
-                }
-            }
-        }
-
-        int totalPixels = width * height;
-        int goodPixels = totalPixels - badPixels;
-
-        return 100d * goodPixels / totalPixels;
-    }
-
 
 }
