@@ -51,6 +51,11 @@ public class Function_4 extends Function {
     // cache for calculated colour values
     private final ConcurrentHashMap<Integer, float[]> resultCache;
 
+    // a malformed type 4 program fails deterministically on every sample of a
+    // shading; only log the parse failure once per function rather than once
+    // per colour lookup.
+    private volatile boolean evaluationFailureLogged = false;
+
     public Function_4(Dictionary d) {
         super(d);
         // decode the stream for parsing.
@@ -92,10 +97,13 @@ public class Function_4 extends Function {
         try {
             lex.parse(x);
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error Processing Type 4 definition", e);
+            if (!evaluationFailureLogged) {
+                evaluationFailureLogged = true;
+                logger.log(Level.WARNING, "Error Processing Type 4 definition", e);
+            }
         }
 
-        // get the remaining number on the stack which are the return values.
+        // get the remaining numbers on the stack which are the return values.
         Stack stack = lex.getStack();
 
         // length of output array
@@ -103,10 +111,24 @@ public class Function_4 extends Function {
         // ready output array
         float[] y = new float[n];
 
-        // pop remaining items off the stack and apply the range bounds.
+        // The n output values are the top-most n items left on the stack.  If
+        // evaluation failed or underflowed the stack may hold fewer than n
+        // items; fall back to the lower range bound rather than throwing and
+        // aborting the entire shading.
+        int available = stack.size();
+        if (available < n) {
+            for (int i = 0; i < n; i++) {
+                y[i] = range[2 * i];
+            }
+            return y;
+        }
+        // read the top n items (a well-behaved function leaves exactly n), and
+        // clamp each to its range; tolerate non-Float numbers defensively.
+        int base = available - n;
         for (int i = 0; i < n; i++) {
-            y[i] = Math.min(Math.max((Float) stack.elementAt(i),
-                    range[2 * i]), range[2 * i + 1]);
+            Object value = stack.elementAt(base + i);
+            float f = value instanceof Number ? ((Number) value).floatValue() : range[2 * i];
+            y[i] = Math.min(Math.max(f, range[2 * i]), range[2 * i + 1]);
         }
         // add the new value to the cache.
         resultCache.put(colourKey, y);

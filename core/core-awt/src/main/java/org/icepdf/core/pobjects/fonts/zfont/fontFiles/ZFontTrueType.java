@@ -261,7 +261,7 @@ public class ZFontTrueType extends ZSimpleFont {
         try {
             if (cmapWinSymbol == null) {
                 if (encoding == null) {
-                    return cmapMacRoman.getGlyphId(code);
+                    return cmapMacRoman != null ? cmapMacRoman.getGlyphId(code) : 0;
                 }
                 String name = encoding.getName(code);
                 // this is slow,  would like to improve.

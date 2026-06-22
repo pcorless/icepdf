@@ -87,6 +87,17 @@ public abstract class ImageReference implements Callable<BufferedImage> {
         if (image != null) {
             try {
                 aG.drawImage(image, aX, aY, aW, aH, null);
+            } catch (OutOfMemoryError e) {
+                // Java2D sizes the destination raster to the transformed image
+                // bounds, so re-scaling the source cannot shrink it (and a
+                // redraw would just OOM again). Skip this image and let the rest
+                // of the page render rather than aborting the whole capture.
+                logger.warning("Out of memory painting image, skipping " +
+                        imageStream.getPObjectReference() +
+                        " (" + imageStream.getImageParams().getWidth() + "x" +
+                        imageStream.getImageParams().getHeight() + ")");
+                image.flush();
+                this.image = null;
             } catch (Exception e) {
                 logger.warning("There was a problem painting image, falling back to scaled instance " +
                         imageStream.getPObjectReference() +

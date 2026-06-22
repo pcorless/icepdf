@@ -19,6 +19,8 @@ import com.twelvemonkeys.image.AffineTransformOp;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.util.Defs;
 
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
@@ -70,7 +72,13 @@ public abstract class AbstractImageDecoder implements ImageDecoder {
      * @return true if the image is really, really, really big.
      */
     boolean isImageReallyBig(WritableRaster raster) {
-        return raster.getWidth() > maxImageWidth && raster.getHeight() > maxImageHeight;
+        return isImageReallyBig(raster.getWidth(), raster.getHeight());
+    }
+
+    boolean isImageReallyBig(int width, int height) {
+        // either dimension being absurd is enough to pop the heap once the image
+        // is expanded/transformed for painting, so guard on OR not AND.
+        return width > maxImageWidth || height > maxImageHeight;
     }
 
     /**
@@ -86,5 +94,34 @@ public abstract class AbstractImageDecoder implements ImageDecoder {
         at.scale(scale, scale);
         AffineTransformOp scaleOp = new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
         return scaleOp.filter(raster, null);
+    }
+
+    /**
+     * Scales an already-decoded image whose dimensions exceed the configured
+     * maximums down to {@link #preferredSize} on its longest edge.  Used by
+     * decoders that produce a BufferedImage rather than a raw raster, so that a
+     * very large image (e.g. a multi-thousand pixel CCITT fax) does not exhaust
+     * the heap when Java2D later expands and transforms it for painting.
+     *
+     * @param image decoded image to bound.
+     * @return a scaled copy, or the original image when no scaling is needed.
+     */
+    BufferedImage scaleReallyBigImage(BufferedImage image) {
+        double scale = Math.min(preferredSize / (double) image.getWidth(),
+                preferredSize / (double) image.getHeight());
+        if (scale >= 1.0) {
+            return image;
+        }
+        int width = (int) Math.ceil(image.getWidth() * scale);
+        int height = (int) Math.ceil(image.getHeight() * scale);
+        BufferedImage scaled = ImageUtility.hasAlpha(image)
+                ? ImageUtility.createTranslucentCompatibleImage(width, height)
+                : ImageUtility.createCompatibleImage(width, height);
+        Graphics2D g = scaled.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.drawImage(image, 0, 0, width, height, null);
+        g.dispose();
+        image.flush();
+        return scaled;
     }
 }
