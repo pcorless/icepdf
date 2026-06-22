@@ -44,6 +44,12 @@ public class PreferencesController {
     public static final String IMAGE_COMPARE_BLENDING_MODE_VALUE = ImageComparePane.DIFFERENCE_BLENDING_MODE;
     public static final String IMAGE_COMPARE_DIFF_ENABLED_KEY = "imageCompareDiffEnabled";
     public static final boolean IMAGE_COMPARE_DIFF_ENABLED_VALUE = true;
+    // per-channel colour tolerance (0-255) used by the compare engine and the interactive fuzz slider.
+    public static final String IMAGE_COMPARE_FUZZ_KEY = "imageCompareFuzz";
+    public static final int IMAGE_COMPARE_FUZZ_VALUE = org.icepdf.qa.utilities.ImageCompare.DEFAULT_FUZZ;
+    // ink-weighted similarity (%) at or below which a result is flagged as a regression in the results tab.
+    public static final String IMAGE_COMPARE_THRESHOLD_KEY = "imageCompareThreshold";
+    public static final double IMAGE_COMPARE_THRESHOLD_VALUE = 99.99d;
     public static final String LAST_CONTENT_SET_KEY = "contentSetBasePath";
     public static final String APPLICATION_HOME_PATH_KEY = "applicationHomePath";
 
@@ -116,6 +122,22 @@ public class PreferencesController {
 
     public static void saveLastUsedImageCompareDiffEnabled(boolean lastImageCompareName) {
         prefs.putBoolean(IMAGE_COMPARE_DIFF_ENABLED_KEY, lastImageCompareName);
+    }
+
+    public static int getImageCompareFuzz() {
+        return prefs.getInt(IMAGE_COMPARE_FUZZ_KEY, IMAGE_COMPARE_FUZZ_VALUE);
+    }
+
+    public static void saveImageCompareFuzz(int fuzz) {
+        prefs.putInt(IMAGE_COMPARE_FUZZ_KEY, fuzz);
+    }
+
+    public static double getImageCompareThreshold() {
+        return prefs.getDouble(IMAGE_COMPARE_THRESHOLD_KEY, IMAGE_COMPARE_THRESHOLD_VALUE);
+    }
+
+    public static void saveImageCompareThreshold(double threshold) {
+        prefs.putDouble(IMAGE_COMPARE_THRESHOLD_KEY, threshold);
     }
 
     public static void saveLastUsedContentSetPath(Path directoryPath) {

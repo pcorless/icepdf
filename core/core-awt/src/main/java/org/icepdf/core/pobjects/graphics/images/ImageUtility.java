@@ -657,7 +657,11 @@ public class ImageUtility {
      * @return resultant image.
      */
     public static BufferedImage applyExplicitSMask(BufferedImage baseImage, BufferedImage sMaskImage) {
-
+        // if either image failed to decode there is nothing to composite; return
+        // whatever base we have rather than NPE inside the scaling step.
+        if (baseImage == null || sMaskImage == null) {
+            return baseImage;
+        }
         // check to make sure the mask and the image are the same size.
         BufferedImage[] images = scaleImagesToSameSize(baseImage, sMaskImage);
         baseImage = images[0];
@@ -880,6 +884,9 @@ public class ImageUtility {
     }
 
     static BufferedImage applyGrayDecode(BufferedImage rgbImage, ImageParams imageParams) {
+        if (rgbImage == null) {
+            return null;
+        }
         WritableRaster wr = rgbImage.getRaster();
         int[] cmap = null;
         int bitsPerComponent = imageParams.getBitsPerComponent();
@@ -891,6 +898,10 @@ public class ImageUtility {
             cmap = GRAY_2_BIT_INDEX_TO_RGB;
         } else if (bitsPerComponent == 4) {
             cmap = GRAY_4_BIT_INDEX_TO_RGB;
+        }
+        if (cmap == null) {
+            // unsupported bits-per-component, leave the image unchanged.
+            return rgbImage;
         }
         ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1,
                 wr.getDataBuffer().getDataType());

@@ -1,7 +1,11 @@
 # Gradle build output (exclude)
 /.gradle/
 /build/
+**/build/
 **/target/
+
+# Test output (exclude)
+**/src/test/out/
 
 # IDE files (exclude)
 /.idea/
