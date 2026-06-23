@@ -15,8 +15,6 @@
  */
 package org.icepdf.core.pobjects.functions.postscript;
 
-import java.util.Stack;
-
 /**
  * Procedure represents a groups of operands enclosed by braces.  For example
  * {dup 0 lt {pop 0 }{dup 1 gt {pop 1 } if } ifelse  is defined as:
@@ -28,12 +26,12 @@ import java.util.Stack;
  */
 public class Procedure extends Operator {
 
-    private final Stack<Object> stack;
+    private final OperandStack stack;
     private final Procedure previousProcedure;
 
     public Procedure(Procedure previousProcedure) {
         super(OperatorNames.OP_PROC);
-        stack = new Stack<>();
+        stack = new OperandStack();
         if (previousProcedure != null) {
             previousProcedure.getProc().push(this);
         }
@@ -44,13 +42,12 @@ public class Procedure extends Operator {
         return previousProcedure;
     }
 
-    public Stack<Object> getProc() {
+    public OperandStack getProc() {
         return stack;
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public void eval(Stack stack) {
+    public void eval(OperandStack stack) {
         // iterate over the stack objects and update the eval stack
         // we need to to this in revers...
         for (Object tmp : this.stack) {

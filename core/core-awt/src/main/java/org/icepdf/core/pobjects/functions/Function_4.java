@@ -18,12 +18,12 @@ package org.icepdf.core.pobjects.functions;
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.functions.postscript.Lexer;
+import org.icepdf.core.pobjects.functions.postscript.OperandStack;
 import org.icepdf.core.util.Utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Arrays;
-import java.util.Stack;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -111,7 +111,7 @@ public class Function_4 extends Function {
         }
 
         // get the remaining numbers on the stack which are the return values.
-        Stack stack = lex.getStack();
+        OperandStack stack = lex.getStack();
 
         // length of output array
         int n = range.length / 2;
