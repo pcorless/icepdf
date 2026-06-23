@@ -18,6 +18,9 @@ module org.icepdf.core {
     requires java.desktop;
     requires java.net.http;
     requires java.naming;
+    // compile-time only: used by the ParsingBenchmark test harness for JFR
+    // profiling; not a runtime dependency of the library.
+    requires static jdk.jfr;
 
     requires org.bouncycastle.pkix;
     requires org.bouncycastle.provider;
