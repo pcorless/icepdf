@@ -102,12 +102,25 @@ public final class ImageCompare {
                 int argbA = rowA[x];
                 int argbB = rowB[x];
 
-                boolean differ = !equalWithinFuzz(argbA, argbB, fuzz);
+                // Flatten each pixel onto white at most once and reuse the
+                // result for both the fuzz-equality and ink tests (the naive
+                // path flattened ~4x per pixel). Identical pixels never differ,
+                // so they only need a single flatten for the ink check.
+                boolean differ;
+                boolean ink;
+                if (argbA == argbB) {
+                    int flat = flattenOntoWhite(argbA);
+                    differ = false;
+                    ink = isInk(flat);
+                } else {
+                    int flatA = flattenOntoWhite(argbA);
+                    int flatB = flattenOntoWhite(argbB);
+                    differ = !equalWithinFuzzFlat(flatA, flatB, fuzz);
+                    ink = isInk(flatA) || isInk(flatB);
+                }
                 if (differ) {
                     diffPixels++;
                 }
-
-                boolean ink = isInk(argbA) || isInk(argbB);
                 if (ink) {
                     unionInkPixels++;
                     if (differ) {
@@ -193,8 +206,14 @@ public final class ImageCompare {
         }
         // Flatten any transparency onto white so a transparent pixel and a
         // white pixel are treated as the same background.
-        int a = flattenOntoWhite(argbA);
-        int b = flattenOntoWhite(argbB);
+        return equalWithinFuzzFlat(flattenOntoWhite(argbA), flattenOntoWhite(argbB), fuzz);
+    }
+
+    /**
+     * Fuzz comparison of two pixels that have already been flattened onto white.
+     * Lets the hot path flatten each source pixel once and reuse the result.
+     */
+    private static boolean equalWithinFuzzFlat(int a, int b, int fuzz) {
         if (a == b) {
             return true;
         }
@@ -204,9 +223,9 @@ public final class ImageCompare {
         return dr <= fuzz && dg <= fuzz && db <= fuzz;
     }
 
-    /** A pixel is "ink" when its luminance is below the background threshold. */
-    private static boolean isInk(int argb) {
-        return luminance(flattenOntoWhite(argb)) < BACKGROUND_LUMINANCE;
+    /** An already-flattened (opaque) RGB pixel is "ink" when its luminance is below the background threshold. */
+    private static boolean isInk(int flatRgb) {
+        return luminance(flatRgb) < BACKGROUND_LUMINANCE;
     }
 
     /** Rec. 601 luma of an opaque packed RGB pixel. */
@@ -246,27 +265,52 @@ public final class ImageCompare {
         if (width < SSIM_WINDOW || height < SSIM_WINDOW) {
             return a.getWidth() == b.getWidth() && a.getHeight() == b.getHeight() ? 1d : 0d;
         }
-        double[][] lumA = luminanceField(a, width, height);
-        double[][] lumB = luminanceField(b, width, height);
+        // Windows are non-overlapping and SSIM_WINDOW rows tall, so process the
+        // overlapping region one band of SSIM_WINDOW rows at a time. Only a
+        // band's worth of luminance is held at once (float[SSIM_WINDOW * width])
+        // instead of two full double[height][width] fields - tens of MB of
+        // per-comparison allocation removed. Luminance values are integers
+        // (0-255), exactly representable as float, so the accumulated score is
+        // identical to the full-field version.
+        float[] bandA = new float[SSIM_WINDOW * width];
+        float[] bandB = new float[SSIM_WINDOW * width];
+        int[] rowA = new int[width];
+        int[] rowB = new int[width];
 
         double ssimSum = 0;
         int windows = 0;
         for (int wy = 0; wy + SSIM_WINDOW <= height; wy += SSIM_WINDOW) {
+            for (int row = 0; row < SSIM_WINDOW; row++) {
+                int y = wy + row;
+                a.getRGB(0, y, width, 1, rowA, 0, width);
+                b.getRGB(0, y, width, 1, rowB, 0, width);
+                int base = row * width;
+                for (int x = 0; x < width; x++) {
+                    bandA[base + x] = luminance(flattenOntoWhite(rowA[x]));
+                    bandB[base + x] = luminance(flattenOntoWhite(rowB[x]));
+                }
+            }
             for (int wx = 0; wx + SSIM_WINDOW <= width; wx += SSIM_WINDOW) {
-                ssimSum += windowSsim(lumA, lumB, wx, wy);
+                ssimSum += windowSsim(bandA, bandB, width, wx);
                 windows++;
             }
         }
         return windows == 0 ? 1d : ssimSum / windows;
     }
 
-    private static double windowSsim(double[][] a, double[][] b, int ox, int oy) {
+    /**
+     * SSIM of a single SSIM_WINDOW x SSIM_WINDOW window within a band of
+     * luminance rows. {@code stride} is the band width and {@code ox} the
+     * window's left edge; rows are addressed band-relative (top row is 0).
+     */
+    private static double windowSsim(float[] a, float[] b, int stride, int ox) {
         int n = SSIM_WINDOW * SSIM_WINDOW;
         double sumA = 0, sumB = 0;
         for (int y = 0; y < SSIM_WINDOW; y++) {
+            int base = y * stride + ox;
             for (int x = 0; x < SSIM_WINDOW; x++) {
-                sumA += a[oy + y][ox + x];
-                sumB += b[oy + y][ox + x];
+                sumA += a[base + x];
+                sumB += b[base + x];
             }
         }
         double meanA = sumA / n;
@@ -274,9 +318,10 @@ public final class ImageCompare {
 
         double varA = 0, varB = 0, cov = 0;
         for (int y = 0; y < SSIM_WINDOW; y++) {
+            int base = y * stride + ox;
             for (int x = 0; x < SSIM_WINDOW; x++) {
-                double da = a[oy + y][ox + x] - meanA;
-                double db = b[oy + y][ox + x] - meanB;
+                double da = a[base + x] - meanA;
+                double db = b[base + x] - meanB;
                 varA += da * da;
                 varB += db * db;
                 cov += da * db;
@@ -288,17 +333,5 @@ public final class ImageCompare {
 
         return ((2 * meanA * meanB + C1) * (2 * cov + C2))
                 / ((meanA * meanA + meanB * meanB + C1) * (varA + varB + C2));
-    }
-
-    private static double[][] luminanceField(BufferedImage image, int width, int height) {
-        double[][] lum = new double[height][width];
-        int[] row = new int[width];
-        for (int y = 0; y < height; y++) {
-            image.getRGB(0, y, width, 1, row, 0, width);
-            for (int x = 0; x < width; x++) {
-                lum[y][x] = luminance(flattenOntoWhite(row[x]));
-            }
-        }
-        return lum;
     }
 }
