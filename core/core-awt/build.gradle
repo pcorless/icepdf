@@ -97,19 +97,21 @@ tasks.register('javadocJar', Jar) {
 // Archives are now automatically included via publishing plugin
 
 
-compileJava {
-    doFirst{
-
-        def jenkinsBuild = System.getenv("BUILD_NUMBER") ?: "0"
-        def jenkinsRevision = System.getenv("SVN_REVISION") ?: "0"
-
-        copy {
-            from 'src/main/resources/org/icepdf/core/application/ProductInfo.java'
-            into 'src/main/java/org/icepdf/core/application/'
-            filter(org.apache.tools.ant.filters.ReplaceTokens,
-                    tokens: [company: COMPANY, product: PRODUCT, version: VERSION, type: RELEASE_TYPE,
-                             build  : jenkinsBuild, revision: jenkinsRevision])
-        }
+// Stamp the current version into the product-info.properties resource as it is
+// copied to the build output.  ProductInfo loads these values at runtime, so no
+// .java is generated and nothing is written back into the source tree.
+processResources {
+    def buildNo = System.getenv("BUILD_NUMBER") ?: "0"
+    def revisionNo = System.getenv("SVN_REVISION") ?: "0"
+    inputs.property('productInfo', "${COMPANY}|${PRODUCT}|${VERSION}|${RELEASE_TYPE}|${buildNo}|${revisionNo}")
+    filesMatching('**/product-info.properties') {
+        filter(org.apache.tools.ant.filters.ReplaceTokens,
+                tokens: [company         : COMPANY.toString(),
+                         product         : PRODUCT.toString(),
+                         'project.version': VERSION.toString(),
+                         releaseType     : RELEASE_TYPE.toString(),
+                         build           : buildNo,
+                         revision        : revisionNo])
     }
 }
 
@@ -137,11 +139,5 @@ tasks.register('parsingBenchmark', JavaExec) {
         if (k.startsWith('icepdf.benchmark.') || k.startsWith('org.icepdf.')) {
             systemProperty(k, v)
         }
-    }
-}
-
-clean {
-    doLast {
-        file("src/main/java/org/icepdf/core/application/ProductInfo.java").delete()
     }
 }

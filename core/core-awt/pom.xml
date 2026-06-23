@@ -14,20 +14,46 @@
         The ICEpdf Common rendering core. Contains AWT based rendering core.
     </description>
 
+    <properties>
+        <!-- Values stamped into product-info.properties (see ProductInfo). -->
+        <company>https://github.com/pcorless/</company>
+        <product>ICEpdf</product>
+        <releaseType></releaseType>
+        <build>0</build>
+        <revision>0</revision>
+    </properties>
+
     <build>
+        <!-- Filter only product-info.properties so the version is stamped into
+             it at build time; everything else is copied verbatim. -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/product-info.properties</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                    <exclude>**/product-info.properties</exclude>
+                </excludes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>templating-maven-plugin</artifactId>
-                <version>1.0.0</version>
-                <executions>
-                    <execution>
-                        <id>generate-version-class</id>
-                        <goals>
-                            <goal>filter-sources</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <configuration>
+                    <!-- Use @token@ delimiters so the one template works for
+                         both Maven and Gradle (Ant ReplaceTokens) filtering. -->
+                    <delimiters>
+                        <delimiter>@</delimiter>
+                    </delimiters>
+                    <useDefaultDelimiters>false</useDefaultDelimiters>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
