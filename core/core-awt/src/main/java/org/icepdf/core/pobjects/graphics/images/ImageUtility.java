@@ -27,10 +27,8 @@ import java.awt.*;
 import java.awt.color.ColorSpace;
 import java.awt.geom.AffineTransform;
 import java.awt.image.*;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -216,24 +214,27 @@ public class ImageUtility {
             maskMaxBlue = maskMaxRGB[2];
         }
 
+        // process a row at a time; per-pixel getRGB/setRGB is the slowest
+        // possible raster access and the original also re-read each pixel.
+        int[] band = new int[width];
         for (int y = 0; y < height; y++) {
+            bi.getRGB(0, y, width, 1, band, 0, width);
+            boolean rowChanged = false;
             for (int x = 0; x < width; x++) {
-                int alpha = 0xFF;
-                int argb = bi.getRGB(x, y);
+                int argb = band[x];
                 int red = ((argb >> 16) & 0xFF);
                 int green = ((argb >> 8) & 0xFF);
                 int blue = (argb & 0xFF);
                 if (blue >= maskMinBlue && blue <= maskMaxBlue &&
                         green >= maskMinGreen && green <= maskMaxGreen &&
                         red >= maskMinRed && red <= maskMaxRed) {
-                    alpha = 0x00;
+                    // clear alpha -> fully transparent
+                    band[x] = argb & 0x00FFFFFF;
+                    rowChanged = true;
                 }
-                if (alpha != 0xFF) {
-                    argb = bi.getRGB(x, y);
-                    argb &= 0x00FFFFFF;
-                    argb |= (0);
-                    bi.setRGB(x, y, argb);
-                }
+            }
+            if (rowChanged) {
+                bi.setRGB(0, y, width, 1, band, 0, width);
             }
         }
         return bi;
@@ -1255,30 +1256,22 @@ public class ImageUtility {
     }
 
     private static void copyDecodedStreamBytesIntoRGB(byte[] data, int[] pixels) {
-        byte[] rgb = new byte[3];
-        try {
-            InputStream input = new ByteArrayInputStream(data);
-            for (int pixelIndex = 0; pixelIndex < pixels.length; pixelIndex++) {
-                int argb = 0xFF000000;
-                final int toRead = 3;
-                int haveRead = 0;
-                while (haveRead < toRead) {
-                    int currRead = input.read(rgb, haveRead, toRead - haveRead);
-                    if (currRead < 0)
-                        break;
-                    haveRead += currRead;
-                }
-                if (haveRead >= 1)
-                    argb |= ((((int) rgb[0]) << 16) & 0x00FF0000);
-                if (haveRead >= 2)
-                    argb |= ((((int) rgb[1]) << 8) & 0x0000FF00);
-                if (haveRead >= 3)
-                    argb |= (((int) rgb[2]) & 0x000000FF);
-                pixels[pixelIndex] = argb;
-            }
-            input.close();
-        } catch (IOException e) {
-            logger.log(Level.FINE, "Problem copying decoding stream bytes: ", e);
+        // index the three bytes per pixel directly rather than reading them a
+        // few at a time through a (synchronized) ByteArrayInputStream, which was
+        // a per-pixel hotspot for large RGB images (mirrors the gray sibling).
+        // A short final run (inline images can be a byte or two shy) keeps the
+        // components that are present and leaves the rest at zero, matching the
+        // prior behaviour.
+        int dataLength = data.length;
+        for (int pixelIndex = 0, base = 0; pixelIndex < pixels.length; pixelIndex++, base += 3) {
+            int argb = 0xFF000000;
+            if (base < dataLength)
+                argb |= (data[base] & 0xFF) << 16;
+            if (base + 1 < dataLength)
+                argb |= (data[base + 1] & 0xFF) << 8;
+            if (base + 2 < dataLength)
+                argb |= (data[base + 2] & 0xFF);
+            pixels[pixelIndex] = argb;
         }
     }
 
