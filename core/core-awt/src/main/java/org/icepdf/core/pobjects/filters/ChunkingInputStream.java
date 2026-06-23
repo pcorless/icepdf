@@ -60,10 +60,9 @@ public abstract class ChunkingInputStream extends InputStream {
 
     protected int fillBufferFromInputStream(int offset, int length) throws IOException {
         int read = 0;
-        int mayRead = in.available();
         int currRead;
         try {
-            while (mayRead >= 0 && read < length) {
+            while (read < length) {
                 currRead = in.read(buffer, offset + read, length - read);
                 if (currRead < 0 && read == 0)
                     return currRead;
