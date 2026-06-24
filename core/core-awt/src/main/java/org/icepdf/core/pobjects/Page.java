@@ -246,8 +246,8 @@ public class Page extends Dictionary {
                 Object tmp = library.getObject(cont);
                 if (tmp instanceof Stream) {
                     Stream tmpStream = (Stream) tmp;
-                    // prune any zero length streams,
-                    if (tmpStream.getRawBytes().length > 0) {
+                    // prune any zero length streams (length without forcing a view-mode stream to materialize),
+                    if (tmpStream.getRawBytesLength() > 0) {
                         tmpStream.setPObjectReference((Reference) cont);
                         contents.add(tmpStream);
                     }
@@ -455,6 +455,13 @@ public class Page extends Dictionary {
                     // pass in option group references into parse.
                     if (streams.length > 0) {
                         shapes = cp.parse(streams, this).getShapes();
+                    }
+                    // content streams are only needed for parsing; the Shapes built above are what painting uses.
+                    // Release each stream's decompressed cache (re-derivable from the still-compressed rawBytes) so
+                    // the inflated buffers aren't retained for the life of the Page. Edited streams (compressed ==
+                    // false, e.g. redaction) are skipped by disposeDecompressed() so their changes aren't lost.
+                    for (Stream content : contents) {
+                        content.disposeDecompressed();
                     }
                     // set the initiated flag, first as there are couple corner
                     // cases where the content parsing can call page.init() again

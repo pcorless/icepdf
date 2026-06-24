@@ -1847,7 +1847,7 @@ public abstract class Annotation extends Dictionary {
                 // build out an appearance stream, corner case iText 2.1
                 // didn't correctly set type = form on the appearance stream obj.
                 try {
-                    form = new Form(library, stream.getEntries(), null);
+                    form = new Form(library, stream.getEntries(), (byte[]) null);
                     form.setPObjectReference(stream.getPObjectReference());
                     form.setRawBytes(stream.getDecodedStreamBytes());
                     form.init();
@@ -1861,7 +1861,7 @@ public abstract class Annotation extends Dictionary {
             DictionaryEntries formEntries = new DictionaryEntries();
             formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
             formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
-            form = new Form(library, formEntries, null);
+            form = new Form(library, formEntries, (byte[]) null);
             form.setPObjectReference(stateManager.getNewReferenceNumber());
             library.addObject(form, form.getPObjectReference());
         }
@@ -1891,7 +1891,7 @@ public abstract class Annotation extends Dictionary {
             DictionaryEntries formEntries = new DictionaryEntries();
             formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
             formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
-            form = new Form(library, formEntries, null);
+            form = new Form(library, formEntries, (byte[]) null);
             form.setPObjectReference(stateManager.getNewReferenceNumber());
             library.addObject(form, form.getPObjectReference());
         }

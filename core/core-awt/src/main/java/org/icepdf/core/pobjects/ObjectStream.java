@@ -46,6 +46,10 @@ public class ObjectStream extends Stream {
         super(library, dictionaryEntries, rawBytes);
     }
 
+    public ObjectStream(Library library, DictionaryEntries dictionaryEntries, ByteBuffer streamDataView) {
+        super(library, dictionaryEntries, streamDataView);
+    }
+
     public void initialize() throws IOException {
         // double-checked locking on the (volatile) inited flag: object streams are cached and shared, so many
         // threads call decompressObject (and thus initialize) concurrently; only the first does the work.

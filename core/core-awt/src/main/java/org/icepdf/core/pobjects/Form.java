@@ -26,6 +26,7 @@ import org.icepdf.core.util.updater.callbacks.ContentStreamCallback;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -70,7 +71,15 @@ public class Form extends Stream {
 
     public Form(Library l, DictionaryEntries h, byte[] rawBytes) {
         super(l, h, rawBytes);
+        initGroup();
+    }
 
+    public Form(Library l, DictionaryEntries h, ByteBuffer streamDataView) {
+        super(l, h, streamDataView);
+        initGroup();
+    }
+
+    private void initGroup() {
         // check for grouping flags so we can do special handling during the
         // xform content stream parsing.
         DictionaryEntries group = library.getDictionary(entries, GROUP_KEY);

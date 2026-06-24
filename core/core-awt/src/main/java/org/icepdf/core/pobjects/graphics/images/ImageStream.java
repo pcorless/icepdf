@@ -25,6 +25,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
@@ -55,6 +56,11 @@ public class ImageStream extends Stream {
         imageParams = new ImageParams(library, entries, null);
     }
 
+    public ImageStream(Library l, DictionaryEntries h, ByteBuffer streamDataView) {
+        super(l, h, streamDataView);
+        imageParams = new ImageParams(library, entries, null);
+    }
+
     public static ImageStream getInstance(Library library, Reference reference, BufferedImage bufferedImage,
                                           boolean useMask) {
         DictionaryEntries imageDictionary = new DictionaryEntries();
@@ -69,7 +75,7 @@ public class ImageStream extends Stream {
         if (useMask && bufferedImage.getColorModel().hasAlpha()) {
             imageDictionary.put(MASK_KEY, Arrays.asList(255, 255, 255, 255, 255, 255));
         }
-        ImageStream imageStream = new ImageStream(library, imageDictionary, null);
+        ImageStream imageStream = new ImageStream(library, imageDictionary, (byte[]) null);
         imageStream.setDecodedImage(bufferedImage);
         // This is pretty rough, will mask any alpha value, but it is a start for now.
         // We can add more complex mask processing later if needed.

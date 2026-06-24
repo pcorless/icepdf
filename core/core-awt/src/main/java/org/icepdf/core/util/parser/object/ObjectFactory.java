@@ -46,27 +46,28 @@ public class ObjectFactory {
             }
             Name type = (Name) entries.get(Dictionary.TYPE_KEY);
             Name subType = (Name) entries.get(Dictionary.SUBTYPE_KEY);
-            // bulk copy as all our filters expect byte[], this may be expensive in some instances.
-            byte[] bufferBytes = new byte[streamData.remaining()];
-            streamData.get(bufferBytes);
+            // Hand the stream the read-only view into the shared document buffer (a fresh, position-0 slice per
+            // object) instead of bulk-copying the still-compressed bytes into a byte[]. The stream keeps the view
+            // pristine and decodes from a private duplicate(); it only materializes a byte[] on the cold
+            // getRawBytes() paths (save/sign/thumbnail). streamData must not be consumed here.
             if (CrossReferenceStream.TYPE.equals(type)) {
-                return new PObject(new CrossReferenceStream(library, entries, bufferBytes), objectNumber, generationNumber);
+                return new PObject(new CrossReferenceStream(library, entries, streamData), objectNumber, generationNumber);
             } else if (ObjectStream.TYPE.equals(type)) {
-                return new PObject(new ObjectStream(library, entries, bufferBytes), objectNumber, generationNumber);
+                return new PObject(new ObjectStream(library, entries, streamData), objectNumber, generationNumber);
             } else if (Form.TYPE_VALUE.equals(type) && ImageStream.TYPE_VALUE.equals(subType)) {
-                return new PObject(new ImageStream(library, entries, bufferBytes), objectNumber, generationNumber);
+                return new PObject(new ImageStream(library, entries, streamData), objectNumber, generationNumber);
             } else if (Form.TYPE_VALUE.equals(type)) {
-                return new PObject(new Form(library, entries, bufferBytes), objectNumber, generationNumber);
+                return new PObject(new Form(library, entries, streamData), objectNumber, generationNumber);
             } else if (Pattern.TYPE_VALUE.equals(type)) {
-                return new PObject(new TilingPattern(library, entries, bufferBytes), objectNumber, generationNumber);
+                return new PObject(new TilingPattern(library, entries, streamData), objectNumber, generationNumber);
             } else if (ImageStream.TYPE_VALUE.equals(subType)) {
-                return new PObject(new ImageStream(library, entries, bufferBytes), objectNumber, generationNumber);
+                return new PObject(new ImageStream(library, entries, streamData), objectNumber, generationNumber);
             } else if (Form.SUB_TYPE_VALUE.equals(subType) && !TilingPattern.TYPE_VALUE.equals(type)) {
-                return new PObject(new Form(library, entries, bufferBytes), objectNumber, generationNumber);
+                return new PObject(new Form(library, entries, streamData), objectNumber, generationNumber);
             } else if (TilingPattern.TYPE_VALUE.equals(subType) && TilingPattern.TYPE_VALUE.equals(type)) {
-                return new PObject(new TilingPattern(library, entries, bufferBytes), objectNumber, generationNumber);
+                return new PObject(new TilingPattern(library, entries, streamData), objectNumber, generationNumber);
             }
-            return new PObject(new Stream(library, entries, bufferBytes), objectNumber, generationNumber);
+            return new PObject(new Stream(library, entries, streamData), objectNumber, generationNumber);
         } else if (objectData instanceof DictionaryEntries) {
             DictionaryEntries entries = (DictionaryEntries) objectData;
             Object object = getInstance(library, entries);
