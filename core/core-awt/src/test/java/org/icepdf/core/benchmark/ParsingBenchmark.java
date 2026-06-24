@@ -24,6 +24,7 @@ import org.icepdf.core.util.GraphicsRenderingHints;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.lang.ref.Reference;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -73,7 +74,12 @@ import java.util.stream.Stream;
  *     <li>{@code icepdf.benchmark.warmup}  - warmup iterations per document (default 1).</li>
  *     <li>{@code icepdf.benchmark.iters}   - measured iterations per document (default 3).</li>
  *     <li>{@code icepdf.benchmark.threads} - pool size for the parallel sweep (default availableProcessors).</li>
- *     <li>{@code icepdf.benchmark.mode}    - open | serial | parallel | all (default all).</li>
+ *     <li>{@code icepdf.benchmark.mode}    - open | serial | parallel | all | heap (default all).
+ *         {@code heap} measures steady-state <i>retained</i> heap rather than time: it opens one document, initialises
+ *         every page (holding them all strongly), settles the GC, and records the live heap. This is the metric for
+ *         retention changes (e.g. dropping cached decompressed content-stream buffers) that are invisible to the
+ *         time/allocation sweeps. Run it forked (one clean JVM per file) and compare two builds; use a modest
+ *         {@code -Picepdf.benchmark.heap} so the live set isn't lost under a large idle ceiling.</li>
  *     <li>{@code icepdf.benchmark.paint}   - also rasterise each page after init (default false).</li>
  *     <li>{@code icepdf.benchmark.maxPages}- cap pages per document, 0 = no cap (default 0).</li>
  *     <li>{@code icepdf.benchmark.jfr}     - if set, record a JFR with lock events to this path.</li>
@@ -86,6 +92,7 @@ public class ParsingBenchmark {
     private static final int THREADS = intProp("icepdf.benchmark.threads", Runtime.getRuntime().availableProcessors());
     private static final int MAX_PAGES = intProp("icepdf.benchmark.maxPages", 0);
     private static final String MODE = System.getProperty("icepdf.benchmark.mode", "all");
+    private static final boolean HEAP = MODE.equals("heap");
     private static final boolean PAINT = Boolean.getBoolean("icepdf.benchmark.paint");
     private static final boolean CHILD = Boolean.getBoolean("icepdf.benchmark.child");
     private static final float PAINT_ZOOM = 1.0f;
@@ -188,6 +195,7 @@ public class ParsingBenchmark {
         long openBest = Long.MAX_VALUE;
         long serialBest = Long.MAX_VALUE;
         long parallelBest = Long.MAX_VALUE;
+        long heapBest = Long.MAX_VALUE;
         int pages = 0;
         for (int i = 0; i < ITERS; i++) {
             Sample s = runOnce(pdf, true);
@@ -195,10 +203,13 @@ public class ParsingBenchmark {
             openBest = Math.min(openBest, s.openNanos);
             if (s.serialNanos > 0) serialBest = Math.min(serialBest, s.serialNanos);
             if (s.parallelNanos > 0) parallelBest = Math.min(parallelBest, s.parallelNanos);
+            // tightest live set across iterations = the cleanest read of the retained set
+            if (s.heapUsedBytes > 0) heapBest = Math.min(heapBest, s.heapUsedBytes);
         }
         return new Result(pdf.getFileName().toString(), pages, sizeKb(pdf),
                 openBest, serialBest == Long.MAX_VALUE ? 0 : serialBest,
-                parallelBest == Long.MAX_VALUE ? 0 : parallelBest);
+                parallelBest == Long.MAX_VALUE ? 0 : parallelBest,
+                heapBest == Long.MAX_VALUE ? 0 : heapBest);
     }
 
     /**
@@ -209,6 +220,28 @@ public class ParsingBenchmark {
         boolean wantSerial = MODE.equals("all") || MODE.equals("serial");
         boolean wantParallel = MODE.equals("all") || MODE.equals("parallel");
         boolean wantOpenOnly = MODE.equals("open");
+
+        // heap mode is a retained-set measurement, not a timing sweep: open once, init every page (holding them all
+        // strongly so the initialised pages and their cached buffers stay live), settle the GC, read the live heap.
+        if (HEAP) {
+            Document doc = new Document();
+            doc.setFile(pdf.toString());
+            int n = pageCount(doc);
+            PageTree tree = doc.getCatalog().getPageTree();
+            List<Page> held = new ArrayList<>(n);
+            for (int p = 0; p < n; p++) {
+                Page page = tree.getPage(p);
+                initPage(page);
+                held.add(page);
+            }
+            sample.pages = n;
+            sample.heapUsedBytes = measureLiveHeap();
+            // keep the document and its pages reachable across the measurement so the GC can't reclaim them early
+            Reference.reachabilityFence(held);
+            Reference.reachabilityFence(doc);
+            doc.dispose();
+            return sample;
+        }
 
         // open timing (always - it is the cross-reference / object parse cold path)
         {
@@ -279,6 +312,26 @@ public class ParsingBenchmark {
         }
     }
 
+    /**
+     * Best-effort live-set reading: GC is advisory, so request it a few times with a short settle and take the
+     * low-water used heap. Run forked (clean JVM per file) for this to be meaningful.
+     */
+    private static long measureLiveHeap() {
+        Runtime rt = Runtime.getRuntime();
+        long used = Long.MAX_VALUE;
+        for (int i = 0; i < 4; i++) {
+            System.gc();
+            try {
+                Thread.sleep(75);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+            used = Math.min(used, rt.totalMemory() - rt.freeMemory());
+        }
+        return used == Long.MAX_VALUE ? rt.totalMemory() - rt.freeMemory() : used;
+    }
+
     private static int pageCount(Document doc) {
         int n = doc.getNumberOfPages();
         return MAX_PAGES > 0 ? Math.min(n, MAX_PAGES) : n;
@@ -311,12 +364,23 @@ public class ParsingBenchmark {
     // ---- reporting ---------------------------------------------------------
 
     private static String header() {
+        if (HEAP) {
+            return String.format("%-40s %6s %8s %14s", "file", "pages", "sizeKB", "liveHeap(MB)");
+        }
         return String.format("%-40s %6s %8s %10s %10s %10s %8s",
                 "file", "pages", "sizeKB", "open(ms)", "serial(ms)", "par(ms)", "speedup");
     }
 
     private static void printSummary(List<Result> results) {
         if (results.isEmpty()) return;
+        if (HEAP) {
+            double heapSum = 0;
+            for (Result r : results) heapSum += r.heapUsedBytes / 1_048_576.0;
+            System.out.println("-".repeat(header().length()));
+            System.out.printf("%-40s %6s %8s %14.1f%n",
+                    "MEAN (" + results.size() + " files)", "", "", heapSum / results.size());
+            return;
+        }
         double openSum = 0, serialSum = 0, parallelSum = 0;
         double speedupSum = 0;
         int speedupCount = 0;
@@ -385,6 +449,7 @@ public class ParsingBenchmark {
         long openNanos;
         long serialNanos;
         long parallelNanos;
+        long heapUsedBytes;
     }
 
     private static final class Result {
@@ -394,18 +459,25 @@ public class ParsingBenchmark {
         final long openNanos;
         final long serialNanos;
         final long parallelNanos;
+        final long heapUsedBytes;
 
-        Result(String file, int pages, long sizeKb, long openNanos, long serialNanos, long parallelNanos) {
+        Result(String file, int pages, long sizeKb, long openNanos, long serialNanos, long parallelNanos,
+               long heapUsedBytes) {
             this.file = file;
             this.pages = pages;
             this.sizeKb = sizeKb;
             this.openNanos = openNanos;
             this.serialNanos = serialNanos;
             this.parallelNanos = parallelNanos;
+            this.heapUsedBytes = heapUsedBytes;
         }
 
         @Override
         public String toString() {
+            if (HEAP) {
+                return String.format("%-40s %6d %8d %14.1f",
+                        trim(file, 40), pages, sizeKb, heapUsedBytes / 1_048_576.0);
+            }
             String speedup = (serialNanos > 0 && parallelNanos > 0)
                     ? String.format("%.2fx", (double) serialNanos / parallelNanos) : "-";
             return String.format("%-40s %6d %8d %10.1f %10.1f %10.1f %8s",
