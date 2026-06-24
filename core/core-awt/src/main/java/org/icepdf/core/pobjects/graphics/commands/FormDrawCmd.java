@@ -43,11 +43,27 @@ public class FormDrawCmd extends AbstractDrawCmd {
     private BufferedImage xFormBuffer;
     private int x, y;
 
+    // When a transparency group's bbox exceeds MAX_IMAGE_SIZE it is rasterised
+    // into a proportionally down-scaled buffer to bound heap; these capture the
+    // scale-up applied when the buffer is finally drawn (see paintOperand).
+    private double formScale = 1.0;
+    private int formWidth, formHeight;
+
     private static final boolean disableXObjectSMask;
 
     // Used to use Max_value but we have a few corner cases where the dimension is +-5 of Short.MAX_VALUE, but
     // realistically we seldom have enough memory to load anything bigger then 8000px.  4k+ image are big!
     public static int MAX_IMAGE_SIZE = 2000; // Short.MAX_VALUE
+
+    // Upper bound on a transparency-group bbox that may be rasterised into a
+    // down-scaled buffer (see createBufferXObject).  Forms larger than this are
+    // treated as having an "unbounded" sentinel bbox (typically +-Short.MAX_VALUE)
+    // whose real painted content is small and clipped elsewhere; scaling such a
+    // bbox into the buffer would collapse the content, so they keep the inline
+    // path instead.  Kept well below Short.MAX_VALUE but above realistic page
+    // geometry.
+    public static int MAX_SCALED_FORM_SIZE =
+            Defs.sysPropertyInt("org.icepdf.core.maxScaledFormSize", 16384);
 
     static {
         // decide if large images will be scaled
@@ -177,7 +193,14 @@ public class FormDrawCmd extends AbstractDrawCmd {
 //            ImageUtility.displayImage(xFormBuffer, "final" + xForm.getGroup() + " " + xForm.getPObjectReference() +
 //                    xFormBuffer.getHeight() + "x" + xFormBuffer.getHeight());
         }
-        g.drawImage(xFormBuffer, null, x, y);
+        if (formScale != 1.0) {
+            // buffer was rasterised at a reduced size; scale it back up to the
+            // group's full footprint so the blend composites over the page at
+            // the correct location and dimensions.
+            g.drawImage(xFormBuffer, x, y, formWidth, formHeight, null);
+        } else {
+            g.drawImage(xFormBuffer, null, x, y);
+        }
         return currentShape;
     }
 
@@ -221,19 +244,51 @@ public class FormDrawCmd extends AbstractDrawCmd {
         Rectangle2D bBox = xForm.getBBox();
         int width = (int) bBox.getWidth();
         int height = (int) bBox.getHeight();
-        // corner cases where some bBoxes don't have a dimension.
-        if (width == 0) {
-            width = 1;
-        } else if (width >= MAX_IMAGE_SIZE) {
-            width = xFormBuffer.getWidth();
-        }
-        if (height == 0) {
-            height = 1;
-        } else if (height >= MAX_IMAGE_SIZE) {
-            height = xFormBuffer.getHeight();
+        double scale = 1.0;
+        int bufferWidth;
+        int bufferHeight;
+        if (isMask) {
+            // Mask / outline sub-buffers keep the original clamp behaviour: an
+            // oversized dimension is pinned to the already-built main buffer so
+            // the two stay aligned for compositing.  Down-scaling is applied only
+            // to the main form buffer below.
+            if (width == 0) {
+                width = 1;
+            } else if (width >= MAX_IMAGE_SIZE) {
+                width = xFormBuffer.getWidth();
+            }
+            if (height == 0) {
+                height = 1;
+            } else if (height >= MAX_IMAGE_SIZE) {
+                height = xFormBuffer.getHeight();
+            }
+            bufferWidth = width;
+            bufferHeight = height;
+        } else {
+            // Bound the main offscreen buffer to MAX_IMAGE_SIZE: a group larger
+            // than the cap is rasterised into a proportionally down-scaled buffer
+            // and scaled back up when drawn.  This keeps the group's blend/alpha
+            // intact instead of dropping it (which previously left e.g. a
+            // Multiply line-art group painting an opaque white background over
+            // the page).
+            if (width == 0) {
+                width = 1;
+            }
+            if (height == 0) {
+                height = 1;
+            }
+            int largest = Math.max(width, height);
+            if (largest > MAX_IMAGE_SIZE) {
+                scale = (double) MAX_IMAGE_SIZE / largest;
+            }
+            bufferWidth = Math.max(1, (int) Math.ceil(width * scale));
+            bufferHeight = Math.max(1, (int) Math.ceil(height * scale));
+            formScale = scale;
+            formWidth = width;
+            formHeight = height;
         }
         // create the new image to write too.
-        BufferedImage bi = ImageUtility.createTranslucentCompatibleImage(width, height);
+        BufferedImage bi = ImageUtility.createTranslucentCompatibleImage(bufferWidth, bufferHeight);
         Graphics2D canvas = bi.createGraphics();
         if (!isMask && xForm.getExtGState() != null && xForm.getExtGState().getBlendingMode() != null
                 && !new Name("Normal").equals(xForm.getExtGState().getBlendingMode())
@@ -246,12 +301,16 @@ public class FormDrawCmd extends AbstractDrawCmd {
                         (((Name) cs).equals(DeviceRGB.DEVICERGB_KEY)
                                 || ((Name) cs).equals(DeviceCMYK.DEVICECMYK_KEY))) {
                     canvas.setColor(Color.WHITE);
-                    canvas.fillRect(0, 0, width, height);
+                    canvas.fillRect(0, 0, bufferWidth, bufferHeight);
                 }
             }
         }
         // copy over the rendering hints
         canvas.setRenderingHints(renderingHints);
+        // map form-space drawing into the (possibly down-scaled) buffer.
+        if (scale != 1.0) {
+            canvas.scale(scale, scale);
+        }
         // get shapes and paint them.
         try {
             Shapes xFormShapes = xForm.getShapes();

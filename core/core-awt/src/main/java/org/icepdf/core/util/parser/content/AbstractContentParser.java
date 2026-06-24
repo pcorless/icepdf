@@ -570,16 +570,38 @@ public abstract class AbstractContentParser {
             // slightly different from a regular xObject as we
             // need to capture the alpha which is only possible
             // by paint the xObject to an image.
+            double formWidth = formXObject.getBBox().getWidth();
+            double formHeight = formXObject.getBBox().getHeight();
+            boolean withinMaxSize = formWidth < FormDrawCmd.MAX_IMAGE_SIZE
+                    && formHeight < FormDrawCmd.MAX_IMAGE_SIZE;
+            boolean hasGroupEffect = formXObject.getExtGState() != null &&
+                    (formXObject.getExtGState().getSMask() != null ||
+                            (formXObject.getExtGState().getBlendingMode() != null &&
+                                    !formXObject.getExtGState().getBlendingMode().equals(BlendComposite.NORMAL_VALUE))
+                            || (formXObject.getExtGState().getNonStrokingAlphConstant() < 1
+                            && formXObject.getExtGState().getNonStrokingAlphConstant() > 0));
+            // A blend-only group larger than MAX_IMAGE_SIZE used to fall through
+            // to the inline path below, which silently dropped its blend mode
+            // (e.g. a Multiply line-art group painting opaque white over the
+            // page).  FormDrawCmd now rasterises oversized groups into a
+            // down-scaled buffer, so let a genuinely-sized blend-only group
+            // through; SMask groups still require a 1:1 buffer, so keep them
+            // gated.  An "unbounded" bbox near +-Short.MAX_VALUE is a sentinel,
+            // not real geometry (the actual content is small and clipped
+            // elsewhere); scaling it would collapse the content to nothing, so
+            // such forms stay on the inline path as before.
+            boolean realisticallySized = formWidth < FormDrawCmd.MAX_SCALED_FORM_SIZE
+                    && formHeight < FormDrawCmd.MAX_SCALED_FORM_SIZE;
+            boolean oversizedBlendOnly = !withinMaxSize
+                    && realisticallySized
+                    && formXObject.getExtGState() != null
+                    && formXObject.getExtGState().getSMask() == null
+                    && formXObject.getExtGState().getBlendingMode() != null
+                    && !formXObject.getExtGState().getBlendingMode().equals(BlendComposite.NORMAL_VALUE);
             if (!disableTransparencyGroups &&
-                    ((formXObject.getBBox().getWidth() < FormDrawCmd.MAX_IMAGE_SIZE && formXObject.getBBox().getWidth() > 1) &&
-                            (formXObject.getBBox().getHeight() < FormDrawCmd.MAX_IMAGE_SIZE && formXObject.getBBox().getHeight() > 1)
-                            && (formXObject.getExtGState() != null &&
-                            (formXObject.getExtGState().getSMask() != null ||
-                                    (formXObject.getExtGState().getBlendingMode() != null &&
-                                            !formXObject.getExtGState().getBlendingMode().equals(BlendComposite.NORMAL_VALUE))
-                                    || (formXObject.getExtGState().getNonStrokingAlphConstant() < 1
-                                    && formXObject.getExtGState().getNonStrokingAlphConstant() > 0)))
-                    )) {
+                    formWidth > 1 && formHeight > 1
+                    && hasGroupEffect
+                    && (withinMaxSize || oversizedBlendOnly)) {
                 // add the hold form for further processing.
                 shapes.add(new FormDrawCmd(formXObject));
             }
