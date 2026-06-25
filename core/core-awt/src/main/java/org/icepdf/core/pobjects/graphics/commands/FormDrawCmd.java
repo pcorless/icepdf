@@ -145,8 +145,23 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 xForm.setShading(isFormShading);
             }
 
-            // create the form and we'll paint it at the very least
-            xFormBuffer = createBufferXObject(parentPage, xForm, null, renderingHints, normalBM);
+            // create the form and we'll paint it at the very least.  An isolated
+            // group composites against a transparent backdrop, so flag the blend
+            // for this buffer's paint: a separable blend over the still
+            // -transparent buffer must yield the source colour, not black (see
+            // BlendComposite.ISOLATED_BACKDROP).  Scoped to just this main-buffer
+            // creation and restored after, so the mask/outline sub-buffers below
+            // and the shared blend paths are unaffected.
+            boolean isolatedGroup = xForm.isIsolated();
+            boolean previousIsolatedBackdrop = isolatedGroup
+                    && BlendComposite.setIsolatedBackdrop(true);
+            try {
+                xFormBuffer = createBufferXObject(parentPage, xForm, null, renderingHints, normalBM);
+            } finally {
+                if (isolatedGroup) {
+                    BlendComposite.setIsolatedBackdrop(previousIsolatedBackdrop);
+                }
+            }
             if (!disableXObjectSMask && hasMask) {
 
                 // apply the mask and paint.

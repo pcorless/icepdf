@@ -119,6 +119,30 @@ public final class BlendComposite implements Composite {
     private float alpha;
     private final BlendingMode mode;
 
+    // Render-scoped flag: when an *isolated* transparency group's content is
+    // being rasterised into its own buffer, the backdrop is genuinely
+    // transparent and a separable blend against a fully-transparent backdrop
+    // must yield the source colour (PDF spec: Cr = (1-ab)*Cs + ab*B, ab=0).
+    // Without this the blenders multiply/screen/etc. against a zero backdrop and
+    // yield black.  Scoped via ThreadLocal so it affects ONLY the isolated-group
+    // buffer paint and never the shared soft-mask / image-group / inline-page
+    // blend paths, where dst-alpha-0 pixels are expected to stay as-is (a global
+    // version of this rule regressed 13/21 corpus docs -- see
+    // TRANSPARENCY-GROUP-BLENDING-DESIGN.md s5.2.2).  FormDrawCmd sets/clears it
+    // around the paint; page rendering is per-thread so the ThreadLocal is safe.
+    private static final ThreadLocal<Boolean> ISOLATED_BACKDROP =
+            ThreadLocal.withInitial(() -> Boolean.FALSE);
+
+    /**
+     * Sets the isolated-group backdrop flag for the current thread and returns
+     * the previous value (so callers can restore it for nested groups).
+     */
+    public static boolean setIsolatedBackdrop(boolean isolated) {
+        boolean previous = ISOLATED_BACKDROP.get();
+        ISOLATED_BACKDROP.set(isolated);
+        return previous;
+    }
+
     private BlendComposite(BlendingMode mode) {
         this(mode, 1.0f);
     }
@@ -258,6 +282,8 @@ public final class BlendComposite implements Composite {
             int height = Math.min(src.getHeight(), dstIn.getHeight());
 
             float alpha = composite.getAlpha();
+            // read the render-scoped flag once, not per pixel (compose is hot).
+            boolean isolatedBackdrop = ISOLATED_BACKDROP.get();
 
             int[] srcPixel = new int[4];
             int[] dstPixel = new int[4];
@@ -282,7 +308,12 @@ public final class BlendComposite implements Composite {
                     dstPixel[2] = (pixel) & 0xFF;
                     dstPixel[3] = (pixel >> 24) & 0xFF;
 
-                    int[] result = blender.blend(srcPixel, dstPixel);
+                    // Inside an isolated group's buffer a fully-transparent
+                    // backdrop carries no colour to blend against, so the blend
+                    // reduces to the source colour (see ISOLATED_BACKDROP).
+                    int[] result = (isolatedBackdrop && dstPixel[3] == 0)
+                            ? srcPixel
+                            : blender.blend(srcPixel, dstPixel);
 
                     // mixes the result with the opacity
                     dstPixels[x] =
