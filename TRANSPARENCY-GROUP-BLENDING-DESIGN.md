@@ -350,11 +350,14 @@ center `≈ #808080`, `InterponSpecManual` unchanged).
 ### 5.2.3 Scoped backdrop-alpha fix — implemented, corpus-neutral
 
 Took the first option above and it works. A render-scoped
-`ThreadLocal<Boolean> ISOLATED_BACKDROP` on `BlendComposite`, read **once per
-`compose()`** (not per pixel), applies the `dst[3]==0 → src` rule only when set.
-`FormDrawCmd` sets it (save/restore for nesting) around **just the isolated
-group's main-buffer creation** — not the mask/outline sub-buffers, not the
-shared soft-mask / image-group / inline-page paths. Result:
+`ThreadLocal<Boolean> TRANSPARENT_BACKDROP` on `BlendComposite`, read **once per
+`compose()`** (not per pixel), weights the blend by backdrop alpha when set —
+`Cs' = (1-αb)·Cs + αb·B(Cb,Cs)` (αb=0 → source, αb=1 → full blend, partial →
+interpolated, so anti-aliased edges and overlapping inner content are handled,
+not just the binary `dst[3]==0` case). `FormDrawCmd` sets it (save/restore for
+nesting) around **just the isolated group's main-buffer creation** — not the
+mask/outline sub-buffers, not the shared soft-mask / image-group / inline-page
+paths. Result:
 
 | | center pixel | corpus vs Phase 1 |
 |---|---|---|
@@ -383,10 +386,38 @@ the group's own buffer" is unambiguous, rather than inside `createBufferXObject`
   refinement (a blanket `/I`/`/K` → buffer over-buffers opaque isolated groups)
   and real-world isolated-group validation beyond the synthetic fixture.
 
-Not yet done: generalise the rule from `dst[3]==0` to partial backdrop alpha
-(full `αb` interpolation), which would also let the white-fill hack be deleted —
-but that re-enters shared-path territory and must clear the same corpus gate that
-the global attempt failed.
+### 5.2.4 Partial-αb generalisation done (scoped); white-fill deletion blocked
+
+Two follow-ups were attempted:
+
+1. **Generalise the scoped rule to partial αb — done, kept.** The binary
+   `dst[3]==0 → src` became the full `Cs' = (1-αb)·Cs + αb·B` interpolation
+   inside the `TRANSPARENT_BACKDROP` scope. Still isolated-only, so corpus stays
+   21/21 identical and the fixture stays `#808080`; now also correct for
+   anti-aliased / overlapping inner content rather than only fully-empty backdrop.
+
+2. **Delete the white-fill hack by broadening the rule to *all* group buffers —
+   attempted, reverted.** The white-fill is the additive-CS workaround for the
+   *non-isolated* group buffer (which ICEpdf also rasterises against a transparent
+   backdrop). The hope was that the αb-weighted blend would reproduce it
+   (`αb-aware(transparent) = src` ≡ `Multiply(src, white) = src`) and the fill
+   could go. Measured:
+   - white-fill **on** + flag broadened to `isTransparencyGroup`: **6/21 changed**;
+   - white-fill **off** + flag broadened: **10/21 changed**.
+
+   So broadening to non-isolated groups is **not** corpus-neutral even with the
+   fill still on — the αb interpolation differs from the plain blender at
+   partial/transparent-backdrop pixels in real documents (overlap, AA edges,
+   non-additive-CS groups the fill never covered). Without per-doc references
+   these can't be declared improvements, and at least the global precedent
+   (§5.2.2) shows some are regressions. Reverted to isolated-only.
+
+   **Conclusion:** the white-fill hack **cannot be deleted** by this route while
+   staying corpus-safe. Deleting it requires the *correct general* group-buffer
+   compositing model (track αb properly across the whole buffer, including the
+   buffer-over-page step and source alpha), validated per-doc against references —
+   a real project, not a scoped flag. Until then the white-fill stays, and the
+   αb-aware rule stays scoped to isolated groups, where it is provably neutral.
 
 ## 5.1 Interim scaling quality regression (must-fix)
 

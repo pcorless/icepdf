@@ -119,27 +119,28 @@ public final class BlendComposite implements Composite {
     private float alpha;
     private final BlendingMode mode;
 
-    // Render-scoped flag: when an *isolated* transparency group's content is
-    // being rasterised into its own buffer, the backdrop is genuinely
-    // transparent and a separable blend against a fully-transparent backdrop
-    // must yield the source colour (PDF spec: Cr = (1-ab)*Cs + ab*B, ab=0).
-    // Without this the blenders multiply/screen/etc. against a zero backdrop and
-    // yield black.  Scoped via ThreadLocal so it affects ONLY the isolated-group
-    // buffer paint and never the shared soft-mask / image-group / inline-page
-    // blend paths, where dst-alpha-0 pixels are expected to stay as-is (a global
-    // version of this rule regressed 13/21 corpus docs -- see
-    // TRANSPARENCY-GROUP-BLENDING-DESIGN.md s5.2.2).  FormDrawCmd sets/clears it
+    // Render-scoped flag: when a transparency group's content is being
+    // rasterised into its own buffer, the buffer starts transparent and a
+    // separable blend must be weighted by the backdrop alpha per the PDF spec
+    // (Cs' = (1-ab)*Cs + ab*B(Cb,Cs)): ab=0 -> source colour, ab=1 -> full
+    // blend.  Without this the blenders multiply/screen/etc. against a zero
+    // backdrop and yield black.  Scoped via ThreadLocal so it affects ONLY the
+    // group-buffer paint and never the shared soft-mask / image-group /
+    // inline-page blend paths, where dst-alpha-0 pixels are expected to stay
+    // as-is (a global version of this rule regressed 13/21 corpus docs -- see
+    // TRANSPARENCY-GROUP-BLENDING-DESIGN.md s5.2.2).  This is the general form of
+    // the createBufferXObject white-fill workaround.  FormDrawCmd sets/clears it
     // around the paint; page rendering is per-thread so the ThreadLocal is safe.
-    private static final ThreadLocal<Boolean> ISOLATED_BACKDROP =
+    private static final ThreadLocal<Boolean> TRANSPARENT_BACKDROP =
             ThreadLocal.withInitial(() -> Boolean.FALSE);
 
     /**
-     * Sets the isolated-group backdrop flag for the current thread and returns
-     * the previous value (so callers can restore it for nested groups).
+     * Sets the transparent-group-backdrop flag for the current thread and
+     * returns the previous value (so callers can restore it for nested groups).
      */
-    public static boolean setIsolatedBackdrop(boolean isolated) {
-        boolean previous = ISOLATED_BACKDROP.get();
-        ISOLATED_BACKDROP.set(isolated);
+    public static boolean setTransparentBackdrop(boolean transparent) {
+        boolean previous = TRANSPARENT_BACKDROP.get();
+        TRANSPARENT_BACKDROP.set(transparent);
         return previous;
     }
 
@@ -283,7 +284,7 @@ public final class BlendComposite implements Composite {
 
             float alpha = composite.getAlpha();
             // read the render-scoped flag once, not per pixel (compose is hot).
-            boolean isolatedBackdrop = ISOLATED_BACKDROP.get();
+            boolean transparentBackdrop = TRANSPARENT_BACKDROP.get();
 
             int[] srcPixel = new int[4];
             int[] dstPixel = new int[4];
@@ -308,12 +309,26 @@ public final class BlendComposite implements Composite {
                     dstPixel[2] = (pixel) & 0xFF;
                     dstPixel[3] = (pixel >> 24) & 0xFF;
 
-                    // Inside an isolated group's buffer a fully-transparent
-                    // backdrop carries no colour to blend against, so the blend
-                    // reduces to the source colour (see ISOLATED_BACKDROP).
-                    int[] result = (isolatedBackdrop && dstPixel[3] == 0)
-                            ? srcPixel
-                            : blender.blend(srcPixel, dstPixel);
+                    // Inside an isolated group's buffer the backdrop alpha is
+                    // genuine, so weight the blend by it per the PDF spec:
+                    //   Cs' = (1 - ab)*Cs + ab*B(Cb, Cs)
+                    // ab=0 (transparent backdrop) -> source colour (no black);
+                    // ab=1 (opaque) -> full blend, i.e. today's behaviour;
+                    // partial ab -> interpolated (anti-aliased edges, overlap).
+                    int[] result;
+                    if (transparentBackdrop) {
+                        int[] blended = blender.blend(srcPixel, dstPixel);
+                        int ab = dstPixel[3];
+                        int ia = 255 - ab;
+                        result = new int[]{
+                                (srcPixel[0] * ia + blended[0] * ab) / 255,
+                                (srcPixel[1] * ia + blended[1] * ab) / 255,
+                                (srcPixel[2] * ia + blended[2] * ab) / 255,
+                                blended[3]
+                        };
+                    } else {
+                        result = blender.blend(srcPixel, dstPixel);
+                    }
 
                     // mixes the result with the opacity
                     dstPixels[x] =
