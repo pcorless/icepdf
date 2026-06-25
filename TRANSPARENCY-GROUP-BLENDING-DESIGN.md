@@ -419,40 +419,40 @@ Two follow-ups were attempted:
    a real project, not a scoped flag. Until then the white-fill stays, and the
    αb-aware rule stays scoped to isolated groups, where it is provably neutral.
 
-## 5.1 Interim scaling quality regression (must-fix)
+## 5.1 Interim scaling quality regression (largely addressed)
 
-The `9c65cbf8c` fix restored correctness at the cost of resolution. An oversized
-group is rasterised into a buffer clamped to `MAX_IMAGE_SIZE` (default **2000**)
-on its largest dimension, then scaled back up to its full footprint on draw. For
-`1.pdf` the group is ~9455 px wide, so the buffer is ~2000 px — a **~4.7× down-
-then-up-scale**. The Multiply now composites correctly, but the line-art is
-visibly softened/blurred; at 1:1 page zoom the degradation is significant.
+The `9c65cbf8c` fix restored correctness at the cost of resolution. The original
+clamp capped the **largest single dimension** at `MAX_IMAGE_SIZE` (2000) and
+scaled uniformly. For a high-aspect-ratio strip this was pathological: `1.pdf`'s
+~9455×631 group became a **2001×134** buffer — the width hit the cap and dragged
+the height down to 134 px, leaving almost no vertical detail in the scanned
+line-art before it was stretched back to 631 units.
 
-This is a deliberate correctness-over-fidelity tradeoff, not the end state. Ways
-to address it, roughly in order of preference:
+**Fixed (area budget).** The clamp now bounds the buffer by total pixel **area**,
+preserving aspect: `scale = √(MAX_IMAGE_SIZE² / (w·h))`. This keeps the *same
+peak memory* as a `MAX_IMAGE_SIZE` square (~16 MB) but distributes it by aspect,
+so `1.pdf`'s strip becomes **~7742×517** — ~3.9× the height, dramatically more
+detail (verified visually: crisp line-art vs the previous vertical smear). Impact
+is surgical: on the Multiply corpus only `1.pdf` changes (26/27 byte-identical to
+the fresh HEAD baseline), because it is the only doc with an oversized
+high-aspect group. `MAX_IMAGE_SIZE` (sysprop `org.icepdf.core.maxSmaskImageSize`)
+still tunes the budget, so raising it pushes toward full-res 1:1.
+
+Remaining headroom, if ever needed (no longer urgent):
 
 1. **Phase 2 makes it moot for the common case.** A non-isolated/non-knockout
-   separable-blend group (exactly this case) paints inline against the page
-   raster with no buffer at all, so it renders at full page resolution with no
-   scale-down. This is the real fix and the reason Phase 2 is the priority.
-2. **Scale to device pixels, not group user-space.** The buffer should be sized
-   to the group's footprint *after* the page CTM/zoom — there is no point
-   rasterising a 9455-unit group to 9455 px if it only occupies, say, 1200 px on
-   screen, and conversely a smaller cap shouldn't apply when the device
-   footprint is modest. Clamp on the on-screen size, not the raw bbox.
-3. **Raise/auto-tune the cap by available heap.** 2000 is very conservative; a
-   9455×632 ARGB buffer is only ~24 MB. The cap could scale with
-   `Runtime.maxMemory()` (or a configurable budget) so typical oversized groups
-   are rasterised 1:1 and only pathological page-sized groups are down-scaled.
-4. **Tile the group** into ≤`MAX_IMAGE_SIZE` strips composited in sequence,
-   preserving full resolution with bounded peak memory. More code; keep as a
-   fallback for groups too large to ever buffer whole.
+   separable-blend group paints inline against the page raster with no buffer at
+   all — full page resolution, no scale-down.
+2. **Scale to device pixels, not group user-space.** Size the buffer to the
+   group's footprint *after* the page CTM/zoom rather than the raw bbox; pairs
+   well with the area budget for very large groups at modest zoom.
+3. **Tile the group** into ≤`MAX_IMAGE_SIZE` strips composited in sequence —
+   full resolution with bounded peak memory, for groups too large to buffer
+   whole even under the area budget.
 
-Until Phase 2 lands, options 2–3 are cheap mitigations worth taking so the
-interim render isn't noticeably degraded. The test matrix's oversized-group row
-should assert an SSIM threshold against the full-resolution
-(`maxSmaskImageSize=20000`) reference, which the current scaled output would
-*fail* — i.e. it is a tracked regression, not acceptable steady state.
+The test matrix's oversized-group row should assert an SSIM threshold against the
+full-resolution (`maxSmaskImageSize=20000`) reference; the area-budget output is
+now much closer to it than the old largest-dimension clamp.
 
 ## 6. Test matrix
 

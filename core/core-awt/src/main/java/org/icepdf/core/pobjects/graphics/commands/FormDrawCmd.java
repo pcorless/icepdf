@@ -285,21 +285,29 @@ public class FormDrawCmd extends AbstractDrawCmd {
             bufferWidth = width;
             bufferHeight = height;
         } else {
-            // Bound the main offscreen buffer to MAX_IMAGE_SIZE: a group larger
-            // than the cap is rasterised into a proportionally down-scaled buffer
-            // and scaled back up when drawn.  This keeps the group's blend/alpha
-            // intact instead of dropping it (which previously left e.g. a
-            // Multiply line-art group painting an opaque white background over
-            // the page).
+            // Bound the main offscreen buffer so an oversized group is rasterised
+            // into a proportionally down-scaled buffer and scaled back up when
+            // drawn, keeping the group's blend/alpha intact instead of dropping
+            // it (which previously left e.g. a Multiply line-art group painting an
+            // opaque white background over the page).
+            //
+            // Bound by total pixel AREA, preserving aspect, rather than capping
+            // the largest single dimension.  Capping the largest dimension
+            // collapses a high-aspect-ratio strip: 1.pdf's ~9455x631 group became
+            // 2001x134 (uniform scale driven by the width), leaving almost no
+            // vertical detail.  The area budget keeps the same peak memory as a
+            // MAX_IMAGE_SIZE square but distributes it by aspect, so that strip
+            // becomes ~7742x517 -- ~3.9x the height for the same ~16 MB ceiling.
             if (width == 0) {
                 width = 1;
             }
             if (height == 0) {
                 height = 1;
             }
-            int largest = Math.max(width, height);
-            if (largest > MAX_IMAGE_SIZE) {
-                scale = (double) MAX_IMAGE_SIZE / largest;
+            long area = (long) width * height;
+            long maxArea = (long) MAX_IMAGE_SIZE * MAX_IMAGE_SIZE;
+            if (area > maxArea) {
+                scale = Math.sqrt((double) maxArea / area);
             }
             bufferWidth = Math.max(1, (int) Math.ceil(width * scale));
             bufferHeight = Math.max(1, (int) Math.ceil(height * scale));
