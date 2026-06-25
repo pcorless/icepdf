@@ -219,10 +219,26 @@ multi-layer groups fall back to the buffer.
   - **Notable gap surfaced:** isolation/knockout (`/I`, `/K`) are read into the
     graphics state (`consume_Do` → `setIsolated`/`setKnockOut`) but are **not
     consulted by the routing predicate** — see §5.2.
-- **Phase 2:** extend the inline path to separable non-Normal blends (Multiply
-  et al.) via the blend-aware `setAlpha`. This is where `1.pdf`-style groups stop
-  needing a buffer at all (and the scale-down quality loss from `9c65cbf8c`
-  disappears for them). Gated by the §4 non-overlap constraint.
+- **Phase 2 — DEFERRED to a separate ticket/branch.** Extend the inline path to
+  separable non-Normal blends (Multiply et al.) via a render-scoped blend-aware
+  composite (the `TRANSPARENT_BACKDROP` ThreadLocal pattern applied to
+  `AlphaDrawCmd`, set by start/end markers around the group's shapes). This is
+  where `1.pdf`-style groups stop needing a buffer at all and the remaining
+  per-image downsample (§5.1.1 stage 1) goes away — each image draws straight to
+  the page raster at the viewing zoom. Gated by the §4 non-overlap constraint.
+
+  Not started here. It is a change to the **hottest paint path** (`AlphaDrawCmd`
+  runs for every fill/stroke/image/text alpha) and needs broad corpus validation,
+  so it is its own effort under a separate ticket/branch.
+
+  **Known hard part (from prior attempts):** going buffer-free does not remove
+  the size problem, it moves it. Painting the group inline means each image draws
+  at `native × page-zoom` device pixels, so at high zoom the *inline* draw can
+  blow up memory exactly as a buffer would. The inline path therefore still needs
+  a **zoom-aware size cap** — bound the device footprint actually rasterised
+  (clamp to on-screen size, tile, or fall back to a buffer past a threshold), not
+  just the user-space bbox. Designing that cap is the crux of Phase 2, not the
+  blend-aware composite.
 - **Phase 3 (optional):** non-separable blends as custom `Composite`s.
 - Buffer path remains the fallback for SMask / knockout / isolated / group-`ca`.
 
