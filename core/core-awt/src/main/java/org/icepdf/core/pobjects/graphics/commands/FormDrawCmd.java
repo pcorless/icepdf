@@ -267,11 +267,22 @@ public class FormDrawCmd extends AbstractDrawCmd {
         double scale = 1.0;
         int bufferWidth;
         int bufferHeight;
-        if (isMask) {
-            // Mask / outline sub-buffers keep the original clamp behaviour: an
-            // oversized dimension is pinned to the already-built main buffer so
-            // the two stay aligned for compositing.  Down-scaling is applied only
-            // to the main form buffer below.
+        if (isMask && xForm == this.xForm && xFormBuffer != null) {
+            // Outline pass for the SAME group (applyExplicitOutline): match the
+            // main buffer's (possibly area-scaled) dimensions and scale exactly,
+            // so the outline lines up 1:1 and applyExplicitOutline does not have
+            // to scaleImagesToSameSize.  That reconciling resample softened an
+            // oversized, down-scaled main buffer (e.g. 1.pdf's 7742x517 main vs a
+            // 7742x631 outline), noticeably blurring the line-art.
+            bufferWidth = xFormBuffer.getWidth();
+            bufferHeight = xFormBuffer.getHeight();
+            scale = formScale;
+        } else if (isMask) {
+            // Mask / outline sub-buffers for a DIFFERENT form (soft masks) keep
+            // the original clamp behaviour: an oversized dimension is pinned to
+            // the already-built main buffer so the two stay aligned for
+            // compositing.  Down-scaling is applied only to the main form buffer
+            // below.
             if (width == 0) {
                 width = 1;
             } else if (width >= MAX_IMAGE_SIZE) {
