@@ -1,6 +1,6 @@
 # Design Note: Buffer-Free Transparency-Group Blending
 
-**Status:** draft / proposal — Phase 1 (de-fuzz classifier) implemented; Phase 2 not started.
+**Status:** draft / proposal — Phase 1 (de-fuzz classifier) implemented; Phase 2 not started; oversized-SMask routing+NPE fixed (§ bug 1/2); shading-luminosity-mask render planned (§9 bug 3).
 **Context:** GH-495 performance work. Follow-up to the oversized-group fix in
 `9c65cbf8c` (scale the offscreen buffer instead of dropping the blend).
 
@@ -575,3 +575,64 @@ corpus. The paint side stays untouched (no new paint-time state) if parse-time
 baking works; only if it doesn't do we fall back to widening `paintOperand`.
 Recommend landing Phase 1 + the test harness first to lock current behaviour,
 then the §4 trace, then Phase 2 behind those tests.
+
+## 9. Shading-based luminosity soft masks render empty (bug 3) — plan
+
+**Symptom.** `WhiteGradient.pdf` (and `P100001613...`, same PDF producer) paint a
+white overlay (`Fm0`: `0 0 0 0 k` fill) faded by a `/Luminosity` soft mask whose
+mask form (`/G`) paints a *shading* (`BX /Sh0 sh EX`, an axial `ShadingType 2`
+DeviceGray gradient). The gradient fade never appears. Routing+NPE fixes (commit
+`f797ebacb`) get the group into the buffered SMask path, but the **mask
+sub-buffer comes out fully transparent**, so luminosity = 0 → the white overlay
+is entirely masked away. mutool renders it correctly (photo faded under white);
+ICEpdf shows the photo at full strength.
+
+**What is and isn't the cause (already ruled out by buffer/`Shapes` dumps):**
+- The base buffer (white fill) is correct: solid opaque white.
+- The mask form's draw commands are all present and well-formed: `TransformDrawCmd`
+  (the `cm` `0 -2077.2 -2077.2 0 -43.2 2682`), a **non-null** `LinearGradientPaint`
+  (`org.icepdf.core...batik...LinearGradientPaint`), a `ShapeDrawCmd` whose shape
+  is set to the form bbox bounds, and a `FillDrawCmd`, under opaque alpha.
+- So it is **not** a null paint, missing fill, or alpha=0. The fill simply
+  produces no pixels in the buffer.
+
+**Where the bug lives.** `FormDrawCmd.createBufferXObject`'s shading special-case
+(the `else` branch ~line 373: set null shapes to `bBox.getBounds2D()`,
+`canvas.translate(-x, -y)`, `canvas.setClip(bBox.getBounds2D())`) plus the
+shading paint's coordinate space. Three coordinate hazards interact:
+1. The mask form's BBox is a **±32768 sentinel** `[-32768 32767 32767 -32768]`,
+   so the fill shape and clip are a 65535-unit box, not real geometry.
+2. `-x,-y` is the **main form's** (`Fm0`) origin, not the mask form's — deliberate
+   (the mask must align to the main buffer) but it has to agree with where the
+   `LinearGradientPaint` axis lands.
+3. The `cm` is applied via the `TransformDrawCmd` in the shapes, *and* the
+   `LinearGradientPaint` carries its own `matrix` — risk of the gradient
+   transform being applied twice (or in the wrong space), so the axis maps far
+   outside the 1866×2079 buffer. (With `NO_CYCLE` that should clamp to an end
+   colour, yet the result is transparent — so confirm whether the paint context
+   is going degenerate/empty rather than off-region.)
+
+**Plan**
+1. **Pin the exact mechanism** (do first, it decides the fix). Instrument the
+   fill: log the `LinearGradientPaint` start/end and `matrix`, the effective
+   device transform at `FillDrawCmd` (`translate ∘ cm`), and where the axis maps
+   relative to the buffer; sample the whole mask buffer (min/max), not just the
+   centre, to confirm it is truly empty. Decide between: (a) gradient transform
+   double-applied / wrong space, (b) paint context degenerate (e.g. zero-length
+   axis after transform), (c) fill region clipped out by the sentinel-derived
+   clip.
+2. **Fix the rasterisation.** Likely: stop driving the shading fill off the
+   sentinel bbox — clip/fill to the **main buffer bounds** (the region the mask
+   actually applies to), and reconstruct the shading paint's transform so the
+   `cm` is applied exactly once, in the buffer's coordinate space. Prefer folding
+   the shading mask into the *same* path the non-shading luminosity mask uses
+   rather than the current fragile special-case.
+3. **Validate.** WhiteGradient + P100001613 must match a reference (mutool /
+   high-cap) within SSIM; the gradient fade must appear. Full Multiply corpus
+   neutral except shading-SMask docs (which improve). Core tests green. Add a
+   small synthetic shading-luminosity-mask fixture to `blending/`.
+
+**Risks.** This is the path the code itself flags as unsupported ("not properly
+aligning the form or mask space to correctly apply a shading pattern"). Sentinel
+bboxes, nested-form coordinate spaces, and the batik gradient paint context make
+it fragile; gate every change against the corpus and both producer files.
