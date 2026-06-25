@@ -277,12 +277,20 @@ public class FormDrawCmd extends AbstractDrawCmd {
             bufferWidth = xFormBuffer.getWidth();
             bufferHeight = xFormBuffer.getHeight();
             scale = formScale;
-        } else if (isMask) {
+        } else if (isMask && xFormBuffer != null) {
             // Mask / outline sub-buffers for a DIFFERENT form (soft masks) keep
             // the original clamp behaviour: an oversized dimension is pinned to
             // the already-built main buffer so the two stay aligned for
             // compositing.  Down-scaling is applied only to the main form buffer
             // below.
+            //
+            // The `xFormBuffer != null` guard is essential: the MAIN buffer is
+            // also created with isMask=true when the group's blend is Normal
+            // (the `normalBM` argument), and at that point xFormBuffer (the field
+            // this clamp pins to) is still null.  A within-MAX_IMAGE_SIZE group
+            // never reached the `>= MAX_IMAGE_SIZE` lines, but an oversized one
+            // NPE'd here; routing it past the gate exposed that.  The main buffer
+            // must instead use the area-scale branch below, so fall through.
             if (width == 0) {
                 width = 1;
             } else if (width >= MAX_IMAGE_SIZE) {

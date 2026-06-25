@@ -733,17 +733,28 @@ public abstract class AbstractContentParser {
         if (!(hasSoftMask || hasBlend || hasPartialAlpha || needsIsolation)) {
             return false;
         }
-        boolean withinMaxSize = formWidth < FormDrawCmd.MAX_IMAGE_SIZE
-                && formHeight < FormDrawCmd.MAX_IMAGE_SIZE;
-        if (withinMaxSize) {
-            return true;
-        }
-        // Oversized: only a blend-only group within the scaled-form ceiling can
-        // be down-scaled into a buffer.  Soft-mask groups (need 1:1) and
-        // sentinel-bbox groups (would collapse when scaled) stay inline.
+        // A sentinel/extreme bbox (typically +-Short.MAX_VALUE) would collapse if
+        // scaled into a buffer, so such forms stay inline regardless of effect.
         boolean realisticallySized = formWidth < FormDrawCmd.MAX_SCALED_FORM_SIZE
                 && formHeight < FormDrawCmd.MAX_SCALED_FORM_SIZE;
-        return realisticallySized && !hasSoftMask && hasBlend;
+        if (!realisticallySized) {
+            return false;
+        }
+        // "Within budget" mirrors createBufferXObject's AREA clamp, not a
+        // per-dimension cap: a group whose area fits MAX_IMAGE_SIZE^2 is
+        // rasterised 1:1, so it can always be buffered -- including an
+        // oversized-but-thin SMask group (e.g. WhiteGradient.pdf's 1867x2079
+        // white-gradient fade, height just over 2000) that the old per-dimension
+        // gate dropped to inline, silently discarding its luminosity mask.
+        long area = (long) formWidth * (long) formHeight;
+        long maxArea = (long) FormDrawCmd.MAX_IMAGE_SIZE * FormDrawCmd.MAX_IMAGE_SIZE;
+        if (area <= maxArea) {
+            return true;
+        }
+        // Over the area budget the buffer must be down-scaled.  Proven safe for
+        // blend-only groups; SMask groups are still excluded here because a
+        // down-scaled luminosity mask is not yet validated.
+        return !hasSoftMask && hasBlend;
     }
 
     protected static void consume_d(GraphicsState graphicState, Stack<Object> stack, Shapes shapes) {
