@@ -454,6 +454,37 @@ The test matrix's oversized-group row should assert an SSIM threshold against th
 full-resolution (`maxSmaskImageSize=20000`) reference; the area-budget output is
 now much closer to it than the old largest-dimension clamp.
 
+### 5.1.1 Where 1.pdf's remaining softness comes from — three scaling stages
+
+A per-image trace (decoded size, draw transform, buffer size) of 1.pdf's group
+found the detail loss is **not** a single scale but three compounding stages:
+
+1. **Per-image downsample (dominant, unaddressed).** Each of the ~49 scans
+   decodes at *full* resolution (`1431×2300`, `1398×2062`, …) and is drawn into
+   a `~280×450` device region in the group buffer — a **~5× downscale per
+   image**. Inherent to buffering: the buffer is ~7742 px wide for 49 scans
+   (~158 px each) while the scans are ~1400 px each; holding their native detail
+   would need a ~68,000-px-wide buffer. No affine shear is involved, just scale
+   plus the normal Y-flip. **Only Phase 2 (inline, no buffer — images draw
+   straight to the page at the viewing zoom) recovers this.**
+2. **Redundant second rasterisation.** `applyExplicitOutline` re-renders the
+   *entire* group a second time (full size) to build an alpha-trim outline. For
+   an opaque line-art group the outline adds nothing but doubles the draw work
+   ("paint time is large"). Skipping it outright is **not** safe — it trims
+   white-fill gaps for non-Multiply blends and changed 12/27 corpus docs
+   (`InterponSpecManual` visibly regressed), so it stays. Cost only.
+3. **Reconciling resample (fixed, commit `37a9ca98b`).** The main buffer is
+   area-scaled (`7742×517`) but the outline was built at the per-dimension clamp
+   (`7742×631`), so `applyExplicitOutline` called `scaleImagesToSameSize` and
+   **resampled the already-down-scaled main buffer** — extra softening. Now the
+   outline is sized to the main buffer (`7742×517`) so the resample is a no-op;
+   1.pdf only (26/27 identical), line-art markedly sharper.
+
+Net: stages 1 (area budget, height 134→517) and 3 (size-match) are fixed and
+1.pdf is much improved; **stage 1's per-image 5× downsample is the remaining
+loss and needs Phase 2.** Stage 2 is pure cost (halved by Phase 2, or by a future
+safe-scoped outline skip).
+
 ## 6. Test matrix
 
 A real-world corpus of transparency-heavy documents will back this (provided
