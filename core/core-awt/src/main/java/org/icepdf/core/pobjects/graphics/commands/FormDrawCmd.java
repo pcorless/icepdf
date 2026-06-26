@@ -350,17 +350,30 @@ public class FormDrawCmd extends AbstractDrawCmd {
         }
         BufferedImage overBackdrop =
                 createBufferXObject(parentPage, xForm, null, hints, normalBM, backdrop, true);
-        return removeBackdrop(overBackdrop, overTransparent, backdrop);
+        Name blend = xForm.getExtGState() != null ? xForm.getExtGState().getBlendingMode() : null;
+        float caRaw = xForm.getExtGState() != null ? xForm.getExtGState().getNonStrokingAlphConstant() : -1f;
+        float ca = (caRaw < 0f || caRaw > 1f) ? 1f : caRaw;
+        return composeContribution(overBackdrop, overTransparent, backdrop, blend, ca);
     }
 
     /**
-     * Per-pixel backdrop removal: given the group composited over the backdrop
-     * (Cn,from overBackdrop), the group's own alpha ag (from overTransparent),
-     * and the backdrop (C0,a0), recover the group colour with the backdrop
-     * removed at alpha ag.  C = Cn + (Cn - C0)*(a0*(1/ag - 1)).
+     * Builds the group's contribution to draw back with SRC_OVER (P2,
+     * spec-correct draw-back).  Per pixel, with backdrop {@code Cb} (the real
+     * page behind the group):
+     * <ol>
+     *   <li>group alpha {@code ag} = alpha of the content over transparent;</li>
+     *   <li>recover the isolated group colour {@code Cs} by removing the backdrop
+     *       from the over-backdrop render (PDF 32000-1 §11.4.8):
+     *       {@code Cs = Cn + (Cn-Cb)*(ab*(1/ag - 1))};</li>
+     *   <li>emit colour {@code B(Cb,Cs)} (the group's own blend) at alpha
+     *       {@code ca*ag}, so SRC_OVER over the page (= Cb) yields the spec
+     *       result {@code (1-ca*ag)*Cb + ca*ag*B(Cb,Cs)} -- the group's blend and
+     *       constant alpha applied to its real backdrop, no double-count.</li>
+     * </ol>
      */
-    private static BufferedImage removeBackdrop(BufferedImage overBackdrop, BufferedImage overTransparent,
-                                                BufferedImage backdrop) {
+    private static BufferedImage composeContribution(BufferedImage overBackdrop, BufferedImage overTransparent,
+                                                     BufferedImage backdrop, Name blend, float ca) {
+        boolean multiply = blend != null && BlendComposite.MULTIPLY_VALUE.equals(blend);
         int w = overBackdrop.getWidth(), h = overBackdrop.getHeight();
         BufferedImage out = ImageUtility.createTranslucentCompatibleImage(w, h);
         int[] bn = new int[w], bt = new int[w], b0 = new int[w], res = new int[w];
@@ -371,19 +384,22 @@ public class FormDrawCmd extends AbstractDrawCmd {
             for (int xx = 0; xx < w; xx++) {
                 int ag = bt[xx] >>> 24;
                 if (ag == 0) {
-                    res[xx] = 0; // no group contribution -> transparent (page shows)
+                    res[xx] = 0; // no group contribution -> page shows through
                     continue;
                 }
-                double a0 = (b0[xx] >>> 24) / 255.0;
-                double k = a0 * (255.0 / ag - 1.0);
+                double k = (b0[xx] >>> 24) / 255.0 * (255.0 / ag - 1.0);
+                int outAlpha = (int) Math.round(ca * ag);
                 int c = 0;
                 for (int s = 0; s < 24; s += 8) {
                     double cn = (bn[xx] >> s) & 0xFF;
-                    double c0 = (b0[xx] >> s) & 0xFF;
-                    int v = (int) Math.round(cn + (cn - c0) * k);
+                    double cb = (b0[xx] >> s) & 0xFF;
+                    double cs = cn + (cn - cb) * k;           // isolated group colour
+                    cs = cs < 0 ? 0 : cs > 255 ? 255 : cs;
+                    double bcs = multiply ? cb * cs / 255.0 : cs;  // B(Cb, Cs)
+                    int v = (int) Math.round(bcs);
                     c |= (v < 0 ? 0 : v > 255 ? 255 : v) << s;
                 }
-                res[xx] = (ag << 24) | c;
+                res[xx] = ((outAlpha < 0 ? 0 : outAlpha > 255 ? 255 : outAlpha) << 24) | c;
             }
             out.setRGB(0, yy, w, 1, res, 0, w);
         }
