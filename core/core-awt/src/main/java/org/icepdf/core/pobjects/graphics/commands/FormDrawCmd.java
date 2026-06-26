@@ -49,7 +49,18 @@ public class FormDrawCmd extends AbstractDrawCmd {
     private double formScale = 1.0;
     private int formWidth, formHeight;
 
+    // Backdrop capture (§10 POC): the Shapes this command lives in and its index,
+    // so a non-isolated group can replay the stack before it to reconstruct the
+    // page backdrop behind the group (instead of the white-fill proxy).
+    private Shapes backdropShapes;
+    private int backdropIndex;
+
     private static final boolean disableXObjectSMask;
+
+    // §10 (experimental, default off): composite non-isolated additive groups
+    // against their real reconstructed page backdrop instead of the white proxy.
+    private static final boolean BACKDROP_COMPOSITE =
+            Defs.sysPropertyBoolean("org.icepdf.core.backdropComposite", false);
 
     // Used to use Max_value but we have a few corner cases where the dimension is +-5 of Short.MAX_VALUE, but
     // realistically we seldom have enough memory to load anything bigger then 8000px.  4k+ image are big!
@@ -76,6 +87,16 @@ public class FormDrawCmd extends AbstractDrawCmd {
 
     public FormDrawCmd(Form xForm) {
         this.xForm = xForm;
+    }
+
+    /**
+     * Records where this command sits in its parent {@link Shapes} so the
+     * backdrop behind the group can be reconstructed by replaying the prior
+     * commands (§10 backdrop-aware compositing POC).
+     */
+    public void setBackdropSource(Shapes shapes, int index) {
+        this.backdropShapes = shapes;
+        this.backdropIndex = index;
     }
 
     @Override
@@ -161,7 +182,15 @@ public class FormDrawCmd extends AbstractDrawCmd {
             boolean previousTransparentBackdrop = isolatedGroup
                     && BlendComposite.setTransparentBackdrop(true);
             try {
-                xFormBuffer = createBufferXObject(parentPage, xForm, null, renderingHints, normalBM);
+                if (BACKDROP_COMPOSITE && !hasMask && isWhiteFillCandidate(xForm)) {
+                    // §10 backdrop-aware compositing: render the group over its
+                    // real page backdrop (reconstructed by replaying the stack)
+                    // instead of the white proxy, then remove the backdrop so the
+                    // page is not composited twice.
+                    xFormBuffer = compositeOverBackdrop(parentPage, xForm, renderingHints, normalBM, g, base);
+                } else {
+                    xFormBuffer = createBufferXObject(parentPage, xForm, null, renderingHints, normalBM);
+                }
             } finally {
                 if (isolatedGroup) {
                     BlendComposite.setTransparentBackdrop(previousTransparentBackdrop);
@@ -224,6 +253,129 @@ public class FormDrawCmd extends AbstractDrawCmd {
         return currentShape;
     }
 
+    // guard so replaying the stack to build a backdrop doesn't recursively try
+    // to build backdrops for the groups inside that replay.
+    private static final ThreadLocal<Boolean> capturingBackdrop =
+            ThreadLocal.withInitial(() -> Boolean.FALSE);
+
+    /**
+     * §10 P0: reconstruct the page/parent backdrop behind this group, aligned
+     * 1:1 with a {@code w x h} group buffer, by replaying the stack commands
+     * before this one.  The replay transform maps the page's device space into
+     * the group buffer's (scaled, origin-translated) space:
+     * {@code scale . translate(-x,-y) . curTransform^-1 . base}.  No raster
+     * readback required.  Returns null if a backdrop can't be built.
+     */
+    private BufferedImage captureBackdrop(Graphics2D g, AffineTransform base, int w, int h) {
+        if (capturingBackdrop.get() || backdropShapes == null || w <= 0 || h <= 0) {
+            return null;
+        }
+        capturingBackdrop.set(Boolean.TRUE);
+        try {
+            BufferedImage backdrop = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D bg = backdrop.createGraphics();
+            // The page's paper is white and is NOT a draw command (it's the
+            // render target's initial fill), so seed it before replaying the
+            // painted stack -- otherwise a group over blank paper sees a
+            // transparent backdrop and the inner blends go wrong (regressing the
+            // white-page case).  Painted content covers it where present.
+            bg.setColor(Color.WHITE);
+            bg.fillRect(0, 0, w, h);
+            // clip to the backdrop image (device space, before the page
+            // transform): stops commands that read the clip from NPEing and
+            // bounds the replay cost to the group's region.
+            bg.setClip(0, 0, w, h);
+            bg.setRenderingHints(g.getRenderingHints());
+            AffineTransform b = new AffineTransform();
+            if (formScale != 1.0) {
+                b.scale(formScale, formScale);
+            }
+            b.translate(-x, -y);
+            b.concatenate(g.getTransform().createInverse());
+            b.concatenate(base);
+            bg.setTransform(b);
+            backdropShapes.paintBackdrop(bg, backdropIndex);
+            bg.dispose();
+            return backdrop;
+        } catch (Exception e) {
+            logger.fine("backdrop capture failed: " + e);
+            return null;
+        } finally {
+            capturingBackdrop.set(Boolean.FALSE);
+        }
+    }
+
+    /** Mirrors the createBufferXObject white-fill gate: a non-Normal-blend group
+     *  over an additive colour space (the case the white proxy applies to). */
+    private static boolean isWhiteFillCandidate(Form xForm) {
+        if (xForm.getExtGState() == null || xForm.getExtGState().getBlendingMode() == null
+                || new Name("Normal").equals(xForm.getExtGState().getBlendingMode())
+                || xForm.getGroup() == null) {
+            return false;
+        }
+        Object cs = xForm.getLibrary().getObject(xForm.getGroup(), new Name("CS"));
+        return cs == null || cs instanceof ICCBased || (cs instanceof Name
+                && (((Name) cs).equals(DeviceRGB.DEVICERGB_KEY) || ((Name) cs).equals(DeviceCMYK.DEVICECMYK_KEY)));
+    }
+
+    /**
+     * §10 backdrop-aware compositing.  Renders the group's content (a) over a
+     * transparent backdrop -- giving the group's own alpha {@code ag} -- and (b)
+     * over the reconstructed page backdrop, then removes the backdrop's
+     * contribution (PDF 32000-1 §11.4.8) so the result can be composited back
+     * onto the real page with the group's blend/ca without double-counting it.
+     * Falls back to the legacy buffer if no backdrop is available.
+     */
+    private BufferedImage compositeOverBackdrop(Page parentPage, Form xForm, RenderingHints hints,
+                                                boolean normalBM, Graphics2D g, AffineTransform base) {
+        BufferedImage overTransparent =
+                createBufferXObject(parentPage, xForm, null, hints, normalBM, null, true);
+        BufferedImage backdrop = captureBackdrop(g, base, overTransparent.getWidth(), overTransparent.getHeight());
+        if (backdrop == null) {
+            return overTransparent;
+        }
+        BufferedImage overBackdrop =
+                createBufferXObject(parentPage, xForm, null, hints, normalBM, backdrop, true);
+        return removeBackdrop(overBackdrop, overTransparent, backdrop);
+    }
+
+    /**
+     * Per-pixel backdrop removal: given the group composited over the backdrop
+     * (Cn,from overBackdrop), the group's own alpha ag (from overTransparent),
+     * and the backdrop (C0,a0), recover the group colour with the backdrop
+     * removed at alpha ag.  C = Cn + (Cn - C0)*(a0*(1/ag - 1)).
+     */
+    private static BufferedImage removeBackdrop(BufferedImage overBackdrop, BufferedImage overTransparent,
+                                                BufferedImage backdrop) {
+        int w = overBackdrop.getWidth(), h = overBackdrop.getHeight();
+        BufferedImage out = ImageUtility.createTranslucentCompatibleImage(w, h);
+        int[] bn = new int[w], bt = new int[w], b0 = new int[w], res = new int[w];
+        for (int yy = 0; yy < h; yy++) {
+            overBackdrop.getRGB(0, yy, w, 1, bn, 0, w);
+            overTransparent.getRGB(0, yy, w, 1, bt, 0, w);
+            backdrop.getRGB(0, yy, w, 1, b0, 0, w);
+            for (int xx = 0; xx < w; xx++) {
+                int ag = bt[xx] >>> 24;
+                if (ag == 0) {
+                    res[xx] = 0; // no group contribution -> transparent (page shows)
+                    continue;
+                }
+                double a0 = (b0[xx] >>> 24) / 255.0;
+                double k = a0 * (255.0 / ag - 1.0);
+                int c = 0;
+                for (int s = 0; s < 24; s += 8) {
+                    double cn = (bn[xx] >> s) & 0xFF;
+                    double c0 = (b0[xx] >> s) & 0xFF;
+                    int v = (int) Math.round(cn + (cn - c0) * k);
+                    c |= (v < 0 ? 0 : v > 255 ? 255 : v) << s;
+                }
+                res[xx] = (ag << 24) | c;
+            }
+            out.setRGB(0, yy, w, 1, res, 0, w);
+        }
+        return out;
+    }
+
     private BufferedImage applyMask(Page parentPage, BufferedImage xFormBuffer, SoftMask softMask, SoftMask gsSoftMask,
                                     RenderingHints renderingHints) {
         if (softMask != null && softMask.getS().equals(SoftMask.SOFT_MASK_TYPE_ALPHA)) {
@@ -261,6 +413,18 @@ public class FormDrawCmd extends AbstractDrawCmd {
      */
     private BufferedImage createBufferXObject(Page parentPage, Form xForm, SoftMask softMask,
                                               RenderingHints renderingHints, boolean isMask) {
+        return createBufferXObject(parentPage, xForm, softMask, renderingHints, isMask, null, false);
+    }
+
+    /**
+     * @param seed   if non-null, drawn into the fresh buffer as the initial
+     *               backdrop (§10 backdrop-aware compositing) instead of the
+     *               white-fill; must already be sized to the buffer.
+     * @param noFill if true, suppress the legacy white-fill (transparent buffer).
+     */
+    private BufferedImage createBufferXObject(Page parentPage, Form xForm, SoftMask softMask,
+                                              RenderingHints renderingHints, boolean isMask,
+                                              BufferedImage seed, boolean noFill) {
         Rectangle2D bBox = xForm.getBBox();
         int width = (int) bBox.getWidth();
         int height = (int) bBox.getHeight();
@@ -337,7 +501,10 @@ public class FormDrawCmd extends AbstractDrawCmd {
         // create the new image to write too.
         BufferedImage bi = ImageUtility.createTranslucentCompatibleImage(bufferWidth, bufferHeight);
         Graphics2D canvas = bi.createGraphics();
-        if (!isMask && xForm.getExtGState() != null && xForm.getExtGState().getBlendingMode() != null
+        if (seed != null) {
+            // §10: seed the real backdrop instead of the white proxy.
+            canvas.drawImage(seed, 0, 0, null);
+        } else if (!noFill && !isMask && xForm.getExtGState() != null && xForm.getExtGState().getBlendingMode() != null
                 && !new Name("Normal").equals(xForm.getExtGState().getBlendingMode())
                 ) {
             if (xForm.getGroup() != null) {

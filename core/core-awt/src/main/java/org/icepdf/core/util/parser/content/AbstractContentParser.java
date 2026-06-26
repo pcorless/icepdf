@@ -581,7 +581,11 @@ public abstract class AbstractContentParser {
             // through an affine transform.  See classifyTransparencyGroup.
             if (!disableTransparencyGroups && requiresOffscreenBuffer(formXObject)) {
                 // add the hold form for further processing.
-                shapes.add(new FormDrawCmd(formXObject));
+                FormDrawCmd formDrawCmd = new FormDrawCmd(formXObject);
+                shapes.add(formDrawCmd);
+                // remember position so the group can reconstruct its backdrop by
+                // replaying the prior commands (§10 backdrop-aware compositing).
+                formDrawCmd.setBackdropSource(shapes, shapes.getShapes().size() - 1);
             } else {
                 shapes.add(new ShapesDrawCmd(formXObject.getShapes()));
             }
