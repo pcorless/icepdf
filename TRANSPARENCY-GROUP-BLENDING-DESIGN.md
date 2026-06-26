@@ -942,3 +942,27 @@ So **P3 nested-group support is not required for the triad** and is de-prioritis
 (the small `Normal`+SMask groups in `pattern_and_CYMK` are a separate, untouched
 path; revisit only if a doc surfaces that needs it). Remaining before default-on:
 wider `pdf-qa/graphics` validation (poppler+gs+mutool) and perf profiling.
+
+### 10.13 Wide validation toward default-on (whole pdf-qa/graphics tree)
+
+Rendered the entire `pdf-qa/graphics` tree (408 docs) flag-off vs flag-on at HEAD:
+**371 identical, 37 changed.** Direction vs poppler (cross-checked mutool+gs):
+**22 better, 13 neutral, 2 marginally worse** — `P100001613` (+0.8) and
+`CutOff_Head` (+0.6), both **sub-1.0 mean-luma delta, localized to a single
+glow/gradient region**, and consistent across all three renderers (so real, not
+renderer noise, but tiny).
+
+**Blockers to removing the flag (making backdrop the default + deleting white-fill):**
+1. **The 2 marginal regressions.** Localized to one gradient/glow group each.
+   Likely gradient-edge/partial-alpha precision in the backdrop reconstruction vs
+   the old white-fill path (SoftLight formula was checked and is spec-correct).
+   Either resolve, or accept as sub-perceptual given 22 improvements.
+2. **Perf.** The backdrop path adds a stack replay + a contribution composite per
+   candidate group (now one content render after §10.11). Profile a
+   transparency-heavy page; bound it (skip when no candidate groups; cache the
+   replay; reuse the area-budget scale).
+3. **Flip + retire.** Default `backdropComposite` on, then delete the white-fill
+   and the now-subsumed scoped `TRANSPARENT_BACKDROP` plumbing.
+
+This is the closest the white-fill replacement has been to default-ready: a whole
+real-world graphics corpus, 22 improvements, 0 large regressions.
