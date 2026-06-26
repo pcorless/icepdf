@@ -1,6 +1,6 @@
 # Design Note: Buffer-Free Transparency-Group Blending
 
-**Status:** draft / proposal — Phase 1 (de-fuzz classifier) implemented; Phase 2 not started; oversized-SMask routing+NPE fixed (§ bug 1/2); shading-luminosity-mask render fixed (§9 bug 3: sentinel overflow + Type 3 stitching function); backdrop-aware non-isolated compositing planned (§10 — the white-fill root fix).
+**Status:** draft / proposal — Phase 1 (de-fuzz classifier) implemented; Phase 2 not started; oversized-SMask routing+NPE fixed (§ bug 1/2); shading-luminosity-mask render fixed (§9 bug 3: sentinel overflow + Type 3 stitching function); backdrop-aware non-isolated compositing IN PROGRESS (§10 — the white-fill root fix; P0 backdrop-replay done & validated, P1 fixes photo-backdrop cases, white-page Multiply removal still TODO; flag `org.icepdf.core.backdropComposite`, default off).
 **Context:** GH-495 performance work. Follow-up to the oversized-group fix in
 `9c65cbf8c` (scale the offscreen buffer instead of dropping the blend).
 
