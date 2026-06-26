@@ -333,68 +333,62 @@ public class FormDrawCmd extends AbstractDrawCmd {
     }
 
     /**
-     * §10 backdrop-aware compositing.  Renders the group's content (a) over a
-     * transparent backdrop -- giving the group's own alpha {@code ag} -- and (b)
-     * over the reconstructed page backdrop, then removes the backdrop's
-     * contribution (PDF 32000-1 §11.4.8) so the result can be composited back
-     * onto the real page with the group's blend/ca without double-counting it.
-     * Falls back to the legacy buffer if no backdrop is available.
+     * §10 backdrop-aware compositing (single render).  Renders the group's
+     * content ONCE over a transparent backdrop with backdrop-aware blending
+     * ({@code TRANSPARENT_BACKDROP}) -- which yields the *isolated* group result
+     * directly (colour {@code Cs}, alpha {@code ag}), since a separable blend over
+     * a transparent backdrop reduces to the source colour.  No second
+     * over-backdrop render and no §11.4.8 removal are needed.  The reconstructed
+     * page backdrop {@code Cb} is then applied at draw-back (composeContribution).
+     * Falls back to the isolated buffer if no backdrop is available.
      */
     private BufferedImage compositeOverBackdrop(Page parentPage, Form xForm, RenderingHints hints,
                                                 boolean normalBM, Graphics2D g, AffineTransform base) {
-        BufferedImage overTransparent =
-                createBufferXObject(parentPage, xForm, null, hints, normalBM, null, true);
-        BufferedImage backdrop = captureBackdrop(g, base, overTransparent.getWidth(), overTransparent.getHeight());
-        if (backdrop == null) {
-            return overTransparent;
+        boolean prevBackdrop = BlendComposite.setTransparentBackdrop(true);
+        BufferedImage isolated;
+        try {
+            isolated = createBufferXObject(parentPage, xForm, null, hints, normalBM, null, true);
+        } finally {
+            BlendComposite.setTransparentBackdrop(prevBackdrop);
         }
-        BufferedImage overBackdrop =
-                createBufferXObject(parentPage, xForm, null, hints, normalBM, backdrop, true);
+        BufferedImage backdrop = captureBackdrop(g, base, isolated.getWidth(), isolated.getHeight());
+        if (backdrop == null) {
+            return isolated;
+        }
         Name blend = xForm.getExtGState() != null ? xForm.getExtGState().getBlendingMode() : null;
         float caRaw = xForm.getExtGState() != null ? xForm.getExtGState().getNonStrokingAlphConstant() : -1f;
         float ca = (caRaw < 0f || caRaw > 1f) ? 1f : caRaw;
-        return composeContribution(overBackdrop, overTransparent, backdrop, blend, ca);
+        return composeContribution(isolated, backdrop, blend, ca);
     }
 
     /**
-     * Builds the group's contribution to draw back with SRC_OVER (P2,
-     * spec-correct draw-back).  Per pixel, with backdrop {@code Cb} (the real
-     * page behind the group):
-     * <ol>
-     *   <li>group alpha {@code ag} = alpha of the content over transparent;</li>
-     *   <li>recover the isolated group colour {@code Cs} by removing the backdrop
-     *       from the over-backdrop render (PDF 32000-1 §11.4.8):
-     *       {@code Cs = Cn + (Cn-Cb)*(ab*(1/ag - 1))};</li>
-     *   <li>emit colour {@code B(Cb,Cs)} (the group's own blend) at alpha
-     *       {@code ca*ag}, so SRC_OVER over the page (= Cb) yields the spec
-     *       result {@code (1-ca*ag)*Cb + ca*ag*B(Cb,Cs)} -- the group's blend and
-     *       constant alpha applied to its real backdrop, no double-count.</li>
-     * </ol>
+     * Builds the group's contribution to draw back with SRC_OVER (spec-correct
+     * draw-back).  Given the isolated group result ({@code Cs, ag}) and the real
+     * backdrop {@code Cb}, emit colour {@code B(Cb,Cs)} (the group's own blend) at
+     * alpha {@code ca*ag}, so SRC_OVER over the page (= Cb) yields the §11.4.6
+     * result {@code (1-ca*ag)*Cb + ca*ag*B(Cb,Cs)} -- the group's blend and
+     * constant alpha applied to its real backdrop, no double-count.
      */
-    private static BufferedImage composeContribution(BufferedImage overBackdrop, BufferedImage overTransparent,
-                                                     BufferedImage backdrop, Name blend, float ca) {
+    private static BufferedImage composeContribution(BufferedImage isolated, BufferedImage backdrop,
+                                                     Name blend, float ca) {
         boolean multiply = blend != null && BlendComposite.MULTIPLY_VALUE.equals(blend);
-        int w = overBackdrop.getWidth(), h = overBackdrop.getHeight();
+        int w = isolated.getWidth(), h = isolated.getHeight();
         BufferedImage out = ImageUtility.createTranslucentCompatibleImage(w, h);
-        int[] bn = new int[w], bt = new int[w], b0 = new int[w], res = new int[w];
+        int[] is = new int[w], b0 = new int[w], res = new int[w];
         for (int yy = 0; yy < h; yy++) {
-            overBackdrop.getRGB(0, yy, w, 1, bn, 0, w);
-            overTransparent.getRGB(0, yy, w, 1, bt, 0, w);
+            isolated.getRGB(0, yy, w, 1, is, 0, w);
             backdrop.getRGB(0, yy, w, 1, b0, 0, w);
             for (int xx = 0; xx < w; xx++) {
-                int ag = bt[xx] >>> 24;
+                int ag = is[xx] >>> 24;
                 if (ag == 0) {
                     res[xx] = 0; // no group contribution -> page shows through
                     continue;
                 }
-                double k = (b0[xx] >>> 24) / 255.0 * (255.0 / ag - 1.0);
                 int outAlpha = (int) Math.round(ca * ag);
                 int c = 0;
                 for (int s = 0; s < 24; s += 8) {
-                    double cn = (bn[xx] >> s) & 0xFF;
-                    double cb = (b0[xx] >> s) & 0xFF;
-                    double cs = cn + (cn - cb) * k;           // isolated group colour
-                    cs = cs < 0 ? 0 : cs > 255 ? 255 : cs;
+                    double cs = (is[xx] >> s) & 0xFF;       // isolated group colour
+                    double cb = (b0[xx] >> s) & 0xFF;       // backdrop colour
                     double bcs = multiply ? cb * cs / 255.0 : cs;  // B(Cb, Cs)
                     int v = (int) Math.round(bcs);
                     c |= (v < 0 ? 0 : v > 255 ? 255 : v) << s;
