@@ -1,6 +1,6 @@
 # Design Note: Buffer-Free Transparency-Group Blending
 
-**Status:** draft / proposal — Phase 1 (de-fuzz classifier) implemented; Phase 2 not started; oversized-SMask routing+NPE fixed (§ bug 1/2); shading-luminosity-mask render fixed (§9 bug 3: sentinel overflow + Type 3 stitching function); backdrop-aware non-isolated compositing IN PROGRESS (§10 — the white-fill root fix; P0 backdrop-replay done & validated, P1 fixes photo-backdrop cases, P2 spec-correct draw-back DONE (corpus-clean, 0 regressions); single-render removal DONE (perf + unblocks nesting); nested groups + wider validation TODO before default-on; flag `org.icepdf.core.backdropComposite`, default off).
+**Status:** draft / proposal — Phase 1 (de-fuzz classifier) implemented; Phase 2 not started; oversized-SMask routing+NPE fixed (§ bug 1/2); shading-luminosity-mask render fixed (§9 bug 3: sentinel overflow + Type 3 stitching function); backdrop-aware non-isolated compositing IN PROGRESS (§10 — the white-fill root fix; P0 backdrop-replay done & validated, P1 fixes photo-backdrop cases, P2 spec-correct draw-back DONE (corpus-clean, 0 regressions); single-render + full separable blends DONE; whole reference triad improves, 0 corpus regressions; wider validation + perf TODO before default-on; flag `org.icepdf.core.backdropComposite`, default off).
 **Context:** GH-495 performance work. Follow-up to the oversized-group fix in
 `9c65cbf8c` (scale the offscreen buffer instead of dropping the blend).
 
@@ -927,3 +927,18 @@ same readback transform). Caveat to confirm first: it's unverified that
 *non-Normal-blend* path this work targets — they may be **Normal**-blend SMask
 groups (which the white-fill never touched), i.e. a different bug. Confirm the
 test case before building P3.
+
+### 10.12 pattern_and_CYMK confirmed = blend modes, not nesting (commit 4b1baa713)
+
+Per-group path logging settled the §10.10 question: `pattern_and_CYMK_jpeg`'s
+white patches are **Screen/Overlay** groups already on the backdrop-composite
+path (`whiteFillCand=true`), not nested groups. The neutrality was purely because
+`composeContribution` only handled Multiply; the other separable blends fell back
+to Normal. Implementing the full §11.3.5 separable set fixed it: **46.1→42.0**,
+and the whole reference triad (Earth Day, transparency_start, pattern_and_CYMK)
+now improves, +InterponSpecManual, **0 regressions** on the Multiply corpus.
+
+So **P3 nested-group support is not required for the triad** and is de-prioritised
+(the small `Normal`+SMask groups in `pattern_and_CYMK` are a separate, untouched
+path; revisit only if a doc surfaces that needs it). Remaining before default-on:
+wider `pdf-qa/graphics` validation (poppler+gs+mutool) and perf profiling.
