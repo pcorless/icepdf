@@ -1,6 +1,6 @@
 # Design Note: Buffer-Free Transparency-Group Blending
 
-**Status:** draft / proposal — Phase 1 (de-fuzz classifier) implemented; Phase 2 not started; oversized-SMask routing+NPE fixed (§ bug 1/2); shading-luminosity-mask render fixed (§9 bug 3: sentinel overflow + Type 3 stitching function).
+**Status:** draft / proposal — Phase 1 (de-fuzz classifier) implemented; Phase 2 not started; oversized-SMask routing+NPE fixed (§ bug 1/2); shading-luminosity-mask render fixed (§9 bug 3: sentinel overflow + Type 3 stitching function); backdrop-aware non-isolated compositing planned (§10 — the white-fill root fix).
 **Context:** GH-495 performance work. Follow-up to the oversized-group fix in
 `9c65cbf8c` (scale the offscreen buffer instead of dropping the blend).
 
@@ -692,3 +692,108 @@ shading paint's coordinate space. Three coordinate hazards interact:
 aligning the form or mask space to correctly apply a shading pattern"). Sentinel
 bboxes, nested-form coordinate spaces, and the batik gradient paint context make
 it fragile; gate every change against the corpus and both producer files.
+
+## 10. Backdrop-aware non-isolated group compositing — PLAN ("transparency all the way through")
+
+The root cause of the recurring "fades to white instead of transparent" bug
+(§5.2.5): ICEpdf renders every transparency group into an **isolated** offscreen
+buffer and, for additive-CS non-Normal-blend groups, seeds it **white** as a
+proxy for the page backdrop. That proxy is correct only when the page behind the
+group actually is white. The real fix is to composite a **non-isolated** group
+against its **real** backdrop. This section scopes that work.
+
+### 10.1 Reference triad (the acceptance set)
+
+Three real files, same producer family, span the cases. Validate every change
+against all three **and** the Multiply corpus, cross-checking with **mutool +
+poppler + ghostscript** (mutool alone is unreliable — see §9 / RXV540440).
+
+| File | Backdrop | Today | Want |
+|------|----------|-------|------|
+| `transparency_start.pdf` | **white page** | correct (white proxy happens to match) | stay correct |
+| `P100002202` (Earth Day) | **photo** | black→**white** band | black→transparent (reveal photo) |
+| `pattern_and_CYMK_jpeg.pdf` | **CMYK JPEG** | **white patches** | dark JPEG shows through |
+
+`pattern_and_CYMK_jpeg` is the stress case: **many nested `/I false` groups**,
+luminosity soft masks **with `/BC` backdrop colour**, over a CMYK JPEG.
+
+### 10.2 The correct model (PDF 32000-1 §11.4.7–11.4.8, §11.3.7.2)
+
+- An **isolated** group (`/I true`) composites against a fully transparent
+  backdrop, then the result composites onto the page. ICEpdf's isolated buffer +
+  the §5.2.3 `TRANSPARENT_BACKDROP` rule already approximate this.
+- A **non-isolated** group (`/I false` — all three files) composites against the
+  **group backdrop** (the page content behind it). The spec computes the group in
+  the presence of that backdrop, then **removes the backdrop's contribution** so
+  the group can be composited back with its own `ca`/blend without double-counting
+  it. Backdrop removal (spec §11.4.8): `C = Cn + (Cn − C0)·(α0·(1/αg − 1))`, with
+  `C0`,`α0` the backdrop colour/alpha and `Cn`,`αg` the in-group composited
+  result/alpha. The white-fill is a degenerate stand-in for `C0 = white`.
+
+### 10.3 Implementation approach (A: backdrop-seeded buffer + removal)
+
+Chosen approach: keep the buffer (needed for soft masks / group `ca`), but seed
+it with the **real backdrop** and remove it on the way out.
+
+1. **Plumb the page backdrop to `FormDrawCmd`.** This is the foundational enabler
+   and the main missing piece: `paintOperand` has only a `Graphics2D`, not the
+   page raster, so it cannot read what is behind the group. Options: (a) expose
+   the page's backing `BufferedImage` through the paint context / `Shapes.paint`
+   so a group can read the sub-raster under its device bbox; (b) capture the
+   backdrop region just-in-time before painting the group. (a) is cleaner and
+   reusable.
+2. **Seed instead of white-fill.** For a non-isolated group, copy the backdrop
+   sub-raster into the group buffer (at the buffer's possibly-down-scaled
+   resolution — align with the §5.1 area budget) rather than `fillRect` white.
+   Isolated groups keep the transparent + `TRANSPARENT_BACKDROP` path.
+3. **Render the group content** over the seeded backdrop (inner blends now
+   multiply/etc. against the real backdrop — fixes the §5.2 bug-2 class too,
+   retiring the need for the white-fill *and* the `TRANSPARENT_BACKDROP` scoped
+   hack).
+4. **Remove the backdrop** (§11.4.8 formula) per pixel before the buffer is
+   composited back, so the page content under the group is not multiplied twice.
+5. **Soft masks with `/BC`:** the mask's backdrop colour seeds the *mask* group's
+   backdrop the same way; wire `/BC` (e.g. obj 17/28/48 in `pattern_and_CYMK`)
+   into the mask render rather than ignoring it.
+6. **Retire the white-fill** and re-scope/`remove` `TRANSPARENT_BACKDROP` once the
+   seeded-backdrop path subsumes both.
+
+### 10.4 Hard parts / risks
+
+- **Backdrop readback plumbing** (10.3.1) — the real work; everything else builds
+  on it. Must handle the headless `BufferedImage` page target and any tiled paint.
+- **Nested non-isolated groups** (`pattern_and_CYMK_jpeg`): the backdrop for a
+  nested group is the *parent group's buffer-in-progress*, not the page — the seed
+  must come from the enclosing buffer, so this has to work recursively, not just
+  at page level.
+- **Coordinate / resolution alignment:** backdrop sampled in device space vs the
+  group buffer's (possibly area-scaled, translated, `cm`-warped) space.
+- **Double-composite correctness:** getting backdrop removal exactly right;
+  off-by-a-formula re-introduces darkening/white. Unit-test the removal math
+  against hand-computed pixels before trusting renders.
+- **Performance:** a raster copy + per-pixel removal per group; bound it (skip for
+  groups with no backdrop interaction, reuse the area-budget downscale).
+
+### 10.5 Phasing
+
+- **P0 — Backdrop plumbing.** Expose the page/parent backdrop sub-raster to
+  `FormDrawCmd`. No behaviour change yet; add a debug dump to prove the right
+  pixels are captured for the triad.
+- **P1 — Seed + remove, non-isolated, no mask, flag-gated.** Replace white-fill
+  for the simplest non-isolated additive Multiply group; validate Earth Day moves
+  toward reference and `transparency_start` stays correct (white backdrop seeds
+  white → same result). Corpus-gate.
+- **P2 — Soft masks + `/BC`.** Extend to masked groups; `pattern_and_CYMK_jpeg`
+  is the target.
+- **P3 — Nested groups + retire white-fill / `TRANSPARENT_BACKDROP`.** Make the
+  seed recursive; delete the hacks once the triad + corpus pass on all three
+  renderers.
+- Each phase behind a flag, default off until P3 proves the triad + corpus
+  regression-free.
+
+### 10.6 Definition of done
+
+All three triad files match the poppler/ghostscript reference (not just mutool)
+within SSIM; Multiply corpus shows no regressions (only the known
+white-proxy-dependent docs *improve*); white-fill and the scoped
+`TRANSPARENT_BACKDROP` flag are removed; backdrop-removal math has unit tests.
