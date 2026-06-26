@@ -40,6 +40,9 @@ public class ConfigSerializer {
     static {
         mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
         mapper.enable(DeserializationFeature.READ_ENUMS_USING_TO_STRING);
+        // tolerate config files written by other builds that carry extra
+        // fields (e.g. an older/newer Result schema) rather than failing to load.
+        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     }
 
     public static Path save(Object object) {
