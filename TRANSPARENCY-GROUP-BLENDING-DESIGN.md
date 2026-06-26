@@ -967,6 +967,31 @@ renderer noise, but tiny).
 This is the closest the white-fill replacement has been to default-ready: a whole
 real-world graphics corpus, 22 improvements, 0 large regressions.
 
+### 10.15 P100001613 re-diagnosed — a low-resolution measurement artifact, not a regression
+
+§10.14's "fix via device-pixel sizing" was built on a **wrong premise** and is
+withdrawn. Prototyped visible-region device-pixel buffer sizing for the backdrop
+path (size to bbox ∩ clip at device resolution instead of the raw bbox). It
+correctly shrank P100001613's buffer (3928×1019 covering the off-page 10538-bbox →
+849×823 for the visible region) but **barely moved the score** (15.81 → 15.52),
+and the dev-sized output was 0.86 from the flag-off output — i.e. group 216's own
+resolution was never the issue (it's a smooth Screen gradient).
+
+What the earlier `maxSmaskImageSize=8000` test actually showed: that cap is
+**global**, so `OFF cap8k = 10.71` — flag-**off** improves just as much. The win
+was every *other* form/mask in the doc sharpening, unrelated to backdrop. At proper
+resolution the backdrop-vs-white-fill delta on the one Screen group is
+**on 10.84 − off 10.71 = 0.13** — negligible. The headline "+0.8" at the default
+cap was that 0.13 difference *amplified by the under-resolved doc* (the sharp
+sun-disc edge smeared across low-res pixels), not a compositing flaw.
+
+So **P100001613 is not a real regression** and needs no backdrop change. Device-pixel
+sizing reverted (it changes corpus renders and saves memory for off-page groups, but
+does not serve the flag-removal goal; revisit only as a standalone memory
+optimisation). Remaining sub-1.0 case: CutOff_Head's edge strip (§10.14) — small;
+characterise or accept. Revised gate to default-on: (1) accept/close CutOff strip,
+(2) perf, (3) flip + delete white-fill.
+
 ### 10.14 The two marginal regressions diagnosed — both resolution/edge, not flaws
 
 - **`P100001613` (+0.8) = under-resolution, not a regression.** Its only candidate
