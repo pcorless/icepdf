@@ -371,7 +371,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
      */
     private static BufferedImage composeContribution(BufferedImage isolated, BufferedImage backdrop,
                                                      Name blend, float ca) {
-        boolean multiply = blend != null && BlendComposite.MULTIPLY_VALUE.equals(blend);
+        int mode = blendMode(blend);
         int w = isolated.getWidth(), h = isolated.getHeight();
         BufferedImage out = ImageUtility.createTranslucentCompatibleImage(w, h);
         int[] is = new int[w], b0 = new int[w], res = new int[w];
@@ -389,8 +389,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 for (int s = 0; s < 24; s += 8) {
                     double cs = (is[xx] >> s) & 0xFF;       // isolated group colour
                     double cb = (b0[xx] >> s) & 0xFF;       // backdrop colour
-                    double bcs = multiply ? cb * cs / 255.0 : cs;  // B(Cb, Cs)
-                    int v = (int) Math.round(bcs);
+                    int v = (int) Math.round(separableBlend(mode, cb, cs));  // B(Cb, Cs)
                     c |= (v < 0 ? 0 : v > 255 ? 255 : v) << s;
                 }
                 res[xx] = ((outAlpha < 0 ? 0 : outAlpha > 255 ? 255 : outAlpha) << 24) | c;
@@ -398,6 +397,65 @@ public class FormDrawCmd extends AbstractDrawCmd {
             out.setRGB(0, yy, w, 1, res, 0, w);
         }
         return out;
+    }
+
+    // separable blend mode codes
+    private static final int B_NORMAL = 0, B_MULTIPLY = 1, B_SCREEN = 2, B_OVERLAY = 3,
+            B_DARKEN = 4, B_LIGHTEN = 5, B_COLOR_DODGE = 6, B_COLOR_BURN = 7,
+            B_HARD_LIGHT = 8, B_SOFT_LIGHT = 9, B_DIFFERENCE = 10, B_EXCLUSION = 11;
+
+    private static int blendMode(Name blend) {
+        if (blend == null) return B_NORMAL;
+        if (BlendComposite.MULTIPLY_VALUE.equals(blend)) return B_MULTIPLY;
+        if (BlendComposite.SCREEN_VALUE.equals(blend)) return B_SCREEN;
+        if (BlendComposite.OVERLAY_VALUE.equals(blend)) return B_OVERLAY;
+        if (BlendComposite.DARKEN_VALUE.equals(blend)) return B_DARKEN;
+        if (BlendComposite.LIGHTEN_VALUE.equals(blend)) return B_LIGHTEN;
+        if (BlendComposite.COLOR_DODGE_VALUE.equals(blend)) return B_COLOR_DODGE;
+        if (BlendComposite.COLOR_BURN_VALUE.equals(blend)) return B_COLOR_BURN;
+        if (BlendComposite.HARD_LIGHT_VALUE.equals(blend)) return B_HARD_LIGHT;
+        if (BlendComposite.SOFT_LIGHT_VALUE.equals(blend)) return B_SOFT_LIGHT;
+        if (BlendComposite.DIFFERENCE_VALUE.equals(blend)) return B_DIFFERENCE;
+        if (BlendComposite.EXCLUSION_VALUE.equals(blend)) return B_EXCLUSION;
+        return B_NORMAL;
+    }
+
+    /** PDF 32000-1 §11.3.5 separable blend functions B(Cb, Cs), channels 0..255. */
+    private static double separableBlend(int mode, double cb, double cs) {
+        switch (mode) {
+            case B_MULTIPLY: return cb * cs / 255.0;
+            case B_SCREEN: return cb + cs - cb * cs / 255.0;
+            case B_OVERLAY: return hardLight(cs, cb);          // Overlay(b,s)=HardLight(s,b)
+            case B_DARKEN: return Math.min(cb, cs);
+            case B_LIGHTEN: return Math.max(cb, cs);
+            case B_COLOR_DODGE:
+                if (cb == 0) return 0;
+                if (cs >= 255) return 255;
+                return Math.min(255.0, cb * 255.0 / (255.0 - cs));
+            case B_COLOR_BURN:
+                if (cb >= 255) return 255;
+                if (cs == 0) return 0;
+                return 255.0 - Math.min(255.0, (255.0 - cb) * 255.0 / cs);
+            case B_HARD_LIGHT: return hardLight(cb, cs);
+            case B_SOFT_LIGHT: {
+                double b = cb / 255.0, s = cs / 255.0;
+                double d = b <= 0.25 ? ((16 * b - 12) * b + 4) * b : Math.sqrt(b);
+                double r = s <= 0.5 ? b - (1 - 2 * s) * b * (1 - b) : b + (2 * s - 1) * (d - b);
+                return r * 255.0;
+            }
+            case B_DIFFERENCE: return Math.abs(cb - cs);
+            case B_EXCLUSION: return cb + cs - 2 * cb * cs / 255.0;
+            default: return cs;                                // Normal/Compatible
+        }
+    }
+
+    private static double hardLight(double cb, double cs) {
+        // HardLight(Cb,Cs) = Multiply(Cb,2Cs) if Cs<=.5 else Screen(Cb,2Cs-1)
+        if (cs <= 127.5) {
+            return cb * (2 * cs) / 255.0;
+        }
+        double s2 = 2 * cs - 255.0;
+        return cb + s2 - cb * s2 / 255.0;
     }
 
     private BufferedImage applyMask(Page parentPage, BufferedImage xFormBuffer, SoftMask softMask, SoftMask gsSoftMask,
