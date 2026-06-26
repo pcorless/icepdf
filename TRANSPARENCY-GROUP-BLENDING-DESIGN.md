@@ -1,6 +1,6 @@
 # Design Note: Buffer-Free Transparency-Group Blending
 
-**Status:** draft / proposal — Phase 1 (de-fuzz classifier) implemented; Phase 2 not started; oversized-SMask routing+NPE fixed (§ bug 1/2); shading-luminosity-mask render fixed (§9 bug 3: sentinel overflow + Type 3 stitching function); backdrop-aware non-isolated compositing IN PROGRESS (§10 — the white-fill root fix; P0 backdrop-replay done & validated, P1 fixes photo-backdrop cases, P2 spec-correct draw-back DONE (corpus-clean, 0 regressions); nested groups + wider validation TODO before default-on; flag `org.icepdf.core.backdropComposite`, default off).
+**Status:** draft / proposal — Phase 1 (de-fuzz classifier) implemented; Phase 2 not started; oversized-SMask routing+NPE fixed (§ bug 1/2); shading-luminosity-mask render fixed (§9 bug 3: sentinel overflow + Type 3 stitching function); backdrop-aware non-isolated compositing IN PROGRESS (§10 — the white-fill root fix; P0 backdrop-replay done & validated, P1 fixes photo-backdrop cases, P2 spec-correct draw-back DONE (corpus-clean, 0 regressions); single-render removal DONE (perf + unblocks nesting); nested groups + wider validation TODO before default-on; flag `org.icepdf.core.backdropComposite`, default off).
 **Context:** GH-495 performance work. Follow-up to the oversized-group fix in
 `9c65cbf8c` (scale the offscreen buffer instead of dropping the blend).
 
@@ -907,3 +907,23 @@ Lessons for the next attempt:
   two-render-per-group design interacts badly with nesting (exponential, and
   ambiguous backdrop). A single-render removal (track αg without a second content
   render) would make nesting tractable — worth solving before P3.
+
+### 10.11 Single-render removal DONE (commit 4347f7856)
+
+The two-render scheme is gone. A single render over a transparent backdrop with
+`TRANSPARENT_BACKDROP` set yields the isolated group result `(Cs, ag)` directly
+(separable blend over transparent → source), so the over-backdrop render and the
+§11.4.8 removal arithmetic are unnecessary. Output is equivalent to the
+two-render P2 (distance-to-poppler/mutool unchanged to 0.1 across all
+backdrop-composite docs; only sub-perceptual rounding diffs), at ~half the cost.
+
+**This unblocks P3 nesting:** with one pass, the parent buffer-in-progress is
+well-defined (no over-transparent/over-backdrop ambiguity). Sketch for the next
+P3 attempt: push the parent's captured backdrop `Bp` **and** the live parent
+buffer `bi` (= parent content-so-far over transparent); a nested group builds its
+backdrop as `bi over Bp` mapped into its space (both are in parent-buffer space,
+same readback transform). Caveat to confirm first: it's unverified that
+`pattern_and_CYMK_jpeg`'s white patches even come from the non-isolated-additive
+*non-Normal-blend* path this work targets — they may be **Normal**-blend SMask
+groups (which the white-fill never touched), i.e. a different bug. Confirm the
+test case before building P3.
