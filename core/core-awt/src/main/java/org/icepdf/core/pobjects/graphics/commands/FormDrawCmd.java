@@ -371,10 +371,26 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 }
                 // basic support for gradient fills,  still have a few corners cases to work on.
                 else {
+                    // The `sh` fill shape defaults to the form bbox.  When that
+                    // bbox is a +-Short.MAX_VALUE sentinel (common for shading
+                    // soft masks) and the form's cm scales it up, the shape maps
+                    // to ~1e8 device coordinates and overflows Java2D's
+                    // rasteriser -> zero coverage -> an empty (fully transparent)
+                    // mask -> the masked content vanishes (WhiteGradient.pdf).
+                    // Detect that overflow and substitute the buffer region (the
+                    // area the mask actually covers), reusing the same transform
+                    // the fill will run under so the gradient still lands 1:1.
+                    AffineTransform fillXform = AffineTransform.getTranslateInstance(-x, -y);
                     for (DrawCmd cmd : xFormShapes.getShapes()) {
-                        if (cmd instanceof ShapeDrawCmd && ((ShapeDrawCmd) cmd).getShape() == null) {
+                        if (cmd instanceof TransformDrawCmd) {
+                            // TransformDrawCmd sets transform = base . cm; base
+                            // here is the translate below, so track the latest cm.
+                            fillXform = AffineTransform.getTranslateInstance(-x, -y);
+                            fillXform.concatenate(((TransformDrawCmd) cmd).getAffineTransform());
+                        } else if (cmd instanceof ShapeDrawCmd && ((ShapeDrawCmd) cmd).getShape() == null) {
                             Rectangle2D bounds = bBox.getBounds2D();
-                            ((ShapeDrawCmd) cmd).setShape(bounds);
+                            ((ShapeDrawCmd) cmd).setShape(clampShadingFillShape(bounds, fillXform,
+                                    bufferWidth, bufferHeight));
                         }
                     }
                     canvas.translate(-x, -y);
@@ -389,6 +405,36 @@ public class FormDrawCmd extends AbstractDrawCmd {
         }
         canvas.dispose();
         return bi;
+    }
+
+    // Device coordinate beyond which Java2D's rasteriser loses coverage; a
+    // shading-mask buffer is at most a few thousand pixels, so anything past this
+    // is a sentinel-bbox blow-up, not real geometry.
+    private static final double SHADING_FILL_DEVICE_LIMIT = 1_000_000d;
+
+    /**
+     * Returns a fill shape for a shading `sh` whose original shape is the form
+     * bbox.  If that bbox maps within the rasteriser's safe device range under
+     * {@code fillXform}, it is returned unchanged.  If it would overflow (a
+     * +-Short.MAX_VALUE sentinel bbox scaled up by the form's cm), it is replaced
+     * with the buffer region transformed back into the fill's user space, so the
+     * shading covers exactly the mask buffer without overflowing.
+     */
+    private static Shape clampShadingFillShape(Rectangle2D bounds, AffineTransform fillXform,
+                                               int bufferWidth, int bufferHeight) {
+        Rectangle2D device = fillXform.createTransformedShape(bounds).getBounds2D();
+        if (device.getMinX() > -SHADING_FILL_DEVICE_LIMIT
+                && device.getMinY() > -SHADING_FILL_DEVICE_LIMIT
+                && device.getMaxX() < SHADING_FILL_DEVICE_LIMIT
+                && device.getMaxY() < SHADING_FILL_DEVICE_LIMIT) {
+            return bounds;
+        }
+        try {
+            return fillXform.createInverse().createTransformedShape(
+                    new Rectangle2D.Double(0, 0, bufferWidth, bufferHeight));
+        } catch (java.awt.geom.NoninvertibleTransformException e) {
+            return bounds;
+        }
     }
 
     private boolean checkForShaddingFill(Form xform) {
