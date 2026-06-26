@@ -54,6 +54,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
     // page backdrop behind the group (instead of the white-fill proxy).
     private Shapes backdropShapes;
     private int backdropIndex;
+    private boolean usedBackdropComposite;
 
     private static final boolean disableXObjectSMask;
 
@@ -188,6 +189,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
                     // instead of the white proxy, then remove the backdrop so the
                     // page is not composited twice.
                     xFormBuffer = compositeOverBackdrop(parentPage, xForm, renderingHints, normalBM, g, base);
+                    usedBackdropComposite = xFormBuffer != null;
                 } else {
                     xFormBuffer = createBufferXObject(parentPage, xForm, null, renderingHints, normalBM);
                 }
@@ -242,6 +244,15 @@ public class FormDrawCmd extends AbstractDrawCmd {
 //            ImageUtility.displayImage(xFormBuffer, "final" + xForm.getGroup() + " " + xForm.getPObjectReference() +
 //                    xFormBuffer.getHeight() + "x" + xFormBuffer.getHeight());
         }
+        // §10: a backdrop-composited buffer already holds the group's
+        // contribution with the backdrop removed; the page blend (e.g. Multiply)
+        // would double-count the backdrop it was just composited over, so draw it
+        // back with plain SRC_OVER instead of the active group blend.
+        java.awt.Composite savedComposite = null;
+        if (usedBackdropComposite) {
+            savedComposite = g.getComposite();
+            g.setComposite(java.awt.AlphaComposite.SrcOver);
+        }
         if (formScale != 1.0) {
             // buffer was rasterised at a reduced size; scale it back up to the
             // group's full footprint so the blend composites over the page at
@@ -249,6 +260,9 @@ public class FormDrawCmd extends AbstractDrawCmd {
             g.drawImage(xFormBuffer, x, y, formWidth, formHeight, null);
         } else {
             g.drawImage(xFormBuffer, null, x, y);
+        }
+        if (savedComposite != null) {
+            g.setComposite(savedComposite);
         }
         return currentShape;
     }
