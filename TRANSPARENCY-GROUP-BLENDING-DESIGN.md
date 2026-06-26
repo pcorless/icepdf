@@ -1,6 +1,6 @@
 # Design Note: Buffer-Free Transparency-Group Blending
 
-**Status:** draft / proposal — Phase 1 (de-fuzz classifier) implemented; Phase 2 not started; oversized-SMask routing+NPE fixed (§ bug 1/2); shading-luminosity-mask render fixed (§9 bug 3: sentinel overflow + Type 3 stitching function); backdrop-aware non-isolated compositing IN PROGRESS (§10 — the white-fill root fix; P0 backdrop-replay done & validated, P1 fixes photo-backdrop cases, white-page Multiply removal still TODO; flag `org.icepdf.core.backdropComposite`, default off).
+**Status:** draft / proposal — Phase 1 (de-fuzz classifier) implemented; Phase 2 not started; oversized-SMask routing+NPE fixed (§ bug 1/2); shading-luminosity-mask render fixed (§9 bug 3: sentinel overflow + Type 3 stitching function); backdrop-aware non-isolated compositing IN PROGRESS (§10 — the white-fill root fix; P0 backdrop-replay done & validated, P1 fixes photo-backdrop cases, P2 spec-correct draw-back DONE (corpus-clean, 0 regressions); nested groups + wider validation TODO before default-on; flag `org.icepdf.core.backdropComposite`, default off).
 **Context:** GH-495 performance work. Follow-up to the oversized-group fix in
 `9c65cbf8c` (scale the offscreen buffer instead of dropping the blend).
 
@@ -855,3 +855,36 @@ simplified `BlendComposite`.** That is the last piece before the flag can defaul
 on and the white-fill can be retired. Phasing now: P0 ✓ (replay backdrop),
 P1 ✓ (seed+remove, photo cases), **P2 = spec-correct draw-back composite (TODO)**,
 P3 = nested groups + retire white-fill.
+
+### 10.9 P2 DONE — spec-correct draw-back, corpus-clean (commit de3cc1327)
+
+The draw-back is now the PDF 32000-1 §11.4.6 result-colour formula for an opaque
+page backdrop, computed per pixel against the reconstructed backdrop `Cb`:
+
+    Cr = (1 - ca*ag)*Cb + ca*ag*B(Cb, Cs)
+
+`composeContribution` emits the contribution as colour `B(Cb,Cs)` at alpha
+`ca*ag` (with `Cs` = isolated group colour from §11.4.8 removal), drawn back with
+SRC_OVER over the page (= `Cb`). This applies the group's **own** blend and
+constant alpha to its **true** backdrop with no double-count, so it is correct
+for white-page *and* photo backdrops, Multiply-significant or not — replacing the
+SRC_OVER-vs-Multiply guesswork of §10.8.
+
+**Result (Multiply corpus, flag on, vs poppler/mutool): 13/27 change, 4 better
+(Earth Day white band fixed and matches mutool, Sea Turtle 50.4→41.3,
+transparency_start 4.9→4.1 beating the white-fill, L010), 9 neutral, 0
+regressions.** Flag still default off; flag-off byte-identical to HEAD; core
+tests green.
+
+**Remaining before defaulting on + retiring the white-fill:**
+- **P3 nested groups.** `pattern_and_CYMK_jpeg` is only neutral because a nested
+  group's true backdrop is the *parent buffer in progress*, not the page; the
+  replay currently rebuilds from page paper + the parent's prior commands, which
+  is an approximation. Make the backdrop capture recursive (seed from the
+  enclosing group's buffer).
+- **Non-Multiply blends.** `composeContribution` currently implements `B` for
+  Multiply and Normal; add the other separable modes for general correctness.
+- **Wider validation.** Run the whole `pdf-qa/graphics` tree (poppler+gs+mutool),
+  as for the Function_3 fix, before flipping the default.
+- **Perf.** Two content renders + a stack replay per group; profile and bound
+  (skip when the group has no backdrop interaction; reuse the area-budget scale).
