@@ -435,6 +435,36 @@ Two follow-ups were attempted:
    a real project, not a scoped flag. Until then the white-fill stays, and the
    αb-aware rule stays scoped to isolated groups, where it is provably neutral.
 
+### 5.2.5 The white-fill is a *white-backdrop proxy* — proven by two files
+
+Two real documents pin down exactly what the white-fill is and why no local
+heuristic can fix it (investigated 2026-06-25):
+
+- `P100002202` (Earth Day): a black rectangle under a luminosity soft mask inside
+  a non-isolated Multiply `ca 0.4` group, sitting over a **photo**. It should fade
+  black→**transparent** (revealing the solar-panel photo); ICEpdf renders it
+  black→**white**. Disabling the white-fill fixes it (matches mutool).
+- `transparency_start`: non-isolated Multiply groups over a **white page**. It
+  renders **correctly only because** of the white-fill — removing it regresses
+  hard (mutool 4.9→25.6 *and* poppler 6.5→27.3, so not a mutool artifact).
+
+So the white-fill is a **stand-in for the group's real backdrop, hard-coded to
+white.** It is right exactly when the page behind the group *is* white
+(`transparency_start`) and wrong when it is anything else (`P100002202`'s photo).
+No local signal separates the two: both are non-isolated Multiply groups with
+soft masks and overlapping `ca` ranges (Earth Day .2–.4; transparency_start
+.35–1.0). Attempts that all failed corpus validation: remove white-fill
+(3 better / 3 worse / 4 neutral), broaden `TRANSPARENT_BACKDROP` to all groups
+(same), and post-paint "fill only fully-transparent holes white" (degenerates to
+no-white-fill because the content is partial-alpha throughout).
+
+**The real fix is "transparency all the way through":** a non-isolated group must
+composite against its **actual page backdrop**, not a white proxy — i.e. seed the
+group buffer with the page pixels under its bbox (or paint the group inline onto
+the page), then apply the PDF non-isolated **backdrop-removal** formula when
+compositing the result back. That is the proper model §5.2.4 calls for; these two
+files are its concrete justification. It is architectural work, not a heuristic.
+
 ## 5.1 Interim scaling quality regression (largely addressed)
 
 The `9c65cbf8c` fix restored correctness at the cost of resolution. The original
