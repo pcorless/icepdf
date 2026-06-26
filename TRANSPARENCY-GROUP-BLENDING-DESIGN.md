@@ -888,3 +888,22 @@ tests green.
   as for the Function_3 fix, before flipping the default.
 - **Perf.** Two content renders + a stack replay per group; profile and bound
   (skip when the group has no backdrop interaction; reuse the area-budget scale).
+
+### 10.10 P3 nested-backdrop attempt — reverted (parent-buffer readback)
+
+First P3 cut: a ThreadLocal stack of the buffer-in-progress; a nested group reads
+its backdrop from the parent buffer (top of stack) via
+`scale ∘ translate(-x,-y) ∘ curTransform⁻¹` instead of the white-paper replay.
+Result: it did **not** improve `pattern_and_CYMK_jpeg` (still 46.0) and slightly
+nudged `transparency_start` (4.1→5.2), so net-negative — **reverted**, P2 kept.
+
+Lessons for the next attempt:
+- `pattern_and_CYMK`'s nested groups likely don't take the `isWhiteFillCandidate`
+  compositeOverBackdrop path at all (different blend/CS), so reading the parent
+  buffer never engaged — confirm by logging which groups hit the path.
+- The parent buffer is painted **twice** (overTransparent + overBackdrop) per the
+  two-render removal; a nested read picks up whichever pass is running, so the
+  nested backdrop is only valid during the parent's overBackdrop pass. The
+  two-render-per-group design interacts badly with nesting (exponential, and
+  ambiguous backdrop). A single-render removal (track αg without a second content
+  render) would make nesting tractable — worth solving before P3.
