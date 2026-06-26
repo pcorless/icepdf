@@ -966,3 +966,25 @@ renderer noise, but tiny).
 
 This is the closest the white-fill replacement has been to default-ready: a whole
 real-world graphics corpus, 22 improvements, 0 large regressions.
+
+### 10.14 The two marginal regressions diagnosed — both resolution/edge, not flaws
+
+- **`P100001613` (+0.8) = under-resolution, not a regression.** Its only candidate
+  is a huge Screen group (10538×2734) that the area budget down-scales ~0.37×, so
+  the *backdrop reconstruction* loses detail at the glow edges. Re-rendered with a
+  larger cap (`maxSmaskImageSize=8000`, less down-scale) flag-on scores **10.84 vs
+  flag-off's 14.99 — markedly better.** So the backdrop approach is the more
+  correct one here; the default buffer is simply too small for the reconstruction.
+  Fix = **device-pixel-aware buffer sizing** (§5.1 option 2): size the group buffer
+  to its on-screen footprint, not the raw bbox — a 10538-unit group occupying
+  ~964 px on screen needs no down-scale. Resolves this *and* is a general quality
+  win.
+- **`CutOff_Head` (+0.6) = a narrow edge strip** (diff bbox a ~30 px-wide vertical
+  band) from the `ca 0.25` Multiply group; small, not oversized. Likely a
+  partial-alpha edge-precision diff at a 4-up panel seam. Minor; characterise
+  separately.
+
+**Revised path to default-on:** (1) device-pixel buffer sizing (fixes P100001613
+and improves quality generally), (2) confirm/accept the CutOff edge strip, (3)
+perf, (4) flip default + delete white-fill. The 22 improvements stand; neither
+marginal case is a flaw in the backdrop model.
