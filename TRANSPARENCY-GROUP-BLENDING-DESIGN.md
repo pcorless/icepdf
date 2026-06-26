@@ -1,6 +1,6 @@
 # Design Note: Buffer-Free Transparency-Group Blending
 
-**Status:** draft / proposal — Phase 1 (de-fuzz classifier) implemented; Phase 2 not started; oversized-SMask routing+NPE fixed (§ bug 1/2); shading-luminosity-mask render planned (§9 bug 3).
+**Status:** draft / proposal — Phase 1 (de-fuzz classifier) implemented; Phase 2 not started; oversized-SMask routing+NPE fixed (§ bug 1/2); shading-luminosity-mask render fixed (§9 bug 3: sentinel overflow + Type 3 stitching function).
 **Context:** GH-495 performance work. Follow-up to the oversized-group fix in
 `9c65cbf8c` (scale the offscreen buffer instead of dropping the blend).
 
@@ -576,7 +576,33 @@ baking works; only if it doesn't do we fall back to widening `paintOperand`.
 Recommend landing Phase 1 + the test harness first to lock current behaviour,
 then the §4 trace, then Phase 2 behind those tests.
 
-## 9. Shading-based luminosity soft masks render empty (bug 3) — plan
+## 9. Shading-based luminosity soft masks render empty (bug 3) — RESOLVED
+
+**Resolved** in `833a99b94` (Function_3) + `ebf884b0a` (shading overflow). It was
+*two* coupled bugs:
+
+1. **Sentinel-bbox rasteriser overflow (`FormDrawCmd`).** The `sh` fill shape
+   defaulted to the mask form's `±Short.MAX_VALUE` bbox; scaled by the mask's `cm`
+   (~2077×) it mapped to ~1e8 device coords and overflowed Java2D → zero coverage
+   → empty mask. Fix: when the transformed fill shape exceeds a safe device range,
+   substitute the buffer region (reconstructed via the same `translate∘cm` the
+   fill runs under) so the gradient lands 1:1; normal-sized shading masks
+   untouched.
+2. **Type 3 stitching function mis-evaluated (`Function_3`) — the real cause of
+   the "shifted" gradient.** `calculate()` returned `functions[b]` for the
+   interior interval `[bounds[b], bounds[b+1])` instead of `functions[b+1]`, and
+   `encode()` only sub-domain-encoded segment 0. A white / white→black-ramp /
+   black stitching gradient collapsed to a near-step, mispositioning the fade.
+   Fix: interior interval uses `functions[b+1]`; `encode()` uses the sub-domain
+   for all segments. Affects *all* Type 3 functions (gradients, transfer/tint
+   functions), so corpus-validated: 8/27 docs change, 4 closer to the mutool
+   reference, 4 neutral, 0 regressions; core tests green.
+
+Result: WhiteGradient's gradient fade matches the mutool reference (distance-to-ref
+37.9 → 30.5; the overflow fix *alone* was 45.3, confirming the two are coupled).
+
+---
+*Original investigation notes (kept for context):*
 
 **Symptom.** `WhiteGradient.pdf` (and `P100001613...`, same PDF producer) paint a
 white overlay (`Fm0`: `0 0 0 0 k` fill) faded by a `/Luminosity` soft mask whose
