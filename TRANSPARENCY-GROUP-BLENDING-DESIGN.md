@@ -830,3 +830,28 @@ white-proxy-dependent docs *improve*); white-fill and the scoped
   `ca`/blend only to the contribution. Validate the full triad (white page +
   photo + nested) on poppler+ghostscript+mutool before turning the flag on by
   default and retiring the white-fill.
+
+### 10.8 Draw-back composite: SRC_OVER vs group blend (commit b44eed851)
+
+The seeded buffer holds the group composited over its real backdrop; the removed
+contribution must be drawn back **without** re-applying the backdrop. Two
+draw-back operators were measured (flag-on, vs poppler/mutool):
+
+| doc (backdrop) | white-fill | Multiply draw-back | SRC_OVER draw-back |
+|----------------|-----------:|-------------------:|-------------------:|
+| transparency_start (white) | 4.9 | 25.4 ✗ | **5.6** ✓ |
+| P100002010 (white-ish) | 26.8 | 35.6 ✗ | **25.8** ✓ |
+| Earth Day (photo) | 29.6 | 25.5 ✓ | **24.6** ✓ |
+| Sea Turtle (photo) | 50.4 | 46.9 ✓ | **46.0** ✓ |
+| pattern_and_CYMK (jpeg) | 46.1 | 39.8 ✓ | 46.1 ≈ |
+| test | 27.1 | 30.2 ✗ | 37.7 ✗ |
+
+SRC_OVER is net-better (chosen), but neither is universal: `test`'s group
+Multiply is genuinely significant at draw-back, so dropping it (SRC_OVER) loses
+it, while keeping it (Multiply) double-counts the backdrop elsewhere. **The
+unified answer is to apply the group's own blend at draw-back via a spec-correct
+Porter-Duff+blend operator consistent with the §11.4.8 removal — not ICEpdf's
+simplified `BlendComposite`.** That is the last piece before the flag can default
+on and the white-fill can be retired. Phasing now: P0 ✓ (replay backdrop),
+P1 ✓ (seed+remove, photo cases), **P2 = spec-correct draw-back composite (TODO)**,
+P3 = nested groups + retire white-fill.
