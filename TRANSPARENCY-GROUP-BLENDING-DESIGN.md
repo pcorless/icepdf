@@ -797,3 +797,36 @@ All three triad files match the poppler/ghostscript reference (not just mutool)
 within SSIM; Multiply corpus shows no regressions (only the known
 white-proxy-dependent docs *improve*); white-fill and the scoped
 `TRANSPARENT_BACKDROP` flag are removed; backdrop-removal math has unit tests.
+
+### 10.7 Progress (commit a1099fd90, flag `org.icepdf.core.backdropComposite`, default off)
+
+- **P0 DONE & validated.** Backdrop reconstruction by replaying the stack works
+  with no raster readback. `Shapes.paintBackdrop(g, uptoIndex)` replays
+  `[0, index)`; `FormDrawCmd.captureBackdrop` renders it into a buffer aligned 1:1
+  to the group buffer via `scale ∘ translate(-x,-y) ∘ curTransform⁻¹ ∘ base`,
+  seeded with **white paper** (the page background is the render target's initial
+  fill, not a draw command, so it must be seeded or a group over blank paper sees
+  a transparent backdrop). Verified visually: each group's captured backdrop is
+  what's behind it (the two band gradients correctly see the sky strips).
+- **P1 PARTIAL.** `compositeOverBackdrop` renders the content over the real
+  backdrop *and* over transparent (for the group alpha `αg`), then
+  `removeBackdrop` applies §11.4.8. Photo-/image-backdrop docs improve toward the
+  poppler/mutool reference: Earth Day 29.6→25.5, Sea Turtle 50.4→46.9,
+  pattern_and_CYMK 46.1→39.8. The white-band artifact is gone on Earth Day.
+- **Remaining problem (the next nut).** The **white-page Multiply** case
+  (`transparency_start`) still regresses (4.9→25.4). Root: the white-fill is
+  *itself* the correct backdrop seed for a white page (`Multiply(white-seed,
+  white-page)` doesn't double-count), whereas seeding the real backdrop and
+  drawing back with Multiply *does* double-count it — which backdrop-removal must
+  cancel. But the removal (`C = Cn + (Cn−C0)·(α0·(1/αg−1))`) is derived for a
+  spec-correct over-composite, while ICEpdf's `BlendComposite` Multiply draw-back
+  is a **simplified** `dst + (B(src,dst)−dst)·alpha` (no proper per-pixel alpha
+  compositing). The two are inconsistent, so the removed result re-composited via
+  the simplified Multiply doesn't reconstruct the right pixels.
+- **Next step.** Make removal and draw-back consistent: either (a) composite the
+  group result back with a **spec-correct** Porter-Duff+blend operator (not the
+  simplified `BlendComposite`) so §11.4.8 holds, or (b) skip removal and draw the
+  *seeded buffer* back with `SRC` over the group's clip while applying the group
+  `ca`/blend only to the contribution. Validate the full triad (white page +
+  photo + nested) on poppler+ghostscript+mutool before turning the flag on by
+  default and retiring the white-fill.
