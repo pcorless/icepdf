@@ -174,7 +174,8 @@ public class FormDrawCmd extends AbstractDrawCmd {
             boolean previousTransparentBackdrop = isolatedGroup
                     && BlendComposite.setTransparentBackdrop(true);
             try {
-                if (!hasMask && !annotationAppearance.get() && isBackdropCompositeCandidate(xForm)) {
+                if (!hasMask && !annotationAppearance.get() && backdropShapes != null
+                        && isBackdropCompositeCandidate(xForm)) {
                     // §10 backdrop-aware compositing: render the group over its
                     // real page backdrop (reconstructed by replaying the stack),
                     // then remove the backdrop so the page is not composited

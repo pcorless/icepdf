@@ -583,9 +583,19 @@ public abstract class AbstractContentParser {
                 // add the hold form for further processing.
                 FormDrawCmd formDrawCmd = new FormDrawCmd(formXObject);
                 shapes.add(formDrawCmd);
-                // remember position so the group can reconstruct its backdrop by
-                // replaying the prior commands (§10 backdrop-aware compositing).
-                formDrawCmd.setBackdropSource(shapes, shapes.getShapes().size() - 1);
+                // Remember position so the group can reconstruct its backdrop by
+                // replaying the prior commands (§10 backdrop-aware compositing) --
+                // but ONLY for a page-level Do (page != null).  When the Do is
+                // inside another form (page == null) the prior commands are local
+                // to that form, so the replay misses the page content painted
+                // behind the form (e.g. black_or_red.pdf's Multiply banner over the
+                // page's blue gradient) and the blend composites against a blank
+                // backdrop.  Without a backdrop source the group falls back to the
+                // direct path and is drawn with the active blend composite over the
+                // real destination, which sees the true backdrop.
+                if (page != null) {
+                    formDrawCmd.setBackdropSource(shapes, shapes.getShapes().size() - 1);
+                }
             } else {
                 shapes.add(new ShapesDrawCmd(formXObject.getShapes()));
             }
