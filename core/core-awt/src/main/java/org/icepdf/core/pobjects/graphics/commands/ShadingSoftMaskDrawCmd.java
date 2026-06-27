@@ -136,6 +136,10 @@ public class ShadingSoftMaskDrawCmd extends AbstractDrawCmd {
             g.drawImage(result, device.x, device.y, null);
             g.setComposite(savedComposite);
             g.setTransform(saved);
+            // transient offscreen buffers -- release their rasters now.
+            if (mask != null) mask.flush();
+            if (result != shade) shade.flush();
+            result.flush();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (Exception e) {

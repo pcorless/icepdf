@@ -350,7 +350,9 @@ public class FormDrawCmd extends AbstractDrawCmd {
         Name blend = xForm.getExtGState() != null ? xForm.getExtGState().getBlendingMode() : null;
         float caRaw = xForm.getExtGState() != null ? xForm.getExtGState().getNonStrokingAlphConstant() : -1f;
         float ca = (caRaw < 0f || caRaw > 1f) ? 1f : caRaw;
-        return composeContribution(isolated, backdrop, blend, ca);
+        BufferedImage result = composeContribution(isolated, backdrop, blend, ca);
+        backdrop.flush(); // transient -- contribution is now in the isolated buffer
+        return result;
     }
 
     /**
@@ -365,15 +367,18 @@ public class FormDrawCmd extends AbstractDrawCmd {
                                                      Name blend, float ca) {
         int mode = blendMode(blend);
         int w = isolated.getWidth(), h = isolated.getHeight();
-        BufferedImage out = ImageUtility.createTranslucentCompatibleImage(w, h);
-        int[] is = new int[w], b0 = new int[w], res = new int[w];
+        // Reuse the isolated buffer as the output (the contribution replaces it in
+        // place) instead of allocating a third full-page buffer per group; the
+        // backdrop row is the only other input and is read before the matching
+        // isolated pixel is overwritten.
+        int[] is = new int[w], b0 = new int[w];
         for (int yy = 0; yy < h; yy++) {
             isolated.getRGB(0, yy, w, 1, is, 0, w);
             backdrop.getRGB(0, yy, w, 1, b0, 0, w);
             for (int xx = 0; xx < w; xx++) {
                 int ag = is[xx] >>> 24;
                 if (ag == 0) {
-                    res[xx] = 0; // no group contribution -> page shows through
+                    is[xx] = 0; // no group contribution -> page shows through
                     continue;
                 }
                 int outAlpha = (int) Math.round(ca * ag);
@@ -384,11 +389,11 @@ public class FormDrawCmd extends AbstractDrawCmd {
                     int v = (int) Math.round(separableBlend(mode, cb, cs));  // B(Cb, Cs)
                     c |= (v < 0 ? 0 : v > 255 ? 255 : v) << s;
                 }
-                res[xx] = ((outAlpha < 0 ? 0 : outAlpha > 255 ? 255 : outAlpha) << 24) | c;
+                is[xx] = ((outAlpha < 0 ? 0 : outAlpha > 255 ? 255 : outAlpha) << 24) | c;
             }
-            out.setRGB(0, yy, w, 1, res, 0, w);
+            isolated.setRGB(0, yy, w, 1, is, 0, w);
         }
-        return out;
+        return isolated;
     }
 
     // separable blend mode codes
