@@ -58,10 +58,12 @@ public class FormDrawCmd extends AbstractDrawCmd {
 
     private static final boolean disableXObjectSMask;
 
-    // §10 (experimental, default off): composite non-isolated additive groups
-    // against their real reconstructed page backdrop instead of the white proxy.
+    // §10: composite non-isolated additive groups against their real reconstructed
+    // page backdrop instead of the white proxy.  Default ON (§10.9–10.17: corpus
+    // 22 better / 0 real regressions, perf bounded + cached); set the property to
+    // false to fall back to the legacy white-fill proxy.
     private static final boolean BACKDROP_COMPOSITE =
-            Defs.sysPropertyBoolean("org.icepdf.core.backdropComposite", false);
+            Defs.sysPropertyBoolean("org.icepdf.core.backdropComposite", true);
 
     // Used to use Max_value but we have a few corner cases where the dimension is +-5 of Short.MAX_VALUE, but
     // realistically we seldom have enough memory to load anything bigger then 8000px.  4k+ image are big!
