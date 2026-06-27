@@ -967,6 +967,30 @@ renderer noise, but tiny).
 This is the closest the white-fill replacement has been to default-ready: a whole
 real-world graphics corpus, 22 improvements, 0 large regressions.
 
+### 10.18 White-fill deleted, flag retired — the proxy era ends
+
+Default flipped to ON (§10 commit) then the legacy white-fill **proxy removed**:
+- Dropped the `org.icepdf.core.backdropComposite` flag (always on) and the
+  white-fill `fillRect` branch + its now-dead `seed`/`noFill` params/overload in
+  `createBufferXObject`.
+- Renamed `isWhiteFillCandidate` → `isBackdropCompositeCandidate`; refreshed
+  the stale proxy comments; removed the unused `DictionaryEntries` import.
+- Kept `captureBackdrop`'s white **paper** seed — that's the page's real white
+  background for backdrop reconstruction, not the proxy.
+
+**Verified a rendering no-op:** the full `blending` tree (67 docs incl. the masked
+reference triad Earth Day / transparency_start / pattern_and_CYMK) is
+**byte-identical** with the proxy present vs deleted. With backdrop compositing as
+the default the proxy was already dead code — masked (`hasMask`) candidate groups
+bypass the backdrop path but the luminosity mask zeroes out the white-filled
+regions anyway, so removing the fill changes nothing. Core tests green.
+
+Non-isolated additive groups now composite against their real reconstructed page
+backdrop, full stop — no white stand-in anywhere. Open follow-ups (corner cases, to
+tackle individually): masked blend groups still use the plain isolated buffer (the
+backdrop path is `!hasMask`); CMYK groups still blend in RGB (§10.16); nested groups
+(§P3) remain deferred.
+
 ### 10.17 Perf profiling — bounded, cached, no pathology; clears the perf gate
 
 Timed the whole `blending` dir (22 pages incl. a 227-page doc) flag-off vs flag-on,
