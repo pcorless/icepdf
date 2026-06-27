@@ -174,7 +174,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
             boolean previousTransparentBackdrop = isolatedGroup
                     && BlendComposite.setTransparentBackdrop(true);
             try {
-                if (!hasMask && isBackdropCompositeCandidate(xForm)) {
+                if (!hasMask && !annotationAppearance.get() && isBackdropCompositeCandidate(xForm)) {
                     // §10 backdrop-aware compositing: render the group over its
                     // real page backdrop (reconstructed by replaying the stack),
                     // then remove the backdrop so the page is not composited
@@ -262,6 +262,24 @@ public class FormDrawCmd extends AbstractDrawCmd {
     // to build backdrops for the groups inside that replay.
     private static final ThreadLocal<Boolean> capturingBackdrop =
             ThreadLocal.withInitial(() -> Boolean.FALSE);
+
+    // Set while an annotation appearance stream is being painted.  An annotation
+    // is drawn ON TOP of the already-rendered page, so its real backdrop is the
+    // page content sitting in the destination Graphics2D -- which the replay-based
+    // captureBackdrop cannot reconstruct (the page is not in the appearance form's
+    // shape stack; the replay only sees a blank white seed).  Compositing a
+    // separable blend (e.g. a Multiply highlight) over that blank backdrop and
+    // drawing it SRC_OVER obliterates the underlying text.  When this is set the
+    // group instead takes the plain buffered path and is drawn back with the
+    // active blend composite, letting Java2D read the real page pixels as the
+    // blend destination (the spec-correct result for an annotation over the page).
+    private static final ThreadLocal<Boolean> annotationAppearance =
+            ThreadLocal.withInitial(() -> Boolean.FALSE);
+
+    /** Toggle the annotation-appearance backdrop bypass (see field). */
+    public static void setAnnotationAppearance(boolean painting) {
+        annotationAppearance.set(painting);
+    }
 
     /**
      * §10 P0: reconstruct the page/parent backdrop behind this group, aligned

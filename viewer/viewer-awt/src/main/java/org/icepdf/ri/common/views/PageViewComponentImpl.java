@@ -36,6 +36,8 @@ import java.awt.*;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -341,6 +343,20 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
             boolean notSelectTool =
                     documentViewModel.getViewToolMode() !=
                             DocumentViewModel.DISPLAY_TOOL_SELECTION;
+            // The page back-buffer (a readable ARGB raster), used to blend an
+            // annotation that carries a blend mode (e.g. a Multiply highlight)
+            // against the real page content.  Painting such an annotation
+            // straight onto the Swing/X11 canvas throws in BlendComposite and
+            // falls back to a flat alpha; rasterising it over this backdrop
+            // instead yields the spec-correct blend (see paintBlendedAnnotation).
+            PageBufferStore.Snapshot backdrop = pageBufferStore.getSnapshot();
+            boolean backdropUsable = backdrop.image != null
+                    && backdrop.pageZoom == pageZoom
+                    && backdrop.pageRotation == pageRotation;
+            // transform that maps page user space back to component space (the
+            // space the backdrop buffer and the blit are expressed in).
+            AffineTransform componentSpace = new AffineTransform(prePaintTransform);
+            AffineTransform userSpace = gg2.getTransform();
             // paint all annotations on top of the content buffer
             AnnotationComponent annotation;
             synchronized (annotationComponentsLock) {
@@ -353,11 +369,20 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                                     && annotation.isActive()) &&
                             !(annotation.getAnnotation() instanceof ChoiceWidgetAnnotation
                                     && annotation.isActive())) {
+                        boolean focus = annotation.hasFocus() && notSelectTool;
+                        if (backdropUsable && annotation.getAnnotation().appearanceHasBlendMode()
+                                && paintBlendedAnnotation(gg2, annotation.getAnnotation(), at,
+                                componentSpace, backdrop, focus)) {
+                            // blended over the page backdrop and blitted; restore
+                            // the user-space transform for the remaining anots.
+                            gg2.setTransform(userSpace);
+                            continue;
+                        }
                         annotation.getAnnotation().render(gg2,
                                 GraphicsRenderingHints.SCREEN,
                                 documentViewModel.getViewRotation(),
                                 documentViewModel.getViewZoom(),
-                                annotation.hasFocus() && notSelectTool);
+                                focus);
                     }
                 }
             }
@@ -365,6 +390,67 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
             gg2.setColor(oldColor);
             gg2.setStroke(oldStroke);
             gg2.setTransform(prePaintTransform);
+        }
+    }
+
+    /**
+     * Rasterises an annotation that carries a blend mode over a buffer seeded
+     * with the real page content beneath it, then blits the composited region
+     * back to the canvas.  Because the blend target is a {@link BufferedImage}
+     * raster (not the Swing/X11 canvas) the {@code BlendComposite} path works and
+     * reads the page pixels as the backdrop, giving the same spec-correct blend
+     * (e.g. a Multiply highlight letting the underlying text show through) that
+     * the headless page-capture path produces -- instead of the flat-alpha
+     * fallback the canvas path resorts to on X11.
+     *
+     * @param gg2            canvas graphics, currently in page user space.
+     * @param annotation     annotation to paint.
+     * @param at             page transform (user space relative to component space).
+     * @param componentSpace transform mapping component space (identity page user
+     *                       space pre-{@code at}); used for the backdrop blit.
+     * @param backdrop       consistent snapshot of the page back-buffer.
+     * @param focus          whether the annotation currently has focus.
+     * @return true if the annotation was blended and blitted; false to fall back
+     * to the normal direct render.
+     */
+    private boolean paintBlendedAnnotation(Graphics2D gg2, Annotation annotation, AffineTransform at,
+                                           AffineTransform componentSpace, PageBufferStore.Snapshot backdrop,
+                                           boolean focus) {
+        // annotation footprint in component space.
+        Rectangle2D userRect = annotation.getUserSpaceRectangle();
+        Rectangle bounds = at.createTransformedShape(userRect).getBounds();
+        // intersect with the visible page area; a small margin absorbs border/aa.
+        bounds.grow(2, 2);
+        Rectangle pageBounds = new Rectangle(0, 0, pageSize.width, pageSize.height);
+        Rectangle region = bounds.intersection(pageBounds);
+        if (region.width <= 0 || region.height <= 0 || (long) region.width * region.height > 64L * 1024 * 1024) {
+            return false;
+        }
+        try {
+            BufferedImage layer = new BufferedImage(region.width, region.height, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D lg = layer.createGraphics();
+            GraphicsRenderingHints grh = GraphicsRenderingHints.getDefault();
+            lg.setRenderingHints(grh.getRenderingHints(GraphicsRenderingHints.SCREEN));
+            // 1. seed the layer with the page backdrop beneath the annotation.
+            //    Replicate AbstractPageViewComponent's buffer blit, shifted so the
+            //    region's top-left maps to the layer origin.
+            Rectangle clip = backdrop.imageLocation;
+            lg.translate(-region.x, -region.y);
+            lg.drawImage(backdrop.image, clip.x, clip.y, clip.width, clip.height, null);
+            // 2. render the annotation over the backdrop in page user space.
+            lg.transform(at);
+            annotation.render(lg, GraphicsRenderingHints.SCREEN,
+                    documentViewModel.getViewRotation(), documentViewModel.getViewZoom(), focus);
+            lg.dispose();
+            // 3. blit the composited region back to the canvas (component space).
+            gg2.setTransform(componentSpace);
+            gg2.drawImage(layer, region.x, region.y, null);
+            layer.flush();
+            return true;
+        } catch (Throwable e) {
+            // any failure -> let the caller fall back to the direct canvas render.
+            logger.fine("blended annotation rasterisation failed, falling back: " + e);
+            return false;
         }
     }
 
