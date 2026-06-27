@@ -48,11 +48,32 @@ public class ShadingSoftMaskDrawCmd extends AbstractDrawCmd {
     private final Paint shadingPaint;
     private final SoftMask softMask;
     private final float alpha;
+    // When non-null, the explicit region to fill (a path `f` fill); otherwise the
+    // current clip is used (a shading `sh` fill).
+    private final Shape fillShape;
+    // True for `f` fills: draw the masked result with g's current composite (the
+    // blend mode + constant alpha already installed by the preceding `gs`), rather
+    // than overriding to SrcOver.  Lets a Screen/Multiply bevel blend correctly.
+    private final boolean useCurrentComposite;
 
+    /** Shading `sh` fill with a luminosity soft mask (faded.pdf). */
     public ShadingSoftMaskDrawCmd(Paint shadingPaint, SoftMask softMask, float alpha) {
+        this(shadingPaint, null, softMask, alpha, false);
+    }
+
+    /** Path `f` fill with a luminosity soft mask, drawn with the active blend
+     *  composite (bevel highlights/shadows -- trans.pdf, Lesson Plans.pdf). */
+    public ShadingSoftMaskDrawCmd(Paint fillPaint, Shape fillShape, SoftMask softMask) {
+        this(fillPaint, fillShape, softMask, 1f, true);
+    }
+
+    private ShadingSoftMaskDrawCmd(Paint shadingPaint, Shape fillShape, SoftMask softMask,
+                                   float alpha, boolean useCurrentComposite) {
         this.shadingPaint = shadingPaint;
+        this.fillShape = fillShape;
         this.softMask = softMask;
         this.alpha = alpha;
+        this.useCurrentComposite = useCurrentComposite;
     }
 
     @Override
@@ -63,56 +84,64 @@ public class ShadingSoftMaskDrawCmd extends AbstractDrawCmd {
         if (!optionalContentState.isVisible() || shadingPaint == null) {
             return currentShape;
         }
-        Shape fillClip = g.getClip();
-        if (fillClip == null) {
+        // Region to fill: the explicit path for an `f` fill, else the clip for `sh`.
+        Shape region = fillShape != null ? fillShape : g.getClip();
+        Shape gClip = g.getClip();
+        if (region == null) {
             return currentShape;
         }
         AffineTransform ctm = g.getTransform();
-        Rectangle device = ctm.createTransformedShape(fillClip).getBounds();
+        Rectangle device = ctm.createTransformedShape(region).getBounds();
+        if (gClip != null) {
+            device = device.intersection(ctm.createTransformedShape(gClip).getBounds());
+        }
         if (device.width <= 0 || device.height <= 0) {
             return currentShape;
         }
         if (device.width > MAX_DIM || device.height > MAX_DIM) {
-            // fall back to a plain shading fill rather than over-allocate.
+            // fall back to a plain fill rather than over-allocate.
             g.setPaint(shadingPaint);
-            g.fill(fillClip);
+            g.fill(region);
             return currentShape;
         }
         try {
-            // 1. shading colour over the clip.
+            // 1. fill colour/shading over the region.
             BufferedImage shade = ImageUtility.createTranslucentCompatibleImage(device.width, device.height);
             Graphics2D sg = shade.createGraphics();
             sg.setRenderingHints(g.getRenderingHints());
             sg.translate(-device.x, -device.y);
             sg.transform(ctm);
-            sg.setClip(fillClip);
+            if (gClip != null) {
+                sg.setClip(gClip);
+            }
             sg.setPaint(shadingPaint);
-            sg.fill(fillClip);
+            sg.fill(region);
             sg.dispose();
 
             // 2. soft-mask luminosity over the same region.
-            BufferedImage mask = renderLuminosityMask(parentPage, g, ctm, fillClip, device);
+            BufferedImage mask = renderLuminosityMask(parentPage, g, ctm, region, device);
 
-            // 3. combine: mask luminosity weights the shading alpha.
+            // 3. combine: mask luminosity weights the fill alpha.
             BufferedImage result = (mask != null)
                     ? ImageUtility.applyExplicitSMask(shade, mask) : shade;
 
-            // 4. blit back in device space, honouring the constant alpha.
+            // 4. blit back in device space.
             AffineTransform saved = g.getTransform();
             Composite savedComposite = g.getComposite();
             g.setTransform(new AffineTransform());
-            if (alpha >= 0f && alpha < 1f) {
+            if (!useCurrentComposite && alpha >= 0f && alpha < 1f) {
                 g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
             }
+            // else: keep g's composite -- the blend mode + ca installed by `gs`.
             g.drawImage(result, device.x, device.y, null);
             g.setComposite(savedComposite);
             g.setTransform(saved);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (Exception e) {
-            logger.fine("shading soft-mask paint failed, falling back to plain fill: " + e);
+            logger.fine("soft-mask fill paint failed, falling back to plain fill: " + e);
             g.setPaint(shadingPaint);
-            g.fill(fillClip);
+            g.fill(region);
         }
         return currentShape;
     }
@@ -144,21 +173,25 @@ public class ShadingSoftMaskDrawCmd extends AbstractDrawCmd {
         mg.fillRect(0, 0, device.width, device.height);
         mg.setRenderingHints(g.getRenderingHints());
         // The mask group's coordinate system is the CTM in effect when the soft
-        // mask was *set* (§11.6.5.2), i.e. before the page applied the gradient
-        // matrix between `gs` and `sh`.  `ctm` already includes that matrix, and
-        // the mask group re-applies its own (identical) cm internally -- which
-        // would transform the gradient twice (rotated/offset fade).  Undo the
-        // mask's own cm from the base so its internal cm lands the gradient on
-        // exactly the sh-time CTM, aligned with the visible shading.
+        // mask was *set* (§11.6.5.2).  For an `sh` fill the page applies the
+        // gradient matrix between `gs` and `sh`, so the sh-time `ctm` includes it
+        // AND the mask group re-applies its own (identical) cm internally --
+        // transforming the gradient twice (rotated/offset fade).  Undo the mask's
+        // own cm so its internal cm lands it on exactly the sh-time CTM.  A plain
+        // `f` fill has no intermediate cm (the fill follows `gs` directly), so the
+        // mask group's cm is legitimate and must NOT be undone -- undoing it there
+        // mis-positions the mask off-buffer (all-black -> the fill vanishes).
         AffineTransform base = new AffineTransform();
         base.translate(-device.x, -device.y);
         base.concatenate(ctm);
-        AffineTransform maskCm = firstTransform(maskShapes);
-        if (maskCm != null) {
-            try {
-                base.concatenate(maskCm.createInverse());
-            } catch (java.awt.geom.NoninvertibleTransformException e) {
-                // fall back to the raw ctm base
+        if (!useCurrentComposite) {
+            AffineTransform maskCm = firstTransform(maskShapes);
+            if (maskCm != null) {
+                try {
+                    base.concatenate(maskCm.createInverse());
+                } catch (java.awt.geom.NoninvertibleTransformException e) {
+                    // fall back to the raw ctm base
+                }
             }
         }
         mg.setTransform(base);

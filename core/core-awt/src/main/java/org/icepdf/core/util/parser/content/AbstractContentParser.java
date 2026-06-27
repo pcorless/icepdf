@@ -1975,10 +1975,22 @@ public abstract class AbstractContentParser {
                     commonOverPrintAlpha(graphicState.getFillAlpha(),
                             graphicState.getFillColorSpace()));
         }
-        // avoid doing fill, as we likely have  blending mode that will obfuscate the underlying
-        // content.
+        // A fill with a luminosity soft mask: render the fill modulated by the
+        // mask (and the active blend composite) instead of dropping it.  This is
+        // what makes 90s-style bevels appear -- a white Screen rect and a black
+        // Multiply rect, each masked to a bevel edge (trans.pdf, Lesson Plans.pdf).
+        // The legacy behaviour skipped any soft-masked fill entirely (so the
+        // bevels never rendered); other mask types keep that skip.
         if (graphicState.getExtGState() != null &&
                 graphicState.getExtGState().getSMask() != null) {
+            SoftMask sMask = graphicState.getExtGState().getSMask();
+            if (sMask.getS() != null
+                    && sMask.getS().equals(SoftMask.SOFT_MASK_TYPE_LUMINOSITY)
+                    && graphicState.getFillColor() != null
+                    && !(graphicState.getFillColorSpace() instanceof PatternColor)) {
+                shapes.add(new ShadingSoftMaskDrawCmd(graphicState.getFillColor(),
+                        (GeneralPath) geometricPath.clone(), sMask));
+            }
             return;
         }
         // The knockout effect can only be achieved by changing the alpha
