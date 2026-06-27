@@ -967,6 +967,34 @@ renderer noise, but tiny).
 This is the closest the white-fill replacement has been to default-ready: a whole
 real-world graphics corpus, 22 improvements, 0 large regressions.
 
+### 10.17 Perf profiling — bounded, cached, no pathology; clears the perf gate
+
+Timed the whole `blending` dir (22 pages incl. a 227-page doc) flag-off vs flag-on,
+warmed, per-doc:
+- Aggregate within noise (off 30691ms vs on 30974ms second runs).
+- Worst absolute: the 227-page doc **+771ms / 227 pages ≈ 3.4 ms/page (+4.8%)**.
+- Worst relative: small pages with candidate groups — `transparency_design`
+  230→320ms, `Trauma_Survivor` 91→149ms — tens of ms each, still sub-150ms.
+- No O(N²) blow-up.
+
+Why it's bounded:
+1. **One-time + cached.** `paintOperand` builds the buffer (and thus runs
+   `compositeOverBackdrop`/`captureBackdrop`) only when `xFormBuffer == null` — the
+   first paint. Viewer repaints/zooms reuse the cached buffer, exactly like the
+   existing white-fill buffers; no re-replay.
+2. **Replay depth capped at 1.** `captureBackdrop` sets the `capturingBackdrop`
+   ThreadLocal; a candidate group encountered *inside* a replay returns null from
+   `captureBackdrop` and falls back to its isolated buffer, so the stack replay
+   never nests. Worst case per candidate group is one `[0,index)` replay, and prior
+   groups in that replay hit their already-built caches.
+3. **Gated.** The replay only runs for `isWhiteFillCandidate` groups (non-Normal
+   blend, additive CS); a page with none pays nothing.
+4. Transient memory: `captureBackdrop` allocates one w×h ARGB matching the group
+   buffer (≤ the 4M-px / ~16 MB area cap), freed immediately after compose.
+
+**Perf gate cleared.** Remaining gate to default-on: **flip the default + delete the
+white-fill** (and the now-subsumed scoped `TRANSPARENT_BACKDROP`).
+
 ### 10.16 CutOff_Head diagnosed — CMYK blend-space, in the discard bleed strip; accept
 
 Dumped the candidate group's Cs/Cb/result (group 714, the only candidate):
