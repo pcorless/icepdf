@@ -967,6 +967,33 @@ renderer noise, but tiny).
 This is the closest the white-fill replacement has been to default-ready: a whole
 real-world graphics corpus, 22 improvements, 0 large regressions.
 
+### 10.16 CutOff_Head diagnosed — CMYK blend-space, in the discard bleed strip; accept
+
+Dumped the candidate group's Cs/Cb/result (group 714, the only candidate):
+- It is a **clipped image** (`Im0`) drawn with Multiply ca 0.25 into a 47 pt strip —
+  the **print bleed/trim region** of a 4-up imposition (the literal "cut off" content
+  beyond the trim line, designed to be discarded).
+- Its group dict (938) is **`/I false`** — genuinely *non-isolated*, so ON's
+  backdrop compositing is the spec-appropriate path, not a misroute.
+- At opaque image pixels ON == OFF (verified by formula: Cs=(15,46,112),
+  Cb=(0,146,208), Multiply→(0,26,91) @ ca·αg=0.25 → 0.75·Cb+0.25·Multiply).
+  The −29.7 mean darkening (97% of strip pixels OFF-closer-to-poppler) is at the
+  image's **soft edges**, where OFF's white-fill leaks the lighter page through.
+
+Root cause of the residual: the group's **`/CS /DeviceCMYK`**. Per §11.3 a Multiply
+in a CMYK group blends in CMYK (subtractive — multiplying ink coverages *lightens*);
+ICEpdf does every separable blend in **RGB** (BlendComposite and composeContribution
+alike), where Multiply darkens. This is a **pre-existing, engine-wide limitation**
+(OFF multiplies in RGB too) — not introduced by backdrop compositing; OFF only looks
+closer because the white-fill masks it at soft edges.
+
+**Verdict: accept.** Sub-perceptual, in a trimmed-off bleed strip, on the
+spec-correct path; gs is neutral (on 9.04 vs off 8.99), only poppler mildly prefers
+OFF (+0.58), mutool is the usual outlier. A real fix means CMYK-space blending — a
+large, separate, engine-wide change that would touch BlendComposite globally and
+risk the 22 wins. Not worth it for a discard margin. Gate to default-on is now just:
+**(1) perf, (2) flip default + delete white-fill.**
+
 ### 10.15 P100001613 re-diagnosed — a low-resolution measurement artifact, not a regression
 
 §10.14's "fix via device-pixel sizing" was built on a **wrong premise** and is
