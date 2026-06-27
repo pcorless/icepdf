@@ -553,7 +553,7 @@ public class ContentParser extends AbstractContentParser {
                         // shading operator.
                         case Operands.sh:
                             consume_sh(graphicState, stack, shapes,
-                                    resources);
+                                    resources, page != null);
                             break;
 
                         /*

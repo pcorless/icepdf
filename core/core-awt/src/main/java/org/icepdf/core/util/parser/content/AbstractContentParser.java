@@ -1449,19 +1449,36 @@ public abstract class AbstractContentParser {
 
     protected static void consume_sh(GraphicsState graphicState, Stack<Object> stack,
                                      Shapes shapes,
-                                     Resources resources) throws InterruptedException {
+                                     Resources resources, boolean pageLevel) throws InterruptedException {
         Object o = stack.peek();
         // if a name then we are dealing with a pattern.
         if (o instanceof Name) {
             Name patternName = (Name) stack.pop();
             Pattern pattern = resources.getShading(patternName);
+            SoftMask shSoftMask = graphicState.getExtGState() != null
+                    ? graphicState.getExtGState().getSMask() : null;
+            // Only apply the soft mask to the shading here for a page-level `sh`.
+            // A shading `sh` inside a form is part of that form's own compositing
+            // (the form may be a transparency group masked at the group level), and
+            // applying the mask again on the inner shading over-darkens it
+            // (af400e35).  Form-level `sh` keeps the legacy approximation.
+            boolean luminosityMask = pageLevel && shSoftMask != null && shSoftMask.getS() != null
+                    && shSoftMask.getS().equals(SoftMask.SOFT_MASK_TYPE_LUMINOSITY);
+            if (pattern != null && luminosityMask) {
+                // A luminosity soft mask modulates the shading per-pixel; render
+                // the shading and the mask to buffers and composite, instead of
+                // dropping the mask for a flat alpha (faded.pdf white-fade bug).
+                pattern.init(graphicState);
+                shapes.add(new ShadingSoftMaskDrawCmd(pattern.getPaint(), shSoftMask,
+                        graphicState.getFillAlpha()));
+                return;
+            }
             if (pattern != null) {
                 pattern.init(graphicState);
                 // we paint the shape and color shading as defined
                 // by the pattern dictionary and respect the current clip
                 // TODO further work is needed here to build out the pattern fill.
-                if (graphicState.getExtGState() != null &&
-                        graphicState.getExtGState().getSMask() != null) {
+                if (shSoftMask != null) {
                     setAlpha(shapes, graphicState,
                             graphicState.getAlphaRule(),
                             0.50f);
