@@ -69,7 +69,7 @@ public class TextSprite {
     private FontFile font;
     // font's resource name and size, used by PS writer.
     private String fontName;
-    private int fontSize;
+    private float fontSize;
 
     private static final String TYPE_3 = "Type3";
 
@@ -294,11 +294,11 @@ public class TextSprite {
         this.fontName = fontName;
     }
 
-    public int getFontSize() {
+    public float getFontSize() {
         return fontSize;
     }
 
-    public void setFontSize(int fontSize) {
+    public void setFontSize(float fontSize) {
         this.fontSize = fontSize;
     }
 
