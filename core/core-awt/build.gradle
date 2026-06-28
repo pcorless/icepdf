@@ -141,3 +141,20 @@ tasks.register('parsingBenchmark', JavaExec) {
         }
     }
 }
+
+// GH-501 strategic probe: report black-ink (K) stats of preserved DeviceCMYK
+// samples across a corpus, to find files where the raster-level subtractive path
+// could matter (maxK > 0).  See CmykSampleProbeTest.
+//   ./gradlew :core:core-awt:cmykProbe -Pcmyk.probe.dirs=/path/a:/path/b
+tasks.register('cmykProbe', JavaExec) {
+    group = 'verification'
+    description = 'Probes preserved DeviceCMYK samples for genuine black ink (GH-501).'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'org.icepdf.core.pobjects.graphics.CmykSampleProbeTest'
+    workingDir = rootProject.projectDir
+    maxHeapSize = project.findProperty('cmyk.probe.heap') ?: '4g'
+    systemProperty('cmyk.probe', '1')
+    if (project.hasProperty('cmyk.probe.dirs')) {
+        systemProperty('cmyk.probe.dirs', project.property('cmyk.probe.dirs'))
+    }
+}
