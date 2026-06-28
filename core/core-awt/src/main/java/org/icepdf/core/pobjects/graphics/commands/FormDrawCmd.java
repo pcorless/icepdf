@@ -369,7 +369,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
         Name blend = xForm.getExtGState() != null ? xForm.getExtGState().getBlendingMode() : null;
         float caRaw = xForm.getExtGState() != null ? xForm.getExtGState().getNonStrokingAlphConstant() : -1f;
         float ca = (caRaw < 0f || caRaw > 1f) ? 1f : caRaw;
-        BufferedImage result = composeContribution(isolated, backdrop, blend, ca);
+        BufferedImage result = composeContribution(isolated, backdrop, blend, ca, blendingSpaceFor(xForm));
         backdrop.flush(); // transient -- contribution is now in the isolated buffer
         return result;
     }
@@ -384,13 +384,26 @@ public class FormDrawCmd extends AbstractDrawCmd {
      */
     // The colour-space math for group compositing (GH-501).  The composition flow
     // below is channel-count-agnostic; swapping this strategy is how a DeviceCMYK
-    // group will blend subtractively without forking the flow.  Defaults to the
-    // additive sRGB behaviour the compositor has always used.
-    private static final BlendingSpace blendingSpace = RgbBlendingSpace.INSTANCE;
+    // group blends subtractively without forking the flow -- an RGB group keeps the
+    // additive sRGB behaviour the compositor has always used, a DeviceCMYK group
+    // gets the §11.3.5 ink-complement blend (see CmykBlendingSpace), and a colour
+    // change in one cannot reach the other.
+    private static BlendingSpace blendingSpaceFor(Form xForm) {
+        if (xForm.getGroup() == null) {
+            return RgbBlendingSpace.INSTANCE;
+        }
+        Object cs = xForm.getLibrary().getObject(xForm.getGroup(), new Name("CS"));
+        if (cs instanceof Name && ((Name) cs).equals(DeviceCMYK.DEVICECMYK_KEY)) {
+            return CmykBlendingSpace.INSTANCE;
+        }
+        if (cs instanceof ICCBased && ((ICCBased) cs).getNumComponents() == 4) {
+            return CmykBlendingSpace.INSTANCE;
+        }
+        return RgbBlendingSpace.INSTANCE;
+    }
 
     private static BufferedImage composeContribution(BufferedImage isolated, BufferedImage backdrop,
-                                                     Name blend, float ca) {
-        BlendingSpace space = blendingSpace;
+                                                     Name blend, float ca, BlendingSpace space) {
         BlendComposite.BlendingMode mode = toBlendingMode(blend);
         int w = isolated.getWidth(), h = isolated.getHeight();
         int n = space.channelCount();
