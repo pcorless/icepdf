@@ -105,4 +105,54 @@ public class CmykBlendingSpaceTest {
     public void hasFourChannels() {
         assertEquals(4, CMYK.channelCount());
     }
+
+    /** The sRGB recovery carries NO black channel (K=0): a real black channel is
+     *  unrecoverable from sRGB and must come from the preserved CMYK samples. */
+    @Test
+    public void fromSRGBGeneratesNoBlack() {
+        double[] ch = new double[4];
+        for (int argb : new int[]{0xFF7F3D12, 0xFF000000, 0xFF8040C0}) {
+            CMYK.fromSRGB(argb, ch);
+            assertEquals(0.0, ch[3], 1e-9, "fromSRGB must not fabricate a K channel");
+        }
+    }
+
+    /** Why subtractive routing is DEFERRED on the sRGB path: blending sRGB-recovered
+     *  CMYK (K=0) through this space is identical to a plain RGB blend for every
+     *  white-preserving mode -- the complements cancel, so there is no subtractive
+     *  gain to be had from sRGB, only the risk of a fabricated-K colour shift.  This
+     *  is the property that lets composeContribution stay additive without loss. */
+    @Test
+    public void k0RecoveryEqualsRgbForWhitePreservingModes() {
+        BlendComposite.BlendingMode[] whitePreserving = {
+                BlendComposite.BlendingMode.MULTIPLY,
+                BlendComposite.BlendingMode.SCREEN,
+                BlendComposite.BlendingMode.OVERLAY,
+                BlendComposite.BlendingMode.DARKEN,
+                BlendComposite.BlendingMode.LIGHTEN,
+                BlendComposite.BlendingMode.HARD_LIGHT,
+        };
+        int[] colours = {0xFFFFA500, 0xFFC86432, 0xFF6496C8, 0xFFFFFFFF, 0xFF000000, 0xFFB43CC8};
+        double[] cs = new double[4], cb = new double[4], rs = new double[3], rb = new double[3];
+        double[] outC = new double[4], outR = new double[3];
+        for (BlendComposite.BlendingMode mode : whitePreserving) {
+            for (int b : colours) {
+                for (int s : colours) {
+                    // CMYK(K=0) path
+                    CMYK.fromSRGB(s, cs);
+                    CMYK.fromSRGB(b, cb);
+                    for (int c = 0; c < 4; c++) outC[c] = CMYK.separable(mode, cb[c], cs[c]);
+                    int viaCmyk = CMYK.toSRGB(outC, 0xFF) & 0xFFFFFF;
+                    // RGB path
+                    RGB.fromSRGB(s, rs);
+                    RGB.fromSRGB(b, rb);
+                    for (int c = 0; c < 3; c++) outR[c] = RGB.separable(mode, rb[c], rs[c]);
+                    int viaRgb = RGB.toSRGB(outR, 0xFF) & 0xFFFFFF;
+                    assertEquals(viaRgb, viaCmyk,
+                            () -> String.format("%s blend diverged: rgb=%06X cmyk=%06X",
+                                    mode, viaRgb, viaCmyk));
+                }
+            }
+        }
+    }
 }

@@ -369,7 +369,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
         Name blend = xForm.getExtGState() != null ? xForm.getExtGState().getBlendingMode() : null;
         float caRaw = xForm.getExtGState() != null ? xForm.getExtGState().getNonStrokingAlphConstant() : -1f;
         float ca = (caRaw < 0f || caRaw > 1f) ? 1f : caRaw;
-        BufferedImage result = composeContribution(isolated, backdrop, blend, ca, blendingSpaceFor(xForm));
+        BufferedImage result = composeContribution(isolated, backdrop, blend, ca);
         backdrop.flush(); // transient -- contribution is now in the isolated buffer
         return result;
     }
@@ -382,28 +382,22 @@ public class FormDrawCmd extends AbstractDrawCmd {
      * result {@code (1-ca*ag)*Cb + ca*ag*B(Cb,Cs)} -- the group's blend and
      * constant alpha applied to its real backdrop, no double-count.
      */
-    // The colour-space math for group compositing (GH-501).  The composition flow
-    // below is channel-count-agnostic; swapping this strategy is how a DeviceCMYK
-    // group blends subtractively without forking the flow -- an RGB group keeps the
-    // additive sRGB behaviour the compositor has always used, a DeviceCMYK group
-    // gets the §11.3.5 ink-complement blend (see CmykBlendingSpace), and a colour
-    // change in one cannot reach the other.
-    private static BlendingSpace blendingSpaceFor(Form xForm) {
-        if (xForm.getGroup() == null) {
-            return RgbBlendingSpace.INSTANCE;
-        }
-        Object cs = xForm.getLibrary().getObject(xForm.getGroup(), new Name("CS"));
-        if (cs instanceof Name && ((Name) cs).equals(DeviceCMYK.DEVICECMYK_KEY)) {
-            return CmykBlendingSpace.INSTANCE;
-        }
-        if (cs instanceof ICCBased && ((ICCBased) cs).getNumComponents() == 4) {
-            return CmykBlendingSpace.INSTANCE;
-        }
-        return RgbBlendingSpace.INSTANCE;
-    }
+    // The colour-space math for group compositing (GH-501).  composeContribution
+    // works on the group's *sRGB* isolated buffer, and a DeviceCMYK group cannot be
+    // blended subtractively from there: once the content is decoded to sRGB the
+    // black (K) channel is gone, and recovering CMYK from sRGB collapses the
+    // chromatic channels straight back to an RGB blend -- proven against three
+    // reference renderers, where the sRGB-recovered "subtractive" path fabricated a
+    // K channel and shifted pattern_and_CYMK_jpeg.pdf orange->green (Acrobat/Chrome/
+    // Firefox all show orange).  So this path stays additive; genuine subtractive
+    // blending needs the *true* preserved CMYK samples (ImageUtility.getCmykSamples)
+    // composited at the raster level (the 3a/n finding), which is the next step.
+    // CmykBlendingSpace holds the §11.3.5 ink-complement math, staged for that path.
+    private static final BlendingSpace blendingSpace = RgbBlendingSpace.INSTANCE;
 
     private static BufferedImage composeContribution(BufferedImage isolated, BufferedImage backdrop,
-                                                     Name blend, float ca, BlendingSpace space) {
+                                                     Name blend, float ca) {
+        BlendingSpace space = blendingSpace;
         BlendComposite.BlendingMode mode = toBlendingMode(blend);
         int w = isolated.getWidth(), h = isolated.getHeight();
         int n = space.channelCount();
