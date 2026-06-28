@@ -44,6 +44,47 @@ public class ImageUtility {
     static final Logger logger =
             Logger.getLogger(ImageUtility.class.getName());
 
+    // GH-501 Phase 2: a DeviceCMYK transparency group must blend in CMYK, but a
+    // CMYK image is decoded straight to sRGB (via an ICC profile / the convoluted
+    // CMYKRasterOp) and the true 4-channel CMYK is then gone.  When a CMYK group is
+    // being rasterised the compositor sets this flag; convertCmykToRgb then stashes
+    // the post-decode CMYK raster keyed by the sRGB image it produced, so the group
+    // buffer can recover the real CMYK samples instead of the unrecoverable sRGB.
+    // Off by default -> zero cost/behaviour change on the normal path.  Global
+    // (not thread-local): image decoding can run on pooled worker threads, so a
+    // thread-scoped flag set by the rendering thread would never reach the decoder.
+    private static volatile boolean PRESERVE_CMYK = false;
+    private static final java.util.Map<BufferedImage, Raster> CMYK_SAMPLES =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /** Toggles CMYK-sample preservation; returns the prior value so callers can
+     *  restore it.  Global because decoding may happen off the render thread. */
+    public static boolean setPreserveCmyk(boolean preserve) {
+        boolean previous = PRESERVE_CMYK;
+        PRESERVE_CMYK = preserve;
+        return previous;
+    }
+
+    /** The true CMYK raster a CMYK image decoded from, or null if it wasn't a CMYK
+     *  image or preservation was off when it decoded. */
+    public static Raster getCmykSamples(BufferedImage rgbImage) {
+        return CMYK_SAMPLES.get(rgbImage);
+    }
+
+    /** Number of preserved CMYK rasters currently retained (diagnostic). */
+    public static int cmykSampleCount() {
+        return CMYK_SAMPLES.size();
+    }
+
+    private static void preserveCmyk(BufferedImage rgbImage, Raster cmykRaster) {
+        if (PRESERVE_CMYK && cmykRaster != null) {
+            // Copy: the decoder may reuse/mutate the source raster after we return.
+            WritableRaster copy = cmykRaster.createCompatibleWritableRaster();
+            copy.setRect(cmykRaster);
+            CMYK_SAMPLES.put(rgbImage, copy);
+        }
+    }
+
     static final int[] GRAY_1_BIT_INDEX_TO_RGB_REVERSED = new int[]{
             0xFFFFFFFF,
             0xFF000000
@@ -966,6 +1007,8 @@ public class ImageUtility {
             CMYKRasterOp cmykRasterOp = new CMYKRasterOp(null);
             cmykRasterOp.filter(cmykRaster, rgbRaster);
         }
+        // GH-501: keep the true CMYK samples (post-decode) for CMYK group blending.
+        preserveCmyk(rgbImage, cmykRaster);
         return rgbImage;
     }
 
@@ -1009,6 +1052,8 @@ public class ImageUtility {
             CMYKRasterOp cmykRasterOp = new CMYKRasterOp(null);
             cmykRasterOp.filter(ycckRaster, rgbRaster);
         }
+        // GH-501: keep the true CMYK samples (post-YCCK->CMYK) for CMYK group blending.
+        preserveCmyk(rgbImage, ycckRaster);
         return rgbImage;
     }
 
