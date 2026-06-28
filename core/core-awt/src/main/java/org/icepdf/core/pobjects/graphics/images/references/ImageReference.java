@@ -121,6 +121,10 @@ public abstract class ImageReference implements Callable<BufferedImage> {
         if (image != null) {
             try {
                 aG.drawImage(image, aX, aY, aW, aH, null);
+                // GH-501 step 2: if a CMYK group is being rasterised, blit this
+                // image's TRUE preserved CMYK samples into the ink sink, aligned to
+                // the transform just used here (no-op on the normal render path).
+                ImageUtility.captureCmykInk(imageStream, aG, aX, aY, aW, aH);
             } catch (OutOfMemoryError e) {
                 // Java2D sizes the destination raster to the transformed image
                 // bounds, so re-scaling the source cannot shrink it (and a
