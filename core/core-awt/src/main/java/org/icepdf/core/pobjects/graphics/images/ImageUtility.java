@@ -76,6 +76,13 @@ public class ImageUtility {
         return CMYK_SAMPLES.size();
     }
 
+    /** Any one preserved CMYK raster (diagnostic / verification). */
+    public static Raster anyPreservedCmyk() {
+        synchronized (CMYK_SAMPLES) {
+            return CMYK_SAMPLES.isEmpty() ? null : CMYK_SAMPLES.values().iterator().next();
+        }
+    }
+
     private static void preserveCmyk(BufferedImage rgbImage, Raster cmykRaster) {
         if (PRESERVE_CMYK && cmykRaster != null) {
             // Copy: the decoder may reuse/mutate the source raster after we return.
@@ -83,6 +90,25 @@ public class ImageUtility {
             copy.setRect(cmykRaster);
             CMYK_SAMPLES.put(rgbImage, copy);
         }
+    }
+
+    /** Whether CMYK preservation is currently active (lets a per-pixel decoder such
+     *  as RawDecoder skip building the capture buffer when off). */
+    public static boolean isPreserveCmyk() {
+        return PRESERVE_CMYK;
+    }
+
+    /** Preserve an interleaved C,M,Y,K byte buffer (4 bands, 0..255) a per-pixel
+     *  decoder built alongside the sRGB image -- the raw FlateDecode CMYK path,
+     *  which converts sample-by-sample with no intermediate CMYK raster. */
+    public static void preserveCmykBytes(BufferedImage rgbImage, byte[] interleavedCmyk, int width, int height) {
+        if (!PRESERVE_CMYK || interleavedCmyk == null) {
+            return;
+        }
+        DataBufferByte db = new DataBufferByte(interleavedCmyk, interleavedCmyk.length);
+        WritableRaster wr = Raster.createInterleavedRaster(
+                db, width, height, width * 4, 4, new int[]{0, 1, 2, 3}, null);
+        CMYK_SAMPLES.put(rgbImage, wr);
     }
 
     static final int[] GRAY_1_BIT_INDEX_TO_RGB_REVERSED = new int[]{
@@ -960,6 +986,11 @@ public class ImageUtility {
         // apply colour space
         PColorSpaceRasterOp pColorSpaceRasterOp = new PColorSpaceRasterOp(colorSpace, null);
         pColorSpaceRasterOp.filter(colourRaster, rgbRaster);
+        // GH-501: raw (FlateDecode) DeviceCMYK images reach RGB through this generic
+        // path, not convertCmykToRgb -- keep their true CMYK samples too.
+        if (colorSpace instanceof DeviceCMYK) {
+            preserveCmyk(rgbImage, colourRaster);
+        }
         return rgbImage;
     }
 
