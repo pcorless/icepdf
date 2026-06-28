@@ -83,6 +83,35 @@ public class ImageUtility {
         }
     }
 
+    /** A translucent CMYK (C,M,Y,K + alpha) image over the DeviceCMYK ICC colour
+     *  space -- the render target for a DeviceCMYK transparency group, so its
+     *  content stays in CMYK (GH-501 Phase 2).  Java2D rasterises into it; a CMYK
+     *  source ({@link #wrapCmyk}) drawn in shares this colour space so the samples
+     *  are copied, not re-converted through sRGB. */
+    public static BufferedImage createCmykImage(int width, int height) {
+        ColorSpace cs = DeviceCMYK.getIccCmykColorSpace();
+        ComponentColorModel cm = new ComponentColorModel(
+                cs, true, false, ColorModel.TRANSLUCENT, DataBuffer.TYPE_BYTE);
+        WritableRaster wr = cm.createCompatibleWritableRaster(width, height);
+        return new BufferedImage(cm, wr, false, null);
+    }
+
+    /** Wraps a preserved 4-band CMYK raster as an opaque CMYK {@link BufferedImage}
+     *  (same ICC colour space as {@link #createCmykImage}) so it can be drawn into
+     *  a CMYK group buffer without an sRGB round-trip. */
+    public static BufferedImage wrapCmyk(Raster cmykRaster) {
+        ColorSpace cs = DeviceCMYK.getIccCmykColorSpace();
+        ComponentColorModel cm = new ComponentColorModel(
+                cs, false, false, ColorModel.OPAQUE, DataBuffer.TYPE_BYTE);
+        WritableRaster wr = cmykRaster instanceof WritableRaster
+                ? (WritableRaster) cmykRaster
+                : cmykRaster.createCompatibleWritableRaster();
+        if (!(cmykRaster instanceof WritableRaster)) {
+            ((WritableRaster) wr).setRect(cmykRaster);
+        }
+        return new BufferedImage(cm, wr, false, null);
+    }
+
     private static void preserveCmyk(BufferedImage rgbImage, Raster cmykRaster) {
         if (PRESERVE_CMYK && cmykRaster != null) {
             // Copy: the decoder may reuse/mutate the source raster after we return.
