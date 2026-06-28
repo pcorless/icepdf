@@ -36,15 +36,23 @@ package org.icepdf.core.pobjects.graphics;
  * {@code cb*cs/255 = 0} would wrongly wash it to white.  This is the whole reason a
  * DeviceCMYK group muddied when composited in RGB (GH-501).
  * <p>
- * Device conversion uses the textbook GCR sRGB&harr;CMYK transform, which is
- * exactly invertible for in-gamut colours: {@link #toSRGB}({@link #fromSRGB}(p)) ==
- * p.  That is deliberate -- the isolated group colour {@code Cs} therefore passes
- * through losslessly and <i>only</i> the backdrop interaction (the separable blend
- * against {@code Cb}) changes, keeping this strategy a surgical swap of the blend
- * math rather than a colour shift.  (An ICC-accurate device conversion, and reading
- * the group's <i>true</i> preserved CMYK samples instead of recovering them from
- * sRGB, are the GH-501 Phase 2 follow-ups; see
- * {@code ImageUtility.getCmykSamples}.)
+ * <b>This space must be fed TRUE CMYK ink</b> (the preserved samples from
+ * {@code ImageUtility.getCmykSamples}), not CMYK recovered from sRGB.  The recovery
+ * convenience {@link #fromSRGB} uses a no-black (pure C,M,Y, K=0) transform that
+ * round-trips losslessly, but a verified finding makes clear it is only a stand-in:
+ * subtractive blending of K=0 ink reduces <i>exactly</i> to the additive RGB blend
+ * for every white-preserving mode (Multiply/Screen/Overlay/...), because the
+ * fromSRGB / separable / toSRGB complements cancel.  The black channel is the sole
+ * carrier of genuinely subtractive behaviour, and it cannot be recovered from sRGB
+ * once an image has decoded -- attempting to fabricate it (an earlier GCR
+ * {@code K=1-max(rgb)} variant) shifted {@code pattern_and_CYMK_jpeg.pdf} from its
+ * reference-correct orange to green (Acrobat, Chrome and Firefox all show orange).
+ * <p>
+ * Consequently this strategy is <b>staged, not yet wired</b> into the sRGB-based
+ * {@code FormDrawCmd.composeContribution} path (which stays additive); it becomes
+ * active when the group is composited at the raster level from its preserved CMYK
+ * samples -- the GH-501 Phase 2 raster-renderer step (see the 3a/n finding).  The
+ * {@link #separable} math here is the piece that path consumes.
  *
  * @see RgbBlendingSpace
  * @see BlendingSpace
@@ -62,34 +70,25 @@ public final class CmykBlendingSpace implements BlendingSpace {
     }
 
     /**
-     * sRGB ARGB pixel -> C,M,Y,K ink (0..255) via the GCR transform
-     * {@code K = 1 - max(r,g,b)}, {@code C = (1-r-K)/(1-K)} (and similarly M, Y).
+     * sRGB ARGB pixel -> C,M,Y ink (0..255) with no black generation (K=0):
+     * {@code C = 255 - r} (and similarly M, Y).  Lossless and exactly inverted by
+     * {@link #toSRGB}.  This is a recovery stand-in only -- it carries no real black
+     * channel (see the class note), so blending the result reduces to an additive
+     * RGB blend.  The raster-renderer path supplies true K via the preserved CMYK
+     * samples instead of calling this.
      */
     @Override
     public void fromSRGB(int argb, double[] channels) {
-        double r = ((argb >> 16) & 0xFF) / 255.0;
-        double g = ((argb >> 8) & 0xFF) / 255.0;
-        double b = (argb & 0xFF) / 255.0;
-        double k = 1.0 - Math.max(r, Math.max(g, b));
-        double c, m, y;
-        if (k >= 1.0) {
-            // pure black: no chromatic ink, all key.
-            c = m = y = 0.0;
-        } else {
-            double w = 1.0 - k;
-            c = (1.0 - r - k) / w;
-            m = (1.0 - g - k) / w;
-            y = (1.0 - b - k) / w;
-        }
-        channels[0] = c * 255.0;
-        channels[1] = m * 255.0;
-        channels[2] = y * 255.0;
-        channels[3] = k * 255.0;
+        channels[0] = 255.0 - ((argb >> 16) & 0xFF);
+        channels[1] = 255.0 - ((argb >> 8) & 0xFF);
+        channels[2] = 255.0 - (argb & 0xFF);
+        channels[3] = 0.0;
     }
 
     /**
-     * C,M,Y,K ink (0..255) + 8-bit alpha -> sRGB ARGB, the exact inverse of
-     * {@link #fromSRGB}: {@code r = (1-C)(1-K)} (and similarly g, b).
+     * C,M,Y,K ink (0..255) + 8-bit alpha -> sRGB ARGB: {@code r = (1-C)(1-K)} (and
+     * similarly g, b).  Inverts {@link #fromSRGB} exactly, and is the real sink for
+     * true-sample CMYK (where K is non-zero) at the final convert-to-device step.
      */
     @Override
     public int toSRGB(double[] channels, int alpha) {
