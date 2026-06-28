@@ -83,6 +83,44 @@ public class ImageUtility {
         }
     }
 
+    /** Drop all preserved CMYK samples (diagnostic: reset between probe runs). */
+    public static void clearCmykSamples() {
+        CMYK_SAMPLES.clear();
+    }
+
+    /**
+     * Diagnostic K-channel (band 3) summary across every currently preserved CMYK
+     * raster: {@code {images, totalPixels, pixelsWithKgt8, maxK}}.  Used to answer
+     * the GH-501 question "does this file carry genuine black ink?" -- a group whose
+     * CMYK content is all K=0 blends identically in CMYK and RGB, so the raster-level
+     * subtractive path can only matter where maxK &gt; 0 / pixelsWithKgt8 &gt; 0.
+     */
+    public static long[] cmykKSummary() {
+        long images = 0, totalPixels = 0, pixelsKgt8 = 0, maxK = 0;
+        synchronized (CMYK_SAMPLES) {
+            for (Raster r : CMYK_SAMPLES.values()) {
+                if (r == null || r.getNumBands() < 4) {
+                    continue;
+                }
+                images++;
+                int w = r.getWidth(), h = r.getHeight();
+                for (int y = 0; y < h; y++) {
+                    for (int x = 0; x < w; x++) {
+                        int k = r.getSample(x, y, 3) & 0xFF;
+                        totalPixels++;
+                        if (k > 8) {
+                            pixelsKgt8++;
+                        }
+                        if (k > maxK) {
+                            maxK = k;
+                        }
+                    }
+                }
+            }
+        }
+        return new long[]{images, totalPixels, pixelsKgt8, maxK};
+    }
+
     /** A translucent CMYK (C,M,Y,K + alpha) image over the DeviceCMYK ICC colour
      *  space -- the render target for a DeviceCMYK transparency group, so its
      *  content stays in CMYK (GH-501 Phase 2).  Java2D rasterises into it; a CMYK
