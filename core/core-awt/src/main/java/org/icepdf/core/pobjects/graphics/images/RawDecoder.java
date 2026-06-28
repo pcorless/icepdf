@@ -81,6 +81,15 @@ public class RawDecoder extends AbstractImageDecoder {
         // too, bit by painful bit.
         BufferedImage bim = ImageUtility.createTranslucentCompatibleImage(width, height);
 
+        // GH-501: when a CMYK group is being rasterised, capture the true CMYK
+        // samples alongside the sRGB image so the group can blend in CMYK.  This
+        // per-pixel decoder is the raw FlateDecode path (no intermediate CMYK
+        // raster); cmykCapture is null (no cost) unless preservation is on for an
+        // 8-bit DeviceCMYK image.
+        byte[] cmykCapture = (ImageUtility.isPreserveCmyk() && bitsPerComponent == 8
+                && colorSpaceCompCount == 4 && colorSpace instanceof DeviceCMYK)
+                ? new byte[width * height * 4] : null;
+
         // create the buffer and get the first series of bytes from the cached
         // stream
         // get the full image data.
@@ -171,6 +180,15 @@ public class RawDecoder extends AbstractImageDecoder {
                                     f[i] = maxColourValue - f[i];
                                 }
                             }
+                            if (cmykCapture != null) {
+                                // f holds the decoded C,M,Y,K samples (0..255) -- the
+                                // true CMYK, before colorSpace.getColor() flattens to sRGB.
+                                int idx = (y * width + x) * 4;
+                                cmykCapture[idx] = (byte) f[0];
+                                cmykCapture[idx + 1] = (byte) f[1];
+                                cmykCapture[idx + 2] = (byte) f[2];
+                                cmykCapture[idx + 3] = (byte) f[3];
+                            }
                             imageBits[x] = convertSample(colorSpace, f, ff, maxColourValue, lastF, lastRgb);
                         }
                         // else just set pixel with the default values
@@ -188,6 +206,10 @@ public class RawDecoder extends AbstractImageDecoder {
             in.close();
         } catch (IOException e) {
             logger.log(Level.FINE, "Error parsing image.", e);
+        }
+
+        if (cmykCapture != null) {
+            ImageUtility.preserveCmykBytes(bim, cmykCapture, width, height);
         }
 
         return bim;
