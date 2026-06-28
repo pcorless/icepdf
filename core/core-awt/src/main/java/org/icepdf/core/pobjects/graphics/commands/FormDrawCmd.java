@@ -382,15 +382,24 @@ public class FormDrawCmd extends AbstractDrawCmd {
      * result {@code (1-ca*ag)*Cb + ca*ag*B(Cb,Cs)} -- the group's blend and
      * constant alpha applied to its real backdrop, no double-count.
      */
+    // The colour-space math for group compositing (GH-501).  The composition flow
+    // below is channel-count-agnostic; swapping this strategy is how a DeviceCMYK
+    // group will blend subtractively without forking the flow.  Defaults to the
+    // additive sRGB behaviour the compositor has always used.
+    private static final BlendingSpace blendingSpace = RgbBlendingSpace.INSTANCE;
+
     private static BufferedImage composeContribution(BufferedImage isolated, BufferedImage backdrop,
                                                      Name blend, float ca) {
-        int mode = blendMode(blend);
+        BlendingSpace space = blendingSpace;
+        BlendComposite.BlendingMode mode = toBlendingMode(blend);
         int w = isolated.getWidth(), h = isolated.getHeight();
+        int n = space.channelCount();
         // Reuse the isolated buffer as the output (the contribution replaces it in
         // place) instead of allocating a third full-page buffer per group; the
         // backdrop row is the only other input and is read before the matching
         // isolated pixel is overwritten.
         int[] is = new int[w], b0 = new int[w];
+        double[] cs = new double[n], cb = new double[n], out = new double[n];
         for (int yy = 0; yy < h; yy++) {
             isolated.getRGB(0, yy, w, 1, is, 0, w);
             backdrop.getRGB(0, yy, w, 1, b0, 0, w);
@@ -401,77 +410,36 @@ public class FormDrawCmd extends AbstractDrawCmd {
                     continue;
                 }
                 int outAlpha = (int) Math.round(ca * ag);
-                int c = 0;
-                for (int s = 0; s < 24; s += 8) {
-                    double cs = (is[xx] >> s) & 0xFF;       // isolated group colour
-                    double cb = (b0[xx] >> s) & 0xFF;       // backdrop colour
-                    int v = (int) Math.round(separableBlend(mode, cb, cs));  // B(Cb, Cs)
-                    c |= (v < 0 ? 0 : v > 255 ? 255 : v) << s;
+                if (outAlpha < 0) outAlpha = 0; else if (outAlpha > 255) outAlpha = 255;
+                space.fromSRGB(is[xx], cs);   // isolated group colour Cs
+                space.fromSRGB(b0[xx], cb);   // real backdrop colour Cb
+                for (int c = 0; c < n; c++) {
+                    out[c] = space.separable(mode, cb[c], cs[c]);   // B(Cb, Cs)
                 }
-                is[xx] = ((outAlpha < 0 ? 0 : outAlpha > 255 ? 255 : outAlpha) << 24) | c;
+                is[xx] = space.toSRGB(out, outAlpha);
             }
             isolated.setRGB(0, yy, w, 1, is, 0, w);
         }
         return isolated;
     }
 
-    // separable blend mode codes
-    private static final int B_NORMAL = 0, B_MULTIPLY = 1, B_SCREEN = 2, B_OVERLAY = 3,
-            B_DARKEN = 4, B_LIGHTEN = 5, B_COLOR_DODGE = 6, B_COLOR_BURN = 7,
-            B_HARD_LIGHT = 8, B_SOFT_LIGHT = 9, B_DIFFERENCE = 10, B_EXCLUSION = 11;
-
-    private static int blendMode(Name blend) {
-        if (blend == null) return B_NORMAL;
-        if (BlendComposite.MULTIPLY_VALUE.equals(blend)) return B_MULTIPLY;
-        if (BlendComposite.SCREEN_VALUE.equals(blend)) return B_SCREEN;
-        if (BlendComposite.OVERLAY_VALUE.equals(blend)) return B_OVERLAY;
-        if (BlendComposite.DARKEN_VALUE.equals(blend)) return B_DARKEN;
-        if (BlendComposite.LIGHTEN_VALUE.equals(blend)) return B_LIGHTEN;
-        if (BlendComposite.COLOR_DODGE_VALUE.equals(blend)) return B_COLOR_DODGE;
-        if (BlendComposite.COLOR_BURN_VALUE.equals(blend)) return B_COLOR_BURN;
-        if (BlendComposite.HARD_LIGHT_VALUE.equals(blend)) return B_HARD_LIGHT;
-        if (BlendComposite.SOFT_LIGHT_VALUE.equals(blend)) return B_SOFT_LIGHT;
-        if (BlendComposite.DIFFERENCE_VALUE.equals(blend)) return B_DIFFERENCE;
-        if (BlendComposite.EXCLUSION_VALUE.equals(blend)) return B_EXCLUSION;
-        return B_NORMAL;
-    }
-
-    /** PDF 32000-1 §11.3.5 separable blend functions B(Cb, Cs), channels 0..255. */
-    private static double separableBlend(int mode, double cb, double cs) {
-        switch (mode) {
-            case B_MULTIPLY: return cb * cs / 255.0;
-            case B_SCREEN: return cb + cs - cb * cs / 255.0;
-            case B_OVERLAY: return hardLight(cs, cb);          // Overlay(b,s)=HardLight(s,b)
-            case B_DARKEN: return Math.min(cb, cs);
-            case B_LIGHTEN: return Math.max(cb, cs);
-            case B_COLOR_DODGE:
-                if (cb == 0) return 0;
-                if (cs >= 255) return 255;
-                return Math.min(255.0, cb * 255.0 / (255.0 - cs));
-            case B_COLOR_BURN:
-                if (cb >= 255) return 255;
-                if (cs == 0) return 0;
-                return 255.0 - Math.min(255.0, (255.0 - cb) * 255.0 / cs);
-            case B_HARD_LIGHT: return hardLight(cb, cs);
-            case B_SOFT_LIGHT: {
-                double b = cb / 255.0, s = cs / 255.0;
-                double d = b <= 0.25 ? ((16 * b - 12) * b + 4) * b : Math.sqrt(b);
-                double r = s <= 0.5 ? b - (1 - 2 * s) * b * (1 - b) : b + (2 * s - 1) * (d - b);
-                return r * 255.0;
-            }
-            case B_DIFFERENCE: return Math.abs(cb - cs);
-            case B_EXCLUSION: return cb + cs - 2 * cb * cs / 255.0;
-            default: return cs;                                // Normal/Compatible
-        }
-    }
-
-    private static double hardLight(double cb, double cs) {
-        // HardLight(Cb,Cs) = Multiply(Cb,2Cs) if Cs<=.5 else Screen(Cb,2Cs-1)
-        if (cs <= 127.5) {
-            return cb * (2 * cs) / 255.0;
-        }
-        double s2 = 2 * cs - 255.0;
-        return cb + s2 - cb * s2 / 255.0;
+    /** Maps a PDF blend-mode {@link Name} to the {@link BlendComposite.BlendingMode}
+     *  the {@link BlendingSpace} understands; only the separable modes appear on a
+     *  transparency group, anything else falls back to Normal. */
+    private static BlendComposite.BlendingMode toBlendingMode(Name blend) {
+        if (blend == null) return BlendComposite.BlendingMode.NORMAL;
+        if (BlendComposite.MULTIPLY_VALUE.equals(blend)) return BlendComposite.BlendingMode.MULTIPLY;
+        if (BlendComposite.SCREEN_VALUE.equals(blend)) return BlendComposite.BlendingMode.SCREEN;
+        if (BlendComposite.OVERLAY_VALUE.equals(blend)) return BlendComposite.BlendingMode.OVERLAY;
+        if (BlendComposite.DARKEN_VALUE.equals(blend)) return BlendComposite.BlendingMode.DARKEN;
+        if (BlendComposite.LIGHTEN_VALUE.equals(blend)) return BlendComposite.BlendingMode.LIGHTEN;
+        if (BlendComposite.COLOR_DODGE_VALUE.equals(blend)) return BlendComposite.BlendingMode.COLOR_DODGE;
+        if (BlendComposite.COLOR_BURN_VALUE.equals(blend)) return BlendComposite.BlendingMode.COLOR_BURN;
+        if (BlendComposite.HARD_LIGHT_VALUE.equals(blend)) return BlendComposite.BlendingMode.HARD_LIGHT;
+        if (BlendComposite.SOFT_LIGHT_VALUE.equals(blend)) return BlendComposite.BlendingMode.SOFT_LIGHT;
+        if (BlendComposite.DIFFERENCE_VALUE.equals(blend)) return BlendComposite.BlendingMode.DIFFERENCE;
+        if (BlendComposite.EXCLUSION_VALUE.equals(blend)) return BlendComposite.BlendingMode.EXCLUSION;
+        return BlendComposite.BlendingMode.NORMAL;
     }
 
     private BufferedImage applyMask(Page parentPage, BufferedImage xFormBuffer, SoftMask softMask, SoftMask gsSoftMask,
