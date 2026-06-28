@@ -150,6 +150,30 @@ public class ImageUtility {
         return new BufferedImage(cm, wr, false, null);
     }
 
+    // Preserved CMYK samples keyed by the stable ImageStream (not the produced
+    // BufferedImage, which mask/scale/proxy stages replace downstream).  This is
+    // the key the draw-time ink capture looks up.
+    private static final java.util.Map<Object, Raster> CMYK_BY_STREAM =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /** Associate any CMYK samples preserved for {@code decoderImage} (the decoder
+     *  output) with the stable {@code streamKey}, so the draw-time ink capture can
+     *  find them no matter how many mask/scale stages replace the image. */
+    public static void associateCmykStream(Object streamKey, BufferedImage decoderImage) {
+        if (streamKey == null || decoderImage == null) {
+            return;
+        }
+        Raster r = CMYK_SAMPLES.get(decoderImage);
+        if (r != null) {
+            CMYK_BY_STREAM.put(streamKey, r);
+        }
+    }
+
+    /** Preserved CMYK samples for an image XObject, by its stable stream key. */
+    public static Raster getCmykSamplesForStream(Object streamKey) {
+        return streamKey == null ? null : CMYK_BY_STREAM.get(streamKey);
+    }
+
     private static void preserveCmyk(BufferedImage rgbImage, Raster cmykRaster) {
         if (PRESERVE_CMYK && cmykRaster != null) {
             // Copy: the decoder may reuse/mutate the source raster after we return.
@@ -176,6 +200,105 @@ public class ImageUtility {
         WritableRaster wr = Raster.createInterleavedRaster(
                 db, width, height, width * 4, 4, new int[]{0, 1, 2, 3}, null);
         CMYK_SAMPLES.put(rgbImage, wr);
+    }
+
+    // ----- GH-501 Phase 2 step 2: raster-level CMYK ink capture --------------
+    // A DeviceCMYK transparency group is rasterised to an sRGB buffer by Java2D
+    // (FormDrawCmd.createBufferXObject), which destroys the true CMYK so the group
+    // cannot be blended subtractively.  While that buffer is being painted we also
+    // blit each CMYK image's TRUE preserved samples into a parallel CMYK ink raster
+    // -- aligned for free by reading the canvas transform at the exact draw moment,
+    // so the ink lands pixel-identical to where Java2D placed the sRGB image (the
+    // 3a/n finding: blit the raster, never colour-managed drawImage).  The group
+    // compositor then blends from this ink (real K) instead of the lossy sRGB.
+
+    /** Captures TRUE CMYK ink into a group-buffer-sized raster during a form paint. */
+    public static final class CmykInkSink {
+        final WritableRaster ink;      // 4-band byte C,M,Y,K, group buffer dimensions
+        final WritableRaster coverage; // 1-band byte, 255 where a CMYK image landed
+        final int w, h;
+        boolean captured;
+
+        CmykInkSink(int w, int h) {
+            this.w = w;
+            this.h = h;
+            this.ink = Raster.createInterleavedRaster(
+                    DataBuffer.TYPE_BYTE, w, h, 4, new Point(0, 0));
+            this.coverage = Raster.createInterleavedRaster(
+                    DataBuffer.TYPE_BYTE, w, h, 1, new Point(0, 0));
+        }
+
+        public WritableRaster getInk() {
+            return ink;
+        }
+
+        public WritableRaster getCoverage() {
+            return coverage;
+        }
+
+        public boolean isCaptured() {
+            return captured;
+        }
+    }
+
+    private static final ThreadLocal<CmykInkSink> INK_SINK = new ThreadLocal<>();
+
+    /** Begins CMYK ink capture for a {@code w x h} group buffer on this thread. */
+    public static CmykInkSink beginCmykInkCapture(int w, int h) {
+        CmykInkSink sink = new CmykInkSink(w, h);
+        INK_SINK.set(sink);
+        return sink;
+    }
+
+    /** Ends CMYK ink capture and returns the sink (may be empty if no CMYK image
+     *  with preserved samples was drawn). */
+    public static CmykInkSink endCmykInkCapture() {
+        CmykInkSink sink = INK_SINK.get();
+        INK_SINK.remove();
+        return sink;
+    }
+
+    /**
+     * If a {@link CmykInkSink} is active and {@code drawn} has preserved CMYK
+     * samples, blit those true samples into the ink raster under the same
+     * transform Java2D just used to draw the sRGB image -- {@code g.getTransform()}
+     * composed with the {@code drawImage(img, ax, ay, aw, ah)} source->user box --
+     * so the ink is pixel-aligned with the sRGB buffer.  No-op when no sink is
+     * active (the normal render path) or the image isn't a preserved CMYK image.
+     */
+    public static void captureCmykInk(Object streamKey, Graphics2D g,
+                                      int ax, int ay, int aw, int ah) {
+        CmykInkSink sink = INK_SINK.get();
+        if (sink == null) {
+            return;
+        }
+        Raster cmyk = getCmykSamplesForStream(streamKey);
+        if (cmyk == null || cmyk.getNumBands() < 4) {
+            return;
+        }
+        int srcW = cmyk.getWidth(), srcH = cmyk.getHeight();
+        if (srcW <= 0 || srcH <= 0 || aw <= 0 || ah <= 0) {
+            return;
+        }
+        try {
+            // image pixel (px,py) -> user (ax + px*aw/srcW, ay + py*ah/srcH) -> buffer
+            AffineTransform m = new AffineTransform(g.getTransform());
+            m.translate(ax, ay);
+            m.scale(aw / (double) srcW, ah / (double) srcH);
+            AffineTransformOp op = new AffineTransformOp(m, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+            op.filter(cmyk, sink.ink);
+            // mark coverage: blit an all-255 single-band raster through the same map.
+            WritableRaster ones = Raster.createInterleavedRaster(
+                    DataBuffer.TYPE_BYTE, srcW, srcH, 1, new Point(0, 0));
+            byte[] ob = ((DataBufferByte) ones.getDataBuffer()).getData();
+            Arrays.fill(ob, (byte) 0xFF);
+            op.filter(ones, sink.coverage);
+            sink.captured = true;
+        } catch (Exception e) {
+            // a singular/oversized transform just means no subtractive capture for
+            // this image; the compositor falls back to the additive sRGB path.
+            logger.fine("CMYK ink capture skipped: " + e);
+        }
     }
 
     static final int[] GRAY_1_BIT_INDEX_TO_RGB_REVERSED = new int[]{

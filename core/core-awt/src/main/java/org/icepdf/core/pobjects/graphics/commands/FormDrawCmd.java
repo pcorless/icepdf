@@ -71,6 +71,12 @@ public class FormDrawCmd extends AbstractDrawCmd {
     public static int MAX_SCALED_FORM_SIZE =
             Defs.sysPropertyInt("org.icepdf.core.maxScaledFormSize", 16384);
 
+    // GH-501 step 2: raster-level subtractive compositing of DeviceCMYK groups from
+    // true preserved samples.  On by default; -Dorg.icepdf.core.cmyk.subtractive=false
+    // forces the additive sRGB path (A/B comparison and safety kill-switch).
+    private static final boolean cmykSubtractiveEnabled =
+            Defs.sysPropertyBoolean("org.icepdf.core.cmyk.subtractive", true);
+
     static {
         // decide if large images will be scaled
         disableXObjectSMask =
@@ -356,11 +362,20 @@ public class FormDrawCmd extends AbstractDrawCmd {
     private BufferedImage compositeOverBackdrop(Page parentPage, Form xForm, RenderingHints hints,
                                                 boolean normalBM, Graphics2D g, AffineTransform base) {
         boolean prevBackdrop = BlendComposite.setTransparentBackdrop(true);
+        // GH-501 step 2: for a DeviceCMYK group, preserve true CMYK samples and
+        // capture them aligned to the group buffer so the blend can run
+        // subtractively from real ink instead of the lossy sRGB.
+        boolean cmykGroup = cmykSubtractiveEnabled && isCmykGroup(xForm);
+        boolean prevPreserve = cmykGroup && ImageUtility.setPreserveCmyk(true);
+        capturedInk = null;
         BufferedImage isolated;
         try {
-            isolated = createBufferXObject(parentPage, xForm, null, hints, normalBM);
+            isolated = createBufferXObject(parentPage, xForm, null, hints, normalBM, cmykGroup);
         } finally {
             BlendComposite.setTransparentBackdrop(prevBackdrop);
+            if (cmykGroup) {
+                ImageUtility.setPreserveCmyk(prevPreserve);
+            }
         }
         BufferedImage backdrop = captureBackdrop(g, base, isolated.getWidth(), isolated.getHeight());
         if (backdrop == null) {
@@ -369,9 +384,74 @@ public class FormDrawCmd extends AbstractDrawCmd {
         Name blend = xForm.getExtGState() != null ? xForm.getExtGState().getBlendingMode() : null;
         float caRaw = xForm.getExtGState() != null ? xForm.getExtGState().getNonStrokingAlphConstant() : -1f;
         float ca = (caRaw < 0f || caRaw > 1f) ? 1f : caRaw;
-        BufferedImage result = composeContribution(isolated, backdrop, blend, ca);
-        backdrop.flush(); // transient -- contribution is now in the isolated buffer
+        // True-ink subtractive path when CMYK samples were captured; otherwise the
+        // additive sRGB path (unchanged for RGB/ICC groups and any CMYK group whose
+        // image decoded before preservation was enabled).
+        BufferedImage result = (capturedInk != null && capturedInk.isCaptured())
+                ? composeCmykContribution(isolated, capturedInk, backdrop, blend, ca)
+                : composeContribution(isolated, backdrop, blend, ca);
+        backdrop.flush(); // transient -- contribution is now in the result buffer
         return result;
+    }
+
+    /** A DeviceCMYK transparency group (the raster-level subtractive path's scope;
+     *  ICCBased-CMYK groups are left to the additive path for now). */
+    private static boolean isCmykGroup(Form xForm) {
+        if (xForm.getGroup() == null) {
+            return false;
+        }
+        Object cs = xForm.getLibrary().getObject(xForm.getGroup(), new Name("CS"));
+        return cs instanceof Name && ((Name) cs).equals(DeviceCMYK.DEVICECMYK_KEY);
+    }
+
+    /**
+     * §11.3.5 subtractive compositing from TRUE CMYK ink (GH-501 step 2).  Builds
+     * the per-pixel source ink from the captured samples where a CMYK image landed
+     * (the real K), falling back to the sRGB-recovered pure-CMY ink elsewhere (K=0,
+     * which blends identically to the additive path), then hands off to
+     * {@link CmykGroupCompositor}.  Returns the group contribution to draw back
+     * SRC_OVER -- the same contract as {@link #composeContribution}.
+     */
+    // GH-501 step 2 diagnostic: number of groups composited via the true-ink
+    // subtractive path (so a test can confirm the path engaged).
+    public static volatile int cmykSubtractiveComposites = 0;
+
+    private BufferedImage composeCmykContribution(BufferedImage isolated, ImageUtility.CmykInkSink sink,
+                                                  BufferedImage backdrop, Name blend, float ca) {
+        cmykSubtractiveComposites++;
+        int w = isolated.getWidth(), h = isolated.getHeight(), n = w * h;
+        byte[] srcInk = new byte[n * 4];
+        int[] srcAlpha = new int[n];
+        int[] backdropArgb = new int[n];
+        int[] isoRow = new int[w];
+        int[] bRow = new int[w];
+        java.awt.image.WritableRaster ink = sink.getInk();
+        java.awt.image.WritableRaster cov = sink.getCoverage();
+        for (int yy = 0; yy < h; yy++) {
+            isolated.getRGB(0, yy, w, 1, isoRow, 0, w);
+            backdrop.getRGB(0, yy, w, 1, bRow, 0, w);
+            for (int xx = 0; xx < w; xx++) {
+                int i = yy * w + xx;
+                int argb = isoRow[xx];
+                srcAlpha[i] = argb >>> 24;
+                backdropArgb[i] = bRow[xx];
+                int p = i * 4;
+                if ((cov.getSample(xx, yy, 0) & 0xFF) > 127) {
+                    srcInk[p] = (byte) ink.getSample(xx, yy, 0);
+                    srcInk[p + 1] = (byte) ink.getSample(xx, yy, 1);
+                    srcInk[p + 2] = (byte) ink.getSample(xx, yy, 2);
+                    srcInk[p + 3] = (byte) ink.getSample(xx, yy, 3);
+                } else {
+                    // no captured ink here -> sRGB-recovered pure-CMY (K=0)
+                    srcInk[p] = (byte) (255 - ((argb >> 16) & 0xFF));
+                    srcInk[p + 1] = (byte) (255 - ((argb >> 8) & 0xFF));
+                    srcInk[p + 2] = (byte) (255 - (argb & 0xFF));
+                    srcInk[p + 3] = 0;
+                }
+            }
+        }
+        return CmykGroupCompositor.compose(srcInk, srcAlpha, backdropArgb,
+                toBlendingMode(blend), ca, w, h);
     }
 
     /**
@@ -486,6 +566,17 @@ public class FormDrawCmd extends AbstractDrawCmd {
      */
     private BufferedImage createBufferXObject(Page parentPage, Form xForm, SoftMask softMask,
                                               RenderingHints renderingHints, boolean isMask) {
+        return createBufferXObject(parentPage, xForm, softMask, renderingHints, isMask, false);
+    }
+
+    // GH-501 step 2: the ink sink captured during the most recent capturing
+    // createBufferXObject call (true CMYK samples blitted aligned to the group
+    // buffer), consumed by compositeOverBackdrop for subtractive compositing.
+    private ImageUtility.CmykInkSink capturedInk;
+
+    private BufferedImage createBufferXObject(Page parentPage, Form xForm, SoftMask softMask,
+                                              RenderingHints renderingHints, boolean isMask,
+                                              boolean captureCmykInk) {
         Rectangle2D bBox = xForm.getBBox();
         int width = (int) bBox.getWidth();
         int height = (int) bBox.getHeight();
@@ -606,7 +697,16 @@ public class FormDrawCmd extends AbstractDrawCmd {
                     canvas.translate(-x, -y);
                     canvas.setClip(bBox.getBounds2D());
                 }
-                xFormShapes.paint(canvas);
+                if (captureCmykInk) {
+                    ImageUtility.beginCmykInkCapture(bufferWidth, bufferHeight);
+                }
+                try {
+                    xFormShapes.paint(canvas);
+                } finally {
+                    if (captureCmykInk) {
+                        capturedInk = ImageUtility.endCmykInkCapture();
+                    }
+                }
                 xFormShapes.setPageParent(null);
             }
         } catch (InterruptedException e) {

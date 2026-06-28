@@ -133,6 +133,11 @@ public class ImageStream extends Stream {
         if (decodedImage == null) {
             decodedImage = new RawDecoder(this, graphicsState).decode();
         }
+        // GH-501 step 2: the decoder output may carry preserved TRUE CMYK samples
+        // (keyed by this object); mask processing below replaces decodedImage with a
+        // new BufferedImage, so remember the decoder output to re-key the samples to
+        // the final image that actually gets drawn.
+        BufferedImage rawDecoded = decodedImage;
         if (decodedImage != null) {
             if (imageParams.isImageMask()) {
                 decodedImage = ImageUtility.applyExplicitMask(decodedImage, graphicsState.getFillColor());
@@ -155,6 +160,9 @@ public class ImageStream extends Stream {
 //            if (maskDecoder != null || smaskDecoder != null)
 //                ImageUtility.displayImage(decodedImage, "Final " + pObjectReference.toString());
         }
+        // associate any preserved CMYK samples with this stable stream key so the
+        // draw-time ink capture finds them regardless of downstream mask/scale.
+        ImageUtility.associateCmykStream(this, rawDecoded);
         return decodedImage;
     }
 
