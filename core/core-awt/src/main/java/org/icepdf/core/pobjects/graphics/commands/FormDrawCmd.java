@@ -290,31 +290,16 @@ public class FormDrawCmd extends AbstractDrawCmd {
             savedComposite = g.getComposite();
             g.setComposite(java.awt.AlphaComposite.SrcOver);
         }
-        if (deviceResActive) {
-            // Option C: the buffer was rasterised at device resolution, so blit it
-            // back 1:1 in device space -- the page CTM must NOT resample it (that is
-            // exactly the re-blur the legacy form-resolution path incurs).  The form
-            // bbox maps to an axis-aligned device rectangle (guaranteed by the
-            // isAxisAligned gate); draw under an identity transform into that
-            // rectangle, carrying the clip across so the group stays bounded.  The
-            // active composite (group blend / SRC_OVER) still applies against the
-            // real device pixels.
-            AffineTransform savedTx = g.getTransform();
-            Shape savedClip = g.getClip();
-            Rectangle2D formRect = new Rectangle2D.Double(x, y, formWidth, formHeight);
-            Rectangle devBounds = savedTx.createTransformedShape(formRect).getBounds();
-            Shape devClip = savedClip != null ? savedTx.createTransformedShape(savedClip) : null;
-            g.setTransform(new AffineTransform());
-            if (devClip != null) {
-                g.setClip(devClip);
-            }
-            g.drawImage(xFormBuffer, devBounds.x, devBounds.y, devBounds.width, devBounds.height, null);
-            g.setTransform(savedTx);
-            g.setClip(savedClip);
-        } else if (formScale != 1.0) {
-            // buffer was rasterised at a reduced size; scale it back up to the
-            // group's full footprint so the blend composites over the page at
-            // the correct location and dimensions.
+        if (deviceResActive || formScale != 1.0) {
+            // The buffer was rasterised at a scale != 1 form-unit per pixel: either
+            // DOWN-scaled to bound heap (formScale < 1) or UP-scaled to device
+            // resolution (Option C, deviceResActive).  In both cases draw it into the
+            // group's form-space footprint (x, y, formWidth, formHeight) under the
+            // page CTM, which orients (including the PDF y-flip) and positions it --
+            // hand-rolling the device-space blit dropped that orientation and
+            // mis-mapped the rect.  For a device-resolution buffer the CTM's up-scale
+            // is then a ~1:1 resample of a full-resolution buffer (sharp), not the
+            // magnification of a too-small one.
             g.drawImage(xFormBuffer, x, y, formWidth, formHeight, null);
         } else {
             g.drawImage(xFormBuffer, null, x, y);
@@ -735,9 +720,10 @@ public class FormDrawCmd extends AbstractDrawCmd {
             formWidth = width;
             formHeight = height;
             if (deviceResActive) {
-                // Record the achieved form->device scale; leave formScale == 1.0 so
-                // paintOperand takes the device-space 1:1 blit-back (not the legacy
-                // up-scale-under-CTM branch, which would re-blur a device-res buffer).
+                // Record the achieved form->device scale (consumed by captureBackdrop
+                // for backdrop alignment).  formScale stays 1.0: paintOperand maps this
+                // larger buffer into the form footprint under the page CTM, so the
+                // CTM's up-scale becomes a ~1:1 resample of a full-resolution buffer.
                 deviceBufferScale = scale;
             } else {
                 formScale = scale;
