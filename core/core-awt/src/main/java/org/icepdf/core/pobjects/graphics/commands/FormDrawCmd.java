@@ -77,6 +77,26 @@ public class FormDrawCmd extends AbstractDrawCmd {
     private static final boolean cmykSubtractiveEnabled =
             Defs.sysPropertyBoolean("org.icepdf.core.cmyk.subtractive", true);
 
+    // Option C (bufferless-groups fork): size a buffered group's offscreen raster
+    // at DEVICE resolution rather than at form-space (PDF unit) resolution.  The
+    // legacy buffer is sized to the bbox in PDF units (createBufferXObject) and
+    // then up-scaled by the page CTM when drawn back (paintOperand), so at any
+    // zoom > 100% the group is resampled from a too-small buffer -> soft text and
+    // images.  When this flag is on, an axis-aligned, non-backdrop-composited,
+    // non-masked group is rasterised at CTM scale and blitted back 1:1 in device
+    // space, so the resample the page transform would have done happens once, at
+    // full resolution.  OFF by default until corpus-validated; the legacy
+    // form-resolution path is byte-identical when off.
+    private static final boolean deviceResolutionBuffers =
+            Defs.sysPropertyBoolean("org.icepdf.core.group.deviceResolution", false);
+
+    // Per-paint scratch for the Option C device-resolution path: set in
+    // paintOperand before the buffer is built, consulted by createBufferXObject's
+    // main sizing branch, and again by the draw-back.  deviceBufferScale is the
+    // achieved form->device scale baked into the buffer (after the area clamp).
+    private boolean deviceResActive;
+    private double deviceBufferScale = 1.0;
+
     static {
         // decide if large images will be scaled
         disableXObjectSMask =
@@ -179,9 +199,25 @@ public class FormDrawCmd extends AbstractDrawCmd {
             boolean isolatedGroup = xForm.isIsolated();
             boolean previousTransparentBackdrop = isolatedGroup
                     && BlendComposite.setTransparentBackdrop(true);
+            // The §10 backdrop path replays the stack into a form-resolution
+            // buffer (captureBackdrop derives its replay transform from formScale),
+            // so Option C deliberately steps aside there -- it only sharpens the
+            // plain buffered group (e.g. a ca<1 Normal group) on an axis-aligned
+            // CTM at zoom > 100%.
+            boolean willCompositeBackdrop = !hasMask && !annotationAppearance.get()
+                    && backdropShapes != null && isBackdropCompositeCandidate(xForm);
+            deviceResActive = false;
+            deviceBufferScale = 1.0;
+            if (deviceResolutionBuffers && !willCompositeBackdrop && !hasMask) {
+                AffineTransform ctm = g.getTransform();
+                double scale = uniformScale(ctm);
+                if (isAxisAligned(ctm) && scale > 1.0001) {
+                    deviceResActive = true;
+                    deviceBufferScale = scale;
+                }
+            }
             try {
-                if (!hasMask && !annotationAppearance.get() && backdropShapes != null
-                        && isBackdropCompositeCandidate(xForm)) {
+                if (willCompositeBackdrop) {
                     // §10 backdrop-aware compositing: render the group over its
                     // real page backdrop (reconstructed by replaying the stack),
                     // then remove the backdrop so the page is not composited
@@ -251,7 +287,28 @@ public class FormDrawCmd extends AbstractDrawCmd {
             savedComposite = g.getComposite();
             g.setComposite(java.awt.AlphaComposite.SrcOver);
         }
-        if (formScale != 1.0) {
+        if (deviceResActive) {
+            // Option C: the buffer was rasterised at device resolution, so blit it
+            // back 1:1 in device space -- the page CTM must NOT resample it (that is
+            // exactly the re-blur the legacy form-resolution path incurs).  The form
+            // bbox maps to an axis-aligned device rectangle (guaranteed by the
+            // isAxisAligned gate); draw under an identity transform into that
+            // rectangle, carrying the clip across so the group stays bounded.  The
+            // active composite (group blend / SRC_OVER) still applies against the
+            // real device pixels.
+            AffineTransform savedTx = g.getTransform();
+            Shape savedClip = g.getClip();
+            Rectangle2D formRect = new Rectangle2D.Double(x, y, formWidth, formHeight);
+            Rectangle devBounds = savedTx.createTransformedShape(formRect).getBounds();
+            Shape devClip = savedClip != null ? savedTx.createTransformedShape(savedClip) : null;
+            g.setTransform(new AffineTransform());
+            if (devClip != null) {
+                g.setClip(devClip);
+            }
+            g.drawImage(xFormBuffer, devBounds.x, devBounds.y, devBounds.width, devBounds.height, null);
+            g.setTransform(savedTx);
+            g.setClip(savedClip);
+        } else if (formScale != 1.0) {
             // buffer was rasterised at a reduced size; scale it back up to the
             // group's full footprint so the blend composites over the page at
             // the correct location and dimensions.
@@ -286,6 +343,23 @@ public class FormDrawCmd extends AbstractDrawCmd {
     /** Toggle the annotation-appearance backdrop bypass (see field). */
     public static void setAnnotationAppearance(boolean painting) {
         annotationAppearance.set(painting);
+    }
+
+    /**
+     * Option C: a transform with no rotation/shear, so the form bbox maps to an
+     * axis-aligned device rectangle and a device-resolution buffer can be blitted
+     * back 1:1 without needing the transform to place it.  Rotated/sheared groups
+     * keep the legacy form-resolution path (which carries the transform on the CTM).
+     */
+    private static boolean isAxisAligned(AffineTransform t) {
+        return Math.abs(t.getShearX()) < 1e-6 && Math.abs(t.getShearY()) < 1e-6;
+    }
+
+    /** Option C: uniform form->device scale magnitude of the current CTM. */
+    private static double uniformScale(AffineTransform t) {
+        double sx = Math.hypot(t.getScaleX(), t.getShearY());
+        double sy = Math.hypot(t.getShearX(), t.getScaleY());
+        return Math.max(sx, sy);
     }
 
     /**
@@ -639,16 +713,29 @@ public class FormDrawCmd extends AbstractDrawCmd {
             if (height == 0) {
                 height = 1;
             }
-            long area = (long) width * height;
+            // Option C: when active, target DEVICE resolution (scale up by the CTM
+            // magnitude) instead of 1 form-unit per buffer pixel.  The same area
+            // budget then clamps the (now larger) buffer, so peak heap is unchanged;
+            // a group too big to hold at device resolution simply gets less of the
+            // sharpening, never more memory than the legacy path's ceiling.
+            scale = deviceResActive ? deviceBufferScale : 1.0;
+            long area = (long) Math.ceil(width * scale) * (long) Math.ceil(height * scale);
             long maxArea = (long) MAX_IMAGE_SIZE * MAX_IMAGE_SIZE;
             if (area > maxArea) {
-                scale = Math.sqrt((double) maxArea / area);
+                scale *= Math.sqrt((double) maxArea / area);
             }
             bufferWidth = Math.max(1, (int) Math.ceil(width * scale));
             bufferHeight = Math.max(1, (int) Math.ceil(height * scale));
-            formScale = scale;
             formWidth = width;
             formHeight = height;
+            if (deviceResActive) {
+                // Record the achieved form->device scale; leave formScale == 1.0 so
+                // paintOperand takes the device-space 1:1 blit-back (not the legacy
+                // up-scale-under-CTM branch, which would re-blur a device-res buffer).
+                deviceBufferScale = scale;
+            } else {
+                formScale = scale;
+            }
         }
         // create the new image to write too.
         BufferedImage bi = ImageUtility.createTranslucentCompatibleImage(bufferWidth, bufferHeight);
