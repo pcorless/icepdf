@@ -68,6 +68,10 @@ public class Shapes {
     // the collection of objects listening for page paint events
     private Page parentPage;
 
+    // page-level transparency group (/Group on the page dict), null when the page
+    // is not a transparency group.  Consumed by the page-group buffer compositor.
+    private TransparencyGroup pageGroup;
+
     // text extraction data structure
     private final PageText pageText = new PageText();
 
@@ -94,6 +98,18 @@ public class Shapes {
 
     public void setPageParent(Page parent) {
         parentPage = parent;
+    }
+
+    /**
+     * The page-level transparency group ({@code /Group} on the page dictionary),
+     * or null when the page is not itself a transparency group.
+     */
+    public TransparencyGroup getPageGroup() {
+        return pageGroup;
+    }
+
+    public void setPageGroup(TransparencyGroup pageGroup) {
+        this.pageGroup = pageGroup;
     }
 
     public void add(DrawCmd drawCmd){

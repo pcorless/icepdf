@@ -19,6 +19,7 @@ import org.icepdf.core.events.*;
 import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.core.pobjects.graphics.Shapes;
+import org.icepdf.core.pobjects.graphics.TransparencyGroup;
 import org.icepdf.core.pobjects.graphics.WatermarkCallback;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.LineText;
@@ -142,6 +143,10 @@ public class Page extends Dictionary {
     public static final Name ARTBOX_KEY = new Name("ArtBox");
     public static final Name BLEEDBOX_KEY = new Name("BleedBox");
     public static final Name TRIMBOX_KEY = new Name("TrimBox");
+    // page-level transparency group (/Group) attribute keys (PDF §11.6.6).
+    public static final Name SUBTYPE_KEY = new Name("S");
+    public static final Name TRANSPARENCY_VALUE = new Name("Transparency");
+    public static final Name GROUP_CS_KEY = new Name("CS");
     /**
      * Defines the boundaries of the physical medium on which the page is
      * intended to be displayed or printed.
@@ -455,6 +460,12 @@ public class Page extends Dictionary {
                     // pass in option group references into parse.
                     if (streams.length > 0) {
                         shapes = cp.parse(streams, this).getShapes();
+                        // record the page-level transparency group (/Group on the
+                        // page dict), normally discarded.  A page that is itself a
+                        // transparency group can be rendered into a shared group
+                        // buffer so its inner groups blend against each other before
+                        // reaching the page backdrop (see Shapes#getPageGroup).
+                        initPageGroup();
                     }
                     // content streams are only needed for parsing; the Shapes built above are what painting uses.
                     // Release each stream's decompressed cache (re-derivable from the still-compressed rawBytes) so
@@ -488,6 +499,32 @@ public class Page extends Dictionary {
             throw new InterruptedException(e.getMessage());
         }
         notifyPageInitializationEnded(inited);
+    }
+
+    /**
+     * Reads the page dictionary's {@code /Group} entry (PDF §11.6.6) and, when it
+     * is a transparency group, records its attributes on the page shapes via
+     * {@link Shapes#setPageGroup}.  Mirrors {@link Form#initGroup}.  No-op when the
+     * page is not a transparency group.
+     */
+    private void initPageGroup() {
+        if (shapes == null) {
+            return;
+        }
+        DictionaryEntries group = library.getDictionary(entries, Form.GROUP_KEY);
+        if (group == null) {
+            return;
+        }
+        Name subtype = library.getName(group, SUBTYPE_KEY);
+        if (subtype != null && !TRANSPARENCY_VALUE.equals(subtype)) {
+            return;
+        }
+        Boolean isolated = library.getBoolean(group, Form.I_KEY);
+        Boolean knockout = library.getBoolean(group, Form.K_KEY);
+        Object cs = library.getObject(group, GROUP_CS_KEY);
+        Name csName = cs instanceof Name ? (Name) cs : null;
+        shapes.setPageGroup(new TransparencyGroup(
+                Boolean.TRUE.equals(isolated), Boolean.TRUE.equals(knockout), csName));
     }
 
     public List<Stream> getContentStreams() {

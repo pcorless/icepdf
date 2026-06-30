@@ -98,6 +98,9 @@ public abstract class AbstractContentParser {
     private static final float OVERPAINT_ALPHA = 0.4f;
 
     private static final ClipDrawCmd clipDrawCmd = new ClipDrawCmd();
+
+    // transparency group colour-space key (/CS), for group-boundary markers.
+    private static final Name GROUP_CS_KEY = new Name("CS");
     private static final NoClipDrawCmd noClipDrawCmd = new NoClipDrawCmd();
 
     protected GraphicsState graphicState;
@@ -579,6 +582,18 @@ public abstract class AbstractContentParser {
             // shapes straight onto the page; otherwise it is painted inline
             // (ShapesDrawCmd), which also avoids the quality loss of buffering
             // through an affine transform.  See classifyTransparencyGroup.
+            // Inert group-boundary markers delimit the group's emission on the
+            // stack, carrying its attributes for a compositor (page-group buffer /
+            // scoped-run buffer).  GroupDrawCmd paints nothing, so the default
+            // paint loop is unaffected.
+            boolean emitGroupMarkers = formXObject.isTransparencyGroup();
+            if (emitGroupMarkers) {
+                Object groupCs = formXObject.getLibrary().getObject(formXObject.getGroup(), GROUP_CS_KEY);
+                Name groupBlend = formXObject.getExtGState() != null
+                        ? formXObject.getExtGState().getBlendingMode() : null;
+                shapes.add(new GroupDrawCmd(true, formXObject.isIsolated(), formXObject.isKnockOut(),
+                        groupCs instanceof Name ? (Name) groupCs : null, groupBlend, formXObject.getBBox()));
+            }
             if (!disableTransparencyGroups && requiresOffscreenBuffer(formXObject)) {
                 // add the hold form for further processing.
                 FormDrawCmd formDrawCmd = new FormDrawCmd(formXObject);
@@ -598,6 +613,10 @@ public abstract class AbstractContentParser {
                 }
             } else {
                 shapes.add(new ShapesDrawCmd(formXObject.getShapes()));
+            }
+            if (emitGroupMarkers) {
+                shapes.add(new GroupDrawCmd(false, formXObject.isIsolated(), formXObject.isKnockOut(),
+                        null, null, formXObject.getBBox()));
             }
             // update text sprites with geometric path state
             if (formXObject.getShapes() != null &&
