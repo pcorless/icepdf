@@ -186,9 +186,12 @@ public class FormDrawCmd extends AbstractDrawCmd {
                     // real page backdrop (reconstructed by replaying the stack),
                     // then remove the backdrop so the page is not composited
                     // twice.  Replaces the legacy white-fill backdrop proxy.
+                    // Returns null when it declines (blank/white backdrop -- see
+                    // isBlankBackdrop); fall back to the direct blended path.
                     xFormBuffer = compositeOverBackdrop(parentPage, xForm, renderingHints, normalBM, g, base);
                     usedBackdropComposite = xFormBuffer != null;
-                } else {
+                }
+                if (xFormBuffer == null) {
                     xFormBuffer = createBufferXObject(parentPage, xForm, null, renderingHints, normalBM);
                 }
             } finally {
@@ -384,6 +387,21 @@ public class FormDrawCmd extends AbstractDrawCmd {
         Name blend = xForm.getExtGState() != null ? xForm.getExtGState().getBlendingMode() : null;
         float caRaw = xForm.getExtGState() != null ? xForm.getExtGState().getNonStrokingAlphConstant() : -1f;
         float ca = (caRaw < 0f || caRaw > 1f) ? 1f : caRaw;
+        // Decline §10 only for the precise case it destroys: an OPAQUE lightening
+        // group over an effectively blank (white) reconstructed backdrop.  Such a
+        // blend collapses B(white,Cs) -> white (ColorDodge/Screen/Overlay/ColorBurn/
+        // Lighten), erasing fully-opaque content -- 978-9-7315-0059-9_1.pdf is an
+        // all-CMYK stack of exactly these.  Falling back to the direct blended path
+        // restores the geometry.  Translucent lightening groups (ca < 1, e.g.
+        // transparency_design.pdf's Overlay/ColorDodge at ca .5-.71) are left to
+        // §10 -- it renders their soft pastel result correctly, and declining would
+        // turn them into harsh dark halos.  Darkening/Normal groups and groups over
+        // genuine backdrop content are likewise unaffected.
+        if (ca >= 0.99f && isWhiteWashingBlend(blend) && isBlankBackdrop(backdrop)) {
+            isolated.flush();
+            backdrop.flush();
+            return null;
+        }
         // True-ink subtractive path when CMYK samples were captured; otherwise the
         // additive sRGB path (unchanged for RGB/ICC groups and any CMYK group whose
         // image decoded before preservation was enabled).
@@ -392,6 +410,50 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 : composeContribution(isolated, backdrop, blend, ca);
         backdrop.flush(); // transient -- contribution is now in the result buffer
         return result;
+    }
+
+    // A reconstructed backdrop whose mean luminance is at/above this (0-255) is
+    // treated as effectively blank white paper -- there is no meaningful content
+    // behind the group to composite against, and a lightening blend over it would
+    // only wash the group out.  Mean luminance (not a non-white pixel count) is
+    // used deliberately: it stays near-white as sparse group content accumulates
+    // into later groups' backdrops, so the decline is stable across the stack
+    // rather than order-dependent.  A genuine colour/gradient backdrop sits far
+    // below this.
+    private static final double BLANK_BACKDROP_MIN_MEAN_LUM =
+            Defs.doubleProperty("org.icepdf.core.blankBackdropMeanLum", 245d);
+
+    /** True when {@code backdrop} is effectively uniform white paper (mean
+     *  luminance at/above {@link #BLANK_BACKDROP_MIN_MEAN_LUM}), i.e. the group
+     *  sits over no meaningful reconstructed content. */
+    private static boolean isBlankBackdrop(BufferedImage backdrop) {
+        int w = backdrop.getWidth(), h = backdrop.getHeight();
+        long total = (long) w * h;
+        if (total == 0) {
+            return true;
+        }
+        double sumLum = 0;
+        int[] row = new int[w];
+        for (int y = 0; y < h; y++) {
+            backdrop.getRGB(0, y, w, 1, row, 0, w);
+            for (int p : row) {
+                sumLum += 0.299 * ((p >> 16) & 0xff) + 0.587 * ((p >> 8) & 0xff) + 0.114 * (p & 0xff);
+            }
+        }
+        return sumLum / total >= BLANK_BACKDROP_MIN_MEAN_LUM;
+    }
+
+    /** True for blend modes that collapse to white when the backdrop is white --
+     *  B(white, Cs) ~ white.  Over a blank backdrop these erase opaque group
+     *  content, so §10 is declined for them (see {@link #compositeOverBackdrop}).
+     *  ColorBurn is included: ColorBurn(1, Cs) = 1 - min(1, 0/Cs) = 1. */
+    private static boolean isWhiteWashingBlend(Name blend) {
+        return blend != null && (
+                blend.equals(BlendComposite.COLOR_DODGE_VALUE)
+                        || blend.equals(BlendComposite.SCREEN_VALUE)
+                        || blend.equals(BlendComposite.COLOR_BURN_VALUE)
+                        || blend.equals(BlendComposite.OVERLAY_VALUE)
+                        || blend.equals(BlendComposite.LIGHTEN_VALUE));
     }
 
     /** A DeviceCMYK transparency group (the raster-level subtractive path's scope;
