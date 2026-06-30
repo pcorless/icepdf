@@ -199,16 +199,19 @@ public class FormDrawCmd extends AbstractDrawCmd {
             boolean isolatedGroup = xForm.isIsolated();
             boolean previousTransparentBackdrop = isolatedGroup
                     && BlendComposite.setTransparentBackdrop(true);
-            // The §10 backdrop path replays the stack into a form-resolution
-            // buffer (captureBackdrop derives its replay transform from formScale),
-            // so Option C deliberately steps aside there -- it only sharpens the
-            // plain buffered group (e.g. a ca<1 Normal group) on an axis-aligned
-            // CTM at zoom > 100%.
+            // The §10 backdrop path also benefits from device-resolution buffers:
+            // captureBackdrop now derives its replay transform from the effective
+            // buffer scale (deviceBufferScale when active, else formScale), so the
+            // reconstructed backdrop stays aligned 1:1 with a device-res isolated
+            // buffer and the per-pixel compose math (scale-agnostic) is unchanged.
+            // Only masked groups remain on the legacy form-resolution path (their
+            // mask/outline sub-buffers are sized to match the main buffer's
+            // formScale and would need separate reconciliation).
             boolean willCompositeBackdrop = !hasMask && !annotationAppearance.get()
                     && backdropShapes != null && isBackdropCompositeCandidate(xForm);
             deviceResActive = false;
             deviceBufferScale = 1.0;
-            if (deviceResolutionBuffers && !willCompositeBackdrop && !hasMask) {
+            if (deviceResolutionBuffers && !hasMask) {
                 AffineTransform ctm = g.getTransform();
                 double scale = uniformScale(ctm);
                 if (isAxisAligned(ctm) && scale > 1.0001) {
@@ -391,8 +394,11 @@ public class FormDrawCmd extends AbstractDrawCmd {
             bg.setClip(0, 0, w, h);
             bg.setRenderingHints(g.getRenderingHints());
             AffineTransform b = new AffineTransform();
-            if (formScale != 1.0) {
-                b.scale(formScale, formScale);
+            // Align the replayed backdrop to the achieved buffer scale: device
+            // resolution (Option C) when active, otherwise the area-clamp formScale.
+            double effScale = deviceResActive ? deviceBufferScale : formScale;
+            if (effScale != 1.0) {
+                b.scale(effScale, effScale);
             }
             b.translate(-x, -y);
             b.concatenate(g.getTransform().createInverse());
