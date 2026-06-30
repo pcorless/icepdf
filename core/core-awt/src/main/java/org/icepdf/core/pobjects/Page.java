@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.events.*;
 import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.annotations.*;
+import org.icepdf.core.pobjects.graphics.BlendComposite;
 import org.icepdf.core.pobjects.graphics.DeviceCMYK;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.TransparencyGroup;
@@ -516,7 +517,7 @@ public class Page extends Dictionary {
     /**
      * Reads the page dictionary's {@code /Group} entry (PDF §11.6.6) and, when it
      * is a transparency group, records its attributes on the page shapes via
-     * {@link Shapes#setPageGroup}.  Mirrors {@link Form#initGroup}.  No-op when the
+     * {@link Shapes#setPageGroup}.  Mirrors {@code Form.initGroup}.  No-op when the
      * page is not a transparency group.
      */
     private void initPageGroup() {
@@ -836,10 +837,19 @@ public class Page extends Dictionary {
             if (savedClip != null) {
                 bg.setClip(savedClip);
             }
+            // The buffer is seeded transparent, so a separable blend over an
+            // empty pixel must reduce to the source colour, not multiply against
+            // 0 and go black.  TRANSPARENT_BACKDROP makes BlendComposite reweight
+            // by backdrop alpha (Cs' = (1-ab)Cs + ab*B(Cb,Cs)); without it a
+            // Multiply group (e.g. 9919.pdf's watch image, pattern_and_CYMK's
+            // shadows) blackens.  978's opaque fills are unaffected (ab=1 -> full
+            // blend, today's behaviour).
             FormDrawCmd.setRenderingIntoPageGroup(true);
+            boolean prevTransparent = BlendComposite.setTransparentBackdrop(true);
             try {
                 shapes.paint(bg);
             } finally {
+                BlendComposite.setTransparentBackdrop(prevTransparent);
                 FormDrawCmd.setRenderingIntoPageGroup(false);
             }
         } finally {
