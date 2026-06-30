@@ -300,6 +300,17 @@ public class FormDrawCmd extends AbstractDrawCmd {
      * readback required.  Returns null if a backdrop can't be built.
      */
     private BufferedImage captureBackdrop(Graphics2D g, AffineTransform base, int w, int h) {
+        return captureBackdrop(g, base, w, h, false);
+    }
+
+    /**
+     * As {@link #captureBackdrop(Graphics2D, AffineTransform, int, int)}, but when
+     * {@code skipFormGroups} is true the sibling transparency groups are excluded
+     * from the replay (see {@link Shapes#paintBackdrop(Graphics2D, int, boolean)}).
+     * Used by the §10 decline gate to evaluate the true page backdrop independent
+     * of the other groups in the same stack.
+     */
+    private BufferedImage captureBackdrop(Graphics2D g, AffineTransform base, int w, int h, boolean skipFormGroups) {
         if (capturingBackdrop.get() || backdropShapes == null || w <= 0 || h <= 0) {
             return null;
         }
@@ -327,7 +338,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
             b.concatenate(g.getTransform().createInverse());
             b.concatenate(base);
             bg.setTransform(b);
-            backdropShapes.paintBackdrop(bg, backdropIndex);
+            backdropShapes.paintBackdrop(bg, backdropIndex, skipFormGroups);
             bg.dispose();
             return backdrop;
         } catch (Exception e) {
@@ -388,8 +399,8 @@ public class FormDrawCmd extends AbstractDrawCmd {
         float caRaw = xForm.getExtGState() != null ? xForm.getExtGState().getNonStrokingAlphConstant() : -1f;
         float ca = (caRaw < 0f || caRaw > 1f) ? 1f : caRaw;
         // Decline §10 only for the precise case it destroys: an OPAQUE lightening
-        // group over an effectively blank (white) reconstructed backdrop.  Such a
-        // blend collapses B(white,Cs) -> white (ColorDodge/Screen/Overlay/ColorBurn/
+        // group over an effectively blank (white) page backdrop.  Such a blend
+        // collapses B(white,Cs) -> white (ColorDodge/Screen/Overlay/ColorBurn/
         // Lighten), erasing fully-opaque content -- 978-9-7315-0059-9_1.pdf is an
         // all-CMYK stack of exactly these.  Falling back to the direct blended path
         // restores the geometry.  Translucent lightening groups (ca < 1, e.g.
@@ -397,10 +408,25 @@ public class FormDrawCmd extends AbstractDrawCmd {
         // §10 -- it renders their soft pastel result correctly, and declining would
         // turn them into harsh dark halos.  Darkening/Normal groups and groups over
         // genuine backdrop content are likewise unaffected.
-        if (ca >= 0.99f && isWhiteWashingBlend(blend) && isBlankBackdrop(backdrop)) {
-            isolated.flush();
-            backdrop.flush();
-            return null;
+        //
+        // The blank test uses a backdrop that EXCLUDES the sibling transparency
+        // groups (skipFormGroups): every group in the same stack then sees the
+        // same true page backdrop, so the decision is stack-wide and consistent
+        // rather than order-dependent.  Without this, an earlier group's painted
+        // rings darken later groups' backdrops below the blank threshold, so those
+        // re-engage §10 and wash out (978 recovers only partially).
+        if (ca >= 0.99f && isWhiteWashingBlend(blend)) {
+            BufferedImage gateBackdrop =
+                    captureBackdrop(g, base, isolated.getWidth(), isolated.getHeight(), true);
+            boolean blankPage = gateBackdrop == null || isBlankBackdrop(gateBackdrop);
+            if (gateBackdrop != null) {
+                gateBackdrop.flush();
+            }
+            if (blankPage) {
+                isolated.flush();
+                backdrop.flush();
+                return null;
+            }
         }
         // True-ink subtractive path when CMYK samples were captured; otherwise the
         // additive sRGB path (unchanged for RGB/ICC groups and any CMYK group whose
