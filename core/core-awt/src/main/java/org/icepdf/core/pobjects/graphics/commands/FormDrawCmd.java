@@ -90,12 +90,28 @@ public class FormDrawCmd extends AbstractDrawCmd {
     private static final boolean deviceResolutionBuffers =
             Defs.sysPropertyBoolean("org.icepdf.core.group.deviceResolution", false);
 
+    // Rebuild a cached device-res buffer once the page CTM scale exceeds the
+    // resolution it was baked at by more than this factor (so a minor zoom nudge
+    // does not re-rasterise the whole group every paint).
+    private static final double BUFFER_REBUILD_RATIO = 1.25;
+
     // Per-paint scratch for the Option C device-resolution path: set in
     // paintOperand before the buffer is built, consulted by createBufferXObject's
     // main sizing branch, and again by the draw-back.  deviceBufferScale is the
     // achieved form->device scale baked into the buffer (after the area clamp).
     private boolean deviceResActive;
     private double deviceBufferScale = 1.0;
+
+    // Option C zoom-invalidation: the offscreen buffer is cached for this command's
+    // lifetime (Page.shapes is parsed once and reused across every zoom), so a
+    // device-resolution buffer would otherwise stay frozen at the zoom it was first
+    // built at and blur as the page is zoomed in.  These record whether the group
+    // is device-res eligible (non-masked), the form->buffer scale baked into the
+    // cached buffer, and whether the area budget clamped it -- so paintOperand can
+    // drop and rebuild the buffer when the page zoom outgrows it.
+    private boolean deviceResEligible;
+    private double bufferBuiltScale;
+    private boolean bufferClampedAtMax;
 
     static {
         // decide if large images will be scaled
@@ -125,6 +141,19 @@ public class FormDrawCmd extends AbstractDrawCmd {
                               Shape clip, AffineTransform base,
                               OptionalContentState optionalContentState,
                               boolean paintAlpha, PaintTimer paintTimer) {
+        // Option C: drop a cached device-res buffer once the page has zoomed in
+        // past the resolution it was baked at, so it rebuilds sharp at the new
+        // device scale (Page.shapes -- and this command's buffer -- are cached
+        // across zooms).  Skipped when the buffer was already clamped to the area
+        // budget (a rebuild can add no detail) and for non-eligible (masked)
+        // groups.  Flag-gated; off => no invalidation (byte-identical legacy path).
+        if (deviceResolutionBuffers && xFormBuffer != null && deviceResEligible
+                && !bufferClampedAtMax && bufferBuiltScale > 0
+                && isAxisAligned(g.getTransform())
+                && uniformScale(g.getTransform()) > bufferBuiltScale * BUFFER_REBUILD_RATIO) {
+            xFormBuffer.flush();
+            xFormBuffer = null;
+        }
         if (optionalContentState.isVisible() && xFormBuffer == null) {
             RenderingHints renderingHints = g.getRenderingHints();
             Rectangle2D bBox = xForm.getBBox();
@@ -211,6 +240,12 @@ public class FormDrawCmd extends AbstractDrawCmd {
                     && backdropShapes != null && isBackdropCompositeCandidate(xForm);
             deviceResActive = false;
             deviceBufferScale = 1.0;
+            // Eligible groups are tracked for zoom-rebuild even when device-res does
+            // not engage this paint (e.g. first painted at fit-page, scale <= 1):
+            // the buffer is recorded at its baked scale so a later zoom-in rebuilds
+            // it at device resolution.  Masked groups stay on the legacy path and
+            // are never rebuilt (avoids churn, their sub-buffers are formScale-tied).
+            deviceResEligible = deviceResolutionBuffers && !hasMask;
             if (deviceResolutionBuffers && !hasMask) {
                 AffineTransform ctm = g.getTransform();
                 double scale = uniformScale(ctm);
@@ -728,6 +763,11 @@ public class FormDrawCmd extends AbstractDrawCmd {
             } else {
                 formScale = scale;
             }
+            // Option C zoom-invalidation bookkeeping: remember the scale this buffer
+            // was baked at and whether the area budget clamped it, so paintOperand
+            // can rebuild it (or leave it) when the page zoom changes.
+            bufferBuiltScale = scale;
+            bufferClampedAtMax = area > maxArea;
         }
         // create the new image to write too.
         BufferedImage bi = ImageUtility.createTranslucentCompatibleImage(bufferWidth, bufferHeight);
