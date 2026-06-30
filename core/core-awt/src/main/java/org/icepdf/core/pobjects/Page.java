@@ -18,8 +18,10 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.events.*;
 import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.annotations.*;
+import org.icepdf.core.pobjects.graphics.DeviceCMYK;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.TransparencyGroup;
+import org.icepdf.core.pobjects.graphics.commands.FormDrawCmd;
 import org.icepdf.core.pobjects.graphics.WatermarkCallback;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.LineText;
@@ -33,6 +35,7 @@ import org.icepdf.core.util.updater.modifiers.ModifierFactory;
 
 import java.awt.*;
 import java.awt.geom.*;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
@@ -130,6 +133,15 @@ public class Page extends Dictionary {
     // with spare CPU.  Opt in for image-heavy workloads.
     private static final boolean EAGER_IMAGE_DECODE =
             Defs.booleanProperty("org.icepdf.core.imageReference.eagerDecode", false);
+
+    // GH-502 option (b): when the page is itself a transparency group, render its
+    // content into one shared offscreen buffer (seeded transparent) so the page's
+    // groups blend against each other before reaching the page backdrop, then
+    // composite that buffer over the (white) paper -- pdf.js's "treat non-isolated
+    // as isolated" behaviour.  Default off; broad blast radius (most modern PDFs
+    // carry a page /Group) so opt-in while it is proven on metrics.
+    private static final boolean PAGE_GROUP_BUFFER =
+            Defs.booleanProperty("org.icepdf.core.pageGroupBuffer", false);
 
     public static final Name TYPE = new Name("Page");
     public static final Name ANNOTS_KEY = new Name("Annots");
@@ -698,7 +710,11 @@ public class Page extends Dictionary {
             Shape pageClip = g2.getClip();
 
             shapes.setPageParent(this);
-            shapes.paint(g2);
+            if (PAGE_GROUP_BUFFER && isPageGroupBufferCandidate()) {
+                paintPageGroupBuffered(g2);
+            } else {
+                shapes.paint(g2);
+            }
             shapes.setPageParent(null);
 
             g2.setTransform(pageTransform);
@@ -760,6 +776,84 @@ public class Page extends Dictionary {
         if (imageCount == 0 || (pageInitialized && pagePainted)) {
             notifyPageLoadingEnded();
         }
+    }
+
+    /**
+     * GH-502 option (b): paint the page content into a shared transparency-group
+     * buffer rather than straight onto {@code g2}, then composite that buffer back.
+     * <br>
+     * The page is itself a transparency group (page dict {@code /Group}); its inner
+     * groups must blend against each other (and against a transparent seed) inside
+     * one buffer, otherwise a darkening fill (e.g. a ColorBurn layer) composites
+     * against the white paper and washes out instead of darkening the accumulated
+     * content.  The buffer is built at device resolution under the current page CTM
+     * (so orientation/position/scale follow the CTM exactly -- no hand-rolled blit),
+     * then drawn back over the already-filled (white) paper with SRC_OVER.
+     * <br>
+     * While painting into the buffer, {@link FormDrawCmd}'s §10 backdrop-composite
+     * and its decline gate are bypassed (the buffer IS the backdrop), so each inner
+     * group takes the direct blended path against the live accumulating pixels.
+     */
+    /**
+     * Whether the page should be rendered through the shared transparency-group
+     * buffer.  Scoped to a <b>DeviceCMYK</b> page group: those are the subtractive
+     * CMYK stacks (e.g. 978-9-7315-0059-9_1.pdf) that build a dark field from ink
+     * and need isolated-style accumulation.  A DeviceRGB/DeviceGray page group is
+     * decorative content composited over the white paper -- buffering it as
+     * isolated makes its translucent groups interact with each other instead of
+     * the paper (dark halos), so it stays on the existing direct path.
+     */
+    private boolean isPageGroupBufferCandidate() {
+        TransparencyGroup pageGroup = shapes != null ? shapes.getPageGroup() : null;
+        return pageGroup != null && DeviceCMYK.DEVICECMYK_KEY.equals(pageGroup.getColorSpace());
+    }
+
+    private void paintPageGroupBuffered(Graphics2D g2) throws InterruptedException {
+        AffineTransform savedTx = g2.getTransform();
+        Shape savedClip = g2.getClip();
+        // device-space pixel bounds of the current clip (the page footprint).
+        Rectangle devBounds = savedClip != null
+                ? savedTx.createTransformedShape(savedClip).getBounds()
+                : savedTx.createTransformedShape(g2.getClipBounds()).getBounds();
+        if (devBounds.width <= 0 || devBounds.height <= 0) {
+            // nothing to buffer; fall back to the direct paint.
+            shapes.paint(g2);
+            return;
+        }
+        BufferedImage buffer = new BufferedImage(devBounds.width, devBounds.height,
+                BufferedImage.TYPE_INT_ARGB);
+        Graphics2D bg = buffer.createGraphics();
+        try {
+            bg.setRenderingHints(g2.getRenderingHints());
+            // map page user space -> buffer pixels: translate the device origin to
+            // (0,0), then apply the page CTM.  Painting the shapes through this is a
+            // 1:1 device-resolution render (sharp), and the clip carries over in the
+            // same user space.
+            AffineTransform bt = new AffineTransform();
+            bt.translate(-devBounds.x, -devBounds.y);
+            bt.concatenate(savedTx);
+            bg.setTransform(bt);
+            if (savedClip != null) {
+                bg.setClip(savedClip);
+            }
+            FormDrawCmd.setRenderingIntoPageGroup(true);
+            try {
+                shapes.paint(bg);
+            } finally {
+                FormDrawCmd.setRenderingIntoPageGroup(false);
+            }
+        } finally {
+            bg.dispose();
+        }
+        // composite the accumulated group buffer over the (white) paper in device
+        // space; opaque accumulated content covers the paper, residual transparent
+        // gaps reveal it.
+        g2.setTransform(new AffineTransform());
+        g2.setClip(null);
+        g2.drawImage(buffer, devBounds.x, devBounds.y, null);
+        g2.setTransform(savedTx);
+        g2.setClip(savedClip);
+        buffer.flush();
     }
 
     /**

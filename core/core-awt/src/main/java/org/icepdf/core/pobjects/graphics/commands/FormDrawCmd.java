@@ -180,7 +180,8 @@ public class FormDrawCmd extends AbstractDrawCmd {
             boolean previousTransparentBackdrop = isolatedGroup
                     && BlendComposite.setTransparentBackdrop(true);
             try {
-                if (!hasMask && !annotationAppearance.get() && backdropShapes != null
+                if (!hasMask && !annotationAppearance.get() && !renderingIntoPageGroup.get()
+                        && backdropShapes != null
                         && isBackdropCompositeCandidate(xForm)) {
                     // §10 backdrop-aware compositing: render the group over its
                     // real page backdrop (reconstructed by replaying the stack),
@@ -289,6 +290,22 @@ public class FormDrawCmd extends AbstractDrawCmd {
     /** Toggle the annotation-appearance backdrop bypass (see field). */
     public static void setAnnotationAppearance(boolean painting) {
         annotationAppearance.set(painting);
+    }
+
+    // Set while the page content is being rendered into a page-level transparency
+    // group buffer (Page.paintPageContent, -Dorg.icepdf.core.pageGroupBuffer).
+    // Inside that buffer the groups must blend against the live accumulating
+    // buffer pixels (the direct blended path), so the §10 backdrop-composite and
+    // its decline gate -- which reconstruct a separate white-seeded backdrop --
+    // must be bypassed: the buffer IS the backdrop, reconstruction is redundant
+    // and wrong there.  This is what lets a darkening group (e.g. a ColorBurn
+    // fill) darken the accumulated content instead of washing over white.
+    private static final ThreadLocal<Boolean> renderingIntoPageGroup =
+            ThreadLocal.withInitial(() -> Boolean.FALSE);
+
+    /** Toggle the page-group-buffer §10 bypass (see field). */
+    public static void setRenderingIntoPageGroup(boolean rendering) {
+        renderingIntoPageGroup.set(rendering);
     }
 
     /**
