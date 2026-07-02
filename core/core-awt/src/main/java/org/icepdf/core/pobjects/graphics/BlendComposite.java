@@ -323,20 +323,35 @@ public final class BlendComposite implements Composite {
                     // partial ab -> interpolated (anti-aliased edges, overlap).
                     // `result` holds B(Cb,Cs); reweight the colour in place,
                     // leaving result[3] (the blended alpha).
+                    // colour weight for the backdrop<->blend lerp below.  Normally
+                    // the group constant alpha; inside a group buffer we also fold
+                    // in per-pixel source coverage so a faint (low-alpha) blend
+                    // pixel does not fully overwrite the backdrop.  Ignoring src
+                    // coverage let an Overlay/Multiply of a dark, low-alpha source
+                    // crush an opaque backdrop to black (pattern_and_CYMK shadows).
+                    float colourWeight = alpha;
                     if (transparentBackdrop) {
                         int ab = dstPixel[3];
                         int ia = 255 - ab;
                         result[0] = (srcPixel[0] * ia + result[0] * ab) / 255;
                         result[1] = (srcPixel[1] * ia + result[1] * ab) / 255;
                         result[2] = (srcPixel[2] * ia + result[2] * ab) / 255;
+                        // Interpolate the weight by backdrop opacity so the extremes
+                        // stay exactly as before: over a transparent backdrop (ab=0)
+                        // the source passes through at full coverage (gaps reveal the
+                        // source, unchanged); over an opaque backdrop (ab=255) the
+                        // blend contributes only src[3]/255 (no crush).  An opaque
+                        // source (src[3]=255) yields colourWeight==alpha for any ab,
+                        // so opaque-fill groups (978) are byte-identical.
+                        colourWeight = alpha * (ia + ab * srcPixel[3] / 255f) / 255f;
                     }
 
                     // mixes the result with the opacity
                     dstPixels[x] =
                             ((int) (dstPixel[3] + (result[3] - dstPixel[3]) * alpha) & 0xFF) << 24 |
-                                    ((int) (dstPixel[0] + (result[0] - dstPixel[0]) * alpha) & 0xFF) << 16 |
-                                    ((int) (dstPixel[1] + (result[1] - dstPixel[1]) * alpha) & 0xFF) << 8 |
-                                    (int) (dstPixel[2] + (result[2] - dstPixel[2]) * alpha) & 0xFF;
+                                    ((int) (dstPixel[0] + (result[0] - dstPixel[0]) * colourWeight) & 0xFF) << 16 |
+                                    ((int) (dstPixel[1] + (result[1] - dstPixel[1]) * colourWeight) & 0xFF) << 8 |
+                                    (int) (dstPixel[2] + (result[2] - dstPixel[2]) * colourWeight) & 0xFF;
                 }
                 dstOut.setDataElements(0, y, width, 1, dstPixels);
             }
