@@ -180,7 +180,24 @@ public class FormDrawCmd extends AbstractDrawCmd {
             boolean previousTransparentBackdrop = isolatedGroup
                     && BlendComposite.setTransparentBackdrop(true);
             try {
-                if (!hasMask && !annotationAppearance.get() && !renderingIntoPageGroup.get()
+                // Inside the page-group buffer §10 is normally bypassed so a
+                // separable (non-Normal) group blends against the live accumulating
+                // buffer.  But a NON-isolated NORMAL group has no blend to interact
+                // with the backdrop at draw-back, so rendering it isolated (over the
+                // transparent seed) yields its bare, un-composited content -- a light
+                // gradient that then washes the page (P100002589 turtle divider band,
+                // forms 46/58).  Such groups still need §10's backdrop-aware
+                // compositing, so keep it for Normal blends even inside the buffer.
+                // Only a separable (non-Normal) group blend interacts with the
+                // backdrop at draw-back (its BlendComposite reads the accumulated
+                // buffer as the blend destination); for those the §10 reconstruction
+                // is redundant inside the page-group buffer and is bypassed.  A
+                // Normal / no-blend group draws back with AlphaComposite, which just
+                // overlays its isolated content -- so it still needs §10's real
+                // backdrop compositing or it washes the page (turtle forms 46/58).
+                boolean separableGroupBlend = g.getComposite() instanceof BlendComposite;
+                boolean pageGroupBypass = renderingIntoPageGroup.get() && separableGroupBlend;
+                if (!hasMask && !annotationAppearance.get() && !pageGroupBypass
                         && backdropShapes != null
                         && isBackdropCompositeCandidate(xForm)) {
                     // §10 backdrop-aware compositing: render the group over its
