@@ -189,9 +189,9 @@ public final class BlendComposite implements Composite {
         } else if (modeName.equals(LIGHTEN_VALUE)) {
             return new BlendComposite(BlendingMode.LIGHTEN, alpha);
         } else if (modeName.equals(COLOR_DODGE_VALUE)) {
-            return new BlendComposite(BlendingMode.SOFT_DODGE, alpha);
+            return new BlendComposite(BlendingMode.COLOR_DODGE, alpha);
         } else if (modeName.equals(COLOR_BURN_VALUE)) {
-            return new BlendComposite(BlendingMode.SOFT_BURN, alpha);
+            return new BlendComposite(BlendingMode.COLOR_BURN, alpha);
         } else if (modeName.equals(HARD_LIGHT_VALUE)) {
             return new BlendComposite(BlendingMode.HARD_LIGHT, alpha);
         } else if (modeName.equals(SOFT_LIGHT_VALUE)) {
