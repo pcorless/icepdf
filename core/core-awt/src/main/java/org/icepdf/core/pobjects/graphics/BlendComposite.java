@@ -781,7 +781,13 @@ public final class BlendComposite implements Composite {
                                             255 - ((255 - dst[1]) * (255 - src[1]) >> 7),
                                     dst[2] < 128 ? (dst[2] * src[2]) >> 7 :
                                             255 - ((255 - dst[2]) * (255 - src[2]) >> 7),
-                                    Math.min(255, dst[3])
+                                    // result alpha is the source/backdrop union like every
+                                    // other separable blender; using dst[3] alone dropped the
+                                    // source coverage, so an opaque Overlay group over a
+                                    // transparent backdrop produced zero alpha and vanished
+                                    // (978's Fm5 dark shading -> invisible -> ColorBurn washed
+                                    // the field cyan instead of black).
+                                    Math.min(255, src[3] + dst[3])
                             ); return;
 //                            copy(dst, out); return;
                         }
