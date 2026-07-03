@@ -310,7 +310,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
     }
 
     // Set while the page content is being rendered into a page-level transparency
-    // group buffer (Page.paintPageContent, -Dorg.icepdf.core.pageGroupBuffer).
+    // group buffer (Page.paintPageGroupBuffered, for DeviceCMYK page groups).
     // Inside that buffer the groups must blend against the live accumulating
     // buffer pixels (the direct blended path), so the §10 backdrop-composite and
     // its decline gate -- which reconstruct a separate white-seeded backdrop --

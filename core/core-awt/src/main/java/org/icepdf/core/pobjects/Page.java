@@ -135,16 +135,6 @@ public class Page extends Dictionary {
     private static final boolean EAGER_IMAGE_DECODE =
             Defs.booleanProperty("org.icepdf.core.imageReference.eagerDecode", false);
 
-    // GH-502 option (b): when the page is itself a transparency group, render its
-    // content into one shared offscreen buffer (seeded transparent) so the page's
-    // groups blend against each other before reaching the page backdrop, then
-    // composite that buffer over the (white) paper -- pdf.js's "treat non-isolated
-    // as isolated" behaviour.  Default ON, scoped to DeviceCMYK page groups
-    // (isPageGroupBufferCandidate); validated across the CMYK page-group corpus
-    // with no regressions.  Set -Dorg.icepdf.core.pageGroupBuffer=false to opt out.
-    private static final boolean PAGE_GROUP_BUFFER =
-            Defs.booleanProperty("org.icepdf.core.pageGroupBuffer", true);
-
     public static final Name TYPE = new Name("Page");
     public static final Name ANNOTS_KEY = new Name("Annots");
     public static final Name CONTENTS_KEY = new Name("Contents");
@@ -712,7 +702,7 @@ public class Page extends Dictionary {
             Shape pageClip = g2.getClip();
 
             shapes.setPageParent(this);
-            if (PAGE_GROUP_BUFFER && isPageGroupBufferCandidate()) {
+            if (isPageGroupBufferCandidate()) {
                 paintPageGroupBuffered(g2);
             } else {
                 shapes.paint(g2);
