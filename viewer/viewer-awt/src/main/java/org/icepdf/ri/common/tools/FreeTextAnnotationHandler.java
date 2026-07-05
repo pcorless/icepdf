@@ -180,8 +180,8 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
         String fontName = preferences.get(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_FONT, "Helvetica");
         annotation.setFontName(fontName);
         // apply font size
-        int fontSize = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SIZE, FreeTextAnnotation.defaultFontSize);
-        annotation.setFontSize(fontSize);
+        float floatFontSize = preferences.getFloat(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SIZE, FreeTextAnnotation.defaultFontSize);
+        annotation.setFontSize(floatFontSize);
         // opacity
         int opacity = preferences.getInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_OPACITY, 255);
         annotation.setOpacity(opacity);

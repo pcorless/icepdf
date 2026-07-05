@@ -94,7 +94,7 @@ public class ContentWriterUtils {
                                                        final float advanceX,
                                                        final float advanceY,
                                                        Shapes shapes,
-                                                       int fontSize,
+                                                       float fontSize,
                                                        float lineSpacing,
                                                        Color fontColor,
                                                        String content) {
