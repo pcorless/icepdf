@@ -42,16 +42,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
  */
 public class ImageCompareTask extends AbstractTestTask {
 
-    private static final int THREAD_EXECUTOR_SIZE = 4;
+    // ICEpdf system property that sizes the per-version image-proxy decode pool; sized from
+    // preferences before the capture-set class loaders (and their Library statics) are created.
+    private static final String ICEPDF_IMAGE_THREAD_POOL_PROPERTY = "org.icepdf.core.library.imageThreadPoolSize";
 
     // page capture test
     public static final String PAGE_CAPTURE_CLASS = "org.icepdf.ri.util.qa.PageCapture";
@@ -69,7 +74,10 @@ public class ImageCompareTask extends AbstractTestTask {
 
     private ArrayList<Path> filePaths;
 
-    protected static ExecutorService executorService;
+    // Capture concurrency, read once from preferences in setup() so a run uses a consistent value.
+    // P: documents captured/compared at once. Q: render threads per in-flight document (floor 2).
+    private int concurrentDocuments;
+    private int renderThreadsPerDocument;
 
     public ImageCompareTask(Mediator mediator) {
         this.mediator = mediator;
@@ -125,7 +133,13 @@ public class ImageCompareTask extends AbstractTestTask {
         captureSetA = project.getCaptureSetA();
         captureSetB = project.getCaptureSetB();
 
-        executorService = Executors.newFixedThreadPool(THREAD_EXECUTOR_SIZE);
+        // read capture-concurrency preferences once for the whole run.
+        concurrentDocuments = PreferencesController.getCaptureConcurrentDocuments();
+        renderThreadsPerDocument = PreferencesController.getCaptureRenderThreadsPerDocument();
+        // Size ICEpdf's image-proxy pool before config() creates the class loaders: Library reads
+        // this property in a static initializer, so it must be set before that class is loaded.
+        System.setProperty(ICEPDF_IMAGE_THREAD_POOL_PROPERTY,
+                Integer.toString(PreferencesController.getCaptureImageThreadPoolSize()));
     }
 
     @Override
@@ -165,8 +179,11 @@ public class ImageCompareTask extends AbstractTestTask {
             throw new ConfigurationException("Capture page count must be at least one.");
         }
 
-        // create new urlClass loaders for each capture set as part of this work and validate that the class loader
-        // have valid classes.
+        // Create the per-capture-set URLClassLoaders here, once, on the single config thread. This
+        // validates the classpath and, importantly, primes CaptureSet.classLoader before any
+        // document units run: getTestInstance() below and inside the render units then only ever
+        // read the already-created loader, so there is no lazy-init race once documents run
+        // concurrently (increment 2).
         try {
             getTestInstance(captureSetA);
         } catch (Exception e) {
@@ -219,31 +236,47 @@ public class ImageCompareTask extends AbstractTestTask {
     @Override
     public void testAndAnalyze() {
         System.out.println("---- Test and Analyze started -----");
-        try {
+        {
             List<Result> results = new ArrayList<>(commonContentSets.size() * commonPageCount);
             Platform.runLater(mediator::resetProjectResults);
 
             int testSize = filePaths.size();
-            int i = 1;
-            for (Path filePath : filePaths) {
-                if (isCancelled()) {
-                    updateMessage("Cancelled");
-                    break;
+            AtomicInteger completed = new AtomicInteger();
+            // Each document is a self-contained unit (capture A+B, dispose, compare all pages,
+            // publish) that owns its own render pool. The units are submitted to a document-level
+            // pool of size P (CONCURRENT_DOCUMENTS) so up to P documents run at once; each running
+            // unit still drives at least two threads over its own document. Only P inner render
+            // pools exist at any moment, which bounds the memory/thread footprint. Progress is
+            // reported by an atomic counter as units finish (any order); results are merged back in
+            // document order by iterating the futures in submission order, so the saved output is
+            // deterministic regardless of completion order.
+            ExecutorService documentPool = Executors.newFixedThreadPool(concurrentDocuments);
+            try {
+                List<Future<List<Result>>> futures = new ArrayList<>(testSize);
+                for (int idx = 0; idx < filePaths.size(); idx++) {
+                    Path filePath = filePaths.get(idx);
+                    int documentIndex = idx + 1;
+                    futures.add(documentPool.submit(
+                            new CaptureAndCompareDocument(filePath, documentIndex, completed, testSize)));
                 }
-                // update the UI
-                updateProgress(i, testSize);
-                // setup what needs to be captured.
-                if (!captureSetA.isComplete() && !captureSetB.isComplete()) {
-                    capturePages(filePath, i, captureSetA, captureSetB);
-                } else if (!captureSetA.isComplete()) {
-                    capturePages(filePath, i, captureSetA);
-                } else if (!captureSetB.isComplete()) {
-                    capturePages(filePath, i, captureSetB);
+                for (Future<List<Result>> future : futures) {
+                    if (isCancelled()) {
+                        updateMessage("Cancelled");
+                        break;
+                    }
+                    try {
+                        results.addAll(future.get());
+                    } catch (CancellationException e) {
+                        // unit was interrupted by documentPool.shutdownNow() during cancellation.
+                    } catch (ExecutionException e) {
+                        e.printStackTrace();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
                 }
-                // compare output
-                results.addAll(comparePages(i, filePath, captureSetA, captureSetB));
-
-                i++;
+            } finally {
+                documentPool.shutdownNow();
             }
             // mark each content set as complete.
             if (!captureSetA.isComplete() && !captureSetB.isComplete()) {
@@ -268,13 +301,6 @@ public class ImageCompareTask extends AbstractTestTask {
             //save teh projects state.
             project.setResults(results);
             ConfigSerializer.save(project);
-        } catch (InterruptedException e) {
-            if (isCancelled()) {
-                updateMessage("Cancelled");
-            }
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
         }
     }
 
@@ -282,7 +308,6 @@ public class ImageCompareTask extends AbstractTestTask {
     public void teardown() {
         // do and cleanup.
         Platform.runLater(mediator::setStopTestTaskGuiState);
-        executorService.shutdownNow();
     }
 
     private Object getTestInstance(CaptureSet captureSet) {
@@ -343,11 +368,17 @@ public class ImageCompareTask extends AbstractTestTask {
         return 0;
     }
 
-    private void capturePages(Path filePath, int documentIndex, CaptureSet... captureSet) throws InterruptedException, ExecutionException {
+    /**
+     * Captures the requested pages of a single document across the given capture sets. The page
+     * callables for every capture set are submitted together to the document's own render pool, so
+     * pages of the same document are always rendered by at least two threads concurrently - the
+     * stress condition that surfaces ICEpdf sync bugs.
+     */
+    private void capturePages(ExecutorService renderPool, Path filePath, int documentIndex, CaptureSet... captureSet)
+            throws InterruptedException, ExecutionException {
         // capture pageCaptureTest
-        Object[] testInstances;
-        List<Callable<Void>> callables = new ArrayList<>(commonPageCount * 2);
-        testInstances = new Object[captureSet.length];
+        Object[] testInstances = new Object[captureSet.length];
+        List<Callable<Void>> callables = new ArrayList<>(commonPageCount * captureSet.length);
         for (int i = 0; i < captureSet.length; i++) {
             Object testInstance = getTestInstance(captureSet[i]);
 
@@ -359,31 +390,91 @@ public class ImageCompareTask extends AbstractTestTask {
             testInstances[i] = testInstance;
         }
         // run the pageCaptureTest capture
-        executorService.invokeAll(callables);
+        renderPool.invokeAll(callables);
         // close
         for (int i = 0; i < captureSet.length; i++) {
-            executorService.submit(new DocumentCloser(captureSet[i], testInstances[i])).get();
+            renderPool.submit(new DocumentCloser(captureSet[i], testInstances[i])).get();
         }
     }
 
-    private List<Result> comparePages(int documentIndex, Path filePath, CaptureSet captureSetA, CaptureSet captureSetB)
+    private List<Result> comparePages(ExecutorService renderPool, int documentIndex, Path filePath,
+                                      CaptureSet captureSetA, CaptureSet captureSetB)
             throws InterruptedException, ExecutionException {
-        List<Result> results = new ArrayList<>();
+        List<Callable<Result>> compareCallables = new ArrayList<>(commonPageCount);
         for (int i = 0; i < commonPageCount; i++) {
-            Result result = executorService.submit(new DocumentImageCompare(filePath, i, captureSetA, captureSetB)).get();
+            compareCallables.add(new DocumentImageCompare(filePath, i, captureSetA, captureSetB));
+        }
+        // invokeAll preserves the callable order, so results stay in page order regardless of the
+        // order the compares actually finish.
+        List<Future<Result>> futures = renderPool.invokeAll(compareCallables);
+        List<Result> results = new ArrayList<>(commonPageCount);
+        // Buffer this document's compare output and flush it in a single call so that, with several
+        // documents comparing at once, each document's per-page lines stay contiguous instead of
+        // interleaving across documents.
+        StringBuilder log = new StringBuilder();
+        for (int page = 0; page < futures.size(); page++) {
+            Result result = futures.get(page).get();
             if (result != null) {
                 results.add(result);
                 if (result.getDifference() < 100) {
-                    System.err.format("File [%d/%d|%.2f%%]=%s%n", documentIndex, filePaths.size(), result.getDifference(), filePath.toString());
-                    System.out.print('~');
+                    log.append(String.format("Diff  [%d/%d] %s page %d: %.2f%%%n",
+                            documentIndex, filePaths.size(), filePath.toString(), page + 1, result.getDifference()));
                 } else {
-                    System.out.print('=');
+                    log.append(String.format("Match [%d/%d] %s page %d%n",
+                            documentIndex, filePaths.size(), filePath.toString(), page + 1));
                 }
             }
+        }
+        if (log.length() > 0) {
+            System.out.print(log);
+            System.out.flush();
         }
         Platform.runLater(() -> mediator.addProjectResults(results));
 
         return results;
+    }
+
+    /**
+     * Self-contained capture-and-compare pipeline for a single document. Owns a render pool of
+     * {@code renderThreadsPerDocument} threads for the duration of the document so that, no matter
+     * how many documents run at once, every in-flight document is exercised by at least two
+     * concurrent page-render threads. Returns the document's results in page order.
+     */
+    private class CaptureAndCompareDocument implements Callable<List<Result>> {
+
+        private final Path filePath;
+        private final int documentIndex;
+        private final AtomicInteger completed;
+        private final int testSize;
+
+        private CaptureAndCompareDocument(Path filePath, int documentIndex, AtomicInteger completed, int testSize) {
+            this.filePath = filePath;
+            this.documentIndex = documentIndex;
+            this.completed = completed;
+            this.testSize = testSize;
+        }
+
+        @Override
+        public List<Result> call() throws InterruptedException, ExecutionException {
+            ExecutorService renderPool = Executors.newFixedThreadPool(renderThreadsPerDocument);
+            try {
+                // setup what needs to be captured.
+                if (!captureSetA.isComplete() && !captureSetB.isComplete()) {
+                    capturePages(renderPool, filePath, documentIndex, captureSetA, captureSetB);
+                } else if (!captureSetA.isComplete()) {
+                    capturePages(renderPool, filePath, documentIndex, captureSetA);
+                } else if (!captureSetB.isComplete()) {
+                    capturePages(renderPool, filePath, documentIndex, captureSetB);
+                }
+                // compare output
+                return comparePages(renderPool, documentIndex, filePath, captureSetA, captureSetB);
+            } finally {
+                renderPool.shutdownNow();
+                // report progress as documents finish; completion order is not document order, but
+                // the count is monotonic so the progress bar only advances.
+                updateProgress(completed.incrementAndGet(), testSize);
+            }
+        }
     }
 
     public static class CapturePage implements Callable<Void> {
@@ -414,7 +505,7 @@ public class ImageCompareTask extends AbstractTestTask {
                             fileName + "_" + pageNumber + ".png");
 
                     if (!Files.exists(imageCapture)) {
-                        System.out.print("|");
+                        System.out.println("Capturing " + fileName + " page " + (pageNumber + 1) + "/" + numberOfPage);
 
                         // paint the page.
                         Method captureMethod = pageCaptureClass.getMethod(PAGE_CAPTURE_METHOD,

@@ -114,7 +114,10 @@ public class Mediator {
         // get the test and try to run
         currentTestTask = TestFactory.getInstance().createTestInstance(this);
         progressBar.progressProperty().bind(currentTestTask.progressProperty());
-        new Thread(currentTestTask).start();
+        // Daemon so the run thread can never hold the JVM alive on its own once the UI closes.
+        Thread testThread = new Thread(currentTestTask);
+        testThread.setDaemon(true);
+        testThread.start();
     }
 
     /**
