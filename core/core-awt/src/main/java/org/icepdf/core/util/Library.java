@@ -68,28 +68,58 @@ public class Library {
     public static int imagePoolThreads;
     private static final long KEEP_ALIVE_TIME = 90;
 
-    static {
-        try {
-            commonPoolThreads =
-                    Defs.intProperty("org.icepdf.core.library.threadPoolSize", 4);
-            if (commonPoolThreads < 1) {
-                commonPoolThreads = 2;
-            }
-        } catch (NumberFormatException e) {
-            logger.warning("Error reading buffered scale factor");
-        }
+    // Thread pool sizing.  When the size properties below are not set explicitly, both pools are
+    // auto-sized from the host's CPU count: one thread per core less one (leaving a core for the
+    // Swing/AWT event dispatch thread during a busy thumbnail or page sweep), floored at
+    // MIN_POOL_THREADS and capped at the value of THREAD_POOL_CAP_PROPERTY (default
+    // DEFAULT_THREAD_POOL_CAP).  The cap is deliberately conservative: each in-flight page render
+    // and image decode holds a full BufferedImage, so raising it past 8 warrants heap measurement
+    // first.  An explicitly set size property is always honoured as-is (only floored at 1).
+    public static final String COMMON_POOL_SIZE_PROPERTY = "org.icepdf.core.library.threadPoolSize";
+    public static final String IMAGE_POOL_SIZE_PROPERTY = "org.icepdf.core.library.imageThreadPoolSize";
+    public static final String THREAD_POOL_CAP_PROPERTY = "org.icepdf.core.library.threadPoolCap";
+    private static final int DEFAULT_THREAD_POOL_CAP = 8;
+    private static final int MIN_POOL_THREADS = 2;
 
-        try {
-            // todo make ImageReference call interruptible and then we can get rid of this pool.
-            imagePoolThreads =
-                    Defs.intProperty("org.icepdf.core.library.imageThreadPoolSize", 2);
-            if (imagePoolThreads < 1) {
-                imagePoolThreads = 2;
-            }
-        } catch (NumberFormatException e) {
-            logger.warning("Error reading buffered scale factor");
-        }
+    static {
+        commonPoolThreads = resolvePoolSize(COMMON_POOL_SIZE_PROPERTY);
+        imagePoolThreads = resolvePoolSize(IMAGE_POOL_SIZE_PROPERTY);
         JceProvider.loadProvider();
+    }
+
+    /**
+     * Resolves a thread-pool size.  If the given system property is set it is honoured verbatim
+     * (floored at 1); otherwise the size is derived from {@link Runtime#availableProcessors()} as
+     * {@code cores - 1}, clamped to {@code [MIN_POOL_THREADS, cap]} where {@code cap} comes from
+     * {@link #THREAD_POOL_CAP_PROPERTY} (default {@link #DEFAULT_THREAD_POOL_CAP}).
+     *
+     * @param sizeProperty name of the explicit-size system property.
+     * @return resolved thread count, always &gt;= 1.
+     */
+    private static int resolvePoolSize(String sizeProperty) {
+        String override = Defs.sysProperty(sizeProperty);
+        if (override != null) {
+            try {
+                int value = Integer.parseInt(override.trim());
+                return value < 1 ? MIN_POOL_THREADS : value;
+            } catch (NumberFormatException e) {
+                logger.warning("Invalid thread pool size for " + sizeProperty + ": '" + override
+                        + "', falling back to CPU-based sizing.");
+            }
+        }
+        int cap = Defs.intProperty(THREAD_POOL_CAP_PROPERTY, DEFAULT_THREAD_POOL_CAP);
+        if (cap < MIN_POOL_THREADS) {
+            cap = MIN_POOL_THREADS;
+        }
+        // leave a core for the event dispatch thread during large render/thumbnail sweeps.
+        int derived = Runtime.getRuntime().availableProcessors() - 1;
+        if (derived < MIN_POOL_THREADS) {
+            derived = MIN_POOL_THREADS;
+        }
+        if (derived > cap) {
+            derived = cap;
+        }
+        return derived;
     }
 
     private final ConcurrentHashMap<Reference, java.lang.ref.Reference<Object>> objectStore =
@@ -1049,6 +1079,40 @@ public class Library {
         commonThreadPool.shutdownNow();
         imageThreadPool.purge();
         imageThreadPool.shutdownNow();
+    }
+
+    /**
+     * Resizes the common (page/thumbnail render) and image-decode thread pools at runtime, updating
+     * both the recorded sizes and, if the pools have already been created, the live executors.
+     * Intended for embedding applications that want to tune concurrency to their hardware or heap
+     * without a JVM restart.  Sizes are floored at 1; there is no upper cap here as an explicit
+     * runtime request is treated like an explicit override.
+     *
+     * @param common number of threads for the common render pool.
+     * @param image  number of threads for the image-decode pool.
+     */
+    public static synchronized void setThreadPoolSizes(int common, int image) {
+        commonPoolThreads = Math.max(1, common);
+        imagePoolThreads = Math.max(1, image);
+        resizePool(commonThreadPool, commonPoolThreads);
+        resizePool(imageThreadPool, imagePoolThreads);
+        logger.log(Level.FINE, () -> "Resized ICEpdf thread pools: common=" + commonPoolThreads
+                + ", image=" + imagePoolThreads);
+    }
+
+    private static void resizePool(ThreadPoolExecutor pool, int size) {
+        if (pool == null || pool.isShutdown()) {
+            return;
+        }
+        // Core and max must stay consistent, and ThreadPoolExecutor rejects a transition where core
+        // would exceed max (or max drop below core), so order the two calls by growth direction.
+        if (size >= pool.getCorePoolSize()) {
+            pool.setMaximumPoolSize(size);
+            pool.setCorePoolSize(size);
+        } else {
+            pool.setCorePoolSize(size);
+            pool.setMaximumPoolSize(size);
+        }
     }
 
     public static void execute(Runnable runnable) {
