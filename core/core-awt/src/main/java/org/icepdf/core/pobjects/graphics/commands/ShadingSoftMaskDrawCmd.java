@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 ICEsoft Technologies Canada Corp.
+ * Copyright 2026 Patrick Corless
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -19,8 +19,8 @@ import org.icepdf.core.pobjects.Form;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.OptionalContentState;
 import org.icepdf.core.pobjects.graphics.PaintTimer;
-import org.icepdf.core.pobjects.graphics.SoftMask;
 import org.icepdf.core.pobjects.graphics.Shapes;
+import org.icepdf.core.pobjects.graphics.SoftMask;
 import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 
 import java.awt.*;
