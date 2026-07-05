@@ -71,6 +71,17 @@ public class FormDrawCmd extends AbstractDrawCmd {
     public static int MAX_SCALED_FORM_SIZE =
             Defs.sysPropertyInt("org.icepdf.core.maxScaledFormSize", 16384);
 
+    // GH-501 step 2: raster-level subtractive compositing of DeviceCMYK groups from
+    // true preserved samples.  On by default; -Dorg.icepdf.core.cmyk.subtractive=false
+    // forces the additive sRGB path (A/B comparison and safety kill-switch).
+    private static final boolean cmykSubtractiveEnabled =
+            Defs.sysPropertyBoolean("org.icepdf.core.cmyk.subtractive", true);
+
+    // Prototype (§5.2): also treat isolated/knockout groups as buffer-requiring in
+    // requiresOffscreenBuffer.  Off by default while we measure corpus impact.
+    private static final boolean isolationAwareRouting =
+            Defs.sysPropertyBoolean("org.icepdf.core.isolationAwareRouting", false);
+
     static {
         // decide if large images will be scaled
         disableXObjectSMask =
@@ -78,6 +89,94 @@ public class FormDrawCmd extends AbstractDrawCmd {
                         false);
 
         MAX_IMAGE_SIZE = Defs.sysPropertyInt("org.icepdf.core.maxSmaskImageSize", MAX_IMAGE_SIZE);
+    }
+
+    /**
+     * Decides whether a transparency-group form must be rasterised into an
+     * offscreen buffer ({@link FormDrawCmd}) or can be painted inline as plain
+     * shapes ({@link ShapesDrawCmd}).
+     * <p>
+     * A buffer is required only when the group carries a <i>group effect</i>
+     * that cannot be reproduced by painting its shapes straight onto the page:
+     * <ul>
+     *   <li>a soft mask (the mask must be read back from a raster),</li>
+     *   <li>a non-Normal blend mode applied to the group as a unit, or</li>
+     *   <li>a group constant alpha in the open interval (0,1), which applies to
+     *       the <i>composited</i> group and therefore needs it composited first.</li>
+     * </ul>
+     * Groups with none of these — including plain Normal, fully-opaque groups —
+     * composite identically whether painted inline or via a buffer (Porter-Duff
+     * <i>over</i> is associative), so they are painted inline; this also avoids
+     * the resolution loss of buffering through an affine transform.
+     * <p>
+     * Size handling: a group is only buffered if it fits the offscreen-buffer
+     * budget.  Groups within {@link #MAX_IMAGE_SIZE} buffer 1:1.  A larger
+     * <i>blend-only</i> (no soft mask) group is down-scaled into the buffer, but
+     * only up to {@link #MAX_SCALED_FORM_SIZE}; beyond that the bbox is treated
+     * as an unbounded {@code +-Short.MAX_VALUE} sentinel (real content small and
+     * clipped elsewhere) that would collapse if scaled, so it stays inline.
+     * Soft-mask groups need a 1:1 buffer and are never down-scaled.
+     * <p>
+     * Behaviour-preserving refactor of the previous inline
+     * {@code withinMaxSize}/{@code hasGroupEffect}/{@code oversizedBlendOnly}
+     * predicate; see {@code TRANSPARENCY-GROUP-BLENDING-DESIGN.md}.
+     *
+     * @param form transparency-group form being placed by a {@code Do}.
+     * @return true if the group must be rasterised to a buffer.
+     */
+    public static boolean requiresOffscreenBuffer(Form form) {
+        ExtGState extGState = form.getExtGState();
+        if (extGState == null) {
+            return false;
+        }
+        double formWidth = form.getBBox().getWidth();
+        double formHeight = form.getBBox().getHeight();
+        // degenerate / sub-pixel groups: nothing meaningful to buffer.
+        if (formWidth <= 1 || formHeight <= 1) {
+            return false;
+        }
+        boolean hasSoftMask = extGState.getSMask() != null;
+        Name blendingMode = extGState.getBlendingMode();
+        boolean hasBlend = blendingMode != null
+                && !blendingMode.equals(BlendComposite.NORMAL_VALUE);
+        float ca = extGState.getNonStrokingAlphConstant();
+        boolean hasPartialAlpha = ca > 0 && ca < 1;
+        // Prototype (§5.2): an isolated group needs a transparent backdrop and a
+        // knockout group needs its initial backdrop preserved -- both of which
+        // only a buffer provides.  These flags are otherwise parsed but never
+        // consulted in routing.  Gated off by default while corpus impact is
+        // measured (a fully-opaque/all-Normal isolated group renders the same
+        // inline, so this over-buffers until refined to require inner
+        // transparency).
+        boolean needsIsolation = isolationAwareRouting
+                && (form.isIsolated() || form.isKnockOut());
+        // No group effect -> inline; painting the shapes SRC_OVER onto the page
+        // is identical to compositing them to a buffer first.
+        if (!(hasSoftMask || hasBlend || hasPartialAlpha || needsIsolation)) {
+            return false;
+        }
+        // A sentinel/extreme bbox (typically +-Short.MAX_VALUE) would collapse if
+        // scaled into a buffer, so such forms stay inline regardless of effect.
+        boolean realisticallySized = formWidth < MAX_SCALED_FORM_SIZE
+                && formHeight < MAX_SCALED_FORM_SIZE;
+        if (!realisticallySized) {
+            return false;
+        }
+        // "Within budget" mirrors createBufferXObject's AREA clamp, not a
+        // per-dimension cap: a group whose area fits MAX_IMAGE_SIZE^2 is
+        // rasterised 1:1, so it can always be buffered -- including an
+        // oversized-but-thin SMask group (e.g. WhiteGradient.pdf's 1867x2079
+        // white-gradient fade, height just over 2000) that the old per-dimension
+        // gate dropped to inline, silently discarding its luminosity mask.
+        long area = (long) formWidth * (long) formHeight;
+        long maxArea = (long) MAX_IMAGE_SIZE * MAX_IMAGE_SIZE;
+        if (area <= maxArea) {
+            return true;
+        }
+        // Over the area budget the buffer must be down-scaled.  Proven safe for
+        // blend-only groups; SMask groups are still excluded here because a
+        // down-scaled luminosity mask is not yet validated.
+        return !hasSoftMask && hasBlend;
     }
 
     public FormDrawCmd(Form xForm) {
@@ -174,15 +273,36 @@ public class FormDrawCmd extends AbstractDrawCmd {
             boolean previousTransparentBackdrop = isolatedGroup
                     && BlendComposite.setTransparentBackdrop(true);
             try {
-                if (!hasMask && !annotationAppearance.get() && backdropShapes != null
+                // Inside the page-group buffer §10 is normally bypassed so a
+                // separable (non-Normal) group blends against the live accumulating
+                // buffer.  But a NON-isolated NORMAL group has no blend to interact
+                // with the backdrop at draw-back, so rendering it isolated (over the
+                // transparent seed) yields its bare, un-composited content -- a light
+                // gradient that then washes the page (P100002589 turtle divider band,
+                // forms 46/58).  Such groups still need §10's backdrop-aware
+                // compositing, so keep it for Normal blends even inside the buffer.
+                // Only a separable (non-Normal) group blend interacts with the
+                // backdrop at draw-back (its BlendComposite reads the accumulated
+                // buffer as the blend destination); for those the §10 reconstruction
+                // is redundant inside the page-group buffer and is bypassed.  A
+                // Normal / no-blend group draws back with AlphaComposite, which just
+                // overlays its isolated content -- so it still needs §10's real
+                // backdrop compositing or it washes the page (turtle forms 46/58).
+                boolean separableGroupBlend = g.getComposite() instanceof BlendComposite;
+                boolean pageGroupBypass = renderingIntoPageGroup.get() && separableGroupBlend;
+                if (!hasMask && !annotationAppearance.get() && !pageGroupBypass
+                        && backdropShapes != null
                         && isBackdropCompositeCandidate(xForm)) {
                     // §10 backdrop-aware compositing: render the group over its
                     // real page backdrop (reconstructed by replaying the stack),
                     // then remove the backdrop so the page is not composited
                     // twice.  Replaces the legacy white-fill backdrop proxy.
+                    // Returns null when it declines (blank/white backdrop -- see
+                    // isBlankBackdrop); fall back to the direct blended path.
                     xFormBuffer = compositeOverBackdrop(parentPage, xForm, renderingHints, normalBM, g, base);
                     usedBackdropComposite = xFormBuffer != null;
-                } else {
+                }
+                if (xFormBuffer == null) {
                     xFormBuffer = createBufferXObject(parentPage, xForm, null, renderingHints, normalBM);
                 }
             } finally {
@@ -282,6 +402,22 @@ public class FormDrawCmd extends AbstractDrawCmd {
         annotationAppearance.set(painting);
     }
 
+    // Set while the page content is being rendered into a page-level transparency
+    // group buffer (Page.paintPageGroupBuffered, for DeviceCMYK page groups).
+    // Inside that buffer the groups must blend against the live accumulating
+    // buffer pixels (the direct blended path), so the §10 backdrop-composite and
+    // its decline gate -- which reconstruct a separate white-seeded backdrop --
+    // must be bypassed: the buffer IS the backdrop, reconstruction is redundant
+    // and wrong there.  This is what lets a darkening group (e.g. a ColorBurn
+    // fill) darken the accumulated content instead of washing over white.
+    private static final ThreadLocal<Boolean> renderingIntoPageGroup =
+            ThreadLocal.withInitial(() -> Boolean.FALSE);
+
+    /** Toggle the page-group-buffer §10 bypass (see field). */
+    public static void setRenderingIntoPageGroup(boolean rendering) {
+        renderingIntoPageGroup.set(rendering);
+    }
+
     /**
      * §10 P0: reconstruct the page/parent backdrop behind this group, aligned
      * 1:1 with a {@code w x h} group buffer, by replaying the stack commands
@@ -291,6 +427,17 @@ public class FormDrawCmd extends AbstractDrawCmd {
      * readback required.  Returns null if a backdrop can't be built.
      */
     private BufferedImage captureBackdrop(Graphics2D g, AffineTransform base, int w, int h) {
+        return captureBackdrop(g, base, w, h, false);
+    }
+
+    /**
+     * As {@link #captureBackdrop(Graphics2D, AffineTransform, int, int)}, but when
+     * {@code skipFormGroups} is true the sibling transparency groups are excluded
+     * from the replay (see {@link Shapes#paintBackdrop(Graphics2D, int, boolean)}).
+     * Used by the §10 decline gate to evaluate the true page backdrop independent
+     * of the other groups in the same stack.
+     */
+    private BufferedImage captureBackdrop(Graphics2D g, AffineTransform base, int w, int h, boolean skipFormGroups) {
         if (capturingBackdrop.get() || backdropShapes == null || w <= 0 || h <= 0) {
             return null;
         }
@@ -318,7 +465,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
             b.concatenate(g.getTransform().createInverse());
             b.concatenate(base);
             bg.setTransform(b);
-            backdropShapes.paintBackdrop(bg, backdropIndex);
+            backdropShapes.paintBackdrop(bg, backdropIndex, skipFormGroups);
             bg.dispose();
             return backdrop;
         } catch (Exception e) {
@@ -356,11 +503,20 @@ public class FormDrawCmd extends AbstractDrawCmd {
     private BufferedImage compositeOverBackdrop(Page parentPage, Form xForm, RenderingHints hints,
                                                 boolean normalBM, Graphics2D g, AffineTransform base) {
         boolean prevBackdrop = BlendComposite.setTransparentBackdrop(true);
+        // GH-501 step 2: for a DeviceCMYK group, preserve true CMYK samples and
+        // capture them aligned to the group buffer so the blend can run
+        // subtractively from real ink instead of the lossy sRGB.
+        boolean cmykGroup = cmykSubtractiveEnabled && isCmykGroup(xForm);
+        boolean prevPreserve = cmykGroup && ImageUtility.setPreserveCmyk(true);
+        capturedInk = null;
         BufferedImage isolated;
         try {
-            isolated = createBufferXObject(parentPage, xForm, null, hints, normalBM);
+            isolated = createBufferXObject(parentPage, xForm, null, hints, normalBM, cmykGroup);
         } finally {
             BlendComposite.setTransparentBackdrop(prevBackdrop);
+            if (cmykGroup) {
+                ImageUtility.setPreserveCmyk(prevPreserve);
+            }
         }
         BufferedImage backdrop = captureBackdrop(g, base, isolated.getWidth(), isolated.getHeight());
         if (backdrop == null) {
@@ -369,9 +525,148 @@ public class FormDrawCmd extends AbstractDrawCmd {
         Name blend = xForm.getExtGState() != null ? xForm.getExtGState().getBlendingMode() : null;
         float caRaw = xForm.getExtGState() != null ? xForm.getExtGState().getNonStrokingAlphConstant() : -1f;
         float ca = (caRaw < 0f || caRaw > 1f) ? 1f : caRaw;
-        BufferedImage result = composeContribution(isolated, backdrop, blend, ca);
-        backdrop.flush(); // transient -- contribution is now in the isolated buffer
+        // Decline §10 only for the precise case it destroys: an OPAQUE lightening
+        // group over an effectively blank (white) page backdrop.  Such a blend
+        // collapses B(white,Cs) -> white (ColorDodge/Screen/Overlay/ColorBurn/
+        // Lighten), erasing fully-opaque content -- 978-9-7315-0059-9_1.pdf is an
+        // all-CMYK stack of exactly these.  Falling back to the direct blended path
+        // restores the geometry.  Translucent lightening groups (ca < 1, e.g.
+        // transparency_design.pdf's Overlay/ColorDodge at ca .5-.71) are left to
+        // §10 -- it renders their soft pastel result correctly, and declining would
+        // turn them into harsh dark halos.  Darkening/Normal groups and groups over
+        // genuine backdrop content are likewise unaffected.
+        //
+        // The blank test uses a backdrop that EXCLUDES the sibling transparency
+        // groups (skipFormGroups): every group in the same stack then sees the
+        // same true page backdrop, so the decision is stack-wide and consistent
+        // rather than order-dependent.  Without this, an earlier group's painted
+        // rings darken later groups' backdrops below the blank threshold, so those
+        // re-engage §10 and wash out (978 recovers only partially).
+        if (ca >= 0.99f && isWhiteWashingBlend(blend)) {
+            BufferedImage gateBackdrop =
+                    captureBackdrop(g, base, isolated.getWidth(), isolated.getHeight(), true);
+            boolean blankPage = gateBackdrop == null || isBlankBackdrop(gateBackdrop);
+            if (gateBackdrop != null) {
+                gateBackdrop.flush();
+            }
+            if (blankPage) {
+                isolated.flush();
+                backdrop.flush();
+                return null;
+            }
+        }
+        // True-ink subtractive path when CMYK samples were captured; otherwise the
+        // additive sRGB path (unchanged for RGB/ICC groups and any CMYK group whose
+        // image decoded before preservation was enabled).
+        BufferedImage result = (capturedInk != null && capturedInk.isCaptured())
+                ? composeCmykContribution(isolated, capturedInk, backdrop, blend, ca)
+                : composeContribution(isolated, backdrop, blend, ca);
+        backdrop.flush(); // transient -- contribution is now in the result buffer
         return result;
+    }
+
+    // A reconstructed backdrop whose mean luminance is at/above this (0-255) is
+    // treated as effectively blank white paper -- there is no meaningful content
+    // behind the group to composite against, and a lightening blend over it would
+    // only wash the group out.  Mean luminance (not a non-white pixel count) is
+    // used deliberately: it stays near-white as sparse group content accumulates
+    // into later groups' backdrops, so the decline is stable across the stack
+    // rather than order-dependent.  A genuine colour/gradient backdrop sits far
+    // below this.
+    private static final double BLANK_BACKDROP_MIN_MEAN_LUM =
+            Defs.doubleProperty("org.icepdf.core.blankBackdropMeanLum", 245d);
+
+    /** True when {@code backdrop} is effectively uniform white paper (mean
+     *  luminance at/above {@link #BLANK_BACKDROP_MIN_MEAN_LUM}), i.e. the group
+     *  sits over no meaningful reconstructed content. */
+    private static boolean isBlankBackdrop(BufferedImage backdrop) {
+        int w = backdrop.getWidth(), h = backdrop.getHeight();
+        long total = (long) w * h;
+        if (total == 0) {
+            return true;
+        }
+        double sumLum = 0;
+        int[] row = new int[w];
+        for (int y = 0; y < h; y++) {
+            backdrop.getRGB(0, y, w, 1, row, 0, w);
+            for (int p : row) {
+                sumLum += 0.299 * ((p >> 16) & 0xff) + 0.587 * ((p >> 8) & 0xff) + 0.114 * (p & 0xff);
+            }
+        }
+        return sumLum / total >= BLANK_BACKDROP_MIN_MEAN_LUM;
+    }
+
+    /** True for blend modes that collapse to white when the backdrop is white --
+     *  B(white, Cs) ~ white.  Over a blank backdrop these erase opaque group
+     *  content, so §10 is declined for them (see {@link #compositeOverBackdrop}).
+     *  ColorBurn is included: ColorBurn(1, Cs) = 1 - min(1, 0/Cs) = 1. */
+    private static boolean isWhiteWashingBlend(Name blend) {
+        return blend != null && (
+                blend.equals(BlendComposite.COLOR_DODGE_VALUE)
+                        || blend.equals(BlendComposite.SCREEN_VALUE)
+                        || blend.equals(BlendComposite.COLOR_BURN_VALUE)
+                        || blend.equals(BlendComposite.OVERLAY_VALUE)
+                        || blend.equals(BlendComposite.LIGHTEN_VALUE));
+    }
+
+    /** A DeviceCMYK transparency group (the raster-level subtractive path's scope;
+     *  ICCBased-CMYK groups are left to the additive path for now). */
+    private static boolean isCmykGroup(Form xForm) {
+        if (xForm.getGroup() == null) {
+            return false;
+        }
+        Object cs = xForm.getLibrary().getObject(xForm.getGroup(), new Name("CS"));
+        return cs instanceof Name && ((Name) cs).equals(DeviceCMYK.DEVICECMYK_KEY);
+    }
+
+    /**
+     * §11.3.5 subtractive compositing from TRUE CMYK ink (GH-501 step 2).  Builds
+     * the per-pixel source ink from the captured samples where a CMYK image landed
+     * (the real K), falling back to the sRGB-recovered pure-CMY ink elsewhere (K=0,
+     * which blends identically to the additive path), then hands off to
+     * {@link CmykGroupCompositor}.  Returns the group contribution to draw back
+     * SRC_OVER -- the same contract as {@link #composeContribution}.
+     */
+    // GH-501 step 2 diagnostic: number of groups composited via the true-ink
+    // subtractive path (so a test can confirm the path engaged).
+    public static volatile int cmykSubtractiveComposites = 0;
+
+    private BufferedImage composeCmykContribution(BufferedImage isolated, ImageUtility.CmykInkSink sink,
+                                                  BufferedImage backdrop, Name blend, float ca) {
+        cmykSubtractiveComposites++;
+        int w = isolated.getWidth(), h = isolated.getHeight(), n = w * h;
+        byte[] srcInk = new byte[n * 4];
+        int[] srcAlpha = new int[n];
+        int[] backdropArgb = new int[n];
+        int[] isoRow = new int[w];
+        int[] bRow = new int[w];
+        java.awt.image.WritableRaster ink = sink.getInk();
+        java.awt.image.WritableRaster cov = sink.getCoverage();
+        for (int yy = 0; yy < h; yy++) {
+            isolated.getRGB(0, yy, w, 1, isoRow, 0, w);
+            backdrop.getRGB(0, yy, w, 1, bRow, 0, w);
+            for (int xx = 0; xx < w; xx++) {
+                int i = yy * w + xx;
+                int argb = isoRow[xx];
+                srcAlpha[i] = argb >>> 24;
+                backdropArgb[i] = bRow[xx];
+                int p = i * 4;
+                if ((cov.getSample(xx, yy, 0) & 0xFF) > 127) {
+                    srcInk[p] = (byte) ink.getSample(xx, yy, 0);
+                    srcInk[p + 1] = (byte) ink.getSample(xx, yy, 1);
+                    srcInk[p + 2] = (byte) ink.getSample(xx, yy, 2);
+                    srcInk[p + 3] = (byte) ink.getSample(xx, yy, 3);
+                } else {
+                    // no captured ink here -> sRGB-recovered pure-CMY (K=0)
+                    srcInk[p] = (byte) (255 - ((argb >> 16) & 0xFF));
+                    srcInk[p + 1] = (byte) (255 - ((argb >> 8) & 0xFF));
+                    srcInk[p + 2] = (byte) (255 - (argb & 0xFF));
+                    srcInk[p + 3] = 0;
+                }
+            }
+        }
+        return CmykGroupCompositor.compose(srcInk, srcAlpha, backdropArgb,
+                toBlendingMode(blend), ca, w, h);
     }
 
     /**
@@ -382,15 +677,31 @@ public class FormDrawCmd extends AbstractDrawCmd {
      * result {@code (1-ca*ag)*Cb + ca*ag*B(Cb,Cs)} -- the group's blend and
      * constant alpha applied to its real backdrop, no double-count.
      */
+    // The colour-space math for group compositing (GH-501).  composeContribution
+    // works on the group's *sRGB* isolated buffer, and a DeviceCMYK group cannot be
+    // blended subtractively from there: once the content is decoded to sRGB the
+    // black (K) channel is gone, and recovering CMYK from sRGB collapses the
+    // chromatic channels straight back to an RGB blend -- proven against three
+    // reference renderers, where the sRGB-recovered "subtractive" path fabricated a
+    // K channel and shifted pattern_and_CYMK_jpeg.pdf orange->green (Acrobat/Chrome/
+    // Firefox all show orange).  So this path stays additive; genuine subtractive
+    // blending needs the *true* preserved CMYK samples (ImageUtility.getCmykSamples)
+    // composited at the raster level (the 3a/n finding), which is the next step.
+    // CmykBlendingSpace holds the §11.3.5 ink-complement math, staged for that path.
+    private static final BlendingSpace blendingSpace = RgbBlendingSpace.INSTANCE;
+
     private static BufferedImage composeContribution(BufferedImage isolated, BufferedImage backdrop,
                                                      Name blend, float ca) {
-        int mode = blendMode(blend);
+        BlendingSpace space = blendingSpace;
+        BlendComposite.BlendingMode mode = toBlendingMode(blend);
         int w = isolated.getWidth(), h = isolated.getHeight();
+        int n = space.channelCount();
         // Reuse the isolated buffer as the output (the contribution replaces it in
         // place) instead of allocating a third full-page buffer per group; the
         // backdrop row is the only other input and is read before the matching
         // isolated pixel is overwritten.
         int[] is = new int[w], b0 = new int[w];
+        double[] cs = new double[n], cb = new double[n], out = new double[n];
         for (int yy = 0; yy < h; yy++) {
             isolated.getRGB(0, yy, w, 1, is, 0, w);
             backdrop.getRGB(0, yy, w, 1, b0, 0, w);
@@ -401,77 +712,36 @@ public class FormDrawCmd extends AbstractDrawCmd {
                     continue;
                 }
                 int outAlpha = (int) Math.round(ca * ag);
-                int c = 0;
-                for (int s = 0; s < 24; s += 8) {
-                    double cs = (is[xx] >> s) & 0xFF;       // isolated group colour
-                    double cb = (b0[xx] >> s) & 0xFF;       // backdrop colour
-                    int v = (int) Math.round(separableBlend(mode, cb, cs));  // B(Cb, Cs)
-                    c |= (v < 0 ? 0 : v > 255 ? 255 : v) << s;
+                if (outAlpha < 0) outAlpha = 0; else if (outAlpha > 255) outAlpha = 255;
+                space.fromSRGB(is[xx], cs);   // isolated group colour Cs
+                space.fromSRGB(b0[xx], cb);   // real backdrop colour Cb
+                for (int c = 0; c < n; c++) {
+                    out[c] = space.separable(mode, cb[c], cs[c]);   // B(Cb, Cs)
                 }
-                is[xx] = ((outAlpha < 0 ? 0 : outAlpha > 255 ? 255 : outAlpha) << 24) | c;
+                is[xx] = space.toSRGB(out, outAlpha);
             }
             isolated.setRGB(0, yy, w, 1, is, 0, w);
         }
         return isolated;
     }
 
-    // separable blend mode codes
-    private static final int B_NORMAL = 0, B_MULTIPLY = 1, B_SCREEN = 2, B_OVERLAY = 3,
-            B_DARKEN = 4, B_LIGHTEN = 5, B_COLOR_DODGE = 6, B_COLOR_BURN = 7,
-            B_HARD_LIGHT = 8, B_SOFT_LIGHT = 9, B_DIFFERENCE = 10, B_EXCLUSION = 11;
-
-    private static int blendMode(Name blend) {
-        if (blend == null) return B_NORMAL;
-        if (BlendComposite.MULTIPLY_VALUE.equals(blend)) return B_MULTIPLY;
-        if (BlendComposite.SCREEN_VALUE.equals(blend)) return B_SCREEN;
-        if (BlendComposite.OVERLAY_VALUE.equals(blend)) return B_OVERLAY;
-        if (BlendComposite.DARKEN_VALUE.equals(blend)) return B_DARKEN;
-        if (BlendComposite.LIGHTEN_VALUE.equals(blend)) return B_LIGHTEN;
-        if (BlendComposite.COLOR_DODGE_VALUE.equals(blend)) return B_COLOR_DODGE;
-        if (BlendComposite.COLOR_BURN_VALUE.equals(blend)) return B_COLOR_BURN;
-        if (BlendComposite.HARD_LIGHT_VALUE.equals(blend)) return B_HARD_LIGHT;
-        if (BlendComposite.SOFT_LIGHT_VALUE.equals(blend)) return B_SOFT_LIGHT;
-        if (BlendComposite.DIFFERENCE_VALUE.equals(blend)) return B_DIFFERENCE;
-        if (BlendComposite.EXCLUSION_VALUE.equals(blend)) return B_EXCLUSION;
-        return B_NORMAL;
-    }
-
-    /** PDF 32000-1 §11.3.5 separable blend functions B(Cb, Cs), channels 0..255. */
-    private static double separableBlend(int mode, double cb, double cs) {
-        switch (mode) {
-            case B_MULTIPLY: return cb * cs / 255.0;
-            case B_SCREEN: return cb + cs - cb * cs / 255.0;
-            case B_OVERLAY: return hardLight(cs, cb);          // Overlay(b,s)=HardLight(s,b)
-            case B_DARKEN: return Math.min(cb, cs);
-            case B_LIGHTEN: return Math.max(cb, cs);
-            case B_COLOR_DODGE:
-                if (cb == 0) return 0;
-                if (cs >= 255) return 255;
-                return Math.min(255.0, cb * 255.0 / (255.0 - cs));
-            case B_COLOR_BURN:
-                if (cb >= 255) return 255;
-                if (cs == 0) return 0;
-                return 255.0 - Math.min(255.0, (255.0 - cb) * 255.0 / cs);
-            case B_HARD_LIGHT: return hardLight(cb, cs);
-            case B_SOFT_LIGHT: {
-                double b = cb / 255.0, s = cs / 255.0;
-                double d = b <= 0.25 ? ((16 * b - 12) * b + 4) * b : Math.sqrt(b);
-                double r = s <= 0.5 ? b - (1 - 2 * s) * b * (1 - b) : b + (2 * s - 1) * (d - b);
-                return r * 255.0;
-            }
-            case B_DIFFERENCE: return Math.abs(cb - cs);
-            case B_EXCLUSION: return cb + cs - 2 * cb * cs / 255.0;
-            default: return cs;                                // Normal/Compatible
-        }
-    }
-
-    private static double hardLight(double cb, double cs) {
-        // HardLight(Cb,Cs) = Multiply(Cb,2Cs) if Cs<=.5 else Screen(Cb,2Cs-1)
-        if (cs <= 127.5) {
-            return cb * (2 * cs) / 255.0;
-        }
-        double s2 = 2 * cs - 255.0;
-        return cb + s2 - cb * s2 / 255.0;
+    /** Maps a PDF blend-mode {@link Name} to the {@link BlendComposite.BlendingMode}
+     *  the {@link BlendingSpace} understands; only the separable modes appear on a
+     *  transparency group, anything else falls back to Normal. */
+    private static BlendComposite.BlendingMode toBlendingMode(Name blend) {
+        if (blend == null) return BlendComposite.BlendingMode.NORMAL;
+        if (BlendComposite.MULTIPLY_VALUE.equals(blend)) return BlendComposite.BlendingMode.MULTIPLY;
+        if (BlendComposite.SCREEN_VALUE.equals(blend)) return BlendComposite.BlendingMode.SCREEN;
+        if (BlendComposite.OVERLAY_VALUE.equals(blend)) return BlendComposite.BlendingMode.OVERLAY;
+        if (BlendComposite.DARKEN_VALUE.equals(blend)) return BlendComposite.BlendingMode.DARKEN;
+        if (BlendComposite.LIGHTEN_VALUE.equals(blend)) return BlendComposite.BlendingMode.LIGHTEN;
+        if (BlendComposite.COLOR_DODGE_VALUE.equals(blend)) return BlendComposite.BlendingMode.COLOR_DODGE;
+        if (BlendComposite.COLOR_BURN_VALUE.equals(blend)) return BlendComposite.BlendingMode.COLOR_BURN;
+        if (BlendComposite.HARD_LIGHT_VALUE.equals(blend)) return BlendComposite.BlendingMode.HARD_LIGHT;
+        if (BlendComposite.SOFT_LIGHT_VALUE.equals(blend)) return BlendComposite.BlendingMode.SOFT_LIGHT;
+        if (BlendComposite.DIFFERENCE_VALUE.equals(blend)) return BlendComposite.BlendingMode.DIFFERENCE;
+        if (BlendComposite.EXCLUSION_VALUE.equals(blend)) return BlendComposite.BlendingMode.EXCLUSION;
+        return BlendComposite.BlendingMode.NORMAL;
     }
 
     private BufferedImage applyMask(Page parentPage, BufferedImage xFormBuffer, SoftMask softMask, SoftMask gsSoftMask,
@@ -511,6 +781,17 @@ public class FormDrawCmd extends AbstractDrawCmd {
      */
     private BufferedImage createBufferXObject(Page parentPage, Form xForm, SoftMask softMask,
                                               RenderingHints renderingHints, boolean isMask) {
+        return createBufferXObject(parentPage, xForm, softMask, renderingHints, isMask, false);
+    }
+
+    // GH-501 step 2: the ink sink captured during the most recent capturing
+    // createBufferXObject call (true CMYK samples blitted aligned to the group
+    // buffer), consumed by compositeOverBackdrop for subtractive compositing.
+    private ImageUtility.CmykInkSink capturedInk;
+
+    private BufferedImage createBufferXObject(Page parentPage, Form xForm, SoftMask softMask,
+                                              RenderingHints renderingHints, boolean isMask,
+                                              boolean captureCmykInk) {
         Rectangle2D bBox = xForm.getBBox();
         int width = (int) bBox.getWidth();
         int height = (int) bBox.getHeight();
@@ -631,7 +912,16 @@ public class FormDrawCmd extends AbstractDrawCmd {
                     canvas.translate(-x, -y);
                     canvas.setClip(bBox.getBounds2D());
                 }
-                xFormShapes.paint(canvas);
+                if (captureCmykInk) {
+                    ImageUtility.beginCmykInkCapture(bufferWidth, bufferHeight);
+                }
+                try {
+                    xFormShapes.paint(canvas);
+                } finally {
+                    if (captureCmykInk) {
+                        capturedInk = ImageUtility.endCmykInkCapture();
+                    }
+                }
                 xFormShapes.setPageParent(null);
             }
         } catch (InterruptedException e) {

@@ -68,6 +68,10 @@ public class Shapes {
     // the collection of objects listening for page paint events
     private Page parentPage;
 
+    // page-level transparency group (/Group on the page dict), null when the page
+    // is not a transparency group.  Consumed by the page-group buffer compositor.
+    private TransparencyGroup pageGroup;
+
     // text extraction data structure
     private final PageText pageText = new PageText();
 
@@ -94,6 +98,18 @@ public class Shapes {
 
     public void setPageParent(Page parent) {
         parentPage = parent;
+    }
+
+    /**
+     * The page-level transparency group ({@code /Group} on the page dictionary),
+     * or null when the page is not itself a transparency group.
+     */
+    public TransparencyGroup getPageGroup() {
+        return pageGroup;
+    }
+
+    public void setPageGroup(TransparencyGroup pageGroup) {
+        this.pageGroup = pageGroup;
     }
 
     public void add(DrawCmd drawCmd){
@@ -174,13 +190,30 @@ public class Shapes {
      * and clip; this captures {@code base} from it exactly like {@link #paint}.
      */
     public void paintBackdrop(Graphics2D g, int uptoIndex) throws InterruptedException {
+        paintBackdrop(g, uptoIndex, false);
+    }
+
+    /**
+     * As {@link #paintBackdrop(Graphics2D, int)}, but when {@code skipFormGroups}
+     * is true the prior {@link FormDrawCmd} commands (sibling transparency groups)
+     * are NOT replayed.  This yields the page backdrop as it stands ignoring the
+     * other groups in the same transparency stack -- used by the §10 decline gate
+     * so the "is the backdrop blank?" decision is identical for every group in the
+     * stack (otherwise an earlier group's painted content darkens later groups'
+     * backdrops, making the per-group decision order-dependent).
+     */
+    public void paintBackdrop(Graphics2D g, int uptoIndex, boolean skipFormGroups) throws InterruptedException {
         AffineTransform base = new AffineTransform(g.getTransform());
         Shape clip = g.getClip();
         PaintTimer paintTimer = new PaintTimer();
         Shape previousShape = null;
         int max = Math.min(uptoIndex, shapes.size());
         for (int i = 0; i < max; i++) {
-            previousShape = shapes.get(i).paintOperand(g, parentPage,
+            DrawCmd cmd = shapes.get(i);
+            if (skipFormGroups && cmd instanceof FormDrawCmd) {
+                continue;
+            }
+            previousShape = cmd.paintOperand(g, parentPage,
                     previousShape, clip, base, optionalContentState, paintAlpha, paintTimer);
         }
     }

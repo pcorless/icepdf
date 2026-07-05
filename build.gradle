@@ -47,11 +47,7 @@ distributions {
                 include '*-sources.jar'
             }
             into('libs') {
-                // dependency jars
-                def libs = []
-                libs << project(':core:core-awt').configurations.runtimeClasspath.files
-//                libs << project(':viewer:viewer-awt').configurations.runtimeClasspath.files
-                from libs
+                from { configurations.runtimeClasspath }
                 from project(':core:core-awt').jar
                 from project(':viewer:viewer-awt').jar
                 from project(':core:core-fonts').jar

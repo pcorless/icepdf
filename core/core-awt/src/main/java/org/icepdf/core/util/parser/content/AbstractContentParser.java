@@ -51,9 +51,6 @@ public abstract class AbstractContentParser {
             Logger.getLogger(AbstractContentParser.class.getName());
 
     private static final boolean disableTransparencyGroups;
-    // Prototype (§5.2): also treat isolated/knockout groups as buffer-requiring.
-    // Off by default while we measure corpus impact.
-    private static final boolean isolationAwareRouting;
     private static final boolean enabledOverPrint;
     private static final boolean enabledFontFallback;
 
@@ -69,10 +66,6 @@ public abstract class AbstractContentParser {
         // decide if large images will be scaled
         disableTransparencyGroups =
                 Defs.sysPropertyBoolean("org.icepdf.core.disableTransparencyGroup",
-                        false);
-
-        isolationAwareRouting =
-                Defs.sysPropertyBoolean("org.icepdf.core.isolationAwareRouting",
                         false);
 
         // decide if basic over print support will be enabled.
@@ -98,6 +91,9 @@ public abstract class AbstractContentParser {
     private static final float OVERPAINT_ALPHA = 0.4f;
 
     private static final ClipDrawCmd clipDrawCmd = new ClipDrawCmd();
+
+    // transparency group colour-space key (/CS), for group-boundary markers.
+    private static final Name GROUP_CS_KEY = new Name("CS");
     private static final NoClipDrawCmd noClipDrawCmd = new NoClipDrawCmd();
 
     protected GraphicsState graphicState;
@@ -579,7 +575,19 @@ public abstract class AbstractContentParser {
             // shapes straight onto the page; otherwise it is painted inline
             // (ShapesDrawCmd), which also avoids the quality loss of buffering
             // through an affine transform.  See classifyTransparencyGroup.
-            if (!disableTransparencyGroups && requiresOffscreenBuffer(formXObject)) {
+            // Inert group-boundary markers delimit the group's emission on the
+            // stack, carrying its attributes for a compositor (page-group buffer /
+            // scoped-run buffer).  GroupDrawCmd paints nothing, so the default
+            // paint loop is unaffected.
+            boolean emitGroupMarkers = formXObject.isTransparencyGroup();
+            if (emitGroupMarkers) {
+                Object groupCs = formXObject.getLibrary().getObject(formXObject.getGroup(), GROUP_CS_KEY);
+                Name groupBlend = formXObject.getExtGState() != null
+                        ? formXObject.getExtGState().getBlendingMode() : null;
+                shapes.add(new GroupDrawCmd(true, formXObject.isIsolated(), formXObject.isKnockOut(),
+                        groupCs instanceof Name ? (Name) groupCs : null, groupBlend, formXObject.getBBox()));
+            }
+            if (!disableTransparencyGroups && FormDrawCmd.requiresOffscreenBuffer(formXObject)) {
                 // add the hold form for further processing.
                 FormDrawCmd formDrawCmd = new FormDrawCmd(formXObject);
                 shapes.add(formDrawCmd);
@@ -598,6 +606,10 @@ public abstract class AbstractContentParser {
                 }
             } else {
                 shapes.add(new ShapesDrawCmd(formXObject.getShapes()));
+            }
+            if (emitGroupMarkers) {
+                shapes.add(new GroupDrawCmd(false, formXObject.isIsolated(), formXObject.isKnockOut(),
+                        null, null, formXObject.getBBox()));
             }
             // update text sprites with geometric path state
             if (formXObject.getShapes() != null &&
@@ -680,95 +692,6 @@ public abstract class AbstractContentParser {
             }
         }
         return graphicState;
-    }
-
-    /**
-     * Decides whether a transparency-group form must be rasterised into an
-     * offscreen buffer ({@link FormDrawCmd}) or can be painted inline as plain
-     * shapes ({@link ShapesDrawCmd}).
-     * <p>
-     * A buffer is required only when the group carries a <i>group effect</i>
-     * that cannot be reproduced by painting its shapes straight onto the page:
-     * <ul>
-     *   <li>a soft mask (the mask must be read back from a raster),</li>
-     *   <li>a non-Normal blend mode applied to the group as a unit, or</li>
-     *   <li>a group constant alpha in the open interval (0,1), which applies to
-     *       the <i>composited</i> group and therefore needs it composited first.</li>
-     * </ul>
-     * Groups with none of these — including plain Normal, fully-opaque groups —
-     * composite identically whether painted inline or via a buffer (Porter-Duff
-     * <i>over</i> is associative), so they are painted inline; this also avoids
-     * the resolution loss of buffering through an affine transform.
-     * <p>
-     * Size handling: a group is only buffered if it fits the offscreen-buffer
-     * budget.  Groups within {@link FormDrawCmd#MAX_IMAGE_SIZE} buffer 1:1.  A
-     * larger <i>blend-only</i> (no soft mask) group is down-scaled into the
-     * buffer by {@link FormDrawCmd}, but only up to
-     * {@link FormDrawCmd#MAX_SCALED_FORM_SIZE}; beyond that the bbox is treated
-     * as an unbounded {@code +-Short.MAX_VALUE} sentinel (real content small and
-     * clipped elsewhere) that would collapse if scaled, so it stays inline.
-     * Soft-mask groups need a 1:1 buffer and are never down-scaled.
-     * <p>
-     * Behaviour-preserving refactor of the previous inline
-     * {@code withinMaxSize}/{@code hasGroupEffect}/{@code oversizedBlendOnly}
-     * predicate; see {@code TRANSPARENCY-GROUP-BLENDING-DESIGN.md}.
-     *
-     * @param form transparency-group form being placed by a {@code Do}.
-     * @return true if the group must be rasterised to a buffer.
-     */
-    protected static boolean requiresOffscreenBuffer(Form form) {
-        ExtGState extGState = form.getExtGState();
-        if (extGState == null) {
-            return false;
-        }
-        double formWidth = form.getBBox().getWidth();
-        double formHeight = form.getBBox().getHeight();
-        // degenerate / sub-pixel groups: nothing meaningful to buffer.
-        if (formWidth <= 1 || formHeight <= 1) {
-            return false;
-        }
-        boolean hasSoftMask = extGState.getSMask() != null;
-        Name blendingMode = extGState.getBlendingMode();
-        boolean hasBlend = blendingMode != null
-                && !blendingMode.equals(BlendComposite.NORMAL_VALUE);
-        float ca = extGState.getNonStrokingAlphConstant();
-        boolean hasPartialAlpha = ca > 0 && ca < 1;
-        // Prototype (§5.2): an isolated group needs a transparent backdrop and a
-        // knockout group needs its initial backdrop preserved -- both of which
-        // only a buffer provides.  These flags are otherwise parsed but never
-        // consulted in routing.  Gated off by default while corpus impact is
-        // measured (a fully-opaque/all-Normal isolated group renders the same
-        // inline, so this over-buffers until refined to require inner
-        // transparency).
-        boolean needsIsolation = isolationAwareRouting
-                && (form.isIsolated() || form.isKnockOut());
-        // No group effect -> inline; painting the shapes SRC_OVER onto the page
-        // is identical to compositing them to a buffer first.
-        if (!(hasSoftMask || hasBlend || hasPartialAlpha || needsIsolation)) {
-            return false;
-        }
-        // A sentinel/extreme bbox (typically +-Short.MAX_VALUE) would collapse if
-        // scaled into a buffer, so such forms stay inline regardless of effect.
-        boolean realisticallySized = formWidth < FormDrawCmd.MAX_SCALED_FORM_SIZE
-                && formHeight < FormDrawCmd.MAX_SCALED_FORM_SIZE;
-        if (!realisticallySized) {
-            return false;
-        }
-        // "Within budget" mirrors createBufferXObject's AREA clamp, not a
-        // per-dimension cap: a group whose area fits MAX_IMAGE_SIZE^2 is
-        // rasterised 1:1, so it can always be buffered -- including an
-        // oversized-but-thin SMask group (e.g. WhiteGradient.pdf's 1867x2079
-        // white-gradient fade, height just over 2000) that the old per-dimension
-        // gate dropped to inline, silently discarding its luminosity mask.
-        long area = (long) formWidth * (long) formHeight;
-        long maxArea = (long) FormDrawCmd.MAX_IMAGE_SIZE * FormDrawCmd.MAX_IMAGE_SIZE;
-        if (area <= maxArea) {
-            return true;
-        }
-        // Over the area budget the buffer must be down-scaled.  Proven safe for
-        // blend-only groups; SMask groups are still excluded here because a
-        // down-scaled luminosity mask is not yet validated.
-        return !hasSoftMask && hasBlend;
     }
 
     protected static void consume_d(GraphicsState graphicState, Stack<Object> stack, Shapes shapes) {

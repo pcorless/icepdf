@@ -189,9 +189,9 @@ public final class BlendComposite implements Composite {
         } else if (modeName.equals(LIGHTEN_VALUE)) {
             return new BlendComposite(BlendingMode.LIGHTEN, alpha);
         } else if (modeName.equals(COLOR_DODGE_VALUE)) {
-            return new BlendComposite(BlendingMode.SOFT_DODGE, alpha);
+            return new BlendComposite(BlendingMode.COLOR_DODGE, alpha);
         } else if (modeName.equals(COLOR_BURN_VALUE)) {
-            return new BlendComposite(BlendingMode.SOFT_BURN, alpha);
+            return new BlendComposite(BlendingMode.COLOR_BURN, alpha);
         } else if (modeName.equals(HARD_LIGHT_VALUE)) {
             return new BlendComposite(BlendingMode.HARD_LIGHT, alpha);
         } else if (modeName.equals(SOFT_LIGHT_VALUE)) {
@@ -323,20 +323,35 @@ public final class BlendComposite implements Composite {
                     // partial ab -> interpolated (anti-aliased edges, overlap).
                     // `result` holds B(Cb,Cs); reweight the colour in place,
                     // leaving result[3] (the blended alpha).
+                    // colour weight for the backdrop<->blend lerp below.  Normally
+                    // the group constant alpha; inside a group buffer we also fold
+                    // in per-pixel source coverage so a faint (low-alpha) blend
+                    // pixel does not fully overwrite the backdrop.  Ignoring src
+                    // coverage let an Overlay/Multiply of a dark, low-alpha source
+                    // crush an opaque backdrop to black (pattern_and_CYMK shadows).
+                    float colourWeight = alpha;
                     if (transparentBackdrop) {
                         int ab = dstPixel[3];
                         int ia = 255 - ab;
                         result[0] = (srcPixel[0] * ia + result[0] * ab) / 255;
                         result[1] = (srcPixel[1] * ia + result[1] * ab) / 255;
                         result[2] = (srcPixel[2] * ia + result[2] * ab) / 255;
+                        // Interpolate the weight by backdrop opacity so the extremes
+                        // stay exactly as before: over a transparent backdrop (ab=0)
+                        // the source passes through at full coverage (gaps reveal the
+                        // source, unchanged); over an opaque backdrop (ab=255) the
+                        // blend contributes only src[3]/255 (no crush).  An opaque
+                        // source (src[3]=255) yields colourWeight==alpha for any ab,
+                        // so opaque-fill groups (978) are byte-identical.
+                        colourWeight = alpha * (ia + ab * srcPixel[3] / 255f) / 255f;
                     }
 
                     // mixes the result with the opacity
                     dstPixels[x] =
                             ((int) (dstPixel[3] + (result[3] - dstPixel[3]) * alpha) & 0xFF) << 24 |
-                                    ((int) (dstPixel[0] + (result[0] - dstPixel[0]) * alpha) & 0xFF) << 16 |
-                                    ((int) (dstPixel[1] + (result[1] - dstPixel[1]) * alpha) & 0xFF) << 8 |
-                                    (int) (dstPixel[2] + (result[2] - dstPixel[2]) * alpha) & 0xFF;
+                                    ((int) (dstPixel[0] + (result[0] - dstPixel[0]) * colourWeight) & 0xFF) << 16 |
+                                    ((int) (dstPixel[1] + (result[1] - dstPixel[1]) * colourWeight) & 0xFF) << 8 |
+                                    (int) (dstPixel[2] + (result[2] - dstPixel[2]) * colourWeight) & 0xFF;
                 }
                 dstOut.setDataElements(0, y, width, 1, dstPixels);
             }
@@ -781,7 +796,13 @@ public final class BlendComposite implements Composite {
                                             255 - ((255 - dst[1]) * (255 - src[1]) >> 7),
                                     dst[2] < 128 ? (dst[2] * src[2]) >> 7 :
                                             255 - ((255 - dst[2]) * (255 - src[2]) >> 7),
-                                    Math.min(255, dst[3])
+                                    // result alpha is the source/backdrop union like every
+                                    // other separable blender; using dst[3] alone dropped the
+                                    // source coverage, so an opaque Overlay group over a
+                                    // transparent backdrop produced zero alpha and vanished
+                                    // (978's Fm5 dark shading -> invisible -> ColorBurn washed
+                                    // the field cyan instead of black).
+                                    Math.min(255, src[3] + dst[3])
                             ); return;
 //                            copy(dst, out); return;
                         }
