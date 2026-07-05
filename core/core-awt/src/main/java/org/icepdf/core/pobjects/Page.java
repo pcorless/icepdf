@@ -18,12 +18,8 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.events.*;
 import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.annotations.*;
-import org.icepdf.core.pobjects.graphics.BlendComposite;
-import org.icepdf.core.pobjects.graphics.DeviceCMYK;
-import org.icepdf.core.pobjects.graphics.Shapes;
-import org.icepdf.core.pobjects.graphics.TransparencyGroup;
+import org.icepdf.core.pobjects.graphics.*;
 import org.icepdf.core.pobjects.graphics.commands.FormDrawCmd;
-import org.icepdf.core.pobjects.graphics.WatermarkCallback;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
@@ -771,7 +767,7 @@ public class Page extends Dictionary {
     }
 
     /**
-     * GH-502 option (b): paint the page content into a shared transparency-group
+     * GH-501 option (b): paint the page content into a shared transparency-group
      * buffer rather than straight onto {@code g2}, then composite that buffer back.
      * <br>
      * The page is itself a transparency group (page dict {@code /Group}); its inner
