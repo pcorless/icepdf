@@ -50,6 +50,22 @@ public class PreferencesController {
     // ink-weighted similarity (%) at or below which a result is flagged as a regression in the results tab.
     public static final String IMAGE_COMPARE_THRESHOLD_KEY = "imageCompareThreshold";
     public static final double IMAGE_COMPARE_THRESHOLD_VALUE = 99.99d;
+
+    // Capture concurrency (see ImageCompareTask). P: number of documents captured/compared at once.
+    // Default is deliberately conservative because peak heap scales with P x versions x page rasters.
+    public static final String CAPTURE_CONCURRENT_DOCUMENTS_KEY = "captureConcurrentDocuments";
+    public static final int CAPTURE_CONCURRENT_DOCUMENTS_VALUE =
+            Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors() / 2));
+    // Q: threads that render the pages of a single document. Floored at 2 - rendering pages of the
+    // same document concurrently is the stress condition that surfaces ICEpdf sync bugs.
+    public static final String CAPTURE_RENDER_THREADS_KEY = "captureRenderThreadsPerDocument";
+    public static final int CAPTURE_RENDER_THREADS_VALUE = 4;
+    public static final int CAPTURE_RENDER_THREADS_MIN = 2;
+    // Passthrough to each capture set's ICEpdf -Dorg.icepdf.core.library.imageThreadPoolSize. Only the
+    // image-proxy decode path uses it, and it is read once when that version's Library class loads, so
+    // a change takes effect only for a freshly created capture-set class loader.
+    public static final String CAPTURE_IMAGE_THREAD_POOL_KEY = "captureImageThreadPoolSize";
+    public static final int CAPTURE_IMAGE_THREAD_POOL_VALUE = 2;
     public static final String LAST_CONTENT_SET_KEY = "contentSetBasePath";
     public static final String APPLICATION_HOME_PATH_KEY = "applicationHomePath";
 
@@ -138,6 +154,31 @@ public class PreferencesController {
 
     public static void saveImageCompareThreshold(double threshold) {
         prefs.putDouble(IMAGE_COMPARE_THRESHOLD_KEY, threshold);
+    }
+
+    public static int getCaptureConcurrentDocuments() {
+        return Math.max(1, prefs.getInt(CAPTURE_CONCURRENT_DOCUMENTS_KEY, CAPTURE_CONCURRENT_DOCUMENTS_VALUE));
+    }
+
+    public static void saveCaptureConcurrentDocuments(int concurrentDocuments) {
+        prefs.putInt(CAPTURE_CONCURRENT_DOCUMENTS_KEY, Math.max(1, concurrentDocuments));
+    }
+
+    public static int getCaptureRenderThreadsPerDocument() {
+        return Math.max(CAPTURE_RENDER_THREADS_MIN,
+                prefs.getInt(CAPTURE_RENDER_THREADS_KEY, CAPTURE_RENDER_THREADS_VALUE));
+    }
+
+    public static void saveCaptureRenderThreadsPerDocument(int renderThreadsPerDocument) {
+        prefs.putInt(CAPTURE_RENDER_THREADS_KEY, Math.max(CAPTURE_RENDER_THREADS_MIN, renderThreadsPerDocument));
+    }
+
+    public static int getCaptureImageThreadPoolSize() {
+        return Math.max(1, prefs.getInt(CAPTURE_IMAGE_THREAD_POOL_KEY, CAPTURE_IMAGE_THREAD_POOL_VALUE));
+    }
+
+    public static void saveCaptureImageThreadPoolSize(int imageThreadPoolSize) {
+        prefs.putInt(CAPTURE_IMAGE_THREAD_POOL_KEY, Math.max(1, imageThreadPoolSize));
     }
 
     public static void saveLastUsedContentSetPath(Path directoryPath) {
