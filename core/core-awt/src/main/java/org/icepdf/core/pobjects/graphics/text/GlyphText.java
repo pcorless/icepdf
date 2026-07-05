@@ -18,7 +18,6 @@ package org.icepdf.core.pobjects.graphics.text;
 import org.icepdf.core.pobjects.Name;
 
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.util.logging.Logger;
 
@@ -74,9 +73,19 @@ public class GlyphText extends AbstractText {
      *            extracted bounds are rotated back to the portrait layout.
      */
     public void normalizeToUserSpace(AffineTransform af, AffineTransform af1) {
-        // map the coordinates from glyph space to user space.
-        Path2D.Double generalPath = new Path2D.Double(bounds, af);
-        bounds = (Rectangle2D.Double) generalPath.getBounds2D();
+        // Map the glyph bounds from glyph space to user space.  af may include rotation or shear, so the result is
+        // the bounding box of the four transformed corners.  Computing that directly and updating the bounds in
+        // place avoids allocating a Path2D (and its backing arrays) for every glyph - the previous approach was a
+        // dominant source of GC during text extraction (GH-495).
+        double x0 = bounds.x, y0 = bounds.y;
+        double x1 = x0 + bounds.width, y1 = y0 + bounds.height;
+        double[] pts = {x0, y0, x1, y0, x1, y1, x0, y1};
+        af.transform(pts, 0, pts, 0, 4);
+        double minX = Math.min(Math.min(pts[0], pts[2]), Math.min(pts[4], pts[6]));
+        double maxX = Math.max(Math.max(pts[0], pts[2]), Math.max(pts[4], pts[6]));
+        double minY = Math.min(Math.min(pts[1], pts[3]), Math.min(pts[5], pts[7]));
+        double maxY = Math.max(Math.max(pts[1], pts[3]), Math.max(pts[5], pts[7]));
+        bounds.setRect(minX, minY, maxX - minX, maxY - minY);
         textSelectionBounds = bounds;
     }
 

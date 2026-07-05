@@ -29,6 +29,7 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.NoninvertibleTransformException;
+import java.nio.ByteBuffer;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.List;
@@ -175,8 +176,6 @@ public class TilingPattern extends Stream implements Pattern {
     // Fill colour
     public Color fillColour;
 
-    //  initiated flag
-    private boolean inited;
 
     private GraphicsState parentGraphicState;
 
@@ -188,6 +187,11 @@ public class TilingPattern extends Stream implements Pattern {
 
     public TilingPattern(Library l, DictionaryEntries h, byte[] rawBytes) {
         super(l, h, rawBytes);
+        initiParams();
+    }
+
+    public TilingPattern(Library l, DictionaryEntries h, ByteBuffer streamDataView) {
+        super(l, h, streamDataView);
         initiParams();
     }
 

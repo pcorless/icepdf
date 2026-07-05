@@ -56,9 +56,11 @@ public class Dictionary {
     protected DictionaryEntries entries;
 
     /**
-     * Indicates if Dictionary has been initiated.
+     * Indicates if Dictionary has been initiated.  Volatile so that a thread observing {@code inited == true}
+     * also sees the fields populated by init() - these objects (fonts, colour spaces, etc.) are cached and
+     * shared, and several page-parsing threads may init the same instance concurrently.
      */
-    protected boolean inited;
+    protected volatile boolean inited;
 
     /**
      * Flag to indicate this object has been flaged for deletion.

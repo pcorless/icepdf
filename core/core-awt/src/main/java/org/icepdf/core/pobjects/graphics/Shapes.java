@@ -166,6 +166,26 @@ public class Shapes {
 
 
     /**
+     * Replays the draw commands in [0, uptoIndex) into {@code g} -- i.e. paints
+     * the page/parent stack as it stood just before the command at
+     * {@code uptoIndex}.  Used to reconstruct the *backdrop* behind a
+     * non-isolated transparency group without reading back the page raster
+     * (see FormDrawCmd backdrop capture).  The caller sets {@code g}'s transform
+     * and clip; this captures {@code base} from it exactly like {@link #paint}.
+     */
+    public void paintBackdrop(Graphics2D g, int uptoIndex) throws InterruptedException {
+        AffineTransform base = new AffineTransform(g.getTransform());
+        Shape clip = g.getClip();
+        PaintTimer paintTimer = new PaintTimer();
+        Shape previousShape = null;
+        int max = Math.min(uptoIndex, shapes.size());
+        for (int i = 0; i < max; i++) {
+            previousShape = shapes.get(i).paintOperand(g, parentPage,
+                    previousShape, clip, base, optionalContentState, paintAlpha, paintTimer);
+        }
+    }
+
+    /**
      * Iterates over the Shapes objects extracting all Image objects.
      *
      * @return all images in a page's content, if any.

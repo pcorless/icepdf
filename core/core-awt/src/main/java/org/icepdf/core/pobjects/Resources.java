@@ -17,10 +17,14 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.graphics.*;
+import org.icepdf.core.pobjects.graphics.images.ImageParams;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
+import org.icepdf.core.pobjects.graphics.images.references.ImageReferenceFactory;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -241,6 +245,53 @@ public class Resources extends Dictionary {
             }
         }
         return count;
+    }
+
+    /**
+     * Eagerly starts background decoding of this resource's image XObjects so they decode in parallel while the
+     * content parser runs, instead of each decode only starting when the parser reaches the image's Do operator.
+     * <p>
+     * The references created here are intentionally discarded - they exist only to kick off the decode.  The
+     * content parser's own reference for the same image then joins the pooled or in-flight result through the
+     * image pool de-duplication, so the image is decoded once.  Image masks are skipped because their decode
+     * depends on the parse-time fill colour / graphics state, and pages with fewer than two preloadable images
+     * gain nothing from parallel decoding.
+     */
+    public void preLoadImages() {
+        if (xobjects == null) {
+            return;
+        }
+        List<ImageStream> images = new ArrayList<>();
+        for (Object tmp : xobjects.values()) {
+            if (!(tmp instanceof Reference)) {
+                continue;
+            }
+            Reference reference = (Reference) tmp;
+            if (library.getImagePool().get(reference) != null) {
+                continue;
+            }
+            Object object = library.getObject(reference);
+            if (!(object instanceof ImageStream)) {
+                continue;
+            }
+            ImageStream imageStream = (ImageStream) object;
+            DictionaryEntries imageEntries = imageStream.getEntries();
+            if (library.getBoolean(imageEntries, ImageParams.IMAGE_MASK_KEY)
+                    || imageEntries.get(ImageParams.MASK_KEY) != null) {
+                continue;
+            }
+            images.add(imageStream);
+        }
+        if (images.size() < 2) {
+            return;
+        }
+        // decode uses a default graphics state; this is safe because masks (the only graphics-state-dependent
+        // images) were excluded above.  page is null so these throw-away references emit no page-loading events.
+        GraphicsState graphicsState = new GraphicsState(new Shapes());
+        int imageIndex = 0;
+        for (ImageStream imageStream : images) {
+            ImageReferenceFactory.getImageReference(imageStream, null, this, graphicsState, imageIndex++, null);
+        }
     }
 
     public boolean isForm(Name s) {

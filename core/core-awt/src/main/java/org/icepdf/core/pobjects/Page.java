@@ -122,6 +122,14 @@ public class Page extends Dictionary {
         }
     }
 
+    // When enabled, a page's image XObjects start decoding in parallel at init time rather than each waiting for
+    // the content parser to reach its Do operator.  Off by default: it adds a small upfront cost (resolving every
+    // image XObject and queueing decodes) that text/vector documents - the common case - don't recoup, while the
+    // upside is marginal and only materializes for single pages with several large, non-reused images rendered
+    // with spare CPU.  Opt in for image-heavy workloads.
+    private static final boolean EAGER_IMAGE_DECODE =
+            Defs.booleanProperty("org.icepdf.core.imageReference.eagerDecode", false);
+
     public static final Name TYPE = new Name("Page");
     public static final Name ANNOTS_KEY = new Name("Annots");
     public static final Name CONTENTS_KEY = new Name("Contents");
@@ -238,8 +246,8 @@ public class Page extends Dictionary {
                 Object tmp = library.getObject(cont);
                 if (tmp instanceof Stream) {
                     Stream tmpStream = (Stream) tmp;
-                    // prune any zero length streams,
-                    if (tmpStream.getRawBytes().length > 0) {
+                    // prune any zero length streams (length without forcing a view-mode stream to materialize),
+                    if (tmpStream.getRawBytesLength() > 0) {
                         tmpStream.setPObjectReference((Reference) cont);
                         contents.add(tmpStream);
                     }
@@ -400,6 +408,11 @@ public class Page extends Dictionary {
             // get pages resources
             initPageResources();
 
+            // start decoding the page's images in parallel while the rest of init and content parsing run.
+            if (EAGER_IMAGE_DECODE && resources != null) {
+                resources.preLoadImages();
+            }
+
             // annotations
             initPageAnnotations();
 
@@ -442,6 +455,13 @@ public class Page extends Dictionary {
                     // pass in option group references into parse.
                     if (streams.length > 0) {
                         shapes = cp.parse(streams, this).getShapes();
+                    }
+                    // content streams are only needed for parsing; the Shapes built above are what painting uses.
+                    // Release each stream's decompressed cache (re-derivable from the still-compressed rawBytes) so
+                    // the inflated buffers aren't retained for the life of the Page. Edited streams (compressed ==
+                    // false, e.g. redaction) are skipped by disposeDecompressed() so their changes aren't lost.
+                    for (Stream content : contents) {
+                        content.disposeDecompressed();
                     }
                     // set the initiated flag, first as there are couple corner
                     // cases where the content parsing can call page.init() again

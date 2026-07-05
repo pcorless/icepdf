@@ -18,11 +18,12 @@ package org.icepdf.core.pobjects.functions;
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.functions.postscript.Lexer;
+import org.icepdf.core.pobjects.functions.postscript.OperandStack;
 import org.icepdf.core.util.Utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.Stack;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -48,8 +49,8 @@ public class Function_4 extends Function {
     // decoded content that makes up the type 4 functions.
     private byte[] functionContent;
 
-    // cache for calculated colour values
-    private final ConcurrentHashMap<Integer, float[]> resultCache;
+    // cache for calculated colour values, keyed on the exact input components
+    private final ConcurrentHashMap<InputKey, float[]> resultCache;
 
     // a malformed type 4 program fails deterministically on every sample of a
     // shading; only log the parse failure once per function rather than once
@@ -81,11 +82,17 @@ public class Function_4 extends Function {
      */
     public float[] calculate(float[] x) {
 
-        // check the cache in case we've already made the calculation.
-        Integer colourKey = calculateColourKey(x);
+        // check the cache in case we've already made the calculation.  The key
+        // copies the inputs and compares them by value so distinct inputs never
+        // collide (a hashCode-based key could silently return another input's
+        // colour).
+        InputKey colourKey = new InputKey(x);
         float[] result = resultCache.get(colourKey);
         if (result != null) {
-            return result;
+            // hand back a copy; callers (e.g. Function_3.validateAgainstRange)
+            // clamp the result in place, which would otherwise corrupt the
+            // cached array.
+            return result.clone();
         }
 
         // setup the lexer stream
@@ -104,7 +111,7 @@ public class Function_4 extends Function {
         }
 
         // get the remaining numbers on the stack which are the return values.
-        Stack stack = lex.getStack();
+        OperandStack stack = lex.getStack();
 
         // length of output array
         int n = range.length / 2;
@@ -130,35 +137,37 @@ public class Function_4 extends Function {
             float f = value instanceof Number ? ((Number) value).floatValue() : range[2 * i];
             y[i] = Math.min(Math.max(f, range[2 * i]), range[2 * i + 1]);
         }
-        // add the new value to the cache.
+        // add the new value to the cache and return a private copy so the
+        // cached array stays pristine if the caller mutates the result.
         resultCache.put(colourKey, y);
-        return y;
+        return y.clone();
     }
 
     /**
-     * Utility for creating a comparable colour key for colour components.
-     *
-     * @param colours one or more colour values,  usually maxes out at four.
-     * @return concatenation of colour values.
+     * Value-based cache key wrapping a copy of a function's input components.
+     * Using the component values directly (rather than a hashCode) guarantees
+     * that two different inputs can never map to the same cached result.
      */
-    private Integer calculateColourKey(float[] colours) {
-        int length = colours.length;
-        // only works for colour vlues 0-255
-        if (!(colours[0] <= 1.0)) {
-            if (length == 1) {
-                return (int) colours[0];
-            } else if (length == 2) {
-                return ((int) colours[1] << 8) | (int) colours[0];
-            } else if (length == 3) {
-                return ((int) colours[2] << 16) |
-                        ((int) colours[1] << 8) | (int) colours[0];
+    private static final class InputKey {
+        private final float[] values;
+        private final int hash;
+
+        InputKey(float[] input) {
+            this.values = input.clone();
+            this.hash = Arrays.hashCode(this.values);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
             }
+            return o instanceof InputKey && Arrays.equals(values, ((InputKey) o).values);
         }
-        // otherwise expensive hash generation.
-        StringBuilder builder = new StringBuilder();
-        for (float colour : colours) {
-            builder.append(colour);
+
+        @Override
+        public int hashCode() {
+            return hash;
         }
-        return builder.toString().hashCode();
     }
 }

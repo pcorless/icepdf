@@ -296,6 +296,11 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
             String eString = ucs2Cmap.toUnicode(echar);
             // finally we can get a usable glyph;
             CmapLookup cmapLookup = trueTypeFont.getUnicodeCmapLookup(false);
+            // a substituted CID font may have no unicode cmap, or the UCS2 map may not cover this code; either way
+            // we can't resolve a glyph, so fall back to the raw code rather than NPE (GH-495).
+            if (cmapLookup == null || eString == null || eString.isEmpty()) {
+                return code;
+            }
             echar = cmapLookup.getGlyphId(eString.codePointAt(0));
             return echar;
         } else {

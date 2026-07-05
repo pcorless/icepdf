@@ -43,7 +43,6 @@ import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.*;
 import java.util.logging.Level;
@@ -146,11 +145,8 @@ public class Library {
      * object reference can not be found.
      */
     public Object getObject(Reference reference) {
-        Object obj = getObject(reference, null, true);
-        if (obj != null) {
-            return Objects.requireNonNull(getObject(reference, null, true)).getObject();
-        }
-        return null;
+        PObject pObject = getObject(reference, null, true);
+        return pObject != null ? pObject.getObject() : null;
     }
 
     public PObject getPObject(Reference reference) {
@@ -370,6 +366,19 @@ public class Library {
         setEncrypted(true);
     }
 
+    /**
+     * The whole document loaded into a single {@link ByteBuffer}.
+     * <p>
+     * <b>Concurrency invariant:</b> object parsing reads this buffer lock-free from many threads at once, which is
+     * only safe because the backing bytes are read-only and <em>no reader mutates the shared buffer's
+     * position/limit</em>.  Any code that reads from it on a worker thread MUST work on its own
+     * {@code getMappedFileByteBuffer().duplicate()} (a duplicate shares the read-only bytes but has an independent
+     * position/limit) - never reposition/slice the shared instance directly.  Code that actually replaces or
+     * mutates the buffer (incremental save, signing, cross-reference rebuild) must hold
+     * {@link #getMappedFileByteBufferLock()} and must not run concurrently with rendering.
+     *
+     * @return the shared, read-only document buffer; duplicate it before reading off-thread.
+     */
     public ByteBuffer getMappedFileByteBuffer() {
         return mappedFileByteBuffer;
     }
@@ -382,6 +391,11 @@ public class Library {
         this.fileOrigin = fileOrigin;
     }
 
+    /**
+     * Lock guarding <em>writes</em> to the document buffer (replacing it, or repositioning/slicing the shared
+     * instance) - e.g. incremental save, signing, cross-reference rebuild.  Lock-free readers rely on no such
+     * mutation happening concurrently; see {@link #getMappedFileByteBuffer()}.
+     */
     public Object getMappedFileByteBufferLock() {
         return mappedFileByteBufferLock;
     }

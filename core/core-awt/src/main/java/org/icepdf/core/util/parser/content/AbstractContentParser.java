@@ -51,6 +51,9 @@ public abstract class AbstractContentParser {
             Logger.getLogger(AbstractContentParser.class.getName());
 
     private static final boolean disableTransparencyGroups;
+    // Prototype (§5.2): also treat isolated/knockout groups as buffer-requiring.
+    // Off by default while we measure corpus impact.
+    private static final boolean isolationAwareRouting;
     private static final boolean enabledOverPrint;
     private static final boolean enabledFontFallback;
 
@@ -66,6 +69,10 @@ public abstract class AbstractContentParser {
         // decide if large images will be scaled
         disableTransparencyGroups =
                 Defs.sysPropertyBoolean("org.icepdf.core.disableTransparencyGroup",
+                        false);
+
+        isolationAwareRouting =
+                Defs.sysPropertyBoolean("org.icepdf.core.isolationAwareRouting",
                         false);
 
         // decide if basic over print support will be enabled.
@@ -539,7 +546,7 @@ public abstract class AbstractContentParser {
             if (graphicState.getClip() != null) {
                 AffineTransform matrix = formXObject.getMatrix();
                 Area bbox = new Area(formXObject.getBBox());
-                Area clip = graphicState.getClip();
+                Shape clip = graphicState.getClip();
                 // create inverse of matrix, so we can transform
                 // the clip to form space.
                 try {
@@ -566,28 +573,30 @@ public abstract class AbstractContentParser {
                 setAlpha(shapes, graphicState, graphicState.getAlphaRule(),
                         graphicState.getFillAlpha());
             }
-            // If we have a transparency group we paint it
-            // slightly different from a regular xObject as we
-            // need to capture the alpha which is only possible
-            // by paint the xObject to an image.
-            if (!disableTransparencyGroups &&
-                    ((formXObject.getBBox().getWidth() < FormDrawCmd.MAX_IMAGE_SIZE && formXObject.getBBox().getWidth() > 1) &&
-                            (formXObject.getBBox().getHeight() < FormDrawCmd.MAX_IMAGE_SIZE && formXObject.getBBox().getHeight() > 1)
-                            && (formXObject.getExtGState() != null &&
-                            (formXObject.getExtGState().getSMask() != null ||
-                                    (formXObject.getExtGState().getBlendingMode() != null &&
-                                            !formXObject.getExtGState().getBlendingMode().equals(BlendComposite.NORMAL_VALUE))
-                                    || (formXObject.getExtGState().getNonStrokingAlphConstant() < 1
-                                    && formXObject.getExtGState().getNonStrokingAlphConstant() > 0)))
-                    )) {
+            // Decide how the transparency group is composited.  A group is
+            // rasterised to an offscreen buffer (FormDrawCmd) only when it
+            // carries an effect that cannot be reproduced by painting its
+            // shapes straight onto the page; otherwise it is painted inline
+            // (ShapesDrawCmd), which also avoids the quality loss of buffering
+            // through an affine transform.  See classifyTransparencyGroup.
+            if (!disableTransparencyGroups && requiresOffscreenBuffer(formXObject)) {
                 // add the hold form for further processing.
-                shapes.add(new FormDrawCmd(formXObject));
-            }
-            // the downside of painting to an image is that we
-            // lose quality if there is an affine transform, so
-            // if it isn't a group transparency we paint old way
-            // by just adding the objects to the shapes stack.
-            else {
+                FormDrawCmd formDrawCmd = new FormDrawCmd(formXObject);
+                shapes.add(formDrawCmd);
+                // Remember position so the group can reconstruct its backdrop by
+                // replaying the prior commands (§10 backdrop-aware compositing) --
+                // but ONLY for a page-level Do (page != null).  When the Do is
+                // inside another form (page == null) the prior commands are local
+                // to that form, so the replay misses the page content painted
+                // behind the form (e.g. black_or_red.pdf's Multiply banner over the
+                // page's blue gradient) and the blend composites against a blank
+                // backdrop.  Without a backdrop source the group falls back to the
+                // direct path and is drawn with the active blend composite over the
+                // real destination, which sees the true backdrop.
+                if (page != null) {
+                    formDrawCmd.setBackdropSource(shapes, shapes.getShapes().size() - 1);
+                }
+            } else {
                 shapes.add(new ShapesDrawCmd(formXObject.getShapes()));
             }
             // update text sprites with geometric path state
@@ -671,6 +680,95 @@ public abstract class AbstractContentParser {
             }
         }
         return graphicState;
+    }
+
+    /**
+     * Decides whether a transparency-group form must be rasterised into an
+     * offscreen buffer ({@link FormDrawCmd}) or can be painted inline as plain
+     * shapes ({@link ShapesDrawCmd}).
+     * <p>
+     * A buffer is required only when the group carries a <i>group effect</i>
+     * that cannot be reproduced by painting its shapes straight onto the page:
+     * <ul>
+     *   <li>a soft mask (the mask must be read back from a raster),</li>
+     *   <li>a non-Normal blend mode applied to the group as a unit, or</li>
+     *   <li>a group constant alpha in the open interval (0,1), which applies to
+     *       the <i>composited</i> group and therefore needs it composited first.</li>
+     * </ul>
+     * Groups with none of these — including plain Normal, fully-opaque groups —
+     * composite identically whether painted inline or via a buffer (Porter-Duff
+     * <i>over</i> is associative), so they are painted inline; this also avoids
+     * the resolution loss of buffering through an affine transform.
+     * <p>
+     * Size handling: a group is only buffered if it fits the offscreen-buffer
+     * budget.  Groups within {@link FormDrawCmd#MAX_IMAGE_SIZE} buffer 1:1.  A
+     * larger <i>blend-only</i> (no soft mask) group is down-scaled into the
+     * buffer by {@link FormDrawCmd}, but only up to
+     * {@link FormDrawCmd#MAX_SCALED_FORM_SIZE}; beyond that the bbox is treated
+     * as an unbounded {@code +-Short.MAX_VALUE} sentinel (real content small and
+     * clipped elsewhere) that would collapse if scaled, so it stays inline.
+     * Soft-mask groups need a 1:1 buffer and are never down-scaled.
+     * <p>
+     * Behaviour-preserving refactor of the previous inline
+     * {@code withinMaxSize}/{@code hasGroupEffect}/{@code oversizedBlendOnly}
+     * predicate; see {@code TRANSPARENCY-GROUP-BLENDING-DESIGN.md}.
+     *
+     * @param form transparency-group form being placed by a {@code Do}.
+     * @return true if the group must be rasterised to a buffer.
+     */
+    protected static boolean requiresOffscreenBuffer(Form form) {
+        ExtGState extGState = form.getExtGState();
+        if (extGState == null) {
+            return false;
+        }
+        double formWidth = form.getBBox().getWidth();
+        double formHeight = form.getBBox().getHeight();
+        // degenerate / sub-pixel groups: nothing meaningful to buffer.
+        if (formWidth <= 1 || formHeight <= 1) {
+            return false;
+        }
+        boolean hasSoftMask = extGState.getSMask() != null;
+        Name blendingMode = extGState.getBlendingMode();
+        boolean hasBlend = blendingMode != null
+                && !blendingMode.equals(BlendComposite.NORMAL_VALUE);
+        float ca = extGState.getNonStrokingAlphConstant();
+        boolean hasPartialAlpha = ca > 0 && ca < 1;
+        // Prototype (§5.2): an isolated group needs a transparent backdrop and a
+        // knockout group needs its initial backdrop preserved -- both of which
+        // only a buffer provides.  These flags are otherwise parsed but never
+        // consulted in routing.  Gated off by default while corpus impact is
+        // measured (a fully-opaque/all-Normal isolated group renders the same
+        // inline, so this over-buffers until refined to require inner
+        // transparency).
+        boolean needsIsolation = isolationAwareRouting
+                && (form.isIsolated() || form.isKnockOut());
+        // No group effect -> inline; painting the shapes SRC_OVER onto the page
+        // is identical to compositing them to a buffer first.
+        if (!(hasSoftMask || hasBlend || hasPartialAlpha || needsIsolation)) {
+            return false;
+        }
+        // A sentinel/extreme bbox (typically +-Short.MAX_VALUE) would collapse if
+        // scaled into a buffer, so such forms stay inline regardless of effect.
+        boolean realisticallySized = formWidth < FormDrawCmd.MAX_SCALED_FORM_SIZE
+                && formHeight < FormDrawCmd.MAX_SCALED_FORM_SIZE;
+        if (!realisticallySized) {
+            return false;
+        }
+        // "Within budget" mirrors createBufferXObject's AREA clamp, not a
+        // per-dimension cap: a group whose area fits MAX_IMAGE_SIZE^2 is
+        // rasterised 1:1, so it can always be buffered -- including an
+        // oversized-but-thin SMask group (e.g. WhiteGradient.pdf's 1867x2079
+        // white-gradient fade, height just over 2000) that the old per-dimension
+        // gate dropped to inline, silently discarding its luminosity mask.
+        long area = (long) formWidth * (long) formHeight;
+        long maxArea = (long) FormDrawCmd.MAX_IMAGE_SIZE * FormDrawCmd.MAX_IMAGE_SIZE;
+        if (area <= maxArea) {
+            return true;
+        }
+        // Over the area budget the buffer must be down-scaled.  Proven safe for
+        // blend-only groups; SMask groups are still excluded here because a
+        // down-scaled luminosity mask is not yet validated.
+        return !hasSoftMask && hasBlend;
     }
 
     protected static void consume_d(GraphicsState graphicState, Stack<Object> stack, Shapes shapes) {
@@ -861,7 +959,10 @@ public abstract class AbstractContentParser {
         if (graphicState.getTextState().font != null) {
             FontFile font = graphicState.getTextState().font.getFont();
             if (font != null) {
-                graphicState.getTextState().currentfont = font.deriveFont(size);
+                // deriveFont allocates a new sized font instance; only derive once (an earlier discarded
+                // deriveFont call here was pure allocation churn on every Tf operator) (GH-495).
+                graphicState.getTextState().currentfont =
+                        graphicState.getTextState().font.getFont().deriveFont(size);
             }
         } else {
             // not font found which is a problem,  so we need to check for interactive form dictionary
@@ -1358,19 +1459,36 @@ public abstract class AbstractContentParser {
 
     protected static void consume_sh(GraphicsState graphicState, Stack<Object> stack,
                                      Shapes shapes,
-                                     Resources resources) throws InterruptedException {
+                                     Resources resources, boolean pageLevel) throws InterruptedException {
         Object o = stack.peek();
         // if a name then we are dealing with a pattern.
         if (o instanceof Name) {
             Name patternName = (Name) stack.pop();
             Pattern pattern = resources.getShading(patternName);
+            SoftMask shSoftMask = graphicState.getExtGState() != null
+                    ? graphicState.getExtGState().getSMask() : null;
+            // Only apply the soft mask to the shading here for a page-level `sh`.
+            // A shading `sh` inside a form is part of that form's own compositing
+            // (the form may be a transparency group masked at the group level), and
+            // applying the mask again on the inner shading over-darkens it
+            // (af400e35).  Form-level `sh` keeps the legacy approximation.
+            boolean luminosityMask = pageLevel && shSoftMask != null && shSoftMask.getS() != null
+                    && shSoftMask.getS().equals(SoftMask.SOFT_MASK_TYPE_LUMINOSITY);
+            if (pattern != null && luminosityMask) {
+                // A luminosity soft mask modulates the shading per-pixel; render
+                // the shading and the mask to buffers and composite, instead of
+                // dropping the mask for a flat alpha (faded.pdf white-fade bug).
+                pattern.init(graphicState);
+                shapes.add(new ShadingSoftMaskDrawCmd(pattern.getPaint(), shSoftMask,
+                        graphicState.getFillAlpha()));
+                return;
+            }
             if (pattern != null) {
                 pattern.init(graphicState);
                 // we paint the shape and color shading as defined
                 // by the pattern dictionary and respect the current clip
                 // TODO further work is needed here to build out the pattern fill.
-                if (graphicState.getExtGState() != null &&
-                        graphicState.getExtGState().getSMask() != null) {
+                if (shSoftMask != null) {
                     setAlpha(shapes, graphicState,
                             graphicState.getAlphaRule(),
                             0.50f);
@@ -1867,10 +1985,22 @@ public abstract class AbstractContentParser {
                     commonOverPrintAlpha(graphicState.getFillAlpha(),
                             graphicState.getFillColorSpace()));
         }
-        // avoid doing fill, as we likely have  blending mode that will obfuscate the underlying
-        // content.
+        // A fill with a luminosity soft mask: render the fill modulated by the
+        // mask (and the active blend composite) instead of dropping it.  This is
+        // what makes 90s-style bevels appear -- a white Screen rect and a black
+        // Multiply rect, each masked to a bevel edge (trans.pdf, Lesson Plans.pdf).
+        // The legacy behaviour skipped any soft-masked fill entirely (so the
+        // bevels never rendered); other mask types keep that skip.
         if (graphicState.getExtGState() != null &&
                 graphicState.getExtGState().getSMask() != null) {
+            SoftMask sMask = graphicState.getExtGState().getSMask();
+            if (sMask.getS() != null
+                    && sMask.getS().equals(SoftMask.SOFT_MASK_TYPE_LUMINOSITY)
+                    && graphicState.getFillColor() != null
+                    && !(graphicState.getFillColorSpace() instanceof PatternColor)) {
+                shapes.add(new ShadingSoftMaskDrawCmd(graphicState.getFillColor(),
+                        (GeneralPath) geometricPath.clone(), sMask));
+            }
             return;
         }
         // The knockout effect can only be achieved by changing the alpha
@@ -1993,20 +2123,21 @@ public abstract class AbstractContentParser {
      * @return new text scaling AffineTransform.
      */
     private static AffineTransform applyTextScaling(GraphicsState graphicState) {
-        // get the current CTM
-        AffineTransform af = new AffineTransform(graphicState.getCTM());
+        // the current CTM; read its components directly rather than allocating an extra copy to read from.
+        AffineTransform ctm = graphicState.getCTM();
         // the mystery continues,  it appears that only the negative or positive
         // value of tz is actually used.  If the original non 1 number is used the
         // layout will be messed up.
-        AffineTransform oldHScaling = new AffineTransform(graphicState.getCTM());
+        // snapshot of the CTM to restore after the text block is drawn.
+        AffineTransform oldHScaling = new AffineTransform(ctm);
         float hScaling = graphicState.getTextState().hScalling;
         AffineTransform horizontalScalingTransform =
                 new AffineTransform(
-                        af.getScaleX() * hScaling,
-                        af.getShearY() * hScaling,
-                        af.getShearX(),
-                        af.getScaleY(),
-                        af.getTranslateX(), af.getTranslateY());
+                        ctm.getScaleX() * hScaling,
+                        ctm.getShearY() * hScaling,
+                        ctm.getShearX(),
+                        ctm.getScaleY(),
+                        ctm.getTranslateX(), ctm.getTranslateY());
         // add the transformation to the graphics state
         graphicState.set(horizontalScalingTransform);
 

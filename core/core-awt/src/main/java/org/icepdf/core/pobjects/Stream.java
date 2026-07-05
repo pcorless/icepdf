@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects;
 
 import org.icepdf.core.io.BitStream;
+import org.icepdf.core.io.ByteBufferBackedInputStream;
 import org.icepdf.core.io.ConservativeSizingByteArrayOutputStream;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.filters.*;
@@ -61,6 +62,13 @@ public class Stream extends Dictionary {
     protected byte[] rawBytes;
     protected byte[] decompressedBytes;
 
+    // View into the shared, read-only document buffer holding the still-compressed raw bytes. When non-null the
+    // stream is in "view mode": rawBytes is not materialized until getRawBytes() is called, avoiding a second copy
+    // of bytes that already live (for the document's whole lifetime) in the document buffer. Kept pristine (its
+    // position/limit are never mutated); readers duplicate() it for their own cursor. Cleared when setRawBytes()
+    // switches the stream to array mode.
+    protected ByteBuffer streamDataView;
+
     protected DictionaryEntries decodeParams;
 
     // default compression state for a file loaded stream,  for re-saving
@@ -78,17 +86,67 @@ public class Stream extends Dictionary {
         this.rawBytes = rawBytes;
     }
 
+    public Stream(Library library, DictionaryEntries dictionaryEntries, ByteBuffer streamDataView) {
+        super(library, dictionaryEntries);
+        decodeParams = this.library.getDictionary(entries, DECODEPARAM_KEY);
+        this.streamDataView = streamDataView;
+    }
+
+    /**
+     * Returns the still-compressed raw bytes of the stream. In view mode this materializes (copies) the bytes from
+     * the shared document buffer on first call and caches them; the hot render path decodes via
+     * {@link #getDecodedStreamBytes(int)} and never triggers this copy. Used by the cold save/sign/thumbnail paths
+     * that need an actual byte[].
+     */
     public byte[] getRawBytes() {
+        if (rawBytes == null && streamDataView != null) {
+            ByteBuffer view = streamDataView.duplicate();
+            byte[] materialized = new byte[view.remaining()];
+            view.get(materialized);
+            rawBytes = materialized;
+        }
         return rawBytes;
+    }
+
+    /**
+     * Length of the still-compressed raw bytes without materializing them. Use this in preference to
+     * {@code getRawBytes().length} so view-mode streams aren't forced to copy just for a length/empty check.
+     */
+    public int getRawBytesLength() {
+        if (rawBytes != null) {
+            return rawBytes.length;
+        }
+        if (streamDataView != null) {
+            return streamDataView.remaining();
+        }
+        return 0;
     }
 
     public void setRawBytes(byte[] rawBytes) {
         this.rawBytes = decompressedBytes = rawBytes;
+        this.streamDataView = null;
         compressed = false;
     }
 
     public byte[] getDecompressedBytes() {
         return decompressedBytes;
+    }
+
+    /**
+     * Releases the cached decompressed byte[] when it can be regenerated on demand. This only applies when the
+     * stream is still backed by its original compressed source (compressed == true): a subsequent
+     * {@link #getDecodedStreamBytes(int)} call will simply re-inflate from rawBytes. Edited streams
+     * (compressed == false, set via {@link #setRawBytes(byte[])}) hold their authoritative, not-yet-recompressed
+     * content in decompressedBytes and are left untouched so the edit is not lost.
+     * <br>
+     * Page content streams typically only need their decompressed bytes during content parsing; once the page's
+     * Shapes have been built the inflated buffer is dead weight retained for the life of the (weakly reachable)
+     * Page. Dropping it here trades a rare re-decode (text extraction, search, print) for lower steady-state heap.
+     */
+    public void disposeDecompressed() {
+        if (compressed) {
+            decompressedBytes = null;
+        }
     }
 
     public boolean isRawBytesCompressed() {
@@ -130,16 +188,24 @@ public class Stream extends Dictionary {
         // decompress the stream
         if (compressed) {
             try {
-                ByteArrayInputStream streamInput = new ByteArrayInputStream(rawBytes);
-                long rawStreamLength = rawBytes.length;
+                // Decode straight from the document-buffer view when in view mode (no rawBytes copy); a private
+                // duplicate() gives this decode its own cursor over the shared, read-only bytes.
+                InputStream streamInput;
+                long rawStreamLength;
+                if (rawBytes == null && streamDataView != null) {
+                    ByteBuffer view = streamDataView.duplicate();
+                    rawStreamLength = view.remaining();
+                    streamInput = new ByteBufferBackedInputStream(view);
+                } else {
+                    streamInput = new ByteArrayInputStream(rawBytes);
+                    rawStreamLength = rawBytes.length;
+                }
                 InputStream input = getDecodedInputStream(streamInput, rawStreamLength);
                 if (input == null) return null;
-                int outLength;
-                if (presize > 0) {
-                    outLength = presize;
-                } else {
-                    outLength = Math.max(8192, (int) rawStreamLength);
-                }
+                // Size the output buffer to at least the raw (still-compressed) length: the decoded result is
+                // almost always larger, so this floor skips the early grow-and-copy reallocations that otherwise
+                // dominate decode allocation/GC (the default presize of 8192 would start tiny for large streams).
+                int outLength = Math.max(Math.max(presize, 8192), (int) rawStreamLength);
                 ConservativeSizingByteArrayOutputStream out = new ConservativeSizingByteArrayOutputStream(outLength);
                 byte[] buffer = new byte[Math.min(outLength, 32 * 1024)];
                 while (true) {
@@ -363,7 +429,7 @@ public class Stream extends Dictionary {
      */
     public static Stream createStream(Library library, byte[] streamData) {
         // load font resource from classpath
-        Stream stream = new Stream(library, new DictionaryEntries(), null);
+        Stream stream = new Stream(library, new DictionaryEntries(), (byte[]) null);
         stream.setRawBytes(streamData);
         // compress the form object stream.
         if (Annotation.isCompressAppearanceStream()) {

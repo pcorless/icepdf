@@ -22,6 +22,8 @@ import org.icepdf.core.util.Defs;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
+import java.awt.geom.PathIterator;
+import java.awt.geom.Rectangle2D;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -287,7 +289,10 @@ public class GraphicsState {
     private Shapes shapes;
 
     // current clipping area.
-    private Area clip;
+    // The active clip.  Held as a Rectangle2D whenever the clip is an axis-aligned rectangle (the common case),
+    // which lets setClip/updateClipCM avoid the expensive java.awt.geom.Area boolean/transform machinery; it is
+    // promoted to an Area only when a genuinely non-rectangular clip is involved.
+    private Shape clip;
     private boolean clipChange;
 
     // over print mode
@@ -348,7 +353,7 @@ public class GraphicsState {
 
         shapes = parentGraphicsState.shapes;
         if (parentGraphicsState.clip != null) {
-            clip = (Area) parentGraphicsState.clip.clone();
+            clip = cloneClip(parentGraphicsState.clip);
         }
 
         fillColorSpace = parentGraphicsState.fillColorSpace;
@@ -535,7 +540,7 @@ public class GraphicsState {
             if (clipChange) {
                 if (parentGraphicState.clip != null) {
                     if (!parentGraphicState.clip.equals(clip)) {
-                        parentGraphicState.shapes.add(new ShapeDrawCmd(new Area(parentGraphicState.clip)));
+                        parentGraphicState.shapes.add(new ShapeDrawCmd(cloneClip(parentGraphicState.clip)));
                         parentGraphicState.shapes.add(clipDrawCmd);
                     }
                 } else {
@@ -582,8 +587,16 @@ public class GraphicsState {
                 logger.log(Level.WARNING, "Error generating clip inverse.", e);
             }
 
-            // transform the clip.
-            clip.transform(afInverse);
+            // transform the clip.  An axis-aligned rectangle transformed by a transform without rotation or
+            // shear stays an axis-aligned rectangle, so we can keep the cheap representation; otherwise promote
+            // to an Area and transform that.
+            if (clip instanceof Rectangle2D && isAxisAligned(afInverse)) {
+                clip = afInverse.createTransformedShape((Rectangle2D) clip).getBounds2D();
+            } else {
+                Area area = toArea(clip);
+                area.transform(afInverse);
+                clip = area;
+            }
         }
     }
 
@@ -596,21 +609,30 @@ public class GraphicsState {
      */
     public void setClip(Shape newClip) {
         if (newClip != null) {
-            // intersect can only be calculated on a an area.
-            Area area = new Area(newClip);
-            // make sure the clip is not null
-            if (clip != null) {
-                area.intersect(clip);
+            Shape intersected;
+            Rectangle2D newRect = asAxisAlignedRectangle(newClip);
+            if (clip != null && clip instanceof Rectangle2D && newRect != null) {
+                // fast path: rectangle intersect rectangle is a rectangle, no Area math needed.
+                intersected = ((Rectangle2D) clip).createIntersection(newRect);
+            } else if (clip == null && newRect != null) {
+                intersected = newRect;
+            } else {
+                // general path: at least one of the shapes is not an axis-aligned rectangle.
+                Area area = new Area(newClip);
+                if (clip != null) {
+                    area.intersect(toArea(clip));
+                }
+                intersected = area;
             }
             // update the clip with the new value if it is new.
-            if (clip == null || !clip.equals(area)) {
-                clip = new Area(area);
-                shapes.add(new ShapeDrawCmd(area));
+            if (clip == null || !clip.equals(intersected)) {
+                clip = intersected;
+                shapes.add(new ShapeDrawCmd(cloneClip(intersected)));
                 shapes.add(clipDrawCmd);
                 clipChange = true;
                 if (parentGraphicState != null) parentGraphicState.clipChange = true;
             } else {
-                clip = new Area(area);
+                clip = intersected;
             }
         } else {
             // add a null clip for a null shape, should not normally happen
@@ -622,8 +644,90 @@ public class GraphicsState {
 
     }
 
-    public Area getClip() {
+    public Shape getClip() {
         return clip;
+    }
+
+    /**
+     * @return true if the transform has no rotation or shear, so an axis-aligned rectangle stays axis-aligned
+     * when transformed by it.
+     */
+    private static boolean isAxisAligned(AffineTransform at) {
+        return at.getShearX() == 0 && at.getShearY() == 0;
+    }
+
+    private static Area toArea(Shape shape) {
+        return shape instanceof Area ? (Area) shape : new Area(shape);
+    }
+
+    private static Shape cloneClip(Shape shape) {
+        if (shape instanceof Rectangle2D) {
+            return (Rectangle2D) ((Rectangle2D) shape).clone();
+        }
+        return (Area) ((Area) shape).clone();
+    }
+
+    /**
+     * Returns the shape as an axis-aligned rectangle if it is one (a rectangle whose four corners sit at the two
+     * distinct x and two distinct y extremes), otherwise null.  Clip paths from the {@code W}/{@code re} operators
+     * are usually such rectangles, and recognising them lets clipping avoid the Area machinery.
+     */
+    private static Rectangle2D asAxisAlignedRectangle(Shape shape) {
+        if (shape instanceof Rectangle2D) {
+            return (Rectangle2D) shape;
+        }
+        PathIterator pathIterator = shape.getPathIterator(null);
+        double[] coords = new double[6];
+        double[] xs = new double[5];
+        double[] ys = new double[5];
+        int count = 0;
+        while (!pathIterator.isDone()) {
+            int segment = pathIterator.currentSegment(coords);
+            if (segment == PathIterator.SEG_MOVETO || segment == PathIterator.SEG_LINETO) {
+                if (count >= 5) {
+                    return null;
+                }
+                xs[count] = coords[0];
+                ys[count] = coords[1];
+                count++;
+            } else if (segment != PathIterator.SEG_CLOSE) {
+                // a curve segment means it is not a rectangle.
+                return null;
+            }
+            pathIterator.next();
+        }
+        // an explicitly closed rectangle repeats the first point as the fifth.
+        if (count == 5) {
+            if (xs[4] != xs[0] || ys[4] != ys[0]) {
+                return null;
+            }
+            count = 4;
+        }
+        if (count != 4) {
+            return null;
+        }
+        double minX = Math.min(Math.min(xs[0], xs[1]), Math.min(xs[2], xs[3]));
+        double maxX = Math.max(Math.max(xs[0], xs[1]), Math.max(xs[2], xs[3]));
+        double minY = Math.min(Math.min(ys[0], ys[1]), Math.min(ys[2], ys[3]));
+        double maxY = Math.max(Math.max(ys[0], ys[1]), Math.max(ys[2], ys[3]));
+        if (minX == maxX || minY == maxY) {
+            return null; // degenerate
+        }
+        // every corner must sit on a min/max extreme, and all four corners must be distinct.
+        long cornerBits = 0;
+        for (int i = 0; i < 4; i++) {
+            boolean xExtreme = xs[i] == minX || xs[i] == maxX;
+            boolean yExtreme = ys[i] == minY || ys[i] == maxY;
+            if (!xExtreme || !yExtreme) {
+                return null;
+            }
+            int bit = (xs[i] == minX ? 0 : 1) | (ys[i] == minY ? 0 : 2);
+            cornerBits |= (1L << bit);
+        }
+        if (cornerBits != 0b1111) {
+            return null; // corners not distinct - not a proper rectangle
+        }
+        return new Rectangle2D.Double(minX, minY, maxX - minX, maxY - minY);
     }
 
     public AffineTransform getCTM() {

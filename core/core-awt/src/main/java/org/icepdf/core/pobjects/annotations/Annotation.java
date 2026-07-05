@@ -23,6 +23,10 @@ import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils;
 import org.icepdf.core.pobjects.fonts.zfont.SimpleFont;
 import org.icepdf.core.pobjects.graphics.Shapes;
+import org.icepdf.core.pobjects.graphics.commands.BlendCompositeDrawCmd;
+import org.icepdf.core.pobjects.graphics.commands.DrawCmd;
+import org.icepdf.core.pobjects.graphics.commands.FormDrawCmd;
+import org.icepdf.core.pobjects.graphics.commands.ShapesDrawCmd;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.GraphicsRenderingHints;
@@ -1351,6 +1355,38 @@ public abstract class Annotation extends Dictionary {
 //origG.fill( topLeft );
     }
 
+    /**
+     * Tests whether the current appearance stream carries a non-Normal blend
+     * mode (e.g. a Multiply text-highlight).  Such an annotation must blend
+     * against the real page content beneath it; on a Swing/X11 canvas the
+     * {@code BlendComposite} path throws and falls back to a flat alpha, so the
+     * caller can instead rasterise the annotation over a page-backdrop buffer
+     * (where the blend composites correctly) and blit the result.
+     *
+     * @return true if the selected appearance contains a blend composite.
+     */
+    public boolean appearanceHasBlendMode() {
+        Appearance appearance = appearances.get(currentAppearance);
+        if (appearance == null) return false;
+        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
+        if (appearanceState == null || appearanceState.getShapes() == null) return false;
+        return containsBlendComposite(appearanceState.getShapes());
+    }
+
+    private static boolean containsBlendComposite(Shapes shapes) {
+        if (shapes == null) return false;
+        for (DrawCmd cmd : shapes.getShapes()) {
+            if (cmd instanceof BlendCompositeDrawCmd) {
+                return true;
+            }
+            if (cmd instanceof ShapesDrawCmd
+                    && containsBlendComposite(((ShapesDrawCmd) cmd).getShapes())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     protected void renderAppearanceStream(Graphics2D g, float rotation, float zoom) {
         Appearance appearance = appearances.get(currentAppearance);
         if (appearance == null) return;
@@ -1395,6 +1431,12 @@ public abstract class Annotation extends Dictionary {
 
             AffineTransform preAf = g.getTransform();
             boolean paintFailed = false;
+            // An annotation paints over the already-rendered page, so a blended
+            // group in its appearance stream (e.g. a Multiply text highlight) must
+            // blend against the real page pixels in g, not the replay-reconstructed
+            // backdrop (which is blank for an appearance stream).  Flag the paint so
+            // FormDrawCmd takes the direct-composite path.
+            FormDrawCmd.setAnnotationAppearance(true);
             // regular paint
             try {
                 appearanceState.getShapes().paint(g);
@@ -1416,6 +1458,7 @@ public abstract class Annotation extends Dictionary {
                     logger.fine("Page Annotation Painting interrupted.");
                 }
             }
+            FormDrawCmd.setAnnotationAppearance(false);
 
             g.setTransform(preAf);
         }
@@ -1847,7 +1890,7 @@ public abstract class Annotation extends Dictionary {
                 // build out an appearance stream, corner case iText 2.1
                 // didn't correctly set type = form on the appearance stream obj.
                 try {
-                    form = new Form(library, stream.getEntries(), null);
+                    form = new Form(library, stream.getEntries(), (byte[]) null);
                     form.setPObjectReference(stream.getPObjectReference());
                     form.setRawBytes(stream.getDecodedStreamBytes());
                     form.init();
@@ -1861,7 +1904,7 @@ public abstract class Annotation extends Dictionary {
             DictionaryEntries formEntries = new DictionaryEntries();
             formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
             formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
-            form = new Form(library, formEntries, null);
+            form = new Form(library, formEntries, (byte[]) null);
             form.setPObjectReference(stateManager.getNewReferenceNumber());
             library.addObject(form, form.getPObjectReference());
         }
@@ -1891,7 +1934,7 @@ public abstract class Annotation extends Dictionary {
             DictionaryEntries formEntries = new DictionaryEntries();
             formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
             formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
-            form = new Form(library, formEntries, null);
+            form = new Form(library, formEntries, (byte[]) null);
             form.setPObjectReference(stateManager.getNewReferenceNumber());
             library.addObject(form, form.getPObjectReference());
         }

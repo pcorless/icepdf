@@ -69,8 +69,12 @@ public abstract class AbstractPageViewComponent
         progressivePaint = Defs.booleanProperty("org.icepdf.core.views.page.progressivePaint", true);
     }
 
-    // flags for painting annotations and text highlights.
+    // Whether the worker bakes annotations into the page back buffer. True for plain page views
+    // (e.g. thumbnails); PageViewComponentImpl sets it false because it renders annotations as
+    // separate live Swing components on top of the buffer instead.
     protected boolean paintAnnotations = true;
+    // Always false: search highlights are painted on the EDT in paintTextSelection() so they can
+    // track live search state, rather than being baked into the worker's buffer.
     protected final boolean paintSearchHighlight = false;
 
     // view mvc parents
@@ -90,8 +94,9 @@ public abstract class AbstractPageViewComponent
     // systems graphics configuration for creating a pages back buffer.
     protected GraphicsConfiguration graphicsConfiguration;
 
-    // Main worker task.
-    protected FutureTask<Object> pageImageCaptureTask;
+    // Main worker task. Assigned/read on the EDT (paint and property-change paths) but cancelled in
+    // dispose(), which may run from arbitrary teardown threads, so volatile for reference visibility.
+    protected volatile FutureTask<Object> pageImageCaptureTask;
 
     public AbstractPageViewComponent(DocumentViewModel documentViewModel, PageTree pageTree,
                                      final int pageIndex, int width, int height) {
@@ -111,7 +116,7 @@ public abstract class AbstractPageViewComponent
             pageBoundaryBox = PAGE_BOUNDARY_BOX;
         }
 
-        // set up the store for the pageBufferPadding and current clip
+        // set up the store for the back buffer and current clip
         pageBufferStore = new PageBufferStore();
 
         // initialize page size
@@ -127,6 +132,8 @@ public abstract class AbstractPageViewComponent
         return pageSize.getSize();
     }
 
+    // Intentionally reports the logical page size (zoom/rotation applied) rather than the
+    // component's allocated bounds, so callers that query getSize() get page dimensions.
     public Dimension getSize() {
         return pageSize.getSize();
     }
@@ -225,16 +232,20 @@ public abstract class AbstractPageViewComponent
     }
 
     /**
-     * Checks if this page intersects the viewport
+     * Checks if this page intersects the viewport. Called from the worker thread, where the view
+     * may be tearing down, so a missing model or scroll pane is treated as "not visible".
      *
-     * @return true if page is visible in viewport,  false otherwise.
-     * @throws NullPointerException if the parent scrollPane is null.
+     * @return true if page is visible in viewport, false otherwise (including when the model or
+     * scroll pane is unavailable).
      */
     private boolean isPageIntersectViewport() {
-        Rectangle pageBounds = (documentViewModel != null && documentViewModel.getPageComponents() != null) ?
+        if (documentViewModel == null) {
+            return false;
+        }
+        Rectangle pageBounds = documentViewModel.getPageComponents() != null ?
                 documentViewModel.getPageBounds(pageIndex) : getBounds();
         JScrollPane parentScrollPane = documentViewModel.getDocumentViewScrollPane();
-        return pageBounds != null && this.isShowing() &&
+        return pageBounds != null && parentScrollPane != null && this.isShowing() &&
                 pageBounds.intersects(parentScrollPane.getViewport().getViewRect());
     }
 
@@ -280,14 +291,17 @@ public abstract class AbstractPageViewComponent
         g2d.setColor(pageColor);
         g2d.fillRect(0, 0, pageSize.width, pageSize.height);
 
-        // paint the pageBufferPadding, but get the latest copy encase it was returned extra quick
-        BufferedImage pageImage = pageBufferStore.getImageReference();
+        // paint the back buffer, but get the latest copy in case it was returned extra quick.
+        // read the buffer reference, location, zoom and rotation as one consistent snapshot so a
+        // concurrent worker swap can't pair a new buffer with a stale location/zoom.
+        PageBufferStore.Snapshot snapshot = pageBufferStore.getSnapshot();
+        BufferedImage pageImage = snapshot.image;
         if (pageImage != null) {
-            Rectangle paintingClip = pageBufferStore.getImageLocation();
+            Rectangle paintingClip = snapshot.imageLocation;
             // check if we should scale and rotate the current capture
-            if (pageZoom != pageBufferStore.getPageZoom() ||
-                    pageRotation != pageBufferStore.getPageRotation()) {
-                g2d.transform(calculateBufferAffineTransform());
+            if (pageZoom != snapshot.pageZoom ||
+                    pageRotation != snapshot.pageRotation) {
+                g2d.transform(calculateBufferAffineTransform(snapshot));
                 pageBufferStore.setDirty(true);
                 // force one more paint to make sure we build a new buffer using the current zoom and rotation.
                 repaint();
@@ -323,7 +337,7 @@ public abstract class AbstractPageViewComponent
             imageLocation = new Rectangle(0, 0, pageLocation.width, pageLocation.height);
             imageClipLocation = new Rectangle(imageLocation);
         } else {
-            // otherwise we create a pageBufferPadding based on the viewport size plus some padding
+            // otherwise we create a buffer based on the viewport size plus some padding
             imageClipLocation = viewPort.intersection(pageLocation);
             // move the clip relative to page coordinates
             imageClipLocation.setLocation(
@@ -344,9 +358,9 @@ public abstract class AbstractPageViewComponent
             }
         }
 
-        // check if we need create or refresh the back pageBufferPadding.
+        // check if we need to create or refresh the back buffer.
         if (pageBufferStore.isDirty() || pageBufferStore.getImageReference() == null) {
-            // start future task to paint back pageBufferPadding
+            // start future task to paint the back buffer
             if (pageImageCaptureTask == null || pageImageCaptureTask.isDone() || pageImageCaptureTask.isCancelled()) {
                 pageImageCaptureTask = new FutureTask<>(
                         new PageImageCaptureTask(this, imageLocation, imageClipLocation,
@@ -364,20 +378,20 @@ public abstract class AbstractPageViewComponent
      *
      * @return transform needed to paint the previous out of sync buffer in the correct place.
      */
-    private AffineTransform calculateBufferAffineTransform() {
+    private AffineTransform calculateBufferAffineTransform(PageBufferStore.Snapshot snapshot) {
         AffineTransform at = new AffineTransform();
-        if (pageZoom != pageBufferStore.getPageZoom()) {
-            double pageScale = pageZoom / (double) pageBufferStore.getPageZoom();
+        if (pageZoom != snapshot.pageZoom) {
+            double pageScale = pageZoom / (double) snapshot.pageZoom;
             at.scale(pageScale, pageScale);
         }
         // get the page size of the currently painted image we are trying to scale or rotate.
-        if (pageRotation != pageBufferStore.getPageRotation()) {
+        if (pageRotation != snapshot.pageRotation) {
             double rotation;
-            rotation = pageBufferStore.getPageRotation() - pageRotation;
+            rotation = snapshot.pageRotation - pageRotation;
             if (rotation < 0) {
                 rotation += 360;
             }
-            Rectangle imageLocation = pageBufferStore.getPageSize();
+            Rectangle imageLocation = snapshot.pageSize;
             if (rotation == 90) {
                 at.translate(imageLocation.height, 0);
             } else if (rotation == 180) {
@@ -403,6 +417,9 @@ public abstract class AbstractPageViewComponent
         private final float rotation;
         private final Rectangle imageLocation;
         private final Rectangle imageClipLocation;
+        // defensive copy of the page size; the outer pageSize field is mutated in place on the EDT
+        // by calculatePageSize(), so capture it here to avoid a torn read on the worker thread.
+        private final Rectangle pageSize;
         private final JComponent parent;
 
         public PageImageCaptureTask(JComponent parent, Rectangle imageLocation, Rectangle imageClipLocation,
@@ -412,6 +429,7 @@ public abstract class AbstractPageViewComponent
             this.parent = parent;
             this.imageLocation = imageLocation;
             this.imageClipLocation = imageClipLocation;
+            this.pageSize = new Rectangle(AbstractPageViewComponent.this.pageSize);
         }
 
         public Object call() {
@@ -458,7 +476,7 @@ public abstract class AbstractPageViewComponent
                 page.paint(g2d, GraphicsRenderingHints.SCREEN, pageBoundaryBox, rotation, zoom,
                         paintAnnotations, paintSearchHighlight);
                 g2d.dispose();
-                // init and paint thread went under interrupted, we can move the back pageBufferPadding to the front.
+                // init and paint thread were not interrupted, we can move the back buffer to the front.
                 pageBufferStore.setState(pageBufferImage, imageLocation, imageClipLocation, pageSize,
                         zoom, rotation, false);
             } catch (InterruptedException e) {
@@ -476,7 +494,6 @@ public abstract class AbstractPageViewComponent
             // queue a repaint, regardless of outcome
             SwingUtilities.invokeLater(AbstractPageViewComponent.this::repaint);
 
-            notifyAll();
             return null;
         }
 
@@ -506,6 +523,36 @@ public abstract class AbstractPageViewComponent
 
         PageBufferStore() {
             imageReference = new SoftReference<>(null);
+        }
+
+        /**
+         * Immutable, consistent view of the buffer state captured under a single lock.  Painting reads
+         * the image reference, its location, zoom and rotation together so a concurrent worker
+         * {@link #setState} can't pair a new buffer with a stale location/zoom mid-paint.  Note this
+         * snapshots the image <em>reference</em>, not the pixels, so progressive painting into the
+         * shared buffer still shows through.
+         */
+        protected static final class Snapshot {
+            final BufferedImage image;
+            final Rectangle imageLocation;
+            final Rectangle pageSize;
+            final float pageZoom;
+            final float pageRotation;
+
+            Snapshot(BufferedImage image, Rectangle imageLocation, Rectangle pageSize,
+                     float pageZoom, float pageRotation) {
+                this.image = image;
+                this.imageLocation = imageLocation;
+                this.pageSize = pageSize;
+                this.pageZoom = pageZoom;
+                this.pageRotation = pageRotation;
+            }
+        }
+
+        Snapshot getSnapshot() {
+            synchronized (objectLock) {
+                return new Snapshot(imageReference.get(), imageLocation, pageSize, pageZoom, pageRotation);
+            }
         }
 
         void setState(BufferedImage pageBufferImage, Rectangle imageLocation, Rectangle imageClipLocation,

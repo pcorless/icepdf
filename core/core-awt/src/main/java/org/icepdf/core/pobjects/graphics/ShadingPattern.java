@@ -108,9 +108,6 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
     // graphics state for shading pattern
     protected ExtGState extGState;
 
-    //  initiated flag
-    protected boolean inited;
-
     public ShadingPattern(Library library, DictionaryEntries entries) {
         super(library, entries);
 

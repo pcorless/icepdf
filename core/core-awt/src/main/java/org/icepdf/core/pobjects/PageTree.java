@@ -57,8 +57,6 @@ public class PageTree extends Dictionary {
     private HashMap<Integer, WeakReference<Object>> kidsPageAndPages;
     // pointer to parent page tree
     private PageTree parent;
-    // initiated flag
-    private boolean inited;
     // inheritable page boundary data.
     private PRectangle mediaBox;
     private PRectangle cropBox;

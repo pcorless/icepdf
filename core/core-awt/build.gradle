@@ -97,19 +97,21 @@ tasks.register('javadocJar', Jar) {
 // Archives are now automatically included via publishing plugin
 
 
-compileJava {
-    doFirst{
-
-        def jenkinsBuild = System.getenv("BUILD_NUMBER") ?: "0"
-        def jenkinsRevision = System.getenv("SVN_REVISION") ?: "0"
-
-        copy {
-            from 'src/main/resources/org/icepdf/core/application/ProductInfo.java'
-            into 'src/main/java/org/icepdf/core/application/'
-            filter(org.apache.tools.ant.filters.ReplaceTokens,
-                    tokens: [company: COMPANY, product: PRODUCT, version: VERSION, type: RELEASE_TYPE,
-                             build  : jenkinsBuild, revision: jenkinsRevision])
-        }
+// Stamp the current version into the product-info.properties resource as it is
+// copied to the build output.  ProductInfo loads these values at runtime, so no
+// .java is generated and nothing is written back into the source tree.
+processResources {
+    def buildNo = System.getenv("BUILD_NUMBER") ?: "0"
+    def revisionNo = System.getenv("SVN_REVISION") ?: "0"
+    inputs.property('productInfo', "${COMPANY}|${PRODUCT}|${VERSION}|${RELEASE_TYPE}|${buildNo}|${revisionNo}")
+    filesMatching('**/product-info.properties') {
+        filter(org.apache.tools.ant.filters.ReplaceTokens,
+                tokens: [company         : COMPANY.toString(),
+                         product         : PRODUCT.toString(),
+                         'project.version': VERSION.toString(),
+                         releaseType     : RELEASE_TYPE.toString(),
+                         build           : buildNo,
+                         revision        : revisionNo])
     }
 }
 
@@ -120,8 +122,22 @@ test {
     }
 }
 
-clean {
-    doLast {
-        file("src/main/java/org/icepdf/core/application/ProductInfo.java").delete()
+// Phase 0 parsing performance baseline harness.  Not part of the test task.
+//   ./gradlew :core:core-awt:parsingBenchmark -Picepdf.benchmark.dir=/path/to/corpus
+// Any -Picepdf.benchmark.* project property is forwarded as a -D system property to the runner.
+tasks.register('parsingBenchmark', JavaExec) {
+    group = 'verification'
+    description = 'Runs the object/content parser baseline benchmark (see ParsingBenchmark).'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'org.icepdf.core.benchmark.ParsingBenchmark'
+    // resolve relative -Picepdf.benchmark.dir paths from the repo root, not the module dir
+    workingDir = rootProject.projectDir
+    // large PDFs are loaded whole into a heap ByteBuffer; override with -Picepdf.benchmark.heap=8g
+    maxHeapSize = project.findProperty('icepdf.benchmark.heap') ?: '6g'
+    // forward -Picepdf.benchmark.* and -Porg.icepdf.* to the JVM as system properties
+    project.properties.each { k, v ->
+        if (k.startsWith('icepdf.benchmark.') || k.startsWith('org.icepdf.')) {
+            systemProperty(k, v)
+        }
     }
 }

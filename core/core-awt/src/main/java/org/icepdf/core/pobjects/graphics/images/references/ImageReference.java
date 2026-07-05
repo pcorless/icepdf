@@ -26,6 +26,7 @@ import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -81,6 +82,39 @@ public abstract class ImageReference implements Callable<BufferedImage> {
     public abstract int getHeight();
 
     public abstract BufferedImage getImage() throws InterruptedException;
+
+    /**
+     * Submits this reference's decode ({@link #call()}) to the image executor, de-duplicating against any decode
+     * already in flight for the same image so two references to one image don't both decode it.  The completed
+     * image is published to the {@link ImagePool} as soon as the decode finishes (closing the window between
+     * decode completion and the first {@code getImage()} call), and the in-flight marker is always cleared.
+     */
+    protected void submitDecode() {
+        final ImagePool imagePool = imageStream.getLibrary().getImagePool();
+        FutureTask<BufferedImage> mine = new FutureTask<BufferedImage>(this) {
+            @Override
+            protected void done() {
+                try {
+                    BufferedImage result = get();
+                    if (result != null && reference != null) {
+                        imagePool.put(reference, result);
+                    }
+                } catch (Exception e) {
+                    // decode failed/cancelled; nothing to publish.
+                } finally {
+                    imagePool.removeInProgress(reference);
+                }
+            }
+        };
+        FutureTask<BufferedImage> existing = imagePool.registerInProgress(reference, mine);
+        if (existing != null) {
+            // another reference is already decoding this image; wait on its result.
+            futureTask = existing;
+        } else {
+            futureTask = mine;
+            Library.executeImage(mine);
+        }
+    }
 
     public void drawImage(Graphics2D aG, int aX, int aY, int aW, int aH) throws InterruptedException {
         BufferedImage image = getImage();
