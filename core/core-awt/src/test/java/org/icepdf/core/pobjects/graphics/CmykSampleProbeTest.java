@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 ICEsoft Technologies Canada Corp.
+ * Copyright 2026 Patrick Corless
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -22,7 +22,7 @@ import org.icepdf.core.util.GraphicsRenderingHints;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;

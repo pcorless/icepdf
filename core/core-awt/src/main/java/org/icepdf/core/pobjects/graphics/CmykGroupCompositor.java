@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 ICEsoft Technologies Canada Corp.
+ * Copyright 2026 Patrick Corless
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -20,7 +20,6 @@ import org.icepdf.core.pobjects.graphics.RasterOps.IccCmykRasterOp;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
 
 /**
  * Raster-level subtractive compositor for a DeviceCMYK transparency group
