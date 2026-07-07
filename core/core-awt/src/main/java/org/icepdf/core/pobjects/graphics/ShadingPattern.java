@@ -21,6 +21,7 @@ import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Rectangle2D;
 import java.util.List;
 import java.util.logging.Level;
@@ -277,6 +278,39 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
 
     public void setMatrix(AffineTransform matrix) {
         this.matrix = matrix;
+    }
+
+    /**
+     * Anchors the pattern matrix to the default (initial) coordinate system of
+     * the pattern's parent content stream.  PDF 32000-1 §8.7.3.1 requires a
+     * pattern's appearance to be independent of the CTM in effect when the
+     * pattern is used as the current colour: the pattern matrix maps pattern
+     * space to the <i>default</i> page space, not to the current user space.
+     * <p>
+     * The gradient is painted under the graphics context's live transform
+     * ({@code base × CTM}), and Java2D concatenates the paint's own transform on
+     * top, giving {@code base × CTM × patternMatrix}.  To land the spec-correct
+     * {@code base × patternMatrix} we pre-multiply by {@code CTM}<sup>-1</sup>,
+     * cancelling the fill-time CTM.  When the CTM is the identity (the common
+     * case) this is a no-op, so ordinary patterns are unaffected.
+     *
+     * @param patternMatrix the pattern's {@code Matrix} entry
+     * @param graphicsState graphics state active at the fill (may be null)
+     * @return the pattern matrix compensated for the current CTM
+     */
+    protected AffineTransform anchorToDefaultSpace(AffineTransform patternMatrix,
+                                                   GraphicsState graphicsState) {
+        if (graphicsState == null || graphicsState.getCTM() == null) {
+            return patternMatrix;
+        }
+        try {
+            AffineTransform anchored = graphicsState.getCTM().createInverse();
+            anchored.concatenate(patternMatrix);
+            return anchored;
+        } catch (NoninvertibleTransformException e) {
+            // degenerate CTM (e.g. zero scale); fall back to the raw matrix.
+            return patternMatrix;
+        }
     }
 
     public int getPatternType() {
