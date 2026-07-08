@@ -222,6 +222,24 @@ public class Form extends Stream {
         return leafResources;
     }
 
+    /**
+     * Gets the resources actually used to parse this form's content stream:
+     * the form's own /Resources if present, otherwise the parent resources
+     * supplied via {@link #setParentResources(Resources)} (a form XObject may
+     * inherit its parent's resources, PDF 32000-1 §7.8.3).  Unlike
+     * {@link #getResources()} this returns {@code null} rather than an empty
+     * dictionary when neither is available, and never fabricates an empty one.
+     *
+     * @return effective resources for this form, or {@code null}.
+     */
+    public Resources getLeafResources() {
+        Resources leafResources = library.getResources(entries, RESOURCES_KEY);
+        if (leafResources == null) {
+            leafResources = parentResource;
+        }
+        return leafResources;
+    }
+
     public void setResources(Resources resources) {
         entries.put(RESOURCES_KEY, resources.getEntries());
     }

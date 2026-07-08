@@ -221,6 +221,13 @@ public class FormDrawCmd extends AbstractDrawCmd {
 
             if (xForm.getGraphicsState().getExtGState().getSMask() != null) {
                 softMask = xForm.getGraphicsState().getExtGState().getSMask();
+                // A luminosity/alpha mask group form often carries an empty
+                // /Resources and resolves its XObjects (e.g. a pre-rendered
+                // grayscale drop-shadow image) through the enclosing content
+                // form's resources.  Wire those before getG() initialises the
+                // mask so it actually rasterises instead of collapsing to an
+                // unmasked box.
+                softMask.setParentResources(xForm.getLeafResources());
                 boolean isShading = softMask.getG().getResources().isShading();
                 if (isShading) {
                     isShading = checkForShaddingFill(softMask.getG());
@@ -233,6 +240,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
             }
             if (xForm.getExtGState().getSMask() != null) {
                 formSoftMask = xForm.getExtGState().getSMask();
+                formSoftMask.setParentResources(xForm.getLeafResources());
                 boolean isShading = formSoftMask.getG().getResources().isShading();
                 if (isShading) {
                     isShading = checkForShaddingFill(formSoftMask.getG());
