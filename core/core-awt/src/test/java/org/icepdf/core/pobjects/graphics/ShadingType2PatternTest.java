@@ -37,7 +37,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class ShadingType2PatternTest {
 
     private static ShadingType2Pattern newPattern(AffineTransform patternMatrix) {
-        ShadingType2Pattern pattern = new ShadingType2Pattern(new Library(), new DictionaryEntries());
+        // A shading pattern (PatternType 2, used via scn) -- the only case that
+        // is anchored to default space.  A bare `sh` shading has no PatternType.
+        DictionaryEntries entries = new DictionaryEntries();
+        entries.put(ShadingPattern.PATTERN_TYPE_KEY, ShadingPattern.PATTERN_TYPE_SHADING);
+        ShadingType2Pattern pattern = new ShadingType2Pattern(new Library(), entries);
         pattern.setMatrix(patternMatrix);
         return pattern;
     }
@@ -74,6 +78,25 @@ public class ShadingType2PatternTest {
         AffineTransform spec = new AffineTransform(base);
         spec.concatenate(patternMatrix);
         assertEquals(spec, live, "effective paint transform must land at base × patternMatrix");
+    }
+
+    /**
+     * A bare {@code sh} shading (no {@code /PatternType}) paints in the current
+     * user space, so its matrix must NOT be anchored even under a non-identity
+     * CTM -- cancelling the CTM there collapses the gradient (ICE-15's badge,
+     * whose {@code cm} scales a unit gradient up ~87x).  Only shading patterns
+     * (PatternType 2, via scn) are anchored.
+     */
+    @Test
+    public void shShadingIsNotAnchored() {
+        AffineTransform patternMatrix = new AffineTransform();
+        // No PatternType entry -> treated as a direct `sh` shading.
+        ShadingType2Pattern shShading = new ShadingType2Pattern(new Library(), new DictionaryEntries());
+        shShading.setMatrix(patternMatrix);
+        AffineTransform ctm = AffineTransform.getScaleInstance(87, 87);
+
+        assertEquals(patternMatrix, shShading.anchorToDefaultSpace(patternMatrix, stateWithCtm(ctm)),
+                "an sh shading must keep the current CTM (matrix returned unchanged)");
     }
 
     /**
