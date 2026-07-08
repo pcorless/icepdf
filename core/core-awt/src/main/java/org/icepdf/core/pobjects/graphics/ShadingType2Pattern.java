@@ -152,7 +152,7 @@ public class ShadingType2Pattern extends ShadingPattern {
                     startPoint, endPoint, dist, colors,
                     MultipleGradientPaint.NO_CYCLE,
                     MultipleGradientPaint.LINEAR_RGB,
-                    matrix);
+                    anchorToDefaultSpace(matrix, graphicsState));
             inited = true;
         } catch (Exception e) {
             logger.log(Level.WARNING, "Failed ot initialize gradient paint type 2.", e);

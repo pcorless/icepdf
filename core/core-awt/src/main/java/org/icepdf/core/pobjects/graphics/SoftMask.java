@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Form;
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.functions.Function;
 import org.icepdf.core.util.Library;
 
@@ -63,6 +64,7 @@ public class SoftMask extends Dictionary {
     public static final String SOFT_MASK_TYPE_LUMINOSITY = "Luminosity";
 
     private Form softMask;
+    private Resources parentResources;
 
     public SoftMask(Library library, DictionaryEntries dictionary) {
         super(library, dictionary);
@@ -94,6 +96,29 @@ public class SoftMask extends Dictionary {
      *
      * @return Xobject associated with G, null otherwise.
      */
+    /**
+     * Supplies the resources of the content stream that referenced this soft
+     * mask, to be used as the mask group form's parent resources when it is
+     * initialised.  A luminosity/alpha mask group frequently carries an empty
+     * (or absent) /Resources dict and resolves its XObjects -- e.g. a
+     * pre-rendered grayscale drop-shadow image -- through the resources of the
+     * enclosing stream.  Without this the mask form's {@code Do} operands don't
+     * resolve, the mask rasterises to nothing, and the effect collapses (a soft
+     * drop shadow degrades to an unmasked box).
+     * <p>
+     * Must be called before {@link #getG()} first initialises the mask form.
+     * The mask group form is only weakly cached by the library, so it can be a
+     * different instance each time it is resolved; wiring the parent here -- at
+     * the point of use, right before {@code getG()} -- guarantees the resources
+     * reach the instance actually rasterised.  {@link Form#init()} prefers the
+     * form's own resources, so this is a no-op for mask groups that carry them.
+     *
+     * @param parentResources resources of the referencing content stream.
+     */
+    public void setParentResources(Resources parentResources) {
+        this.parentResources = parentResources;
+    }
+
     public Form getG() {
         if (softMask != null) {
             return softMask;
@@ -102,6 +127,9 @@ public class SoftMask extends Dictionary {
         if (GKey instanceof Form) {
             try {
                 softMask = (Form) GKey;
+                if (parentResources != null) {
+                    softMask.setParentResources(parentResources);
+                }
                 softMask.init();
                 return softMask;
             } catch (InterruptedException e) {

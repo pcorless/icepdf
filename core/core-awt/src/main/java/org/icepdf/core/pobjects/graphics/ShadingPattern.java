@@ -21,6 +21,7 @@ import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Rectangle2D;
 import java.util.List;
 import java.util.logging.Level;
@@ -53,6 +54,11 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
     public static final Name COORDS_KEY = new Name("Coords");
     public static final Name EXTEND_KEY = new Name("Extend");
     public static final Name FUNCTION_KEY = new Name("Function");
+    // PatternType entry value for a shading pattern (used via scn); a bare `sh`
+    // shading dictionary carries no PatternType entry.  Distinguishes the two so
+    // only shading patterns are anchored to default space (see
+    // anchorToDefaultSpace).
+    public static final int PATTERN_TYPE_SHADING = 2;
     // pattern types by number.
     public static final int SHADING_PATTERN_TYPE_1 = 1;
     public static final int SHADING_PATTERN_TYPE_2 = 2;
@@ -277,6 +283,53 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
 
     public void setMatrix(AffineTransform matrix) {
         this.matrix = matrix;
+    }
+
+    /**
+     * Anchors a <i>shading pattern</i>'s matrix to the default (initial)
+     * coordinate system of its parent content stream.  PDF 32000-1 §8.7.3.1
+     * requires a shading <b>pattern</b>'s appearance to be independent of the CTM
+     * in effect when the pattern is used as the current colour: the pattern
+     * matrix maps pattern space to the <i>default</i> page space, not to the
+     * current user space.
+     * <p>
+     * The gradient is painted under the graphics context's live transform
+     * ({@code base × CTM}), and Java2D concatenates the paint's own transform on
+     * top, giving {@code base × CTM × patternMatrix}.  To land the spec-correct
+     * {@code base × patternMatrix} we pre-multiply by {@code CTM}<sup>-1</sup>,
+     * cancelling the fill-time CTM.  When the CTM is the identity (the common
+     * case) this is a no-op.
+     * <p>
+     * <b>Only shading patterns are anchored.</b>  The same {@link ShadingType2Pattern}
+     * / {@link ShadingType3Pattern} classes also back the {@code sh} operator,
+     * which paints a shading directly in the <i>current user space</i> -- its
+     * coordinates are defined relative to the live CTM and the CTM must apply in
+     * full (e.g. ICE-15's badge scales a unit gradient up by its {@code cm};
+     * cancelling the CTM there collapses the gradient to a flat colour).  A bare
+     * {@code sh} shading dictionary carries no {@code /PatternType}, so
+     * {@code patternType != }{@link #PATTERN_TYPE_SHADING} and the raw matrix is
+     * returned unchanged.
+     *
+     * @param patternMatrix the pattern's {@code Matrix} entry
+     * @param graphicsState graphics state active at the fill (may be null)
+     * @return the pattern matrix compensated for the current CTM
+     */
+    protected AffineTransform anchorToDefaultSpace(AffineTransform patternMatrix,
+                                                   GraphicsState graphicsState) {
+        // `sh` shadings paint in current user space -- keep the CTM.  Only a
+        // shading pattern (scn) is independent of the fill-time CTM.
+        if (patternType != PATTERN_TYPE_SHADING
+                || graphicsState == null || graphicsState.getCTM() == null) {
+            return patternMatrix;
+        }
+        try {
+            AffineTransform anchored = graphicsState.getCTM().createInverse();
+            anchored.concatenate(patternMatrix);
+            return anchored;
+        } catch (NoninvertibleTransformException e) {
+            // degenerate CTM (e.g. zero scale); fall back to the raw matrix.
+            return patternMatrix;
+        }
     }
 
     public int getPatternType() {

@@ -199,7 +199,24 @@ public class ShadingSoftMaskDrawCmd extends AbstractDrawCmd {
             }
         }
         mg.setTransform(base);
-        mg.setClip(fillClip);
+        // Clip the mask render to the fill region, but in the buffer's DEVICE
+        // space rather than under `base`.  `fillClip` is expressed in the sh/f
+        // user space (the ctm), and the mask buffer maps device (device.x,device.y)
+        // to its own (0,0).  For an `sh` fill `base` additionally has the mask
+        // group's own cm undone (see above), so clipping with `fillClip` under
+        // `base` lands the clip off the buffer entirely -- the gradient is fully
+        // clipped away and only the BC backdrop remains (a white-BC luminosity
+        // mask then reads as fully opaque, washing the masked image to white:
+        // faded conference-photo regression, GH-501 follow-up).  Mapping the clip
+        // through `translate(-device) . ctm` keeps it aligned to the buffer for
+        // both the `sh` and `f` paths.
+        AffineTransform toDevice = AffineTransform.getTranslateInstance(-device.x, -device.y);
+        toDevice.concatenate(ctm);
+        Shape deviceClip = toDevice.createTransformedShape(fillClip);
+        AffineTransform prevMaskTransform = mg.getTransform();
+        mg.setTransform(new AffineTransform());
+        mg.setClip(deviceClip);
+        mg.setTransform(prevMaskTransform);
         // Substitute any null sentinel shading-fill shape with the fill region so
         // the gradient covers the buffer (mirrors FormDrawCmd.clampShadingFillShape).
         for (DrawCmd cmd : maskShapes.getShapes()) {

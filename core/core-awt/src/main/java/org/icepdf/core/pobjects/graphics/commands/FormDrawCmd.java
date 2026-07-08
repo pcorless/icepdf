@@ -221,6 +221,13 @@ public class FormDrawCmd extends AbstractDrawCmd {
 
             if (xForm.getGraphicsState().getExtGState().getSMask() != null) {
                 softMask = xForm.getGraphicsState().getExtGState().getSMask();
+                // A luminosity/alpha mask group form often carries an empty
+                // /Resources and resolves its XObjects (e.g. a pre-rendered
+                // grayscale drop-shadow image) through the enclosing content
+                // form's resources.  Wire those before getG() initialises the
+                // mask so it actually rasterises instead of collapsing to an
+                // unmasked box.
+                softMask.setParentResources(xForm.getLeafResources());
                 boolean isShading = softMask.getG().getResources().isShading();
                 if (isShading) {
                     isShading = checkForShaddingFill(softMask.getG());
@@ -233,6 +240,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
             }
             if (xForm.getExtGState().getSMask() != null) {
                 formSoftMask = xForm.getExtGState().getSMask();
+                formSoftMask.setParentResources(xForm.getLeafResources());
                 boolean isShading = formSoftMask.getG().getResources().isShading();
                 if (isShading) {
                     isShading = checkForShaddingFill(formSoftMask.getG());
@@ -752,6 +760,24 @@ public class FormDrawCmd extends AbstractDrawCmd {
             BufferedImage sMaskBuffer = createBufferXObject(parentPage, softMask.getG(), softMask, renderingHints, true);
 //            ImageUtility.displayImage(xFormBuffer, "base " + xForm.getPObjectReference() + " " + xFormBuffer.getHeight() + " x " + xFormBuffer.getHeight());
 //            ImageUtility.displayImage(sMaskBuffer, "smask " + softMask.getG().getPObjectReference() + " " + useLuminosity);
+            // A luminosity mask that renders to zero luminosity everywhere would
+            // erase the whole group (applyExplicitSMask/Outline read the mask's red
+            // channel as the alpha weight).  That happens when the mask group's own
+            // bbox differs from the content's and createBufferXObject's oversized
+            // clamp renders the mask content off its (content-sized) buffer -- e.g.
+            // "Java Magazine" cover, form 1370's title-dimming box whose mask group
+            // 1366 has a wider, offset bbox, so the buffered mask comes back fully
+            // transparent and the dark box vanishes.  A genuine "hide everything"
+            // group draws nothing and is never authored, so a zero mask is a
+            // misrender: skip it and keep the unmasked content, matching the
+            // pre-GH-495 inline path (which ignored the mask for such oversized
+            // groups) -- the "close-enough" result.  Correctly rendered masks
+            // (WhiteGradient.pdf's fade, etc.) carry non-zero luminosity and are
+            // unaffected.
+            if (maskContributesNothing(sMaskBuffer)) {
+                sMaskBuffer.flush();
+                return xFormBuffer;
+            }
             if (gsSoftMask == null) {
                 xFormBuffer = ImageUtility.applyExplicitSMask(xFormBuffer, sMaskBuffer);
             } else {
@@ -767,6 +793,31 @@ public class FormDrawCmd extends AbstractDrawCmd {
         }
 //        ImageUtility.displayImage(xFormBuffer, "final  " + softMask.getG().getPObjectReference());
         return xFormBuffer;
+    }
+
+    /**
+     * True when a luminosity soft-mask buffer would contribute zero everywhere --
+     * no pixel has a non-zero red (luminosity) channel, so applying it as a soft
+     * mask erases the group entirely.  This flags a misrendered mask (typically an
+     * oversized mask group whose content landed off its content-clamped buffer),
+     * not a legitimate effect; the caller skips the mask and keeps the content.
+     * Early-exits on the first contributing pixel, so a valid mask costs one row.
+     */
+    static boolean maskContributesNothing(BufferedImage mask) {
+        if (mask == null) {
+            return false;
+        }
+        int w = mask.getWidth(), h = mask.getHeight();
+        int[] row = new int[w];
+        for (int y = 0; y < h; y++) {
+            mask.getRGB(0, y, w, 1, row, 0, w);
+            for (int p : row) {
+                if (((p >> 16) & 0xff) != 0) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**
