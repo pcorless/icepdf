@@ -221,7 +221,7 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
     protected MeshShadingPaint buildMeshPaint(List<MeshShadingPaint.Triangle> triangles,
                                               GraphicsState graphicsState) {
         AffineTransform shadingToUser = matrix;
-        if (patternType == PATTERN_TYPE_SHADING
+        if (patternType == Pattern.PATTERN_TYPE_SHADING
                 && graphicsState != null && graphicsState.getCTM() != null) {
             try {
                 AffineTransform anchored = graphicsState.getCTM().createInverse();
