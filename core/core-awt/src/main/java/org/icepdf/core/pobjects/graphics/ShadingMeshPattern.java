@@ -116,7 +116,9 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
 
         java.util.List<Number> decodeVec = (java.util.List<Number>) library.getObject(shadingDictionary, ImageParams.DECODE_KEY);
 
-        float maxValue = bitsPerCoordinate < 32 ? (float) ((1 << bitsPerCoordinate) - 1) : (float) 2.3283064365386963e-10; // 2^-32;
+        // 2^bitsPerCoordinate - 1, computed with a long so the common 32-bit
+        // case (4294967295) does not overflow an int.
+        float maxValue = (float) ((1L << bitsPerCoordinate) - 1);
         for (int i = 0; i <= DECODE_Y_MAX; ) {
             float Dmin = decodeVec.get(i).floatValue();
             float Dmax = decodeVec.get(i + 1).floatValue();
@@ -150,14 +152,16 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
      * @throws IOException bit stream issue.
      */
     protected Point2D.Float readCoord() throws IOException {
-        float x = vertexBitStream.getBits(bitsPerCoordinate);
-        float y = vertexBitStream.getBits(bitsPerCoordinate);
+        // Coordinates can be up to 32 bits; getBits(32) returns a signed int, so
+        // treat the raw sample as unsigned before decoding.
+        long rawX = vertexBitStream.getBits(bitsPerCoordinate) & 0xFFFFFFFFL;
+        long rawY = vertexBitStream.getBits(bitsPerCoordinate) & 0xFFFFFFFFL;
         // Map the raw sample into the Decode range.  processDecode stored the
         // interval minimum in decode[*_MIN] and the per-unit slope
-        // (Dmax-Dmin)/2^bits-1 in decode[*_MAX], so the decoded value is
+        // (Dmax-Dmin)/(2^bits-1) in decode[*_MAX], so the decoded value is
         // Dmin + raw * slope.
-        x = decode[DECODE_X_MIN] + x * decode[DECODE_X_MAX];
-        y = decode[DECODE_Y_MIN] + y * decode[DECODE_Y_MAX];
+        float x = decode[DECODE_X_MIN] + rawX * decode[DECODE_X_MAX];
+        float y = decode[DECODE_Y_MIN] + rawY * decode[DECODE_Y_MAX];
         return new Point2D.Float(x, y);
     }
 
