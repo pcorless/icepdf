@@ -443,6 +443,29 @@ public class FormDrawCmd extends AbstractDrawCmd {
             savedComposite = g.getComposite();
             g.setComposite(java.awt.AlphaComposite.SrcOver);
         }
+        // A buffered Normal group whose inner content re-asserted the group's own
+        // constant alpha already carries that ca in the buffer.  Some authoring
+        // tools (e.g. Illustrator "stacked" gradient groups) set the same ca both
+        // as the group ca -- applied here at the draw-back composite -- AND via a
+        // gs inside the form, which bakes it into the buffer.  Compositing the
+        // buffer back under the ca composite then applies it a second time (ca^2),
+        // washing out glossy sheens (GH-501, p3 "Upgrade & Save" button).  Detect
+        // it from the buffer itself: when the buffer's PEAK opacity already equals
+        // the ca the draw-back would apply, the group's contribution is fully
+        // represented, so draw it straight (SRC_OVER) and let ca land exactly once.
+        // A group with opaque content (peak 255 > ca) genuinely needs the ca at
+        // draw-back and is left untouched (e.g. WhiteGradient.pdf's ca=0.8 fade).
+        if (savedComposite == null && xFormBuffer != null
+                && g.getComposite() instanceof java.awt.AlphaComposite) {
+            java.awt.AlphaComposite ac = (java.awt.AlphaComposite) g.getComposite();
+            if (ac.getRule() == java.awt.AlphaComposite.SRC_OVER && ac.getAlpha() < 1f) {
+                int target = Math.round(ac.getAlpha() * 255);
+                if (Math.abs(bufferPeakAlpha(xFormBuffer) - target) <= 2) {
+                    savedComposite = g.getComposite();
+                    g.setComposite(java.awt.AlphaComposite.SrcOver);
+                }
+            }
+        }
         if (formScale != 1.0) {
             // buffer was rasterised at a reduced size; scale it back up to the
             // group's full footprint so the blend composites over the page at
@@ -455,6 +478,27 @@ public class FormDrawCmd extends AbstractDrawCmd {
             g.setComposite(savedComposite);
         }
         return currentShape;
+    }
+
+    // Peak (maximum) alpha found in a buffer's pixels, sampled on a stride so a
+    // large buffer is scanned cheaply.  Used to tell whether a group's content
+    // already carries its constant alpha (peak == ca) or is opaque (peak == 255).
+    private static int bufferPeakAlpha(BufferedImage img) {
+        int w = img.getWidth(), h = img.getHeight();
+        int stepX = Math.max(1, w / 256), stepY = Math.max(1, h / 256);
+        int peak = 0;
+        for (int yy = 0; yy < h; yy += stepY) {
+            for (int xx = 0; xx < w; xx += stepX) {
+                int a = (img.getRGB(xx, yy) >>> 24) & 0xff;
+                if (a > peak) {
+                    peak = a;
+                    if (peak == 255) {
+                        return 255;
+                    }
+                }
+            }
+        }
+        return peak;
     }
 
     // guard so replaying the stack to build a backdrop doesn't recursively try
