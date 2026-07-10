@@ -48,6 +48,13 @@ public class FormDrawCmd extends AbstractDrawCmd {
     private double formScale = 1.0;
     private int formWidth, formHeight;
 
+    // When set (a finite soft-mask group), both the content buffer and the mask
+    // sub-buffer are framed to this UNION(content, mask) bbox: same size, same
+    // origin, so applyExplicitSMask overlays them 1:1 -- no scaleImagesToSameSize
+    // resize (one fewer allocation) and no offset, so the mask's soft feather
+    // that extends past the content bbox (a drop shadow's outer edge) is kept.
+    private Rectangle2D bufferFrame;
+
     // Backdrop capture (§10 POC): the Shapes this command lives in and its index,
     // so a non-isolated group can replay the stack before it to reconstruct the
     // page backdrop behind the group (instead of the white-fill proxy).
@@ -314,6 +321,22 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 xForm.setShading(isFormShading);
             }
 
+            // Frame the content buffer and the mask sub-buffer to the UNION of the
+            // content and (finite, non-shading) mask bboxes so the two align 1:1;
+            // x,y move to the union origin for the draw-back.  This keeps the
+            // mask's soft feather where it extends past the content bbox (a drop
+            // shadow's outer edge) instead of clipping it to a hard edge.
+            SoftMask alignMask = softMask != null ? softMask : formSoftMask;
+            if (alignMask != null && alignMask.getG() != null && !alignMask.getG().isShading()
+                    && !xForm.isShading() && hasFiniteSoftMask(xForm)) {
+                Rectangle2D mBox = alignMask.getG().getBBox();
+                if (mBox != null) {
+                    bufferFrame = bBox.createUnion(mBox);
+                    x = (int) Math.floor(bufferFrame.getX());
+                    y = (int) Math.floor(bufferFrame.getY());
+                }
+            }
+
             // create the form and we'll paint it at the very least.  An isolated
             // group composites against a transparent backdrop, so flag the blend
             // for this buffer's paint: a separable blend over the still
@@ -409,6 +432,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
             }
 //            ImageUtility.displayImage(xFormBuffer, "final" + xForm.getGroup() + " " + xForm.getPObjectReference() +
 //                    xFormBuffer.getHeight() + "x" + xFormBuffer.getHeight());
+            bufferFrame = null;
         }
         // §10: a backdrop-composited buffer already holds the group's
         // contribution with the backdrop removed; the page blend (e.g. Multiply)
@@ -895,7 +919,15 @@ public class FormDrawCmd extends AbstractDrawCmd {
         double scale = 1.0;
         int bufferWidth;
         int bufferHeight;
-        if (isMask && xForm == this.xForm && xFormBuffer != null) {
+        if (bufferFrame != null) {
+            // Finite soft-mask group: frame the content and mask buffers to the
+            // common UNION bbox, 1:1, so applyMask overlays them aligned.
+            bufferWidth = Math.max(1, (int) Math.ceil(bufferFrame.getWidth()));
+            bufferHeight = Math.max(1, (int) Math.ceil(bufferFrame.getHeight()));
+            formScale = 1.0;
+            formWidth = bufferWidth;
+            formHeight = bufferHeight;
+        } else if (isMask && xForm == this.xForm && xFormBuffer != null) {
             // Outline pass for the SAME group (applyExplicitOutline): match the
             // main buffer's (possibly area-scaled) dimensions and scale exactly,
             // so the outline lines up 1:1 and applyExplicitOutline does not have
@@ -983,7 +1015,11 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 // translate the coordinate system as we'll paint the g
                 // graphic at the correctly location later.
                 if (!xForm.isShading()) {
-                    canvas.translate(-(int) bBox.getX(), -(int) bBox.getY());
+                    // Translate to the buffer frame origin (the union bbox when
+                    // framing a masked group, else the form's own bbox), but clip
+                    // to the form's own bbox so its content stays within its extent.
+                    Rectangle2D frame = bufferFrame != null ? bufferFrame : bBox;
+                    canvas.translate(-(int) frame.getX(), -(int) frame.getY());
                     canvas.setClip(bBox);
                 }
                 // basic support for gradient fills,  still have a few corners cases to work on.
