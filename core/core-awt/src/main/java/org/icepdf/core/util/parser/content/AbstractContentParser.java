@@ -560,12 +560,18 @@ public abstract class AbstractContentParser {
             }
             shapes.add(clipDrawCmd);
             // 4. Paint the graphics objects in font stream.
-            // still some work to do here regarding BM vs. alpha comp.
+            // A transparency group's constant alpha (ca) applies to the group as
+            // a unit, once, at its composite -- PDF 32000-1 §11.6.6/§7.6.3.  The
+            // group ca is applied here on the OUTER shapes (the boundary): for a
+            // buffered group it becomes the composite the draw-back runs under
+            // (FormDrawCmd), for an inline group it wraps the inner ShapesDrawCmd.
+            // The inner form content keeps its OWN element-level alphas -- it must
+            // NOT have the group ca baked into it as well, or the ca is applied
+            // twice (0.30^2 washes soft sheens; GH-501).  Step 1 of the
+            // transparency-group state rework removed that inner-content bake.
             if ((formXObject.getExtGState() != null &&
                     (formXObject.getExtGState().getBlendingMode() == null ||
                             formXObject.getExtGState().getBlendingMode().equals(BlendComposite.NORMAL_VALUE)))) {
-                setAlpha(formXObject.getShapes(), graphicState, graphicState.getAlphaRule(),
-                        graphicState.getFillAlpha());
                 setAlpha(shapes, graphicState, graphicState.getAlphaRule(),
                         graphicState.getFillAlpha());
             }

@@ -61,6 +61,15 @@ public class FormDrawCmd extends AbstractDrawCmd {
     // realistically we seldom have enough memory to load anything bigger then 8000px.  4k+ image are big!
     public static int MAX_IMAGE_SIZE = 2000; // Short.MAX_VALUE
 
+    // Soft-mask groups cannot be down-scaled: applyMask stretches the mask to the
+    // content buffer, and a down-scaled buffer mis-scales/clips the mask's soft
+    // feather (drop shadows lose their outer edge -> hard edge).  So a masked
+    // group is buffered 1:1 up to this (much larger) ceiling instead of the
+    // 2010-era 2000^2 budget; a 4096^2 ARGB buffer is ~67 MB, acceptable on
+    // modern hardware for the render-quality win.  Beyond this it stays inline.
+    public static int MAX_SMASK_IMAGE_SIZE =
+            Defs.sysPropertyInt("org.icepdf.core.maxSmaskBufferSize", 4096);
+
     // Upper bound on a transparency-group bbox that may be rasterised into a
     // down-scaled buffer (see createBufferXObject).  Forms larger than this are
     // treated as having an "unbounded" sentinel bbox (typically +-Short.MAX_VALUE)
@@ -173,14 +182,51 @@ public class FormDrawCmd extends AbstractDrawCmd {
         if (area <= maxArea) {
             return true;
         }
-        // Over the area budget the buffer must be down-scaled.  Proven safe for
-        // blend-only groups; SMask groups are still excluded here because a
-        // down-scaled luminosity mask is not yet validated.
-        return !hasSoftMask && hasBlend;
+        // A soft-mask group must not be down-scaled (that mis-scales its mask),
+        // so buffer a finite-mask group 1:1 up to the larger SMask ceiling;
+        // createBufferXObject uses the same ceiling so it is NOT down-scaled.
+        // Sentinel/shading-mask groups (unbounded mask bbox) are a separate,
+        // unhandled case and keep the legacy inline path.  A blend-only group can
+        // be down-scaled within MAX_SCALED_FORM_SIZE.
+        if (hasSoftMask) {
+            long maxSMaskArea = (long) MAX_SMASK_IMAGE_SIZE * MAX_SMASK_IMAGE_SIZE;
+            return hasFiniteSoftMask(form) && area <= maxSMaskArea;
+        }
+        return hasBlend;
     }
 
     public FormDrawCmd(Form xForm) {
         this.xForm = xForm;
+    }
+
+    // A mask group bbox at/above this is the +-Short.MAX_VALUE sentinel of a
+    // shading soft mask, whose 1:1/down-scaled buffering is a separate (unhandled)
+    // case; such groups keep the legacy inline path.
+    private static final double SMASK_SENTINEL_BBOX = 30000;
+
+    /** True when this command's group carries a soft mask (from either the
+     *  captured graphics state or the form's own ExtGState); such groups are
+     *  buffered 1:1 up to {@link #MAX_SMASK_IMAGE_SIZE} rather than down-scaled. */
+    private boolean hasSoftMaskGroup() {
+        return hasFiniteSoftMask(xForm);
+    }
+
+    /** True when the group has a soft mask with a realistically sized (non-sentinel)
+     *  mask group bbox -- the case the 1:1 SMask buffer path handles. */
+    private static boolean hasFiniteSoftMask(Form form) {
+        SoftMask sm = null;
+        GraphicsState gs = form.getGraphicsState();
+        if (gs != null && gs.getExtGState() != null) {
+            sm = gs.getExtGState().getSMask();
+        }
+        if (sm == null && form.getExtGState() != null) {
+            sm = form.getExtGState().getSMask();
+        }
+        if (sm == null || sm.getG() == null || sm.getG().getBBox() == null) {
+            return false;
+        }
+        Rectangle2D mb = sm.getG().getBBox();
+        return mb.getWidth() < SMASK_SENTINEL_BBOX && mb.getHeight() < SMASK_SENTINEL_BBOX;
     }
 
     /**
@@ -906,7 +952,11 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 height = 1;
             }
             long area = (long) width * height;
-            long maxArea = (long) MAX_IMAGE_SIZE * MAX_IMAGE_SIZE;
+            // A soft-mask group is buffered 1:1 up to the larger SMask ceiling
+            // (down-scaling mis-scales its mask); other groups keep MAX_IMAGE_SIZE.
+            long maxArea = hasSoftMaskGroup()
+                    ? (long) MAX_SMASK_IMAGE_SIZE * MAX_SMASK_IMAGE_SIZE
+                    : (long) MAX_IMAGE_SIZE * MAX_IMAGE_SIZE;
             if (area > maxArea) {
                 scale = Math.sqrt((double) maxArea / area);
             }
