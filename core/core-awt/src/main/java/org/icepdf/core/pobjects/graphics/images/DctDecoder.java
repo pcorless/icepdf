@@ -15,6 +15,8 @@
  */
 package org.icepdf.core.pobjects.graphics.images;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.graphics.*;
 
 import javax.imageio.ImageIO;
@@ -45,6 +47,12 @@ public class DctDecoder extends AbstractImageDecoder {
 
     private static final int TRANSFORM_POSITION = 11;
     private static final String ADOBE = "Adobe";
+    private static final Name COLOR_TRANSFORM_KEY = new Name("ColorTransform");
+
+    // Set by getJPEGEncoding: true when the encoding came from a definitive Adobe
+    // APP14 marker (authoritative), false when it was inferred from the SOS/SOF
+    // component count (a heuristic an explicit ColorTransform DecodeParm may override).
+    private boolean encodingFromAdobeMarker;
 
     DctDecoder(ImageStream imageStream, GraphicsState graphicsState) {
         super(imageStream, graphicsState);
@@ -118,17 +126,33 @@ public class DctDecoder extends AbstractImageDecoder {
                 wr = scaleReallyBigImages(wr);
             }
 
+            int bands = wr.getNumBands();
+
             // check the encoding type for colour conversion.
             jpegEncoding = getJPEGEncoding(data, dataRead);
-            if (jpegEncoding == 0) {
+            if (jpegEncoding == JPEG_ENC_UNKNOWN_PROBABLY_YCbCr) {
                 // try and find the Adobe transfer meta data.
                 jpegEncoding = getAdobeTransform(imageInputStream);
+            }
+            // When the encoding was inferred from the component count (no definitive
+            // Adobe APP14 marker), an explicit DCTDecode ColorTransform DecodeParm
+            // (PDF 32000-1 §7.4.8) is authoritative and overrides the guess: 0 =
+            // components are NOT colour transformed (direct RGB for 3 bands, CMYK for
+            // 4); 1 = YCbCr (3) / YCCK (4).  Without this an unmarked 3-component JPEG
+            // is assumed YCbCr and a direct-RGB image is cast magenta
+            // (support_4143_3.pdf: CalRGB JPEG, ColorTransform 0).
+            if (!encodingFromAdobeMarker) {
+                int colorTransform = getColorTransform(imageParams);
+                if (colorTransform == 0) {
+                    jpegEncoding = bands >= 4 ? JPEG_ENC_CMYK : JPEG_ENC_RGB;
+                } else if (colorTransform == 1) {
+                    jpegEncoding = bands >= 4 ? JPEG_ENC_YCCK : JPEG_ENC_YCbCr;
+                }
             }
             PColorSpace colourSpace = imageParams.getColourSpace();
             int bitsPerComponent = imageParams.getBitsPerComponent();
             float[] decode = imageParams.getDecode();
-            int bands = wr.getNumBands();
-
+
             if (jpegEncoding == JPEG_ENC_RGB && bitsPerComponent == 8) {
                 tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
             } else if (jpegEncoding == JPEG_ENC_CMYK && bitsPerComponent == 8 && bands > 1) {
@@ -200,6 +224,22 @@ public class DctDecoder extends AbstractImageDecoder {
         return tmpImage;
     }
 
+    /**
+     * The DCTDecode {@code ColorTransform} DecodeParm (PDF 32000-1 §7.4.8): 0 or 1
+     * if present, else -1.  Controls whether the JPEG components are colour
+     * transformed (YCbCr/YCCK) or used directly (RGB/CMYK).
+     */
+    private int getColorTransform(ImageParams imageParams) {
+        DictionaryEntries decodeParams = imageParams.getDecodeParams();
+        if (decodeParams != null) {
+            Object colorTransform = imageParams.getLibrary().getObject(decodeParams, COLOR_TRANSFORM_KEY);
+            if (colorTransform instanceof Number) {
+                return ((Number) colorTransform).intValue();
+            }
+        }
+        return -1;
+    }
+
     private int getJPEGEncoding(byte[] data, int dataLength) {
         int jpegEncoding = JPEG_ENC_UNKNOWN_PROBABLY_YCbCr;
 
@@ -265,6 +305,7 @@ public class DctDecoder extends AbstractImageDecoder {
             index += length;
         }
 
+        encodingFromAdobeMarker = foundAPP14 && foundSOF;
         if (foundAPP14 && foundSOF) {
             if (compsTypeFromAPP14 == 0) {       // 0 seems to indicate no conversion
                 if (numCompsFromSOF == 1)
