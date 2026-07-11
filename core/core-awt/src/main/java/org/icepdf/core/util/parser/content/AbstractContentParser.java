@@ -1927,8 +1927,26 @@ public abstract class AbstractContentParser {
                     && sMask.getS().equals(SoftMask.SOFT_MASK_TYPE_LUMINOSITY)
                     && graphicState.getFillColor() != null
                     && !(graphicState.getFillColorSpace() instanceof PatternColor)) {
+                // If a cm was applied between the `gs` that set the mask and this
+                // fill, the fill CTM no longer matches the mask group's own
+                // coordinate system (§11.6.5.2).  Pass the correction fillCTM^-1 .
+                // gsCTM so the mask group renders in its gs-time space; identity
+                // (null) when there is no intervening cm (the common bevel case).
+                AffineTransform maskCtmFix = null;
+                AffineTransform gsCtm = graphicState.getSoftMaskCtm();
+                if (gsCtm != null) {
+                    try {
+                        maskCtmFix = graphicState.getCTM().createInverse();
+                        maskCtmFix.concatenate(gsCtm);
+                        if (maskCtmFix.isIdentity()) {
+                            maskCtmFix = null;
+                        }
+                    } catch (NoninvertibleTransformException e) {
+                        maskCtmFix = null;
+                    }
+                }
                 shapes.add(new ShadingSoftMaskDrawCmd(graphicState.getFillColor(),
-                        (GeneralPath) geometricPath.clone(), sMask));
+                        (GeneralPath) geometricPath.clone(), sMask, maskCtmFix));
             }
             return;
         }
