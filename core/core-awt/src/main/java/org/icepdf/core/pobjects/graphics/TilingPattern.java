@@ -295,11 +295,19 @@ public class TilingPattern extends Stream implements Pattern {
             logger.log(Level.WARNING, "Error processing tiling pattern.", e);
         }
 
-        // some encoders set the step to 2^15
-        if (xStep >= Short.MAX_VALUE) {
+        // Normalise the XStep/YStep.  Producers emit a "does not repeat" sentinel
+        // -- 2^15 (Short.MAX_VALUE) or ~2^31 -- for a single-stamp pattern.  Such
+        // a step is not a real coordinate and also overflows the tile-cell buffer
+        // math below (the cell would be tens-of-thousands to billions of units,
+        // collapsing the render scale so the stamp vanishes), so fall back to the
+        // BBox as the cell.  A real finite step that merely exceeds the fill
+        // region (e.g. a marker stamped once, CanmoreAlberta's 33183) is kept so
+        // it renders once at true size rather than tiling.  Degenerate (<=0) steps
+        // also fall back to the BBox.
+        if (isSentinelStep(xStep)) {
             xStep = (float) bBox.getWidth();
         }
-        if (yStep >= Short.MAX_VALUE) {
+        if (isSentinelStep(yStep)) {
             yStep = (float) bBox.getHeight();
         }
         // adjust the bBox so that xStep and yStep can be applied
@@ -316,6 +324,21 @@ public class TilingPattern extends Stream implements Pattern {
         patternMatrix.concatenate(matrix);
         GeneralPath tmp = new GeneralPath(bBoxMod);
         bBoxMod = tmp.createTransformedShape(patternMatrix).getBounds2D();
+    }
+
+    /**
+     * A step that is not a usable tile spacing: non-positive, the 2^15
+     * ({@link Short#MAX_VALUE}) "does not repeat" sentinel some producers emit,
+     * or a ~2^31 sentinel.  These are collapsed to the BBox in {@link #init}: they
+     * are not real coordinates and would otherwise size the tile cell to
+     * tens-of-thousands / billions of units, collapsing the render scale so the
+     * tile vanishes.  A merely-large but finite step is a legitimate single stamp
+     * and is left untouched.
+     */
+    private static boolean isSentinelStep(float step) {
+        return step <= 0f
+                || (step >= Short.MAX_VALUE && step <= Short.MAX_VALUE + 1)
+                || step >= (1 << 30);
     }
 
     /**
