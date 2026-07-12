@@ -229,10 +229,19 @@ public class FormDrawCmd extends AbstractDrawCmd {
         if (sm == null && form.getExtGState() != null) {
             sm = form.getExtGState().getSMask();
         }
-        if (sm == null || sm.getG() == null || sm.getG().getBBox() == null) {
+        if (sm == null) {
             return false;
         }
-        Rectangle2D mb = sm.getG().getBBox();
+        // Read the mask group BBox straight from its stream dictionary, WITHOUT
+        // initialising (parsing) the mask form.  hasFiniteSoftMask runs at
+        // page-parse time (via requiresOffscreenBuffer <- consume_Do), before the
+        // mask form's parent resources are wired at render time; parsing its
+        // content here NPEs on a colour space that resolves through those not yet
+        // wired resources (GH-501, Java-Magazine p1/p2 grey drop shadow).
+        Rectangle2D mb = sm.getGBBox();
+        if (mb == null) {
+            return false;
+        }
         return mb.getWidth() < SMASK_SENTINEL_BBOX && mb.getHeight() < SMASK_SENTINEL_BBOX;
     }
 

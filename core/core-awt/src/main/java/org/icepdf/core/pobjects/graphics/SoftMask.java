@@ -23,6 +23,7 @@ import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.functions.Function;
 import org.icepdf.core.util.Library;
 
+import java.awt.geom.Rectangle2D;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -117,6 +118,25 @@ public class SoftMask extends Dictionary {
      */
     public void setParentResources(Resources parentResources) {
         this.parentResources = parentResources;
+    }
+
+    /**
+     * The mask group's {@code BBox} read straight from the {@code /G} form's
+     * stream dictionary, <em>without</em> initialising (parsing) the mask form.
+     * Used to classify a mask (finite vs. sentinel bbox) at page-parse time,
+     * before the mask form's parent resources are wired -- unlike {@link #getG()}
+     * which parses the mask content stream and must only be called at render
+     * time (parsing it here NPEs on colour spaces that resolve through the not
+     * yet wired parent resources).
+     *
+     * @return the mask group BBox, or null if absent.
+     */
+    public Rectangle2D getGBBox() {
+        Object GKey = library.getObject(entries, G_KEY);
+        if (GKey instanceof Form) {
+            return library.getRectangle(((Form) GKey).getEntries(), Form.BBOX_KEY);
+        }
+        return null;
     }
 
     public Form getG() {
