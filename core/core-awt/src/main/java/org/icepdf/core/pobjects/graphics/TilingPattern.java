@@ -389,6 +389,18 @@ public class TilingPattern extends Stream implements Pattern {
             imageHeight = bBox.getHeight();
         }
 
+        // The pattern content is drawn into a buffer of imageWidth x imageHeight
+        // px that represents the tile cell (width x height device units).  The
+        // render transform must therefore map the cell onto the buffer at
+        // imageWidth/width (x) and imageHeight/height (y) -- NOT baseScale.  These
+        // are equal while the buffer is un-clamped (imageWidth == width*baseScale),
+        // but when the buffer is clamped to MAX_BUFFER_SIZE the ratio shrinks while
+        // baseScale does not; drawing at baseScale then renders the cell far larger
+        // than the buffer and only a corner is captured (GH-506: the toxic_*.pdf
+        // radial-glow tile whose cell maps to ~22000 device px).
+        double renderScaleX = width > 0 ? imageWidth / width : baseScale;
+        double renderScaleY = height > 0 ? imageHeight / height : baseScale;
+
         // create the new image to write too.
         final BufferedImage bi = ImageUtility.createTranslucentCompatibleImage((int) Math.round(imageWidth),
                 (int) Math.round(imageHeight));
@@ -416,7 +428,7 @@ public class TilingPattern extends Stream implements Pattern {
 
         // paint the pattern
         try {
-            paintPattern(canvas, tilingShapes, matrix, originalPageSpace, baseScale);
+            paintPattern(canvas, tilingShapes, matrix, originalPageSpace, renderScaleX, renderScaleY);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.log(Level.FINER, "Interrupted painting tiling pattern.");
@@ -451,7 +463,7 @@ public class TilingPattern extends Stream implements Pattern {
     }
 
     private void paintPattern(Graphics2D g2d, Shapes tilingShapes, AffineTransform matrix, AffineTransform base,
-                              double scale) throws InterruptedException {
+                              double scaleX, double scaleY) throws InterruptedException {
 
         // store previous state so we can draw bounds
         AffineTransform preAf = g2d.getTransform();
@@ -468,7 +480,7 @@ public class TilingPattern extends Stream implements Pattern {
                 0,
                 0);
         g2d.setTransform(af2);
-        g2d.scale(scale, scale);
+        g2d.scale(scaleX, scaleY);
         // pain the key pattern
         AffineTransform prePaint = g2d.getTransform();
         tilingShapes.paint(g2d);
