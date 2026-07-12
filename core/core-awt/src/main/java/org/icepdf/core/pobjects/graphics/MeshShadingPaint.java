@@ -105,8 +105,27 @@ public class MeshShadingPaint implements Paint {
     private static final class MeshPaintContext implements PaintContext {
 
         private final int[] buffer;
+        // Per-pixel coverage: true where a triangle painted the pixel, so the
+        // edge-clamp pass can tell a genuine mesh colour from an untouched (0)
+        // buffer cell without being fooled by a triangle colour that is itself 0.
+        private final boolean[] covered;
         private final int imgW, imgH;
         private final int originX, originY;
+
+        // Device-space mesh vertices and their ARGB colours.  Pixels of the fill
+        // region that fall outside every triangle are clamped to the nearest
+        // vertex's colour: a PDF mesh shading is defined only within the mesh, but
+        // Ghostscript/Acrobat extend the boundary colour outward rather than
+        // leaving a hole, so a mesh that does not cover its whole fill path (e.g.
+        // a radial sphere gradient over a rectangle) still fills the corners
+        // instead of dropping to transparent (GH-506 regression, toxic_*.pdf).
+        private final float[] vx, vy;
+        private final int[] vc;
+        // Uniform grid over the vertices' device bbox for a cheap nearest-vertex
+        // query; each cell lists the indices of the vertices that fall in it.
+        private final int gridCols, gridRows;
+        private final double gridMinX, gridMinY, gridCellW, gridCellH;
+        private final int[][] grid;
 
         MeshPaintContext(List<Triangle> triangles, AffineTransform full, Rectangle deviceBounds) {
             originX = deviceBounds.x;
@@ -114,7 +133,17 @@ public class MeshShadingPaint implements Paint {
             imgW = Math.max(1, deviceBounds.width);
             imgH = Math.max(1, deviceBounds.height);
             buffer = new int[imgW * imgH];
+            covered = new boolean[imgW * imgH];
+
+            int vertCount = triangles.size() * 3;
+            vx = new float[vertCount];
+            vy = new float[vertCount];
+            vc = new int[vertCount];
+            double vMinX = Double.MAX_VALUE, vMinY = Double.MAX_VALUE;
+            double vMaxX = -Double.MAX_VALUE, vMaxY = -Double.MAX_VALUE;
+
             double[] pts = new double[6];
+            int vi = 0;
             for (Triangle t : triangles) {
                 pts[0] = t.x0;
                 pts[1] = t.y0;
@@ -124,7 +153,112 @@ public class MeshShadingPaint implements Paint {
                 pts[5] = t.y2;
                 full.transform(pts, 0, pts, 0, 3);
                 rasterize(pts, t.c0, t.c1, t.c2);
+                int[] cs = {t.c0, t.c1, t.c2};
+                for (int k = 0; k < 3; k++) {
+                    float px = (float) pts[k * 2], py = (float) pts[k * 2 + 1];
+                    vx[vi] = px;
+                    vy[vi] = py;
+                    vc[vi] = cs[k];
+                    vi++;
+                    if (px < vMinX) vMinX = px;
+                    if (px > vMaxX) vMaxX = px;
+                    if (py < vMinY) vMinY = py;
+                    if (py > vMaxY) vMaxY = py;
+                }
             }
+
+            // Bucket the vertices into a coarse uniform grid so nearest-vertex
+            // clamp is not an O(vertices) scan per pixel (matters for the many-
+            // triangle tessellations of types 6/7).
+            if (vertCount > 0) {
+                gridCols = Math.max(1, (int) Math.sqrt(vertCount));
+                gridRows = gridCols;
+                gridMinX = vMinX;
+                gridMinY = vMinY;
+                gridCellW = Math.max(1e-6, (vMaxX - vMinX) / gridCols);
+                gridCellH = Math.max(1e-6, (vMaxY - vMinY) / gridRows);
+                int[] counts = new int[gridCols * gridRows];
+                for (int i = 0; i < vertCount; i++) {
+                    counts[gridCell(vx[i], vy[i])]++;
+                }
+                grid = new int[gridCols * gridRows][];
+                for (int c = 0; c < grid.length; c++) {
+                    grid[c] = new int[counts[c]];
+                }
+                int[] fill = new int[gridCols * gridRows];
+                for (int i = 0; i < vertCount; i++) {
+                    int c = gridCell(vx[i], vy[i]);
+                    grid[c][fill[c]++] = i;
+                }
+            } else {
+                gridCols = gridRows = 0;
+                gridMinX = gridMinY = 0;
+                gridCellW = gridCellH = 1;
+                grid = null;
+            }
+        }
+
+        private int gridCell(double px, double py) {
+            int cx = (int) ((px - gridMinX) / gridCellW);
+            int cy = (int) ((py - gridMinY) / gridCellH);
+            if (cx < 0) cx = 0; else if (cx >= gridCols) cx = gridCols - 1;
+            if (cy < 0) cy = 0; else if (cy >= gridRows) cy = gridRows - 1;
+            return cy * gridCols + cx;
+        }
+
+        /**
+         * Colour of the mesh vertex nearest the given device-space point, used to
+         * edge-clamp pixels outside the mesh.  Searches the vertex grid outward in
+         * rings from the point's cell until a ring can no longer contain a closer
+         * vertex than the best found so far.
+         */
+        private int nearestVertexColor(double px, double py) {
+            if (grid == null) {
+                return 0;
+            }
+            int cx = (int) ((px - gridMinX) / gridCellW);
+            int cy = (int) ((py - gridMinY) / gridCellH);
+            if (cx < 0) cx = 0; else if (cx >= gridCols) cx = gridCols - 1;
+            if (cy < 0) cy = 0; else if (cy >= gridRows) cy = gridRows - 1;
+            double bestSq = Double.MAX_VALUE;
+            int bestColor = 0;
+            int maxRing = Math.max(gridCols, gridRows);
+            for (int ring = 0; ring <= maxRing; ring++) {
+                boolean any = false;
+                for (int gy = cy - ring; gy <= cy + ring; gy++) {
+                    if (gy < 0 || gy >= gridRows) continue;
+                    for (int gx = cx - ring; gx <= cx + ring; gx++) {
+                        if (gx < 0 || gx >= gridCols) continue;
+                        // only the outer border of the ring is new
+                        if (ring > 0 && gx != cx - ring && gx != cx + ring
+                                && gy != cy - ring && gy != cy + ring) {
+                            continue;
+                        }
+                        any = true;
+                        for (int idx : grid[gy * gridCols + gx]) {
+                            double dx = vx[idx] - px, dy = vy[idx] - py;
+                            double d = dx * dx + dy * dy;
+                            if (d < bestSq) {
+                                bestSq = d;
+                                bestColor = vc[idx];
+                            }
+                        }
+                    }
+                }
+                // Once a vertex is found, one more ring guarantees the true
+                // nearest (a closer vertex could sit just across a cell border),
+                // after which we can stop.
+                if (bestColor != 0 && ring > 0) {
+                    double ringDist = (ring - 1) * Math.min(gridCellW, gridCellH);
+                    if (ringDist * ringDist > bestSq) {
+                        break;
+                    }
+                }
+                if (!any && ring > Math.max(gridCols, gridRows)) {
+                    break;
+                }
+            }
+            return bestColor;
         }
 
         /**
@@ -172,6 +306,7 @@ public class MeshShadingPaint implements Paint {
                     int g = (int) (l0 * g0 + l1 * g1 + l2 * g2 + 0.5);
                     int b = (int) (l0 * b0 + l1 * b1 + l2 * b2 + 0.5);
                     buffer[row + x] = (a << 24) | (r << 16) | (g << 8) | b;
+                    covered[row + x] = true;
                 }
             }
         }
@@ -197,7 +332,13 @@ public class MeshShadingPaint implements Paint {
                     if (sx < 0 || sx >= imgW) {
                         continue;
                     }
-                    tile[dstRow + i] = buffer[srcRow + sx];
+                    if (covered[srcRow + sx]) {
+                        tile[dstRow + i] = buffer[srcRow + sx];
+                    } else {
+                        // Outside every triangle: clamp to the nearest mesh
+                        // vertex's colour so the fill region has no holes.
+                        tile[dstRow + i] = nearestVertexColor(x + i, y + j);
+                    }
                 }
             }
             return raster;

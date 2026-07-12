@@ -31,8 +31,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Pins the Gouraud triangle rasteriser behind mesh shading types 4-7.  A single
  * triangle with three corner colours must interpolate barycentrically inside its
- * area and leave pixels outside it transparent, so the surrounding page shows
- * through where the mesh does not cover.
+ * area and, for pixels of the fill region outside the mesh, edge-clamp to the
+ * nearest vertex's colour (matching Ghostscript/Acrobat) so a mesh that does not
+ * cover its whole fill path does not leave holes.
  */
 public class MeshShadingPaintTest {
 
@@ -56,11 +57,11 @@ public class MeshShadingPaintTest {
 
     /**
      * A right triangle filling the lower-left half of a 10x10 tile: the corner
-     * vertices carry their exact colours, and a pixel outside the triangle stays
-     * transparent.
+     * vertices carry their exact colours, and a pixel outside the triangle
+     * edge-clamps to the nearest vertex's colour rather than staying transparent.
      */
     @Test
-    public void interpolatesInsideAndLeavesOutsideTransparent() {
+    public void interpolatesInsideAndClampsOutsideToNearestVertex() {
         int red = argb(255, 255, 0, 0);
         int green = argb(255, 0, 255, 0);
         int blue = argb(255, 0, 0, 255);
@@ -73,8 +74,12 @@ public class MeshShadingPaintTest {
 
         // vertex pixels take (essentially) their own colour
         assertEquals(red, px[0 * 10 + 0], "vertex 0 must be its colour");
-        // the far corner (9,9) lies outside the lower-left triangle -> transparent
-        assertEquals(0, px[9 * 10 + 9], "a pixel outside the triangle must be transparent");
+        // Pixel (8,9) lies past the hypotenuse (x+y>10), outside the lower-left
+        // triangle, and is nearest the blue vertex (0.5,9.5): it edge-clamps to
+        // blue and stays opaque instead of transparent.
+        int outside = px[9 * 10 + 8];
+        assertEquals(255, (outside >>> 24) & 0xff, "outside pixel must be opaque (edge-clamped)");
+        assertEquals(blue, outside, "outside pixel clamps to the nearest vertex colour");
         // an interior pixel is an opaque blend of the three corners
         int mid = px[3 * 10 + 3];
         assertEquals(255, (mid >>> 24) & 0xff, "covered pixel must be opaque");
