@@ -423,12 +423,14 @@ public class TilingPattern extends Stream implements Pattern {
             return;
         }
 
-        // make sure we don't have too big an image.
+        // make sure we don't have too big an image; the BBox fallback can itself
+        // exceed the ceiling (a large cell), so cap it too rather than allocating
+        // an over-budget buffer.
         if (imageWidth > MAX_BUFFER_SIZE) {
-            imageWidth = bBox.getWidth();
+            imageWidth = Math.min(bBox.getWidth(), MAX_BUFFER_SIZE);
         }
         if (imageHeight > MAX_BUFFER_SIZE) {
-            imageHeight = bBox.getHeight();
+            imageHeight = Math.min(bBox.getHeight(), MAX_BUFFER_SIZE);
         }
 
         // The pattern content is drawn into a buffer of imageWidth x imageHeight
@@ -470,7 +472,7 @@ public class TilingPattern extends Stream implements Pattern {
 
         // paint the pattern
         try {
-            paintPattern(canvas, tilingShapes, matrix, originalPageSpace, renderScaleX, renderScaleY);
+            paintPattern(canvas, tilingShapes, matrix, originalPageSpace, renderScaleX, renderScaleY, false);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.log(Level.FINER, "Interrupted painting tiling pattern.");
@@ -525,12 +527,12 @@ public class TilingPattern extends Stream implements Pattern {
         Graphics2D canvas = bi.createGraphics();
         canvas.setRenderingHints(renderingHints);
         canvas.setClip(0, 0, bufW, bufH);
-        // Render the BBox content to fill the buffer (renderScale maps BBox ->
-        // buffer; the shared paintPattern draws the cell's neighbours too but they
-        // fall outside this small buffer and are clipped away).
+        // Render the BBox content once to fill the buffer (renderScale maps BBox
+        // -> buffer).  singleTile skips the neighbour ring: the step is many times
+        // the BBox, so neighbours land far outside this small buffer.
         try {
             paintPattern(canvas, getShapes(), matrix, originalPageSpace,
-                    (double) bufW / sw, (double) bufH / sh);
+                    (double) bufW / sw, (double) bufH / sh, true);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.log(Level.FINER, "Interrupted painting single-stamp tiling pattern.");
@@ -549,7 +551,7 @@ public class TilingPattern extends Stream implements Pattern {
     }
 
     private void paintPattern(Graphics2D g2d, Shapes tilingShapes, AffineTransform matrix, AffineTransform base,
-                              double scaleX, double scaleY) throws InterruptedException {
+                              double scaleX, double scaleY, boolean singleTile) throws InterruptedException {
 
         // store previous state so we can draw bounds
         AffineTransform preAf = g2d.getTransform();
@@ -567,56 +569,28 @@ public class TilingPattern extends Stream implements Pattern {
                 0);
         g2d.setTransform(af2);
         g2d.scale(scaleX, scaleY);
-        // pain the key pattern
-        AffineTransform prePaint = g2d.getTransform();
+        // Paint the key tile into the (one-cell) buffer.
+        AffineTransform cellTransform = g2d.getTransform();
         tilingShapes.paint(g2d);
-        g2d.setTransform(prePaint);
 
-//        g2d.setStroke(new BasicStroke(1));
-//        g2d.setColor(Color.GREEN);
-//        g2d.drawRect(1, 1, (int) bBox.getWidth() - 3, (int) bBox.getHeight() - 3);
-//        g2d.setColor(Color.RED);
-//        g2d.draw(bBox);
-//        g2d.drawRect(1, 1, 5, 5);
-
-        // build the the tile
-        g2d.translate(xStep, 0);
-        prePaint = g2d.getTransform();
-        tilingShapes.paint(g2d);
-        g2d.setTransform(prePaint);
-
-        g2d.translate(0, -yStep);
-        prePaint = g2d.getTransform();
-        tilingShapes.paint(g2d);
-        g2d.setTransform(prePaint);
-
-        g2d.translate(-xStep, 0);
-        prePaint = g2d.getTransform();
-        tilingShapes.paint(g2d);
-        g2d.setTransform(prePaint);
-
-        g2d.translate(-xStep, 0);
-        prePaint = g2d.getTransform();
-        tilingShapes.paint(g2d);
-        g2d.setTransform(prePaint);
-
-        g2d.translate(0, yStep);
-        prePaint = g2d.getTransform();
-        tilingShapes.paint(g2d);
-        g2d.setTransform(prePaint);
-
-        g2d.translate(0, yStep);
-        prePaint = g2d.getTransform();
-        tilingShapes.paint(g2d);
-        g2d.setTransform(prePaint);
-
-        g2d.translate(xStep, 0);
-        prePaint = g2d.getTransform();
-        tilingShapes.paint(g2d);
-        g2d.setTransform(prePaint);
-
-        g2d.translate(xStep, 0);
-        tilingShapes.paint(g2d);
+        // The eight neighbouring cells are drawn so a tile whose content bleeds
+        // past its cell (adjacent tiles overlap) still fills the buffer's edges.
+        // A single stamp's step is many times its cell, so its neighbours land
+        // far outside the buffer and only re-render the content stream for nothing
+        // -- skip them.  Every other tile keeps the full ring (cheap for the small
+        // contiguous cells, and required where content legitimately bleeds).
+        if (!singleTile) {
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dx = -1; dx <= 1; dx++) {
+                    if (dx == 0 && dy == 0) {
+                        continue;
+                    }
+                    g2d.setTransform(cellTransform);
+                    g2d.translate(dx * xStep, dy * yStep);
+                    tilingShapes.paint(g2d);
+                }
+            }
+        }
 
         g2d.setTransform(preAf);
     }
