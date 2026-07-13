@@ -404,6 +404,25 @@ public class TilingPattern extends Stream implements Pattern {
         double imageWidth = width * baseScale;
         double imageHeight = height * baseScale;
 
+        // A tile whose cell is at least as large as the clip in both dimensions
+        // appears at most once (the step exceeds the fill), yet the cell-sized
+        // buffer would squeeze the BBox content into a few source px and then
+        // upscale it (badly aliased -- CanmoreAlberta's magnifying-glass logo).
+        // Draw such a single stamp once at BBox resolution instead of tiling a
+        // giant, mostly-empty buffer.  A contiguous tile (step == BBox) is left on
+        // the normal path even when large, since one copy legitimately fills the
+        // clip and repeats seamlessly.
+        Rectangle clipBounds = g.getClipBounds();
+        boolean singleStamp = clipBounds != null
+                && width >= clipBounds.width && height >= clipBounds.height
+                && (Math.round(xStep) != Math.round(bBox.getWidth())
+                    || Math.round(yStep) != Math.round(bBox.getHeight()));
+        if (singleStamp) {
+            paintSingleStamp(g, originalPageSpace, xOffset, yOffset,
+                    width * bBox.getWidth() / xStep, height * bBox.getHeight() / yStep);
+            return;
+        }
+
         // make sure we don't have too big an image.
         if (imageWidth > MAX_BUFFER_SIZE) {
             imageWidth = bBox.getWidth();
@@ -481,6 +500,50 @@ public class TilingPattern extends Stream implements Pattern {
         //        f.setSize(new Dimension(800, 800));
         //        f.setVisible(true);
         // post paint cleanup
+        canvas.dispose();
+        bi.flush();
+    }
+
+    private static final Color TRANSPARENT = new Color(0, 0, 0, 0);
+
+    /**
+     * Paints a pattern that appears at most once in the current clip (its step
+     * exceeds the fill) as a single stamp: the BBox content is rendered at BBox
+     * resolution and blitted once, instead of squeezing it into a mostly-empty
+     * cell-sized {@link TexturePaint} buffer that would badly alias the content.
+     * Memory scales with the BBox (the visible content), not the giant cell.
+     *
+     * @param stampW,stampH device size of the BBox (the cell scaled by BBox/step).
+     */
+    private void paintSingleStamp(Graphics2D g, AffineTransform originalPageSpace,
+                                  double xOffset, double yOffset, double stampW, double stampH) {
+        int sw = Math.max(1, (int) Math.round(Math.abs(stampW)));
+        int sh = Math.max(1, (int) Math.round(Math.abs(stampH)));
+        int bufW = Math.min(sw, MAX_BUFFER_SIZE);
+        int bufH = Math.min(sh, MAX_BUFFER_SIZE);
+        BufferedImage bi = ImageUtility.createTranslucentCompatibleImage(bufW, bufH);
+        Graphics2D canvas = bi.createGraphics();
+        canvas.setRenderingHints(renderingHints);
+        canvas.setClip(0, 0, bufW, bufH);
+        // Render the BBox content to fill the buffer (renderScale maps BBox ->
+        // buffer; the shared paintPattern draws the cell's neighbours too but they
+        // fall outside this small buffer and are clipped away).
+        try {
+            paintPattern(canvas, getShapes(), matrix, originalPageSpace,
+                    (double) bufW / sw, (double) bufH / sh);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.log(Level.FINER, "Interrupted painting single-stamp tiling pattern.");
+        }
+        // Blit the stamp once at the tile origin (the rect one cell's BBox would
+        // occupy) and neutralise the follow-on fill.
+        Object prevInterp = g.getRenderingHint(RenderingHints.KEY_INTERPOLATION);
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.drawImage(bi, (int) Math.round(xOffset), (int) Math.round(yOffset), sw, sh, null);
+        if (prevInterp != null) {
+            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, prevInterp);
+        }
+        g.setPaint(TRANSPARENT);
         canvas.dispose();
         bi.flush();
     }
