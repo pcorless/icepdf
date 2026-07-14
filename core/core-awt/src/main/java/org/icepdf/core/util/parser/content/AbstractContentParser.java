@@ -560,12 +560,18 @@ public abstract class AbstractContentParser {
             }
             shapes.add(clipDrawCmd);
             // 4. Paint the graphics objects in font stream.
-            // still some work to do here regarding BM vs. alpha comp.
+            // A transparency group's constant alpha (ca) applies to the group as
+            // a unit, once, at its composite -- PDF 32000-1 §11.6.6/§7.6.3.  The
+            // group ca is applied here on the OUTER shapes (the boundary): for a
+            // buffered group it becomes the composite the draw-back runs under
+            // (FormDrawCmd), for an inline group it wraps the inner ShapesDrawCmd.
+            // The inner form content keeps its OWN element-level alphas -- it must
+            // NOT have the group ca baked into it as well, or the ca is applied
+            // twice (0.30^2 washes soft sheens; GH-501).  Step 1 of the
+            // transparency-group state rework removed that inner-content bake.
             if ((formXObject.getExtGState() != null &&
                     (formXObject.getExtGState().getBlendingMode() == null ||
                             formXObject.getExtGState().getBlendingMode().equals(BlendComposite.NORMAL_VALUE)))) {
-                setAlpha(formXObject.getShapes(), graphicState, graphicState.getAlphaRule(),
-                        graphicState.getFillAlpha());
                 setAlpha(shapes, graphicState, graphicState.getAlphaRule(),
                         graphicState.getFillAlpha());
             }
@@ -1921,8 +1927,26 @@ public abstract class AbstractContentParser {
                     && sMask.getS().equals(SoftMask.SOFT_MASK_TYPE_LUMINOSITY)
                     && graphicState.getFillColor() != null
                     && !(graphicState.getFillColorSpace() instanceof PatternColor)) {
+                // If a cm was applied between the `gs` that set the mask and this
+                // fill, the fill CTM no longer matches the mask group's own
+                // coordinate system (§11.6.5.2).  Pass the correction fillCTM^-1 .
+                // gsCTM so the mask group renders in its gs-time space; identity
+                // (null) when there is no intervening cm (the common bevel case).
+                AffineTransform maskCtmFix = null;
+                AffineTransform gsCtm = graphicState.getSoftMaskCtm();
+                if (gsCtm != null) {
+                    try {
+                        maskCtmFix = graphicState.getCTM().createInverse();
+                        maskCtmFix.concatenate(gsCtm);
+                        if (maskCtmFix.isIdentity()) {
+                            maskCtmFix = null;
+                        }
+                    } catch (NoninvertibleTransformException e) {
+                        maskCtmFix = null;
+                    }
+                }
                 shapes.add(new ShadingSoftMaskDrawCmd(graphicState.getFillColor(),
-                        (GeneralPath) geometricPath.clone(), sMask));
+                        (GeneralPath) geometricPath.clone(), sMask, maskCtmFix));
             }
             return;
         }

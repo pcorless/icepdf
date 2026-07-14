@@ -295,11 +295,19 @@ public class TilingPattern extends Stream implements Pattern {
             logger.log(Level.WARNING, "Error processing tiling pattern.", e);
         }
 
-        // some encoders set the step to 2^15
-        if (xStep >= Short.MAX_VALUE) {
+        // Normalise the XStep/YStep.  Producers emit a "does not repeat" sentinel
+        // -- 2^15 (Short.MAX_VALUE) or ~2^31 -- for a single-stamp pattern.  Such
+        // a step is not a real coordinate and also overflows the tile-cell buffer
+        // math below (the cell would be tens-of-thousands to billions of units,
+        // collapsing the render scale so the stamp vanishes), so fall back to the
+        // BBox as the cell.  A real finite step that merely exceeds the fill
+        // region (e.g. a marker stamped once, CanmoreAlberta's 33183) is kept so
+        // it renders once at true size rather than tiling.  Degenerate (<=0) steps
+        // also fall back to the BBox.
+        if (isSentinelStep(xStep)) {
             xStep = (float) bBox.getWidth();
         }
-        if (yStep >= Short.MAX_VALUE) {
+        if (isSentinelStep(yStep)) {
             yStep = (float) bBox.getHeight();
         }
         // adjust the bBox so that xStep and yStep can be applied
@@ -316,6 +324,21 @@ public class TilingPattern extends Stream implements Pattern {
         patternMatrix.concatenate(matrix);
         GeneralPath tmp = new GeneralPath(bBoxMod);
         bBoxMod = tmp.createTransformedShape(patternMatrix).getBounds2D();
+    }
+
+    /**
+     * A step that is not a usable tile spacing: non-positive, the 2^15
+     * ({@link Short#MAX_VALUE}) "does not repeat" sentinel some producers emit,
+     * or a ~2^31 sentinel.  These are collapsed to the BBox in {@link #init}: they
+     * are not real coordinates and would otherwise size the tile cell to
+     * tens-of-thousands / billions of units, collapsing the render scale so the
+     * tile vanishes.  A merely-large but finite step is a legitimate single stamp
+     * and is left untouched.
+     */
+    private static boolean isSentinelStep(float step) {
+        return step <= 0f
+                || (step >= Short.MAX_VALUE && step <= Short.MAX_VALUE + 1)
+                || step >= (1 << 30);
     }
 
     /**
@@ -381,13 +404,46 @@ public class TilingPattern extends Stream implements Pattern {
         double imageWidth = width * baseScale;
         double imageHeight = height * baseScale;
 
-        // make sure we don't have too big an image.
+        // A tile whose cell is at least as large as the clip in both dimensions
+        // appears at most once (the step exceeds the fill), yet the cell-sized
+        // buffer would squeeze the BBox content into a few source px and then
+        // upscale it (badly aliased -- CanmoreAlberta's magnifying-glass logo).
+        // Draw such a single stamp once at BBox resolution instead of tiling a
+        // giant, mostly-empty buffer.  A contiguous tile (step == BBox) is left on
+        // the normal path even when large, since one copy legitimately fills the
+        // clip and repeats seamlessly.
+        Rectangle clipBounds = g.getClipBounds();
+        boolean singleStamp = clipBounds != null
+                && width >= clipBounds.width && height >= clipBounds.height
+                && (Math.round(xStep) != Math.round(bBox.getWidth())
+                    || Math.round(yStep) != Math.round(bBox.getHeight()));
+        if (singleStamp) {
+            paintSingleStamp(g, originalPageSpace, xOffset, yOffset,
+                    width * bBox.getWidth() / xStep, height * bBox.getHeight() / yStep);
+            return;
+        }
+
+        // make sure we don't have too big an image; the BBox fallback can itself
+        // exceed the ceiling (a large cell), so cap it too rather than allocating
+        // an over-budget buffer.
         if (imageWidth > MAX_BUFFER_SIZE) {
-            imageWidth = bBox.getWidth();
+            imageWidth = Math.min(bBox.getWidth(), MAX_BUFFER_SIZE);
         }
         if (imageHeight > MAX_BUFFER_SIZE) {
-            imageHeight = bBox.getHeight();
+            imageHeight = Math.min(bBox.getHeight(), MAX_BUFFER_SIZE);
         }
+
+        // The pattern content is drawn into a buffer of imageWidth x imageHeight
+        // px that represents the tile cell (width x height device units).  The
+        // render transform must therefore map the cell onto the buffer at
+        // imageWidth/width (x) and imageHeight/height (y) -- NOT baseScale.  These
+        // are equal while the buffer is un-clamped (imageWidth == width*baseScale),
+        // but when the buffer is clamped to MAX_BUFFER_SIZE the ratio shrinks while
+        // baseScale does not; drawing at baseScale then renders the cell far larger
+        // than the buffer and only a corner is captured (GH-506: the toxic_*.pdf
+        // radial-glow tile whose cell maps to ~22000 device px).
+        double renderScaleX = width > 0 ? imageWidth / width : baseScale;
+        double renderScaleY = height > 0 ? imageHeight / height : baseScale;
 
         // create the new image to write too.
         final BufferedImage bi = ImageUtility.createTranslucentCompatibleImage((int) Math.round(imageWidth),
@@ -416,7 +472,7 @@ public class TilingPattern extends Stream implements Pattern {
 
         // paint the pattern
         try {
-            paintPattern(canvas, tilingShapes, matrix, originalPageSpace, baseScale);
+            paintPattern(canvas, tilingShapes, matrix, originalPageSpace, renderScaleX, renderScaleY, false);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.log(Level.FINER, "Interrupted painting tiling pattern.");
@@ -450,8 +506,52 @@ public class TilingPattern extends Stream implements Pattern {
         bi.flush();
     }
 
+    private static final Color TRANSPARENT = new Color(0, 0, 0, 0);
+
+    /**
+     * Paints a pattern that appears at most once in the current clip (its step
+     * exceeds the fill) as a single stamp: the BBox content is rendered at BBox
+     * resolution and blitted once, instead of squeezing it into a mostly-empty
+     * cell-sized {@link TexturePaint} buffer that would badly alias the content.
+     * Memory scales with the BBox (the visible content), not the giant cell.
+     *
+     * @param stampW,stampH device size of the BBox (the cell scaled by BBox/step).
+     */
+    private void paintSingleStamp(Graphics2D g, AffineTransform originalPageSpace,
+                                  double xOffset, double yOffset, double stampW, double stampH) {
+        int sw = Math.max(1, (int) Math.round(Math.abs(stampW)));
+        int sh = Math.max(1, (int) Math.round(Math.abs(stampH)));
+        int bufW = Math.min(sw, MAX_BUFFER_SIZE);
+        int bufH = Math.min(sh, MAX_BUFFER_SIZE);
+        BufferedImage bi = ImageUtility.createTranslucentCompatibleImage(bufW, bufH);
+        Graphics2D canvas = bi.createGraphics();
+        canvas.setRenderingHints(renderingHints);
+        canvas.setClip(0, 0, bufW, bufH);
+        // Render the BBox content once to fill the buffer (renderScale maps BBox
+        // -> buffer).  singleTile skips the neighbour ring: the step is many times
+        // the BBox, so neighbours land far outside this small buffer.
+        try {
+            paintPattern(canvas, getShapes(), matrix, originalPageSpace,
+                    (double) bufW / sw, (double) bufH / sh, true);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.log(Level.FINER, "Interrupted painting single-stamp tiling pattern.");
+        }
+        // Blit the stamp once at the tile origin (the rect one cell's BBox would
+        // occupy) and neutralise the follow-on fill.
+        Object prevInterp = g.getRenderingHint(RenderingHints.KEY_INTERPOLATION);
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.drawImage(bi, (int) Math.round(xOffset), (int) Math.round(yOffset), sw, sh, null);
+        if (prevInterp != null) {
+            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, prevInterp);
+        }
+        g.setPaint(TRANSPARENT);
+        canvas.dispose();
+        bi.flush();
+    }
+
     private void paintPattern(Graphics2D g2d, Shapes tilingShapes, AffineTransform matrix, AffineTransform base,
-                              double scale) throws InterruptedException {
+                              double scaleX, double scaleY, boolean singleTile) throws InterruptedException {
 
         // store previous state so we can draw bounds
         AffineTransform preAf = g2d.getTransform();
@@ -468,57 +568,29 @@ public class TilingPattern extends Stream implements Pattern {
                 0,
                 0);
         g2d.setTransform(af2);
-        g2d.scale(scale, scale);
-        // pain the key pattern
-        AffineTransform prePaint = g2d.getTransform();
+        g2d.scale(scaleX, scaleY);
+        // Paint the key tile into the (one-cell) buffer.
+        AffineTransform cellTransform = g2d.getTransform();
         tilingShapes.paint(g2d);
-        g2d.setTransform(prePaint);
 
-//        g2d.setStroke(new BasicStroke(1));
-//        g2d.setColor(Color.GREEN);
-//        g2d.drawRect(1, 1, (int) bBox.getWidth() - 3, (int) bBox.getHeight() - 3);
-//        g2d.setColor(Color.RED);
-//        g2d.draw(bBox);
-//        g2d.drawRect(1, 1, 5, 5);
-
-        // build the the tile
-        g2d.translate(xStep, 0);
-        prePaint = g2d.getTransform();
-        tilingShapes.paint(g2d);
-        g2d.setTransform(prePaint);
-
-        g2d.translate(0, -yStep);
-        prePaint = g2d.getTransform();
-        tilingShapes.paint(g2d);
-        g2d.setTransform(prePaint);
-
-        g2d.translate(-xStep, 0);
-        prePaint = g2d.getTransform();
-        tilingShapes.paint(g2d);
-        g2d.setTransform(prePaint);
-
-        g2d.translate(-xStep, 0);
-        prePaint = g2d.getTransform();
-        tilingShapes.paint(g2d);
-        g2d.setTransform(prePaint);
-
-        g2d.translate(0, yStep);
-        prePaint = g2d.getTransform();
-        tilingShapes.paint(g2d);
-        g2d.setTransform(prePaint);
-
-        g2d.translate(0, yStep);
-        prePaint = g2d.getTransform();
-        tilingShapes.paint(g2d);
-        g2d.setTransform(prePaint);
-
-        g2d.translate(xStep, 0);
-        prePaint = g2d.getTransform();
-        tilingShapes.paint(g2d);
-        g2d.setTransform(prePaint);
-
-        g2d.translate(xStep, 0);
-        tilingShapes.paint(g2d);
+        // The eight neighbouring cells are drawn so a tile whose content bleeds
+        // past its cell (adjacent tiles overlap) still fills the buffer's edges.
+        // A single stamp's step is many times its cell, so its neighbours land
+        // far outside the buffer and only re-render the content stream for nothing
+        // -- skip them.  Every other tile keeps the full ring (cheap for the small
+        // contiguous cells, and required where content legitimately bleeds).
+        if (!singleTile) {
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dx = -1; dx <= 1; dx++) {
+                    if (dx == 0 && dy == 0) {
+                        continue;
+                    }
+                    g2d.setTransform(cellTransform);
+                    g2d.translate(dx * xStep, dy * yStep);
+                    tilingShapes.paint(g2d);
+                }
+            }
+        }
 
         g2d.setTransform(preAf);
     }

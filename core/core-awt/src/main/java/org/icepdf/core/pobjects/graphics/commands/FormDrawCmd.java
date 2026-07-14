@@ -48,6 +48,13 @@ public class FormDrawCmd extends AbstractDrawCmd {
     private double formScale = 1.0;
     private int formWidth, formHeight;
 
+    // When set (a finite soft-mask group), both the content buffer and the mask
+    // sub-buffer are framed to this UNION(content, mask) bbox: same size, same
+    // origin, so applyExplicitSMask overlays them 1:1 -- no scaleImagesToSameSize
+    // resize (one fewer allocation) and no offset, so the mask's soft feather
+    // that extends past the content bbox (a drop shadow's outer edge) is kept.
+    private Rectangle2D bufferFrame;
+
     // Backdrop capture (§10 POC): the Shapes this command lives in and its index,
     // so a non-isolated group can replay the stack before it to reconstruct the
     // page backdrop behind the group (instead of the white-fill proxy).
@@ -60,6 +67,15 @@ public class FormDrawCmd extends AbstractDrawCmd {
     // Used to use Max_value but we have a few corner cases where the dimension is +-5 of Short.MAX_VALUE, but
     // realistically we seldom have enough memory to load anything bigger then 8000px.  4k+ image are big!
     public static int MAX_IMAGE_SIZE = 2000; // Short.MAX_VALUE
+
+    // Soft-mask groups cannot be down-scaled: applyMask stretches the mask to the
+    // content buffer, and a down-scaled buffer mis-scales/clips the mask's soft
+    // feather (drop shadows lose their outer edge -> hard edge).  So a masked
+    // group is buffered 1:1 up to this (much larger) ceiling instead of the
+    // 2010-era 2000^2 budget; a 4096^2 ARGB buffer is ~67 MB, acceptable on
+    // modern hardware for the render-quality win.  Beyond this it stays inline.
+    public static int MAX_SMASK_IMAGE_SIZE =
+            Defs.sysPropertyInt("org.icepdf.core.maxSmaskBufferSize", 4096);
 
     // Upper bound on a transparency-group bbox that may be rasterised into a
     // down-scaled buffer (see createBufferXObject).  Forms larger than this are
@@ -173,14 +189,60 @@ public class FormDrawCmd extends AbstractDrawCmd {
         if (area <= maxArea) {
             return true;
         }
-        // Over the area budget the buffer must be down-scaled.  Proven safe for
-        // blend-only groups; SMask groups are still excluded here because a
-        // down-scaled luminosity mask is not yet validated.
-        return !hasSoftMask && hasBlend;
+        // A soft-mask group must not be down-scaled (that mis-scales its mask),
+        // so buffer a finite-mask group 1:1 up to the larger SMask ceiling;
+        // createBufferXObject uses the same ceiling so it is NOT down-scaled.
+        // Sentinel/shading-mask groups (unbounded mask bbox) are a separate,
+        // unhandled case and keep the legacy inline path.  A blend-only group can
+        // be down-scaled within MAX_SCALED_FORM_SIZE.
+        if (hasSoftMask) {
+            long maxSMaskArea = (long) MAX_SMASK_IMAGE_SIZE * MAX_SMASK_IMAGE_SIZE;
+            return hasFiniteSoftMask(form) && area <= maxSMaskArea;
+        }
+        return hasBlend;
     }
 
     public FormDrawCmd(Form xForm) {
         this.xForm = xForm;
+    }
+
+    // A mask group bbox at/above this is the +-Short.MAX_VALUE sentinel of a
+    // shading soft mask, whose 1:1/down-scaled buffering is a separate (unhandled)
+    // case; such groups keep the legacy inline path.
+    private static final double SMASK_SENTINEL_BBOX = 30000;
+
+    /** True when this command's group carries a soft mask (from either the
+     *  captured graphics state or the form's own ExtGState); such groups are
+     *  buffered 1:1 up to {@link #MAX_SMASK_IMAGE_SIZE} rather than down-scaled. */
+    private boolean hasSoftMaskGroup() {
+        return hasFiniteSoftMask(xForm);
+    }
+
+    /** True when the group has a soft mask with a realistically sized (non-sentinel)
+     *  mask group bbox -- the case the 1:1 SMask buffer path handles. */
+    private static boolean hasFiniteSoftMask(Form form) {
+        SoftMask sm = null;
+        GraphicsState gs = form.getGraphicsState();
+        if (gs != null && gs.getExtGState() != null) {
+            sm = gs.getExtGState().getSMask();
+        }
+        if (sm == null && form.getExtGState() != null) {
+            sm = form.getExtGState().getSMask();
+        }
+        if (sm == null) {
+            return false;
+        }
+        // Read the mask group BBox straight from its stream dictionary, WITHOUT
+        // initialising (parsing) the mask form.  hasFiniteSoftMask runs at
+        // page-parse time (via requiresOffscreenBuffer <- consume_Do), before the
+        // mask form's parent resources are wired at render time; parsing its
+        // content here NPEs on a colour space that resolves through those not yet
+        // wired resources (GH-501, Java-Magazine p1/p2 grey drop shadow).
+        Rectangle2D mb = sm.getGBBox();
+        if (mb == null) {
+            return false;
+        }
+        return mb.getWidth() < SMASK_SENTINEL_BBOX && mb.getHeight() < SMASK_SENTINEL_BBOX;
     }
 
     /**
@@ -266,6 +328,22 @@ public class FormDrawCmd extends AbstractDrawCmd {
             if (xForm.getResources().isShading()) {
                 boolean isFormShading = checkForShaddingFill(xForm);
                 xForm.setShading(isFormShading);
+            }
+
+            // Frame the content buffer and the mask sub-buffer to the UNION of the
+            // content and (finite, non-shading) mask bboxes so the two align 1:1;
+            // x,y move to the union origin for the draw-back.  This keeps the
+            // mask's soft feather where it extends past the content bbox (a drop
+            // shadow's outer edge) instead of clipping it to a hard edge.
+            SoftMask alignMask = softMask != null ? softMask : formSoftMask;
+            if (alignMask != null && alignMask.getG() != null && !alignMask.getG().isShading()
+                    && !xForm.isShading() && hasFiniteSoftMask(xForm)) {
+                Rectangle2D mBox = alignMask.getG().getBBox();
+                if (mBox != null) {
+                    bufferFrame = bBox.createUnion(mBox);
+                    x = (int) Math.floor(bufferFrame.getX());
+                    y = (int) Math.floor(bufferFrame.getY());
+                }
             }
 
             // create the form and we'll paint it at the very least.  An isolated
@@ -363,6 +441,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
             }
 //            ImageUtility.displayImage(xFormBuffer, "final" + xForm.getGroup() + " " + xForm.getPObjectReference() +
 //                    xFormBuffer.getHeight() + "x" + xFormBuffer.getHeight());
+            bufferFrame = null;
         }
         // §10: a backdrop-composited buffer already holds the group's
         // contribution with the backdrop removed; the page blend (e.g. Multiply)
@@ -372,6 +451,29 @@ public class FormDrawCmd extends AbstractDrawCmd {
         if (usedBackdropComposite) {
             savedComposite = g.getComposite();
             g.setComposite(java.awt.AlphaComposite.SrcOver);
+        }
+        // A buffered Normal group whose inner content re-asserted the group's own
+        // constant alpha already carries that ca in the buffer.  Some authoring
+        // tools (e.g. Illustrator "stacked" gradient groups) set the same ca both
+        // as the group ca -- applied here at the draw-back composite -- AND via a
+        // gs inside the form, which bakes it into the buffer.  Compositing the
+        // buffer back under the ca composite then applies it a second time (ca^2),
+        // washing out glossy sheens (GH-501, p3 "Upgrade & Save" button).  Detect
+        // it from the buffer itself: when the buffer's PEAK opacity already equals
+        // the ca the draw-back would apply, the group's contribution is fully
+        // represented, so draw it straight (SRC_OVER) and let ca land exactly once.
+        // A group with opaque content (peak 255 > ca) genuinely needs the ca at
+        // draw-back and is left untouched (e.g. WhiteGradient.pdf's ca=0.8 fade).
+        if (savedComposite == null && xFormBuffer != null
+                && g.getComposite() instanceof java.awt.AlphaComposite) {
+            java.awt.AlphaComposite ac = (java.awt.AlphaComposite) g.getComposite();
+            if (ac.getRule() == java.awt.AlphaComposite.SRC_OVER && ac.getAlpha() < 1f) {
+                int target = Math.round(ac.getAlpha() * 255);
+                if (Math.abs(bufferPeakAlpha(xFormBuffer) - target) <= 2) {
+                    savedComposite = g.getComposite();
+                    g.setComposite(java.awt.AlphaComposite.SrcOver);
+                }
+            }
         }
         if (formScale != 1.0) {
             // buffer was rasterised at a reduced size; scale it back up to the
@@ -385,6 +487,27 @@ public class FormDrawCmd extends AbstractDrawCmd {
             g.setComposite(savedComposite);
         }
         return currentShape;
+    }
+
+    // Peak (maximum) alpha found in a buffer's pixels, sampled on a stride so a
+    // large buffer is scanned cheaply.  Used to tell whether a group's content
+    // already carries its constant alpha (peak == ca) or is opaque (peak == 255).
+    private static int bufferPeakAlpha(BufferedImage img) {
+        int w = img.getWidth(), h = img.getHeight();
+        int stepX = Math.max(1, w / 256), stepY = Math.max(1, h / 256);
+        int peak = 0;
+        for (int yy = 0; yy < h; yy += stepY) {
+            for (int xx = 0; xx < w; xx += stepX) {
+                int a = (img.getRGB(xx, yy) >>> 24) & 0xff;
+                if (a > peak) {
+                    peak = a;
+                    if (peak == 255) {
+                        return 255;
+                    }
+                }
+            }
+        }
+        return peak;
     }
 
     // guard so replaying the stack to build a backdrop doesn't recursively try
@@ -849,7 +972,15 @@ public class FormDrawCmd extends AbstractDrawCmd {
         double scale = 1.0;
         int bufferWidth;
         int bufferHeight;
-        if (isMask && xForm == this.xForm && xFormBuffer != null) {
+        if (bufferFrame != null) {
+            // Finite soft-mask group: frame the content and mask buffers to the
+            // common UNION bbox, 1:1, so applyMask overlays them aligned.
+            bufferWidth = Math.max(1, (int) Math.ceil(bufferFrame.getWidth()));
+            bufferHeight = Math.max(1, (int) Math.ceil(bufferFrame.getHeight()));
+            formScale = 1.0;
+            formWidth = bufferWidth;
+            formHeight = bufferHeight;
+        } else if (isMask && xForm == this.xForm && xFormBuffer != null) {
             // Outline pass for the SAME group (applyExplicitOutline): match the
             // main buffer's (possibly area-scaled) dimensions and scale exactly,
             // so the outline lines up 1:1 and applyExplicitOutline does not have
@@ -906,7 +1037,11 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 height = 1;
             }
             long area = (long) width * height;
-            long maxArea = (long) MAX_IMAGE_SIZE * MAX_IMAGE_SIZE;
+            // A soft-mask group is buffered 1:1 up to the larger SMask ceiling
+            // (down-scaling mis-scales its mask); other groups keep MAX_IMAGE_SIZE.
+            long maxArea = hasSoftMaskGroup()
+                    ? (long) MAX_SMASK_IMAGE_SIZE * MAX_SMASK_IMAGE_SIZE
+                    : (long) MAX_IMAGE_SIZE * MAX_IMAGE_SIZE;
             if (area > maxArea) {
                 scale = Math.sqrt((double) maxArea / area);
             }
@@ -933,7 +1068,11 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 // translate the coordinate system as we'll paint the g
                 // graphic at the correctly location later.
                 if (!xForm.isShading()) {
-                    canvas.translate(-(int) bBox.getX(), -(int) bBox.getY());
+                    // Translate to the buffer frame origin (the union bbox when
+                    // framing a masked group, else the form's own bbox), but clip
+                    // to the form's own bbox so its content stays within its extent.
+                    Rectangle2D frame = bufferFrame != null ? bufferFrame : bBox;
+                    canvas.translate(-(int) frame.getX(), -(int) frame.getY());
                     canvas.setClip(bBox);
                 }
                 // basic support for gradient fills,  still have a few corners cases to work on.

@@ -229,6 +229,13 @@ public class GraphicsState {
     // Current transformation matrix.
     private AffineTransform CTM;
 
+    // The CTM in effect when a soft mask was installed via `gs` (§11.6.5.2 -- the
+    // mask group's coordinate system is fixed at that moment, NOT at the later
+    // marking operation, which may have an intervening `cm`).  Captured on
+    // concatenate() and carried through q/Q copies so a fill/shading can position
+    // its soft-mask group correctly even when a cm sits between the gs and the paint.
+    private AffineTransform softMaskCtm;
+
     private static final ClipDrawCmd clipDrawCmd = new ClipDrawCmd();
     private static final NoClipDrawCmd noClipDrawCmd = new NoClipDrawCmd();
 
@@ -340,6 +347,9 @@ public class GraphicsState {
         // copy/clone the parentGraphicsState and return the new object.
 
         CTM = new AffineTransform(parentGraphicsState.CTM);
+        if (parentGraphicsState.softMaskCtm != null) {
+            softMaskCtm = new AffineTransform(parentGraphicsState.softMaskCtm);
+        }
 
         lineCap = parentGraphicsState.lineCap;
         lineWidth = parentGraphicsState.lineWidth;
@@ -460,6 +470,13 @@ public class GraphicsState {
         // keep a reference for our partial Transparency group support.
         this.extGState = new ExtGState(extGState.getLibrary(),
                 extGState.getEntries());
+
+        // Fix the soft-mask group's coordinate system at the CTM in effect now
+        // (when the mask is installed), per §11.6.5.2, so a later fill/shading can
+        // undo any intervening cm when it renders the mask group.
+        if (this.extGState.getSMask() != null) {
+            softMaskCtm = new AffineTransform(CTM);
+        }
 
         // Map over extGState attributes if present.
         // line width
@@ -732,6 +749,16 @@ public class GraphicsState {
 
     public AffineTransform getCTM() {
         return CTM;
+    }
+
+    /**
+     * The CTM in effect when the current soft mask was installed via {@code gs}
+     * (§11.6.5.2), or null if no soft mask has been set.  Used to position the
+     * mask group in its own coordinate system rather than the (possibly
+     * {@code cm}-shifted) coordinate system of the later marking operation.
+     */
+    public AffineTransform getSoftMaskCtm() {
+        return softMaskCtm;
     }
 
     public void setCTM(AffineTransform ctm) {

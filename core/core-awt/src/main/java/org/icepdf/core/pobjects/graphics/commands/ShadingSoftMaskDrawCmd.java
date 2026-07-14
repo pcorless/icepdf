@@ -25,6 +25,7 @@ import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.logging.Logger;
@@ -55,25 +56,35 @@ public class ShadingSoftMaskDrawCmd extends AbstractDrawCmd {
     // blend mode + constant alpha already installed by the preceding `gs`), rather
     // than overriding to SrcOver.  Lets a Screen/Multiply bevel blend correctly.
     private final boolean useCurrentComposite;
+    // Correction (fillCTM^-1 . gsCTM) that maps the fill's user space back to the
+    // space in effect when the soft mask was set, undoing any cm applied between
+    // the `gs` and this fill so the mask group lands in its own coordinate system
+    // (§11.6.5.2).  Null when there is no intervening cm.
+    private final AffineTransform maskCtmFix;
 
     /** Shading `sh` fill with a luminosity soft mask (faded.pdf). */
     public ShadingSoftMaskDrawCmd(Paint shadingPaint, SoftMask softMask, float alpha) {
-        this(shadingPaint, null, softMask, alpha, false);
+        this(shadingPaint, null, softMask, alpha, false, null);
     }
 
     /** Path `f` fill with a luminosity soft mask, drawn with the active blend
-     *  composite (bevel highlights/shadows -- trans.pdf, Lesson Plans.pdf). */
-    public ShadingSoftMaskDrawCmd(Paint fillPaint, Shape fillShape, SoftMask softMask) {
-        this(fillPaint, fillShape, softMask, 1f, true);
+     *  composite (bevel highlights/shadows -- trans.pdf, Lesson Plans.pdf).
+     *  maskCtmFix (fillCTM^-1 . gsCTM, or null) un-shifts the mask group when a cm
+     *  sits between the `gs` and the fill. */
+    public ShadingSoftMaskDrawCmd(Paint fillPaint, Shape fillShape, SoftMask softMask,
+                                  AffineTransform maskCtmFix) {
+        this(fillPaint, fillShape, softMask, 1f, true, maskCtmFix);
     }
 
     private ShadingSoftMaskDrawCmd(Paint shadingPaint, Shape fillShape, SoftMask softMask,
-                                   float alpha, boolean useCurrentComposite) {
+                                   float alpha, boolean useCurrentComposite,
+                                   AffineTransform maskCtmFix) {
         this.shadingPaint = shadingPaint;
         this.fillShape = fillShape;
         this.softMask = softMask;
         this.alpha = alpha;
         this.useCurrentComposite = useCurrentComposite;
+        this.maskCtmFix = maskCtmFix;
     }
 
     @Override
@@ -181,10 +192,7 @@ public class ShadingSoftMaskDrawCmd extends AbstractDrawCmd {
         // gradient matrix between `gs` and `sh`, so the sh-time `ctm` includes it
         // AND the mask group re-applies its own (identical) cm internally --
         // transforming the gradient twice (rotated/offset fade).  Undo the mask's
-        // own cm so its internal cm lands it on exactly the sh-time CTM.  A plain
-        // `f` fill has no intermediate cm (the fill follows `gs` directly), so the
-        // mask group's cm is legitimate and must NOT be undone -- undoing it there
-        // mis-positions the mask off-buffer (all-black -> the fill vanishes).
+        // own cm so its internal cm lands it on exactly the sh-time CTM.
         AffineTransform base = new AffineTransform();
         base.translate(-device.x, -device.y);
         base.concatenate(ctm);
@@ -195,6 +203,23 @@ public class ShadingSoftMaskDrawCmd extends AbstractDrawCmd {
                     base.concatenate(maskCm.createInverse());
                 } catch (java.awt.geom.NoninvertibleTransformException e) {
                     // fall back to the raw ctm base
+                }
+            }
+        } else if (maskCtmFix != null) {
+            // A `f` fill with a cm between the `gs` and the fill: the fill CTM may
+            // carry that cm while the mask group's coordinates do not.  Apply the
+            // correction fillCTM^-1 . gsCTM (so the mask renders under gsCTM) ONLY
+            // when the mask group would otherwise land off the buffer -- i.e. its
+            // coords really are in gs-space (Original.pdf "Ihr Preisvorteil" banner
+            // grey box, GH-501).  When the mask already lands on-buffer under the
+            // fill CTM its coords account for the cm and must be left alone (else a
+            // spurious grey box appears where the mask should be empty, e.g. the
+            // Java-Magazine p7 cover shadow).
+            Rectangle2D mb = maskForm.getBBox();
+            if (mb != null) {
+                Rectangle onBuffer = base.createTransformedShape(mb).getBounds();
+                if (!onBuffer.intersects(0, 0, device.width, device.height)) {
+                    base.concatenate(maskCtmFix);
                 }
             }
         }
