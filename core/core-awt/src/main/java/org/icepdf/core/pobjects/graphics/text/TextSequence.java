@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects.graphics.text;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.IdentityHashMap;
 import java.util.List;
 
@@ -66,6 +67,11 @@ public final class TextSequence {
 
     private final String canonical;
     private final IdentityHashMap<GlyphText, Integer> glyphIndex;
+
+    // lazily built normalized search corpus: runs of whitespace collapsed to a single space,
+    // with a map back to canonical offsets.  Enables searching over a stable, reading-order string.
+    private String searchText;
+    private int[] searchToCanonical;
 
     TextSequence(PageText pageText) {
         List<LineText> pageLines = pageText.getPageLines();
@@ -174,6 +180,63 @@ public final class TextSequence {
 
     public OffsetRange fullRange() {
         return OffsetRange.of(0, length());
+    }
+
+    // ------------------------------------------------------------------
+    // search corpus
+    // ------------------------------------------------------------------
+
+    /**
+     * A normalized, reading-order corpus for searching: every run of whitespace (spaces, tabs,
+     * newlines, non-breaking spaces) is collapsed to a single space.  Matches found in this string
+     * map back to canonical offsets via {@link #searchToCanonicalRange}, and from there to glyphs,
+     * words and highlight rectangles.  Lazily built and cached.
+     *
+     * @return the normalized search corpus.
+     */
+    public String searchText() {
+        if (searchText == null) buildSearchText();
+        return searchText;
+    }
+
+    /**
+     * Maps a half-open range in {@link #searchText()} back to the corresponding canonical
+     * {@link OffsetRange}.
+     *
+     * @param searchStart inclusive start offset in the search corpus
+     * @param searchEnd   exclusive end offset in the search corpus
+     * @return canonical offset range
+     */
+    public OffsetRange searchToCanonicalRange(int searchStart, int searchEnd) {
+        if (searchText == null) buildSearchText();
+        int max = searchText.length();
+        int s = Math.max(0, Math.min(searchStart, max));
+        int e = Math.max(0, Math.min(searchEnd, max));
+        return OffsetRange.of(searchToCanonical[s], searchToCanonical[e]);
+    }
+
+    private void buildSearchText() {
+        StringBuilder sb = new StringBuilder(canonical.length());
+        int[] map = new int[canonical.length() + 1];
+        boolean previousWhitespace = false;
+        for (int i = 0; i < canonical.length(); i++) {
+            char c = canonical.charAt(i);
+            boolean whitespace = c == 160 || Character.isWhitespace(c);
+            if (whitespace) {
+                if (!previousWhitespace) {
+                    map[sb.length()] = i;
+                    sb.append(' ');
+                    previousWhitespace = true;
+                }
+            } else {
+                map[sb.length()] = i;
+                sb.append(c);
+                previousWhitespace = false;
+            }
+        }
+        map[sb.length()] = canonical.length();
+        searchText = sb.toString();
+        searchToCanonical = Arrays.copyOf(map, sb.length() + 1);
     }
 
     // ------------------------------------------------------------------

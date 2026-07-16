@@ -143,6 +143,29 @@ public class TextSequenceTest {
         assertTrue(bar.height > 0);
     }
 
+    @DisplayName("search corpus: whitespace collapsed, maps back to canonical range/words")
+    @Test
+    public void searchCorpus() throws Exception {
+        TextSequence seq = pageText("/redact/test_print.pdf", 0).getTextSequence();
+        String corpus = seq.searchText();
+
+        // collapsed: no double spaces, no newlines, not longer than canonical
+        assertFalse(corpus.contains("  "), "runs of whitespace should collapse");
+        assertFalse(corpus.contains("\n"), "newlines should collapse to spaces");
+        assertTrue(corpus.length() <= seq.length());
+        assertTrue(corpus.contains("todo el mundo"), "collapsed corpus should contain the phrase");
+
+        // a match in the corpus maps back to a canonical range covering the phrase words
+        int start = corpus.indexOf("todo el mundo");
+        OffsetRange canonical = seq.searchToCanonicalRange(start, start + "todo el mundo".length());
+        String mapped = seq.text(canonical);
+        assertTrue(mapped.contains("todo") && mapped.contains("mundo"), "mapped canonical text: " + mapped);
+        StringBuilder words = new StringBuilder();
+        seq.wordsIn(canonical).forEach(w -> words.append(w.getText()));
+        assertTrue(words.toString().replace(" ", "").contains("todoelmundo"),
+                "wordsIn should cover the phrase: " + words);
+    }
+
     @DisplayName("robustness sweep on dense/table doc pdf_reference_addendum_redaction.pdf")
     @Test
     public void sweep_addendum() throws Exception {
