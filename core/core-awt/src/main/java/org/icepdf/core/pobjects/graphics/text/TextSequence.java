@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects.graphics.text;
 
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.IdentityHashMap;
@@ -74,6 +75,12 @@ public final class TextSequence {
     // with a map back to canonical offsets.  Enables searching over a stable, reading-order string.
     private String searchText;
     private int[] searchToCanonical;
+
+    // lazily built diacritic-folded search corpus (whitespace collapsed + accents removed), with a
+    // map back to canonical offsets.  Enables accent-insensitive matching (e.g. "ataudes" finds
+    // "ataúdes").
+    private String foldedSearchText;
+    private int[] foldedToCanonical;
 
     TextSequence(PageText pageText) {
         List<LineText> pageLines = pageText.getPageLines();
@@ -219,6 +226,80 @@ public final class TextSequence {
         int s = Math.max(0, Math.min(searchStart, max));
         int e = Math.max(0, Math.min(searchEnd, max));
         return OffsetRange.of(searchToCanonical[s], searchToCanonical[e]);
+    }
+
+    /**
+     * A diacritic-folded, whitespace-collapsed search corpus: like {@link #searchText()} but with
+     * accents removed (Unicode NFD decomposition with combining marks stripped) so that matching is
+     * accent-insensitive.  Map back to canonical offsets via {@link #foldedToCanonicalRange}.
+     *
+     * @return the folded search corpus.
+     */
+    public String foldedSearchText() {
+        if (foldedSearchText == null) buildFoldedSearchText();
+        return foldedSearchText;
+    }
+
+    /**
+     * Maps a half-open range in {@link #foldedSearchText()} back to the corresponding canonical
+     * {@link OffsetRange}.
+     *
+     * @param foldedStart inclusive start offset in the folded corpus
+     * @param foldedEnd   exclusive end offset in the folded corpus
+     * @return canonical offset range
+     */
+    public OffsetRange foldedToCanonicalRange(int foldedStart, int foldedEnd) {
+        if (foldedSearchText == null) buildFoldedSearchText();
+        int max = foldedSearchText.length();
+        int s = Math.max(0, Math.min(foldedStart, max));
+        int e = Math.max(0, Math.min(foldedEnd, max));
+        return OffsetRange.of(foldedToCanonical[s], foldedToCanonical[e]);
+    }
+
+    /**
+     * Folds a string for accent-insensitive comparison: Unicode NFD decomposition with combining
+     * marks removed.  ASCII is returned unchanged.
+     *
+     * @param text text to fold
+     * @return the diacritic-folded text
+     */
+    public static String foldDiacritics(String text) {
+        boolean ascii = true;
+        for (int i = 0; i < text.length(); i++) {
+            if (text.charAt(i) > 0x7F) {
+                ascii = false;
+                break;
+            }
+        }
+        if (ascii) return text;
+        return Normalizer.normalize(text, Normalizer.Form.NFD).replaceAll("\\p{M}+", "");
+    }
+
+    private void buildFoldedSearchText() {
+        StringBuilder sb = new StringBuilder(canonical.length());
+        List<Integer> map = new ArrayList<>(canonical.length() + 1);
+        boolean previousWhitespace = false;
+        for (int i = 0; i < canonical.length(); i++) {
+            char c = canonical.charAt(i);
+            boolean whitespace = c == 160 || Character.isWhitespace(c);
+            if (whitespace) {
+                if (!previousWhitespace) {
+                    map.add(i);
+                    sb.append(' ');
+                    previousWhitespace = true;
+                }
+            } else {
+                String folded = foldDiacritics(String.valueOf(c));
+                for (int k = 0; k < folded.length(); k++) {
+                    map.add(i);
+                    sb.append(folded.charAt(k));
+                }
+                previousWhitespace = false;
+            }
+        }
+        map.add(canonical.length());
+        foldedSearchText = sb.toString();
+        foldedToCanonical = toIntArray(map);
     }
 
     private void buildSearchText() {

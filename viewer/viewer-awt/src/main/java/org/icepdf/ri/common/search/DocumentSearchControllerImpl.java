@@ -191,7 +191,11 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         final boolean fullLineContext = searchMode == SearchMode.PAGE;
         for (final SearchTerm term : searchModel.getSearchTerms()) {
             final boolean regex = term.isRegex();
-            final String corpus = regex ? sequence.text().toString() : sequence.searchText();
+            final boolean fold = !regex && term.isFoldDiacritics();
+            // Regex terms match the raw canonical text.  Literal terms match a whitespace-collapsed
+            // corpus, optionally diacritic-folded (accent-insensitive) when the term opts in.
+            final String corpus = regex ? sequence.text().toString()
+                    : (fold ? sequence.foldedSearchText() : sequence.searchText());
             final Pattern pattern = compileSearchPattern(term);
             if (pattern == null) continue;
             final Matcher matcher = pattern.matcher(corpus);
@@ -199,7 +203,8 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                 if (matcher.end() == matcher.start()) continue;   // ignore zero-width matches
                 final OffsetRange range = regex
                         ? OffsetRange.of(matcher.start(), matcher.end())
-                        : sequence.searchToCanonicalRange(matcher.start(), matcher.end());
+                        : (fold ? sequence.foldedToCanonicalRange(matcher.start(), matcher.end())
+                        : sequence.searchToCanonicalRange(matcher.start(), matcher.end()));
                 final List<WordText> hitWords = sequence.wordsIn(range);
                 if (hitWords.isEmpty()) continue;
                 searchHits.add(buildHitFragment(sequence, hitWords, term.getHighlightColor(),
@@ -231,7 +236,9 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         if (!term.isCaseSensitive()) {
             flags |= Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE;
         }
-        String expression = Pattern.quote(term.getTerm());
+        // fold the term to match the folded corpus only when the term opts into accent-insensitivity.
+        String expression = Pattern.quote(
+                term.isFoldDiacritics() ? TextSequence.foldDiacritics(term.getTerm()) : term.getTerm());
         if (term.isWholeWord()) {
             expression = "\\b" + expression + "\\b";
         }

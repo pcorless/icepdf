@@ -13,6 +13,7 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.search.SearchMode;
+import org.icepdf.core.search.SearchTerm;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
 import org.icepdf.ri.util.FontPropertiesManager;
 import org.junit.jupiter.api.BeforeAll;
@@ -62,6 +63,24 @@ public class DocumentSearchConvergenceTest {
         return c.searchHighlightPage(page);
     }
 
+    /** WORD search with accent-insensitive (Unicode-normalized) matching opted in. */
+    private int wordFold(Document d, int page, String term) {
+        DocumentSearchControllerImpl c = new DocumentSearchControllerImpl(d);
+        c.setSearchMode(SearchMode.WORD);
+        SearchTerm t = c.addSearchTerm(term, false, false);
+        t.setFoldDiacritics(true);
+        return c.searchHighlightPage(page);
+    }
+
+    /** PAGE search with accent-insensitive (Unicode-normalized) matching opted in. */
+    private int pageFold(Document d, int page, String term) {
+        DocumentSearchControllerImpl c = new DocumentSearchControllerImpl(d);
+        c.setSearchMode(SearchMode.PAGE);
+        SearchTerm t = c.addSearchTerm(term, false, false, false);
+        t.setFoldDiacritics(true);
+        return c.searchHighlightPage(page);
+    }
+
     private String pageHighlighted(Document d, int page, String term, boolean regex) {
         DocumentSearchControllerImpl c = new DocumentSearchControllerImpl(d);
         c.setSearchMode(SearchMode.PAGE);
@@ -79,7 +98,7 @@ public class DocumentSearchConvergenceTest {
         assertEquals(10, word(d, 0, "Un", false, false));   // substring, case-insensitive
         assertEquals(7, word(d, 0, "Un", true, true));      // whole word, case-sensitive
         assertEquals(8, word(d, 0, "un", false, true));     // whole word, case-insensitive
-        assertEquals(4, word(d, 0, "que", false, false));
+        assertEquals(4, word(d, 0, "que", false, false));   // exact (accent-folding is opt-in)
         assertEquals(8, word(d, 0, "de", false, false));    // substring
         assertEquals(5, word(d, 0, "de", false, true));     // whole word
         assertEquals(2, word(d, 0, "de la", false, false)); // phrase across tokens
@@ -100,17 +119,24 @@ public class DocumentSearchConvergenceTest {
         d.dispose();
     }
 
-    @DisplayName("accent-sensitive matching (current limitation; Unicode normalization will change these)")
+    @DisplayName("accent-insensitive matching is opt-in: default exact, folded finds accented text")
     @Test
-    public void accentGap() throws Exception {
+    public void accentInsensitive() throws Exception {
         Document d = doc(POEM);
-        // accented term matches, unaccented term currently does NOT.
-        assertEquals(1, word(d, 0, "carácter", false, false));
-        assertEquals(0, word(d, 0, "caracter", false, false));   // <- gap
-        assertEquals(1, page(d, 0, "sí mismo", false, false));
-        assertEquals(0, page(d, 0, "si mismo", false, false));   // <- gap
-        assertEquals(1, page(d, 0, "ataúdes", false, false));
-        assertEquals(0, page(d, 0, "ataudes", false, false));    // <- gap
+        // default (exact): unaccented term does NOT match accented text.
+        assertEquals(0, word(d, 0, "caracter", false, false));
+        assertEquals(0, page(d, 0, "si mismo", false, false));
+        assertEquals(0, page(d, 0, "ataudes", false, false));
+        // opted-in (folded): both the accented term and its unaccented form match.
+        assertEquals(1, wordFold(d, 0, "carácter"));
+        assertEquals(1, wordFold(d, 0, "caracter"));
+        assertEquals(1, pageFold(d, 0, "sí mismo"));
+        assertEquals(1, pageFold(d, 0, "si mismo"));
+        assertEquals(1, pageFold(d, 0, "ataúdes"));
+        assertEquals(1, pageFold(d, 0, "ataudes"));
+        // folding also makes "que" find the accented "Qué".
+        assertEquals(4, word(d, 0, "que", false, false));   // exact
+        assertEquals(5, wordFold(d, 0, "que"));             // + "Qué"
         d.dispose();
     }
 

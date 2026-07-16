@@ -166,6 +166,24 @@ public class TextSequenceTest {
                 "wordsIn should cover the phrase: " + words);
     }
 
+    @DisplayName("folded search corpus: accents removed, maps back to accented canonical text")
+    @Test
+    public void foldedCorpus() throws Exception {
+        TextSequence seq = pageText("/redact/test_print.pdf", 0).getTextSequence();
+
+        assertEquals("ataudes", TextSequence.foldDiacritics("ataúdes"));
+        assertEquals("PDF", TextSequence.foldDiacritics("PDF"));   // ASCII unchanged
+
+        String folded = seq.foldedSearchText();
+        assertTrue(folded.contains("ataudes"), "folded corpus should drop accents: " + folded.substring(0, 40));
+        assertFalse(folded.contains("ataúdes"), "folded corpus should not retain accented form");
+
+        // an unaccented match maps back to the accented canonical text
+        int start = folded.indexOf("ataudes");
+        OffsetRange canonical = seq.foldedToCanonicalRange(start, start + "ataudes".length());
+        assertEquals("ataúdes", seq.text(canonical));
+    }
+
     @DisplayName("robustness sweep on dense/table doc pdf_reference_addendum_redaction.pdf")
     @Test
     public void sweep_addendum() throws Exception {
