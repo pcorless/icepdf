@@ -24,101 +24,137 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Characterization tests for document search against a real PDF (the Parra poem in test_print.pdf).
- * The existing DocumentSearchControllerImplTest only covers term parsing/management; this pins the
- * actual match/highlight behavior so the TextSequence search-corpus convergence (Step 4) is
- * behavior-preserving.  Counts here are the current, observed behavior.
+ * Characterization tests for document search across two PDFs (the Parra poem and the PDF
+ * redaction addendum), covering WORD and PAGE modes, whole-word, phrases, across-line matches,
+ * accents, regex and result-fragment context.  These pin current behavior as the safety net for
+ * streamlining WORD/PAGE into one corpus engine and adding Unicode-normalized matching.
+ * <p>
+ * Counts are the current, observed behavior.  The {@code accentGap} test intentionally documents a
+ * known limitation (accent-sensitive matching) that a later step is expected to change.
  */
 public class DocumentSearchConvergenceTest {
+
+    private static final String POEM = "/redact/test_print.pdf";
+    private static final String ADDENDUM = "/redact/pdf_reference_addendum_redaction.pdf";
 
     @BeforeAll
     public static void init() {
         FontPropertiesManager.getInstance().loadOrReadSystemFonts();
     }
 
-    private Document doc() throws Exception {
+    private Document doc(String resource) throws Exception {
         Document d = new Document();
-        d.setFile(DocumentSearchConvergenceTest.class.getResource("/redact/test_print.pdf").getFile());
+        d.setFile(DocumentSearchConvergenceTest.class.getResource(resource).getFile());
         return d;
     }
 
-    private int wordHits(Document d, String term, boolean caseSensitive, boolean wholeWord) {
+    private int word(Document d, int page, String term, boolean caseSensitive, boolean wholeWord) {
         DocumentSearchControllerImpl c = new DocumentSearchControllerImpl(d);
         c.setSearchMode(SearchMode.WORD);
         c.addSearchTerm(term, caseSensitive, wholeWord);
-        return c.searchHighlightPage(0);
+        return c.searchHighlightPage(page);
     }
 
-    private int pageHits(Document d, String term, boolean caseSensitive, boolean regex) {
+    private int page(Document d, int page, String term, boolean caseSensitive, boolean regex) {
         DocumentSearchControllerImpl c = new DocumentSearchControllerImpl(d);
         c.setSearchMode(SearchMode.PAGE);
         c.addSearchTerm(term, caseSensitive, false, regex);
-        return c.searchHighlightPage(0);
+        return c.searchHighlightPage(page);
     }
 
-    private String pageHighlightedText(Document d, String term, boolean regex) throws Exception {
+    private String pageHighlighted(Document d, int page, String term, boolean regex) {
         DocumentSearchControllerImpl c = new DocumentSearchControllerImpl(d);
         c.setSearchMode(SearchMode.PAGE);
         c.addSearchTerm(term, false, false, regex);
-        List<WordText> words = c.searchPage(0);
+        List<WordText> words = c.searchPage(page);
         StringBuilder sb = new StringBuilder();
         if (words != null) for (WordText w : words) sb.append(w.getText());
         return sb.toString().replace(" ", "");
     }
 
-    @DisplayName("WORD-mode hit counts (current behavior)")
+    @DisplayName("WORD mode: substring vs whole-word counts")
     @Test
-    public void wordModeCounts() throws Exception {
-        Document d = doc();
-        assertEquals(10, wordHits(d, "Un", false, false));   // case-insensitive un/Un
-        assertEquals(7, wordHits(d, "Un", true, true));      // case-sensitive whole word "Un"
-        assertEquals(4, wordHits(d, "que", false, false));
-        assertEquals(8, wordHits(d, "de", false, false));
-        assertEquals(0, wordHits(d, "zzznotpresent", false, false));
+    public void wordMode() throws Exception {
+        Document d = doc(POEM);
+        assertEquals(10, word(d, 0, "Un", false, false));   // substring, case-insensitive
+        assertEquals(7, word(d, 0, "Un", true, true));      // whole word, case-sensitive
+        assertEquals(8, word(d, 0, "un", false, true));     // whole word, case-insensitive
+        assertEquals(4, word(d, 0, "que", false, false));
+        assertEquals(8, word(d, 0, "de", false, false));    // substring
+        assertEquals(5, word(d, 0, "de", false, true));     // whole word
+        assertEquals(2, word(d, 0, "de la", false, false)); // phrase across tokens
+        assertEquals(0, word(d, 0, "zzznotpresent", false, false));
         d.dispose();
     }
 
-    @DisplayName("PAGE-mode hit counts + regex + phrase (current behavior)")
+    @DisplayName("PAGE mode: substring, phrase, across-line, regex")
     @Test
-    public void pageModeCounts() throws Exception {
-        Document d = doc();
-        assertEquals(10, pageHits(d, "Un", false, false));
-        assertEquals(1, pageHits(d, "todo el mundo", false, false));   // multi-word phrase
-        assertEquals(2, pageHits(d, "de\\s+la", false, true));         // regex
-        assertEquals(1, pageHits(d, "ataúdes", false, false));         // accented
+    public void pageMode() throws Exception {
+        Document d = doc(POEM);
+        assertEquals(10, page(d, 0, "Un", false, false));
+        assertEquals(1, page(d, 0, "todo el mundo", false, false));
+        assertEquals(1, page(d, 0, "Un sacerdote", false, false));   // spans a line break
+        assertEquals(1, page(d, 0, "sí mismo", false, false));
+        assertEquals(2, page(d, 0, "de\\s+la", false, true));        // regex
+        assertEquals(8, page(d, 0, "\\bUn\\b", false, true));        // whole-word via regex
         d.dispose();
     }
 
-    @DisplayName("PAGE-mode highlights the matched words")
+    @DisplayName("accent-sensitive matching (current limitation; Unicode normalization will change these)")
     @Test
-    public void pageModeHighlightContent() throws Exception {
-        Document d = doc();
-        assertTrue(pageHighlightedText(d, "todo el mundo", false).contains("todoelmundo"),
-                "phrase match should highlight the phrase words");
+    public void accentGap() throws Exception {
+        Document d = doc(POEM);
+        // accented term matches, unaccented term currently does NOT.
+        assertEquals(1, word(d, 0, "carácter", false, false));
+        assertEquals(0, word(d, 0, "caracter", false, false));   // <- gap
+        assertEquals(1, page(d, 0, "sí mismo", false, false));
+        assertEquals(0, page(d, 0, "si mismo", false, false));   // <- gap
+        assertEquals(1, page(d, 0, "ataúdes", false, false));
+        assertEquals(0, page(d, 0, "ataudes", false, false));    // <- gap
         d.dispose();
     }
 
-    @DisplayName("result fragments + context padding (current behavior)")
+    @DisplayName("second corpus: PDF redaction addendum (multi-page, dense)")
+    @Test
+    public void addendumCorpus() throws Exception {
+        Document d = doc(ADDENDUM);
+        assertEquals(10, word(d, 1, "Redaction", false, false));
+        assertEquals(13, word(d, 2, "annotation", false, false));
+        assertEquals(6, word(d, 1, "PDF", false, true));                 // whole word
+        assertEquals(8, page(d, 2, "redaction annotation", false, false));
+        assertEquals(3, page(d, 1, "PDF Reference", false, false));
+        d.dispose();
+    }
+
+    @DisplayName("PAGE mode highlights the matched words")
+    @Test
+    public void pageHighlightContent() throws Exception {
+        Document d = doc(POEM);
+        assertTrue(pageHighlighted(d, 0, "todo el mundo", false).contains("todoelmundo"));
+        d.dispose();
+    }
+
+    @DisplayName("result fragments + context padding")
     @Test
     public void resultFragmentsAndContext() throws Exception {
-        Document d = doc();
+        Document d = doc(POEM);
 
         // WORD mode: one fragment per hit, padded with surrounding context words.
-        DocumentSearchControllerImpl word = new DocumentSearchControllerImpl(d);
-        word.setSearchMode(SearchMode.WORD);
-        word.addSearchTerm("que", false, false);
-        List<LineText> wordFragments = word.searchHighlightPage(0, 2);
-        assertEquals(4, wordFragments.size(), "one fragment per 'que' hit");
+        DocumentSearchControllerImpl wordCtl = new DocumentSearchControllerImpl(d);
+        wordCtl.setSearchMode(SearchMode.WORD);
+        wordCtl.addSearchTerm("que", false, false);
+        List<LineText> wordFragments = wordCtl.searchHighlightPage(0, 2);
+        assertEquals(4, wordFragments.size());
         for (LineText fragment : wordFragments) {
-            assertTrue(fragment.toString().toLowerCase().contains("que"), "fragment should contain the hit");
+            assertTrue(fragment.toString().toLowerCase().contains("que"));
             assertTrue(fragment.getWords().size() > 1, "fragment should carry context words");
         }
 
         // PAGE mode: one fragment per phrase hit, with line context.
-        DocumentSearchControllerImpl page = new DocumentSearchControllerImpl(d);
-        page.setSearchMode(SearchMode.PAGE);
-        page.addSearchTerm("todo el mundo", false, false, false);
-        List<LineText> pageFragments = page.searchHighlightPage(0, 0);
+        DocumentSearchControllerImpl pageCtl = new DocumentSearchControllerImpl(d);
+        pageCtl.setSearchMode(SearchMode.PAGE);
+        pageCtl.addSearchTerm("todo el mundo", false, false, false);
+        List<LineText> pageFragments = pageCtl.searchHighlightPage(0, 0);
         assertEquals(1, pageFragments.size());
         StringBuilder joined = new StringBuilder();
         pageFragments.get(0).getWords().forEach(w -> joined.append(w.getText()));
