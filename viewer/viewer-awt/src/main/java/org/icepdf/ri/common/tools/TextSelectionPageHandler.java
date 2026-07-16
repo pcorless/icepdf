@@ -20,7 +20,6 @@ import org.icepdf.ri.common.views.DocumentViewController;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
-import java.awt.geom.AffineTransform;
 
 /**
  * Handles Paint and mouse/keyboard logic around text selection and search
@@ -157,14 +156,7 @@ public class TextSelectionPageHandler extends TextSelection
     }
 
     public void paintTool(Graphics g) {
-        if (enableMarginExclusionBorder && topMarginExclusion != null && bottomMarginExclusion != null) {
-            AffineTransform at = getPageTransform();
-            ((Graphics2D)g).transform(at);
-            g.setColor(Color.RED);
-            paintSelectionBox(g, topMarginExclusion.getBounds());
-            g.setColor(Color.BLUE);
-            paintSelectionBox(g, bottomMarginExclusion.getBounds());
-        }
+
     }
 
 

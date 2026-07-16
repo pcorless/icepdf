@@ -63,6 +63,9 @@ public class PageText implements TextSelect {
     private final ArrayList<LineText> pageLines;
     private ArrayList<LineText> sortedPageLines;
 
+    // reading-order view over sortedPageLines; lazily built, invalidated on re-sort.
+    private TextSequence textSequence;
+
     private AffineTransform previousTextTransform;
     private AffineTransform previousXObjectTransform;
 
@@ -137,6 +140,21 @@ public class PageText implements TextSelect {
             sortAndFormatText();
         }
         return sortedPageLines;
+    }
+
+    /**
+     * Gets the reading-order {@link TextSequence} for this page, a flattened view over the
+     * sorted page lines that maps between page-space points, character offsets, and the
+     * underlying glyph/word/line structure.  The value is cached and rebuilt whenever the
+     * page re-sorts (see {@link #sortAndFormatText}).
+     *
+     * @return reading-order sequence for this page's visible text.
+     */
+    public TextSequence getTextSequence() {
+        if (textSequence == null) {
+            textSequence = new TextSequence(this);
+        }
+        return textSequence;
     }
 
     /**
@@ -594,6 +612,8 @@ public class PageText implements TextSelect {
         // assign back the sorted lines.
         this.sortedPageLines = sortedPageLines;
 
+        // invalidate the reading-order view so it rebuilds from the new sort.
+        this.textSequence = null;
     }
 
 
