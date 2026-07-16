@@ -120,7 +120,9 @@ public class DocumentSearchConvergenceTest {
         Document d = doc(ADDENDUM);
         assertEquals(10, word(d, 1, "Redaction", false, false));
         assertEquals(13, word(d, 2, "annotation", false, false));
-        assertEquals(6, word(d, 1, "PDF", false, true));                 // whole word
+        // whole word: \b boundaries now also find "PDF" glued to punctuation, e.g. "(PDF 1.7)",
+        // which the old token-equality matcher missed (6 -> 8, an intentional improvement).
+        assertEquals(8, word(d, 1, "PDF", false, true));
         assertEquals(8, page(d, 2, "redaction annotation", false, false));
         assertEquals(3, page(d, 1, "PDF Reference", false, false));
         d.dispose();

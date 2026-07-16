@@ -177,155 +177,35 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * list is returned.
      */
     public List<LineText> searchHighlightPage(int pageIndex, int wordPadding) {
-        switch (searchMode) {
-            case WORD:
-                return searchHighlightWordPage(pageIndex, wordPadding);
-            case PAGE:
-                return searchHighlightWholePage(pageIndex);
-            default:
-                return Collections.emptyList();
-        }
-    }
-
-    private List<LineText> searchHighlightWordPage(int pageIndex, int wordPadding) {
-        // search hit list
-        List<LineText> searchHits = new ArrayList<>();
-
-        // get our page text reference
-        PageText pageText = getPageText(pageIndex);
-
-        // some pages just don't have any text.
+        final List<LineText> searchHits = new ArrayList<>();
+        final PageText pageText = getPageText(pageIndex);
         if (pageText == null) {
             return searchHits;
         }
-
-        // get search terms from model and search for each occurrence.
-        List<SearchTerm> terms = searchModel.getSearchTerms();
-        // we need to do the search for  each term.
-        SearchTerm term;
-        for (SearchTerm searchTerm : terms) {
-            term = searchTerm;
-
-            // found word index to keep track of when we have found a hit
-            int searchPhraseHitCount = 0;
-            int searchPhraseFoundCount = term.getTerms().size();
-
-            // start iteration over words.
-            List<LineText> pageLines = pageText.getPageLines();
-            if (pageLines != null) {
-                for (LineText pageLine : pageLines) {
-                    List<WordText> lineWords = pageLine.getWords();
-                    // compare words against search terms.
-                    String wordString;
-                    WordText word;
-                    for (int i = 0, max = lineWords.size(); i < max; i++) {
-                        word = lineWords.get(i);
-
-                        // apply case sensitivity rule.
-                        wordString = term.isCaseSensitive() ? word.toString() :
-                                word.toString().toLowerCase();
-
-                        // skip if it's white space, so we don't worry about it in the search
-                        if (wordString.length() == 1) {
-                            char c = wordString.charAt(0);
-                            if (WordText.isWhiteSpace(c)) {
-                                continue;
-                            }
-                        }
-
-                        // word matches, we have to match full word hits
-                        if (term.isWholeWord()) {
-                            final List<String> termList = term.getTerms();
-                            if (termList != null && termList.size() > searchPhraseHitCount) {
-                                final String hit = termList.get(searchPhraseHitCount);
-                                if (wordString.equals(hit)) {
-                                    // add word to potentials
-                                    searchPhraseHitCount++;
-                                }
-                                // reset the counters.
-                                else {
-                                    searchPhraseHitCount = 0;
-                                }
-                            } else {
-                                searchPhraseHitCount = 0;
-                            }
-                        } else if (term.isRegex()) {
-                            Pattern pattern = term.getRegexPattern();
-                            Matcher matcher = pattern.matcher(wordString);
-                            if (matcher.find()) {
-                                // add word to potentials
-                                if (!word.isWhiteSpace()) {
-                                    searchPhraseHitCount++;
-                                }
-                            }
-                        }
-                        // otherwise we look for an index of hits
-                        else {
-                            // found a potential hit, depends on the length
-                            // of searchPhrase.
-                            final List<String> termList = term.getTerms();
-                            if (termList != null && termList.size() > searchPhraseHitCount) {
-                                final String hit = term.getTerms().get(searchPhraseHitCount);
-                                if (hit != null && wordString.contains(hit)) {
-                                    // add word to potentials
-                                    searchPhraseHitCount++;
-                                }
-                                else {
-                                    // reset the counters.
-                                    searchPhraseHitCount = 0;
-                                }
-                            } else {
-                                searchPhraseHitCount = 0;
-                            }
-                        }
-                        // check if we have found what we're looking for
-                        if (searchPhraseHitCount > 0 && searchPhraseHitCount == searchPhraseFoundCount) {
-                            LineText lineText = new LineText();
-                            int lineWordsSize = lineWords.size();
-                            List<WordText> hitWords = lineText.getWords();
-                            // add pre padding
-                            int spaces = searchPhraseHitCount - 1;
-                            spaces = Math.max(spaces, 0);
-                            int start = i - searchPhraseHitCount - spaces - wordPadding + 1;
-                            start = Math.max(start, 0);
-                            int end = i - searchPhraseHitCount - spaces;
-                            end = Math.max(end, 0);
-                            // add post padding indexes.
-                            int start2 = i + 1;
-                            start2 = Math.min(start2, lineWordsSize);
-                            int end2 = start2 + wordPadding;
-                            end2 = Math.min(end2, lineWordsSize);
-
-                            for (int p = start; p < end; p++) {
-                                hitWords.add(lineWords.get(p));
-                            }
-
-                            // highlight the found words.
-                            WordText wordHit;
-                            for (int w = (end == 0) ? 0 : end + 1; w < start2; w++) {
-                                wordHit = lineWords.get(w);
-                                wordHit.setHighlighted(true);
-                                wordHit.setHasHighlight(true);
-                                wordHit.setHighlightColor(term.getHighlightColor());
-                                hitWords.add(wordHit);
-                                addComponent(pageIndex, wordHit.getText(), wordHit.getBounds());
-                            }
-
-                            for (int p = start2; p < end2; p++) {
-                                hitWords.add(lineWords.get(p));
-                            }
-
-                            // add the hits to our list.
-                            searchHits.add(lineText);
-                            searchPhraseHitCount = 0;
-                        }
-
-                    }
-                }
+        // One corpus-based matcher for both modes: literal terms match a whitespace-collapsed
+        // reading-order corpus (searchText), regex terms match the canonical text; whole-word wraps
+        // the term in \b boundaries.  Matches map back to canonical offsets and then to WordTexts,
+        // which are highlighted in place.  The search mode only affects result-fragment context:
+        // PAGE uses full line context, WORD pads a fixed number of words on each side of the hit.
+        final TextSequence sequence = pageText.getTextSequence();
+        final boolean fullLineContext = searchMode == SearchMode.PAGE;
+        for (final SearchTerm term : searchModel.getSearchTerms()) {
+            final boolean regex = term.isRegex();
+            final String corpus = regex ? sequence.text().toString() : sequence.searchText();
+            final Pattern pattern = compileSearchPattern(term);
+            if (pattern == null) continue;
+            final Matcher matcher = pattern.matcher(corpus);
+            while (matcher.find()) {
+                if (matcher.end() == matcher.start()) continue;   // ignore zero-width matches
+                final OffsetRange range = regex
+                        ? OffsetRange.of(matcher.start(), matcher.end())
+                        : sequence.searchToCanonicalRange(matcher.start(), matcher.end());
+                final List<WordText> hitWords = sequence.wordsIn(range);
+                if (hitWords.isEmpty()) continue;
+                searchHits.add(buildHitFragment(sequence, hitWords, term.getHighlightColor(),
+                        pageIndex, matcher.group(), fullLineContext, wordPadding));
             }
         }
-
-        // if we have a hit we'll add it to the model cache
         if (!searchHits.isEmpty()) {
             searchModel.addPageSearchHit(pageIndex, pageText, searchHits.size());
             if (logger.isLoggable(Level.FINE)) {
@@ -333,6 +213,29 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             }
         }
         return searchHits;
+    }
+
+    /**
+     * Compiles a term into a matcher pattern: regex terms use their own pattern; literal terms are
+     * quoted, optionally wrapped in {@code \b} word boundaries for whole-word searches, and made
+     * case-insensitive / Unicode-aware as configured.
+     *
+     * @param term search term
+     * @return compiled pattern, or null if a regex term has no pattern.
+     */
+    private Pattern compileSearchPattern(SearchTerm term) {
+        if (term.isRegex()) {
+            return term.getRegexPattern();
+        }
+        int flags = Pattern.UNICODE_CHARACTER_CLASS;
+        if (!term.isCaseSensitive()) {
+            flags |= Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE;
+        }
+        String expression = Pattern.quote(term.getTerm());
+        if (term.isWholeWord()) {
+            expression = "\\b" + expression + "\\b";
+        }
+        return Pattern.compile(expression, flags);
     }
 
     @Override
@@ -345,77 +248,35 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         return searchMode;
     }
 
-    private List<LineText> searchHighlightWholePage(final int pageIndex) {
-        // search hit list
-        final List<LineText> searchHits = new ArrayList<>();
-
-        // get our page text reference
-        final PageText pageText = getPageText(pageIndex);
-
-        // some pages just don't have any text.
-        if (pageText == null) {
-            return searchHits;
-        }
-
-        // Search over the page's reading-order text sequence.  Literal terms match a
-        // whitespace-collapsed corpus (searchText), regex terms match the raw canonical text so
-        // whitespace and line anchors behave as authored.  Matches map back to canonical offsets
-        // and then to the underlying WordTexts, which are highlighted in place.
-        final TextSequence sequence = pageText.getTextSequence();
-        final List<SearchTerm> terms = searchModel.getSearchTerms();
-        for (final SearchTerm term : terms) {
-            final boolean regex = term.isRegex();
-            final String corpus = regex ? sequence.text().toString() : sequence.searchText();
-            final Pattern pattern = regex ? term.getRegexPattern()
-                    : Pattern.compile(Pattern.quote(term.getTerm()),
-                    term.isCaseSensitive() ? 0 : Pattern.CASE_INSENSITIVE);
-            if (pattern == null) continue;
-            final Matcher matcher = pattern.matcher(corpus);
-            while (matcher.find()) {
-                final OffsetRange range = regex
-                        ? OffsetRange.of(matcher.start(), matcher.end())
-                        : sequence.searchToCanonicalRange(matcher.start(), matcher.end());
-                final List<WordText> hitWords = sequence.wordsIn(range);
-                if (hitWords.isEmpty()) continue;
-                searchHits.add(buildHitFragment(sequence, hitWords, term.getHighlightColor(),
-                        pageIndex, matcher.group()));
-            }
-        }
-
-        // if we have a hit we'll add it to the model cache
-        if (!searchHits.isEmpty()) {
-            searchModel.addPageSearchHit(pageIndex, pageText, searchHits.size());
-            if (logger.isLoggable(Level.FINE)) {
-                logger.fine("Found search hits on page " + pageIndex + " hit count " + searchHits.size());
-            }
-        }
-        return searchHits;
-    }
-
     /**
-     * Builds a whole-page search-result fragment: the leading context words on the first hit
-     * word's line, the highlighted hit words, and the trailing context words on the last hit
-     * word's line.
+     * Builds a search-result fragment: context words on the first hit word's line before the hit,
+     * the highlighted hit words, and context words on the last hit word's line after the hit.
+     * With {@code fullLineContext} the whole line is included on each side; otherwise up to
+     * {@code wordPadding} words are included on each side.
      *
-     * @param sequence page text sequence
-     * @param hitWords matched words, in reading order
-     * @param color    highlight color for the term
-     * @param pageIndex page the hit is on
-     * @param hitText   matched text (used for the search-hit component label)
+     * @param sequence        page text sequence
+     * @param hitWords        matched words, in reading order
+     * @param color           highlight color for the term
+     * @param pageIndex       page the hit is on
+     * @param hitText         matched text (used for the search-hit component label)
+     * @param fullLineContext true to include the rest of the line on each side (PAGE mode)
+     * @param wordPadding     number of context words on each side when not full-line (WORD mode)
      * @return a LineText fragment for the results list.
      */
     private LineText buildHitFragment(TextSequence sequence, List<WordText> hitWords, Color color,
-                                      int pageIndex, String hitText) {
+                                      int pageIndex, String hitText, boolean fullLineContext, int wordPadding) {
         final LineText fragment = new LineText();
         final WordText firstWord = hitWords.get(0);
         final WordText lastWord = hitWords.get(hitWords.size() - 1);
 
-        // leading context: words on the first hit word's line, up to the hit.
+        // leading context on the first hit word's line.
         final LineText firstLine = sequence.lineOf(firstWord);
         if (firstLine != null) {
-            for (final WordText word : firstLine.getWords()) {
-                if (word == firstWord) break;
-                fragment.getWords().add(word);
+            final List<WordText> lineWords = firstLine.getWords();
+            final int index = lineWords.indexOf(firstWord);
+            if (index > 0) {
+                final int from = fullLineContext ? 0 : Math.max(0, index - wordPadding);
+                for (int i = from; i < index; i++) fragment.getWords().add(lineWords.get(i));
             }
         }
         // the hit words themselves, highlighted.
@@ -426,13 +287,15 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             fragment.getWords().add(word);
             addComponent(pageIndex, hitText, word.getBounds());
         }
-        // trailing context: words on the last hit word's line, after the hit.
+        // trailing context on the last hit word's line.
         final LineText lastLine = sequence.lineOf(lastWord);
         if (lastLine != null) {
-            boolean take = false;
-            for (final WordText word : lastLine.getWords()) {
-                if (take) fragment.getWords().add(word);
-                else if (word == lastWord) take = true;
+            final List<WordText> lineWords = lastLine.getWords();
+            final int index = lineWords.indexOf(lastWord);
+            if (index >= 0) {
+                final int to = fullLineContext ? lineWords.size()
+                        : Math.min(lineWords.size(), index + 1 + wordPadding);
+                for (int i = index + 1; i < to; i++) fragment.getWords().add(lineWords.get(i));
             }
         }
         return fragment;
