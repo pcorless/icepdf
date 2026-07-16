@@ -29,6 +29,8 @@ import org.icepdf.core.search.SearchMode;
 import org.icepdf.core.search.SearchTerm;
 import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.tools.TextSelectionSupport;
+import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.utility.search.SearchHitComponent;
 import org.icepdf.ri.common.utility.search.SearchHitComponentFactory;
 import org.icepdf.ri.common.utility.search.SearchHitComponentFactoryImpl;
@@ -560,16 +562,19 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                             for (int j = searchWordCursor, maxJ = words.size(); j < maxJ; j++) {
                                 word = words.get(j);
                                 if (word.isHighlighted()) {
-                                    // highlight the rest of the words
+                                    // highlight the rest of the words in the run
+                                    WordText lastHit = word;
                                     for (; j < maxJ; j++) {
                                         if (!words.get(j).isHighlighted()) {
                                             break;
                                         }
                                         words.get(j).setHighlightCursor(true);
+                                        lastHit = words.get(j);
                                     }
                                     searchModel.setSearchPageCursor(i);
                                     searchModel.setSearchLineCursor(k);
                                     searchModel.setSearchWordCursor(j);
+                                    selectSearchHit(i, pageText, word, lastHit);
                                     showWord(i, word);
                                     return word;
                                 }
@@ -605,6 +610,27 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                         (int) bounds.x, (int) (bounds.y + bounds.height + 100)));
     }
 
+    /**
+     * Selects the current search hit's word run in the document text selection model, so the found
+     * text is copyable and stays consistent with mouse/keyboard selection (find-and-select).  No-op
+     * when running headless (no view controller).
+     *
+     * @param pageIndex page the hit is on
+     * @param pageText  the hit page's text
+     * @param firstWord first word of the hit run, in reading order
+     * @param lastWord  last word of the hit run, in reading order
+     */
+    private void selectSearchHit(int pageIndex, PageText pageText, WordText firstWord, WordText lastWord) {
+        if (viewerController == null || pageText == null) return;
+        TextSequence sequence = pageText.getTextSequence();
+        OffsetRange first = sequence.rangeOf(firstWord);
+        OffsetRange last = sequence.rangeOf(lastWord);
+        if (first == null || last == null) return;
+        DocumentViewModel documentViewModel = viewerController.getDocumentViewController().getDocumentViewModel();
+        documentViewModel.setTextSelection(pageIndex, first.getStart(), pageIndex, last.getEnd());
+        TextSelectionSupport.applyDocumentSelection(documentViewModel);
+    }
+
     @Override
     public WordText previousSearchHit() {
         if (searchModel.getPageSearchHitsSize() == 0) return null;
@@ -636,16 +662,19 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                                 for (int j = searchWordCursor; j >= 0; j--) {
                                     word = words.get(j);
                                     if (word.isHighlighted()) {
-                                        // highlight the rest of the words
+                                        // highlight the rest of the words in the run
+                                        WordText firstHit = word;
                                         for (; j >= 0; j--) {
                                             if (!words.get(j).isHighlighted()) {
                                                 break;
                                             }
                                             words.get(j).setHighlightCursor(true);
+                                            firstHit = words.get(j);
                                         }
                                         searchModel.setSearchPageCursor(i);
                                         searchModel.setSearchLineCursor(k);
                                         searchModel.setSearchWordCursor(j);
+                                        selectSearchHit(i, pageText, firstHit, word);
                                         showWord(i, word);
                                         return word;
                                     }

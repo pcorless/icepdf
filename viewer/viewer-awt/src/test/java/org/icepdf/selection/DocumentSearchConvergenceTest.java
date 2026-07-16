@@ -11,10 +11,15 @@ package org.icepdf.selection;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.graphics.text.LineText;
+import org.icepdf.core.pobjects.graphics.text.OffsetRange;
+import org.icepdf.core.pobjects.graphics.text.PageText;
+import org.icepdf.core.pobjects.graphics.text.TextSequence;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.search.SearchMode;
 import org.icepdf.core.search.SearchTerm;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
+import org.icepdf.ri.common.tools.TextSelectionSupport;
+import org.icepdf.ri.common.views.DocumentTextSelection;
 import org.icepdf.ri.util.FontPropertiesManager;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -151,6 +156,38 @@ public class DocumentSearchConvergenceTest {
         assertEquals(8, word(d, 1, "PDF", false, true));
         assertEquals(8, page(d, 2, "redaction annotation", false, false));
         assertEquals(3, page(d, 1, "PDF Reference", false, false));
+        d.dispose();
+    }
+
+    @DisplayName("find-and-select: a hit's word run maps to a selectable offset range")
+    @Test
+    public void findAndSelectRange() throws Exception {
+        Document d = doc(POEM);
+        DocumentSearchControllerImpl c = new DocumentSearchControllerImpl(d);
+        c.setSearchMode(SearchMode.PAGE);
+        c.addSearchTerm("todo el mundo", false, false, false);
+        assertTrue(c.searchHighlightPage(0) > 0);
+
+        // gather the highlighted words (same instance the controller searched) in reading order.
+        PageText pageText = d.getPageViewText(0);
+        TextSequence seq = pageText.getTextSequence();
+        WordText first = null, last = null;
+        for (LineText line : pageText.getPageLines()) {
+            for (WordText w : line.getWords()) {
+                if (w.isHighlighted()) {
+                    if (first == null) first = w;
+                    last = w;
+                }
+            }
+        }
+        assertNotNull(first);
+        assertNotNull(last);
+
+        // the run maps to an offset range whose selected text is the found phrase (find-and-select).
+        OffsetRange range = OffsetRange.of(seq.rangeOf(first).getStart(), seq.rangeOf(last).getEnd());
+        DocumentTextSelection selection = new DocumentTextSelection();
+        selection.set(0, range.getStart(), 0, range.getEnd());
+        assertTrue(TextSelectionSupport.selectedText(selection, d).replace(" ", "").contains("todoelmundo"));
         d.dispose();
     }
 
