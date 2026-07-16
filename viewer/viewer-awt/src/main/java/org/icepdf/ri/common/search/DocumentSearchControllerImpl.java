@@ -725,6 +725,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     }
 
     @Override
+    @SuppressWarnings("deprecation")   // still populates SearchTerm.getTerms() for API compatibility
     public SearchTerm addSearchTerm(String term, boolean caseSensitive, boolean wholeWord, boolean regex, Color highlightColor) {
         // keep original copy
         String originalTerm = String.valueOf(term);
@@ -733,8 +734,8 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         if (!caseSensitive) {
             term = term.toLowerCase();
         }
-        // parse search term out into words, so we can match
-        // them against WordText
+        // legacy: populate the (deprecated) per-word token list; the matcher itself uses the whole
+        // term against the reading-order corpus and ignores these tokens.
         ArrayList<String> searchPhrase = searchMode == SearchMode.PAGE ? new ArrayList<>(Collections.singletonList(term)) : searchPhraseParser(term);
         // finally add the search term to the list and return it for management
         SearchTerm searchTerm =
@@ -845,12 +846,15 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     }
 
     /**
-     * Utility for breaking the pattern up into searchable words.  Breaks are
-     * done on white spaces and punctuation.
+     * Utility for breaking a phrase into word/space/punctuation tokens.
      *
-     * @param phrase pattern to search words for.
-     * @return list of words that make up phrase, words, spaces, punctuation.
+     * @param phrase pattern to break into words.
+     * @return list of tokens that make up the phrase.
+     * @deprecated Since 7.5 the search matcher no longer tokenizes terms (it matches the whole term
+     * against a reading-order corpus).  Retained only to populate the deprecated
+     * {@link org.icepdf.core.search.SearchTerm#getTerms()}; scheduled for removal.
      */
+    @Deprecated
     protected ArrayList<String> searchPhraseParser(String phrase) {
         // trim white space, not really useful.
         phrase = phrase.trim();

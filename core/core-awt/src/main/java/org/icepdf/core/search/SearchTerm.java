@@ -76,10 +76,14 @@ public class SearchTerm {
     }
 
     /**
-     * Gets individual strings that make up the search term,
+     * Gets the individual word/space/punctuation tokens that make up the search term.
      *
-     * @return list of strings that contain searchable words.
+     * @return list of tokens that make up the search term.
+     * @deprecated Since 7.5 the search matcher operates on the whole term ({@link #getTerm()})
+     * against a reading-order text corpus and no longer uses these tokens.  Retained for API
+     * compatibility; scheduled for removal in a future major release.
      */
+    @Deprecated
     public ArrayList<String> getTerms() {
         return terms;
     }
