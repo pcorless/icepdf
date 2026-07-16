@@ -16,13 +16,19 @@
 package org.icepdf.ri.common.tools;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.OffsetRange;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.TextSequence;
 import org.icepdf.core.pobjects.graphics.text.WordText;
+import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentTextSelection;
+import org.icepdf.ri.common.views.DocumentViewModel;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -87,6 +93,57 @@ public final class TextSelectionSupport {
                 word.setSelected(true);
             }
         }
+    }
+
+    /**
+     * Projects the authoritative {@link DocumentTextSelection} onto the legacy per-glyph selection
+     * flags for every loaded page it covers (write-through bridge), clears pages that dropped out,
+     * and repaints the affected pages.  Painting itself derives from the offset model, so unloaded
+     * pages still render correctly when they come back.  Shared by the mouse and keyboard paths.
+     *
+     * @param model document view model holding the authoritative selection and page components.
+     */
+    public static void applyDocumentSelection(DocumentViewModel model) {
+        DocumentTextSelection selection = model.getTextSelection();
+
+        // clear flags/repaint on pages that were previously selected.
+        List<AbstractPageViewComponent> previous = model.getSelectedPageText();
+        List<AbstractPageViewComponent> previousCopy =
+                previous != null ? new ArrayList<>(previous) : new ArrayList<>();
+        model.clearSelectedPageText();
+        for (AbstractPageViewComponent page : previousCopy) {
+            PageText pageText = loadedPageText(page);
+            if (pageText != null) applySelectionToFlags(pageText, null);
+            page.repaint();
+        }
+        if (selection.isEmpty()) return;
+
+        // apply flags/repaint on pages the selection now covers.
+        List<AbstractPageViewComponent> pages = model.getPageComponents();
+        for (int index = selection.startPage(); index <= selection.endPage(); index++) {
+            if (index < 0 || index >= pages.size()) continue;
+            AbstractPageViewComponent page = pages.get(index);
+            PageText pageText = loadedPageText(page);
+            if (pageText != null) {
+                OffsetRange range = rangeForPage(selection, index, pageText.getTextSequence());
+                applySelectionToFlags(pageText, range);
+            }
+            model.addSelectedPageText(page);
+            page.repaint();
+        }
+    }
+
+    /**
+     * Non-initializing page text accessor; returns null rather than triggering a parse on the EDT.
+     *
+     * @param page page component
+     * @return the page's already-built text, or null if not loaded.
+     */
+    public static PageText loadedPageText(AbstractPageViewComponent page) {
+        Page currentPage = page.getPage();
+        if (currentPage == null) return null;
+        Shapes shapes = currentPage.getShapes();
+        return shapes != null ? shapes.getPageText() : null;
     }
 
     /**

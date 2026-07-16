@@ -382,6 +382,20 @@ public final class TextSequence {
                 caret.getBias());
     }
 
+    /**
+     * Caret at the given line index nearest {@code goalX}; used to land the caret when vertical
+     * navigation crosses onto this page.
+     *
+     * @param lineIndex sorted-line index (clamped into range)
+     * @param goalX     preferred page-space x column
+     * @return caret on that line
+     */
+    public Caret caretAtLine(int lineIndex, double goalX) {
+        if (lines.length == 0) return new Caret(0, Bias.FORWARD);
+        int li = Math.max(0, Math.min(lineIndex, lines.length - 1));
+        return caretAt(new Point2D.Double(goalX, lines[li].getBounds().getCenterY()));
+    }
+
     // ------------------------------------------------------------------
     // range -> content (used by the viewer write-through bridge)
     // ------------------------------------------------------------------

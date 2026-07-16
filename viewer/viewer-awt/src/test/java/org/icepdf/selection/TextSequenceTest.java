@@ -103,6 +103,46 @@ public class TextSequenceTest {
         assertTrue(frag.size() >= 2, "cross-line selection should span multiple line rects");
     }
 
+    @DisplayName("caret navigation primitives (nextBoundary / caretAbove-Below / caretAtLine / caretRect)")
+    @Test
+    public void navigation() throws Exception {
+        TextSequence seq = pageText("/redact/test_print.pdf", 0).getTextSequence();
+
+        // glyph boundary: +/- 1
+        assertEquals(6, seq.nextBoundary(5, org.icepdf.core.pobjects.graphics.text.BreakType.GLYPH, true));
+        assertEquals(4, seq.nextBoundary(5, org.icepdf.core.pobjects.graphics.text.BreakType.GLYPH, false));
+
+        // word boundary at start of the first word "Qué"
+        OffsetRange firstWord = seq.wordRange(0);
+        assertEquals(firstWord.getEnd(), seq.nextBoundary(0, org.icepdf.core.pobjects.graphics.text.BreakType.WORD, true));
+
+        // line boundary
+        OffsetRange line0 = seq.lineRange(3);
+        assertEquals(line0.getEnd(), seq.nextBoundary(3, org.icepdf.core.pobjects.graphics.text.BreakType.LINE, true));
+        assertEquals(line0.getStart(), seq.nextBoundary(3, org.icepdf.core.pobjects.graphics.text.BreakType.LINE, false));
+
+        // vertical navigation moves one sorted line at the goal column
+        int mid = seq.lineRange(seq.length() / 2).getStart() + 3;
+        int midLine = seq.lineIndexOf(mid);
+        double goalX = seq.caretRect(new Caret(mid, org.icepdf.core.pobjects.graphics.text.Bias.FORWARD)).getX();
+        Caret below = seq.caretBelow(new Caret(mid, org.icepdf.core.pobjects.graphics.text.Bias.FORWARD), goalX);
+        Caret above = seq.caretAbove(new Caret(mid, org.icepdf.core.pobjects.graphics.text.Bias.FORWARD), goalX);
+        assertNotNull(below);
+        assertNotNull(above);
+        assertEquals(midLine + 1, seq.lineIndexOf(below.getOffset()));
+        assertEquals(midLine - 1, seq.lineIndexOf(above.getOffset()));
+
+        // top line has nothing above, last line nothing below
+        assertNull(seq.caretAbove(new Caret(seq.lineRange(0).getStart(), org.icepdf.core.pobjects.graphics.text.Bias.FORWARD), goalX));
+        assertNull(seq.caretBelow(new Caret(seq.length(), org.icepdf.core.pobjects.graphics.text.Bias.FORWARD), goalX));
+
+        // caretAtLine lands on the requested line; caretRect is a zero-width bar with height
+        assertEquals(2, seq.lineIndexOf(seq.caretAtLine(2, goalX).getOffset()));
+        Rectangle2D.Double bar = seq.caretRect(new Caret(mid, org.icepdf.core.pobjects.graphics.text.Bias.FORWARD));
+        assertEquals(0.0, bar.width);
+        assertTrue(bar.height > 0);
+    }
+
     @DisplayName("robustness sweep on dense/table doc pdf_reference_addendum_redaction.pdf")
     @Test
     public void sweep_addendum() throws Exception {

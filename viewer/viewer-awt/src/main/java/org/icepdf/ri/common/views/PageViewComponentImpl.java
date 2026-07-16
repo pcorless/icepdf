@@ -33,8 +33,11 @@ import org.icepdf.ri.common.views.destinations.DestinationComponent;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
@@ -199,6 +202,77 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
             currentToolHandler.installTool();
             addMouseListener(currentToolHandler);
             addMouseMotionListener(currentToolHandler);
+        }
+        // keyboard caret navigation is only active with the text-selection tool.
+        setTextCaretBindings(viewToolMode == DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION);
+    }
+
+    private boolean caretBindingsInstalled;
+
+    private static final String[] CARET_ACTION_NAMES = {
+            "ts.left", "ts.leftExtend", "ts.right", "ts.rightExtend",
+            "ts.up", "ts.upExtend", "ts.down", "ts.downExtend",
+            "ts.home", "ts.homeExtend", "ts.end", "ts.endExtend",
+            "ts.wordLeft", "ts.wordLeftExtend", "ts.wordRight", "ts.wordRightExtend"
+    };
+
+    private static KeyStroke[] caretKeyStrokes() {
+        int shift = InputEvent.SHIFT_DOWN_MASK;
+        int ctrl = InputEvent.CTRL_DOWN_MASK;
+        return new KeyStroke[]{
+                KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0), KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, shift),
+                KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, shift),
+                KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), KeyStroke.getKeyStroke(KeyEvent.VK_UP, shift),
+                KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, shift),
+                KeyStroke.getKeyStroke(KeyEvent.VK_HOME, 0), KeyStroke.getKeyStroke(KeyEvent.VK_HOME, shift),
+                KeyStroke.getKeyStroke(KeyEvent.VK_END, 0), KeyStroke.getKeyStroke(KeyEvent.VK_END, shift),
+                KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, ctrl), KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, ctrl | shift),
+                KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, ctrl), KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, ctrl | shift),
+        };
+    }
+
+    private void runCaretAction(int index) {
+        TextSelectionPageHandler h = textSelectionPageHandler;
+        switch (index) {
+            case 0: h.caretLeft(false); break;
+            case 1: h.caretLeft(true); break;
+            case 2: h.caretRight(false); break;
+            case 3: h.caretRight(true); break;
+            case 4: h.caretUp(false); break;
+            case 5: h.caretUp(true); break;
+            case 6: h.caretDown(false); break;
+            case 7: h.caretDown(true); break;
+            case 8: h.caretLineStart(false); break;
+            case 9: h.caretLineStart(true); break;
+            case 10: h.caretLineEnd(false); break;
+            case 11: h.caretLineEnd(true); break;
+            case 12: h.caretWordLeft(false); break;
+            case 13: h.caretWordLeft(true); break;
+            case 14: h.caretWordRight(false); break;
+            case 15: h.caretWordRight(true); break;
+            default: break;
+        }
+    }
+
+    private void setTextCaretBindings(boolean install) {
+        if (install == caretBindingsInstalled) return;
+        caretBindingsInstalled = install;
+        InputMap inputMap = getInputMap(WHEN_FOCUSED);
+        ActionMap actionMap = getActionMap();
+        KeyStroke[] keys = caretKeyStrokes();
+        for (int i = 0; i < keys.length; i++) {
+            if (install) {
+                final int index = i;
+                inputMap.put(keys[i], CARET_ACTION_NAMES[i]);
+                actionMap.put(CARET_ACTION_NAMES[i], new AbstractAction() {
+                    public void actionPerformed(ActionEvent e) {
+                        runCaretAction(index);
+                    }
+                });
+            } else {
+                inputMap.remove(keys[i]);
+                actionMap.remove(CARET_ACTION_NAMES[i]);
+            }
         }
     }
 

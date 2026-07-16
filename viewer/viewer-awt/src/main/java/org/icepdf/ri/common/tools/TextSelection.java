@@ -16,7 +16,9 @@
 package org.icepdf.ri.common.tools;
 
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.graphics.Shapes;
+import org.icepdf.core.pobjects.graphics.text.Bias;
+import org.icepdf.core.pobjects.graphics.text.BreakType;
+import org.icepdf.core.pobjects.graphics.text.Caret;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.OffsetRange;
 import org.icepdf.core.pobjects.graphics.text.PageText;
@@ -56,6 +58,9 @@ public class TextSelection extends SelectionBoxHandler {
 
     // Pointer to make sure the GC doesn't collect a page while selection state is present
     protected Page pageLock;
+
+    // sticky page-space column for vertical caret navigation; -1 when not navigating vertically.
+    protected double goalX = -1;
 
     public TextSelection(DocumentViewController documentViewController, AbstractPageViewComponent pageViewComponent) {
         super(documentViewController, pageViewComponent);
@@ -206,49 +211,12 @@ public class TextSelection extends SelectionBoxHandler {
     }
 
     /**
-     * Projects the authoritative {@link DocumentTextSelection} onto the legacy per-glyph selection
-     * flags for every loaded page it covers (write-through bridge), clears pages that dropped out,
-     * and repaints the affected pages.  Painting itself derives from the offset model, so unloaded
-     * pages still render correctly when they come back.
+     * Projects the authoritative selection onto the legacy per-glyph flags and repaints; delegates
+     * to {@link TextSelectionSupport#applyDocumentSelection} so the mouse and keyboard paths behave
+     * identically.
      */
     protected void syncSelection() {
-        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-        DocumentTextSelection selection = documentViewModel.getTextSelection();
-
-        // clear flags/repaint on pages that were previously selected.
-        List<AbstractPageViewComponent> previous = documentViewModel.getSelectedPageText();
-        List<AbstractPageViewComponent> previousCopy = previous != null ? new ArrayList<>(previous) : new ArrayList<>();
-        documentViewModel.clearSelectedPageText();
-        for (AbstractPageViewComponent page : previousCopy) {
-            PageText pageText = loadedPageText(page);
-            if (pageText != null) TextSelectionSupport.applySelectionToFlags(pageText, null);
-            page.repaint();
-        }
-        if (selection.isEmpty()) return;
-
-        // apply flags/repaint on pages the selection now covers.
-        List<AbstractPageViewComponent> pages = documentViewModel.getPageComponents();
-        for (int index = selection.startPage(); index <= selection.endPage(); index++) {
-            if (index < 0 || index >= pages.size()) continue;
-            AbstractPageViewComponent page = pages.get(index);
-            PageText pageText = loadedPageText(page);
-            if (pageText != null) {
-                OffsetRange range = TextSelectionSupport.rangeForPage(selection, index, pageText.getTextSequence());
-                TextSelectionSupport.applySelectionToFlags(pageText, range);
-            }
-            documentViewModel.addSelectedPageText(page);
-            page.repaint();
-        }
-    }
-
-    /**
-     * Non-initializing page text accessor; returns null rather than triggering a parse on the EDT.
-     */
-    protected static PageText loadedPageText(AbstractPageViewComponent page) {
-        Page currentPage = page.getPage();
-        if (currentPage == null) return null;
-        Shapes shapes = currentPage.getShapes();
-        return shapes != null ? shapes.getPageText() : null;
+        TextSelectionSupport.applyDocumentSelection(documentViewController.getDocumentViewModel());
     }
 
     /**
@@ -270,7 +238,7 @@ public class TextSelection extends SelectionBoxHandler {
         gg.setStroke(new BasicStroke(1.0f));
 
         Page currentPage = pageViewComponent.getPage();
-        PageText pageText = loadedPageText(pageViewComponent);
+        PageText pageText = TextSelectionSupport.loadedPageText(pageViewComponent);
         if (currentPage != null && pageText != null) {
             AffineTransform pageTransform = currentPage.getPageTransform(
                     documentViewModel.getPageBoundary(),
@@ -383,6 +351,176 @@ public class TextSelection extends SelectionBoxHandler {
         selectedCount = 1;
         syncSelection();
         documentViewController.firePropertyChange(PropertyConstants.TEXT_SELECTED, null, null);
+    }
+
+    // ------------------------------------------------------------------
+    // Keyboard caret navigation.  All operate on the document-level focus caret; the focus page
+    // may differ from this handler's own page.  extend == true moves the focus only (shift-select).
+    // ------------------------------------------------------------------
+
+    public void caretRight(boolean extend) {
+        horizontalCaret(true, extend);
+    }
+
+    public void caretLeft(boolean extend) {
+        horizontalCaret(false, extend);
+    }
+
+    private void horizontalCaret(boolean forward, boolean extend) {
+        DocumentViewModel model = documentViewController.getDocumentViewModel();
+        DocumentTextSelection selection = model.getTextSelection();
+        if (selection.isEmpty()) return;
+        try {
+            int page = selection.getFocusPage(), offset = selection.getFocusOffset();
+            TextSequence seq = sequenceAt(page);
+            if (seq == null) return;
+            int newPage = page, newOffset;
+            if (forward) {
+                if (offset < seq.length()) newOffset = seq.nextBoundary(offset, BreakType.GLYPH, true);
+                else if (page < lastPageIndex()) {
+                    newPage = page + 1;
+                    newOffset = 0;
+                } else newOffset = offset;
+            } else {
+                if (offset > 0) newOffset = seq.nextBoundary(offset, BreakType.GLYPH, false);
+                else if (page > 0) {
+                    newPage = page - 1;
+                    TextSequence prev = sequenceAt(newPage);
+                    newOffset = prev != null ? prev.length() : 0;
+                } else newOffset = 0;
+            }
+            applyCaret(newPage, newOffset, extend, false);
+        } catch (InterruptedException e) {
+            logger.fine("Caret navigation interrupted");
+        }
+    }
+
+    public void caretWordRight(boolean extend) {
+        wordCaret(true, extend);
+    }
+
+    public void caretWordLeft(boolean extend) {
+        wordCaret(false, extend);
+    }
+
+    private void wordCaret(boolean forward, boolean extend) {
+        DocumentViewModel model = documentViewController.getDocumentViewModel();
+        DocumentTextSelection selection = model.getTextSelection();
+        if (selection.isEmpty()) return;
+        try {
+            TextSequence seq = sequenceAt(selection.getFocusPage());
+            if (seq == null) return;
+            int offset = selection.getFocusOffset();
+            int nb = seq.nextBoundary(offset, BreakType.WORD, forward);
+            if (nb == offset) {
+                // at a page edge, roll over one glyph to the neighbouring page.
+                horizontalCaret(forward, extend);
+                return;
+            }
+            applyCaret(selection.getFocusPage(), nb, extend, false);
+        } catch (InterruptedException e) {
+            logger.fine("Caret navigation interrupted");
+        }
+    }
+
+    public void caretLineStart(boolean extend) {
+        lineEdgeCaret(false, extend);
+    }
+
+    public void caretLineEnd(boolean extend) {
+        lineEdgeCaret(true, extend);
+    }
+
+    private void lineEdgeCaret(boolean end, boolean extend) {
+        DocumentViewModel model = documentViewController.getDocumentViewModel();
+        DocumentTextSelection selection = model.getTextSelection();
+        if (selection.isEmpty()) return;
+        try {
+            TextSequence seq = sequenceAt(selection.getFocusPage());
+            if (seq == null) return;
+            OffsetRange line = seq.lineRange(selection.getFocusOffset());
+            applyCaret(selection.getFocusPage(), end ? line.getEnd() : line.getStart(), extend, false);
+        } catch (InterruptedException e) {
+            logger.fine("Caret navigation interrupted");
+        }
+    }
+
+    public void caretDown(boolean extend) {
+        verticalCaret(true, extend);
+    }
+
+    public void caretUp(boolean extend) {
+        verticalCaret(false, extend);
+    }
+
+    private void verticalCaret(boolean down, boolean extend) {
+        DocumentViewModel model = documentViewController.getDocumentViewModel();
+        DocumentTextSelection selection = model.getTextSelection();
+        if (selection.isEmpty()) return;
+        try {
+            int page = selection.getFocusPage(), offset = selection.getFocusOffset();
+            TextSequence seq = sequenceAt(page);
+            if (seq == null) return;
+            if (goalX < 0) goalX = seq.caretRect(new Caret(offset, Bias.FORWARD)).getX();
+            Caret adjacent = down
+                    ? seq.caretBelow(new Caret(offset, Bias.FORWARD), goalX)
+                    : seq.caretAbove(new Caret(offset, Bias.FORWARD), goalX);
+            if (adjacent != null) {
+                applyCaret(page, adjacent.getOffset(), extend, true);
+            } else if (down && page < lastPageIndex()) {
+                TextSequence next = sequenceAt(page + 1);
+                if (next != null) applyCaret(page + 1, next.caretAtLine(0, goalX).getOffset(), extend, true);
+            } else if (!down && page > 0) {
+                TextSequence prev = sequenceAt(page - 1);
+                if (prev != null) applyCaret(page - 1, prev.caretAtLine(prev.lineCount() - 1, goalX).getOffset(), extend, true);
+            }
+        } catch (InterruptedException e) {
+            logger.fine("Caret navigation interrupted");
+        }
+    }
+
+    private void applyCaret(int newPage, int newOffset, boolean extend, boolean verticalMotion) {
+        if (!verticalMotion) goalX = -1;
+        DocumentViewModel model = documentViewController.getDocumentViewModel();
+        if (extend) model.extendTo(newPage, newOffset);
+        else model.collapseTo(newPage, newOffset);
+        TextSelectionSupport.applyDocumentSelection(model);
+        focusAndScrollCaret(newPage, newOffset);
+    }
+
+    private TextSequence sequenceAt(int pageIndex) throws InterruptedException {
+        java.util.List<AbstractPageViewComponent> pages = documentViewController.getDocumentViewModel().getPageComponents();
+        if (pageIndex < 0 || pageIndex >= pages.size()) return null;
+        Page page = pages.get(pageIndex).getPage();
+        if (page == null) return null;
+        PageText pageText = page.getViewText();
+        return pageText != null ? pageText.getTextSequence() : null;
+    }
+
+    private int lastPageIndex() {
+        return documentViewController.getDocumentViewModel().getPageComponents().size() - 1;
+    }
+
+    private void focusAndScrollCaret(int pageIndex, int offset) {
+        DocumentViewModel model = documentViewController.getDocumentViewModel();
+        java.util.List<AbstractPageViewComponent> pages = model.getPageComponents();
+        if (pageIndex < 0 || pageIndex >= pages.size()) return;
+        AbstractPageViewComponent pageComponent = pages.get(pageIndex);
+        pageComponent.requestFocusInWindow();
+        try {
+            Page page = pageComponent.getPage();
+            if (page == null) return;
+            PageText pageText = page.getViewText();
+            if (pageText == null) return;
+            AffineTransform transform = page.getPageTransform(
+                    model.getPageBoundary(), model.getViewRotation(), model.getViewZoom());
+            Rectangle2D.Double caret = pageText.getTextSequence().caretRect(new Caret(offset, Bias.FORWARD));
+            Rectangle bounds = transform.createTransformedShape(caret).getBounds();
+            bounds.grow(8, 24);
+            pageComponent.scrollRectToVisible(bounds);
+        } catch (InterruptedException e) {
+            logger.fine("Caret scroll interrupted");
+        }
     }
 
     @Override
