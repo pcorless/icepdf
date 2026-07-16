@@ -104,6 +104,8 @@ public final class TextSelectionSupport {
      * @param model document view model holding the authoritative selection and page components.
      */
     public static void applyDocumentSelection(DocumentViewModel model) {
+        // the caret just moved; keep it solid and restart the blink cycle.
+        CaretBlink.reset();
         DocumentTextSelection selection = model.getTextSelection();
 
         // clear flags/repaint on pages that were previously selected.

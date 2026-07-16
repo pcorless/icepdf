@@ -169,7 +169,8 @@ public class TextSelectionPageHandler extends TextSelection
         // paint the keyboard caret bar when the document focus caret is on this page.
         DocumentViewModel model = documentViewController.getDocumentViewModel();
         DocumentTextSelection selection = model.getTextSelection();
-        if (selection.isEmpty() || selection.getFocusPage() != pageViewComponent.getPageIndex()) {
+        if (selection.isEmpty() || selection.getFocusPage() != pageViewComponent.getPageIndex()
+                || !CaretBlink.isVisible()) {
             return;
         }
         PageText pageText = TextSelectionSupport.loadedPageText(pageViewComponent);

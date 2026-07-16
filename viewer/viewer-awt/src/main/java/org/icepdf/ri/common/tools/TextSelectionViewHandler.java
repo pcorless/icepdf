@@ -322,11 +322,11 @@ public class TextSelectionViewHandler extends TextSelection
     }
 
     public void installTool() {
-
+        CaretBlink.start(documentViewController);
     }
 
     public void uninstallTool() {
-
+        CaretBlink.stop();
     }
 
     public void mouseEntered(MouseEvent e) {
