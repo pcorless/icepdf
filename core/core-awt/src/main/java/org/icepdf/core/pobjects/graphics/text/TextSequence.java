@@ -64,6 +64,8 @@ public final class TextSequence {
     private final WordText[] words;
     private final int[] wordStart;
     private final int[] wordEnd;
+    private final int[] wordLine;         // sorted-line index of each word
+    private final IdentityHashMap<WordText, Integer> wordIndex;
 
     private final String canonical;
     private final IdentityHashMap<GlyphText, Integer> glyphIndex;
@@ -83,7 +85,7 @@ public final class TextSequence {
         List<Integer> ls = new ArrayList<>(64), le = new ArrayList<>(64);
         List<Integer> lFirst = new ArrayList<>(64), lLast = new ArrayList<>(64);
         List<WordText> wl = new ArrayList<>(128);
-        List<Integer> ws = new ArrayList<>(128), we = new ArrayList<>(128);
+        List<Integer> ws = new ArrayList<>(128), we = new ArrayList<>(128), wLine = new ArrayList<>(128);
 
         StringBuilder sb = new StringBuilder(1024);
         int lineIdx = 0;
@@ -95,8 +97,9 @@ public final class TextSequence {
             ls.add(sb.length());
             for (WordText word : line.getWords()) {
                 if (word.getGlyphs() == null || word.getGlyphs().isEmpty()) continue;
-                int wordIndex = wl.size();
+                int wordIdx = wl.size();
                 wl.add(word);
+                wLine.add(lineIdx);
                 ws.add(sb.length());
                 for (GlyphText glyph : word.getGlyphs()) {
                     String u = glyph.getUnicode() == null ? "" : glyph.getUnicode();
@@ -105,7 +108,7 @@ public final class TextSequence {
                     sb.append(u);
                     gce.add(sb.length());
                     gLine.add(lineIdx);
-                    gWord.add(wordIndex);
+                    gWord.add(wordIdx);
                     lineHasGlyph = true;
                 }
                 we.add(sb.length());
@@ -139,9 +142,12 @@ public final class TextSequence {
         words = wl.toArray(new WordText[0]);
         wordStart = toIntArray(ws);
         wordEnd = toIntArray(we);
+        wordLine = toIntArray(wLine);
 
         glyphIndex = new IdentityHashMap<>(glyphs.length * 2);
         for (int i = 0; i < glyphs.length; i++) glyphIndex.put(glyphs[i], i);
+        wordIndex = new IdentityHashMap<>(words.length * 2);
+        for (int i = 0; i < words.length; i++) wordIndex.put(words[i], i);
     }
 
     // ------------------------------------------------------------------
@@ -485,6 +491,15 @@ public final class TextSequence {
             }
         }
         return out;
+    }
+
+    /**
+     * @param wordText a word in this sequence
+     * @return the sorted line that contains the word, or {@code null} if not part of this sequence.
+     */
+    public LineText lineOf(WordText wordText) {
+        Integer wi = wordIndex.get(wordText);
+        return wi == null ? null : lines[wordLine[wi]];
     }
 
     /**

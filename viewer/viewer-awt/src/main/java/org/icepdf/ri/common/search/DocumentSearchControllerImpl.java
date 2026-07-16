@@ -19,7 +19,9 @@ import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextWidgetAnnotation;
 import org.icepdf.core.pobjects.graphics.text.LineText;
+import org.icepdf.core.pobjects.graphics.text.OffsetRange;
 import org.icepdf.core.pobjects.graphics.text.PageText;
+import org.icepdf.core.pobjects.graphics.text.TextSequence;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.search.DestinationResult;
 import org.icepdf.core.search.DocumentSearchController;
@@ -355,119 +357,30 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             return searchHits;
         }
 
-        //Prepare whole text
+        // Search over the page's reading-order text sequence.  Literal terms match a
+        // whitespace-collapsed corpus (searchText), regex terms match the raw canonical text so
+        // whitespace and line anchors behave as authored.  Matches map back to canonical offsets
+        // and then to the underlying WordTexts, which are highlighted in place.
+        final TextSequence sequence = pageText.getTextSequence();
         final List<SearchTerm> terms = searchModel.getSearchTerms();
-        final Map<Integer, WordText> idxToWordText = new HashMap<>();
-        final List<Integer> wordOffsets = new ArrayList<>();
-        final Map<WordText, LineText> wordTextToLineText = new HashMap<>();
-        SearchTerm term;
-        final StringBuilder textBuilder = new StringBuilder();
-        for (final LineText line : pageText.getPageLines()) {
-            String lastWordText = null;
-            if (line != null && line.getWords() != null) {
-                for (final WordText word : line.getWords()) {
-                    final String wordText = word.getText();
-                    //Remove multi-spaces
-                    if (!wordText.equals(" ") || (lastWordText != null && !lastWordText.equals(" "))) {
-                        wordOffsets.add(textBuilder.length());
-                        idxToWordText.put(wordOffsets.size() - 1, word);
-                        textBuilder.append(wordText);
-                        wordOffsets.add(textBuilder.length());
-                        idxToWordText.put(wordOffsets.size() - 1, word);
-                        lastWordText = wordText;
-                        wordTextToLineText.put(word, line);
-                    }
-                }
-            }
-            textBuilder.append("\n");
-        }
-        final String text = textBuilder.toString();
-        final Map<Color, List<SearchHit>> colorToHits = new HashMap<>();
-        for (final SearchTerm searchTerm : terms) {
-            term = searchTerm;
-
-            String searchString = text;
-            //If not regex, replace line feed by spaces
-            if (!term.isRegex()) {
-                searchString = searchString.replace("\n", " ");
-            }
-            //Always use regex to search
-            final Pattern pattern = term.isRegex() ? term.getRegexPattern() : Pattern.compile(Pattern.quote(term.getTerm()),
+        for (final SearchTerm term : terms) {
+            final boolean regex = term.isRegex();
+            final String corpus = regex ? sequence.text().toString() : sequence.searchText();
+            final Pattern pattern = regex ? term.getRegexPattern()
+                    : Pattern.compile(Pattern.quote(term.getTerm()),
                     term.isCaseSensitive() ? 0 : Pattern.CASE_INSENSITIVE);
-            final Matcher matcher = pattern.matcher(searchString);
-            final List<SearchHit> hits = new ArrayList<>();
+            if (pattern == null) continue;
+            final Matcher matcher = pattern.matcher(corpus);
             while (matcher.find()) {
-                // add word to potentials
-                final int start = matcher.start();
-                final int end = matcher.end();
-                final String hitText = text.substring(start, end);
-                hits.add(new SearchHit(start, end, hitText));
-            }
-            final List<SearchHit> existingHits = colorToHits.getOrDefault(term.getHighlightColor(), new ArrayList<>());
-            existingHits.addAll(hits);
-            colorToHits.put(term.getHighlightColor(), existingHits);
-        }
-        // check if we have found what we're looking for
-        for (final Color color : colorToHits.keySet()) {
-            for (final SearchHit searchHit : colorToHits.get(color)) {
-                final int start = searchHit.getStartOffset();
-                final int end = searchHit.getEndOffset();
-                //Get relevant WordTexts
-                int startIdx = Collections.binarySearch(wordOffsets, start);
-                if (startIdx < 0) {
-                    startIdx = -(startIdx + 1);
-                } else {
-                    //Take word start
-                    if (startIdx + 1 < wordOffsets.size() && wordOffsets.get(startIdx + 1) == start) {
-                        startIdx += 1;
-                    }
-                }
-                int endIdx = Collections.binarySearch(wordOffsets, end);
-                if (endIdx < 0) {
-                    endIdx = Math.min(-(endIdx + 1), idxToWordText.size() - 1);
-                }
-                final LineText lineText = new LineText();
-                //Add start line context
-                final WordText firstWord = idxToWordText.get(startIdx);
-                final LineText firstLineText = wordTextToLineText.get(firstWord);
-                if (firstLineText != null && firstLineText.getWords() != null) {
-                    for (final WordText wt : firstLineText.getWords()) {
-                        if (wt != firstWord) {
-                            lineText.getWords().add(wt);
-                        } else {
-                            break;
-                        }
-                    }
-                }
-                WordText previous = null;
-                for (int i = startIdx; i <= endIdx; ++i) {
-                    final WordText wt = idxToWordText.get(i);
-                    if (wt != previous) {
-                        wt.setHighlighted(true);
-                        wt.setHasHighlight(true);
-                        wt.setHighlightColor(color);
-                        lineText.getWords().add(wt);
-                        addComponent(pageIndex, searchHit.getText(), wt.getBounds());
-                    }
-                    previous = wt;
-                }
-                //Add end line context
-                final WordText lastWord = idxToWordText.get(endIdx);
-                final LineText lastLineText = wordTextToLineText.get(lastWord);
-                if (lastLineText != null && lastLineText.getWords() != null) {
-                    boolean take = false;
-                    for (final WordText wt : lastLineText.getWords()) {
-                        if (take) {
-                            lineText.getWords().add(wt);
-                        } else if (wt == lastWord) {
-                            take = true;
-                        }
-                    }
-                }
-                searchHits.add(lineText);
+                final OffsetRange range = regex
+                        ? OffsetRange.of(matcher.start(), matcher.end())
+                        : sequence.searchToCanonicalRange(matcher.start(), matcher.end());
+                final List<WordText> hitWords = sequence.wordsIn(range);
+                if (hitWords.isEmpty()) continue;
+                searchHits.add(buildHitFragment(sequence, hitWords, term.getHighlightColor(),
+                        pageIndex, matcher.group()));
             }
         }
-
 
         // if we have a hit we'll add it to the model cache
         if (!searchHits.isEmpty()) {
@@ -477,6 +390,52 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             }
         }
         return searchHits;
+    }
+
+    /**
+     * Builds a whole-page search-result fragment: the leading context words on the first hit
+     * word's line, the highlighted hit words, and the trailing context words on the last hit
+     * word's line.
+     *
+     * @param sequence page text sequence
+     * @param hitWords matched words, in reading order
+     * @param color    highlight color for the term
+     * @param pageIndex page the hit is on
+     * @param hitText   matched text (used for the search-hit component label)
+     * @return a LineText fragment for the results list.
+     */
+    private LineText buildHitFragment(TextSequence sequence, List<WordText> hitWords, Color color,
+                                      int pageIndex, String hitText) {
+        final LineText fragment = new LineText();
+        final WordText firstWord = hitWords.get(0);
+        final WordText lastWord = hitWords.get(hitWords.size() - 1);
+
+        // leading context: words on the first hit word's line, up to the hit.
+        final LineText firstLine = sequence.lineOf(firstWord);
+        if (firstLine != null) {
+            for (final WordText word : firstLine.getWords()) {
+                if (word == firstWord) break;
+                fragment.getWords().add(word);
+            }
+        }
+        // the hit words themselves, highlighted.
+        for (final WordText word : hitWords) {
+            word.setHighlighted(true);
+            word.setHasHighlight(true);
+            word.setHighlightColor(color);
+            fragment.getWords().add(word);
+            addComponent(pageIndex, hitText, word.getBounds());
+        }
+        // trailing context: words on the last hit word's line, after the hit.
+        final LineText lastLine = sequence.lineOf(lastWord);
+        if (lastLine != null) {
+            boolean take = false;
+            for (final WordText word : lastLine.getWords()) {
+                if (take) fragment.getWords().add(word);
+                else if (word == lastWord) take = true;
+            }
+        }
+        return fragment;
     }
 
     /**
