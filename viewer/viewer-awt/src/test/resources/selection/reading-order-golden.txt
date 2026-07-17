@@ -1,0 +1,105 @@
+=== xr_650 p6 - single column drawn out of order (Environmental/Programs/legal) [/redact/xr_650.pdf p5] ===
+  L000 y=  471.1 x=  143.9..432.0    P R O G R A M S T H A T P E R F O R M
+  L001 y=  453.9 x=  143.9..480.0    You chose your new Honda XR or XRL because it has so many gr
+  L002 y=  441.9 x=  143.9..480.0    all of the programs available to you as a Honda owner. Take 
+  L003 y=  429.9 x=  143.9..480.0    let you extend virtually all of your Honda’s great warranty 
+  L004 y=  417.9 x=  143.9..480.0    America.† Open to all Honda owners,†† the real-world benefit
+  L005 y=  405.9 x=  143.9..480.0    HRCA. Interested in some accessories to make your XR or XRL 
+  L006 y=  393.9 x=  143.9..445.4    selection of Honda Genuine Accessories. Time for service? Be
+  L007 y=  393.9 x=  444.6..480.0    ™ Oils and
+  L008 y=  381.9 x=  143.9..480.0    Chemicals. And if you’re looking for a way to pay for your n
+  L009 y=  369.9 x=  143.9..480.0    gestions. First, ask about the American Honda Finance Corpor
+  L010 y=  357.9 x=  143.9..454.6    can set everything up for you right in the showroom. Another
+  L011 y=  357.9 x=  454.6..480.0    ™ revolv-
+  L012 y=  345.9 x=  143.9..480.0    ing charge card.‡‡ You can use the Honda Card to purchase Ho
+  L013 y=  333.9 x=  143.9..480.0    And make sure to ask your Honda Dealer about MSF rider train
+  L014 y=  321.9 x=  143.9..480.0    we think our family of Honda off-road motorcycles is the bes
+  L015 y=  309.9 x=  143.9..254.6    grams and support to go with them.
+  L016 y=  277.6 x=  143.9..480.0    Specifications, programs and availability subject to change 
+  L017 y=  268.6 x=  143.9..480.0    specifications in this brochure—including colors, warranty t
+  L018 y=  259.6 x=  143.9..480.0    States. ◊ Mounting brackets required. * Maximum reimbursemen
+  L019 y=  250.6 x=  143.9..480.0    American Honda Service Contract Corporation in the state of 
+  L020 y=  241.6 x=  143.9..480.0    motorcycles purchased from participating dealers in the U.S.
+  L021 y=  232.6 x=  143.9..480.0    approved credit by AHFC. ‡‡ Financing available to qualified
+  L022 y=  223.6 x=  143.9..480.0    Honda Card program at participating dealers. California vers
+  L023 y=  214.6 x=  143.9..480.0    are standard equipment on all Honda streetbikes. Performance
+  L024 y=  205.6 x=  143.9..481.3    Honda Genuine Accessories,™ HRCA,null Honda Rider’s Club of 
+  L025 y=  196.6 x=  143.9..403.7    of Honda Motor Co., Ltd. ©2003 American Honda Motor Co., Inc
+  L026 y=  569.4 x=  144.0..476.5    E N V I R O N M E N T A L C O M M I T M E N T
+  L027 y=  552.1 x=  144.0..480.0    At Honda, we believe in performance and leadership, and that
+  L028 y=  540.1 x=  144.0..480.0    it comes to the environment. We continue to develop low-emis
+  L029 y=  528.1 x=  144.0..480.0    motorcycles, ATVs, scooters and personal watercraft. We alre
+  L030 y=  516.1 x=  144.0..480.0    2008 CARB emissions requirements years ahead of schedule. An
+  L031 y=  504.1 x=  144.0..192.9    can appreciate.
+  L032 y=   97.9 x=  331.5..396.8    honda.com
+
+=== 2005CAT p1 - vertical + horizontal mixed [/redact/2005CAT.pdf p0] ===
+  L000 y=  253.7 x=    2.1..24.6     IN
+  L001 y=  270.5 x=    2.1..24.6     T
+  L002 y=  280.3 x=    2.1..24.6     R
+  L003 y=  291.7 x=   -5.2..24.6     O
+  L004 y=  303.9 x=    2.6..24.4     D
+  L005 y=  315.6 x=    2.6..24.4     U
+  L006 y=  327.1 x=    2.6..24.4     C
+  L007 y=  338.2 x=    2.6..24.4     T
+  L008 y=  347.7 x=    2.6..24.4     IO
+  L009 y=  362.9 x=    9.8..31.6     N
+  L010 y=  523.1 x=   60.8..267.2    It all started in 1949. In Bologna, Italy two
+  L011 y=  503.2 x=   60.8..260.6    brothers Stefano and Gugliemo Marzocchi
+  L012 y=  483.2 x=   60.8..268.4    founded Marzocchi SPA Italia. They built the
+  L013 y=  463.2 x=   60.8..257.6    company on solid, race-proven technology
+  L014 y=  443.2 x=   60.8..257.5    providing durability and performance from
+  L015 y=  423.2 x=   60.8..253.6    all of their premium suspension products.
+  L016 y=  383.1 x=   60.8..210.8    In the early 1990’s, Marzocchi
+  L017 y=  363.2 x=   60.8..260.3    introduced the Bomber line of suspension.
+  L018 y=  343.2 x=   60.8..256.3    Due to our extensive knowledge base and
+  L019 y=  323.2 x=   60.8..273.7    more than ﬁ fty years experience, we met the
+  L020 y=  303.2 x=   60.8..266.5    demand mountain bikers had for a stronger
+  L021 y=  283.2 x=   60.8..150.9    more durable fork.
+  L022 y=  263.2 x=   60.8..257.9    Marzocchi became the benchmark in hard
+  L023 y=  243.2 x=   60.8..206.4    core mountain bike suspension.
+  L024 y=  203.1 x=   60.8..278.9    This year we are proud to introduce our most
+  L025 y=  183.2 x=   60.8..270.3    extensive line to date. We feel that for every
+  L026 y=  163.2 x=   60.8..258.4    rider there is a fork. If you can’t ﬁ nd what
+  L027 y=  143.2 x=   60.8..214.6    you’re looking for in this catalog,
+  L028 y=  123.2 x=   60.8..159.4    then it doesn’t exist.
+  L029 y=   83.1 x=   60.8..236.1    Enjoy the mountain, ride Marzocchi.
+
+=== test_print p1 - plain single column [/redact/test_print.pdf p0] ===
+  L000 y=  779.3 x=   70.9..488.5    Qué es un antipoeta: Un comerciante en urnas y ataúdes? Un
+  L001 y=  767.3 x=   70.9..524.5    sacerdote que no cree en nada? Un general que duda de sí mis
+  L002 y=  755.3 x=   70.9..481.2    Un vagabundo que se ríe de todo Hasta de la vejez y de la
+  L003 y=  743.3 x=   70.9..510.0    muerte? Un interlocutor de mal carácter? Un bailarín al bord
+  L004 y=  731.3 x=   70.9..409.3    del abismo? Un narciso que ama a todo el mundo?
+  L005 y=  807.6 x=  286.7..322.7    - 1 -
+
+=== reference addendum p1 - dense reference layout [/redact/pdf_reference_addendum_redaction.pdf p0] ===
+  L000 y=  662.2 x=   70.5..114.7    bbc
+  L001 y=  420.4 x=  113.8..463.7    PDF Redaction: Addendum for the
+  L002 y=  391.4 x=  113.8..514.1    PDF Reference, sixth edition, version 1.7
+  L003 y=   66.2 x=   70.0..150.2    November 2006
+
+=== libre-test p1 [/redact/libre-test.pdf p0] ===
+  L000 y=  706.7 x=   56.8..533.6    Calculate a foundation price with your current plan
+  L001 y=  687.1 x=   56.8..506.7    Now, let’s lay out the foundation we’ll work from when consi
+  L002 y=  671.2 x=   56.8..549.9    experience, the most important thing to keep in mind is the 
+  L003 y=  655.4 x=   56.8..553.4    in most cases, the amount you pay for the smartphone won’t c
+  L004 y=  639.5 x=   56.8..548.9    a phone from a carrier, most require you also to get specifi
+  L005 y=  623.7 x=   56.8..161.9    what you already pay.
+  L006 y=  589.1 x=   56.8..509.6    The monthly cost of your phone plan will fluctuate depending
+  L007 y=  573.2 x=   56.8..530.5    Therefore, I recommend starting your search for a cheap Pixe
+  L008 y=  557.4 x=   56.8..551.3    considering whether it covers your needs. If it doesn’t, you
+  L009 y=  541.5 x=   56.8..534.6    (which you can probably do alongside getting a new Pixel). I
+  L010 y=  525.7 x=   56.8..539.0    currently need, it might be worth investigating cheaper opti
+  L011 y=  509.8 x=   56.8..540.3    own-phone (BYOP) plans offered by various wireless providers
+  L012 y=  494.0 x=   56.8..149.4    works best for you.
+
+=== potato_out p1 [/redact/potato_out.pdf p0] ===
+  L000 y=  692.1 x=  311.0..443.5    SOUPS,STARTERS & SNACKS
+  L001 y=  647.0 x=  147.4..463.5    Spanish potato omelette
+  L002 y=  676.8 x=   23.0..472.4    PAN    5
+  L003 y=  674.1 x=   36.1..67.5     PREPARATION
+  L004 y=  664.6 x=   38.3..56.6     25 mins
+  L005 y=  653.7 x=   36.0..62.2     COOKING
+  L006 y=  644.7 x=   38.3..56.6     40mins
+
