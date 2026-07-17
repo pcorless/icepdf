@@ -51,6 +51,7 @@ public class ReadingOrderCharacterizationTest {
     /** {resource, zero-based page index, short label}. */
     private static final String[][] FIXTURES = {
             {"/redact/xr_650.pdf", "5", "xr_650 p6 - single column drawn out of order (Environmental/Programs/legal)"},
+            {"/redact/windrivercasestudy1n3d2m8km0r.pdf", "1", "windriver p2 - clean two-column body + full-width footer"},
             {"/redact/2005CAT.pdf", "0", "2005CAT p1 - vertical + horizontal mixed"},
             {"/redact/test_print.pdf", "0", "test_print p1 - plain single column"},
             {"/redact/pdf_reference_addendum_redaction.pdf", "0", "reference addendum p1 - dense reference layout"},

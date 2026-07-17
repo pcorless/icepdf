@@ -33,6 +33,75 @@
   L031 y=  504.1 x=  144.0..192.9    can appreciate.
   L032 y=   97.9 x=  331.5..396.8    honda.com
 
+=== windriver p2 - clean two-column body + full-width footer [/redact/windrivercasestudy1n3d2m8km0r.pdf p1] ===
+  L000 y=   46.0 x=   76.7..153.5    Macrovision Corporation
+  L001 y=   37.0 x=   76.7..232.2    2830 De La Cruz Boulevard, Santa Clara, CA 95050
+  L002 y=   28.0 x=   76.7..223.1    US +1 888-755-0861 Int’l +44 (0) 870-873-6300
+  L003 y=   19.0 x=   76.7..145.9    www.macrovision .com
+  L004 y=    9.6 x=   76.8..525.8    ©2004 Macrovision Corporation. Macrovision and FLEXnet are r
+  L005 y=    4.1 x=   76.8..471.6    and VxWorks is a registered trademark of Wind River Systems,
+  L006 y=  670.6 x=   77.1..283.6    information helps both parties improve their support
+  L007 y=  653.6 x=   77.1..281.3    plans, for example training seminars, services en-
+  L008 y=  636.6 x=   77.1..251.9    gagements, and project resource allocation.
+  L009 y=  612.6 x=   77.1..291.6    “One of the key benefits of the Macrovision solution is
+  L010 y=  595.6 x=   77.1..295.0    that it provides easy access to technology. Second, it is
+  L011 y=  578.6 x=   77.1..296.9    a very objective approach to licensing. It’s not about how
+  L012 y=  561.6 x=   77.1..290.2    many concurrent users you might have, or about how
+  L013 y=  544.6 x=   77.1..298.1    many license servers you need, or how many machines
+  L014 y=  527.6 x=   77.1..286.6    the product is installed on—it really comes down to
+  L015 y=  510.6 x=   77.1..293.8    making sure that software developers have access to
+  L016 y=  493.6 x=   77.1..199.5    our software,” explains Hogan.
+  L017 y=  469.6 x=   77.1..292.8    Hogan says Wind River has been using Macrovision’s
+  L018 y=  452.6 x=   77.1..296.1    licensing solutions for more than 3 years, and is planning
+  L019 y=  435.6 x=   77.1..296.8    to migrate to the next Macrovision release in 2004. Hogan
+  L020 y=  418.6 x=   77.1..299.5    says that Macrovision has done a good job of making its
+  L021 y=  401.6 x=   77.1..292.1    software easy to implement and easy to embed in its
+  L022 y=  384.6 x=   77.1..300.1    products. “At the end of the day, utility pricing, although
+  L023 y=  367.6 x=   77.1..298.6    gaining in popularity, is still relatively new for customers
+  L024 y=  350.6 x=   77.1..179.4    and software publishers .”
+  L025 y=  326.6 x=   77.1..298.7    Hogan points out one caveat that other software vendors
+  L026 y=  309.6 x=   77.1..293.7    should consider when evaluating this approach: “Not
+  L027 y=  292.6 x=   77.1..300.0    all buyers will be attracted to utility pricing so publisher
+  L028 y=  275.6 x=   77.1..298.1    should view it as an extension to their current offerings
+  L029 y=  258.6 x=   77.1..188.1    rather than a replacement .”
+  L030 y=  234.6 x=   77.1..298.6    Hogan also cites three key questions for software vendors
+  L031 y=  217.6 x=   77.1..285.4    considering utility pricing: First, what market forces
+  L032 y=  200.6 x=   77.1..295.8    are driving you and your customers toward utility-based
+  L033 y=  183.6 x=   77.1..296.6    pricing? Second, what’s the utility you’re trying to price
+  L034 y=  166.6 x=   77.1..288.9    and why have you chosen it over others? Third, who’s
+  L035 y=  149.6 x=   77.1..298.0    asking for it and why? His recommendation is to evaluate
+  L036 y=  132.6 x=   77.1..287.6    the strengths and weaknesses of traditional models,
+  L037 y=  115.6 x=   77.1..296.5    and then determine what is most important to a specific
+  L038 y=   98.6 x=   77.1..130.1    market need.
+  L039 y=  670.3 x=  319.4..527.4    Says Hogan, “A major benefit of Macrovision’s utility
+  L040 y=  653.3 x=  319.4..515.4    pricing is being able to create a new offering for
+  L041 y=  636.3 x=  319.4..531.2    existing and new buyers to consider. And that usually
+  L042 y=  619.3 x=  319.4..530.0    translates into new revenue streams and an increasing
+  L043 y=  602.3 x=  319.4..514.1    ability to be more responsive to your customers .”
+  L044 y=  578.3 x=  319.4..396.0    About Macrovision
+  L045 y=  561.3 x=  319.4..531.9    Macrovision Corporation (Nasdaq:MVSN) is the market
+  L046 y=  544.3 x=  319.4..520.7    leader in electronic licensing, copy protection, and
+  L047 y=  527.3 x=  319.4..519.0    digital rights management ("DRM") technologies.
+  L048 y=  510.3 x=  319.4..520.0    Analysts recognize Macrovision as the clear market
+  L049 y=  493.3 x=  319.4..530.7    leader, and it's estimated that the company sells more
+  L050 y=  476.3 x=  319.4..531.1    software-based licensing solutions than all its compet-
+  L051 y=  459.3 x=  319.4..529.0    itors combined. Macrovision FLEXnet, the world's first
+  L052 y=  442.3 x=  319.4..523.2    universal licensing platform, enables customers to
+  L053 y=  425.3 x=  319.4..512.3    easily price, package and protect their software.
+  L054 y=  408.3 x=  319.4..518.7    More than 3000 software publishers have shipped
+  L055 y=  391.3 x=  319.4..371.7    FLEXenabled
+  L056 y=  391.3 x=  371.7..520.7    tm software, and hundreds of Fortune
+  L057 y=  374.3 x=  319.4..519.1    1000 companies use Macrovision technologies to
+  L058 y=  357.3 x=  319.4..530.4    better manage their software licenses. The company
+  L059 y=  340.3 x=  319.4..524.6    holds over 700 software licensing and DRM patents
+  L060 y=  323.3 x=  319.4..525.7    worldwide, and has been ranked by Business 2.0 as
+  L061 y=  306.3 x=  319.4..533.6    one of the top 100 Tech Companies for two consecutive
+  L062 y=  289.3 x=  319.4..514.6    years. Headquartered in Santa Clara, California,
+  L063 y=  272.3 x=  319.4..513.9    Macrovision has international offices in London,
+  L064 y=  255.3 x=  319.4..516.8    Frankfurt, Tel Aviv, Tokyo, Taipei, Hong Kong and
+  L065 y=  238.3 x=  319.4..523.6    Seoul. More information about the Macrovision can
+  L066 y=  221.3 x=  319.4..457.4    be found at www.macrovision.com.
+
 === 2005CAT p1 - vertical + horizontal mixed [/redact/2005CAT.pdf p0] ===
   L000 y=  253.7 x=    2.1..24.6     IN
   L001 y=  270.5 x=    2.1..24.6     T
