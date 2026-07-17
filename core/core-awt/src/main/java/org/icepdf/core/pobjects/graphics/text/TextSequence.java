@@ -339,9 +339,34 @@ public final class TextSequence {
      */
     public Caret caretAt(Point2D pagePoint) {
         if (glyphs.length == 0) return new Caret(0, Bias.FORWARD);
-        int line = nearestLine(pagePoint.getY());
+        double px = pagePoint.getX(), py = pagePoint.getY();
+
+        // 1. direct hit: the glyph whose bounds contain the point (closest centre if several overlap).
+        // This is essential on multi-column or rotated (vertical) layouts where many lines share a
+        // y-band; a y-only line lookup would grab the wrong line and select the wrong word.
+        int hit = -1;
+        double hitDist = Double.MAX_VALUE;
+        for (int i = 0; i < glyphs.length; i++) {
+            Rectangle2D.Double b = glyphs[i].getBounds();
+            if (px >= b.getMinX() && px <= b.getMaxX() && py >= b.getMinY() && py <= b.getMaxY()) {
+                double dx = px - b.getCenterX(), dy = py - b.getCenterY();
+                double d = dx * dx + dy * dy;
+                if (d < hitDist) {
+                    hitDist = d;
+                    hit = i;
+                }
+            }
+        }
+        if (hit >= 0) {
+            Rectangle2D.Double b = glyphs[hit].getBounds();
+            return px >= b.getCenterX()
+                    ? new Caret(glyphCharEnd[hit], Bias.BACKWARD)
+                    : new Caret(glyphCharStart[hit], Bias.FORWARD);
+        }
+
+        // 2. no glyph under the point: pick the nearest line in 2D, then position within it by x.
+        int line = nearestLine(pagePoint);
         int first = lineFirstGlyph[line], last = lineLastGlyph[line];
-        double px = pagePoint.getX();
         Rectangle2D.Double fb = glyphs[first].getBounds();
         Rectangle2D.Double lb = glyphs[last].getBounds();
         if (px <= fb.getMinX()) return new Caret(glyphCharStart[first], Bias.FORWARD);
@@ -374,13 +399,16 @@ public final class TextSequence {
         return false;
     }
 
-    private int nearestLine(double y) {
+    /** Index of the line whose bounding box is nearest the point in 2D (0 if the point is inside). */
+    private int nearestLine(Point2D p) {
         int best = 0;
         double bestDist = Double.MAX_VALUE;
+        double px = p.getX(), py = p.getY();
         for (int i = 0; i < lines.length; i++) {
             Rectangle2D.Double b = lines[i].getBounds();
-            if (y >= b.getMinY() && y <= b.getMaxY()) return i;
-            double d = Math.min(Math.abs(y - b.getMinY()), Math.abs(y - b.getMaxY()));
+            double dx = Math.max(Math.max(b.getMinX() - px, px - b.getMaxX()), 0);
+            double dy = Math.max(Math.max(b.getMinY() - py, py - b.getMaxY()), 0);
+            double d = dx * dx + dy * dy;
             if (d < bestDist) {
                 bestDist = d;
                 best = i;

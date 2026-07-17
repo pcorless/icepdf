@@ -103,6 +103,25 @@ public class TextSequenceTest {
         assertTrue(frag.size() >= 2, "cross-line selection should span multiple line rects");
     }
 
+    @DisplayName("caretAt hits the clicked glyph on a multi-column / vertical-text page (2005CAT.pdf)")
+    @Test
+    public void caretAtMultiColumn() throws Exception {
+        // Layout with vertical text and columns: a y-only line lookup selects the wrong word.
+        // Every glyph's own centre must resolve to a caret on that glyph.
+        TextSequence seq = pageText("/redact/2005CAT.pdf", 0).getTextSequence();
+        int total = 0, wrong = 0;
+        for (GlyphText g : seq.glyphsIn(seq.fullRange())) {
+            Rectangle2D.Double b = g.getBounds();
+            if (b.width <= 0 || b.height <= 0) continue;
+            total++;
+            int off = seq.caretAt(new Point2D.Double(b.getCenterX(), b.getCenterY())).getOffset();
+            int start = seq.offsetOf(g);
+            if (!(off >= start && off <= start + g.getUnicode().length())) wrong++;
+        }
+        assertTrue(total > 0);
+        assertEquals(0, wrong, wrong + "/" + total + " glyph centres resolved to the wrong caret");
+    }
+
     @DisplayName("caret navigation primitives (nextBoundary / caretAbove-Below / caretAtLine / caretRect)")
     @Test
     public void navigation() throws Exception {
