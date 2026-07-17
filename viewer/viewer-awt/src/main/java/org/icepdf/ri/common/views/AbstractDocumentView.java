@@ -310,6 +310,15 @@ public abstract class AbstractDocumentView
     }
 
     public void mouseClicked(MouseEvent e) {
+        // With the text-selection tool active a single click places a keyboard caret on the
+        // page component, which requests focus so caret-navigation keys reach the page.  Grabbing
+        // focus back to the view here would steal those keys (the parent scroll pane then handles
+        // the arrows).  A drag never fires mouseClicked, which is why selection kept focus but a
+        // bare click did not.  Leave focus with the page when the selection tool is active.
+        if (documentViewModel != null
+                && documentViewModel.getViewToolMode() == DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
+            return;
+        }
         requestFocus();
     }
 
