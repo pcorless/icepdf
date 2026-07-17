@@ -69,7 +69,7 @@ test {
     }
     // forward opt-in characterization/golden flags to the test JVM
     // e.g. ./gradlew ... -Dupdate.reading.order.golden=true
-    ['update.reading.order.golden'].each { k ->
+    ['update.reading.order.golden', 'update.reading.order.xycut.golden'].each { k ->
         if (System.getProperty(k) != null) {
             systemProperty(k, System.getProperty(k))
         }
