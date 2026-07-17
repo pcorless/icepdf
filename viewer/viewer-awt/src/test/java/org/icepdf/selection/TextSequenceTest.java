@@ -162,6 +162,38 @@ public class TextSequenceTest {
         assertTrue(bar.height > 0);
     }
 
+    @DisplayName("shift-down onto a shorter next line still advances (goalX overshoots the short line)")
+    @Test
+    public void caretBelowOntoShorterLine() throws Exception {
+        TextSequence seq = pageText("/redact/test_print.pdf", 0).getTextSequence();
+        org.icepdf.core.pobjects.graphics.text.Bias back = org.icepdf.core.pobjects.graphics.text.Bias.BACKWARD;
+        // find a line immediately followed by a shorter one (the classic end-of-paragraph case)
+        int longLine = -1;
+        for (int i = 0; i < seq.lineCount() - 1; i++) {
+            double rightThis = lineRightX(seq, i);
+            double rightNext = lineRightX(seq, i + 1);
+            if (rightThis > rightNext + 2) {
+                longLine = i;
+                break;
+            }
+        }
+        assertTrue(longLine >= 0, "test PDF should have a line followed by a shorter one");
+        // caret at end of the long line, goalX at its right edge (past the shorter line's end)
+        int endOfLong = seq.caretAtLine(longLine, Double.MAX_VALUE).getOffset();
+        int endOfNext = seq.caretAtLine(longLine + 1, Double.MAX_VALUE).getOffset();
+        double goalX = seq.caretRect(new Caret(endOfLong, back)).getX();
+        Caret below = seq.caretBelow(new Caret(endOfLong, back), goalX);
+        assertNotNull(below);
+        // must land on the shorter next line, not snap back to the long line, clamped to its end
+        assertEquals(longLine + 1, seq.lineIndexOf(below.getOffset()));
+        assertEquals(endOfNext, below.getOffset());
+    }
+
+    private static double lineRightX(TextSequence seq, int lineIndex) {
+        int end = seq.caretAtLine(lineIndex, Double.MAX_VALUE).getOffset();
+        return seq.caretRect(new Caret(end, org.icepdf.core.pobjects.graphics.text.Bias.BACKWARD)).getX();
+    }
+
     @DisplayName("search corpus: whitespace collapsed, maps back to canonical range/words")
     @Test
     public void searchCorpus() throws Exception {

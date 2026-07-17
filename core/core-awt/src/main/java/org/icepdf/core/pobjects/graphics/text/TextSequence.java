@@ -365,7 +365,16 @@ public final class TextSequence {
         }
 
         // 2. no glyph under the point: pick the nearest line in 2D, then position within it by x.
-        int line = nearestLine(pagePoint);
+        return caretInLine(nearestLine(pagePoint), px);
+    }
+
+    /**
+     * Positions a caret within a specific line by x, clamping to the line's start/end.  Unlike
+     * {@link #caretAt(Point2D)} this never re-picks the line: vertical navigation onto a shorter
+     * line must land on <em>that</em> line even when {@code px} overshoots its right edge (otherwise
+     * a free 2D line search snaps back to the longer neighbour and the caret can't advance).
+     */
+    private Caret caretInLine(int line, double px) {
         int first = lineFirstGlyph[line], last = lineLastGlyph[line];
         Rectangle2D.Double fb = glyphs[first].getBounds();
         Rectangle2D.Double lb = glyphs[last].getBounds();
@@ -549,15 +558,13 @@ public final class TextSequence {
     public Caret caretAbove(Caret caret, double goalX) {
         int li = lineIndexOf(caret.getOffset());
         if (li <= 0) return null;
-        return new Caret(caretAt(new Point2D.Double(goalX, lines[li - 1].getBounds().getCenterY())).getOffset(),
-                caret.getBias());
+        return new Caret(caretInLine(li - 1, goalX).getOffset(), caret.getBias());
     }
 
     public Caret caretBelow(Caret caret, double goalX) {
         int li = lineIndexOf(caret.getOffset());
         if (li < 0 || li >= lines.length - 1) return null;
-        return new Caret(caretAt(new Point2D.Double(goalX, lines[li + 1].getBounds().getCenterY())).getOffset(),
-                caret.getBias());
+        return new Caret(caretInLine(li + 1, goalX).getOffset(), caret.getBias());
     }
 
     /**
@@ -571,7 +578,7 @@ public final class TextSequence {
     public Caret caretAtLine(int lineIndex, double goalX) {
         if (lines.length == 0) return new Caret(0, Bias.FORWARD);
         int li = Math.max(0, Math.min(lineIndex, lines.length - 1));
-        return caretAt(new Point2D.Double(goalX, lines[li].getBounds().getCenterY()));
+        return caretInLine(li, goalX);
     }
 
     // ------------------------------------------------------------------
