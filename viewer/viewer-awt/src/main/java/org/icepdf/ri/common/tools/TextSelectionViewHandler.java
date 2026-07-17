@@ -65,6 +65,12 @@ public class TextSelectionViewHandler extends TextSelection
     public void mouseClicked(MouseEvent e) {
 
         if (e.getButton() == MouseEvent.BUTTON1 || e.getButton() == MouseEvent.BUTTON3) {
+            // A single click only places the caret, which mousePressed already handled (it also
+            // clears any previous selection).  Clearing here would wipe that caret; only double and
+            // triple clicks clear and perform word/line selection.
+            if (e.getClickCount() < 2) {
+                return;
+            }
             // clear all selected text.
             documentViewController.clearSelectedText();
             clearSelectionState();
