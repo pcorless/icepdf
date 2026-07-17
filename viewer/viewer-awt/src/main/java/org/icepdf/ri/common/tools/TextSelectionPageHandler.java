@@ -81,7 +81,7 @@ public class TextSelectionPageHandler extends TextSelection
      */
     public void mousePressed(MouseEvent e) {
         isClearSelection = false;
-        this.pageViewComponent.requestFocus();
+        this.pageViewComponent.requestFocusInWindow();
         lastMousePressedLocation = e.getPoint();
 
         selectionStart(e.getPoint(), pageViewComponent, true);

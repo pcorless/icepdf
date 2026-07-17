@@ -89,7 +89,7 @@ public class TextSelection extends SelectionBoxHandler {
                 wordSelectHandler(pageViewComponent.getPage(), (Point) clickPoint.clone());
             }
             if (pageViewComponent != null) {
-                pageViewComponent.requestFocus();
+                pageViewComponent.requestFocusInWindow();
             }
         } catch (InterruptedException e) {
             logger.fine("Text selection page access interrupted");
@@ -114,6 +114,9 @@ public class TextSelection extends SelectionBoxHandler {
                         .collapseTo(pageViewComponent.getPageIndex(), offset);
                 selectedCount = 0;
                 syncSelection();
+                // grab keyboard focus so caret navigation keys reach the page rather than
+                // scrolling the parent viewport.
+                pageViewComponent.requestFocusInWindow();
             }
             pageViewComponent.repaint();
         } catch (InterruptedException e) {

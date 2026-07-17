@@ -79,7 +79,7 @@ public class TextSelectionViewHandler extends TextSelection
             PageViewComponentImpl pageComponent = isOverPageComponent(parentComponent, e);
 
             if (pageComponent != null) {
-                pageComponent.requestFocus();
+                pageComponent.requestFocusInWindow();
                 // click word and line selection
                 MouseEvent modeEvent = SwingUtilities.convertMouseEvent(parentComponent, e, pageComponent);
                 pageComponent.getTextSelectionPageHandler().wordLineSelection(
@@ -104,7 +104,7 @@ public class TextSelectionViewHandler extends TextSelection
             // check if we are over a page
             PageViewComponentImpl pageComponent = isOverPageComponent(parentComponent, e);
             if (pageComponent != null) {
-                pageComponent.requestFocus();
+                pageComponent.requestFocusInWindow();
                 MouseEvent modeEvent = SwingUtilities.convertMouseEvent(parentComponent, e, pageComponent);
                 pageComponent.getTextSelectionPageHandler().selectionStart(modeEvent.getPoint(), pageComponent, true);
             }
@@ -116,7 +116,7 @@ public class TextSelectionViewHandler extends TextSelection
             if (canExtract && documentViewController.getSelectedText() != null &&
                     !documentViewController.getSelectedText().isEmpty()) {
                 PageViewComponentImpl pageComponent = isOverPageComponent(parentComponent, e);
-                pageComponent.requestFocus();
+                pageComponent.requestFocusInWindow();
                 JPopupMenu contextMenu = buildSelectedTextContextMenu(pageComponent);
                 contextMenu.show(parentComponent, e.getX(), e.getY());
             }
@@ -126,7 +126,7 @@ public class TextSelectionViewHandler extends TextSelection
                     (documentViewController.getSelectedText() == null ||
                             documentViewController.getSelectedText().isEmpty())) {
                 PageViewComponentImpl pageComponent = isOverPageComponent(parentComponent, e);
-                pageComponent.requestFocus();
+                pageComponent.requestFocusInWindow();
                 MouseEvent modeEvent = SwingUtilities.convertMouseEvent(parentComponent, e, pageComponent);
                 JPopupMenu contextMenu = buildEditTextContextMenu(pageComponent, modeEvent.getPoint());
                 contextMenu.show(parentComponent, e.getX(), e.getY());
