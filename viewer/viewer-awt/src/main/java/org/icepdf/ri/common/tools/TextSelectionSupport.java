@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 ICEsoft Technologies Canada Corp.
+ * Copyright 2026 Patrick Corless
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -18,11 +18,7 @@ package org.icepdf.ri.common.tools;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.Shapes;
-import org.icepdf.core.pobjects.graphics.text.GlyphText;
-import org.icepdf.core.pobjects.graphics.text.OffsetRange;
-import org.icepdf.core.pobjects.graphics.text.PageText;
-import org.icepdf.core.pobjects.graphics.text.TextSequence;
-import org.icepdf.core.pobjects.graphics.text.WordText;
+import org.icepdf.core.pobjects.graphics.text.*;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentTextSelection;
 import org.icepdf.ri.common.views.DocumentViewModel;
