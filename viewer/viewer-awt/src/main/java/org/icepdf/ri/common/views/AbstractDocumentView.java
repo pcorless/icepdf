@@ -15,6 +15,8 @@
  */
 package org.icepdf.ri.common.views;
 
+import org.icepdf.core.pobjects.PDimension;
+import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
@@ -349,6 +351,21 @@ public abstract class AbstractDocumentView
                 (getCurrentToolHandler() instanceof TextSelectionViewHandler ||
                         getCurrentToolHandler() instanceof TextSelectionPageHandler ||
                         getCurrentToolHandler() instanceof HighLightAnnotationHandler);
+    }
+
+    protected PDimension getMaxPageDimension() {
+        final PDimension dimension = new PDimension(0, 0);
+        final PageTree pt = documentViewModel.getDocument().getPageTree();
+        for (int i = 0; i < pt.getNumberOfPages(); ++i) {
+            final PDimension dim = pt.getPage(i).getSize(0f, 1f);
+            if (dim.getHeight() > dimension.getHeight()) {
+                dimension.set((float) dimension.getWidth(), (float) dim.getHeight());
+            }
+            if (dim.getWidth() > dimension.getWidth()) {
+                dimension.set((float) dim.getWidth(), (float) dimension.getHeight());
+            }
+        }
+        return dimension;
     }
 
     /**
