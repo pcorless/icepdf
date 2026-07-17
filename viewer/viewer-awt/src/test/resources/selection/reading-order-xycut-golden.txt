@@ -1,0 +1,174 @@
+=== xr_650 p6 - single column drawn out of order (Environmental/Programs/legal) [/redact/xr_650.pdf p5] ===
+  L000 y=  569.4 x=  144.0..476.5    E N V I R O N M E N T A L C O M M I T M E N T
+  L001 y=  552.1 x=  144.0..480.0    At Honda, we believe in performance and leadership, and that
+  L002 y=  540.1 x=  144.0..480.0    it comes to the environment. We continue to develop low-emis
+  L003 y=  528.1 x=  144.0..480.0    motorcycles, ATVs, scooters and personal watercraft. We alre
+  L004 y=  516.1 x=  144.0..480.0    2008 CARB emissions requirements years ahead of schedule. An
+  L005 y=  504.1 x=  144.0..192.9    can appreciate.
+  L006 y=  471.1 x=  143.9..432.0    P R O G R A M S T H A T P E R F O R M
+  L007 y=  453.9 x=  143.9..480.0    You chose your new Honda XR or XRL because it has so many gr
+  L008 y=  441.9 x=  143.9..480.0    all of the programs available to you as a Honda owner. Take 
+  L009 y=  429.9 x=  143.9..480.0    let you extend virtually all of your Honda’s great warranty 
+  L010 y=  417.9 x=  143.9..480.0    America.† Open to all Honda owners,†† the real-world benefit
+  L011 y=  405.9 x=  143.9..480.0    HRCA. Interested in some accessories to make your XR or XRL 
+  L012 y=  393.9 x=  444.6..480.0    ™ Oils and
+  L013 y=  393.9 x=  143.9..445.4    selection of Honda Genuine Accessories. Time for service? Be
+  L014 y=  381.9 x=  143.9..480.0    Chemicals. And if you’re looking for a way to pay for your n
+  L015 y=  369.9 x=  143.9..480.0    gestions. First, ask about the American Honda Finance Corpor
+  L016 y=  357.9 x=  454.6..480.0    ™ revolv-
+  L017 y=  357.9 x=  143.9..454.6    can set everything up for you right in the showroom. Another
+  L018 y=  345.9 x=  143.9..480.0    ing charge card.‡‡ You can use the Honda Card to purchase Ho
+  L019 y=  333.9 x=  143.9..480.0    And make sure to ask your Honda Dealer about MSF rider train
+  L020 y=  321.9 x=  143.9..480.0    we think our family of Honda off-road motorcycles is the bes
+  L021 y=  309.9 x=  143.9..254.6    grams and support to go with them.
+  L022 y=  277.6 x=  143.9..480.0    Specifications, programs and availability subject to change 
+  L023 y=  268.6 x=  143.9..480.0    specifications in this brochure—including colors, warranty t
+  L024 y=  259.6 x=  143.9..480.0    States. ◊ Mounting brackets required. * Maximum reimbursemen
+  L025 y=  250.6 x=  143.9..480.0    American Honda Service Contract Corporation in the state of 
+  L026 y=  241.6 x=  143.9..480.0    motorcycles purchased from participating dealers in the U.S.
+  L027 y=  232.6 x=  143.9..480.0    approved credit by AHFC. ‡‡ Financing available to qualified
+  L028 y=  223.6 x=  143.9..480.0    Honda Card program at participating dealers. California vers
+  L029 y=  214.6 x=  143.9..480.0    are standard equipment on all Honda streetbikes. Performance
+  L030 y=  205.6 x=  143.9..481.3    Honda Genuine Accessories,™ HRCA,null Honda Rider’s Club of 
+  L031 y=  196.6 x=  143.9..403.7    of Honda Motor Co., Ltd. ©2003 American Honda Motor Co., Inc
+  L032 y=   97.9 x=  331.5..396.8    honda.com
+
+=== windriver p2 - clean two-column body + full-width footer [/redact/windrivercasestudy1n3d2m8km0r.pdf p1] ===
+  L000 y=  670.6 x=   77.1..283.6    information helps both parties improve their support
+  L001 y=  653.6 x=   77.1..281.3    plans, for example training seminars, services en-
+  L002 y=  636.6 x=   77.1..251.9    gagements, and project resource allocation.
+  L003 y=  612.6 x=   77.1..291.6    “One of the key benefits of the Macrovision solution is
+  L004 y=  595.6 x=   77.1..295.0    that it provides easy access to technology. Second, it is
+  L005 y=  578.6 x=   77.1..296.9    a very objective approach to licensing. It’s not about how
+  L006 y=  561.6 x=   77.1..290.2    many concurrent users you might have, or about how
+  L007 y=  544.6 x=   77.1..298.1    many license servers you need, or how many machines
+  L008 y=  527.6 x=   77.1..286.6    the product is installed on—it really comes down to
+  L009 y=  510.6 x=   77.1..293.8    making sure that software developers have access to
+  L010 y=  493.6 x=   77.1..199.5    our software,” explains Hogan.
+  L011 y=  469.6 x=   77.1..292.8    Hogan says Wind River has been using Macrovision’s
+  L012 y=  452.6 x=   77.1..296.1    licensing solutions for more than 3 years, and is planning
+  L013 y=  435.6 x=   77.1..296.8    to migrate to the next Macrovision release in 2004. Hogan
+  L014 y=  418.6 x=   77.1..299.5    says that Macrovision has done a good job of making its
+  L015 y=  401.6 x=   77.1..292.1    software easy to implement and easy to embed in its
+  L016 y=  384.6 x=   77.1..300.1    products. “At the end of the day, utility pricing, although
+  L017 y=  367.6 x=   77.1..298.6    gaining in popularity, is still relatively new for customers
+  L018 y=  350.6 x=   77.1..179.4    and software publishers .”
+  L019 y=  326.6 x=   77.1..298.7    Hogan points out one caveat that other software vendors
+  L020 y=  309.6 x=   77.1..293.7    should consider when evaluating this approach: “Not
+  L021 y=  292.6 x=   77.1..300.0    all buyers will be attracted to utility pricing so publisher
+  L022 y=  275.6 x=   77.1..298.1    should view it as an extension to their current offerings
+  L023 y=  258.6 x=   77.1..188.1    rather than a replacement .”
+  L024 y=  234.6 x=   77.1..298.6    Hogan also cites three key questions for software vendors
+  L025 y=  217.6 x=   77.1..285.4    considering utility pricing: First, what market forces
+  L026 y=  200.6 x=   77.1..295.8    are driving you and your customers toward utility-based
+  L027 y=  183.6 x=   77.1..296.6    pricing? Second, what’s the utility you’re trying to price
+  L028 y=  166.6 x=   77.1..288.9    and why have you chosen it over others? Third, who’s
+  L029 y=  149.6 x=   77.1..298.0    asking for it and why? His recommendation is to evaluate
+  L030 y=  132.6 x=   77.1..287.6    the strengths and weaknesses of traditional models,
+  L031 y=  115.6 x=   77.1..296.5    and then determine what is most important to a specific
+  L032 y=   98.6 x=   77.1..130.1    market need.
+  L033 y=  670.3 x=  319.4..527.4    Says Hogan, “A major benefit of Macrovision’s utility
+  L034 y=  653.3 x=  319.4..515.4    pricing is being able to create a new offering for
+  L035 y=  636.3 x=  319.4..531.2    existing and new buyers to consider. And that usually
+  L036 y=  619.3 x=  319.4..530.0    translates into new revenue streams and an increasing
+  L037 y=  602.3 x=  319.4..514.1    ability to be more responsive to your customers .”
+  L038 y=  578.3 x=  319.4..396.0    About Macrovision
+  L039 y=  561.3 x=  319.4..531.9    Macrovision Corporation (Nasdaq:MVSN) is the market
+  L040 y=  544.3 x=  319.4..520.7    leader in electronic licensing, copy protection, and
+  L041 y=  527.3 x=  319.4..519.0    digital rights management ("DRM") technologies.
+  L042 y=  510.3 x=  319.4..520.0    Analysts recognize Macrovision as the clear market
+  L043 y=  493.3 x=  319.4..530.7    leader, and it's estimated that the company sells more
+  L044 y=  476.3 x=  319.4..531.1    software-based licensing solutions than all its compet-
+  L045 y=  459.3 x=  319.4..529.0    itors combined. Macrovision FLEXnet, the world's first
+  L046 y=  442.3 x=  319.4..523.2    universal licensing platform, enables customers to
+  L047 y=  425.3 x=  319.4..512.3    easily price, package and protect their software.
+  L048 y=  408.3 x=  319.4..518.7    More than 3000 software publishers have shipped
+  L049 y=  391.3 x=  371.7..520.7    tm software, and hundreds of Fortune
+  L050 y=  391.3 x=  319.4..371.7    FLEXenabled
+  L051 y=  374.3 x=  319.4..519.1    1000 companies use Macrovision technologies to
+  L052 y=  357.3 x=  319.4..530.4    better manage their software licenses. The company
+  L053 y=  340.3 x=  319.4..524.6    holds over 700 software licensing and DRM patents
+  L054 y=  323.3 x=  319.4..525.7    worldwide, and has been ranked by Business 2.0 as
+  L055 y=  306.3 x=  319.4..533.6    one of the top 100 Tech Companies for two consecutive
+  L056 y=  289.3 x=  319.4..514.6    years. Headquartered in Santa Clara, California,
+  L057 y=  272.3 x=  319.4..513.9    Macrovision has international offices in London,
+  L058 y=  255.3 x=  319.4..516.8    Frankfurt, Tel Aviv, Tokyo, Taipei, Hong Kong and
+  L059 y=  238.3 x=  319.4..523.6    Seoul. More information about the Macrovision can
+  L060 y=  221.3 x=  319.4..457.4    be found at www.macrovision.com.
+  L061 y=   46.0 x=   76.7..153.5    Macrovision Corporation
+  L062 y=   37.0 x=   76.7..232.2    2830 De La Cruz Boulevard, Santa Clara, CA 95050
+  L063 y=   28.0 x=   76.7..223.1    US +1 888-755-0861 Int’l +44 (0) 870-873-6300
+  L064 y=   19.0 x=   76.7..145.9    www.macrovision .com
+  L065 y=    9.6 x=   76.8..525.8    ©2004 Macrovision Corporation. Macrovision and FLEXnet are r
+  L066 y=    4.1 x=   76.8..471.6    and VxWorks is a registered trademark of Wind River Systems,
+
+=== 2005CAT p1 - vertical + horizontal mixed [/redact/2005CAT.pdf p0] ===
+  L000 y=  253.7 x=    2.1..24.6     IN
+  L001 y=  270.5 x=    2.1..24.6     T
+  L002 y=  280.3 x=    2.1..24.6     R
+  L003 y=  291.7 x=   -5.2..24.6     O
+  L004 y=  303.9 x=    2.6..24.4     D
+  L005 y=  315.6 x=    2.6..24.4     U
+  L006 y=  327.1 x=    2.6..24.4     C
+  L007 y=  338.2 x=    2.6..24.4     T
+  L008 y=  347.7 x=    2.6..24.4     IO
+  L009 y=  362.9 x=    9.8..31.6     N
+  L010 y=  523.1 x=   60.8..267.2    It all started in 1949. In Bologna, Italy two
+  L011 y=  503.2 x=   60.8..260.6    brothers Stefano and Gugliemo Marzocchi
+  L012 y=  483.2 x=   60.8..268.4    founded Marzocchi SPA Italia. They built the
+  L013 y=  463.2 x=   60.8..257.6    company on solid, race-proven technology
+  L014 y=  443.2 x=   60.8..257.5    providing durability and performance from
+  L015 y=  423.2 x=   60.8..253.6    all of their premium suspension products.
+  L016 y=  383.1 x=   60.8..210.8    In the early 1990’s, Marzocchi
+  L017 y=  363.2 x=   60.8..260.3    introduced the Bomber line of suspension.
+  L018 y=  343.2 x=   60.8..256.3    Due to our extensive knowledge base and
+  L019 y=  323.2 x=   60.8..273.7    more than ﬁ fty years experience, we met the
+  L020 y=  303.2 x=   60.8..266.5    demand mountain bikers had for a stronger
+  L021 y=  283.2 x=   60.8..150.9    more durable fork.
+  L022 y=  263.2 x=   60.8..257.9    Marzocchi became the benchmark in hard
+  L023 y=  243.2 x=   60.8..206.4    core mountain bike suspension.
+  L024 y=  203.1 x=   60.8..278.9    This year we are proud to introduce our most
+  L025 y=  183.2 x=   60.8..270.3    extensive line to date. We feel that for every
+  L026 y=  163.2 x=   60.8..258.4    rider there is a fork. If you can’t ﬁ nd what
+  L027 y=  143.2 x=   60.8..214.6    you’re looking for in this catalog,
+  L028 y=  123.2 x=   60.8..159.4    then it doesn’t exist.
+  L029 y=   83.1 x=   60.8..236.1    Enjoy the mountain, ride Marzocchi.
+
+=== test_print p1 - plain single column [/redact/test_print.pdf p0] ===
+  L000 y=  807.6 x=  286.7..322.7    - 1 -
+  L001 y=  779.3 x=   70.9..488.5    Qué es un antipoeta: Un comerciante en urnas y ataúdes? Un
+  L002 y=  767.3 x=   70.9..524.5    sacerdote que no cree en nada? Un general que duda de sí mis
+  L003 y=  755.3 x=   70.9..481.2    Un vagabundo que se ríe de todo Hasta de la vejez y de la
+  L004 y=  743.3 x=   70.9..510.0    muerte? Un interlocutor de mal carácter? Un bailarín al bord
+  L005 y=  731.3 x=   70.9..409.3    del abismo? Un narciso que ama a todo el mundo?
+
+=== reference addendum p1 - dense reference layout [/redact/pdf_reference_addendum_redaction.pdf p0] ===
+  L000 y=  662.2 x=   70.5..114.7    bbc
+  L001 y=  420.4 x=  113.8..463.7    PDF Redaction: Addendum for the
+  L002 y=  391.4 x=  113.8..514.1    PDF Reference, sixth edition, version 1.7
+  L003 y=   66.2 x=   70.0..150.2    November 2006
+
+=== libre-test p1 [/redact/libre-test.pdf p0] ===
+  L000 y=  706.7 x=   56.8..533.6    Calculate a foundation price with your current plan
+  L001 y=  687.1 x=   56.8..506.7    Now, let’s lay out the foundation we’ll work from when consi
+  L002 y=  671.2 x=   56.8..549.9    experience, the most important thing to keep in mind is the 
+  L003 y=  655.4 x=   56.8..553.4    in most cases, the amount you pay for the smartphone won’t c
+  L004 y=  639.5 x=   56.8..548.9    a phone from a carrier, most require you also to get specifi
+  L005 y=  623.7 x=   56.8..161.9    what you already pay.
+  L006 y=  589.1 x=   56.8..509.6    The monthly cost of your phone plan will fluctuate depending
+  L007 y=  573.2 x=   56.8..530.5    Therefore, I recommend starting your search for a cheap Pixe
+  L008 y=  557.4 x=   56.8..551.3    considering whether it covers your needs. If it doesn’t, you
+  L009 y=  541.5 x=   56.8..534.6    (which you can probably do alongside getting a new Pixel). I
+  L010 y=  525.7 x=   56.8..539.0    currently need, it might be worth investigating cheaper opti
+  L011 y=  509.8 x=   56.8..540.3    own-phone (BYOP) plans offered by various wireless providers
+  L012 y=  494.0 x=   56.8..149.4    works best for you.
+
+=== potato_out p1 [/redact/potato_out.pdf p0] ===
+  L000 y=  692.1 x=  311.0..443.5    SOUPS,STARTERS & SNACKS
+  L001 y=  676.8 x=   23.0..472.4    PAN    5
+  L002 y=  674.1 x=   36.1..67.5     PREPARATION
+  L003 y=  664.6 x=   38.3..56.6     25 mins
+  L004 y=  653.7 x=   36.0..62.2     COOKING
+  L005 y=  647.0 x=  147.4..463.5    Spanish potato omelette
+  L006 y=  644.7 x=   38.3..56.6     40mins
+

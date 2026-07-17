@@ -65,6 +65,12 @@ public class TextSelectionViewHandler extends TextSelection
     public void mouseClicked(MouseEvent e) {
 
         if (e.getButton() == MouseEvent.BUTTON1 || e.getButton() == MouseEvent.BUTTON3) {
+            // A single click only places the caret, which mousePressed already handled (it also
+            // clears any previous selection).  Clearing here would wipe that caret; only double and
+            // triple clicks clear and perform word/line selection.
+            if (e.getClickCount() < 2) {
+                return;
+            }
             // clear all selected text.
             documentViewController.clearSelectedText();
             clearSelectionState();
@@ -73,7 +79,7 @@ public class TextSelectionViewHandler extends TextSelection
             PageViewComponentImpl pageComponent = isOverPageComponent(parentComponent, e);
 
             if (pageComponent != null) {
-                pageComponent.requestFocus();
+                pageComponent.requestFocusInWindow();
                 // click word and line selection
                 MouseEvent modeEvent = SwingUtilities.convertMouseEvent(parentComponent, e, pageComponent);
                 pageComponent.getTextSelectionPageHandler().wordLineSelection(
@@ -98,7 +104,7 @@ public class TextSelectionViewHandler extends TextSelection
             // check if we are over a page
             PageViewComponentImpl pageComponent = isOverPageComponent(parentComponent, e);
             if (pageComponent != null) {
-                pageComponent.requestFocus();
+                pageComponent.requestFocusInWindow();
                 MouseEvent modeEvent = SwingUtilities.convertMouseEvent(parentComponent, e, pageComponent);
                 pageComponent.getTextSelectionPageHandler().selectionStart(modeEvent.getPoint(), pageComponent, true);
             }
@@ -110,7 +116,7 @@ public class TextSelectionViewHandler extends TextSelection
             if (canExtract && documentViewController.getSelectedText() != null &&
                     !documentViewController.getSelectedText().isEmpty()) {
                 PageViewComponentImpl pageComponent = isOverPageComponent(parentComponent, e);
-                pageComponent.requestFocus();
+                pageComponent.requestFocusInWindow();
                 JPopupMenu contextMenu = buildSelectedTextContextMenu(pageComponent);
                 contextMenu.show(parentComponent, e.getX(), e.getY());
             }
@@ -120,7 +126,7 @@ public class TextSelectionViewHandler extends TextSelection
                     (documentViewController.getSelectedText() == null ||
                             documentViewController.getSelectedText().isEmpty())) {
                 PageViewComponentImpl pageComponent = isOverPageComponent(parentComponent, e);
-                pageComponent.requestFocus();
+                pageComponent.requestFocusInWindow();
                 MouseEvent modeEvent = SwingUtilities.convertMouseEvent(parentComponent, e, pageComponent);
                 JPopupMenu contextMenu = buildEditTextContextMenu(pageComponent, modeEvent.getPoint());
                 contextMenu.show(parentComponent, e.getX(), e.getY());
@@ -268,45 +274,42 @@ public class TextSelectionViewHandler extends TextSelection
         if (documentViewController != null && isSelecting) {
             isDragging = true;
 
-            // update the currently parentComponent box
+            // update the parentComponent box (kept for autoscroll bookkeeping).
             updateSelectionSize(e.getX(), e.getY(), parentComponent);
 
-            DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
-            // clear previously selected pages
-            documentViewModel.clearSelectedPageText();
-
-            // add selection box to child pages
-            java.util.List<AbstractPageViewComponent> pages =
-                    documentViewModel.getPageComponents();
-            for (AbstractPageViewComponent page : pages) {
-                Rectangle tmp = SwingUtilities.convertRectangle(
-                        parentComponent, getRectToDraw(), page);
-                if (page.getBounds().intersects(tmp)) {
-                    // add the page to the page as it is marked for selection
-                    documentViewModel.addSelectedPageText(page);
-
-                    Point modEvent = SwingUtilities.convertPoint(parentComponent,
-                            e.getPoint(), page);
-
-                    // set the selected region.
-                    page.setSelectionRectangle(modEvent, tmp);
-                    ((PageViewComponentImpl) page).getTextSelectionPageHandler().setRectToDraw(tmp);
-
-                    // pass the selection movement on to the page.
-                    boolean isMovingDown = lastMousePressedLocation.y <= e.getPoint().y;
-                    boolean isMovingRight = lastMousePressedLocation.x <= e.getPoint().x;
-
-                    ((PageViewComponentImpl) page).getTextSelectionPageHandler()
-                            .selection(modEvent, page, isMovingDown, isMovingRight);
-
-                } else {
-                    documentViewModel.removeSelectedPageText(page);
-                    page.clearSelectedText();
-                    page.repaint();
-                }
+            // find the page (or nearest page in the drag direction) under the cursor and extend
+            // the document caret selection to it; syncSelection() fills the pages in between.
+            PageViewComponentImpl page = pageUnderOrNearest(e);
+            if (page != null) {
+                Point pagePoint = SwingUtilities.convertPoint(parentComponent, e.getPoint(), page);
+                boolean isMovingDown = lastMousePressedLocation.y <= e.getPoint().y;
+                boolean isMovingRight = lastMousePressedLocation.x <= e.getPoint().x;
+                page.getTextSelectionPageHandler().selection(pagePoint, page, isMovingDown, isMovingRight);
             }
         }
+    }
 
+    /**
+     * Returns the page component under the event, or the vertically nearest page when the cursor is
+     * in a margin/gap so that dragging past a page boundary still extends the selection.
+     */
+    private PageViewComponentImpl pageUnderOrNearest(MouseEvent e) {
+        PageViewComponentImpl over = isOverPageComponent(parentComponent, e);
+        if (over != null) return over;
+        java.util.List<AbstractPageViewComponent> pages =
+                documentViewController.getDocumentViewModel().getPageComponents();
+        AbstractPageViewComponent best = null;
+        double bestDist = Double.MAX_VALUE;
+        int y = e.getY();
+        for (AbstractPageViewComponent page : pages) {
+            Rectangle b = page.getBounds();
+            double d = y < b.y ? b.y - y : (y > b.y + b.height ? y - (b.y + b.height) : 0);
+            if (d < bestDist) {
+                bestDist = d;
+                best = page;
+            }
+        }
+        return (PageViewComponentImpl) best;
     }
 
     public void mouseMoved(MouseEvent e) {
@@ -325,11 +328,11 @@ public class TextSelectionViewHandler extends TextSelection
     }
 
     public void installTool() {
-
+        CaretBlink.start(documentViewController);
     }
 
     public void uninstallTool() {
-
+        CaretBlink.stop();
     }
 
     public void mouseEntered(MouseEvent e) {

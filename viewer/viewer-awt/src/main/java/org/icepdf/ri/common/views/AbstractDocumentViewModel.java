@@ -55,6 +55,8 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     private HashMap<Integer, AbstractPageViewComponent> selectedPageText;
     // select all state flag, optimization for painting select all state lazily
     private boolean selectAll;
+    // authoritative document-level text selection (anchor->focus offset pair).
+    private final DocumentTextSelection textSelection = new DocumentTextSelection();
     protected List<AbstractPageViewComponent> pageComponents;
     protected HashMap<AbstractPageViewComponent, ArrayList<PageViewAnnotationComponent>> documentViewAnnotationComponents;
     // scroll pane used to contain the view
@@ -243,6 +245,26 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
             selectedPageText.clear();
         }
         selectAll = false;
+    }
+
+    public DocumentTextSelection getTextSelection() {
+        return textSelection;
+    }
+
+    public void collapseTo(int page, int offset) {
+        textSelection.collapseTo(page, offset);
+    }
+
+    public void extendTo(int page, int offset) {
+        textSelection.extendTo(page, offset);
+    }
+
+    public void setTextSelection(int anchorPage, int anchorOffset, int focusPage, int focusOffset) {
+        textSelection.set(anchorPage, anchorOffset, focusPage, focusOffset);
+    }
+
+    public void clearTextSelection() {
+        textSelection.clear();
     }
 
     /**

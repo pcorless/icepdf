@@ -24,6 +24,7 @@ import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.tools.TextSelectionSupport;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
@@ -267,6 +268,7 @@ public class DocumentViewControllerImpl
         ArrayList<AbstractPageViewComponent> selectedPages =
                 documentViewModel.getSelectedPageText();
         documentViewModel.setSelectAll(false);
+        documentViewModel.clearTextSelection();
         if (selectedPages != null &&
                 selectedPages.size() > 0) {
             for (AbstractPageViewComponent pageComp : selectedPages) {
@@ -315,31 +317,18 @@ public class DocumentViewControllerImpl
 
     public String getSelectedText() {
         if (documentViewModel == null) return null;
+        // regular selection by user mouse, keyboard or api derives from the document offset model.
+        if (!documentViewModel.isSelectAll()) {
+            return TextSelectionSupport.selectedText(
+                    documentViewModel.getTextSelection(), documentViewModel.getDocument());
+        }
+        // select all text
         StringBuilder selectedText = new StringBuilder();
         try {
-            // regular page selected by user mouse, keyboard or api
-            if (!documentViewModel.isSelectAll()) {
-                ArrayList<AbstractPageViewComponent> selectedPages =
-                        documentViewModel.getSelectedPageText();
-                if (selectedPages != null &&
-                        selectedPages.size() > 0) {
-                    for (AbstractPageViewComponent pageComp : selectedPages) {
-                        if (pageComp != null) {
-                            int pageIndex = pageComp.getPageIndex();
-                            selectedText.append(document.getPageText(pageIndex).getSelected());
-                        }
-                    }
-                }
+            Document document = documentViewModel.getDocument();
+            for (int i = 0; i < document.getNumberOfPages(); i++) {
+                selectedText.append(document.getPageText(i));
             }
-            // select all text
-            else {
-                Document document = documentViewModel.getDocument();
-                // iterate over each page in the document
-                for (int i = 0; i < document.getNumberOfPages(); i++) {
-                    selectedText.append(viewerController.getDocument().getPageText(i));
-                }
-            }
-
         } catch (InterruptedException e) {
             logger.log(Level.SEVERE, "Page text extraction thread interrupted.", e);
         }

@@ -46,14 +46,39 @@ import java.util.*;
 public class PageText implements TextSelect {
 
     private static final boolean checkForDuplicates;
-    private static final boolean preserveColumns;
+
+    /** Page reading-order strategy applied to the sorted line list. */
+    private enum ReadingOrder {PLOT, YSORT, XYCUT}
+
+    private static final ReadingOrder readingOrder;
 
     static {
         checkForDuplicates = Defs.booleanProperty(
                 "org.icepdf.core.views.page.text.trim.duplicates", false);
 
-        preserveColumns = Defs.booleanProperty(
+        // readingOrder supersedes the older boolean preserveColumns; when readingOrder is not set
+        // we derive the mode from preserveColumns so existing configurations behave unchanged.
+        //   plot  = preserveColumns=true  (default): keep content-stream plot order
+        //   ysort = preserveColumns=false          : global top-to-bottom y-sort
+        //   xycut =                                  geometry-driven column/band ordering
+        boolean preserveColumns = Defs.booleanProperty(
                 "org.icepdf.core.views.page.text.preserveColumns", true);
+        String mode = Defs.sysProperty("org.icepdf.core.views.page.text.readingOrder");
+        if (mode == null) {
+            readingOrder = preserveColumns ? ReadingOrder.PLOT : ReadingOrder.YSORT;
+        } else {
+            switch (mode.trim().toLowerCase()) {
+                case "ysort":
+                    readingOrder = ReadingOrder.YSORT;
+                    break;
+                case "xycut":
+                    readingOrder = ReadingOrder.XYCUT;
+                    break;
+                default:
+                    readingOrder = ReadingOrder.PLOT;
+                    break;
+            }
+        }
     }
 
     // pointer to current line during document parse, no other use.
@@ -62,6 +87,9 @@ public class PageText implements TextSelect {
 
     private final ArrayList<LineText> pageLines;
     private ArrayList<LineText> sortedPageLines;
+
+    // reading-order view over sortedPageLines; lazily built, invalidated on re-sort.
+    private TextSequence textSequence;
 
     private AffineTransform previousTextTransform;
     private AffineTransform previousXObjectTransform;
@@ -137,6 +165,21 @@ public class PageText implements TextSelect {
             sortAndFormatText();
         }
         return sortedPageLines;
+    }
+
+    /**
+     * Gets the reading-order {@link TextSequence} for this page, a flattened view over the
+     * sorted page lines that maps between page-space points, character offsets, and the
+     * underlying glyph/word/line structure.  The value is cached and rebuilt whenever the
+     * page re-sorts (see {@link #sortAndFormatText}).
+     *
+     * @return reading-order sequence for this page's visible text.
+     */
+    public TextSequence getTextSequence() {
+        if (textSequence == null) {
+            textSequence = new TextSequence(this);
+        }
+        return textSequence;
     }
 
     /**
@@ -567,9 +610,21 @@ public class PageText implements TextSelect {
             }
         }
 
-        // sort the lines
-        if (sortedPageLines.size() > 0 && !preserveColumns) {
-            sortedPageLines.sort(new LinePositionComparator());
+        // order the lines according to the configured reading-order strategy.  PLOT keeps the
+        // content-stream order the slicing produced; YSORT is a global top-to-bottom sort; XYCUT
+        // applies geometry-driven column/band ordering (see XYCutReadingOrder).
+        if (sortedPageLines.size() > 0) {
+            switch (readingOrder) {
+                case YSORT:
+                    sortedPageLines.sort(new LinePositionComparator());
+                    break;
+                case XYCUT:
+                    sortedPageLines = XYCutReadingOrder.order(sortedPageLines);
+                    break;
+                case PLOT:
+                default:
+                    break;
+            }
         }
 
         // Round out the word bounds
@@ -594,6 +649,8 @@ public class PageText implements TextSelect {
         // assign back the sorted lines.
         this.sortedPageLines = sortedPageLines;
 
+        // invalidate the reading-order view so it rebuilds from the new sort.
+        this.textSequence = null;
     }
 
 

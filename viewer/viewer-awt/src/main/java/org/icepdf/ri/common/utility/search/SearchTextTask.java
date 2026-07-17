@@ -23,6 +23,8 @@ import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.search.DestinationResult;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.search.SearchMode;
+import org.icepdf.core.search.SearchTerm;
+import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
@@ -135,7 +137,10 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
             searchController.clearAllSearchHighlight();
         }
         searchController.setSearchMode(searchMode);
-        searchController.addSearchTerm(pattern, caseSensitive, wholeWord, regex);
+        SearchTerm searchTerm = searchController.addSearchTerm(pattern, caseSensitive, wholeWord, regex);
+        // interactive search is accent-insensitive by default (Unicode-normalized); can be disabled
+        // with -Dorg.icepdf.core.search.foldDiacritics=false.
+        searchTerm.setFoldDiacritics(Defs.booleanProperty("org.icepdf.core.search.foldDiacritics", true));
 
         Document document = controller.getDocument();
         // iterate over each page in the document
