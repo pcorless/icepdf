@@ -98,6 +98,22 @@ public class ReadingOrderXYCutTest {
                 "Programs block must read before the legal print below it");
     }
 
+    @DisplayName("fragments sharing a visual line read left-to-right despite a sub-point y offset")
+    @Test
+    public void nearTieFragmentsNotReversed() throws Exception {
+        // "FLEXenabled" (y=391.2958) and its superscripted continuation "tm software, and hundreds
+        // of Fortune" (y=391.3020) share a visual line but differ in y by 0.006pt.  An exact-tie
+        // x comparison loses that, emitting the continuation first and reversing the line.
+        List<String> order = texts(orderedLines("/redact/windrivercasestudy1n3d2m8km0r.pdf", 1));
+        assertTrue(indexOfContaining(order, "FLEXenabled") < indexOfContaining(order, "tm software"),
+                "left fragment must read before the superscripted continuation on the same line");
+
+        // same defect class on xr_650 p6: a trademark glyph at the right edge of a body line.
+        List<String> xr = texts(orderedLines("/redact/xr_650.pdf", 5));
+        assertTrue(indexOfContaining(xr, "Honda Genuine Accessories") < indexOfContaining(xr, "Oils and"),
+                "body text must read before the trademark fragment sharing its line");
+    }
+
     @DisplayName("windriver p2: left column fully precedes right column (no interleaving)")
     @Test
     public void windriverColumnsNotInterleaved() throws Exception {

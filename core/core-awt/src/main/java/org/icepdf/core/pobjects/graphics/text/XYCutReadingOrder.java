@@ -47,13 +47,6 @@ public final class XYCutReadingOrder {
     private XYCutReadingOrder() {
     }
 
-    /** Reading-order comparator for a leaf region: top-to-bottom (y desc), then left-to-right. */
-    private static final Comparator<LineText> TOP_LEFT =
-            (a, b) -> {
-                int c = Double.compare(b.getBounds().getY(), a.getBounds().getY());
-                return c != 0 ? c : Double.compare(a.getBounds().getX(), b.getBounds().getX());
-            };
-
     /**
      * Returns {@code lines} re-ordered into reading order.  The input list is not modified.
      */
@@ -119,7 +112,7 @@ public final class XYCutReadingOrder {
         if (isVerticalStack(region)) {
             out.addAll(region);
         } else {
-            region.sort(TOP_LEFT);
+            LinePositionComparator.orderTopLeft(region);
             out.addAll(region);
         }
     }

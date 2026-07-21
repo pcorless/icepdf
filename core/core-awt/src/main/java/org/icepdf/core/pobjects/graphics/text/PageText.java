@@ -22,6 +22,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Rectangle2D;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Page text represents the root element of a page's text hierarchy which
@@ -44,6 +45,8 @@ import java.util.*;
  * @since 4.0
  */
 public class PageText implements TextSelect {
+
+    private static final Logger logger = Logger.getLogger(PageText.class.getName());
 
     private static final boolean checkForDuplicates;
 
@@ -74,7 +77,15 @@ public class PageText implements TextSelect {
                 case "xycut":
                     readingOrder = ReadingOrder.XYCUT;
                     break;
+                case "plot":
+                    readingOrder = ReadingOrder.PLOT;
+                    break;
                 default:
+                    // an unrecognised value is almost always a typo (e.g. "ycut"); falling back
+                    // silently makes it look like the flag had no effect at all.
+                    logger.warning("Unknown reading-order mode '" + mode + "' for "
+                            + "org.icepdf.core.views.page.text.readingOrder; expected one of "
+                            + "plot, ysort, xycut.  Falling back to plot.");
                     readingOrder = ReadingOrder.PLOT;
                     break;
             }
@@ -616,7 +627,7 @@ public class PageText implements TextSelect {
         if (sortedPageLines.size() > 0) {
             switch (readingOrder) {
                 case YSORT:
-                    sortedPageLines.sort(new LinePositionComparator());
+                    LinePositionComparator.orderTopLeft(sortedPageLines);
                     break;
                 case XYCUT:
                     sortedPageLines = XYCutReadingOrder.order(sortedPageLines);

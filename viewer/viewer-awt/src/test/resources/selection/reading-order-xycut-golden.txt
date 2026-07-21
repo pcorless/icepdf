@@ -11,12 +11,12 @@
   L009 y=  429.9 x=  143.9..480.0    let you extend virtually all of your Honda’s great warranty 
   L010 y=  417.9 x=  143.9..480.0    America.† Open to all Honda owners,†† the real-world benefit
   L011 y=  405.9 x=  143.9..480.0    HRCA. Interested in some accessories to make your XR or XRL 
-  L012 y=  393.9 x=  444.6..480.0    ™ Oils and
-  L013 y=  393.9 x=  143.9..445.4    selection of Honda Genuine Accessories. Time for service? Be
+  L012 y=  393.9 x=  143.9..445.4    selection of Honda Genuine Accessories. Time for service? Be
+  L013 y=  393.9 x=  444.6..480.0    ™ Oils and
   L014 y=  381.9 x=  143.9..480.0    Chemicals. And if you’re looking for a way to pay for your n
   L015 y=  369.9 x=  143.9..480.0    gestions. First, ask about the American Honda Finance Corpor
-  L016 y=  357.9 x=  454.6..480.0    ™ revolv-
-  L017 y=  357.9 x=  143.9..454.6    can set everything up for you right in the showroom. Another
+  L016 y=  357.9 x=  143.9..454.6    can set everything up for you right in the showroom. Another
+  L017 y=  357.9 x=  454.6..480.0    ™ revolv-
   L018 y=  345.9 x=  143.9..480.0    ing charge card.‡‡ You can use the Honda Card to purchase Ho
   L019 y=  333.9 x=  143.9..480.0    And make sure to ask your Honda Dealer about MSF rider train
   L020 y=  321.9 x=  143.9..480.0    we think our family of Honda off-road motorcycles is the bes
@@ -83,8 +83,8 @@
   L046 y=  442.3 x=  319.4..523.2    universal licensing platform, enables customers to
   L047 y=  425.3 x=  319.4..512.3    easily price, package and protect their software.
   L048 y=  408.3 x=  319.4..518.7    More than 3000 software publishers have shipped
-  L049 y=  391.3 x=  371.7..520.7    tm software, and hundreds of Fortune
-  L050 y=  391.3 x=  319.4..371.7    FLEXenabled
+  L049 y=  391.3 x=  319.4..371.7    FLEXenabled
+  L050 y=  391.3 x=  371.7..520.7    tm software, and hundreds of Fortune
   L051 y=  374.3 x=  319.4..519.1    1000 companies use Macrovision technologies to
   L052 y=  357.3 x=  319.4..530.4    better manage their software licenses. The company
   L053 y=  340.3 x=  319.4..524.6    holds over 700 software licensing and DRM patents
@@ -169,6 +169,6 @@
   L002 y=  674.1 x=   36.1..67.5     PREPARATION
   L003 y=  664.6 x=   38.3..56.6     25 mins
   L004 y=  653.7 x=   36.0..62.2     COOKING
-  L005 y=  647.0 x=  147.4..463.5    Spanish potato omelette
-  L006 y=  644.7 x=   38.3..56.6     40mins
+  L005 y=  644.7 x=   38.3..56.6     40mins
+  L006 y=  647.0 x=  147.4..463.5    Spanish potato omelette
 
