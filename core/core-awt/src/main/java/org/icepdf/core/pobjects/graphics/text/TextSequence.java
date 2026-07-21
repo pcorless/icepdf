@@ -539,9 +539,7 @@ public final class TextSequence {
     public int nextBoundary(int offset, BreakType type, boolean forward) {
         switch (type) {
             case WORD:
-                OffsetRange w = wordRange(offset);
-                if (forward) return offset < w.getEnd() ? w.getEnd() : clampOffset(offset + 1);
-                return offset > w.getStart() ? w.getStart() : clampOffset(offset - 1);
+                return forward ? nextWordEnd(offset) : prevWordStart(offset);
             case LINE:
                 OffsetRange l = lineRange(offset);
                 return forward ? l.getEnd() : l.getStart();
@@ -549,6 +547,67 @@ public final class TextSequence {
             default:
                 return clampOffset(forward ? offset + 1 : offset - 1);
         }
+    }
+
+    /**
+     * End offset of the next non-whitespace word whose end lies strictly after {@code offset}.
+     * Whitespace-only words are skipped so a single step lands on a word end rather than stopping
+     * on the space that follows it (which made forward word-selection cost two presses per word).
+     * Returns {@code offset} unchanged when there is no further word, so the caller can detect the
+     * page edge and roll over to the neighbouring page.
+     */
+    private int nextWordEnd(int offset) {
+        for (int wi = firstWordEndingAfter(offset); wi < words.length; wi++) {
+            if (!isWhitespaceWord(wi)) return wordEnd[wi];
+        }
+        return clampOffset(offset);
+    }
+
+    /**
+     * Start offset of the previous non-whitespace word whose start lies strictly before
+     * {@code offset}.  The mirror of {@link #nextWordEnd(int)}; returns {@code offset} unchanged
+     * when there is no earlier word so the caller can roll over to the previous page.
+     */
+    private int prevWordStart(int offset) {
+        for (int wi = lastWordStartingBefore(offset); wi >= 0; wi--) {
+            if (!isWhitespaceWord(wi)) return wordStart[wi];
+        }
+        return clampOffset(offset);
+    }
+
+    /** Smallest word index whose end offset is strictly greater than {@code offset}. */
+    private int firstWordEndingAfter(int offset) {
+        int lo = 0, hi = words.length;
+        while (lo < hi) {
+            int mid = (lo + hi) >>> 1;
+            if (wordEnd[mid] <= offset) lo = mid + 1;
+            else hi = mid;
+        }
+        return lo;
+    }
+
+    /** Largest word index whose start offset is strictly less than {@code offset} (-1 if none). */
+    private int lastWordStartingBefore(int offset) {
+        int lo = 0, hi = words.length;
+        while (lo < hi) {
+            int mid = (lo + hi) >>> 1;
+            if (wordStart[mid] < offset) lo = mid + 1;
+            else hi = mid;
+        }
+        return lo - 1;
+    }
+
+    /**
+     * True when word {@code wi} is whitespace only.  Prefers the parser's own
+     * {@link WordText#isWhiteSpace()} flag but falls back to inspecting the canonical text, since
+     * not every producer flags its inter-word spacing.
+     */
+    private boolean isWhitespaceWord(int wi) {
+        if (words[wi].isWhiteSpace()) return true;
+        for (int o = wordStart[wi]; o < wordEnd[wi]; o++) {
+            if (!Character.isWhitespace(canonical.charAt(o))) return false;
+        }
+        return wordEnd[wi] > wordStart[wi];
     }
 
     // ------------------------------------------------------------------

@@ -10,6 +10,7 @@
 package org.icepdf.selection;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.graphics.text.BreakType;
 import org.icepdf.core.pobjects.graphics.text.Caret;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.OffsetRange;
@@ -134,6 +135,17 @@ public class TextSequenceTest {
         // word boundary at start of the first word "Qué"
         OffsetRange firstWord = seq.wordRange(0);
         assertEquals(firstWord.getEnd(), seq.nextBoundary(0, org.icepdf.core.pobjects.graphics.text.BreakType.WORD, true));
+
+        // word navigation must not double-stop on the space between words: one forward step from a
+        // word end lands on the *next* word end, not on the intervening whitespace (GH-513).
+        BreakType word = org.icepdf.core.pobjects.graphics.text.BreakType.WORD;
+        int afterQue = seq.nextBoundary(0, word, true);
+        int afterEs = seq.nextBoundary(afterQue, word, true);
+        assertEquals("Qué", seq.text(0, afterQue));
+        assertEquals("Qué es", seq.text(0, afterEs), "forward word step skipped straight over the space");
+        // backward mirrors forward: from inside "es" one step reaches the start of "Qué" in a
+        // single move, not stopping on the lone space between them.
+        assertEquals(0, seq.nextBoundary(afterQue + 1, word, false));
 
         // line boundary
         OffsetRange line0 = seq.lineRange(3);
