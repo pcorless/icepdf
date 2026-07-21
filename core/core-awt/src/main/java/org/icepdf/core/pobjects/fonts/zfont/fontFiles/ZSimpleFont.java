@@ -101,7 +101,7 @@ public abstract class ZSimpleFont implements FontFile {
         this.source = font.source;
         this.fontBoxFont = font.fontBoxFont;
         this.isDamaged = font.isDamaged;
-        this.gsTransform = new AffineTransform(gsTransform);
+        this.gsTransform = new AffineTransform(font.gsTransform);
         this.fontMatrix = new AffineTransform(font.fontMatrix);
         this.fontTransform = new AffineTransform(font.fontTransform);
         Rectangle2D maxCharBounds = font.maxCharBounds;
