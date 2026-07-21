@@ -171,6 +171,11 @@ public abstract class CompositeFont extends SimpleFont {
             for (int i = 0, max = individualWidths.size() - 1; i < max; i++) {
                 current = ((Number) individualWidths.get(i)).intValue();
                 currentNext = individualWidths.get(i + 1);
+                // the c [w1 w2 ...] group's width array may be given as an
+                // indirect reference rather than an inline array.
+                if (currentNext instanceof Reference) {
+                    currentNext = library.getObject(currentNext);
+                }
                 if (currentNext instanceof ArrayList) {
                     ArrayList widths2 = (ArrayList) currentNext;
                     Object tmp;
@@ -229,6 +234,9 @@ public abstract class CompositeFont extends SimpleFont {
         for (int i = 0, max = widths.size() - 1; i < max; i++) {
             current = ((Number) widths.get(i)).intValue();
             currentNext = widths.get(i + 1);
+            if (currentNext instanceof Reference) {
+                currentNext = library.getObject(currentNext);
+            }
             if (currentNext instanceof ArrayList) {
                 ArrayList widths2 = (ArrayList) currentNext;
                 int newMax = current + widths2.size();
