@@ -152,8 +152,28 @@ public class Shapes {
      * @throws InterruptedException thread interrupted.
      */
     public void paint(Graphics2D g) throws InterruptedException {
+        paint(g, parentPage, paintAlpha);
+    }
+
+    /**
+     * Paint the graphics stack to the graphics context using the supplied parent
+     * page and alpha flag rather than this Shapes' instance fields.
+     * <p>
+     * The same nested Shapes object is shared across every concurrent paint of a
+     * cached page display list, so the parent page and alpha flag must be passed
+     * as call-local parameters here instead of being written into (and reset on)
+     * the shared instance.  The previous set/paint/reset-to-null pattern let one
+     * thread null {@code parentPage} mid-paint of another, which NPE'd a draw
+     * command; that exception was swallowed below and the rest of the form's
+     * shapes were skipped -- i.e. missing content on a concurrently rendered page.
+     *
+     * @param g          graphics context to paint to.
+     * @param parentPage parent page for this paint (call-local, not stored).
+     * @param paintAlpha whether alpha compositing draw commands are honoured.
+     * @throws InterruptedException thread interrupted.
+     */
+    public void paint(Graphics2D g, Page parentPage, boolean paintAlpha) throws InterruptedException {
         try {
-            boolean interrupted = false;
             AffineTransform base = new AffineTransform(g.getTransform());
             Shape clip = g.getClip();
 
@@ -189,8 +209,8 @@ public class Shapes {
      * (see FormDrawCmd backdrop capture).  The caller sets {@code g}'s transform
      * and clip; this captures {@code base} from it exactly like {@link #paint}.
      */
-    public void paintBackdrop(Graphics2D g, int uptoIndex) throws InterruptedException {
-        paintBackdrop(g, uptoIndex, false);
+    public void paintBackdrop(Graphics2D g, Page parentPage, int uptoIndex) throws InterruptedException {
+        paintBackdrop(g, parentPage, uptoIndex, false);
     }
 
     /**
@@ -202,7 +222,8 @@ public class Shapes {
      * stack (otherwise an earlier group's painted content darkens later groups'
      * backdrops, making the per-group decision order-dependent).
      */
-    public void paintBackdrop(Graphics2D g, int uptoIndex, boolean skipFormGroups) throws InterruptedException {
+    public void paintBackdrop(Graphics2D g, Page parentPage, int uptoIndex, boolean skipFormGroups)
+            throws InterruptedException {
         AffineTransform base = new AffineTransform(g.getTransform());
         Shape clip = g.getClip();
         PaintTimer paintTimer = new PaintTimer();

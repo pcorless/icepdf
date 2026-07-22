@@ -557,8 +557,8 @@ public class FormDrawCmd extends AbstractDrawCmd {
      * {@code scale . translate(-x,-y) . curTransform^-1 . base}.  No raster
      * readback required.  Returns null if a backdrop can't be built.
      */
-    private BufferedImage captureBackdrop(Graphics2D g, AffineTransform base, int w, int h) {
-        return captureBackdrop(g, base, w, h, false);
+    private BufferedImage captureBackdrop(Graphics2D g, Page parentPage, AffineTransform base, int w, int h) {
+        return captureBackdrop(g, parentPage, base, w, h, false);
     }
 
     /**
@@ -568,7 +568,8 @@ public class FormDrawCmd extends AbstractDrawCmd {
      * Used by the §10 decline gate to evaluate the true page backdrop independent
      * of the other groups in the same stack.
      */
-    private BufferedImage captureBackdrop(Graphics2D g, AffineTransform base, int w, int h, boolean skipFormGroups) {
+    private BufferedImage captureBackdrop(Graphics2D g, Page parentPage, AffineTransform base, int w, int h,
+                                          boolean skipFormGroups) {
         if (capturingBackdrop.get() || backdropShapes == null || w <= 0 || h <= 0) {
             return null;
         }
@@ -596,7 +597,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
             b.concatenate(g.getTransform().createInverse());
             b.concatenate(base);
             bg.setTransform(b);
-            backdropShapes.paintBackdrop(bg, backdropIndex, skipFormGroups);
+            backdropShapes.paintBackdrop(bg, parentPage, backdropIndex, skipFormGroups);
             bg.dispose();
             return backdrop;
         } catch (Exception e) {
@@ -649,7 +650,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 ImageUtility.setPreserveCmyk(prevPreserve);
             }
         }
-        BufferedImage backdrop = captureBackdrop(g, base, isolated.getWidth(), isolated.getHeight());
+        BufferedImage backdrop = captureBackdrop(g, parentPage, base, isolated.getWidth(), isolated.getHeight());
         if (backdrop == null) {
             return isolated;
         }
@@ -675,7 +676,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
         // re-engage §10 and wash out (978 recovers only partially).
         if (ca >= 0.99f && isWhiteWashingBlend(blend)) {
             BufferedImage gateBackdrop =
-                    captureBackdrop(g, base, isolated.getWidth(), isolated.getHeight(), true);
+                    captureBackdrop(g, parentPage, base, isolated.getWidth(), isolated.getHeight(), true);
             boolean blankPage = gateBackdrop == null || isBlankBackdrop(gateBackdrop);
             if (gateBackdrop != null) {
                 gateBackdrop.flush();
@@ -1064,7 +1065,6 @@ public class FormDrawCmd extends AbstractDrawCmd {
         try {
             Shapes xFormShapes = xForm.getShapes();
             if (xFormShapes != null) {
-                xFormShapes.setPageParent(parentPage);
                 // translate the coordinate system as we'll paint the g
                 // graphic at the correctly location later.
                 if (!xForm.isShading()) {
@@ -1106,13 +1106,13 @@ public class FormDrawCmd extends AbstractDrawCmd {
                     ImageUtility.beginCmykInkCapture(bufferWidth, bufferHeight);
                 }
                 try {
-                    xFormShapes.paint(canvas);
+                    // parent page passed as a call-local parameter, no shared-field mutation
+                    xFormShapes.paint(canvas, parentPage, xFormShapes.isPaintAlpha());
                 } finally {
                     if (captureCmykInk) {
                         capturedInk = ImageUtility.endCmykInkCapture();
                     }
                 }
-                xFormShapes.setPageParent(null);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

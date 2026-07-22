@@ -249,9 +249,8 @@ public class ShadingSoftMaskDrawCmd extends AbstractDrawCmd {
                 ((ShapeDrawCmd) cmd).setShape(fillClip);
             }
         }
-        maskShapes.setPageParent(parentPage);
-        maskShapes.paint(mg);
-        maskShapes.setPageParent(null);
+        // pass parent page as a call-local parameter, no shared-field mutation
+        maskShapes.paint(mg, parentPage, maskShapes.isPaintAlpha());
         mg.dispose();
         return mask;
     }

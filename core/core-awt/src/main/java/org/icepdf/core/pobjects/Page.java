@@ -697,13 +697,16 @@ public class Page extends Dictionary {
             AffineTransform pageTransform = g2.getTransform();
             Shape pageClip = g2.getClip();
 
-            shapes.setPageParent(this);
+            // Pass this page through paint() as a call-local parameter rather than
+            // writing it into the shared Shapes and resetting to null afterwards:
+            // several threads can paint this same cached display list concurrently,
+            // and the reset-to-null raced (nulling the parent mid-paint of another
+            // thread dropped form content -- missing content on the page).
             if (isPageGroupBufferCandidate()) {
                 paintPageGroupBuffered(g2);
             } else {
-                shapes.paint(g2);
+                shapes.paint(g2, this, shapes.isPaintAlpha());
             }
-            shapes.setPageParent(null);
 
             g2.setTransform(pageTransform);
             g2.setClip(pageClip);
@@ -805,7 +808,7 @@ public class Page extends Dictionary {
                 : savedTx.createTransformedShape(g2.getClipBounds()).getBounds();
         if (devBounds.width <= 0 || devBounds.height <= 0) {
             // nothing to buffer; fall back to the direct paint.
-            shapes.paint(g2);
+            shapes.paint(g2, this, shapes.isPaintAlpha());
             return;
         }
         BufferedImage buffer = new BufferedImage(devBounds.width, devBounds.height,
@@ -834,7 +837,7 @@ public class Page extends Dictionary {
             FormDrawCmd.setRenderingIntoPageGroup(true);
             boolean prevTransparent = BlendComposite.setTransparentBackdrop(true);
             try {
-                shapes.paint(bg);
+                shapes.paint(bg, this, shapes.isPaintAlpha());
             } finally {
                 BlendComposite.setTransparentBackdrop(prevTransparent);
                 FormDrawCmd.setRenderingIntoPageGroup(false);

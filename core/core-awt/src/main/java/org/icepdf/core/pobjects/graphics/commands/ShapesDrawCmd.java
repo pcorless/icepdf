@@ -49,10 +49,12 @@ public class ShapesDrawCmd extends AbstractDrawCmd {
                               boolean paintAlpha, PaintTimer paintTimer) throws InterruptedException {
         if (optionalContentState.isVisible() &&
                 shapes != null) {
-            shapes.setPageParent(parentPage);
-            shapes.setPaintAlpha(paintAlpha);
-            shapes.paint(g);
-            shapes.setPageParent(null);
+            // Pass parent page and alpha as call-local parameters rather than
+            // mutating the shared nested Shapes' instance fields: the same Shapes
+            // is painted by every thread rendering this cached page concurrently,
+            // and the old set/paint/reset-to-null pattern raced (nulling
+            // parentPage mid-paint of another thread dropped the form's content).
+            shapes.paint(g, parentPage, paintAlpha);
         }
         return currentShape;
     }
