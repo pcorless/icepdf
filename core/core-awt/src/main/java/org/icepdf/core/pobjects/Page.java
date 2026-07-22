@@ -1414,19 +1414,25 @@ public class Page extends Dictionary {
     }
 
     public float getPageRotation() {
+        // Compute in a local: this method is called from getPageTransform on every
+        // paint, and several threads can paint the same Page concurrently.  The
+        // previous code mutated the shared pageRotation field in place and, worse,
+        // non-idempotently (pageRotation = 360 - pageRotation): two concurrent
+        // calls could double-apply the 360-minus normalisation, turning a /Rotate 90
+        // page's 270 into 90 (a 180 degree difference) and flipping the whole page.
+        float rotation = 0;
         // Get the pages default orientation if available, if not defined
         // then it is zero.
         Object tmpRotation = library.getObject(entries, ROTATE_KEY);
         if (tmpRotation != null) {
-            pageRotation = ((Number) tmpRotation).floatValue();
-//            System.out.println("Page Rotation  " + pageRotation);
+            rotation = ((Number) tmpRotation).floatValue();
         }
         // check parent to see if value has been set
         else {
             PageTree pageTree = getParent();
             while (pageTree != null) {
                 if (pageTree.isRotationFactor) {
-                    pageRotation = pageTree.rotationFactor;
+                    rotation = pageTree.rotationFactor;
                     break;
                 }
                 pageTree = pageTree.getParent();
@@ -1434,10 +1440,12 @@ public class Page extends Dictionary {
         }
         // PDF specifies rotation as clockwise, but Java2D does it
         //  counter-clockwise, so normalise it to Java2D
-        pageRotation = 360 - pageRotation;
-        pageRotation %= 360;
-//        System.out.println("New Page Rotation " + pageRotation);
-        return pageRotation;
+        rotation = 360 - rotation;
+        rotation %= 360;
+        // publish the normalised value (idempotent: every call computes the same
+        // result, so a concurrent write is harmless).
+        pageRotation = rotation;
+        return rotation;
     }
 
     /**
