@@ -237,12 +237,44 @@ public class Library {
             if (obj == null) return null;
             // keep expensive like fonts, images, page tree
             PObject object = ((PObject) obj);
-            if (isSoftReferenceAble(object)) {
-                objectStore.put(reference, new SoftReference<>(obj));
-            } else {
-                objectStore.put(reference, new WeakReference<>(obj));
+            // Atomic publish + converge on a single instance per reference.  The
+            // get()/load()/put() above is not atomic, so two threads that both
+            // miss the cache each load a fresh copy of the same object.  Handing
+            // both copies out let, e.g., two Page instances for one reference run
+            // their synchronized init() concurrently (different monitors) and
+            // corrupt shared state -- a ConcurrentModificationException on the
+            // shared /Annots list, or missing content when one duplicate disposes
+            // a content stream another is still parsing.  Here the loser discards
+            // its copy and returns the instance the winner published, so callers
+            // always observe exactly one instance of a given reference.  No lock
+            // is held across load() (object loading re-enters getObject for object
+            // streams and malformed files can contain reference cycles, so a
+            // load-time lock could deadlock); the rare double-load is only wasted
+            // parsing, never a duplicate live instance.
+            java.lang.ref.Reference<Object> newRef = isSoftReferenceAble(object)
+                    ? new SoftReference<>(obj) : new WeakReference<>(obj);
+            if (!useCache) {
+                objectStore.put(reference, newRef);
+                return object;
             }
-            return object;
+            while (true) {
+                java.lang.ref.Reference<Object> prevRef = objectStore.putIfAbsent(reference, newRef);
+                if (prevRef == null) {
+                    // we won: ours is the published instance.
+                    return object;
+                }
+                Object published = prevRef.get();
+                if (published != null) {
+                    // another thread already published; use it, discard ours.
+                    return published instanceof PObject
+                            ? (PObject) published : new PObject(published, reference);
+                }
+                // prevRef referent was GC'd; atomically replace the stale entry.
+                if (objectStore.replace(reference, prevRef, newRef)) {
+                    return object;
+                }
+                // lost the replace race; retry.
+            }
         }
         if (obj instanceof PObject) {
             return (PObject) obj;
