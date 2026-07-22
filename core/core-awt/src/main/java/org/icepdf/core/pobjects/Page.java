@@ -1535,26 +1535,31 @@ public class Page extends Dictionary {
         if (mediaBox != null) {
             return mediaBox;
         }
+        // Compute into a local and publish the shared mediaBox field ONCE so a
+        // concurrent caller never observes it mid-resolution (parent-walk /
+        // default fallback), which would yield an inconsistent page dimension.
+        PRectangle box = null;
         // add all of the pages media box dimensions to a vector and process
         List boxDimensions = (List) (library.getObject(entries, MEDIABOX_KEY));
         if (boxDimensions != null) {
-            mediaBox = new PRectangle(boxDimensions);
+            box = new PRectangle(boxDimensions);
         }
         // If mediaBox is null check with the parent pages, as media box is inheritable
-        if (mediaBox == null) {
+        if (box == null) {
             PageTree pageTree = getParent();
-            while (pageTree != null && mediaBox == null) {
-                mediaBox = pageTree.getMediaBox();
-                if (mediaBox == null) {
+            while (pageTree != null && box == null) {
+                box = (PRectangle) pageTree.getMediaBox();
+                if (box == null) {
                     pageTree = pageTree.getParent();
                 }
             }
         }
         // last resort
-        if (mediaBox == null) {
-            mediaBox = new PRectangle(new Point.Float(0, 0), new Point.Float(612, 792));
+        if (box == null) {
+            box = new PRectangle(new Point.Float(0, 0), new Point.Float(612, 792));
         }
-        return mediaBox;
+        mediaBox = box;
+        return box;
     }
 
     /**
@@ -1567,21 +1572,28 @@ public class Page extends Dictionary {
         if (cropBox != null) {
             return cropBox;
         }
+        // Compute into a local and publish the shared cropBox field ONCE, fully
+        // resolved.  This method assigned cropBox to the RAW box first and then
+        // replaced it with the media-box intersection, so a concurrent caller
+        // could see the field in that intermediate (un-intersected) state and
+        // return a different-sized box -- yielding a different page dimension
+        // than a serial render (same lazy-init publication bug as getPageRotation).
+        PRectangle box = null;
         // add all the pages crop box dimensions to a vector and process
         List boxDimensions = (List) (library.getObject(entries, CROPBOX_KEY));
         if (boxDimensions != null) {
-            cropBox = new PRectangle(boxDimensions);
+            box = new PRectangle(boxDimensions);
         }
         // If cropbox is null check with the parent pages, as media box is inheritable
         boolean isParentCropBox = false;
-        if (cropBox == null) {
+        if (box == null) {
             PageTree pageTree = getParent();
-            while (pageTree != null && cropBox == null) {
+            while (pageTree != null && box == null) {
                 if (pageTree.getCropBox() == null) {
                     break;
                 }
-                cropBox = pageTree.getCropBox();
-                if (cropBox != null) {
+                box = (PRectangle) pageTree.getCropBox();
+                if (box != null) {
                     isParentCropBox = true;
                 }
                 pageTree = pageTree.getParent();
@@ -1589,15 +1601,16 @@ public class Page extends Dictionary {
         }
         // Default value of the cropBox is the MediaBox if not set implicitly
         PRectangle mediaBox = (PRectangle) getMediaBox();
-        if ((cropBox == null || isParentCropBox) && mediaBox != null) {
-            cropBox = (PRectangle) mediaBox.clone();
-        } else if (cropBox != null && mediaBox != null) {
+        if ((box == null || isParentCropBox) && mediaBox != null) {
+            box = (PRectangle) mediaBox.clone();
+        } else if (box != null && mediaBox != null) {
             // PDF 1.5 spec states that the media box should be intersected with the
             // crop box to get the new box. But we only want to do this if the
             // cropBox is not the same as the mediaBox
-            cropBox = mediaBox.createCartesianIntersection(cropBox);
+            box = mediaBox.createCartesianIntersection(box);
         }
-        return cropBox;
+        cropBox = box;
+        return box;
     }
 
     /**
@@ -1610,16 +1623,19 @@ public class Page extends Dictionary {
         if (artBox != null) {
             return artBox;
         }
+        // compute into a local and publish once (see getCropBox).
+        PRectangle box = null;
         // get the art box vector value
         List boxDimensions = (List) (library.getObject(entries, ARTBOX_KEY));
         if (boxDimensions != null) {
-            artBox = new PRectangle(boxDimensions);
+            box = new PRectangle(boxDimensions);
         }
         // Default value of the artBox is the bleed if not set implicitly
-        if (artBox == null) {
-            artBox = (PRectangle) getCropBox();
+        if (box == null) {
+            box = (PRectangle) getCropBox();
         }
-        return artBox;
+        artBox = box;
+        return box;
     }
 
     /**
@@ -1632,17 +1648,19 @@ public class Page extends Dictionary {
         if (bleedBox != null) {
             return bleedBox;
         }
+        // compute into a local and publish once (see getCropBox).
+        PRectangle box = null;
         // get the art box vector value
         List boxDimensions = (List) (library.getObject(entries, BLEEDBOX_KEY));
         if (boxDimensions != null) {
-            bleedBox = new PRectangle(boxDimensions);
-//            System.out.println("Page - BleedBox " + bleedBox);
+            box = new PRectangle(boxDimensions);
         }
         // Default value of the bleedBox is the bleed if not set implicitly
-        if (bleedBox == null) {
-            bleedBox = (PRectangle) getCropBox();
+        if (box == null) {
+            box = (PRectangle) getCropBox();
         }
-        return bleedBox;
+        bleedBox = box;
+        return box;
     }
 
     /**
@@ -1655,17 +1673,19 @@ public class Page extends Dictionary {
         if (trimBox != null) {
             return trimBox;
         }
+        // compute into a local and publish once (see getCropBox).
+        PRectangle box = null;
         // get the art box vector value
         List boxDimensions = (List) (library.getObject(entries, TRIMBOX_KEY));
         if (boxDimensions != null) {
-            trimBox = new PRectangle(boxDimensions);
-//            System.out.println("Page - TrimBox " + trimBox);
+            box = new PRectangle(boxDimensions);
         }
         // Default value of the trimBox is the bleed if not set implicitly
-        if (trimBox == null) {
-            trimBox = (PRectangle) getCropBox();
+        if (box == null) {
+            box = (PRectangle) getCropBox();
         }
-        return trimBox;
+        trimBox = box;
+        return box;
     }
 
     /**
