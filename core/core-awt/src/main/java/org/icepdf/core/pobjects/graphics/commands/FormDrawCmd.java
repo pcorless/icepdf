@@ -1065,6 +1065,9 @@ public class FormDrawCmd extends AbstractDrawCmd {
         try {
             Shapes xFormShapes = xForm.getShapes();
             if (xFormShapes != null) {
+                // Sentinel shading-fill override, resolved below for shading forms
+                // and passed to paint() call-locally (never written into the cache).
+                Shape nullShapeFill = null;
                 // translate the coordinate system as we'll paint the g
                 // graphic at the correctly location later.
                 if (!xForm.isShading()) {
@@ -1086,6 +1089,10 @@ public class FormDrawCmd extends AbstractDrawCmd {
                     // Detect that overflow and substitute the buffer region (the
                     // area the mask actually covers), reusing the same transform
                     // the fill will run under so the gradient still lands 1:1.
+                    // Resolve the sentinel fill shape read-only (no mutation of the
+                    // shared cached commands): track the latest cm to build fillXform,
+                    // then compute the clamped fill and hand it to paint() as a
+                    // call-local override so concurrent paints don't collide.
                     AffineTransform fillXform = AffineTransform.getTranslateInstance(-x, -y);
                     for (DrawCmd cmd : xFormShapes.getShapes()) {
                         if (cmd instanceof TransformDrawCmd) {
@@ -1095,8 +1102,8 @@ public class FormDrawCmd extends AbstractDrawCmd {
                             fillXform.concatenate(((TransformDrawCmd) cmd).getAffineTransform());
                         } else if (cmd instanceof ShapeDrawCmd && ((ShapeDrawCmd) cmd).getShape() == null) {
                             Rectangle2D bounds = bBox.getBounds2D();
-                            ((ShapeDrawCmd) cmd).setShape(clampShadingFillShape(bounds, fillXform,
-                                    bufferWidth, bufferHeight));
+                            nullShapeFill = clampShadingFillShape(bounds, fillXform,
+                                    bufferWidth, bufferHeight);
                         }
                     }
                     canvas.translate(-x, -y);
@@ -1106,8 +1113,9 @@ public class FormDrawCmd extends AbstractDrawCmd {
                     ImageUtility.beginCmykInkCapture(bufferWidth, bufferHeight);
                 }
                 try {
-                    // parent page passed as a call-local parameter, no shared-field mutation
-                    xFormShapes.paint(canvas, parentPage, xFormShapes.isPaintAlpha());
+                    // parent page and any sentinel fill override passed as call-local
+                    // parameters, no shared-state mutation.
+                    xFormShapes.paint(canvas, parentPage, nullShapeFill);
                 } finally {
                     if (captureCmykInk) {
                         capturedInk = ImageUtility.endCmykInkCapture();

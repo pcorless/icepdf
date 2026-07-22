@@ -705,7 +705,7 @@ public class Page extends Dictionary {
             if (isPageGroupBufferCandidate()) {
                 paintPageGroupBuffered(g2);
             } else {
-                shapes.paint(g2, this, shapes.isPaintAlpha());
+                shapes.paint(g2, this);
             }
 
             g2.setTransform(pageTransform);
@@ -808,7 +808,7 @@ public class Page extends Dictionary {
                 : savedTx.createTransformedShape(g2.getClipBounds()).getBounds();
         if (devBounds.width <= 0 || devBounds.height <= 0) {
             // nothing to buffer; fall back to the direct paint.
-            shapes.paint(g2, this, shapes.isPaintAlpha());
+            shapes.paint(g2, this);
             return;
         }
         BufferedImage buffer = new BufferedImage(devBounds.width, devBounds.height,
@@ -837,7 +837,7 @@ public class Page extends Dictionary {
             FormDrawCmd.setRenderingIntoPageGroup(true);
             boolean prevTransparent = BlendComposite.setTransparentBackdrop(true);
             try {
-                shapes.paint(bg, this, shapes.isPaintAlpha());
+                shapes.paint(bg, this);
             } finally {
                 BlendComposite.setTransparentBackdrop(prevTransparent);
                 FormDrawCmd.setRenderingIntoPageGroup(false);

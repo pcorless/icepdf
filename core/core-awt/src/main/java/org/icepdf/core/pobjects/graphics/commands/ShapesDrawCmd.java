@@ -49,12 +49,13 @@ public class ShapesDrawCmd extends AbstractDrawCmd {
                               boolean paintAlpha, PaintTimer paintTimer) throws InterruptedException {
         if (optionalContentState.isVisible() &&
                 shapes != null) {
-            // Pass parent page and alpha as call-local parameters rather than
-            // mutating the shared nested Shapes' instance fields: the same Shapes
-            // is painted by every thread rendering this cached page concurrently,
-            // and the old set/paint/reset-to-null pattern raced (nulling
-            // parentPage mid-paint of another thread dropped the form's content).
-            shapes.paint(g, parentPage, paintAlpha);
+            // Pass the parent page as a call-local parameter rather than mutating
+            // the shared nested Shapes' instance field: the same Shapes is painted
+            // by every thread rendering this cached page concurrently, and the old
+            // set/paint/reset-to-null pattern raced (nulling parentPage mid-paint
+            // of another thread dropped the form's content).  paint() builds its
+            // own per-call OCG state and reads the global alpha option internally.
+            shapes.paint(g, parentPage);
         }
         return currentShape;
     }
