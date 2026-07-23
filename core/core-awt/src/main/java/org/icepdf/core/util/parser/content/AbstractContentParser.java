@@ -620,17 +620,29 @@ public abstract class AbstractContentParser {
             // update text sprites with geometric path state
             if (formXObject.getShapes() != null &&
                     formXObject.getShapes().getPageText() != null) {
-                // normalize each sprite.
-                AffineTransform pageSpace = graphicState.getCTM();
-                pageSpace.concatenate(formXObject.getMatrix());
-                formXObject.getShapes().getPageText()
-                        .applyXObjectTransform(pageSpace);
-                // add the text to the current shapes for extraction and
-                // selection purposes.
+                // The form XObject is a shared, cached object (one instance per
+                // reference via Library.getObject), so its PageText is shared by
+                // every page that draws the form.  applyXObjectTransform() and
+                // getPageLines() both mutate that PageText in place (transforming
+                // glyph bounds, clearing/re-sorting the line list); two pages
+                // drawing the same form concurrently corrupt each other's state
+                // and throw mid-parse (NPE in sortAndFormatText/LineText.getBounds),
+                // which aborts the page's content stream and drops all content
+                // after the Do -> "text doesn't render, background lines fine".
+                // Serialize the merge on the shared PageText so concurrent Do of
+                // the same form can't interleave; different forms still parallelize.
                 PageText pageText = formXObject.getShapes().getPageText();
-                if (pageText != null && pageText.getPageLines() != null) {
-                    shapes.getPageText().addPageLines(
-                            pageText.getPageLines());
+                synchronized (pageText) {
+                    // normalize each sprite.
+                    AffineTransform pageSpace = graphicState.getCTM();
+                    pageSpace.concatenate(formXObject.getMatrix());
+                    pageText.applyXObjectTransform(pageSpace);
+                    // add the text to the current shapes for extraction and
+                    // selection purposes.
+                    if (pageText.getPageLines() != null) {
+                        shapes.getPageText().addPageLines(
+                                pageText.getPageLines());
+                    }
                 }
             }
             // Some Do object will have images, and we need to make sure we account for localized space.
