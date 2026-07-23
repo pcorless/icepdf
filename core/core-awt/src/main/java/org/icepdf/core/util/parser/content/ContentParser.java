@@ -28,6 +28,7 @@ import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReferenceFactory;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.RenderExceptionMonitor;
 import org.icepdf.core.util.updater.callbacks.ContentStreamCallback;
 
 import java.awt.geom.AffineTransform;
@@ -165,6 +166,7 @@ public class ContentParser extends AbstractContentParser {
                             try {
                                 yBTstart = parseText(lexer, shapes, yBTstart);
                             } catch (Exception e) {
+                                RenderExceptionMonitor.record("ContentParser.parseText(BT)", e);
                                 logger.log(Level.SEVERE, "Error parsing text block", e);
                             } finally {
                                 inTextBlock = false;
@@ -592,7 +594,11 @@ public class ContentParser extends AbstractContentParser {
             logger.log(Level.FINE, "ContentParser thread interrupted");
             throw new InterruptedException("ContentParser thread interrupted");
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error parsing content stream. ", e);
+            // Swallow so the shapes parsed before the fault still paint; record
+            // for the race-audit tripwire.  This is the catch that absorbed the
+            // shared-form PageText race (aborting the rest of the stream).
+            RenderExceptionMonitor.record("ContentParser.parse", e);
+            logger.log(Level.WARNING, "Error parsing content stream; remaining operators in this stream skipped. ", e);
         }
         return this;
     }
@@ -1092,6 +1098,7 @@ public class ContentParser extends AbstractContentParser {
         } catch (IOException e) {
             throw e;
         } catch (Exception e) {
+            RenderExceptionMonitor.record("ContentParser.parseInlineImage", e);
             logger.log(Level.FINE, "Error parsing inline image.", e);
         }
     }

@@ -482,8 +482,11 @@ public class Page extends Dictionary {
                 } catch (InterruptedException e) {
                     throw new InterruptedException(e.getMessage());
                 } catch (Exception e) {
+                    // Page-level init fault discards ALL content for the page;
+                    // record for the race-audit tripwire before we drop it.
+                    RenderExceptionMonitor.record("Page.init", e);
                     shapes = new Shapes();
-                    logger.log(Level.WARNING, "Error initializing Page.", e);
+                    logger.log(Level.WARNING, "Error initializing Page; all page content discarded.", e);
                 }
             }
             // empty page, nothing to do.
@@ -1770,6 +1773,7 @@ public class Page extends Dictionary {
                     }
                 }
             } catch (Exception e) {
+                RenderExceptionMonitor.record("Page.getText", e);
                 logger.log(Level.WARNING, "Error getting page text.", e);
             }
         }

@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.RenderExceptionMonitor;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -222,7 +223,10 @@ public class Shapes {
         catch (InterruptedException e){
             throw new InterruptedException(e.getMessage());
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error painting shapes.", e);
+            // Swallow so the rest of the page still paints; record for the
+            // race-audit tripwire (no-op unless -Dorg.icepdf.core.debug.renderExceptions).
+            RenderExceptionMonitor.record("Shapes.paint", e);
+            logger.log(Level.WARNING, "Error painting shapes; remaining shapes in this list skipped.", e);
         }
     }
 
