@@ -41,6 +41,16 @@ public class FormDrawCmd extends AbstractDrawCmd {
 
     private BufferedImage xFormBuffer;
     private int x, y;
+    // A FormDrawCmd lives in a Form's cached Shapes, so a form shared across
+    // pages (a header/logo/branding form) has ONE FormDrawCmd painted by several
+    // page-render threads at once.  The buffer build below is a lazy one-shot
+    // that mutates instance fields (xFormBuffer/x/y/bufferFrame) AND shared cached
+    // soft-mask state (SoftMask.setParentResources / mask-form setShading); two
+    // threads racing it corrupt the buffer -> a soft-masked element loses its mask
+    // and paints as an opaque black box (GH-495, "Run & Gun.pdf" logo).  Build
+    // once under lock; xFormBufferBuilt is published (volatile) LAST so a reader
+    // taking the lock-free fast path never sees a half-built buffer / stale x,y.
+    private volatile boolean xFormBufferBuilt;
 
     // When a transparency group's bbox exceeds MAX_IMAGE_SIZE it is rasterised
     // into a proportionally down-scaled buffer to bound heap; these capture the
@@ -260,7 +270,9 @@ public class FormDrawCmd extends AbstractDrawCmd {
                               Shape clip, AffineTransform base,
                               OptionalContentState optionalContentState,
                               boolean paintAlpha, PaintTimer paintTimer) {
-        if (optionalContentState.isVisible() && xFormBuffer == null) {
+        if (optionalContentState.isVisible() && !xFormBufferBuilt) {
+          synchronized (this) {
+           if (!xFormBufferBuilt) {
             RenderingHints renderingHints = g.getRenderingHints();
             Rectangle2D bBox = xForm.getBBox();
             x = (int) bBox.getX();
@@ -442,6 +454,9 @@ public class FormDrawCmd extends AbstractDrawCmd {
 //            ImageUtility.displayImage(xFormBuffer, "final" + xForm.getGroup() + " " + xForm.getPObjectReference() +
 //                    xFormBuffer.getHeight() + "x" + xFormBuffer.getHeight());
             bufferFrame = null;
+            xFormBufferBuilt = true; // publish LAST: buffer + x,y are now final
+           }
+          }
         }
         // §10: a backdrop-composited buffer already holds the group's
         // contribution with the backdrop removed; the page blend (e.g. Multiply)
