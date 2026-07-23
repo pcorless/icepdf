@@ -59,7 +59,12 @@ public class CryptFilter extends Dictionary {
 
 
     // listing of crypt filters associated with the CF dictionary, one or more.
-    public HashMap<Name, CryptFilterEntry> cryptFilters;
+    // volatile + built-in-a-local then published once (see getCryptFilterByName):
+    // the former lazy build published an EMPTY map before filling it, so a
+    // concurrent stream decode could look up its filter, get null, and fall back
+    // to the default V2/RC4 algorithm for an AES stream -> wrong per-object key ->
+    // garbage plaintext -> 0-byte inflate -> silently dropped page content (GH-495).
+    public volatile HashMap<Name, CryptFilterEntry> cryptFilters;
 
 
     public CryptFilter(Library library, DictionaryEntries entries) {
@@ -75,19 +80,27 @@ public class CryptFilter extends Dictionary {
      */
     public CryptFilterEntry getCryptFilterByName(Name cryptFilterName) {
         // check if need to initialize the dictionary
-        if (cryptFilters == null) {
-            cryptFilters = new HashMap<>(1);
-            Set<Name> cryptKeys = entries.keySet();
-            Object filter;
-            for (Name name : cryptKeys) {
-                filter = entries.get(name);
-                if (filter instanceof DictionaryEntries) {
-                    cryptFilters.put(name, new CryptFilterEntry(library, (DictionaryEntries) filter));
+        HashMap<Name, CryptFilterEntry> filters = cryptFilters;
+        if (filters == null) {
+            synchronized (this) {
+                filters = cryptFilters;
+                if (filters == null) {
+                    // build fully in a local, then publish once so a concurrent
+                    // reader never sees a half-populated map.
+                    filters = new HashMap<>(1);
+                    Set<Name> cryptKeys = entries.keySet();
+                    Object filter;
+                    for (Name name : cryptKeys) {
+                        filter = entries.get(name);
+                        if (filter instanceof DictionaryEntries) {
+                            filters.put(name, new CryptFilterEntry(library, (DictionaryEntries) filter));
+                        }
+                    }
+                    cryptFilters = filters;
                 }
-
             }
         }
-        return cryptFilters.get(cryptFilterName);
+        return filters.get(cryptFilterName);
     }
 
 }
